@@ -28,6 +28,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include <wx/glcanvas.h>
 
+#include <memory>
+
 //#include <glad/glad.h>
 //#include <glm/glm.hpp>
 //#include <glm/gtc/matrix_transform.hpp>
@@ -66,7 +68,7 @@ public:
 
 private:
 
-    wxGLContext* context;
+    std::unique_ptr<wxGLContext> context;
 	wxGLContextAttrs context_attributes;
     //wxGLContextAttrs defaultAttrs();
     

@@ -2,6 +2,7 @@
 
 project(Decade)
 
+message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 message("cmake version: ${CMAKE_VERSION}")
 
 function(message_list list_name)
@@ -37,11 +38,14 @@ set(wxUSE_EXCEPTIONS OFF CACHE BOOL "wxUSE_EXCEPTIONS" FORCE)
 set(wxUSE_STL ON CACHE BOOL "wxUSE_STL" FORCE)
 set(wxUSE_CAIRO OFF CACHE BOOL "wxUSE_CAIRO" FORCE)
 
-set(wxBUILD_TOOLKIT gtk2 CACHE STRING "wxBUILD_TOOLKIT" FORCE)
-# cc1plus: Warnung: /home/titan99/code/decade-build/external/wxWidgets/libs/core/cotire/core_CXX_prefix.hxx.gch: nicht verwendet, da »__WXGTK2__« nicht definiert [-Winvalid-pch]
+set(wxUSE_OPENGL ON CACHE BOOL "wxUSE_OPENGL" FORCE)
 
-
-
+if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
+	set(wxBUILD_TOOLKIT msw CACHE STRING "wxBUILD_TOOLKIT" FORCE)
+else()
+	# set(wxBUILD_TOOLKIT gtk3 CACHE STRING "wxBUILD_TOOLKIT" FORCE)
+	# cc1plus: Warnung: /home/titan99/code/decade-build/external/wxWidgets/libs/core/cotire/core_CXX_prefix.hxx.gch: nicht verwendet, da »__WXGTK2__« nicht definiert [-Winvalid-pch]
+endif()
 
 set(wxBUILD_SHARED OFF CACHE BOOL "wxBUILD_SHARED" FORCE)
 set(wxBUILD_PRECOMP ON CACHE BOOL "wxBUILD_PRECOMP" FORCE)

@@ -59,13 +59,12 @@ GraphicEngine* GLCanvas::GetGraphicEngine()
 void GLCanvas::LoadOpenGL()
 {
     bool shown_on_screen = GetParent()->IsShownOnScreen();
-
     bool canvas_shown_on_screen = this->IsShownOnScreen();
 
 	if (openGL_ready == false && shown_on_screen)
     {
 		context_attributes.PlatformDefaults().CoreProfile().OGLVersion(3, 2).EndList();
-		context = new wxGLContext(this, nullptr, &context_attributes);
+		context = std::make_unique<wxGLContext>(this, nullptr, &context_attributes);
 		std::cout << "context IsOK " << context->IsOK() << '\n';
 
         SetCurrent(*context);
