@@ -20,7 +20,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 
 LicenseInformationDialog::LicenseInformationDialog() :
-	wxDialog(nullptr, wxID_ANY, L"Open Source Licenses Information", wxDefaultPosition, wxSize(800, 600)/*wxDefaultSize*/, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER | wxMAXIMIZE_BOX)
+	wxDialog(nullptr, wxID_ANY, L"Open Source Licenses Information", wxDefaultPosition, wxSize(800, 600)/*wxDefaultSize*/,
+			wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER | wxMAXIMIZE_BOX )
 {
 	wxBoxSizer* vertical_sizer = new wxBoxSizer(wxVERTICAL);
 	SetSizer(vertical_sizer);

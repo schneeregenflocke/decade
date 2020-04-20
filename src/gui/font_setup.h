@@ -61,6 +61,7 @@ private:
 
 	bool font_directory_enumerated;
 
+	std::string default_font_path;
 	std::string font_file_path;
 	wxFontPickerCtrl* font_picker;
 	EnumerateFont enum_fonts;
