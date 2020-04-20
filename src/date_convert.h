@@ -19,7 +19,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #pragma once
 
 #define BOOST_DATE_TIME_NO_LIB
-#include <boost\date_time\gregorian\gregorian.hpp>
+#include <boost/date_time/gregorian/gregorian.hpp>
 
 using date = boost::gregorian::date;
 

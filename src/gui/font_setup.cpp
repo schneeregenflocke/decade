@@ -23,6 +23,13 @@ FontSetupPanel::FontSetupPanel(wxWindow* parent) :
 	wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxPanelNameStr),
 	font_directory_enumerated(false)
 {
+#ifdef _WIN32
+	default_font_path = "C:/Windows/Fonts/arial.ttf";
+#endif
+#ifdef __linux__
+	default_font_path = "/usr/share/fonts/cantarell/Cantarell-Regular.otf";
+#endif
+
 	font_picker = new wxFontPickerCtrl(this, wxID_ANY, wxNullFont, wxDefaultPosition, wxDefaultSize, wxFNTP_DEFAULT_STYLE);
 	font_picker->Enable(true);
 	//font_picker->SetMinSize(wxSize(300, -1));
@@ -36,8 +43,6 @@ FontSetupPanel::FontSetupPanel(wxWindow* parent) :
 	SetSizer(vertical_sizer);
 
 	Bind(wxEVT_FONTPICKER_CHANGED, &FontSetupPanel::SlotSelectFont, this);
-
-	
 }
 
 std::string FontSetupPanel::GetFontFilePath()
@@ -54,8 +59,7 @@ void FontSetupPanel::SetFontFilePath(std::string file_path)
 	}
 	else
 	{
-		std::string w32_default_font_path = "C:/Windows/Fonts/arial.ttf";
-		font_file_path = w32_default_font_path;
+		font_file_path = default_font_path;
 	}
 
 	signal_fontpath(font_file_path);
@@ -68,9 +72,8 @@ void FontSetupPanel::SetFontFilePath(std::string file_path)
 
 void FontSetupPanel::SendDefaultValues()
 {
-	std::string w32_default_font_path = "C:/Windows/Fonts/arial.ttf";
-	font_file_path = w32_default_font_path;
-	signal_fontpath(w32_default_font_path);
+	font_file_path = default_font_path;
+	signal_fontpath(default_font_path);
 }
 
 void FontSetupPanel::SlotSelectFont(wxFontPickerEvent& event)

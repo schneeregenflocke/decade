@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 */
 
 
-#include "Projection.h"
+#include "projection.h"
 
 
 glm::mat4 Projection::OrthoMatrix(const rect4& viewSize)

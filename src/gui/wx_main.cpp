@@ -59,6 +59,7 @@ bool App::OnInit()
     main_window = new MainWindow("Decade", wxPoint(100, 100), wxSize(800, 600));
     //main_window->Maximize();
     main_window->Show();
+    main_window->Raise();
 
     main_window->GetGLCanvas()->LoadOpenGL();
     
@@ -77,10 +78,13 @@ bool App::OnInit()
     std::wcout << "OSMajorVersion.OSMinorVersion.OSMicroVersion " << wxPlatformInfo::Get().GetOSMajorVersion() << '.' <<
     wxPlatformInfo::Get().GetOSMinorVersion() << '.' <<
     wxPlatformInfo::Get().GetOSMicroVersion() << '\n';
-
+#if defined _WIN32
     std::wcout << "_WIN32 " << _WIN32 << '\n';
+#endif
+#if defined _MSC_VER && _MSVC_LANG
     std::wcout << "_MSC_VER " << _MSC_VER << '\n';
     std::wcout << "_MSVC_LANG " << _MSVC_LANG << '\n';
+#endif
 
     return true;
 }
@@ -305,7 +309,9 @@ void MainWindow::ImportCSV(const std::string& filepath)
     {
         if (csv_reader.ready())
         {
-            auto& row = csv_reader.next_row();
+            auto row = csv_reader.next_row(); // auto& row = csv_reader.next_row();
+
+			
             
             auto begin_date = string_to_boost_date(row[std::to_string(0)], date_format);
             auto last_date = string_to_boost_date(row[std::to_string(1)], date_format);
