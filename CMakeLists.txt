@@ -23,6 +23,8 @@ find_package(Boost REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 
+message("Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
+message("Boost_LIBRARY_DIRS: ${Boost_LIBRARY_DIRS}")
 
 
 set(wxUSE_GUI ON CACHE BOOL "wxUSE_GUI" FORCE)
@@ -33,14 +35,21 @@ set(wxUSE_WINRT OFF CACHE BOOL "wxUSE_WINRT" FORCE)
 set(wxUSE_EXCEPTIONS OFF CACHE BOOL "wxUSE_EXCEPTIONS" FORCE)
 #set(wxUSE_ON_FATAL_EXCEPTION ON CACHE BOOL "wxUSE_ON_FATAL_EXCEPTION" FORCE)
 set(wxUSE_STL ON CACHE BOOL "wxUSE_STL" FORCE)
+set(wxUSE_CAIRO OFF CACHE BOOL "wxUSE_CAIRO" FORCE)
+
+set(wxBUILD_TOOLKIT gtk2 CACHE STRING "wxBUILD_TOOLKIT" FORCE)
+# cc1plus: Warnung: /home/titan99/code/decade-build/external/wxWidgets/libs/core/cotire/core_CXX_prefix.hxx.gch: nicht verwendet, da »__WXGTK2__« nicht definiert [-Winvalid-pch]
+
+
+
 
 set(wxBUILD_SHARED OFF CACHE BOOL "wxBUILD_SHARED" FORCE)
 set(wxBUILD_PRECOMP ON CACHE BOOL "wxBUILD_PRECOMP" FORCE)
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets")
-target_compile_definitions(gl   PUBLIC _CRT_SECURE_NO_WARNINGS)
-target_compile_definitions(core PUBLIC _CRT_SECURE_NO_WARNINGS)
-target_compile_definitions(base PUBLIC _CRT_SECURE_NO_WARNINGS)
+#target_compile_definitions(gl   PUBLIC _CRT_SECURE_NO_WARNINGS)
+#target_compile_definitions(core PUBLIC _CRT_SECURE_NO_WARNINGS)
+#target_compile_definitions(base PUBLIC _CRT_SECURE_NO_WARNINGS)
 include_directories("${CMAKE_CURRENT_BINARY_DIR}/external/wxWidgets/mswud")
 
 

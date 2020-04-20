@@ -20,15 +20,23 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 
 GLCanvas::GLCanvas(wxWindow* parent, const wxGLAttributes& canvas_attributes) : 
-    wxGLCanvas(parent, canvas_attributes), 
-    context(this, nullptr, &defaultAttrs()), 
+    wxGLCanvas(parent, canvas_attributes),
     wxCommandEventTag(wxNewEventType()),
     openGL_ready(false)
 {
+	/*	/home/titan99/code/decade/src/gui/gl_canvas.cpp: In Konstruktor »GLCanvas::GLCanvas(wxWindow*, const wxGLAttributes&)«:
+		/home/titan99/code/decade/src/gui/gl_canvas.cpp:24:42: Fehler: Adresse eines rvalues wird ermittelt [-fpermissive]
+   		24 |     context(this, nullptr, &defaultAttrs()),
+	*/
+	
+	/*context_attributes.PlatformDefaults().CoreProfile().OGLVersion(3, 2).EndList();
+	context = new wxGLContext(this, nullptr, &context_attributes);
+	std::cout << "context IsOK " << context->IsOK() << '\n';*/
+
     //Bind(wxEVT_PAINT, &GLCanvas::OnPaint, this);
     //Bind(wxEVT_SIZE, &GLCanvas::OnSize, this);
 
-    std::cout << "context IsOK " << context.IsOK() << '\n';   
+
 }
 
 const wxEventTypeTag<wxCommandEvent> GLCanvas::GetGLReadyEventTag()
@@ -41,19 +49,26 @@ GraphicEngine* GLCanvas::GetGraphicEngine()
     return graphic_engine.get();
 }
 
-wxGLContextAttrs GLCanvas::defaultAttrs()
+/*wxGLContextAttrs GLCanvas::defaultAttrs()
 {
-    wxGLContextAttrs context_attributes;
     context_attributes.PlatformDefaults().CoreProfile().OGLVersion(3, 2).EndList();
     return context_attributes;
-}
+}*/
 
 
 void GLCanvas::LoadOpenGL()
 {
-    if (openGL_ready == false && GetParent()->IsShownOnScreen())
+    bool shown_on_screen = GetParent()->IsShownOnScreen();
+
+    bool canvas_shown_on_screen = this->IsShownOnScreen();
+
+	if (openGL_ready == false && shown_on_screen)
     {
-        SetCurrent(context);
+		context_attributes.PlatformDefaults().CoreProfile().OGLVersion(3, 2).EndList();
+		context = new wxGLContext(this, nullptr, &context_attributes);
+		std::cout << "context IsOK " << context->IsOK() << '\n';
+
+        SetCurrent(*context);
         openGL_ready = gladLoadGL();
 
         wxString version_string;

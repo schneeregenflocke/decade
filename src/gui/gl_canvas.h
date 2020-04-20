@@ -65,14 +65,17 @@ public:
     void LoadOpenGL();
 
 private:
-    wxGLContextAttrs defaultAttrs();
+
+    wxGLContext* context;
+	wxGLContextAttrs context_attributes;
+    //wxGLContextAttrs defaultAttrs();
     
 
     void OnPaint(wxPaintEvent& event);
     void OnSize(wxSizeEvent& event);
     
 
-    wxGLContext context;
+
     int openGL_ready;
     std::unique_ptr<GraphicEngine> graphic_engine;
 

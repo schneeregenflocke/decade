@@ -88,6 +88,9 @@ std::string boost_date_to_string(const date& date_variable)
 
 boost::gregorian::date string_to_boost_date(std::string date_string, const date_format_descriptor& format)
 {
+
+	std::string non_const_date_string = date_string;
+
 	bool failed = false;
 	std::array<int, 3> date_parts;
 	size_t delimPos = 0;
@@ -101,7 +104,7 @@ boost::gregorian::date string_to_boost_date(std::string date_string, const date_
 			break;
 		}
 
-		date_string = date_string.substr(delimPos, std::string::npos);
+		non_const_date_string = non_const_date_string.substr(delimPos, std::string::npos);
 
 		if (!std::isdigit(date_string[0]))
 		{
@@ -109,7 +112,7 @@ boost::gregorian::date string_to_boost_date(std::string date_string, const date_
 			break;
 		}
 
-		int number = std::stoi(date_string, &delimPos);
+		int number = std::stoi(non_const_date_string, &delimPos);
 		++delimPos;
 
 		if (format.date_order[index] == 0 && format.shortyear)
