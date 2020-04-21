@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 */
 
+
 #include "wx_main.h"
 
 
@@ -35,8 +36,6 @@ wxIMPLEMENT_APP_NO_MAIN(App);
 
 int main(int argc, char* argv[])
 {
-    //return WinMain(::GetModuleHandle(NULL), NULL, ::GetCommandLineA(), SW_SHOWNORMAL);
-
     wxEntryStart(argc, argv);
 
     wxTheApp->CallOnInit();
@@ -45,16 +44,15 @@ int main(int argc, char* argv[])
     
     wxEntryCleanup();
 
-    return 0;
+    return EXIT_SUCCESS;
 }
-
 
 
 bool App::OnInit()
 {
     std::locale::global(std::locale(""));
 
-    //////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////
     
     main_window = new MainWindow("Decade", wxPoint(100, 100), wxSize(800, 600));
     //main_window->Maximize();
@@ -62,10 +60,8 @@ bool App::OnInit()
     main_window->Raise();
 
     main_window->GetGLCanvas()->LoadOpenGL();
-    
-    //main_window->Refresh();
 
-    //////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////
 
     std::wcout << "current locale name " << std::locale("").name() << '\n';
 
@@ -78,9 +74,11 @@ bool App::OnInit()
     std::wcout << "OSMajorVersion.OSMinorVersion.OSMicroVersion " << wxPlatformInfo::Get().GetOSMajorVersion() << '.' <<
     wxPlatformInfo::Get().GetOSMinorVersion() << '.' <<
     wxPlatformInfo::Get().GetOSMicroVersion() << '\n';
+
 #if defined _WIN32
     std::wcout << "_WIN32 " << _WIN32 << '\n';
 #endif
+
 #if defined _MSC_VER && _MSVC_LANG
     std::wcout << "_MSC_VER " << _MSC_VER << '\n';
     std::wcout << "_MSVC_LANG " << _MSVC_LANG << '\n';
@@ -100,7 +98,7 @@ MainWindow::MainWindow(const wxString& title, const wxPoint& pos, const wxSize& 
     main_splitter->SetMinimumPaneSize(20); 
     main_splitter->SetSashGravity(0.25);
 
-    //////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////
 
     wxSplitterWindow* list_book_splitter;
     list_book_splitter = new wxSplitterWindow(main_splitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE | wxCLIP_CHILDREN);
@@ -116,14 +114,12 @@ MainWindow::MainWindow(const wxString& title, const wxPoint& pos, const wxSize& 
     list_panel_sizer->Add(list_box, 1, wxEXPAND | wxALL, 5);
     list_panel->SetSizer(list_panel_sizer);
 
-
-
-    //////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////
 
     wxPanel* book_panel;
     book_panel = new wxPanel(list_book_splitter, wxID_ANY);
 
-    //////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////
 
     page_setup_panel = new PageSetupPanel(book_panel);
     data_table_panel = new DataTablePanel(book_panel, &dataStore);
@@ -159,11 +155,11 @@ MainWindow::MainWindow(const wxString& title, const wxPoint& pos, const wxSize& 
     book_panel_sizer->Show(default_list_box_selection, true);
     book_panel_sizer->Layout();
 
-    //////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////
 
     list_book_splitter->SplitVertically(list_panel, book_panel);
 
-    //////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////
     
     wxGLAttributes attributes;
     attributes.PlatformDefaults().Defaults().EndList();
@@ -180,24 +176,25 @@ MainWindow::MainWindow(const wxString& title, const wxPoint& pos, const wxSize& 
 
     Bind(gl_canvas->GetGLReadyEventTag(), &MainWindow::SlotGLReady, this);
 
-    //////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////
 
     main_splitter->SplitVertically(list_book_splitter, gl_canvas_panel);
 
-    //////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////
 
     InitMenu();
 
-    //////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////
 
     CreateStatusBar(1);
-
 }
+
 
 GLCanvas* MainWindow::GetGLCanvas()
 {
     return gl_canvas;
 }
+
 
 void MainWindow::SlotSelectListBook(wxCommandEvent& event)
 {
@@ -208,6 +205,7 @@ void MainWindow::SlotSelectListBook(wxCommandEvent& event)
 
     book_panel_sizer->Layout();
 }
+
 
 void MainWindow::InitMenu()
 {
@@ -251,6 +249,7 @@ void MainWindow::InitMenu()
     menu_help->Append(ID_LICENSE_INFO, L"&Open Source Licenses");
 }
 
+
 void MainWindow::SlotImportCSV(wxCommandEvent& event)
 {
     wxFileDialog openFileDialog(this, "Import file", wxEmptyString, wxEmptyString, "CSV and TXT files (*.csv;*.txt)|*.csv;*.txt", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
@@ -262,6 +261,7 @@ void MainWindow::SlotImportCSV(wxCommandEvent& event)
         ImportCSV(filePath);
     }
 }
+
 
 void MainWindow::SlotExportCSV(wxCommandEvent& event)
 {
@@ -290,6 +290,7 @@ void MainWindow::SlotExportCSV(wxCommandEvent& event)
     }
 }
 
+
 void MainWindow::ImportCSV(const std::string& filepath)
 {
     csv::Reader csv_reader;
@@ -309,10 +310,10 @@ void MainWindow::ImportCSV(const std::string& filepath)
     {
         if (csv_reader.ready())
         {
+            ////////////////////////////////////////////////////////////////////////////////
+
             auto row = csv_reader.next_row(); // auto& row = csv_reader.next_row();
 
-			
-            
             auto begin_date = string_to_boost_date(row[std::to_string(0)], date_format);
             auto last_date = string_to_boost_date(row[std::to_string(1)], date_format);
 
@@ -337,6 +338,7 @@ void MainWindow::SlotExit(wxCommandEvent& event)
 {
     Close(true);
 }
+
 
 void MainWindow::SlotGLReady(wxCommandEvent& event)
 {
@@ -369,6 +371,7 @@ void MainWindow::SlotGLReady(wxCommandEvent& event)
     calendar_setup_panel->SendDefaultValues();
 }
 
+
 void MainWindow::SlotExportPNG(wxCommandEvent& event)
 {
     wxFileDialog file_dialog(this, "Export PNG file", wxEmptyString, wxEmptyString, "PNG files (*.png)|*.png", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
@@ -380,6 +383,7 @@ void MainWindow::SlotExportPNG(wxCommandEvent& event)
     }
 }
 
+
 void MainWindow::SlotLoadXML(wxCommandEvent& event)
 {
     wxFileDialog openFileDialog(this, "Open File", wxEmptyString, wxEmptyString, "XML Files (*.xml)|*.xml", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
@@ -390,6 +394,7 @@ void MainWindow::SlotLoadXML(wxCommandEvent& event)
         current_xml_file = file_path;
     }   
 }
+
 
 void MainWindow::SlotSaveXML(wxCommandEvent& event)
 {
@@ -410,12 +415,14 @@ void MainWindow::SlotSaveXML(wxCommandEvent& event)
     }
 }
 
+
 void MainWindow::SlotLicenseInfo(wxCommandEvent& event)
 {
     LicenseInformationDialog dialog;
 
     dialog.ShowModal();
 }
+
 
 void MainWindow::SaveXML(const std::wstring& filepath)
 {
@@ -456,6 +463,7 @@ void MainWindow::SaveXML(const std::wstring& filepath)
     
     doc.save_file(filepath.c_str());
 }
+
 
 void MainWindow::LoadXML(const std::wstring& filepath)
 {
@@ -504,5 +512,4 @@ void MainWindow::LoadXML(const std::wstring& filepath)
     elements_setup_panel->LoadFromXML(doc);
     calendar_setup_panel->LoadFromXML(doc);
 }
-
 

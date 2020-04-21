@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 */
 
+
 #pragma once
 
 #ifdef WX_PRECOMP
@@ -56,7 +57,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include <pugixml.hpp>
 
 
-// https://wiki.wxwidgets.org/Avoiding_Memory_Leaks Reason for use of raw pointers instead of smart_pointers
+// Reason for use of raw pointers instead of smart_pointers:
+// https://wiki.wxwidgets.org/Avoiding_Memory_Leaks 
 
 
 class MainWindow : public wxFrame
@@ -107,7 +109,6 @@ private:
 };
 
 
-
 class App : public wxApp
 {
 public:
@@ -118,6 +119,4 @@ private:
 
     MainWindow* main_window;
 };
-
-
 
