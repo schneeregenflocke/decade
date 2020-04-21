@@ -550,24 +550,24 @@ void CalendarPage::SetupBarsShape()
 
 	for (size_t index = 0; index < data_store->GetNumberBars(); ++index)
 	{
-		//int row = data_store->GetBar(index).getYear() - data_store->GetFirstYear();calendarSpan
+		//int row = data_store->GetBar(index).GetYear() - data_store->GetFirstYear();calendarSpan
 
-		if (calendarSpan.IsInSpan(data_store->GetBar(index).getYear()))
+		if (calendarSpan.IsInSpan(data_store->GetBar(index).GetYear()))
 		{
-			int row = data_store->GetBar(index).getYear() - calendarSpan.GetFirstYear();
+			int row = data_store->GetBar(index).GetYear() - calendarSpan.GetFirstYear();
 
 			auto current_cell = row_frames.GetSubFrame(row, 1);
 
 			rect4 bar_cell;
-			bar_cell.Left(current_cell.Left() + data_store->GetBar(index).getFirstDay() * day_width);
+			bar_cell.Left(current_cell.Left() + data_store->GetBar(index).GetFirstDay() * day_width);
 			bar_cell.Bottom(current_cell.Bottom());
-			bar_cell.Right(current_cell.Left() + data_store->GetBar(index).getLastDay() * day_width);
+			bar_cell.Right(current_cell.Left() + data_store->GetBar(index).GetLastDay() * day_width);
 			bar_cell.Top(current_cell.Top());
 
 			//bars_cells[index] = bar_cell;
 			bars_cells.push_back(bar_cell);
 
-			std::wstring numsText = std::to_wstring(data_store->GetBar(index).getNumber() + 1);
+			std::wstring numsText = std::to_wstring(data_store->GetBar(index).GetNumber() + 1);
 
 			bar_labels_text[index]->SetFont(font.get());
 
@@ -606,7 +606,7 @@ void CalendarPage::SetupYearsTotals()
 
 	for (size_t index = 0; index < data_store->GetSpan(); ++index)
 	{
-		//int row = data_store->GetBar(index).getYear() - calendarSpan.GetFirstYear();
+		//int row = data_store->GetBar(index).GetYear() - calendarSpan.GetFirstYear();
 
 		if (calendarSpan.IsInSpan(data_store->GetFirstYear() + index))
 		{

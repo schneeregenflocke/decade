@@ -16,104 +16,62 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 */
 
+
 #include "dates_storage.h"
 
-/*DateCSV::DateCSV()
-	: seperator(L'\t'), isOpen(false)
+
+Bar::Bar(const date_period& date_interval) :
+	date_interval(date_interval),
+	number(0),
+	admission(0),
+	lenght(0)
 {}
 
-bool DateCSV::OpenFile(const std::string& fileName)
+void Bar::SetNumber(size_t number)
 {
-	fileStream.open(fileName);
-	if (fileStream.is_open())
-	{
-		isOpen = true;
-	}
-	return isOpen;
+	this->number = number;
 }
 
-void DateCSV::CloseFile()
+int Bar::GetYear() const
 {
-	fileStream.close();
-	if (!fileStream.is_open())
-	{
-		isOpen = false;
-	}
+	return date_interval.begin().year();
 }
 
-void DateCSV::SetSeperator(char argSeperator)
+int Bar::GetLenght() const
 {
-	seperator = argSeperator;
+	return date_interval.length().days();
 }
 
-std::vector<date_period> DateCSV::readFile()
+float Bar::GetFirstDay() const
 {
-	std::vector<date_period> date_intervals;
+	return static_cast<float>(date_interval.begin().day_of_year() - 1);
+}
 
-	std::string line;
-	while (std::getline(fileStream, line))
-	{
-		std::stringstream lineStream(line);
-		std::string column;
-
-		std::array<date, 2> datePeriodParts;
-
-		for (size_t index = 0; index < 2; ++index)
-		{
-			std::getline(lineStream, column, seperator);
-			std::stringstream dateStream(column);
-			std::string datePart;
-
-			std::array<int, 3> dateParts;
-
-			for (size_t subIndex = 0; subIndex < 3; ++subIndex)
-			{
-				std::getline(dateStream, datePart, '.');
-				dateParts[subIndex] = std::atoi(datePart.c_str());
-			}
-
-			try
-			{
-				datePeriodParts[index] = date(dateParts[2], dateParts[1], dateParts[0]);
-			}
-			catch (const std::exception & excptn)
-			{
-				datePeriodParts[index] = date(boost::date_time::not_a_date_time);
-			}
-		}
-		
-		if ((datePeriodParts[0].is_not_a_date() || datePeriodParts[1].is_not_a_date()) == false)
-		{
-			date_period currentDatePeriod(datePeriodParts[0], datePeriodParts[1] + date_duration(1));
-
-			if (!currentDatePeriod.is_null())
-			{
-				date_intervals.push_back(currentDatePeriod);
-			}
-		}	
-	}
-
-	return date_intervals;
-}*/
-
-
-
-
-void DateIntervals::SetDateIntervals(const std::vector<date_period>& values)
+float Bar::GetLastDay() const
 {
-	date_intervals.clear();
+	return static_cast<float>(date_interval.last().day_of_year());
+}
 
-	date_intervals.reserve(values.size());
+size_t Bar::GetNumber() const
+{
+	return number;
+}
 
-	for (const auto& period : values)
+
+void DateIntervals::SetDateIntervals(const std::vector<date_period>& date_intervals)
+{
+	this->date_intervals.clear();
+	this->date_intervals.reserve(date_intervals.size());
+
+	for (const auto& period : date_intervals)
 	{
 		if (CheckDateInterval(period.begin(), period.end()))
 		{
-			date_intervals.push_back(period);
+			this->date_intervals.push_back(period);
 		}
 	}
 
-	date_intervals.shrink_to_fit();
+	this->date_intervals.shrink_to_fit();
 	
 	Sort();
 	ProcessDateInterIntervals();
@@ -122,7 +80,7 @@ void DateIntervals::SetDateIntervals(const std::vector<date_period>& values)
 	ProcessAnnualTotals();
 }
 
-bool DateIntervals::CheckDateInterval(date begin_date, date end_date)
+bool DateIntervals::CheckDateInterval(const date& begin_date, const date& end_date)
 {
 	bool valid = false;
 
@@ -140,15 +98,6 @@ bool DateIntervals::CheckDateInterval(date begin_date, date end_date)
 }
 
 
-/*const std::vector<date_period>& DateIntervals::GetDateIntervalsConstRef() const
-{
-	return date_intervals;
-}*/
-
-/*const std::vector<date_period>& DateIntervals::GetDateInterIntervalsConstRef() const
-{
-	return date_inter_intervals;
-}*/
 
 size_t DateIntervals::GetDateIntervalsSize() const
 {
@@ -205,7 +154,7 @@ void DateIntervals::ProcessBars()
 		for (auto subindex = 0U; subindex < splitDatePeriods.size(); ++subindex)
 		{
 			Bar bar(splitDatePeriods[subindex]);
-			bar.setNumber(index);
+			bar.SetNumber(index);
 			bars.push_back(bar);
 		}	
 	}
@@ -218,9 +167,9 @@ void DateIntervals::ProcessAnnualTotals()
 	
 	for (size_t index = 0; index < bars.size(); ++index)
 	{
-		size_t annualTotalsIndex = static_cast<size_t>(bars[index].getYear()) - static_cast<size_t>(GetFirstYear());
+		size_t annualTotalsIndex = static_cast<size_t>(bars[index].GetYear()) - static_cast<size_t>(GetFirstYear());
 
-		annualTotals[annualTotalsIndex] += bars[index].getLenght();
+		annualTotals[annualTotalsIndex] += bars[index].GetLenght();
 	}
 }
 
@@ -258,43 +207,6 @@ Bar DateIntervals::GetBar(size_t index) const
 int DateIntervals::GetAnnualTotal(size_t index) const
 {
 	return annualTotals[index];
-}
-
-
-
-Bar::Bar(const date_period& date_interval) : 
-	dateInterval(date_interval)
-{
-}
-
-void Bar::setNumber(int argNumber)
-{
-	number = argNumber;
-}
-
-int Bar::getYear()
-{
-	return dateInterval.begin().year();
-}
-
-int Bar::getLenght()
-{
-	return dateInterval.length().days();
-}
-
-float Bar::getFirstDay()
-{
-	return static_cast<float>(dateInterval.begin().day_of_year() - 1);
-}
-
-float Bar::getLastDay()
-{
-	return static_cast<float>(dateInterval.last().day_of_year());
-}
-
-int Bar::getNumber()
-{
-	return number;
 }
 
 

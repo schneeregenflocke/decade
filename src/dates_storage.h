@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 */
 
+
 #ifndef DATES_H
 #define DATES_H
 
@@ -34,57 +35,33 @@ using months = boost::gregorian::months;
 #include <array>
 
 
-/*class DateCSV
-{
-public:
-
-	DateCSV();
-
-	bool OpenFile(const std::string& fileName);
-	void CloseFile();
-	void SetSeperator(char argSeperator);
-	std::vector<boost::gregorian::date_period> readFile();
-
-private:
-	std::ifstream fileStream;
-	bool isOpen;
-	char seperator;
-};*/
-
-
 class Bar
 {
-
 public:
 
-	Bar(const boost::gregorian::date_period& date_interval);
+	Bar(const date_period& date_interval);
 	
-	void setNumber(int argNumber);
-	int getYear();
-	int getLenght();
-	float getFirstDay();
-	float getLastDay();
-	int getNumber();
+	void SetNumber(size_t number);
+	int GetYear() const;
+	int GetLenght() const;
+	float GetFirstDay() const;
+	float GetLastDay() const;
+	size_t GetNumber() const;
 
 private:
 
-	date_period dateInterval;
-	int number;
+	date_period date_interval;
+	size_t number;
 	int admission;
 	int lenght;
 };
-
-
 
 
 class DateIntervals
 {
 public:
 
-	void SetDateIntervals(const std::vector<date_period>& values);
-
-	//const std::vector<date_period>& GetDateIntervalsConstRef() const;
-	//const std::vector<date_period>& GetDateInterIntervalsConstRef() const;
+	void SetDateIntervals(const std::vector<date_period>& date_intervals);
 
 	size_t GetDateIntervalsSize() const;
 	const date_period& GetDateIntervalConstRef(size_t index) const;
@@ -98,7 +75,7 @@ public:
 	Bar GetBar(size_t index) const;
 	int GetAnnualTotal(size_t index) const;
 
-	static bool CheckDateInterval(date begin_date, date end_date);
+	static bool CheckDateInterval(const date& begin_date, const date& end_date);
 
 private:
 
@@ -107,10 +84,8 @@ private:
 	void ProcessBars();
 	void ProcessAnnualTotals();
 
-	
-
-	std::vector<boost::gregorian::date_period> date_intervals;
-	std::vector<boost::gregorian::date_period> date_inter_intervals;
+	std::vector<date_period> date_intervals;
+	std::vector<date_period> date_inter_intervals;
 	
 	std::vector<Bar> bars;
 	std::vector<int> annualTotals;
