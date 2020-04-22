@@ -87,8 +87,9 @@ public:
 
 	void OnDataStoreChanged(wxCommandEvent& event);
 
-	void SlotPageSize(float width, float height);
-	void SlotPageMargins(float left, float bottom, float right, float top);
+	void SlotPageSize(const std::array<float, 2>& page_size);
+	void SlotPageMargins(const std::array<float, 4>& page_margins);
+
 	void SlotSelectFont(const std::string& font_path);
 
 	void SlotTitleFrameHeight(float height);

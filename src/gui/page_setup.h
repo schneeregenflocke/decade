@@ -40,34 +40,33 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include <wx/sizer.h>
 
 #include <memory>
-#include <functional>
-#include <boost/signals2.hpp>
+//#include <pugixml.hpp>
 #include <array>
 
+#include <sigslot/signal.hpp>
 
-//#include <glm/vec2.hpp>
-//#include <glm/vec4.hpp>
+#include <pugixml.hpp>
 
 
 
-class PageSetupPanel : public wxPanel
+
+class PageSetupPanel : private wxPanel
 {
 public:
 	PageSetupPanel(wxWindow* parent);
 
-	template<typename T, typename U> 
-	void ConnectSignalPageSize(T memfunptr, U objectptr);
-
-	template<typename T, typename U>
-	void ConnectSignalPageMargins(T memfunptr, U objectptr);
+	friend class MainWindow;
 
 	void SendDefaultValues();
 
-	std::array<float, 2> GetPageSize();
-	std::array<float, 4> GetPageMargins();
-	void SetPageSize(const std::array<float, 2>& value);
-	void SetPageMargins(const std::array<float, 4>& value);
-	
+	void SaveXML(pugi::xml_node* doc);
+	void LoadXML(const pugi::xml_node& doc);
+
+	//std::array<float, 2> GetPageSize();
+	//std::array<float, 4> GetPageMargins();
+	//void SetPageSize(const std::array<float, 2>& value);
+	//void SetPageMargins(const std::array<float, 4>& value);
+
 private:
 
 	std::array<float, 2> page_size;
@@ -90,19 +89,6 @@ private:
 	wxSpinCtrlDouble* page_width_spinctrl;
 	wxSpinCtrlDouble* page_height_spinctrl;
 
-	boost::signals2::signal<void(float, float)> signal_page_size;
-	boost::signals2::signal<void(float, float, float, float)> signal_page_margins;
+	sigslot::signal<const std::array<float, 2>&> signal_page_size;
+	sigslot::signal<const std::array<float, 4>&> signal_page_margins;
 };
-
-
-template<typename T, typename U>
-inline void PageSetupPanel::ConnectSignalPageSize(T memfunptr, U objectptr)
-{
-	signal_page_size.connect(std::bind(memfunptr, objectptr, std::placeholders::_1, std::placeholders::_2));
-}
-
-template<typename T, typename U>
-inline void PageSetupPanel::ConnectSignalPageMargins(T memfunptr, U objectptr)
-{
-	signal_page_margins.connect(std::bind(memfunptr, objectptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-}

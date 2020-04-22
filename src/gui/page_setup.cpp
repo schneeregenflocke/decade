@@ -19,12 +19,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include "page_setup.h"
 
+
 PageSetupPanel::PageSetupPanel(wxWindow* parent) : 
 	wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxPanelNameStr), 
-	ID_PAGE_SETUP(wxNewId()), 
-	ID_CUSTOM_SIZE(wxNewId()), 
-	ID_PAGE_WIDTH(wxNewId()), 
-	ID_PAGE_HEIGHT(wxNewId())
+	ID_PAGE_SETUP(NewControlId()),
+	ID_CUSTOM_SIZE(NewControlId()),
+	ID_PAGE_WIDTH(NewControlId()),
+	ID_PAGE_HEIGHT(NewControlId())
 {
 
 	wxPrintData print_data;
@@ -94,7 +95,39 @@ void PageSetupPanel::SendDefaultValues()
 	ScanPageSetupDialogData(*page_setup_dialog_data);
 }
 
-std::array<float, 2> PageSetupPanel::GetPageSize()
+void PageSetupPanel::SaveXML(pugi::xml_node* doc)
+{
+	auto node_page_setup = doc->append_child(L"page_setup");
+
+	auto node_page_size = node_page_setup.append_child(L"page_size");
+	node_page_size.append_attribute(L"width").set_value(page_size[0]);
+	node_page_size.append_attribute(L"height").set_value(page_size[1]);
+
+	auto node_page_margins = node_page_setup.append_child(L"page_margins");
+	node_page_margins.append_attribute(L"left").set_value(page_margins[0]);
+	node_page_margins.append_attribute(L"bottom").set_value(page_margins[1]);
+	node_page_margins.append_attribute(L"right").set_value(page_margins[2]);
+	node_page_margins.append_attribute(L"top").set_value(page_margins[3]);
+}
+
+void PageSetupPanel::LoadXML(const pugi::xml_node& doc)
+{
+	auto node_page_setup = doc.child(L"page_setup");
+
+	auto node_page_size = node_page_setup.child(L"page_size");
+	page_size[0] = node_page_size.attribute(L"width").as_float();
+	page_size[1] = node_page_size.attribute(L"height").as_float();
+
+	auto node_page_margins = node_page_setup.child(L"page_margins");
+	page_margins[0] = node_page_margins.attribute(L"left").as_float();
+	page_margins[1] = node_page_margins.attribute(L"bottom").as_float();
+	page_margins[2] = node_page_margins.attribute(L"right").as_float();
+	page_margins[3] = node_page_margins.attribute(L"top").as_float();
+
+	ScanData();
+}
+
+/*std::array<float, 2> PageSetupPanel::GetPageSize()
 {
 	return page_size;
 }
@@ -114,7 +147,7 @@ void PageSetupPanel::SetPageMargins(const std::array<float, 4>& value)
 {
 	page_margins = value;
 	ScanData();
-}
+}*/
 
 void PageSetupPanel::ScanPageSetupDialogData(const wxPageSetupDialogData& dialog_data)
 {
@@ -142,8 +175,9 @@ void PageSetupPanel::ScanPageSetupDialogData(const wxPageSetupDialogData& dialog
 	page_margins[2] = dialog_data.GetMarginBottomRight().x;
 	page_margins[3] = dialog_data.GetMarginTopLeft().y;
 
-	signal_page_size(page_size[0], page_size[1]);
-	signal_page_margins(page_margins[0], page_margins[1], page_margins[2], page_margins[3]);
+
+	signal_page_size(page_size);
+	signal_page_margins(page_margins);
 }
 
 void PageSetupPanel::ScanData()
@@ -164,8 +198,8 @@ void PageSetupPanel::ScanData()
 	page_setup_dialog_data->SetMarginTopLeft(wxPoint(page_margins[0], page_margins[3]));
 	page_setup_dialog_data->SetMarginBottomRight(wxPoint(page_margins[2], page_margins[1]));
 
-	signal_page_size(page_size[0], page_size[1]);
-	signal_page_margins(page_margins[0], page_margins[1], page_margins[2], page_margins[3]);
+	signal_page_size(page_size);
+	signal_page_margins(page_margins);
 }
 
 void PageSetupPanel::OnButtonClicked(wxCommandEvent& event)

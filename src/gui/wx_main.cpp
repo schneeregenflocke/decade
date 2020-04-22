@@ -347,11 +347,14 @@ void MainWindow::SlotGLReady(wxCommandEvent& event)
 
     Bind(data_table_panel->GetDatesStoreChangedEventTag(), &CalendarPage::OnDataStoreChanged, calendar.get());
 
-    page_setup_panel->ConnectSignalPageSize(&CalendarPage::SlotPageSize, calendar.get());
-    page_setup_panel->ConnectSignalPageMargins(&CalendarPage::SlotPageMargins, calendar.get());
+    page_setup_panel->signal_page_size.connect(&CalendarPage::SlotPageSize, calendar.get());
+    page_setup_panel->signal_page_margins.connect(&CalendarPage::SlotPageMargins, calendar.get());
 
-    page_setup_panel->ConnectSignalPageSize(&GraphicEngine::SlotPageSize, gl_canvas->GetGraphicEngine());
+    page_setup_panel->signal_page_size.connect(&GraphicEngine::SlotPageSize, gl_canvas->GetGraphicEngine());
 
+    //page_setup_panel->ConnectSignalPageSize(&CalendarPage::SlotPageSize, calendar.get());
+    //page_setup_panel->ConnectSignalPageMargins(&CalendarPage::SlotPageMargins, calendar.get());
+    //page_setup_panel->ConnectSignalPageSize(&GraphicEngine::SlotPageSize, gl_canvas->GetGraphicEngine());
     page_setup_panel->SendDefaultValues();
 
  
@@ -443,20 +446,8 @@ void MainWindow::SaveXML(const std::wstring& filepath)
         attribute_end_date.set_value(std::wstring(end_date_iso_string.begin(), end_date_iso_string.end()).c_str());
     }
 
-    auto node_page_setup = doc.append_child(L"page_setup");
-
-    auto page_size = page_setup_panel->GetPageSize();
-    auto node_page_size = node_page_setup.append_child(L"page_size");
-    node_page_size.append_attribute(L"width").set_value(page_size[0]);
-    node_page_size.append_attribute(L"height").set_value(page_size[1]);
-
-    auto page_margins = page_setup_panel->GetPageMargins();
-    auto node_page_margins = node_page_setup.append_child(L"page_margins");
-    node_page_margins.append_attribute(L"left").set_value(page_margins[0]);
-    node_page_margins.append_attribute(L"bottom").set_value(page_margins[1]);
-    node_page_margins.append_attribute(L"right").set_value(page_margins[2]);
-    node_page_margins.append_attribute(L"top").set_value(page_margins[3]);
-
+    
+    page_setup_panel->SaveXML(&doc);
     title_setup_panel->SaveToXML(&doc);
     elements_setup_panel->SaveToXML(&doc);
     calendar_setup_panel->SaveToXML(&doc);
@@ -491,23 +482,10 @@ void MainWindow::LoadXML(const std::wstring& filepath)
         dataStore.SetDateIntervals(temporary);
         data_table_panel->InitializeTable();
 
-        auto node_page_setup = doc.child(L"page_setup");
-
-        auto node_page_size = node_page_setup.child(L"page_size");
-        auto page_width = node_page_size.attribute(L"width").as_float();
-        auto page_height = node_page_size.attribute(L"height").as_float();
-
-        page_setup_panel->SetPageSize({ page_width , page_height });
-
-        auto node_page_margins = node_page_setup.child(L"page_margins");
-        auto margin_left = node_page_margins.attribute(L"left").as_float();
-        auto margin_bottom = node_page_margins.attribute(L"bottom").as_float();
-        auto margin_right = node_page_margins.attribute(L"right").as_float();
-        auto margin_top = node_page_margins.attribute(L"top").as_float();
-
-        page_setup_panel->SetPageMargins({ margin_left , margin_bottom, margin_right,  margin_top });
+        
     }
 
+    page_setup_panel->LoadXML(doc);
     title_setup_panel->LoadFromXML(doc);
     elements_setup_panel->LoadFromXML(doc);
     calendar_setup_panel->LoadFromXML(doc);

@@ -31,6 +31,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include <type_traits>
 #include <algorithm>
 #include <string>
+#include <memory>
 
 #include <wx/glcanvas.h>
 
@@ -107,7 +108,7 @@ public:
 	}
 
 	void RenderToPNG(const std::wstring& file_path);
-	void SlotPageSize(float width, float height);
+	void SlotPageSize(const std::array<float, 2> page_size);
 
 private:
 

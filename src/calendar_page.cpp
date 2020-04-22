@@ -159,16 +159,16 @@ void CalendarPage::OnDataStoreChanged(wxCommandEvent& event)
 	Update();
 }
 
-void CalendarPage::SlotPageSize(float width, float height)
+void CalendarPage::SlotPageSize(const std::array<float, 2>& page_size)
 {
-	page_size = rect4(width, height);
+	this->page_size = rect4(page_size[0], page_size[1]);
 
 	Update();
 }
 
-void CalendarPage::SlotPageMargins(float left, float bottom, float right, float top)
+void CalendarPage::SlotPageMargins(const std::array<float, 4>& page_margins)
 {
-	page_margin = rect4(left, bottom, right, top);
+	page_margin = rect4(page_margins[0], page_margins[1], page_margins[2], page_margins[3]);
 	
 	Update();
 }
