@@ -22,3 +22,6 @@
 [submodule "external/wxWidgets"]
 	path = external/wxWidgets
 	url = https://github.com/wxWidgets/wxWidgets.git
+[submodule "external/sigslot"]
+	path = external/sigslot
+	url = https://github.com/palacaze/sigslot.git
