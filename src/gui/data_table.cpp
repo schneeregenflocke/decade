@@ -20,22 +20,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include "data_table.h"
 
 
-DataTablePanel::DataTablePanel(wxWindow* parent, DateIntervals* data_store)
-	: wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxPanelNameStr),
-		data_store(data_store), datesStoreChangedEventTag(wxNewEventType())
+DataTablePanel::DataTablePanel(wxWindow* parent) : 
+	wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxPanelNameStr)//,
+	//datesStoreChangedEventTag(wxNewEventType())
 {
 
 	data_view_list_ctrl = new wxDataViewListCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxDV_SINGLE, wxDefaultValidator);
 	 
 	Bind(wxEVT_DATAVIEW_ITEM_ACTIVATED, &DataTablePanel::OnItemActivated, this);
+	Bind(wxEVT_DATAVIEW_ITEM_EDITING_DONE, &DataTablePanel::OnItemEditing, this);
+	Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &DataTablePanel::OnSelectionChanged, this);
 
 	// Bind(wxEVT_DATAVIEW_ITEM_START_EDITING, &DataTablePanel::OnItemEditing, this);
 	// Bind(wxEVT_DATAVIEW_ITEM_EDITING_STARTED, &DataTablePanel::OnItemEditing, this);
-	Bind(wxEVT_DATAVIEW_ITEM_EDITING_DONE, &DataTablePanel::OnItemEditing, this); 
-
-	Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &DataTablePanel::OnSelectionChanged, this);
-	Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED, &DataTablePanel::OnValueChanged, this);
-
+	// Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED, &DataTablePanel::OnValueChanged, this);
 
 	addRowButton = new wxButton(this, wxID_ADD, "Add Row");
 	deleteRowButton = new wxButton(this, wxID_DELETE, "Delete Row");
@@ -92,8 +90,9 @@ void DataTablePanel::OnItemEditing(wxDataViewEvent& event)
 		if (event.IsEditCancelled() == false)
 		{
 			auto edited_string = event.GetValue().GetString().ToStdString();
+			
+			// Check Date
 			auto edited_date = string_to_boost_date(edited_string, dateFormat);
-
 			if (edited_date.is_special() == false)
 			{
 				std::string parsed_string = boost_date_to_string(edited_date);
@@ -105,7 +104,6 @@ void DataTablePanel::OnItemEditing(wxDataViewEvent& event)
 			}
 
 			ScanTable();
-			ScanStore();
 		}		
 	}
 }
@@ -113,7 +111,7 @@ void DataTablePanel::OnItemEditing(wxDataViewEvent& event)
 void DataTablePanel::OnSelectionChanged(wxDataViewEvent& event)
 {
 	//std::cout << "selection changed row " << data_view_list_ctrl->GetSelectedRow() << " column " << event.GetColumn() << '\n';
-	UpdateButton();
+	UpdateButtons();
 }
 
 void DataTablePanel::OnButtonClicked(wxCommandEvent& event)
@@ -122,11 +120,19 @@ void DataTablePanel::OnButtonClicked(wxCommandEvent& event)
 
 	if (event.GetId() == wxID_ADD)
 	{
-		++selected_row;
+		if (selected_row == wxNOT_FOUND)
+		{
+			selected_row = data_view_list_ctrl->GetItemCount();
+		}
+		else 
+		{
+			++selected_row;
+		}
+		
 		InsertRow(selected_row);
 		data_view_list_ctrl->SelectRow(selected_row);
 		data_view_list_ctrl->EnsureVisible(data_view_list_ctrl->RowToItem(selected_row));
-		UpdateButton();
+		UpdateButtons();
 	}
 
 	if (event.GetId() == wxID_DELETE && selected_row != wxNOT_FOUND)
@@ -145,21 +151,23 @@ void DataTablePanel::OnButtonClicked(wxCommandEvent& event)
 			}		
 		}
 
-		UpdateButton();
+		UpdateButtons();
 	}
 }
 
-void DataTablePanel::OnValueChanged(wxDataViewEvent& event)
-{}
+/*void DataTablePanel::OnValueChanged(wxDataViewEvent& event)
+{}*/
 
 
-const wxEventTypeTag<wxCommandEvent> DataTablePanel::GetDatesStoreChangedEventTag() const
+
+
+/*const wxEventTypeTag<wxCommandEvent> DataTablePanel::GetDatesStoreChangedEventTag() const
 {
 	return datesStoreChangedEventTag;
-}
+}*/
 
 
-void DataTablePanel::UpdateButton()
+void DataTablePanel::UpdateButtons()
 {
 	if (data_view_list_ctrl->GetSelectedRow() == wxNOT_FOUND)
 	{
@@ -173,20 +181,26 @@ void DataTablePanel::UpdateButton()
 
 void DataTablePanel::InsertRow(size_t row)
 {
-	wxVector<wxVariant> empty_row;
-	empty_row.resize(data_view_list_ctrl->GetColumnCount());
-	data_view_list_ctrl->InsertItem(row, empty_row);
+	if (row <= data_view_list_ctrl->GetItemCount())
+	{
+		wxVector<wxVariant> empty_row;
+		empty_row.resize(data_view_list_ctrl->GetColumnCount());
+		data_view_list_ctrl->InsertItem(row, empty_row);
+	}
 }
 
 void DataTablePanel::RemoveRow(size_t row)
 {
-	data_view_list_ctrl->DeleteItem(row);
-	ScanTable();
-	ScanStore();
+	if (row <= data_view_list_ctrl->GetItemCount())
+	{
+		data_view_list_ctrl->DeleteItem(row);
+		ScanTable();
+	}
+	//ScanStore();
 }
 
 
-void DataTablePanel::InitializeTable()
+/*void DataTablePanel::InitializeTable()
 {
 	data_view_list_ctrl->DeleteAllItems();
 
@@ -209,10 +223,45 @@ void DataTablePanel::InitializeTable()
 
 	wxCommandEvent datesStoreChangedEvent(datesStoreChangedEventTag);
 	ProcessWindowEvent(datesStoreChangedEvent);
+}*/
+
+
+void DataTablePanel::SlotUpdateTable(const std::vector<date_period>& date_intervals, const std::vector<date_period>& date_inter_intervals)
+{
+	UpdateValidRows();
+	auto number_insert_rows = date_intervals.size() - valid_rows.size();
+
+	for (size_t index = 0; index < valid_rows.size(); ++index)
+	{
+		data_view_list_ctrl->SetValue(std::to_string(index + 1), valid_rows[index], 0);
+		data_view_list_ctrl->SetValue(boost_date_to_string(date_intervals[index].begin()), valid_rows[index], 1);
+		data_view_list_ctrl->SetValue(boost_date_to_string(date_intervals[index].end()), valid_rows[index], 2);
+		data_view_list_ctrl->SetValue(std::to_string(date_intervals[index].length().days()), valid_rows[index], 3);
+
+		if (index < (date_intervals.size() - 1))
+		{
+			data_view_list_ctrl->SetValue(std::to_string(date_inter_intervals[index].length().days()), valid_rows[index], 4);
+		}
+	}
+
+	for (size_t index = valid_rows.size(); index < date_intervals.size(); ++index)
+	{
+		InsertRow(index);
+
+		data_view_list_ctrl->SetValue(std::to_string(index + 1), index, 0);
+		data_view_list_ctrl->SetValue(boost_date_to_string(date_intervals[index].begin()), index, 1);
+		data_view_list_ctrl->SetValue(boost_date_to_string(date_intervals[index].end()), index, 2);
+		data_view_list_ctrl->SetValue(std::to_string(date_intervals[index].length().days()), index, 3);
+
+		if (index < (date_intervals.size() - 1))
+		{
+			data_view_list_ctrl->SetValue(std::to_string(date_inter_intervals[index].length().days()), index, 4);
+		}
+	}
 }
 
 
-void DataTablePanel::ScanStore()
+/*void DataTablePanel::ScanStore()
 {
 	for (size_t index = 0; index < valid_rows.size(); ++index)
 	{
@@ -228,30 +277,44 @@ void DataTablePanel::ScanStore()
 			data_view_list_ctrl->SetValue(std::to_string(data_store->GetDateInterIntervalConstRef(index).length().days()), valid_rows[index], 4);
 		}
 	}
+}*/
+
+
+void DataTablePanel::UpdateValidRows()
+{
+	valid_rows.clear();
+	for (size_t row = 0; row < data_view_list_ctrl->GetItemCount(); ++row)
+	{
+		auto begin_date = ParseDateByCell(row, 1);
+		auto end_date = ParseDateByCell(row, 2);
+
+		if (CheckDateInterval(begin_date, end_date))
+		{
+			valid_rows.push_back(row);
+		}
+	}
 }
 
 
 void DataTablePanel::ScanTable()
 {
-	valid_rows.clear();
-	std::vector<date_period> local_date_intervals;
+	UpdateValidRows();
 
-	for (size_t row = 0; row < data_view_list_ctrl->GetStore()->GetItemCount(); ++row)
+	std::vector<date_period> date_intervals;
+
+	for (size_t index = 0; index < valid_rows.size(); ++index)
 	{
-		auto begin_date = ParseDateByCell(row, 1);
-		auto end_date = ParseDateByCell(row, 2);
+		auto begin_date = ParseDateByCell(valid_rows[index], 1);
+		auto end_date = ParseDateByCell(valid_rows[index], 2);
 		
-		if (CheckDateInterval(begin_date, end_date))
-		{
-			valid_rows.push_back(row);
-			local_date_intervals.push_back(date_period(begin_date, end_date));
-		}
+		date_intervals.push_back(date_period(begin_date, end_date));	
 	}
 
-	data_store->SetDateIntervals(local_date_intervals);
+	signal_table_date_intervals(date_intervals);
 
-	wxCommandEvent datesStoreChangedEvent(datesStoreChangedEventTag);
-	ProcessWindowEvent(datesStoreChangedEvent);
+	//data_store->SetDateIntervals(local_date_intervals);
+	//wxCommandEvent datesStoreChangedEvent(datesStoreChangedEventTag);
+	//ProcessWindowEvent(datesStoreChangedEvent);
 }
 
 bool DataTablePanel::CheckDateInterval(date begin_date, date end_date)

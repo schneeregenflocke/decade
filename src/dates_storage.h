@@ -30,6 +30,8 @@ using date_period = boost::gregorian::date_period;
 using months = boost::gregorian::months;
 
 
+#include <sigslot/signal.hpp>
+
 #include <fstream>
 #include <sstream>
 #include <array>
@@ -57,36 +59,61 @@ private:
 };
 
 
+
 class DateIntervals
 {
 public:
 
-	void SetDateIntervals(const std::vector<date_period>& date_intervals);
+	DateIntervals();
+
+	virtual void SetDateIntervals(const std::vector<date_period>& date_intervals);
 
 	size_t GetDateIntervalsSize() const;
 	const date_period& GetDateIntervalConstRef(size_t index) const;
 	const date_period& GetDateInterIntervalConstRef(size_t index) const;
-	
+
 	int GetSpan() const;
 	int GetFirstYear() const;
 	int GetLastYear() const;
-	
+
+	static bool CheckDateInterval(const date& begin_date, const date& end_date);
+
+	void SetTransform(int shift_begin_date, int shift_end_date);
+
+	sigslot::signal<const std::vector<date_period>&> signal_transformed_date_intervals;
+	sigslot::signal<const std::vector<date_period>&, const std::vector<date_period>&> signal_date_intervals;
+
+protected:
+
+	void ProcessDateIntervals(const std::vector<date_period>& date_intervals);
+	void Sort();
+	void ProcessDateInterIntervals();
+	void ProcessShiftDateIntervals();
+	void SendDateIntervals();
+
+	std::vector<date_period> date_intervals;
+	std::vector<date_period> date_inter_intervals;
+	std::vector<date_period> shifted_date_intervals;
+
+	std::array<int, 2> date_shift;
+};
+
+
+class DateIntervalStore : public DateIntervals
+{
+public:
+
+	void SetDateIntervals(const std::vector<date_period>& date_intervals) override;
+
 	size_t GetNumberBars() const;
 	Bar GetBar(size_t index) const;
 	int GetAnnualTotal(size_t index) const;
 
-	static bool CheckDateInterval(const date& begin_date, const date& end_date);
-
 private:
 
-	void Sort();
-	void ProcessDateInterIntervals();
 	void ProcessBars();
 	void ProcessAnnualTotals();
 
-	std::vector<date_period> date_intervals;
-	std::vector<date_period> date_inter_intervals;
-	
 	std::vector<Bar> bars;
 	std::vector<int> annualTotals;
 };

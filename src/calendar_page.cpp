@@ -125,9 +125,8 @@ std::vector<rect4> RowFrames::GetSubFrames()
 
 
 
-CalendarPage::CalendarPage(GraphicEngine* graphic_engine, DateIntervals* data_store) : 
-	graphic_engine(graphic_engine), 
-	data_store(data_store)
+CalendarPage::CalendarPage(GraphicEngine* graphic_engine) : 
+	graphic_engine(graphic_engine)
 {
 	page_shape = graphic_engine->AddShape<QuadShape>();
 
@@ -154,8 +153,10 @@ CalendarPage::CalendarPage(GraphicEngine* graphic_engine, DateIntervals* data_st
 	sub_frames_shape = graphic_engine->AddShape<RectanglesShape>();
 }
 
-void CalendarPage::OnDataStoreChanged(wxCommandEvent& event)
+void CalendarPage::SetDateIntervals(const std::vector<date_period>& date_intervals)
 {
+	data_store.SetDateIntervals(date_intervals);
+
 	Update();
 }
 
@@ -249,9 +250,9 @@ void CalendarPage::Update()
 
 
 ////////////////////////////////////////
-	if (calendar_config.auto_calendar_range == true && data_store->GetSpan() > 0)
+	if (calendar_config.auto_calendar_range == true && data_store.GetSpan() > 0)
 	{
-		calendarSpan.SetSpan(data_store->GetFirstYear(), data_store->GetLastYear());
+		calendarSpan.SetSpan(data_store.GetFirstYear(), data_store.GetLastYear());
 	}
 	else
 	{
@@ -541,33 +542,33 @@ void CalendarPage::SetupBarsShape()
 {
 	std::vector<rect4> bars_cells;
 	//bars_cells.resize(data_store->GetNumberBars());
-	bars_cells.reserve(data_store->GetNumberBars());
+	bars_cells.reserve(data_store.GetNumberBars());
 	//std::vector<glm::vec3> bars_text_positions;
 	//bars_text_positions.resize(data_store->getBarsSize());
 
 	graphic_engine->RemoveShapes(bar_labels_text);
-	bar_labels_text = graphic_engine->AddShapes<FontShape>(data_store->GetNumberBars());
+	bar_labels_text = graphic_engine->AddShapes<FontShape>(data_store.GetNumberBars());
 
-	for (size_t index = 0; index < data_store->GetNumberBars(); ++index)
+	for (size_t index = 0; index < data_store.GetNumberBars(); ++index)
 	{
 		//int row = data_store->GetBar(index).GetYear() - data_store->GetFirstYear();calendarSpan
 
-		if (calendarSpan.IsInSpan(data_store->GetBar(index).GetYear()))
+		if (calendarSpan.IsInSpan(data_store.GetBar(index).GetYear()))
 		{
-			int row = data_store->GetBar(index).GetYear() - calendarSpan.GetFirstYear();
+			int row = data_store.GetBar(index).GetYear() - calendarSpan.GetFirstYear();
 
 			auto current_cell = row_frames.GetSubFrame(row, 1);
 
 			rect4 bar_cell;
-			bar_cell.Left(current_cell.Left() + data_store->GetBar(index).GetFirstDay() * day_width);
+			bar_cell.Left(current_cell.Left() + data_store.GetBar(index).GetFirstDay() * day_width);
 			bar_cell.Bottom(current_cell.Bottom());
-			bar_cell.Right(current_cell.Left() + data_store->GetBar(index).GetLastDay() * day_width);
+			bar_cell.Right(current_cell.Left() + data_store.GetBar(index).GetLastDay() * day_width);
 			bar_cell.Top(current_cell.Top());
 
 			//bars_cells[index] = bar_cell;
 			bars_cells.push_back(bar_cell);
 
-			std::wstring numsText = std::to_wstring(data_store->GetBar(index).GetNumber() + 1);
+			std::wstring numsText = std::to_wstring(data_store.GetBar(index).GetNumber() + 1);
 
 			bar_labels_text[index]->SetFont(font.get());
 
@@ -602,22 +603,22 @@ void CalendarPage::SetupBarsShape()
 void CalendarPage::SetupYearsTotals()
 {
 	std::vector<rect4> years_totals_cells;
-	years_totals_cells.resize(data_store->GetSpan());
+	years_totals_cells.resize(data_store.GetSpan());
 
-	for (size_t index = 0; index < data_store->GetSpan(); ++index)
+	for (size_t index = 0; index < data_store.GetSpan(); ++index)
 	{
 		//int row = data_store->GetBar(index).GetYear() - calendarSpan.GetFirstYear();
 
-		if (calendarSpan.IsInSpan(data_store->GetFirstYear() + index))
+		if (calendarSpan.IsInSpan(data_store.GetFirstYear() + index))
 		{
-			int row = data_store->GetFirstYear() + index - calendarSpan.GetFirstYear();
+			int row = data_store.GetFirstYear() + index - calendarSpan.GetFirstYear();
 
 			auto current_cell = row_frames.GetSubFrame(row, 0);
 
 			rect4 year_total_cell;
 			year_total_cell.Left(current_cell.Left());
 			year_total_cell.Bottom(current_cell.Bottom());
-			year_total_cell.Right(current_cell.Left() + static_cast<float>(data_store->GetAnnualTotal(index)) * day_width);
+			year_total_cell.Right(current_cell.Left() + static_cast<float>(data_store.GetAnnualTotal(index)) * day_width);
 			year_total_cell.Top(current_cell.Top());
 
 			years_totals_cells[index] = year_total_cell;

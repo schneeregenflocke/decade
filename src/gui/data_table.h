@@ -38,6 +38,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 //#define BOOST_DATE_TIME_NO_LIB
 //#include <boost/date_time.hpp>
 
+#include <sigslot/signal.hpp>
+
 #include <array>
 #include <sstream>
 #include <locale>
@@ -55,25 +57,34 @@ class DataTablePanel : public wxPanel
 {
 public:
 
-	DataTablePanel(wxWindow* parent, DateIntervals* data_store);
-	void InitializeTable();
-	const wxEventTypeTag<wxCommandEvent> GetDatesStoreChangedEventTag() const;
+	DataTablePanel(wxWindow* parent);
+
+	void SlotUpdateTable(const std::vector<date_period>& date_intervals, const std::vector<date_period>& date_inter_intervals);
+
+	//void SlotInitializeTable();
+	//const wxEventTypeTag<wxCommandEvent> GetDatesStoreChangedEventTag() const;
+
+	sigslot::signal<const std::vector<date_period>&> signal_table_date_intervals;
 
 private:
+
+	void UpdateValidRows();
 	
 	void OnItemActivated(wxDataViewEvent& event);
 	void OnItemEditing(wxDataViewEvent& event);
 	void OnSelectionChanged(wxDataViewEvent& event);
 	void OnButtonClicked(wxCommandEvent& event);
-	void OnValueChanged(wxDataViewEvent& event);
+	//void OnValueChanged(wxDataViewEvent& event);
 	
-	void UpdateButton();
+	void UpdateButtons();
 
 	void InsertRow(size_t row);
 	void RemoveRow(size_t row);
 
 	bool CheckDateInterval(date begin_date, date end_date);
 	date ParseDateByCell(int row, int column);
+
+	void ScanTable();
 	
 	wxDataViewListCtrl* data_view_list_ctrl;
 	
@@ -82,13 +93,11 @@ private:
 	wxButton* addRowButton;
 	wxButton* deleteRowButton;
 
-	DateIntervals* data_store;
-
-	void ScanTable();
-	void ScanStore();
-
 	std::vector<size_t> valid_rows;
 
-	const wxEventTypeTag<wxCommandEvent> datesStoreChangedEventTag;
+
+	//void ScanStore();
+	//DateIntervalStore* data_store;
+	//const wxEventTypeTag<wxCommandEvent> datesStoreChangedEventTag;
 };
 

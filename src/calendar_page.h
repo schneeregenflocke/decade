@@ -20,10 +20,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #ifndef CALENDAR_H
 #define CALENDAR_H
 
-#include "dates_storage.h"
 #include "graphics/graphic_engine.h"
 #include "graphics/shapes.h"
 #include "graphics/font.h"
+
+#include "dates_storage.h"
 #include "shape_config.h"
 #include "calendar_config.h"
 
@@ -39,7 +40,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include <numeric>
 
 ////////////////////////////////////////
-#include <wx/event.h>
+
 
 
 class CalendarSpan
@@ -83,9 +84,9 @@ class CalendarPage
 {
 public:
 
-	CalendarPage(GraphicEngine* graphic_engine, DateIntervals* data_store);
+	CalendarPage(GraphicEngine* graphic_engine);
 
-	void OnDataStoreChanged(wxCommandEvent& event);
+	void SetDateIntervals(const std::vector<date_period>& date_intervals);
 
 	void SlotPageSize(const std::array<float, 2>& page_size);
 	void SlotPageMargins(const std::array<float, 4>& page_margins);
@@ -114,11 +115,13 @@ public:
 
 	void SetLegend();
 
+	
+
 private:
 
-	GraphicEngine* graphic_engine;
-	DateIntervals* data_store;
+	DateIntervalStore data_store;
 
+	GraphicEngine* graphic_engine;
 	CalendarSpan calendarSpan;
 
 	std::unique_ptr<FontLoader> font;

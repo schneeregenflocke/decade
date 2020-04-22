@@ -99,6 +99,7 @@ list(APPEND resource_files
 	external/provisional_license_collection/Boost_LICENSE_1_0.txt
 	external/provisional_license_collection/embed-resource-LICENSE.txt
 	external/provisional_license_collection/wxWidgets-licence.txt
+	external/sigslot/LICENSE
 )
 
 message_list(resource_files)

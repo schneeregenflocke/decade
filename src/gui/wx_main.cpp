@@ -122,7 +122,7 @@ MainWindow::MainWindow(const wxString& title, const wxPoint& pos, const wxSize& 
     ////////////////////////////////////////////////////////////////////////////////
 
     page_setup_panel = new PageSetupPanel(book_panel);
-    data_table_panel = new DataTablePanel(book_panel, &dataStore);
+    data_table_panel = new DataTablePanel(book_panel);
     font_setup_panel = new FontSetupPanel(book_panel);
     title_setup_panel = new TitleSetupPanel(book_panel);
     elements_setup_panel = new ElementsSetupsPanel(book_panel);
@@ -207,6 +207,49 @@ void MainWindow::SlotSelectListBook(wxCommandEvent& event)
 }
 
 
+void MainWindow::SlotGLReady(wxCommandEvent& event)
+{
+    
+    calendar = std::make_unique<CalendarPage>(gl_canvas->GetGraphicEngine());
+    calendar->Update();
+
+    dataStore.signal_date_intervals.connect(&DataTablePanel::SlotUpdateTable, data_table_panel);
+    
+    data_table_panel->signal_table_date_intervals.connect(&DateIntervals::SetDateIntervals, &dataStore);
+
+    dataStore.SetTransform(0, 1);
+    dataStore.signal_transformed_date_intervals.connect(&CalendarPage::SetDateIntervals, calendar.get());
+
+    
+
+    page_setup_panel->signal_page_size.connect(&CalendarPage::SlotPageSize, calendar.get());
+    page_setup_panel->signal_page_margins.connect(&CalendarPage::SlotPageMargins, calendar.get());
+
+    page_setup_panel->signal_page_size.connect(&GraphicEngine::SlotPageSize, gl_canvas->GetGraphicEngine());
+
+    //page_setup_panel->ConnectSignalPageSize(&CalendarPage::SlotPageSize, calendar.get());
+    //page_setup_panel->ConnectSignalPageMargins(&CalendarPage::SlotPageMargins, calendar.get());
+    //page_setup_panel->ConnectSignalPageSize(&GraphicEngine::SlotPageSize, gl_canvas->GetGraphicEngine());
+    page_setup_panel->SendDefaultValues();
+
+
+    font_setup_panel->ConnectSignalFontPath(&CalendarPage::SlotSelectFont, calendar.get());
+    font_setup_panel->SendDefaultValues();
+
+    title_setup_panel->ConnectSignalFrameHeight(&CalendarPage::SlotTitleFrameHeight, calendar.get());
+    title_setup_panel->ConnectSignalFontSizeRatio(&CalendarPage::SlotTitleFontSizeRatio, calendar.get());
+    title_setup_panel->ConnectSignalTitleText(&CalendarPage::SlotTitleText, calendar.get());
+    title_setup_panel->ConnectSignalTextColor(&CalendarPage::SlotTitleTextColor, calendar.get());
+    title_setup_panel->SendDefaultValues();
+
+    elements_setup_panel->ConnectSignalRectangleShapeConfig(&CalendarPage::SlotRectangleShapeConfig, calendar.get());
+    elements_setup_panel->SendDefaultValues();
+
+    calendar_setup_panel->ConnectSignalCalendarConfig(&CalendarPage::SlotCalendarConfig, calendar.get());
+    calendar_setup_panel->SendDefaultValues();
+}
+
+
 void MainWindow::InitMenu()
 {
     const int ID_EXPORT_PNG = NewControlId();
@@ -249,6 +292,10 @@ void MainWindow::InitMenu()
     menu_help->Append(ID_LICENSE_INFO, L"&Open Source Licenses");
 }
 
+void MainWindow::SlotExit(wxCommandEvent& event)
+{
+    Close(true);
+}
 
 void MainWindow::SlotImportCSV(wxCommandEvent& event)
 {
@@ -261,7 +308,6 @@ void MainWindow::SlotImportCSV(wxCommandEvent& event)
         ImportCSV(filePath);
     }
 }
-
 
 void MainWindow::SlotExportCSV(wxCommandEvent& event)
 {
@@ -281,7 +327,7 @@ void MainWindow::SlotExportCSV(wxCommandEvent& event)
         for(size_t index = 0; index < dataStore.GetDateIntervalsSize(); ++index)
         {
             auto begin_date = boost_date_to_string(dataStore.GetDateIntervalConstRef(index).begin());
-            auto last_date = boost_date_to_string(dataStore.GetDateIntervalConstRef(index).last());
+            auto last_date = boost_date_to_string(dataStore.GetDateIntervalConstRef(index).end());
             
             csv_writer.write_row(begin_date, last_date);
         }
@@ -289,7 +335,6 @@ void MainWindow::SlotExportCSV(wxCommandEvent& event)
         csv_writer.close();
     }
 }
-
 
 void MainWindow::ImportCSV(const std::string& filepath)
 {
@@ -311,7 +356,6 @@ void MainWindow::ImportCSV(const std::string& filepath)
         if (csv_reader.ready())
         {
             ////////////////////////////////////////////////////////////////////////////////
-
             auto row = csv_reader.next_row(); // auto& row = csv_reader.next_row();
 
             auto begin_date = string_to_boost_date(row[std::to_string(0)], date_format);
@@ -319,7 +363,7 @@ void MainWindow::ImportCSV(const std::string& filepath)
 
             if ((begin_date.is_special() || last_date.is_special()) == false)
             {
-                date_period date_interval(begin_date, last_date + date_duration(1));
+                date_period date_interval(begin_date, last_date);
 
                 if (date_interval.is_null() == false)
                 {
@@ -330,50 +374,7 @@ void MainWindow::ImportCSV(const std::string& filepath)
     }
 
     dataStore.SetDateIntervals(date_intervals);
-    data_table_panel->InitializeTable(); 
 }
-
-
-void MainWindow::SlotExit(wxCommandEvent& event)
-{
-    Close(true);
-}
-
-
-void MainWindow::SlotGLReady(wxCommandEvent& event)
-{
-    calendar = std::make_unique<CalendarPage>(gl_canvas->GetGraphicEngine(), &dataStore);
-    calendar->Update();
-
-    Bind(data_table_panel->GetDatesStoreChangedEventTag(), &CalendarPage::OnDataStoreChanged, calendar.get());
-
-    page_setup_panel->signal_page_size.connect(&CalendarPage::SlotPageSize, calendar.get());
-    page_setup_panel->signal_page_margins.connect(&CalendarPage::SlotPageMargins, calendar.get());
-
-    page_setup_panel->signal_page_size.connect(&GraphicEngine::SlotPageSize, gl_canvas->GetGraphicEngine());
-
-    //page_setup_panel->ConnectSignalPageSize(&CalendarPage::SlotPageSize, calendar.get());
-    //page_setup_panel->ConnectSignalPageMargins(&CalendarPage::SlotPageMargins, calendar.get());
-    //page_setup_panel->ConnectSignalPageSize(&GraphicEngine::SlotPageSize, gl_canvas->GetGraphicEngine());
-    page_setup_panel->SendDefaultValues();
-
- 
-    font_setup_panel->ConnectSignalFontPath(&CalendarPage::SlotSelectFont, calendar.get());
-    font_setup_panel->SendDefaultValues();
-
-    title_setup_panel->ConnectSignalFrameHeight(&CalendarPage::SlotTitleFrameHeight, calendar.get());
-    title_setup_panel->ConnectSignalFontSizeRatio(&CalendarPage::SlotTitleFontSizeRatio, calendar.get());
-    title_setup_panel->ConnectSignalTitleText(&CalendarPage::SlotTitleText, calendar.get());
-    title_setup_panel->ConnectSignalTextColor(&CalendarPage::SlotTitleTextColor, calendar.get());
-    title_setup_panel->SendDefaultValues();
-
-    elements_setup_panel->ConnectSignalRectangleShapeConfig(&CalendarPage::SlotRectangleShapeConfig, calendar.get());
-    elements_setup_panel->SendDefaultValues();
-
-    calendar_setup_panel->ConnectSignalCalendarConfig(&CalendarPage::SlotCalendarConfig, calendar.get());
-    calendar_setup_panel->SendDefaultValues();
-}
-
 
 void MainWindow::SlotExportPNG(wxCommandEvent& event)
 {
@@ -386,7 +387,6 @@ void MainWindow::SlotExportPNG(wxCommandEvent& event)
     }
 }
 
-
 void MainWindow::SlotLoadXML(wxCommandEvent& event)
 {
     wxFileDialog openFileDialog(this, "Open File", wxEmptyString, wxEmptyString, "XML Files (*.xml)|*.xml", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
@@ -397,7 +397,6 @@ void MainWindow::SlotLoadXML(wxCommandEvent& event)
         current_xml_file = file_path;
     }   
 }
-
 
 void MainWindow::SlotSaveXML(wxCommandEvent& event)
 {
@@ -418,15 +417,6 @@ void MainWindow::SlotSaveXML(wxCommandEvent& event)
     }
 }
 
-
-void MainWindow::SlotLicenseInfo(wxCommandEvent& event)
-{
-    LicenseInformationDialog dialog;
-
-    dialog.ShowModal();
-}
-
-
 void MainWindow::SaveXML(const std::wstring& filepath)
 {
     pugi::xml_document doc;
@@ -445,8 +435,7 @@ void MainWindow::SaveXML(const std::wstring& filepath)
         std::string end_date_iso_string = boost::gregorian::to_iso_string(dataStore.GetDateIntervalConstRef(index).end());
         attribute_end_date.set_value(std::wstring(end_date_iso_string.begin(), end_date_iso_string.end()).c_str());
     }
-
-    
+   
     page_setup_panel->SaveXML(&doc);
     title_setup_panel->SaveToXML(&doc);
     elements_setup_panel->SaveToXML(&doc);
@@ -454,7 +443,6 @@ void MainWindow::SaveXML(const std::wstring& filepath)
     
     doc.save_file(filepath.c_str());
 }
-
 
 void MainWindow::LoadXML(const std::wstring& filepath)
 {
@@ -479,15 +467,18 @@ void MainWindow::LoadXML(const std::wstring& filepath)
             temporary.push_back(date_period(boost_begin_date, boost_end_date));
         }
 
-        dataStore.SetDateIntervals(temporary);
-        data_table_panel->InitializeTable();
-
-        
+        dataStore.SetDateIntervals(temporary);       
     }
 
     page_setup_panel->LoadXML(doc);
     title_setup_panel->LoadFromXML(doc);
     elements_setup_panel->LoadFromXML(doc);
     calendar_setup_panel->LoadFromXML(doc);
+}
+
+void MainWindow::SlotLicenseInfo(wxCommandEvent& event)
+{
+    LicenseInformationDialog dialog;
+    dialog.ShowModal();
 }
 

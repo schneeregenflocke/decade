@@ -60,6 +60,7 @@ void LicenseInformationDialog::CollectLicenses()
 	collected_licenses.emplace_back("pugixml", LOAD_RESOURCE(external_pugixml_LICENSE_md).toString());
 	collected_licenses.emplace_back("lodepng", LOAD_RESOURCE(external_lodepng_LICENSE).toString());
 	collected_licenses.emplace_back("freetype2", LOAD_RESOURCE(external_freetype2_docs_LICENSE_TXT).toString());
+	collected_licenses.emplace_back("sigslot", LOAD_RESOURCE(external_sigslot_LICENSE).toString());
 	
 	for (const auto& license : collected_licenses)
 	{
