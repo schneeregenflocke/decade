@@ -86,7 +86,6 @@ private:
 
 	void ScanTable();
 	void ScanStore();
-	//void ScanTableScanStore();
 
 	std::vector<size_t> valid_rows;
 
