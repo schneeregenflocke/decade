@@ -44,7 +44,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include <memory>
 #include <functional>
-#include <boost/signals2.hpp>
+
+#include <sigslot/signal.hpp>
 
 #include <pugixml.hpp>
 
@@ -55,13 +56,15 @@ public:
 	
 	ElementsSetupsPanel(wxWindow* parent);
 
-	template<typename T, typename U>
-	void ConnectSignalRectangleShapeConfig(T memfunptr, U objectptr);
+	/*template<typename T, typename U>
+	void ConnectSignalRectangleShapeConfig(T memfunptr, U objectptr);*/
 
 	void SendDefaultValues();
 
 	void SaveToXML(pugi::xml_node* node);
 	void LoadFromXML(const pugi::xml_node& node);
+
+	sigslot::signal<const std::vector<RectangleShapeConfig>&> signal_shape_config;
 
 private:
 
@@ -94,11 +97,11 @@ private:
 	const int ID_LINE_ALPHA_SLIDER;
 	const int ID_FILL_ALPHA_SLIDER;
 
-	boost::signals2::signal<void(const std::vector<RectangleShapeConfig>&)> signal_rectangle_shape_config;
+	//boost::signals2::signal<void(const std::vector<RectangleShapeConfig>&)> signal_rectangle_shape_config;
 };
 
-template<typename T, typename U>
+/*template<typename T, typename U>
 inline void ElementsSetupsPanel::ConnectSignalRectangleShapeConfig(T memfunptr, U objectptr)
 {
 	signal_rectangle_shape_config.connect(std::bind(memfunptr, objectptr, std::placeholders::_1));
-}
+}*/

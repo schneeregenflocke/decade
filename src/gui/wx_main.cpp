@@ -241,7 +241,7 @@ void MainWindow::SlotGLReady()
     title_setup_panel->SendDefaultValues();
 
 
-    elements_setup_panel->ConnectSignalRectangleShapeConfig(&CalendarPage::SlotRectangleShapeConfig, calendar.get());
+    elements_setup_panel->signal_shape_config.connect(&CalendarPage::SlotRectangleShapeConfig, calendar.get());
     elements_setup_panel->SendDefaultValues();
 
 

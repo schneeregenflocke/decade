@@ -144,7 +144,7 @@ ElementsSetupsPanel::ElementsSetupsPanel(wxWindow* parent) :
 
 void ElementsSetupsPanel::SendDefaultValues()
 {
-	signal_rectangle_shape_config(element_configurations);
+	signal_shape_config(element_configurations);
 }
 
 void ElementsSetupsPanel::SaveToXML(pugi::xml_node* node)
@@ -203,7 +203,7 @@ void ElementsSetupsPanel::LoadFromXML(const pugi::xml_node& node)
 
 		config_iterator->FillColor(fill_color);
 
-		signal_rectangle_shape_config(element_configurations);
+		signal_shape_config(element_configurations);
 	}
 }
 
@@ -245,7 +245,7 @@ void ElementsSetupsPanel::SlotOutlineVisible(wxCommandEvent& event)
 	element_configurations[element_selection].OutlineVisible(check_status);
 	UpdateWidgets(element_selection);
 
-	signal_rectangle_shape_config(element_configurations);
+	signal_shape_config(element_configurations);
 }
 
 void ElementsSetupsPanel::SlotFillVisible(wxCommandEvent& event)
@@ -255,7 +255,7 @@ void ElementsSetupsPanel::SlotFillVisible(wxCommandEvent& event)
 	element_configurations[element_selection].FillVisible(check_status);
 	UpdateWidgets(element_selection);
 
-	signal_rectangle_shape_config(element_configurations);
+	signal_shape_config(element_configurations);
 }
 
 void ElementsSetupsPanel::SlotLineWidth(wxSpinDoubleEvent& event)
@@ -264,7 +264,7 @@ void ElementsSetupsPanel::SlotLineWidth(wxSpinDoubleEvent& event)
 	size_t element_selection = static_cast<size_t>(elements_list_box->GetSelection());
 	element_configurations[element_selection].LineWidth(linewidth);
 
-	signal_rectangle_shape_config(element_configurations);
+	signal_shape_config(element_configurations);
 }
 
 void ElementsSetupsPanel::SlotLineColor(wxColourPickerEvent& event)
@@ -277,7 +277,7 @@ void ElementsSetupsPanel::SlotLineColor(wxColourPickerEvent& event)
 
 	element_configurations[element_selection].OutlineColor(color);
 
-	signal_rectangle_shape_config(element_configurations);
+	signal_shape_config(element_configurations);
 }
 
 void ElementsSetupsPanel::SlotFillColor(wxColourPickerEvent& event)
@@ -290,7 +290,7 @@ void ElementsSetupsPanel::SlotFillColor(wxColourPickerEvent& event)
 
 	element_configurations[element_selection].FillColor(color);
 
-	signal_rectangle_shape_config(element_configurations);
+	signal_shape_config(element_configurations);
 }
 
 void ElementsSetupsPanel::SlotLineColorAlpha(wxCommandEvent& event)
@@ -303,7 +303,7 @@ void ElementsSetupsPanel::SlotLineColorAlpha(wxCommandEvent& event)
 	current_line_color.a = alpha_value;
 	element_configurations[element_selection].OutlineColor(current_line_color);
 
-	signal_rectangle_shape_config(element_configurations);
+	signal_shape_config(element_configurations);
 }
 
 void ElementsSetupsPanel::SlotFillColorAlpha(wxCommandEvent& event)
@@ -316,6 +316,6 @@ void ElementsSetupsPanel::SlotFillColorAlpha(wxCommandEvent& event)
 	current_line_color.a = alpha_value;
 	element_configurations[element_selection].FillColor(current_line_color);
 
-	signal_rectangle_shape_config(element_configurations);
+	signal_shape_config(element_configurations);
 }
 
