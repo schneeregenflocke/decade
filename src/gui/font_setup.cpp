@@ -23,11 +23,12 @@ FontSetupPanel::FontSetupPanel(wxWindow* parent) :
 	wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxPanelNameStr),
 	font_directory_enumerated(false)
 {
+
 #ifdef _WIN32
-	default_font_path = "C:/Windows/Fonts/arial.ttf";
+	default_font_file_path = "C:/Windows/Fonts/arial.ttf";
 #endif
 #ifdef __linux__
-	default_font_path = "/usr/share/fonts/cantarell/Cantarell-Regular.otf";
+	default_font_file_path = "/usr/share/fonts/cantarell/Cantarell-Regular.otf";
 #endif
 
 	font_picker = new wxFontPickerCtrl(this, wxID_ANY, wxNullFont, wxDefaultPosition, wxDefaultSize, wxFNTP_DEFAULT_STYLE);
@@ -47,33 +48,27 @@ FontSetupPanel::FontSetupPanel(wxWindow* parent) :
 
 std::string FontSetupPanel::GetFontFilePath()
 {
-	return font_file_path;
+	return current_font_file_path;
 }
 
-void FontSetupPanel::SetFontFilePath(std::string file_path)
+void FontSetupPanel::SetFontFilePath(const std::string& font_file_path)
 {
-	if (std::filesystem::exists(file_path))
+	if (std::filesystem::exists(font_file_path))
 	{
-		font_file_path = file_path;
-		signal_fontpath(file_path);
+		current_font_file_path = font_file_path;
 	}
 	else
 	{
-		font_file_path = default_font_path;
+		current_font_file_path = default_font_file_path;
 	}
-
-	signal_fontpath(font_file_path);
+	signal_font_file_path(this->current_font_file_path);
 }
 
-/*FontSetupPanel::~FontSetupPanel()
-{
-	//enumerate_thread.join();
-}*/
 
 void FontSetupPanel::SendDefaultValues()
 {
-	font_file_path = default_font_path;
-	signal_fontpath(default_font_path);
+	current_font_file_path = default_font_file_path;
+	signal_font_file_path(default_font_file_path);
 }
 
 void FontSetupPanel::SlotSelectFont(wxFontPickerEvent& event)
@@ -81,24 +76,26 @@ void FontSetupPanel::SlotSelectFont(wxFontPickerEvent& event)
 	if (!font_directory_enumerated)
 	{
 		font_picker->Enable(false);
+
 		enumerate_thread = std::thread(&FontSetupPanel::EnumerateFontDirectory, this);
-		//enumerate_thread.detach();
 		enumerate_thread.join();
+
 		font_picker->Enable(true);
+
 		font_directory_enumerated = true;
 	}
 	
-	auto fontlookup = PrepareFontName(event.GetFont());
+	auto font_lookup = PrepareFontName(event.GetFont());
 
-	auto filepath = enum_fonts.GetFilepath(fontlookup);
-	if (filepath != std::string("NotFound") && std::filesystem::exists(filepath))
+	auto font_file_path = enum_fonts.GetFilepath(font_lookup);
+	if (font_file_path != std::string("NotFound") && std::filesystem::exists(font_file_path))
 	{
-		font_file_path = filepath;
-		signal_fontpath(filepath);
+		current_font_file_path = font_file_path;
+		signal_font_file_path(font_file_path);
 	}
 	else
 	{
-		std::cout << "font file not found" << '\n';
+		std::cerr << "font file not found" << '\n';
 	}
 }
 

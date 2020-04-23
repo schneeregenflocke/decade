@@ -213,32 +213,26 @@ void MainWindow::SlotSelectListBook(wxCommandEvent& event)
 
 void MainWindow::SlotGLReady()
 {
-    
+
     calendar = std::make_unique<CalendarPage>(gl_canvas->GetGraphicEngine());
     calendar->Update();
 
-    dataStore.signal_date_intervals.connect(&DataTablePanel::SlotUpdateTable, data_table_panel);
-    
-    data_table_panel->signal_table_date_intervals.connect(&DateIntervals::SetDateIntervals, &dataStore);
 
+    dataStore.signal_date_intervals.connect(&DataTablePanel::SlotUpdateTable, data_table_panel);
+    data_table_panel->signal_table_date_intervals.connect(&DateIntervals::SetDateIntervals, &dataStore);
     dataStore.SetTransform(0, 1);
     dataStore.signal_transformed_date_intervals.connect(&CalendarPage::SetDateIntervals, calendar.get());
 
     
-
     page_setup_panel->signal_page_size.connect(&CalendarPage::SlotPageSize, calendar.get());
     page_setup_panel->signal_page_margins.connect(&CalendarPage::SlotPageMargins, calendar.get());
-
     page_setup_panel->signal_page_size.connect(&GraphicEngine::SlotPageSize, gl_canvas->GetGraphicEngine());
-
-    //page_setup_panel->ConnectSignalPageSize(&CalendarPage::SlotPageSize, calendar.get());
-    //page_setup_panel->ConnectSignalPageMargins(&CalendarPage::SlotPageMargins, calendar.get());
-    //page_setup_panel->ConnectSignalPageSize(&GraphicEngine::SlotPageSize, gl_canvas->GraphicEngine());
     page_setup_panel->SendDefaultValues();
 
 
-    font_setup_panel->ConnectSignalFontPath(&CalendarPage::SlotSelectFont, calendar.get());
+    font_setup_panel->signal_font_file_path.connect(&CalendarPage::SlotSelectFont, calendar.get());
     font_setup_panel->SendDefaultValues();
+
 
     title_setup_panel->ConnectSignalFrameHeight(&CalendarPage::SlotTitleFrameHeight, calendar.get());
     title_setup_panel->ConnectSignalFontSizeRatio(&CalendarPage::SlotTitleFontSizeRatio, calendar.get());

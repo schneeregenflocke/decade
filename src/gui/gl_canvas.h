@@ -20,23 +20,26 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include "../graphics/graphic_engine.h"
 
-#ifdef WX_PRECOMP
+/*#ifdef WX_PRECOMP
 #include <wx/wxprec.h>
 #else 
 #include <wx/wx.h>
-#endif
+#endif*/
 
 #include <wx/glcanvas.h>
+#include <wx/dcclient.h>
+
+#include <glad/glad.h>
 
 #include <sigslot/signal.hpp>
+
+#include <glm/vec3.hpp>
 
 #include <memory>
 #include <array>
 #include <string>
 
-#include <glad/glad.h>
 
-#include <glm/vec3.hpp>
 
 
 

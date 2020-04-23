@@ -35,7 +35,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include <thread>
 #include <filesystem>
 
-#include <boost/signals2.hpp>
+#include <sigslot/signal.hpp>
 
 
 class FontSetupPanel : public wxPanel
@@ -43,15 +43,12 @@ class FontSetupPanel : public wxPanel
 public:
 
 	FontSetupPanel(wxWindow* parent);
-	//~FontSetupPanel();
 
 	std::string GetFontFilePath();
-	void SetFontFilePath(std::string file_path);
+	void SetFontFilePath(const std::string& font_file_path);
 
 	void SendDefaultValues();
-
-	template<typename T, typename U>
-	void ConnectSignalFontPath(T memfunptr, U objectptr);
+	sigslot::signal<const std::string&> signal_font_file_path;
 
 private:
 
@@ -61,16 +58,18 @@ private:
 
 	bool font_directory_enumerated;
 
-	std::string default_font_path;
-	std::string font_file_path;
+	std::string default_font_file_path;
+	std::string current_font_file_path;
+
 	wxFontPickerCtrl* font_picker;
+
 	EnumerateFont enum_fonts;
-	boost::signals2::signal<void(const std::string&)> signal_fontpath;
+
 	std::thread enumerate_thread;
 };
 
-template<typename T, typename U>
+/*template<typename T, typename U>
 inline void FontSetupPanel::ConnectSignalFontPath(T memfunptr, U objectptr)
 {
 	signal_fontpath.connect(std::bind(memfunptr, objectptr, std::placeholders::_1));
-}
+}*/
