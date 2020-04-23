@@ -56,6 +56,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include <pugixml.hpp>
 
+#include <sigslot/signal.hpp>
+
 
 // Reason for use of raw pointers instead of smart_pointers:
 // https://wiki.wxwidgets.org/Avoiding_Memory_Leaks 
@@ -73,9 +75,11 @@ private:
 
     void InitMenu();
 
+    void SlotGLReady();
+
     void SlotSelectListBook(wxCommandEvent& event);
     void SlotExit(wxCommandEvent& event);
-    void SlotGLReady(wxCommandEvent& event);
+    
     void SlotExportPNG(wxCommandEvent& event);
     void SlotLoadXML(wxCommandEvent& event);
     void SlotSaveXML(wxCommandEvent& event);

@@ -28,11 +28,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include <wx/glcanvas.h>
 
-#include <memory>
+#include <sigslot/signal.hpp>
 
-//#include <glad/glad.h>
-//#include <glm/glm.hpp>
-//#include <glm/gtc/matrix_transform.hpp>
+#include <memory>
+#include <array>
+#include <string>
+
+#include <glad/glad.h>
+
+#include <glm/vec3.hpp>
+
 
 
 class MouseInteraction
@@ -61,27 +66,25 @@ class GLCanvas : public wxGLCanvas
 public:
 
     GLCanvas(wxWindow* parent, const wxGLAttributes& canvas_attributes);
-    const wxEventTypeTag<wxCommandEvent> GetGLReadyEventTag();
+
     GraphicEngine* GetGraphicEngine();
 
-    void LoadOpenGL();
+    void LoadOpenGL(const std::array<int, 2>& version);
+    std::string GetGLVersionString();
+
+    sigslot::signal<> signal_opengl_ready;
 
 private:
 
     std::unique_ptr<wxGLContext> context;
 	wxGLContextAttrs context_attributes;
-    //wxGLContextAttrs defaultAttrs();
-    
 
     void OnPaint(wxPaintEvent& event);
     void OnSize(wxSizeEvent& event);
     
-
-
     int openGL_ready;
-    std::unique_ptr<GraphicEngine> graphic_engine;
 
-    const wxEventTypeTag<wxCommandEvent> wxCommandEventTag;
+    std::unique_ptr<GraphicEngine> graphic_engine;
 
     std::unique_ptr<MouseInteraction> mouse_interaction;
 };

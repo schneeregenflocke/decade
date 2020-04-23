@@ -36,6 +36,17 @@ wxIMPLEMENT_APP_NO_MAIN(App);
 
 int main(int argc, char* argv[])
 {
+    std::wcout << "__cplusplus " + std::to_string(__cplusplus) + '\n';
+
+#if defined _WIN32
+    std::wcout << "_WIN32 " << _WIN32 << '\n';
+#endif
+
+#if defined _MSC_VER && _MSVC_LANG
+    std::wcout << "_MSC_VER " << _MSC_VER << '\n';
+    std::wcout << "_MSVC_LANG " << _MSVC_LANG << '\n';
+#endif
+
     wxEntryStart(argc, argv);
 
     wxTheApp->CallOnInit();
@@ -51,6 +62,16 @@ int main(int argc, char* argv[])
 bool App::OnInit()
 {
     std::locale::global(std::locale(""));
+    std::wcout << "current locale name " << std::locale("").name() << '\n';
+
+    std::wcout << "OperatingSystemIdName " << wxPlatformInfo::Get().GetOperatingSystemIdName() << '\n';
+    std::wcout << "ArchName " << wxPlatformInfo::Get().GetArchName() << '\n';
+
+    std::wcout << "OSMajorVersion.OSMinorVersion.OSMicroVersion " << wxPlatformInfo::Get().GetOSMajorVersion() << '.' <<
+        wxPlatformInfo::Get().GetOSMinorVersion() << '.' <<
+        wxPlatformInfo::Get().GetOSMicroVersion() << '\n';
+
+    std::wcout << "wxVERSION_STRING " << wxVERSION_STRING << '\n';
 
     ////////////////////////////////////////////////////////////////////////////////
     
@@ -59,30 +80,13 @@ bool App::OnInit()
     main_window->Show();
     main_window->Raise();
 
-    main_window->GetGLCanvas()->LoadOpenGL();
+    std::array<int, 2> gl_version{ 3, 2 };
+    
+    main_window->GetGLCanvas()->LoadOpenGL(gl_version);
 
     ////////////////////////////////////////////////////////////////////////////////
 
-    std::wcout << "current locale name " << std::locale("").name() << '\n';
-
-    std::wcout << "wxVERSION_STRING " << wxVERSION_STRING << '\n';
     std::wcout << "ContentScaleFactor " << main_window->GetContentScaleFactor() << '\n';
-
-    std::wcout << "OperatingSystemIdName " << wxPlatformInfo::Get().GetOperatingSystemIdName() << '\n';
-    std::wcout << "ArchName " << wxPlatformInfo::Get().GetArchName() << '\n';
-
-    std::wcout << "OSMajorVersion.OSMinorVersion.OSMicroVersion " << wxPlatformInfo::Get().GetOSMajorVersion() << '.' <<
-    wxPlatformInfo::Get().GetOSMinorVersion() << '.' <<
-    wxPlatformInfo::Get().GetOSMicroVersion() << '\n';
-
-#if defined _WIN32
-    std::wcout << "_WIN32 " << _WIN32 << '\n';
-#endif
-
-#if defined _MSC_VER && _MSVC_LANG
-    std::wcout << "_MSC_VER " << _MSC_VER << '\n';
-    std::wcout << "_MSVC_LANG " << _MSVC_LANG << '\n';
-#endif
 
     return true;
 }
@@ -174,8 +178,8 @@ MainWindow::MainWindow(const wxString& title, const wxPoint& pos, const wxSize& 
     gl_canvas_panel_sizer->Add(gl_canvas, 1, wxEXPAND | wxALL, 5);
     gl_canvas_panel->SetSizer(gl_canvas_panel_sizer);
 
-    Bind(gl_canvas->GetGLReadyEventTag(), &MainWindow::SlotGLReady, this);
-
+    //Bind(gl_canvas->GetGLReadyEventTag(), &MainWindow::SlotGLReady, this);
+    gl_canvas->signal_opengl_ready.connect(&MainWindow::SlotGLReady, this);
     ////////////////////////////////////////////////////////////////////////////////
 
     main_splitter->SplitVertically(list_book_splitter, gl_canvas_panel);
@@ -207,7 +211,7 @@ void MainWindow::SlotSelectListBook(wxCommandEvent& event)
 }
 
 
-void MainWindow::SlotGLReady(wxCommandEvent& event)
+void MainWindow::SlotGLReady()
 {
     
     calendar = std::make_unique<CalendarPage>(gl_canvas->GetGraphicEngine());
@@ -229,7 +233,7 @@ void MainWindow::SlotGLReady(wxCommandEvent& event)
 
     //page_setup_panel->ConnectSignalPageSize(&CalendarPage::SlotPageSize, calendar.get());
     //page_setup_panel->ConnectSignalPageMargins(&CalendarPage::SlotPageMargins, calendar.get());
-    //page_setup_panel->ConnectSignalPageSize(&GraphicEngine::SlotPageSize, gl_canvas->GetGraphicEngine());
+    //page_setup_panel->ConnectSignalPageSize(&GraphicEngine::SlotPageSize, gl_canvas->GraphicEngine());
     page_setup_panel->SendDefaultValues();
 
 
