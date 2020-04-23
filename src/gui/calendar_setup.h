@@ -36,7 +36,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include <memory>
 #include <functional>
-#include <boost/signals2.hpp>
+
+#include <sigslot/signal.hpp>
 
 #include <pugixml.hpp>
 
@@ -47,13 +48,15 @@ public:
 
 	CalendarSetupPanel(wxWindow* parent);
 
-	template<typename T, typename U>
-	void ConnectSignalCalendarConfig(T memfunptr, U objectptr);
+	/*template<typename T, typename U>
+	void ConnectSignalCalendarConfig(T memfunptr, U objectptr);*/
 	
 	void SendDefaultValues();
 
 	void SaveToXML(pugi::xml_node* node);
 	void LoadFromXML(const pugi::xml_node& node);
+
+	sigslot::signal<const CalendarConfig&> signal_calendar_config;
 
 private:
 
@@ -72,7 +75,7 @@ private:
 	wxCheckBox* auto_span_check_box;
 
 	CalendarConfig calendar_config;
-	boost::signals2::signal<void(const CalendarConfig&)> calendar_config_signal;
+	
 
 	const int ID_WEIGHT0;
 	const int ID_WEIGHT1;
@@ -85,8 +88,8 @@ private:
 	const int ID_AUTO_SPAN;
 };
 
-template<typename T, typename U>
+/*template<typename T, typename U>
 void CalendarSetupPanel::ConnectSignalCalendarConfig(T memfunptr, U objectptr)
 {
-	calendar_config_signal.connect(std::bind(memfunptr, objectptr, std::placeholders::_1));
-}
+	c*alendar_config_signal.connect(std::bind(memfunptr, objectptr, std::placeholders::_1));
+}*/

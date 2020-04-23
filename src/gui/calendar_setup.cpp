@@ -107,7 +107,7 @@ void CalendarSetupPanel::SendDefaultValues()
 	calendar_span_from_spin_ctrl->Enable(!calendar_config.auto_calendar_range);
 	calendar_span_to_spin_ctrl->Enable(!calendar_config.auto_calendar_range);
 
-	calendar_config_signal(calendar_config);
+	signal_calendar_config(calendar_config);
 }
 
 void CalendarSetupPanel::SaveToXML(pugi::xml_node* node)
@@ -143,7 +143,7 @@ void CalendarSetupPanel::LoadFromXML(const pugi::xml_node& node)
 	calendar_config.max_calendar_range = child_node.child(L"max_calendar_range").attribute(L"max_calendar_range").as_int();
 	calendar_config.auto_calendar_range = child_node.child(L"auto_calendar_range").attribute(L"auto_calendar_range").as_bool();
 
-	calendar_config_signal(calendar_config);
+	signal_calendar_config(calendar_config);
 	UpdateControls();
 }
 
@@ -166,7 +166,7 @@ void CalendarSetupPanel::SlotWeightCtrls(wxSpinDoubleEvent& event)
 		calendar_config.gap_factor = event.GetValue();
 	}
 
-	calendar_config_signal(calendar_config);
+	signal_calendar_config(calendar_config);
 }
 
 void CalendarSetupPanel::SlotSpanSpinCtrls(wxSpinEvent& event)
@@ -180,7 +180,7 @@ void CalendarSetupPanel::SlotSpanSpinCtrls(wxSpinEvent& event)
 		calendar_config.max_calendar_range = event.GetValue();
 	}
 
-	calendar_config_signal(calendar_config);
+	signal_calendar_config(calendar_config);
 }
 
 void CalendarSetupPanel::SlotAutoSpanCheckBox(wxCommandEvent& event)
@@ -193,7 +193,7 @@ void CalendarSetupPanel::SlotAutoSpanCheckBox(wxCommandEvent& event)
 		calendar_span_to_spin_ctrl->Enable(!calendar_config.auto_calendar_range);
 	}
 
-	calendar_config_signal(calendar_config);
+	signal_calendar_config(calendar_config);
 }
 
 void CalendarSetupPanel::UpdateControls()

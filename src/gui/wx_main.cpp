@@ -245,7 +245,7 @@ void MainWindow::SlotGLReady()
     elements_setup_panel->SendDefaultValues();
 
 
-    calendar_setup_panel->ConnectSignalCalendarConfig(&CalendarPage::SlotCalendarConfig, calendar.get());
+    calendar_setup_panel->signal_calendar_config.connect(&CalendarPage::SlotCalendarConfig, calendar.get());
     calendar_setup_panel->SendDefaultValues();
 }
 
