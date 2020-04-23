@@ -47,9 +47,6 @@ class CalendarSetupPanel : public wxPanel
 public:
 
 	CalendarSetupPanel(wxWindow* parent);
-
-	/*template<typename T, typename U>
-	void ConnectSignalCalendarConfig(T memfunptr, U objectptr);*/
 	
 	void SendDefaultValues();
 
@@ -87,9 +84,3 @@ private:
 
 	const int ID_AUTO_SPAN;
 };
-
-/*template<typename T, typename U>
-void CalendarSetupPanel::ConnectSignalCalendarConfig(T memfunptr, U objectptr)
-{
-	c*alendar_config_signal.connect(std::bind(memfunptr, objectptr, std::placeholders::_1));
-}*/

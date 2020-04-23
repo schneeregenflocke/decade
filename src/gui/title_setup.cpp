@@ -46,25 +46,26 @@ TitleSetupPanel::TitleSetupPanel(wxWindow* parent) :
 	std::array<wxStaticText*, 5> labels;
 
 	labels[0] = new wxStaticText(this, wxID_ANY, L"Frame Height");
+	labels[0]->SetMinSize(wxSize(120, -1));
 	horizontal_sizers[0]->Add(labels[0], 0, wxEXPAND | wxALL, 5);
-	horizontal_sizers[0]->SetItemMinSize(size_t(0), wxSize(150, -1));
 
 	labels[1] = new wxStaticText(this, wxID_ANY, L"Font Size Ratio");
+	labels[1]->SetMinSize(wxSize(120, -1));
 	horizontal_sizers[1]->Add(labels[1], 0, wxEXPAND | wxALL, 5);
-	horizontal_sizers[1]->SetItemMinSize(size_t(0), wxSize(150, -1));
+	//horizontal_sizers[1]->SetItemMinSize(0, wxSize(150, -1));
 
 	labels[2] = new wxStaticText(this, wxID_ANY, L"Text");
+	labels[2]->SetMinSize(wxSize(120, -1));
 	horizontal_sizers[2]->Add(labels[2], 0, wxEXPAND | wxALL, 5);
-	horizontal_sizers[2]->SetItemMinSize(size_t(0), wxSize(150, -1));
 
 	labels[3] = new wxStaticText(this, wxID_ANY, L"Text Color");
+	labels[3]->SetMinSize(wxSize(120, -1));
 	horizontal_sizers[3]->Add(labels[3], 0, wxEXPAND | wxALL, 5);
-	horizontal_sizers[3]->SetItemMinSize(size_t(0), wxSize(150, -1));
 	labels[3]->Enable(false);
 
 	labels[4] = new wxStaticText(this, wxID_ANY, L"Color Transparency");
+	labels[4]->SetMinSize(wxSize(120, -1));
 	horizontal_sizers[4]->Add(labels[4], 0, wxEXPAND | wxALL, 5);
-	horizontal_sizers[4]->SetItemMinSize(size_t(0), wxSize(150, -1));
 	labels[4]->Enable(false);
 	
 	frame_height_ctrl = new wxSpinCtrlDouble(this, ID_FRAME_HEIGHT);
