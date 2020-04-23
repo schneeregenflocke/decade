@@ -97,15 +97,12 @@ TitleSetupPanel::TitleSetupPanel(wxWindow* parent) :
 
 	////////////////////////////////////////
 
-	ScanMemberVariables();
-	//frame_height_ctrl->SetValue(frame_height);
-	//size_ratio_ctrl->SetValue(font_size_ratio);
-	//title_text_edit->SetValue(title_text);
+	UpdateWidgets();
 
 	text_color_picker->SetColour(wxColour(0, 0, 0, 1));
 }
 
-float TitleSetupPanel::GetFrameHeight()
+/*float TitleSetupPanel::GetFrameHeight()
 {
 	return frame_height;
 }
@@ -123,20 +120,20 @@ std::wstring TitleSetupPanel::GetTitleText()
 void TitleSetupPanel::SetFrameHeight(float value)
 {
 	frame_height = value;
-	ScanMemberVariables();
+	UpdateWidgets();
 }
 
 void TitleSetupPanel::SetFontSizeRatio(float value)
 {
 	font_size_ratio = value;
-	ScanMemberVariables();
+	UpdateWidgets();
 }
 
 void TitleSetupPanel::SetTitleText(const std::wstring& value)
 {
 	title_text = value;
-	ScanMemberVariables();
-}
+	UpdateWidgets();
+}*/
 
 void TitleSetupPanel::SaveToXML(pugi::xml_node* node)
 {
@@ -155,7 +152,7 @@ void TitleSetupPanel::LoadFromXML(const pugi::xml_node& node)
 	font_size_ratio = child_node.attribute(L"font_size_ratio").as_float();
 	title_text = child_node.attribute(L"title_text").as_string();
 
-	ScanMemberVariables();
+	UpdateWidgets();
 }
 
 void TitleSetupPanel::SendDefaultValues()
@@ -164,10 +161,10 @@ void TitleSetupPanel::SendDefaultValues()
 	signal_font_size_ratio(font_size_ratio);
 	signal_title_text(title_text);
 
-	signal_text_color(0.f, 0.f, 0.f, 1.f);
+	signal_text_color(std::array<float, 4>{0.f, 0.f, 0.f, 1.f});
 }
 
-void TitleSetupPanel::ScanMemberVariables()
+void TitleSetupPanel::UpdateWidgets()
 {
 	frame_height_ctrl->SetValue(frame_height);
 	size_ratio_ctrl->SetValue(font_size_ratio);
@@ -211,9 +208,9 @@ void TitleSetupPanel::SlotColorPickerControl(wxColourPickerEvent& event)
 		text_color[0] = To_RGBA_float(color.Red());
 		text_color[1] = To_RGBA_float(color.Green());
 		text_color[2] = To_RGBA_float(color.Blue());
+		text_color[3] = 1.0f; // To_RGBA_float(color.Alpha());
+		signal_text_color(text_color);
 	}
-
-	signal_text_color(text_color[0], text_color[1], text_color[2], text_color[3]);
 }
 
 void TitleSetupPanel::SlotSliderControl(wxCommandEvent& event)
@@ -222,9 +219,8 @@ void TitleSetupPanel::SlotSliderControl(wxCommandEvent& event)
 	{
 		auto char_value = static_cast<unsigned char>(event.GetInt());
 		text_color[3] = To_RGBA_float(char_value);
+		signal_text_color(text_color);
 	}
-
-	signal_text_color(text_color[0], text_color[1], text_color[2], text_color[3]);
 }
 
 float TitleSetupPanel::To_RGBA_float(unsigned char value)

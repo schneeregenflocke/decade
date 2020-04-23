@@ -234,14 +234,16 @@ void MainWindow::SlotGLReady()
     font_setup_panel->SendDefaultValues();
 
 
-    title_setup_panel->ConnectSignalFrameHeight(&CalendarPage::SlotTitleFrameHeight, calendar.get());
-    title_setup_panel->ConnectSignalFontSizeRatio(&CalendarPage::SlotTitleFontSizeRatio, calendar.get());
-    title_setup_panel->ConnectSignalTitleText(&CalendarPage::SlotTitleText, calendar.get());
-    title_setup_panel->ConnectSignalTextColor(&CalendarPage::SlotTitleTextColor, calendar.get());
+    title_setup_panel->signal_frame_height.connect(&CalendarPage::SlotTitleFrameHeight, calendar.get());
+    title_setup_panel->signal_font_size_ratio.connect(&CalendarPage::SlotTitleFontSizeRatio, calendar.get());
+    title_setup_panel->signal_title_text.connect(&CalendarPage::SlotTitleText, calendar.get());
+    title_setup_panel->signal_text_color.connect(&CalendarPage::SlotTitleTextColor, calendar.get());
     title_setup_panel->SendDefaultValues();
+
 
     elements_setup_panel->ConnectSignalRectangleShapeConfig(&CalendarPage::SlotRectangleShapeConfig, calendar.get());
     elements_setup_panel->SendDefaultValues();
+
 
     calendar_setup_panel->ConnectSignalCalendarConfig(&CalendarPage::SlotCalendarConfig, calendar.get());
     calendar_setup_panel->SendDefaultValues();

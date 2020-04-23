@@ -39,8 +39,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include <string>
 #include <limits>
 
-#include <boost/signals2.hpp>
-
+#include <sigslot/signal.hpp>
 
 #include <pugixml.hpp>
 
@@ -52,37 +51,31 @@ public:
 
 	TitleSetupPanel(wxWindow* parent);
 
-	float GetFrameHeight();
-	float GetFontSizeRatio();
-	std::wstring GetTitleText();
-	void SetFrameHeight(float value);
-	void SetFontSizeRatio(float value);
-	void SetTitleText(const std::wstring& value);
+	//float GetFrameHeight();
+	//float GetFontSizeRatio();
+	//std::wstring GetTitleText();
+	//void SetFrameHeight(float value);
+	//void SetFontSizeRatio(float value);
+	//void SetTitleText(const std::wstring& value);
 
 	void SaveToXML(pugi::xml_node* node);
 	void LoadFromXML(const pugi::xml_node& node);
 
-	template<typename T, typename U>
-	void ConnectSignalFrameHeight(T memfunptr, U objectptr);
-
-	template<typename T, typename U>
-	void ConnectSignalFontSizeRatio(T memfunptr, U objectptr);
-
-	template<typename T, typename U>
-	void ConnectSignalTitleText(T memfunptr, U objectptr);
-
-	template<typename T, typename U>
-	void ConnectSignalTextColor(T memfunptr, U objectptr);
-
 	void SendDefaultValues();
+
+	sigslot::signal<float> signal_frame_height;
+	sigslot::signal<float> signal_font_size_ratio;
+	sigslot::signal<const std::wstring&> signal_title_text;
+	sigslot::signal<const std::array<float, 4>&> signal_text_color;
 
 private:
 
 	float frame_height;
 	float font_size_ratio;
 	std::wstring title_text;
+	std::array<float, 4> text_color;
 
-	void ScanMemberVariables();
+	void UpdateWidgets();
 
 	wxSpinCtrlDouble* frame_height_ctrl;
 	wxSpinCtrlDouble* size_ratio_ctrl;
@@ -99,36 +92,5 @@ private:
 	const int ID_COLOR_PICKER;
 	const int ID_SLIDER;
 
-	boost::signals2::signal<void(float)> signal_frame_height;
-	boost::signals2::signal<void(float)> signal_font_size_ratio;
-	boost::signals2::signal<void(const std::wstring&)> signal_title_text;
-	boost::signals2::signal<void(float, float, float, float)> signal_text_color;
-
-	std::array<float, 4> text_color;
-
 	float To_RGBA_float(unsigned char value);
 };
-
-template<typename T, typename U>
-inline void TitleSetupPanel::ConnectSignalFrameHeight(T memfunptr, U objectptr)
-{
-	signal_frame_height.connect(std::bind(memfunptr, objectptr, std::placeholders::_1));
-}
-
-template<typename T, typename U>
-inline void TitleSetupPanel::ConnectSignalFontSizeRatio(T memfunptr, U objectptr)
-{
-	signal_font_size_ratio.connect(std::bind(memfunptr, objectptr, std::placeholders::_1));
-}
-
-template<typename T, typename U>
-inline void TitleSetupPanel::ConnectSignalTitleText(T memfunptr, U objectptr)
-{
-	signal_title_text.connect(std::bind(memfunptr, objectptr, std::placeholders::_1));
-}
-
-template<typename T, typename U>
-inline void TitleSetupPanel::ConnectSignalTextColor(T memfunptr, U objectptr)
-{
-	signal_text_color.connect(std::bind(memfunptr, objectptr, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-}

@@ -96,7 +96,7 @@ public:
 	void SlotTitleFrameHeight(float height);
 	void SlotTitleFontSizeRatio(float ratio);
 	void SlotTitleText(const std::wstring& text);
-	void SlotTitleTextColor(float r_ch, float g_ch, float b_ch, float a_ch);
+	void SlotTitleTextColor(const std::array<float, 4>& title_text_color);
 
 	void SlotRectangleShapeConfig(const std::vector<RectangleShapeConfig>& configs);
 

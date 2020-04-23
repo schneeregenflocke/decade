@@ -202,9 +202,9 @@ void CalendarPage::SlotTitleText(const std::wstring& text)
 	Update();
 }
 
-void CalendarPage::SlotTitleTextColor(float r_ch, float g_ch, float b_ch, float a_ch)
+void CalendarPage::SlotTitleTextColor(const std::array<float, 4>& title_text_color)
 {
-	title_text_color = glm::vec4(r_ch, g_ch, b_ch, a_ch);
+	this->title_text_color = glm::vec4(title_text_color[0], title_text_color[1], title_text_color[2], title_text_color[3]);
 
 	Update();
 }
