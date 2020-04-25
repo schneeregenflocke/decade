@@ -105,8 +105,8 @@ private:
     std::unique_ptr<CalendarPage> calendar;
 
     
-    DateIntervals dataStore;
-    DateIntervalStore transformed_data_store;
+    DateIntervals date_intervals;
+    DateIntervalStore transformed_dates_store;
 
     GLCanvas* gl_canvas;
 

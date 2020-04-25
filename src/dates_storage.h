@@ -36,6 +36,8 @@ using months = boost::gregorian::months;
 #include <sstream>
 #include <array>
 
+#include <pugixml.hpp>
+
 
 class Bar
 {
@@ -60,6 +62,9 @@ private:
 
 
 
+
+
+
 class DateIntervals
 {
 public:
@@ -67,6 +72,9 @@ public:
 	DateIntervals();
 
 	virtual void SetDateIntervals(const std::vector<date_period>& date_intervals);
+	
+	void LoadXML(const pugi::xml_node& doc);
+	void SaveXML(pugi::xml_node* doc);
 
 	size_t GetDateIntervalsSize() const;
 	const date_period& GetDateIntervalConstRef(size_t index) const;

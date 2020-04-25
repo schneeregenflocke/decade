@@ -218,10 +218,10 @@ void MainWindow::SlotGLReady()
     calendar->Update();
 
 
-    dataStore.signal_date_intervals.connect(&DataTablePanel::SlotUpdateTable, data_table_panel);
-    data_table_panel->signal_table_date_intervals.connect(&DateIntervals::SetDateIntervals, &dataStore);
-    dataStore.SetTransform(0, 1);
-    dataStore.signal_transformed_date_intervals.connect(&CalendarPage::SetDateIntervals, calendar.get());
+    date_intervals.signal_date_intervals.connect(&DataTablePanel::SlotUpdateTable, data_table_panel);
+    data_table_panel->signal_table_date_intervals.connect(&DateIntervals::SetDateIntervals, &date_intervals);
+    date_intervals.SetTransform(0, 1);
+    date_intervals.signal_transformed_date_intervals.connect(&CalendarPage::SetDateIntervals, calendar.get());
 
     
     page_setup_panel->signal_page_size.connect(&CalendarPage::SlotPageSize, calendar.get());
@@ -324,10 +324,10 @@ void MainWindow::SlotExportCSV(wxCommandEvent& event)
             .header(false)
             .skip_empty_rows(true);
 
-        for(size_t index = 0; index < dataStore.GetDateIntervalsSize(); ++index)
+        for(size_t index = 0; index < date_intervals.GetDateIntervalsSize(); ++index)
         {
-            auto begin_date = boost_date_to_string(dataStore.GetDateIntervalConstRef(index).begin());
-            auto last_date = boost_date_to_string(dataStore.GetDateIntervalConstRef(index).end());
+            auto begin_date = boost_date_to_string(date_intervals.GetDateIntervalConstRef(index).begin());
+            auto last_date = boost_date_to_string(date_intervals.GetDateIntervalConstRef(index).end());
             
             csv_writer.write_row(begin_date, last_date);
         }
@@ -349,7 +349,7 @@ void MainWindow::ImportCSV(const std::string& filepath)
 
     date_format_descriptor date_format = InitDateFormat();
 
-    std::vector<date_period> date_intervals;
+    std::vector<date_period> buffer;
    
     while (csv_reader.busy())
     {
@@ -367,13 +367,13 @@ void MainWindow::ImportCSV(const std::string& filepath)
 
                 if (date_interval.is_null() == false)
                 {
-                    date_intervals.push_back(date_interval);
+                    buffer.push_back(date_interval);
                 }
             }
         }
     }
 
-    dataStore.SetDateIntervals(date_intervals);
+    date_intervals.SetDateIntervals(buffer);
 }
 
 void MainWindow::SlotExportPNG(wxCommandEvent& event)
@@ -421,21 +421,7 @@ void MainWindow::SaveXML(const std::wstring& filepath)
 {
     pugi::xml_document doc;
 
-    auto node_date_intervals = doc.append_child(L"date_intervals");
-
-    for (size_t index = 0; index < dataStore.GetDateIntervalsSize(); ++index)
-    {
-        auto node_interval = node_date_intervals.append_child(L"interval");
-
-        auto attribute_begin_date = node_interval.append_attribute(L"begin_date");
-        std::string begin_date_iso_string = boost::gregorian::to_iso_string(dataStore.GetDateIntervalConstRef(index).begin());
-        attribute_begin_date.set_value(std::wstring(begin_date_iso_string.begin(), begin_date_iso_string.end()).c_str());
-        
-        auto attribute_end_date = node_interval.append_attribute(L"end_date");
-        std::string end_date_iso_string = boost::gregorian::to_iso_string(dataStore.GetDateIntervalConstRef(index).end());
-        attribute_end_date.set_value(std::wstring(end_date_iso_string.begin(), end_date_iso_string.end()).c_str());
-    }
-   
+    date_intervals.SaveXML(&doc);
     page_setup_panel->SaveXML(&doc);
     title_setup_panel->SaveToXML(&doc);
     elements_setup_panel->SaveToXML(&doc);
@@ -447,33 +433,15 @@ void MainWindow::SaveXML(const std::wstring& filepath)
 void MainWindow::LoadXML(const std::wstring& filepath)
 {
     pugi::xml_document doc;
-
     auto load_success = doc.load_file(filepath.c_str());
-
     if (load_success)
     {
-        auto node_date_intervals = doc.child(L"date_intervals");
-
-        std::vector<date_period> temporary;
-
-        for (auto& node_interval : node_date_intervals.children(L"interval"))
-        {
-            std::wstring begin_date_string = node_interval.attribute(L"begin_date").value();
-            std::wstring end_date_string = node_interval.attribute(L"end_date").value();
-
-            date boost_begin_date = boost::gregorian::from_undelimited_string(std::string(begin_date_string.begin(), begin_date_string.end()));
-            date boost_end_date = boost::gregorian::from_undelimited_string(std::string(end_date_string.begin(), end_date_string.end()));
-
-            temporary.push_back(date_period(boost_begin_date, boost_end_date));
-        }
-
-        dataStore.SetDateIntervals(temporary);       
+        date_intervals.LoadXML(doc);
+        page_setup_panel->LoadXML(doc);
+        title_setup_panel->LoadFromXML(doc);
+        elements_setup_panel->LoadFromXML(doc);
+        calendar_setup_panel->LoadFromXML(doc);
     }
-
-    page_setup_panel->LoadXML(doc);
-    title_setup_panel->LoadFromXML(doc);
-    elements_setup_panel->LoadFromXML(doc);
-    calendar_setup_panel->LoadFromXML(doc);
 }
 
 void MainWindow::SlotLicenseInfo(wxCommandEvent& event)

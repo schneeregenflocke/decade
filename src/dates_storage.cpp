@@ -244,4 +244,40 @@ int DateIntervalStore::GetAnnualTotal(size_t index) const
 	return annualTotals[index];
 }
 
+void DateIntervals::LoadXML(const pugi::xml_node& doc)
+{
+	auto base_node = doc.child(L"date_intervals");
 
+	std::vector<date_period> buffer;
+
+	for (auto& node_interval : base_node.children(L"interval"))
+	{
+		std::wstring begin_date_string = node_interval.attribute(L"begin_date").value();
+		std::wstring end_date_string = node_interval.attribute(L"end_date").value();
+
+		date boost_begin_date = boost::gregorian::from_undelimited_string(std::string(begin_date_string.begin(), begin_date_string.end()));
+		date boost_end_date = boost::gregorian::from_undelimited_string(std::string(end_date_string.begin(), end_date_string.end()));
+
+		buffer.push_back(date_period(boost_begin_date, boost_end_date));
+	}
+
+	SetDateIntervals(buffer);
+}
+
+void DateIntervals::SaveXML(pugi::xml_node* doc)
+{
+	auto base_node = doc->append_child(L"date_intervals");
+
+	for (size_t index = 0; index < date_intervals.size(); ++index)
+	{
+		auto node = base_node.append_child(L"interval");
+
+		auto attribute_begin_date = node.append_attribute(L"begin_date");
+		std::string begin_date_iso_string = boost::gregorian::to_iso_string(date_intervals[index].begin());
+		attribute_begin_date.set_value(std::wstring(begin_date_iso_string.begin(), begin_date_iso_string.end()).c_str());
+
+		auto attribute_end_date = node.append_attribute(L"end_date");
+		std::string end_date_iso_string = boost::gregorian::to_iso_string(date_intervals[index].end());
+		attribute_end_date.set_value(std::wstring(end_date_iso_string.begin(), end_date_iso_string.end()).c_str());
+	}
+}
