@@ -259,6 +259,19 @@ void CuboidShape::SetShape(const vec3& center, float width, float height, float 
 
 
 
+void RectanglesShape::SetShapes(const std::vector<rect4>& rectangles, const std::vector<float>& linewidths, const std::vector<vec4>& fillcolors, const std::vector<vec4>& outlinecolors)
+{
+	size_t size = 6 * 5 * rectangles.size();
+	SetBufferSize(size);
+
+	for (size_t index = 0; index < rectangles.size(); ++index)
+	{
+		SetSlice(index, rectangles[index], linewidths[index], fillcolors[index], outlinecolors[index]);
+	}
+
+	UpdateBuffer();
+}
+
 void RectanglesShape::SetShapes(const std::vector<rect4>& rectangles, float outlinethickness, const std::vector<vec4>& fillcolors, const vec4& outlinecolor)
 {
 	size_t size = 6 * 5 * rectangles.size();

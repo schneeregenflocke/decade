@@ -147,66 +147,6 @@ void ElementsSetupsPanel::SendDefaultValues()
 	signal_shape_config(element_configurations);
 }
 
-void ElementsSetupsPanel::SaveToXML(pugi::xml_node* node)
-{
-	auto child_node = node->append_child(L"elements_setup");
-
-	for (const auto& element : element_configurations)
-	{
-		auto element_node = child_node.append_child(L"element");
-
-		element_node.append_attribute(L"name").set_value(element.Name().c_str());
-		element_node.append_attribute(L"outline_visible").set_value(element.OutlineVisible());
-		element_node.append_attribute(L"fill_visible").set_value(element.FillVisible());
-		element_node.append_attribute(L"linewidth").set_value(element.LineWidth());
-
-		element_node.append_attribute(L"outline_color_r").set_value(element.OutlineColor().r);
-		element_node.append_attribute(L"outline_color_g").set_value(element.OutlineColor().g);
-		element_node.append_attribute(L"outline_color_b").set_value(element.OutlineColor().b);
-		element_node.append_attribute(L"outline_color_a").set_value(element.OutlineColor().a);
-
-		element_node.append_attribute(L"fill_color_r").set_value(element.FillColor().r);
-		element_node.append_attribute(L"fill_color_g").set_value(element.FillColor().g);
-		element_node.append_attribute(L"fill_color_b").set_value(element.FillColor().b);
-		element_node.append_attribute(L"fill_color_a").set_value(element.FillColor().a);
-	}
-}
-
-
-void ElementsSetupsPanel::LoadFromXML(const pugi::xml_node& node)
-{
-	auto child_node = node.child(L"elements_setup");
-
-	for (auto& element_node : child_node.children(L"element"))
-	{
-		auto element_name = element_node.attribute(L"name").as_string();
-
-		auto config_iterator = RectangleShapeConfig::GetShapeConfig(element_name, &element_configurations);
-
-		config_iterator->OutlineVisible(element_node.attribute(L"outline_visible").as_bool());
-		config_iterator->FillVisible(element_node.attribute(L"fill_visible").as_bool());
-		config_iterator->LineWidth(element_node.attribute(L"linewidth").as_float());
-
-		glm::vec4 outline_color;
-		outline_color.r = element_node.attribute(L"outline_color_r").as_float();
-		outline_color.g = element_node.attribute(L"outline_color_g").as_float();
-		outline_color.b = element_node.attribute(L"outline_color_b").as_float();
-		outline_color.a = element_node.attribute(L"outline_color_a").as_float();
-
-		config_iterator->OutlineColor(outline_color);
-
-		glm::vec4 fill_color;
-		fill_color.r = element_node.attribute(L"fill_color_r").as_float();
-		fill_color.g = element_node.attribute(L"fill_color_g").as_float();
-		fill_color.b = element_node.attribute(L"fill_color_b").as_float();
-		fill_color.a = element_node.attribute(L"fill_color_a").as_float();
-
-		config_iterator->FillColor(fill_color);
-
-		signal_shape_config(element_configurations);
-	}
-}
-
 void ElementsSetupsPanel::UpdateWidgets(size_t config_index)
 {
 	auto& current_element = element_configurations[config_index];
@@ -319,3 +259,63 @@ void ElementsSetupsPanel::SlotFillColorAlpha(wxCommandEvent& event)
 	signal_shape_config(element_configurations);
 }
 
+
+void ElementsSetupsPanel::SaveToXML(pugi::xml_node* node)
+{
+	auto child_node = node->append_child(L"elements_setup");
+
+	for (const auto& element : element_configurations)
+	{
+		auto element_node = child_node.append_child(L"element");
+
+		element_node.append_attribute(L"name").set_value(element.Name().c_str());
+		element_node.append_attribute(L"outline_visible").set_value(element.OutlineVisible());
+		element_node.append_attribute(L"fill_visible").set_value(element.FillVisible());
+		element_node.append_attribute(L"linewidth").set_value(element.LineWidth());
+
+		element_node.append_attribute(L"outline_color_r").set_value(element.OutlineColor().r);
+		element_node.append_attribute(L"outline_color_g").set_value(element.OutlineColor().g);
+		element_node.append_attribute(L"outline_color_b").set_value(element.OutlineColor().b);
+		element_node.append_attribute(L"outline_color_a").set_value(element.OutlineColor().a);
+
+		element_node.append_attribute(L"fill_color_r").set_value(element.FillColor().r);
+		element_node.append_attribute(L"fill_color_g").set_value(element.FillColor().g);
+		element_node.append_attribute(L"fill_color_b").set_value(element.FillColor().b);
+		element_node.append_attribute(L"fill_color_a").set_value(element.FillColor().a);
+	}
+}
+
+
+void ElementsSetupsPanel::LoadFromXML(const pugi::xml_node& node)
+{
+	auto child_node = node.child(L"elements_setup");
+
+	for (auto& element_node : child_node.children(L"element"))
+	{
+		auto element_name = element_node.attribute(L"name").as_string();
+
+		auto config_iterator = RectangleShapeConfig::GetShapeConfig(element_name, &element_configurations);
+
+		config_iterator->OutlineVisible(element_node.attribute(L"outline_visible").as_bool());
+		config_iterator->FillVisible(element_node.attribute(L"fill_visible").as_bool());
+		config_iterator->LineWidth(element_node.attribute(L"linewidth").as_float());
+
+		glm::vec4 outline_color;
+		outline_color.r = element_node.attribute(L"outline_color_r").as_float();
+		outline_color.g = element_node.attribute(L"outline_color_g").as_float();
+		outline_color.b = element_node.attribute(L"outline_color_b").as_float();
+		outline_color.a = element_node.attribute(L"outline_color_a").as_float();
+
+		config_iterator->OutlineColor(outline_color);
+
+		glm::vec4 fill_color;
+		fill_color.r = element_node.attribute(L"fill_color_r").as_float();
+		fill_color.g = element_node.attribute(L"fill_color_g").as_float();
+		fill_color.b = element_node.attribute(L"fill_color_b").as_float();
+		fill_color.a = element_node.attribute(L"fill_color_a").as_float();
+
+		config_iterator->FillColor(fill_color);
+
+		signal_shape_config(element_configurations);
+	}
+}

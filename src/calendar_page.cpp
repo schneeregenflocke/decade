@@ -432,7 +432,7 @@ void CalendarPage::SetupYearsShapes()
 
 		rect4 year_cell = row_frames.GetSubFrame(index, 1);
 		//year_cell.Left(cells_frame.Left());
-		//year_cell.Bottom(cells_frame.Bottom() + row_height * indexfloat + row_height / 4.f);
+		//year_cell.Bottom(cells_frame.Bottom() + row_height * float_index + row_height / 4.f);
 		year_cell.Right(year_cell.Left() + year_lenght);
 		//year_cell.Top(year_cell.Bottom() + row_height / 4.f);
 
@@ -482,7 +482,8 @@ void CalendarPage::SetupMonthsShapes()
 
 void CalendarPage::SetupDaysShapes()
 {
-	
+	using namespace boost::gregorian;
+
 	int days_index = 0;
 	int number_days_cells = 0;
 
@@ -491,51 +492,52 @@ void CalendarPage::SetupDaysShapes()
 		number_days_cells = date_period(date(calendarSpan.GetFirstYear(), 1, 1), date(calendarSpan.GetLastYear() + 1, 1, 1)).length().days();
 	}
 
-	std::vector<rect4> days_cells;
-	days_cells.resize(number_days_cells);
-
+	std::vector<rect4> days_cells(number_days_cells);
+	std::vector<float> days_cells_shape_linewidths(number_days_cells);
 	std::vector<vec4> days_cells_shape_fillcolors(number_days_cells);
+	std::vector<vec4> days_cells_shape_outlinecolors(number_days_cells);
 
 	auto config = GetShapeConfig(L"Day Shapes");
 	auto sunday_config = GetShapeConfig(L"Sunday Shapes");
 
 	for (int index = 0; index < calendarSpan.GetSpan(); ++index)
 	{
-		float indexfloat = static_cast<float>(index);
-
 		int current_year = calendarSpan.GetFirstYear() + index;
-		int number_days = boost::gregorian::date_period(boost::gregorian::date(current_year, 1, 1), boost::gregorian::date(current_year + 1, 1, 1)).length().days();
+		int number_days = date_period(date(current_year, 1, 1), date(current_year + 1, 1, 1)).length().days();
 
 		for (int subindex = 0; subindex < number_days; ++subindex)
 		{
-			float subindexfloat = static_cast<float>(subindex);
+			float float_subindex = static_cast<float>(subindex);
 
 			auto current_cell = row_frames.GetSubFrame(index, 1);
 
 			rect4 day_cell;
-
-			day_cell.Left(current_cell.Left() + subindexfloat * day_width);
+			day_cell.Left(current_cell.Left() + float_subindex * day_width);
 			day_cell.Bottom(current_cell.Bottom());
 			day_cell.Right(day_cell.Left() + day_width);
 			day_cell.Top(current_cell.Top());
 			
 			days_cells[days_index] = day_cell;
 
-			boost::gregorian::date current_date = boost::gregorian::date(calendarSpan.GetFirstYear(), 1, 1) + boost::gregorian::date_duration(days_index);
+			date current_date = date(calendarSpan.GetFirstYear(), 1, 1) + date_duration(days_index);
 			if (current_date.day_of_week() == boost::date_time::Sunday)
 			{
+				days_cells_shape_linewidths[days_index] = sunday_config.LineWidth();
 				days_cells_shape_fillcolors[days_index] = sunday_config.FillColor();
+				days_cells_shape_outlinecolors[days_index] = sunday_config.OutlineColor();
 			}
 			else
 			{
+				days_cells_shape_linewidths[days_index] = config.LineWidth();
 				days_cells_shape_fillcolors[days_index] = config.FillColor();
+				days_cells_shape_outlinecolors[days_index] = config.OutlineColor();
 			}
 
 			++days_index;
 		}
 	}
 
-	days_cells_shape->SetShapes(days_cells, config.LineWidth(), days_cells_shape_fillcolors, config.OutlineColor());
+	days_cells_shape->SetShapes(days_cells, days_cells_shape_linewidths, days_cells_shape_fillcolors, days_cells_shape_outlinecolors);
 }
 
 void CalendarPage::SetupBarsShape()

@@ -113,6 +113,7 @@ public:
 class RectanglesShape : public Shape<SimpleShader>
 {
 public:
+	void SetShapes(const std::vector<rect4>& rectangles, const std::vector<float>& linewidths, const std::vector<vec4>& fillcolors, const std::vector<vec4>& outlinecolors);
 	void SetShapes(const std::vector<rect4>& rectangles, float outlinethickness, const std::vector<vec4>& fillcolors, const vec4& outlinecolor);
 	void SetShapes(const std::vector<rect4>& rectangles, float outlinethickness, const vec4& fillcolor, const vec4& outlinecolor);
 	void SetShapes(const rect4 rectangle, float outlinethickness, const vec4& fillcolor, const vec4& outlinecolor);
