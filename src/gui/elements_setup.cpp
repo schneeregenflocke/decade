@@ -16,9 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 */
 
+
 #include "elements_setup.h"
-
-
 
 
 ElementsSetupsPanel::ElementsSetupsPanel(wxWindow* parent) :
@@ -30,6 +29,8 @@ ElementsSetupsPanel::ElementsSetupsPanel(wxWindow* parent) :
 	ID_LINE_ALPHA_SLIDER(wxNewId()),
 	ID_FILL_ALPHA_SLIDER(wxNewId())
 {
+
+
 	wxBoxSizer* vertical_sizer = new wxBoxSizer(wxVERTICAL);
 	SetSizer(vertical_sizer);
 

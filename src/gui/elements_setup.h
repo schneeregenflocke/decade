@@ -56,9 +56,6 @@ public:
 	
 	ElementsSetupsPanel(wxWindow* parent);
 
-	/*template<typename T, typename U>
-	void ConnectSignalRectangleShapeConfig(T memfunptr, U objectptr);*/
-
 	void SendDefaultValues();
 
 	void SaveToXML(pugi::xml_node* node);
@@ -96,12 +93,4 @@ private:
 	const int ID_FILL_COLOR_PICKER;
 	const int ID_LINE_ALPHA_SLIDER;
 	const int ID_FILL_ALPHA_SLIDER;
-
-	//boost::signals2::signal<void(const std::vector<RectangleShapeConfig>&)> signal_rectangle_shape_config;
 };
-
-/*template<typename T, typename U>
-inline void ElementsSetupsPanel::ConnectSignalRectangleShapeConfig(T memfunptr, U objectptr)
-{
-	signal_rectangle_shape_config.connect(std::bind(memfunptr, objectptr, std::placeholders::_1));
-}*/

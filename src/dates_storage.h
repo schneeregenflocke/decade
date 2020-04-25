@@ -76,9 +76,12 @@ public:
 	void LoadXML(const pugi::xml_node& doc);
 	void SaveXML(pugi::xml_node* doc);
 
+
+	////////////////////////////////////////////////////////////
 	size_t GetDateIntervalsSize() const;
 	const date_period& GetDateIntervalConstRef(size_t index) const;
 	const date_period& GetDateInterIntervalConstRef(size_t index) const;
+	////////////////////////////////////////////////////////////
 
 	int GetSpan() const;
 	int GetFirstYear() const;
