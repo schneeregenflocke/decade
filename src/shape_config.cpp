@@ -77,33 +77,39 @@ void RectangleShapeConfig::OutlineColor(glm::vec4 value)
 	outline_color = value;
 }
 
-glm::vec4 RectangleShapeConfig::OutlineColor() const
-{
-	glm::vec4 return_value = glm::vec4(0.f, 0.f, 0.f, 0.f);
-
-	if (outline_visible == true)
-	{
-		return_value = outline_color;
-	}
-
-	return return_value;
-}
-
 void RectangleShapeConfig::FillColor(glm::vec4 value)
 {
 	fill_color = value;
 }
 
+glm::vec4 RectangleShapeConfig::OutlineColor() const
+{
+	glm::vec4 return_value = glm::vec4(0.f, 0.f, 0.f, 0.f);
+	if (outline_visible == true)
+	{
+		return_value = outline_color;
+	}
+	return return_value;
+}
+
 glm::vec4 RectangleShapeConfig::FillColor() const
 {
 	glm::vec4 return_value = glm::vec4(0.f, 0.f, 0.f, 0.f);
-
 	if (fill_visible == true)
 	{
 		return_value = fill_color;
-	}
-		
+	}	
 	return return_value;
+}
+
+glm::vec4 RectangleShapeConfig::OutlineColorDisabled() const
+{
+	return outline_color;
+}
+
+glm::vec4 RectangleShapeConfig::FillColorDisabled() const
+{
+	return fill_color;
 }
 
 bool RectangleShapeConfig::operator==(const RectangleShapeConfig& compare_object)

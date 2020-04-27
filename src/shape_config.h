@@ -33,17 +33,24 @@ public:
 
 	std::wstring Name() const;
 
-	void OutlineVisible(bool value);
-	bool OutlineVisible() const;
 	void FillVisible(bool value);
+	void OutlineVisible(bool value);
+
 	bool FillVisible() const;
+	bool OutlineVisible() const;
 
 	void LineWidth(float value);
-	float LineWidth() const;
+	
 	void OutlineColor(glm::vec4 value);
-	glm::vec4 OutlineColor() const;
 	void FillColor(glm::vec4 value);
+
+	float LineWidth() const;
+
+	glm::vec4 OutlineColor() const;
 	glm::vec4 FillColor() const;
+
+	glm::vec4 OutlineColorDisabled() const;
+	glm::vec4 FillColorDisabled() const;
 
 	bool operator==(const RectangleShapeConfig& compare_object);
 

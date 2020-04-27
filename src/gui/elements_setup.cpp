@@ -156,16 +156,11 @@ void ElementsSetupsPanel::UpdateWidgets(size_t config_index)
 
 	linewidth_ctrl->SetValue(current_element.LineWidth());
 
-	if (outline_visible)
-	{
-		line_color_picker->SetColour(to_wx_color(current_element.OutlineColor()));
-		line_color_alpha_slider->SetValue(100 - static_cast<int>(current_element.OutlineColor().a * 100.f));
-	}
-	if (fill_visible)
-	{
-		fill_color_picker->SetColour(to_wx_color(current_element.FillColor()));
-		fill_color_alpha_slider->SetValue(100 - static_cast<int>(current_element.FillColor().a * 100.f));
-	}
+	line_color_picker->SetColour(to_wx_color(current_element.OutlineColorDisabled()));
+	line_color_alpha_slider->SetValue(100 - static_cast<int>(current_element.OutlineColorDisabled().a * 100.f));
+
+	fill_color_picker->SetColour(to_wx_color(current_element.FillColorDisabled()));
+	fill_color_alpha_slider->SetValue(100 - static_cast<int>(current_element.FillColorDisabled().a * 100.f));
 }
 
 void ElementsSetupsPanel::SlotSelectListBook(wxCommandEvent& event)
