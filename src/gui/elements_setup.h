@@ -54,20 +54,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 
 
-/*class Sizer
-{
-public:
-	Sizer(wxWindow* base);
-
-	Sizer* AddHorizontalSizer(wxWindow* window);
-
-private:
-
-	wxSizer* vertical_sizer;
-	std::vector<wxSizer*> horizontal_sizers;
-};*/
-
-
 class ElementsSetupsPanel : public wxPanel
 {
 public:
@@ -83,6 +69,9 @@ public:
 
 private:
 
+	void InitWidgets();
+	void InitSizers();
+
 	void UpdateWidgets(size_t config_index);
 
 	void SlotSelectListBook(wxCommandEvent& event);
@@ -95,13 +84,18 @@ private:
 	void SlotFillColorAlpha(wxCommandEvent& event);
 
 	wxListBox* elements_list_box;
-	wxCheckBox* outline_visible;
-	wxCheckBox* fill_visible;
+	wxCheckBox* outline_visible_ctrl;
+	wxCheckBox* fill_visible_ctrl;
 	wxSpinCtrlDouble* linewidth_ctrl;
 	wxColourPickerCtrl* line_color_picker;
 	wxColourPickerCtrl* fill_color_picker;
 	wxSlider* line_color_alpha_slider;
 	wxSlider* fill_color_alpha_slider;
+	wxStaticText* linewidth_label;
+	wxStaticText* linecolor_label;
+	wxStaticText* fillcolor_label;
+	wxStaticText* line_transparency_label;
+	wxStaticText* fill_transparency_label;
 
 	std::vector<RectangleShapeConfig> element_configurations;
 

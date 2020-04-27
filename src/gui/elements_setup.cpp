@@ -22,42 +22,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 ElementsSetupsPanel::ElementsSetupsPanel(wxWindow* parent) :
 	wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxPanelNameStr), 
-	ID_OUTLINE_VISIBLE(wxNewId()),
-	ID_FILLING_VISIBLE(wxNewId()),
-	ID_LINE_COLOR_PICKER(wxNewId()),
-	ID_FILL_COLOR_PICKER(wxNewId()),
-	ID_LINE_ALPHA_SLIDER(wxNewId()),
-	ID_FILL_ALPHA_SLIDER(wxNewId())
+	ID_OUTLINE_VISIBLE(NewControlId()),
+	ID_FILLING_VISIBLE(NewControlId()),
+	ID_LINE_COLOR_PICKER(NewControlId()),
+	ID_FILL_COLOR_PICKER(NewControlId()),
+	ID_LINE_ALPHA_SLIDER(NewControlId()),
+	ID_FILL_ALPHA_SLIDER(NewControlId())
 {
-	wxSizerFlags sizerFlags0;
-
-	sizerFlags0.Proportion(0);
-	sizerFlags0.Expand();
-
-	wxBoxSizer* vertical_sizer = new wxBoxSizer(wxVERTICAL);
-	SetSizer(vertical_sizer);
-
-	wxBoxSizer* select_list_box_sizer = new wxBoxSizer(wxHORIZONTAL);
-	//vertical_sizer->Add(select_list_box_sizer, 0, wxEXPAND);
-	vertical_sizer->Add(select_list_box_sizer, sizerFlags0);
-
-
-	wxSizerFlags sizerFlags1;
-	sizerFlags1.Proportion(1);
-	sizerFlags1.Expand();
-	sizerFlags1.Border(wxALL, 5);
-
-	elements_list_box = new wxListBox(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, nullptr, wxLB_SINGLE | wxLB_NEEDED_SB, wxDefaultValidator, wxListBoxNameStr);
-	//select_list_box_sizer->Add(elements_list_box, 1, wxEXPAND | wxALL, 5);
-	select_list_box_sizer->Add(elements_list_box, sizerFlags1);
-
 	
-	
-	Bind(wxEVT_LISTBOX, &ElementsSetupsPanel::SlotSelectListBook, this);
+	InitWidgets();
+	InitSizers();
 
-	wxBoxSizer* select_book_sizer = new wxBoxSizer(wxHORIZONTAL);
-	vertical_sizer->Add(select_book_sizer, 0, wxEXPAND);
-	
+	////////////////////////////////////////
+
 	element_configurations.emplace_back(L"Page Margin", true, false, 0.5f, glm::vec4(0.f, 0.f, 0.f, 1.f), glm::vec4(1.f, 1.f, 1.f, 0.f));
 	element_configurations.emplace_back(L"Title Frame", true, false, 0.2f, glm::vec4(0.f, 0.f, 0.f, 1.f), glm::vec4(1.f, 1.f, 1.f, 0.f));
 	element_configurations.emplace_back(L"Calendar Labels", true, false, 0.2f, glm::vec4(1.f, 1.f, 1.f, 0.f), glm::vec4(0.f, 0.f, 0.f, 1.f));
@@ -67,94 +44,93 @@ ElementsSetupsPanel::ElementsSetupsPanel(wxWindow* parent) :
 	element_configurations.emplace_back(L"Years Shapes", false, false, 0.2f, glm::vec4(0.25f, 0.25f, 0.25f, 1.f), glm::vec4(0.25f, 0.25f, 0.25f, 0.f));
 	element_configurations.emplace_back(L"Bars Shapes", true, true, 0.5f, glm::vec4(0.25f, 0.25f, 0.75f, 0.75f), glm::vec4(0.25f, 0.25f, 0.75f, 0.35f));
 	element_configurations.emplace_back(L"Years Totals", false, true, 0.2f, glm::vec4(0.25f, 0.75f, 0.25f, 1.f), glm::vec4(0.25f, 0.75f, 0.25f, 1.f));
-	
-	////////////////////////////////////////
-	////////////////////////////////////////
+
 
 	for (size_t index = 0; index < element_configurations.size(); ++index)
 	{
 		elements_list_box->AppendString(element_configurations[index].Name());
 	}
+
 	size_t default_selection = 0;
 	elements_list_box->Select(default_selection);
-	
 
 	////////////////////////////////////////
-
-	
-	std::array<wxBoxSizer*, 7> horizontal_sizers;
-	for (auto& horizontal_sizer : horizontal_sizers)
-	{
-		horizontal_sizer = new wxBoxSizer(wxHORIZONTAL);
-		vertical_sizer->Add(horizontal_sizer, 0, wxEXPAND);
-	}
-	
-	outline_visible = new wxCheckBox(this, ID_OUTLINE_VISIBLE, L"Outline Visible");
-	horizontal_sizers[0]->Add(outline_visible, 0, wxEXPAND | wxALL, 5);
-
-	wxStaticText* linewidth_label = new wxStaticText(this, wxID_ANY, L"Line Width");
-	linewidth_label->SetMinSize(wxSize(100, -1));
-	horizontal_sizers[1]->Add(linewidth_label, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
-
-	linewidth_ctrl = new wxSpinCtrlDouble(this, wxID_ANY);
-	linewidth_ctrl->SetRange(0.0, 10.0);
-	linewidth_ctrl->SetDigits(2);
-	linewidth_ctrl->SetIncrement(0.1);
-	horizontal_sizers[1]->Add(linewidth_ctrl, 1, wxEXPAND | wxALL, 5);
-
-	wxStaticText* linecolor_label = new wxStaticText(this, wxID_ANY, L"Line Color");
-	linecolor_label->SetMinSize(wxSize(100, -1));
-	horizontal_sizers[2]->Add(linecolor_label, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
-
-	line_color_picker = new wxColourPickerCtrl(this, ID_LINE_COLOR_PICKER, *wxStockGDI::GetColour(wxStockGDI::COLOUR_BLACK),
-		wxDefaultPosition, wxDefaultSize, wxCLRP_SHOW_ALPHA);
-	horizontal_sizers[2]->Add(line_color_picker, 1, wxEXPAND | wxALL, 5);
-
-	fill_visible = new wxCheckBox(this, ID_FILLING_VISIBLE, L"Fill Visible");
-	horizontal_sizers[4]->Add(fill_visible, 0, wxEXPAND | wxALL, 5);
-
-	wxStaticText* fillcolor_label = new wxStaticText(this, wxID_ANY, L"Fill Color");
-	fillcolor_label->SetMinSize(wxSize(100, -1));
-	horizontal_sizers[5]->Add(fillcolor_label, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
-
-	fill_color_picker = new wxColourPickerCtrl(this, ID_FILL_COLOR_PICKER, *wxStockGDI::GetColour(wxStockGDI::COLOUR_BLACK),
-		wxDefaultPosition, wxDefaultSize, wxCLRP_SHOW_ALPHA);
-	horizontal_sizers[5]->Add(fill_color_picker, 1, wxEXPAND | wxALL, 5);
-
-	wxStaticText* line_transparency_label = new wxStaticText(this, wxID_ANY, L"Outline Transparency");
-	line_transparency_label->SetMinSize(wxSize(100, -1));
-	horizontal_sizers[3]->Add(line_transparency_label, 0,  wxALL, 5);
-
-	line_color_alpha_slider = new wxSlider(this, ID_LINE_ALPHA_SLIDER, 0, 0, 100, wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL | wxSL_LABELS | wxSL_BOTTOM);
-	horizontal_sizers[3]->Add(line_color_alpha_slider, 1, wxEXPAND | wxALL, 5);
-
-	wxStaticText* fill_transparency_label = new wxStaticText(this, wxID_ANY, L"Fill Transparency");
-	fill_transparency_label->SetMinSize(wxSize(100, -1));
-	horizontal_sizers[6]->Add(fill_transparency_label, 0,  wxALL, 5);
-
-	fill_color_alpha_slider = new wxSlider(this, ID_FILL_ALPHA_SLIDER, 0, 0, 100, wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL | wxSL_LABELS | wxSL_BOTTOM);
-	horizontal_sizers[6]->Add(fill_color_alpha_slider, 1, wxEXPAND | wxALL, 5);
-
-	vertical_sizer->Layout();
-
-
-	UpdateWidgets(default_selection);
-
 	////////////////////////////////////////
 
+	Bind(wxEVT_LISTBOX, &ElementsSetupsPanel::SlotSelectListBook, this);
 	Bind(wxEVT_CHECKBOX, &ElementsSetupsPanel::SlotOutlineVisible, this, ID_OUTLINE_VISIBLE);
 	Bind(wxEVT_CHECKBOX, &ElementsSetupsPanel::SlotFillVisible, this, ID_FILLING_VISIBLE);
 	Bind(wxEVT_SPINCTRLDOUBLE, &ElementsSetupsPanel::SlotLineWidth, this);
 	Bind(wxEVT_COLOURPICKER_CHANGED, &ElementsSetupsPanel::SlotLineColor, this, ID_LINE_COLOR_PICKER);
 	Bind(wxEVT_COLOURPICKER_CHANGED, &ElementsSetupsPanel::SlotFillColor, this, ID_FILL_COLOR_PICKER);
-	Bind(wxEVT_SLIDER, &ElementsSetupsPanel::SlotLineColorAlpha, this, ID_LINE_ALPHA_SLIDER); //wxEVT_SLIDER wxEVT_SCROLL_THUMBTRACK
-	Bind(wxEVT_SLIDER, &ElementsSetupsPanel::SlotFillColorAlpha, this, ID_FILL_ALPHA_SLIDER); //wxEVT_SLIDER wxEVT_SCROLL_THUMBTRACK
+	Bind(wxEVT_SLIDER, &ElementsSetupsPanel::SlotLineColorAlpha, this, ID_LINE_ALPHA_SLIDER);
+	Bind(wxEVT_SLIDER, &ElementsSetupsPanel::SlotFillColorAlpha, this, ID_FILL_ALPHA_SLIDER);
 
 	////////////////////////////////////////
 
-
+	UpdateWidgets(default_selection);
 }
 
+void ElementsSetupsPanel::InitWidgets()
+{
+	elements_list_box = new wxListBox(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, nullptr, wxLB_SINGLE | wxLB_NEEDED_SB, wxDefaultValidator, wxListBoxNameStr);
+	
+	outline_visible_ctrl = new wxCheckBox(this, ID_OUTLINE_VISIBLE, L"Outline Visible");
+	fill_visible_ctrl = new wxCheckBox(this, ID_FILLING_VISIBLE, L"Fill Visible");
+	
+	line_color_picker = new wxColourPickerCtrl(this, ID_LINE_COLOR_PICKER, *wxStockGDI::GetColour(wxStockGDI::COLOUR_BLACK), wxDefaultPosition, wxDefaultSize, wxCLRP_SHOW_ALPHA);
+	fill_color_picker = new wxColourPickerCtrl(this, ID_FILL_COLOR_PICKER, *wxStockGDI::GetColour(wxStockGDI::COLOUR_BLACK), wxDefaultPosition, wxDefaultSize, wxCLRP_SHOW_ALPHA);
+	
+	linewidth_ctrl = new wxSpinCtrlDouble(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, /*16384L*/ wxSP_ARROW_KEYS | wxALIGN_RIGHT);
+	linewidth_ctrl->SetRange(0.0, 10.0);
+	linewidth_ctrl->SetDigits(2);
+	linewidth_ctrl->SetIncrement(0.05);
+
+	wxSize default_label_size(150, -1);
+	linewidth_label = new wxStaticText(this, wxID_ANY, L"Line Width", wxDefaultPosition, default_label_size);
+	linecolor_label = new wxStaticText(this, wxID_ANY, L"Line Color", wxDefaultPosition, default_label_size);
+	fillcolor_label = new wxStaticText(this, wxID_ANY, L"Fill Color", wxDefaultPosition, default_label_size);
+	line_transparency_label = new wxStaticText(this, wxID_ANY, L"Transparency", wxDefaultPosition, default_label_size);
+	fill_transparency_label = new wxStaticText(this, wxID_ANY, L"Transparency", wxDefaultPosition, default_label_size);
+
+	line_color_alpha_slider = new wxSlider(this, ID_LINE_ALPHA_SLIDER, 0, 0, 100, wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL );
+	fill_color_alpha_slider = new wxSlider(this, ID_FILL_ALPHA_SLIDER, 0, 0, 100, wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL );
+}
+
+void ElementsSetupsPanel::InitSizers()
+{
+	std::array<wxSizerFlags, 4> sizer_flags;
+	sizer_flags[0].Proportion(0).Expand();
+	sizer_flags[1].Proportion(1).Expand();
+	sizer_flags[2].Proportion(0).CenterVertical().Border(wxBOTTOM | wxTOP, 5);
+	sizer_flags[3].Proportion(1).Expand().Border(wxBOTTOM | wxTOP, 5);
+
+	wxBoxSizer* vertical_sizer = new wxBoxSizer(wxVERTICAL);
+	SetSizer(vertical_sizer);
+
+	std::array<wxBoxSizer*, 8> horizontal_sizers;
+	for (auto& horizontal_sizer : horizontal_sizers)
+	{
+		horizontal_sizer = new wxBoxSizer(wxHORIZONTAL);
+		vertical_sizer->Add(horizontal_sizer, sizer_flags[0]);
+	}
+
+	horizontal_sizers[0]->Add(elements_list_box, sizer_flags[1]);
+	horizontal_sizers[1]->Add(outline_visible_ctrl, sizer_flags[3]);
+	horizontal_sizers[2]->Add(linewidth_label, sizer_flags[2]);
+	horizontal_sizers[2]->Add(linewidth_ctrl, sizer_flags[3]);
+	horizontal_sizers[3]->Add(linecolor_label, sizer_flags[2]);
+	horizontal_sizers[3]->Add(line_color_picker, sizer_flags[3]);
+	horizontal_sizers[4]->Add(line_transparency_label, sizer_flags[2]);
+	horizontal_sizers[4]->Add(line_color_alpha_slider, sizer_flags[3]);
+	horizontal_sizers[5]->Add(fill_visible_ctrl, sizer_flags[3]);
+	horizontal_sizers[6]->Add(fillcolor_label, sizer_flags[2]);
+	horizontal_sizers[6]->Add(fill_color_picker, sizer_flags[3]);
+	horizontal_sizers[7]->Add(fill_transparency_label, sizer_flags[2]);
+	horizontal_sizers[7]->Add(fill_color_alpha_slider, sizer_flags[3]);
+
+	vertical_sizer->Layout();
+}
 
 void ElementsSetupsPanel::SendDefaultValues()
 {
@@ -165,25 +141,31 @@ void ElementsSetupsPanel::UpdateWidgets(size_t config_index)
 {
 	auto& current_element = element_configurations[config_index];
 
-	auto outline_visible_status = current_element.OutlineVisible();
-	outline_visible->SetValue(outline_visible_status);
+	auto outline_visible = current_element.OutlineVisible();
 
-	linewidth_ctrl->Enable(outline_visible_status);
-	line_color_picker->Enable(outline_visible_status);
-	line_color_alpha_slider->Enable(outline_visible_status);
+	outline_visible_ctrl->SetValue(outline_visible);
+	linewidth_ctrl->Enable(outline_visible);
+	line_color_picker->Enable(outline_visible);
+	line_color_alpha_slider->Enable(outline_visible);
 
-	auto fill_visible_status = current_element.FillVisible();
-	fill_visible->SetValue(fill_visible_status);
+	auto fill_visible = current_element.FillVisible();
 
-	fill_color_picker->Enable(fill_visible_status);
-	fill_color_alpha_slider->Enable(fill_visible_status);
+	fill_visible_ctrl->SetValue(fill_visible);
+	fill_color_picker->Enable(fill_visible);
+	fill_color_alpha_slider->Enable(fill_visible);
 
 	linewidth_ctrl->SetValue(current_element.LineWidth());
-	line_color_picker->SetColour(to_wx_color(current_element.OutlineColor()));
-	fill_color_picker->SetColour(to_wx_color(current_element.FillColor()));
 
-	line_color_alpha_slider->SetValue(100 - static_cast<int>(current_element.OutlineColor().a * 100.f));
-	fill_color_alpha_slider->SetValue(100 - static_cast<int>(current_element.FillColor().a * 100.f));
+	if (outline_visible)
+	{
+		line_color_picker->SetColour(to_wx_color(current_element.OutlineColor()));
+		line_color_alpha_slider->SetValue(100 - static_cast<int>(current_element.OutlineColor().a * 100.f));
+	}
+	if (fill_visible)
+	{
+		fill_color_picker->SetColour(to_wx_color(current_element.FillColor()));
+		fill_color_alpha_slider->SetValue(100 - static_cast<int>(current_element.FillColor().a * 100.f));
+	}
 }
 
 void ElementsSetupsPanel::SlotSelectListBook(wxCommandEvent& event)
