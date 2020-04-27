@@ -29,17 +29,30 @@ ElementsSetupsPanel::ElementsSetupsPanel(wxWindow* parent) :
 	ID_LINE_ALPHA_SLIDER(wxNewId()),
 	ID_FILL_ALPHA_SLIDER(wxNewId())
 {
+	wxSizerFlags sizerFlags0;
 
+	sizerFlags0.Proportion(0);
+	sizerFlags0.Expand();
 
 	wxBoxSizer* vertical_sizer = new wxBoxSizer(wxVERTICAL);
 	SetSizer(vertical_sizer);
 
 	wxBoxSizer* select_list_box_sizer = new wxBoxSizer(wxHORIZONTAL);
-	vertical_sizer->Add(select_list_box_sizer, 0, wxEXPAND);
+	//vertical_sizer->Add(select_list_box_sizer, 0, wxEXPAND);
+	vertical_sizer->Add(select_list_box_sizer, sizerFlags0);
+
+
+	wxSizerFlags sizerFlags1;
+	sizerFlags1.Proportion(1);
+	sizerFlags1.Expand();
+	sizerFlags1.Border(wxALL, 5);
 
 	elements_list_box = new wxListBox(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, nullptr, wxLB_SINGLE | wxLB_NEEDED_SB, wxDefaultValidator, wxListBoxNameStr);
-	select_list_box_sizer->Add(elements_list_box, 1, wxEXPAND | wxALL, 5);
+	//select_list_box_sizer->Add(elements_list_box, 1, wxEXPAND | wxALL, 5);
+	select_list_box_sizer->Add(elements_list_box, sizerFlags1);
 
+	
+	
 	Bind(wxEVT_LISTBOX, &ElementsSetupsPanel::SlotSelectListBook, this);
 
 	wxBoxSizer* select_book_sizer = new wxBoxSizer(wxHORIZONTAL);

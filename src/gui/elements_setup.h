@@ -21,6 +21,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include "../shape_config.h"
 
 
+
+
+
 #ifdef WX_PRECOMP
 #include <wx/wxprec.h>
 #else 
@@ -48,6 +51,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include <sigslot/signal.hpp>
 
 #include <pugixml.hpp>
+
+
+
+/*class Sizer
+{
+public:
+	Sizer(wxWindow* base);
+
+	Sizer* AddHorizontalSizer(wxWindow* window);
+
+private:
+
+	wxSizer* vertical_sizer;
+	std::vector<wxSizer*> horizontal_sizers;
+};*/
 
 
 class ElementsSetupsPanel : public wxPanel
