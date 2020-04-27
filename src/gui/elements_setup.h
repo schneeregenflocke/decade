@@ -39,6 +39,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include <wx/spinctrl.h>
 #include <wx/clrpicker.h>
 #include <wx/slider.h>
+#include <wx/statbox.h>
 
 #include <array>
 #include <vector>
@@ -87,6 +88,8 @@ private:
 	wxCheckBox* outline_visible_ctrl;
 	wxCheckBox* fill_visible_ctrl;
 	wxSpinCtrlDouble* linewidth_ctrl;
+	//wxSpinCtrlDouble* line_transparency_ctrl;
+	//wxSpinCtrlDouble* fill_transparency_ctrl;
 	wxColourPickerCtrl* line_color_picker;
 	wxColourPickerCtrl* fill_color_picker;
 	wxSlider* line_color_alpha_slider;

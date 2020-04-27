@@ -99,35 +99,53 @@ void ElementsSetupsPanel::InitWidgets()
 
 void ElementsSetupsPanel::InitSizers()
 {
-	std::array<wxSizerFlags, 4> sizer_flags;
+	std::array<wxSizerFlags, 3> sizer_flags;
 	sizer_flags[0].Proportion(0).Expand();
-	sizer_flags[1].Proportion(1).Expand();
-	sizer_flags[2].Proportion(0).CenterVertical().Border(wxBOTTOM | wxTOP, 5);
-	sizer_flags[3].Proportion(1).Expand().Border(wxBOTTOM | wxTOP, 5);
+	sizer_flags[1].Proportion(0).CenterVertical().Border(wxALL, 5);
+	sizer_flags[2].Proportion(1).Expand().Border(wxALL, 5);
 
 	wxBoxSizer* vertical_sizer = new wxBoxSizer(wxVERTICAL);
 	SetSizer(vertical_sizer);
 
-	std::array<wxBoxSizer*, 8> horizontal_sizers;
-	for (auto& horizontal_sizer : horizontal_sizers)
+
+	wxStaticBoxSizer* static_box_sizer_elements = new wxStaticBoxSizer(wxVERTICAL, this, L"Elements");
+	wxStaticBoxSizer* static_box_sizer_outline = new wxStaticBoxSizer(wxVERTICAL, this, L"Outline");
+	wxStaticBoxSizer* static_box_sizer_fill = new wxStaticBoxSizer(wxVERTICAL, this, L"Fill");
+	
+	vertical_sizer->Add(static_box_sizer_elements, sizer_flags[0]);
+	vertical_sizer->Add(static_box_sizer_outline, sizer_flags[0]);
+	vertical_sizer->Add(static_box_sizer_fill, sizer_flags[0]);
+
+
+	std::array<wxBoxSizer*, 4> horizontal_sizers_outline;
+	for (auto& horizontal_sizer : horizontal_sizers_outline)
 	{
 		horizontal_sizer = new wxBoxSizer(wxHORIZONTAL);
-		vertical_sizer->Add(horizontal_sizer, sizer_flags[0]);
+		static_box_sizer_outline->Add(horizontal_sizer, sizer_flags[0]);
 	}
 
-	horizontal_sizers[0]->Add(elements_list_box, sizer_flags[1]);
-	horizontal_sizers[1]->Add(outline_visible_ctrl, sizer_flags[3]);
-	horizontal_sizers[2]->Add(linewidth_label, sizer_flags[2]);
-	horizontal_sizers[2]->Add(linewidth_ctrl, sizer_flags[3]);
-	horizontal_sizers[3]->Add(linecolor_label, sizer_flags[2]);
-	horizontal_sizers[3]->Add(line_color_picker, sizer_flags[3]);
-	horizontal_sizers[4]->Add(line_transparency_label, sizer_flags[2]);
-	horizontal_sizers[4]->Add(line_color_alpha_slider, sizer_flags[3]);
-	horizontal_sizers[5]->Add(fill_visible_ctrl, sizer_flags[3]);
-	horizontal_sizers[6]->Add(fillcolor_label, sizer_flags[2]);
-	horizontal_sizers[6]->Add(fill_color_picker, sizer_flags[3]);
-	horizontal_sizers[7]->Add(fill_transparency_label, sizer_flags[2]);
-	horizontal_sizers[7]->Add(fill_color_alpha_slider, sizer_flags[3]);
+	std::array<wxBoxSizer*, 3> horizontal_sizers_fill;
+	for (auto& horizontal_sizer : horizontal_sizers_fill)
+	{
+		horizontal_sizer = new wxBoxSizer(wxHORIZONTAL);
+		static_box_sizer_fill->Add(horizontal_sizer, sizer_flags[0]);
+	}
+
+	static_box_sizer_elements->Add(elements_list_box, sizer_flags[2]);
+
+	horizontal_sizers_outline[0]->Add(outline_visible_ctrl, sizer_flags[2]);
+	horizontal_sizers_outline[1]->Add(linewidth_label, sizer_flags[1]);
+	horizontal_sizers_outline[1]->Add(linewidth_ctrl, sizer_flags[2]);
+	horizontal_sizers_outline[2]->Add(linecolor_label, sizer_flags[1]);
+	horizontal_sizers_outline[2]->Add(line_color_picker, sizer_flags[2]);
+	horizontal_sizers_outline[3]->Add(line_transparency_label, sizer_flags[1]);
+	horizontal_sizers_outline[3]->Add(line_color_alpha_slider, sizer_flags[2]);
+
+	horizontal_sizers_fill[0]->Add(fill_visible_ctrl, sizer_flags[2]);
+	horizontal_sizers_fill[1]->Add(fillcolor_label, sizer_flags[1]);
+	horizontal_sizers_fill[1]->Add(fill_color_picker, sizer_flags[2]);
+	horizontal_sizers_fill[2]->Add(fill_transparency_label, sizer_flags[1]);
+	horizontal_sizers_fill[2]->Add(fill_color_alpha_slider, sizer_flags[1]);
 
 	vertical_sizer->Layout();
 }
