@@ -18,10 +18,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #pragma once
 
-
-#include "../date_convert.h"
-#include "../dates_storage.h"
-
+#include "../date_utils.h"
 
 #ifdef WX_PRECOMP
 #include <wx/wxprec.h>
@@ -81,12 +78,12 @@ private:
 	void InsertRow(size_t row);
 	void RemoveRow(size_t row);
 
-	bool CheckDateInterval(date begin_date, date end_date);
+	//bool CheckDateInterval(date begin_date, date end_date);
 	date ParseDateByCell(int row, int column);
 
 	void ScanTable();
 	
-	wxDataViewListCtrl* data_view_list_ctrl;
+	wxDataViewListCtrl* data_table;
 	
 	date_format_descriptor dateFormat;
 

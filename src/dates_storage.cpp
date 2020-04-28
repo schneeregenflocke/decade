@@ -72,9 +72,9 @@ void DateIntervals::ProcessDateIntervals(const std::vector<date_period>& date_in
 	this->date_intervals.clear();
 	this->date_intervals.reserve(date_intervals.size());
 
-	for (const auto& period : date_intervals)
+	for (auto period : date_intervals)
 	{
-		if (CheckDateInterval(period.begin(), period.end()))
+		if (CheckAndAdjustDateInterval(&period) > 0)
 		{
 			this->date_intervals.push_back(period);
 		}
@@ -95,22 +95,7 @@ void DateIntervals::SendDateIntervals()
 	signal_transformed_date_intervals(shifted_date_intervals);
 }
 
-bool DateIntervals::CheckDateInterval(const date& begin_date, const date& end_date)
-{
-	bool valid = false;
 
-	if (begin_date.is_special() == false && end_date.is_special() == false)
-	{
-		date_period period = date_period(begin_date, end_date);
-
-		if (period.is_null() == false)
-		{
-			valid = true;
-		}
-	}
-
-	return valid;
-}
 
 void DateIntervals::SetTransform(int shift_begin_date, int shift_end_date)
 {

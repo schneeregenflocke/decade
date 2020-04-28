@@ -37,7 +37,7 @@ ElementsSetupsPanel::ElementsSetupsPanel(wxWindow* parent) :
 
 	element_configurations.emplace_back(L"Page Margin", true, false, 0.5f, glm::vec4(0.f, 0.f, 0.f, 1.f), glm::vec4(1.f, 1.f, 1.f, 0.f));
 	element_configurations.emplace_back(L"Title Frame", true, false, 0.2f, glm::vec4(0.f, 0.f, 0.f, 1.f), glm::vec4(1.f, 1.f, 1.f, 0.f));
-	element_configurations.emplace_back(L"Calendar Labels", true, false, 0.2f, glm::vec4(1.f, 1.f, 1.f, 0.f), glm::vec4(0.f, 0.f, 0.f, 1.f));
+	element_configurations.emplace_back(L"Calendar Labels", true, false, 0.2f, glm::vec4(0.25f, 0.25f, 0.25f, 0.25f), glm::vec4(0.f, 0.f, 0.f, 1.f));
 	element_configurations.emplace_back(L"Day Shapes", true, true, 0.2f, glm::vec4(0.75f, 0.75f, 0.75f, 1.f), glm::vec4(0.f, 0.f, 0.f, 0.f));
 	element_configurations.emplace_back(L"Sunday Shapes", true, true, 0.2f, glm::vec4(0.75f, 0.75f, 0.75f, 1.f), glm::vec4(0.75f, 0.75f, 0.75f, 1.f));
 	element_configurations.emplace_back(L"Months Shapes", true, true, 0.2f, glm::vec4(0.25f, 0.25f, 0.25f, 1.f), glm::vec4(0.25f, 0.25f, 0.25f, 0.f));

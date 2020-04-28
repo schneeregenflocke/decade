@@ -20,15 +20,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #ifndef DATES_H
 #define DATES_H
 
-
-#define BOOST_DATE_TIME_NO_LIB
-#include <boost/date_time/gregorian/gregorian.hpp>
-
-using date = boost::gregorian::date;
-using date_duration = boost::gregorian::date_duration;
-using date_period = boost::gregorian::date_period;
-using months = boost::gregorian::months;
-
+#include "date_utils.h"
 
 #include <sigslot/signal.hpp>
 
@@ -86,8 +78,6 @@ public:
 	int GetSpan() const;
 	int GetFirstYear() const;
 	int GetLastYear() const;
-
-	static bool CheckDateInterval(const date& begin_date, const date& end_date);
 
 	void SetTransform(int shift_begin_date, int shift_end_date);
 

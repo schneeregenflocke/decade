@@ -27,7 +27,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include "gl_canvas.h"
 #include "../calendar_page.h"
-#include "../date_convert.h"
+#include "../date_utils.h"
 
 #include "data_table.h"
 #include "page_setup.h"

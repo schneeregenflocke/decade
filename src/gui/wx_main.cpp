@@ -217,22 +217,18 @@ void MainWindow::SlotGLReady()
     calendar = std::make_unique<CalendarPage>(gl_canvas->GetGraphicEngine());
     calendar->Update();
 
-
     date_intervals.signal_date_intervals.connect(&DataTablePanel::SlotUpdateTable, data_table_panel);
     data_table_panel->signal_table_date_intervals.connect(&DateIntervals::SetDateIntervals, &date_intervals);
     date_intervals.SetTransform(0, 1);
     date_intervals.signal_transformed_date_intervals.connect(&CalendarPage::SetDateIntervals, calendar.get());
 
-    
     page_setup_panel->signal_page_size.connect(&CalendarPage::SlotPageSize, calendar.get());
     page_setup_panel->signal_page_margins.connect(&CalendarPage::SlotPageMargins, calendar.get());
     page_setup_panel->signal_page_size.connect(&GraphicEngine::SlotPageSize, gl_canvas->GetGraphicEngine());
     page_setup_panel->SendDefaultValues();
 
-
     font_setup_panel->signal_font_file_path.connect(&CalendarPage::SlotSelectFont, calendar.get());
     font_setup_panel->SendDefaultValues();
-
 
     title_setup_panel->signal_frame_height.connect(&CalendarPage::SlotTitleFrameHeight, calendar.get());
     title_setup_panel->signal_font_size_ratio.connect(&CalendarPage::SlotTitleFontSizeRatio, calendar.get());
@@ -240,10 +236,8 @@ void MainWindow::SlotGLReady()
     title_setup_panel->signal_text_color.connect(&CalendarPage::SlotTitleTextColor, calendar.get());
     title_setup_panel->SendDefaultValues();
 
-
     elements_setup_panel->signal_shape_config.connect(&CalendarPage::SlotRectangleShapeConfig, calendar.get());
     elements_setup_panel->SendDefaultValues();
-
 
     calendar_setup_panel->signal_calendar_config.connect(&CalendarPage::SlotCalendarConfig, calendar.get());
     calendar_setup_panel->SendDefaultValues();
@@ -358,17 +352,29 @@ void MainWindow::ImportCSV(const std::string& filepath)
             ////////////////////////////////////////////////////////////////////////////////
             auto row = csv_reader.next_row(); // auto& row = csv_reader.next_row();
 
-            auto begin_date = string_to_boost_date(row[std::to_string(0)], date_format);
-            auto last_date = string_to_boost_date(row[std::to_string(1)], date_format);
-
-            if ((begin_date.is_special() || last_date.is_special()) == false)
+            auto begin_date_string = row[std::to_string(0)];
+            auto end_date_string = row[std::to_string(1)];
+            
+            auto begin_date = string_to_boost_date(begin_date_string, date_format);
+            auto end_date = string_to_boost_date(end_date_string, date_format);
+            
+            // check for date_period
+            if ( (begin_date.is_special() || end_date.is_special() ) == false)
             {
-                date_period date_interval(begin_date, last_date);
+                date_period date_interval(begin_date, end_date);
 
                 if (date_interval.is_null() == false)
                 {
                     buffer.push_back(date_interval);
                 }
+            }
+
+            // check for single date
+            if ( begin_date.is_special() == false && end_date_string.empty() )
+            {
+                date_period date_interval(begin_date, begin_date);
+
+                buffer.push_back(date_interval);
             }
         }
     }

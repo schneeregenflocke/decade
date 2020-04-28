@@ -72,7 +72,7 @@ public:
 	{
 		shader->UseProgram();
 		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, vertices_size);
+		glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(vertices_size));
 	}
 
 	void SetShader(Shader* shaderPtr)

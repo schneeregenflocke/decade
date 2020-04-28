@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 */
 
-#include "date_convert.h"
+#include "date_utils.h"
 
 
 date_format_descriptor InitDateFormat()
@@ -112,7 +112,18 @@ boost::gregorian::date string_to_boost_date(std::string date_string, const date_
 			break;
 		}
 
-		int number = std::stoi(non_const_date_string, &delimPos);
+		int number = 0;
+
+		try
+		{
+			number = std::stoi(non_const_date_string, &delimPos);
+		}
+		catch (const std::exception&)
+		{
+			failed = true;
+			break;
+		}
+		
 		++delimPos;
 
 		if (format.date_order[index] == 0 && format.shortyear)
@@ -148,4 +159,57 @@ boost::gregorian::date string_to_boost_date(std::string date_string, const date_
 	}
 	
 	return date_variable;
+}
+
+/// case_id 0: invalid date_interval
+/// case_id 1: valid date_interval
+/// case_id 2: single date
+int CheckDateInterval(const date& begin_date, const date& end_date)
+{
+	int case_id = 0;
+
+	if (begin_date.is_special() == false && end_date.is_special() == false)
+	{
+		date_period period = date_period(begin_date, end_date);
+
+		if (period.is_null() == false)
+		{
+			case_id = 1;
+		}
+		if (begin_date == end_date)
+		{
+			case_id = 2;
+		}
+	}
+	else if (begin_date.is_special() == false /*&& date_interval->end().is_special() == true*/)
+	{
+		case_id = 3;
+	}
+
+	return case_id;
+}
+
+int CheckAndAdjustDateInterval(date_period* date_interval)
+{
+	int case_id = 0;
+
+	if (date_interval->begin().is_special() == false && date_interval->end().is_special() == false)
+	{
+		if (date_interval->is_null() == false)
+		{
+			case_id = 1;
+		}
+
+		if (date_interval->begin() == date_interval->end())
+		{
+			case_id = 2;
+		}
+	}
+	else if (date_interval->begin().is_special() == false /*&& date_interval->end().is_special() == true*/)
+	{
+		*date_interval = date_period(date_interval->begin(), date_interval->begin());
+		case_id = 3;
+	}
+
+	return case_id;
 }

@@ -115,7 +115,7 @@ public:
 		for (size_t index = 0; index < textTextures.size(); ++index)
 		{
 			glBindTexture(GL_TEXTURE_2D, textTextures[index]);
-			glDrawArrays(GL_TRIANGLES, index * 6, 6);
+			glDrawArrays(GL_TRIANGLES, static_cast<GLint>(index) * 6, 6);
 		}
 	}
 

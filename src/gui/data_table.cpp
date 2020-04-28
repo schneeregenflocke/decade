@@ -22,10 +22,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 DataTablePanel::DataTablePanel(wxWindow* parent) : 
 	wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxPanelNameStr)//,
-	//datesStoreChangedEventTag(wxNewEventType())
 {
 
-	data_view_list_ctrl = new wxDataViewListCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxDV_SINGLE, wxDefaultValidator);
+	data_table = new wxDataViewListCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxDV_SINGLE, wxDefaultValidator);
 	 
 	Bind(wxEVT_DATAVIEW_ITEM_ACTIVATED, &DataTablePanel::OnItemActivated, this);
 	Bind(wxEVT_DATAVIEW_ITEM_EDITING_DONE, &DataTablePanel::OnItemEditing, this);
@@ -48,15 +47,15 @@ DataTablePanel::DataTablePanel(wxWindow* parent) :
 
 
 	wxBoxSizer* mainSizer = new wxBoxSizer(wxVERTICAL);
-	mainSizer->Add(data_view_list_ctrl, 1, wxEXPAND | wxALL, 5);
+	mainSizer->Add(data_table, 1, wxEXPAND | wxALL, 5);
 	mainSizer->Add(subSizer, 0, wxEXPAND);
 	SetSizer(mainSizer);
 
-	data_view_list_ctrl->AppendTextColumn(L"Number", wxDATAVIEW_CELL_INERT);
-	data_view_list_ctrl->AppendTextColumn(L"From Date", wxDATAVIEW_CELL_EDITABLE);
-	data_view_list_ctrl->AppendTextColumn(L"To Date", wxDATAVIEW_CELL_EDITABLE);
-	data_view_list_ctrl->AppendTextColumn(L"Duration", wxDATAVIEW_CELL_INERT);
-	data_view_list_ctrl->AppendTextColumn(L"Duration to next", wxDATAVIEW_CELL_INERT);
+	data_table->AppendTextColumn(L"Number", wxDATAVIEW_CELL_INERT);
+	data_table->AppendTextColumn(L"From Date", wxDATAVIEW_CELL_EDITABLE);
+	data_table->AppendTextColumn(L"To Date", wxDATAVIEW_CELL_EDITABLE);
+	data_table->AppendTextColumn(L"Duration", wxDATAVIEW_CELL_INERT);
+	data_table->AppendTextColumn(L"Duration to next", wxDATAVIEW_CELL_INERT);
 
 	/*
 	wxArrayString test_string;
@@ -64,10 +63,9 @@ DataTablePanel::DataTablePanel(wxWindow* parent) :
 	test_string.Add(L"choice B");
 	wxDataViewChoiceRenderer* choice_renderer = new wxDataViewChoiceRenderer(test_string);
 	wxDataViewColumn* test_column = new wxDataViewColumn(L"test column", choice_renderer, 5);
-	data_view_list_ctrl->AppendColumn(test_column);
+	data_table->AppendColumn(test_column);
 	*/
 	
-
 	dateFormat = InitDateFormat();
 }
 
@@ -77,7 +75,7 @@ void DataTablePanel::OnItemActivated(wxDataViewEvent& event)
 {
 	if (event.GetItem().IsOk() && event.GetDataViewColumn())
 	{
-		data_view_list_ctrl->EditItem(event.GetItem(), event.GetDataViewColumn());
+		data_table->EditItem(event.GetItem(), event.GetDataViewColumn());
 	}
 }
 
@@ -96,11 +94,11 @@ void DataTablePanel::OnItemEditing(wxDataViewEvent& event)
 			if (edited_date.is_special() == false)
 			{
 				std::string parsed_string = boost_date_to_string(edited_date);
-				data_view_list_ctrl->SetValue(parsed_string.c_str(), data_view_list_ctrl->GetSelectedRow(), event.GetColumn());	
+				data_table->SetValue(parsed_string.c_str(), data_table->GetSelectedRow(), event.GetColumn());	
 			}
 			else
 			{
-				data_view_list_ctrl->SetValue(edited_string.c_str(), data_view_list_ctrl->GetSelectedRow(), event.GetColumn());
+				data_table->SetValue(edited_string.c_str(), data_table->GetSelectedRow(), event.GetColumn());
 			}
 
 			ScanTable();
@@ -110,19 +108,18 @@ void DataTablePanel::OnItemEditing(wxDataViewEvent& event)
 
 void DataTablePanel::OnSelectionChanged(wxDataViewEvent& event)
 {
-	//std::cout << "selection changed row " << data_view_list_ctrl->GetSelectedRow() << " column " << event.GetColumn() << '\n';
 	UpdateButtons();
 }
 
 void DataTablePanel::OnButtonClicked(wxCommandEvent& event)
 {
-	auto selected_row = data_view_list_ctrl->GetSelectedRow();
+	auto selected_row = data_table->GetSelectedRow();
 
 	if (event.GetId() == wxID_ADD)
 	{
 		if (selected_row == wxNOT_FOUND)
 		{
-			selected_row = data_view_list_ctrl->GetItemCount();
+			selected_row = data_table->GetItemCount();
 		}
 		else 
 		{
@@ -130,8 +127,8 @@ void DataTablePanel::OnButtonClicked(wxCommandEvent& event)
 		}
 		
 		InsertRow(selected_row);
-		data_view_list_ctrl->SelectRow(selected_row);
-		data_view_list_ctrl->EnsureVisible(data_view_list_ctrl->RowToItem(selected_row));
+		data_table->SelectRow(selected_row);
+		data_table->EnsureVisible(data_table->RowToItem(selected_row));
 		UpdateButtons();
 	}
 
@@ -139,15 +136,15 @@ void DataTablePanel::OnButtonClicked(wxCommandEvent& event)
 	{
 		RemoveRow(selected_row);
 
-		if (data_view_list_ctrl->GetItemCount() > 0)
+		if (data_table->GetItemCount() > 0)
 		{
-			if (data_view_list_ctrl->GetItemCount() == selected_row)
+			if (data_table->GetItemCount() == selected_row)
 			{
-				data_view_list_ctrl->SelectRow(selected_row - 1);
+				data_table->SelectRow(selected_row - 1);
 			}
 			else
 			{
-				data_view_list_ctrl->SelectRow(selected_row);
+				data_table->SelectRow(selected_row);
 			}		
 		}
 
@@ -158,69 +155,61 @@ void DataTablePanel::OnButtonClicked(wxCommandEvent& event)
 /*void DataTablePanel::OnValueChanged(wxDataViewEvent& event)
 {}*/
 
-
-
-
 /*const wxEventTypeTag<wxCommandEvent> DataTablePanel::GetDatesStoreChangedEventTag() const
 {
 	return datesStoreChangedEventTag;
 }*/
 
-
 void DataTablePanel::UpdateButtons()
 {
-	if (data_view_list_ctrl->GetSelectedRow() == wxNOT_FOUND)
+	if (data_table->GetSelectedRow() == wxNOT_FOUND)
 	{
-		deleteRowButton->Disable();
+		deleteRowButton->Enable(false);
 	}
 	else
 	{
-		deleteRowButton->Enable();
+		deleteRowButton->Enable(true);
 	}
 }
 
 void DataTablePanel::InsertRow(size_t row)
 {
-	if (row <= data_view_list_ctrl->GetItemCount())
+	if (row <= data_table->GetItemCount())
 	{
 		wxVector<wxVariant> empty_row;
-		empty_row.resize(data_view_list_ctrl->GetColumnCount());
-		data_view_list_ctrl->InsertItem(row, empty_row);
+		empty_row.resize(data_table->GetColumnCount());
+		data_table->InsertItem(row, empty_row);
 	}
 }
 
 void DataTablePanel::RemoveRow(size_t row)
 {
-	if (row <= data_view_list_ctrl->GetItemCount())
+	if (row <= data_table->GetItemCount())
 	{
-		data_view_list_ctrl->DeleteItem(row);
+		data_table->DeleteItem(row);
 		ScanTable();
 	}
-	//ScanStore();
 }
 
 
 /*void DataTablePanel::InitializeTable()
 {
-	data_view_list_ctrl->DeleteAllItems();
+	data_table->DeleteAllItems();
 
 	for (int index = 0; index < data_store->GetDateIntervalsSize(); ++index)
 	{
 		InsertRow(index);
 
-		data_view_list_ctrl->SetValue(boost_date_to_string(data_store->GetDateIntervalConstRef(index).begin()), index, 1);
-		data_view_list_ctrl->SetValue(boost_date_to_string(data_store->GetDateIntervalConstRef(index).end()), index, 2);
-
-		data_view_list_ctrl->SetValue(std::to_string(index + 1), index, 0);
-
-		data_view_list_ctrl->SetValue(std::to_string(data_store->GetDateIntervalConstRef(index).length().days()), index, 3);
+		data_table->SetValue(boost_date_to_string(data_store->GetDateIntervalConstRef(index).begin()), index, 1);
+		data_table->SetValue(boost_date_to_string(data_store->GetDateIntervalConstRef(index).end()), index, 2);
+		data_table->SetValue(std::to_string(index + 1), index, 0);
+		data_table->SetValue(std::to_string(data_store->GetDateIntervalConstRef(index).length().days()), index, 3);
 
 		if (index < (data_store->GetDateIntervalsSize() - 1))
 		{
-			data_view_list_ctrl->SetValue(std::to_string(data_store->GetDateInterIntervalConstRef(index).length().days()), index, 4);
+			data_table->SetValue(std::to_string(data_store->GetDateInterIntervalConstRef(index).length().days()), index, 4);
 		}
 	}
-
 	wxCommandEvent datesStoreChangedEvent(datesStoreChangedEventTag);
 	ProcessWindowEvent(datesStoreChangedEvent);
 }*/
@@ -229,18 +218,32 @@ void DataTablePanel::RemoveRow(size_t row)
 void DataTablePanel::SlotUpdateTable(const std::vector<date_period>& date_intervals, const std::vector<date_period>& date_inter_intervals)
 {
 	UpdateValidRows();
+	auto number_overwrite_rows = valid_rows.size() > date_intervals.size() ? date_intervals.size() : valid_rows.size();
 	auto number_insert_rows = date_intervals.size() - valid_rows.size();
 
 	for (size_t index = 0; index < valid_rows.size(); ++index)
 	{
-		data_view_list_ctrl->SetValue(std::to_string(index + 1), valid_rows[index], 0);
-		data_view_list_ctrl->SetValue(boost_date_to_string(date_intervals[index].begin()), valid_rows[index], 1);
-		data_view_list_ctrl->SetValue(boost_date_to_string(date_intervals[index].end()), valid_rows[index], 2);
-		data_view_list_ctrl->SetValue(std::to_string(date_intervals[index].length().days()), valid_rows[index], 3);
+		data_table->SetValue(std::to_string(index + 1), valid_rows[index], 0);
+		data_table->SetValue(boost_date_to_string(date_intervals[index].begin()), valid_rows[index], 1);
+
+		if (date_intervals[index].begin() == date_intervals[index].end())
+		{
+			data_table->SetValue(L"", valid_rows[index], 2);
+		}
+		else
+		{
+			data_table->SetValue(boost_date_to_string(date_intervals[index].end()), valid_rows[index], 2);
+		}
+
+		data_table->SetValue(std::to_string(date_intervals[index].length().days()), valid_rows[index], 3);
 
 		if (index < (date_intervals.size() - 1))
 		{
-			data_view_list_ctrl->SetValue(std::to_string(date_inter_intervals[index].length().days()), valid_rows[index], 4);
+			data_table->SetValue(std::to_string(date_inter_intervals[index].length().days()), valid_rows[index], 4);
+		}
+		else
+		{
+			data_table->SetValue(L"", valid_rows[index], 4);
 		}
 	}
 
@@ -248,14 +251,27 @@ void DataTablePanel::SlotUpdateTable(const std::vector<date_period>& date_interv
 	{
 		InsertRow(index);
 
-		data_view_list_ctrl->SetValue(std::to_string(index + 1), index, 0);
-		data_view_list_ctrl->SetValue(boost_date_to_string(date_intervals[index].begin()), index, 1);
-		data_view_list_ctrl->SetValue(boost_date_to_string(date_intervals[index].end()), index, 2);
-		data_view_list_ctrl->SetValue(std::to_string(date_intervals[index].length().days()), index, 3);
+		data_table->SetValue(std::to_string(index + 1), index, 0);
+		data_table->SetValue(boost_date_to_string(date_intervals[index].begin()), index, 1);
+
+		if (date_intervals[index].begin() == date_intervals[index].end())
+		{
+			data_table->SetValue(L"", index, 2);
+		}
+		else
+		{
+			data_table->SetValue(boost_date_to_string(date_intervals[index].end()), index, 2);
+		}
+
+		data_table->SetValue(std::to_string(date_intervals[index].length().days()), index, 3);
 
 		if (index < (date_intervals.size() - 1))
 		{
-			data_view_list_ctrl->SetValue(std::to_string(date_inter_intervals[index].length().days()), index, 4);
+			data_table->SetValue(std::to_string(date_inter_intervals[index].length().days()), index, 4);
+		}
+		else
+		{
+			data_table->SetValue(L"", index, 4);
 		}
 	}
 }
@@ -265,16 +281,16 @@ void DataTablePanel::SlotUpdateTable(const std::vector<date_period>& date_interv
 {
 	for (size_t index = 0; index < valid_rows.size(); ++index)
 	{
-		data_view_list_ctrl->SetValue(boost_date_to_string(data_store->GetDateIntervalConstRef(index).begin()), valid_rows[index], 1);
-		data_view_list_ctrl->SetValue(boost_date_to_string(data_store->GetDateIntervalConstRef(index).end()), valid_rows[index], 2);
+		data_table->SetValue(boost_date_to_string(data_store->GetDateIntervalConstRef(index).begin()), valid_rows[index], 1);
+		data_table->SetValue(boost_date_to_string(data_store->GetDateIntervalConstRef(index).end()), valid_rows[index], 2);
 
-		data_view_list_ctrl->SetValue(std::to_string(index + 1), valid_rows[index], 0);
+		data_table->SetValue(std::to_string(index + 1), valid_rows[index], 0);
 
-		data_view_list_ctrl->SetValue(std::to_string(data_store->GetDateIntervalConstRef(index).length().days()), valid_rows[index], 3);
+		data_table->SetValue(std::to_string(data_store->GetDateIntervalConstRef(index).length().days()), valid_rows[index], 3);
 
 		if (index < (data_store->GetDateIntervalsSize() - 1))
 		{
-			data_view_list_ctrl->SetValue(std::to_string(data_store->GetDateInterIntervalConstRef(index).length().days()), valid_rows[index], 4);
+			data_table->SetValue(std::to_string(data_store->GetDateInterIntervalConstRef(index).length().days()), valid_rows[index], 4);
 		}
 	}
 }*/
@@ -283,14 +299,20 @@ void DataTablePanel::SlotUpdateTable(const std::vector<date_period>& date_interv
 void DataTablePanel::UpdateValidRows()
 {
 	valid_rows.clear();
-	for (size_t row = 0; row < data_view_list_ctrl->GetItemCount(); ++row)
+	for (size_t row = 0; row < data_table->GetItemCount(); ++row)
 	{
 		auto begin_date = ParseDateByCell(row, 1);
 		auto end_date = ParseDateByCell(row, 2);
 
-		if (CheckDateInterval(begin_date, end_date))
+		if (CheckDateInterval(begin_date, end_date) > 0)
 		{
 			valid_rows.push_back(row);
+		}
+		else
+		{
+			data_table->SetValue(L"", row, 0);
+			data_table->SetValue(L"", row, 3);
+			data_table->SetValue(L"", row, 4);
 		}
 	}
 }
@@ -306,8 +328,13 @@ void DataTablePanel::ScanTable()
 	{
 		auto begin_date = ParseDateByCell(valid_rows[index], 1);
 		auto end_date = ParseDateByCell(valid_rows[index], 2);
+
+		date_period buffer = date_period(begin_date, end_date);
 		
-		date_intervals.push_back(date_period(begin_date, end_date));	
+		if (CheckAndAdjustDateInterval(&buffer) > 0)
+		{
+			date_intervals.push_back(buffer);
+		}		
 	}
 
 	signal_table_date_intervals(date_intervals);
@@ -317,11 +344,11 @@ void DataTablePanel::ScanTable()
 	//ProcessWindowEvent(datesStoreChangedEvent);
 }
 
-bool DataTablePanel::CheckDateInterval(date begin_date, date end_date)
+/*bool DataTablePanel::CheckDateInterval(date begin_date, date end_date)
 {
 	bool valid = false;
 
-	if (begin_date.is_special() == false && end_date.is_special() == false)
+	if ((begin_date.is_special() || end_date.is_special()) == false)
 	{
 		date_period period = date_period(begin_date, end_date);
 
@@ -332,11 +359,11 @@ bool DataTablePanel::CheckDateInterval(date begin_date, date end_date)
 	}
 
 	return valid;
-}
+}*/
 
 date DataTablePanel::ParseDateByCell(int row, int column)
 {
 	wxVariant cell_value;
-	data_view_list_ctrl->GetStore()->GetValueByRow(cell_value, row, column);
+	data_table->GetStore()->GetValueByRow(cell_value, row, column);
 	return string_to_boost_date(cell_value.GetString().ToStdString(), dateFormat);
 }
