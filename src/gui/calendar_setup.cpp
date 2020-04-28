@@ -41,7 +41,7 @@ CalendarSetupPanel::CalendarSetupPanel(wxWindow* parent) :
 
 	wxStaticText* weight0_label = new wxStaticText(this, wxID_ANY, L"Subrow Weight 0");
 	weight0_label->SetMinSize(wxSize(120, -1));
-	weight0_spin_ctrl = new  wxSpinCtrlDouble(this, ID_WEIGHT0);
+	weight0_spin_ctrl = new  wxSpinCtrlDouble(this, ID_WEIGHT0, wxEmptyString, wxDefaultPosition, wxDefaultSize, /*16384L*/ wxSP_ARROW_KEYS | wxALIGN_RIGHT);
 	weight0_spin_ctrl->SetValue(1.f);
 	weight0_spin_ctrl->SetIncrement(0.1f);
 	horizontal_sizers[2]->Add(weight0_label, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
@@ -49,7 +49,7 @@ CalendarSetupPanel::CalendarSetupPanel(wxWindow* parent) :
 
 	wxStaticText* weight1_label = new wxStaticText(this, wxID_ANY, L"Subrow Weight 1");
 	weight1_label->SetMinSize(wxSize(120, -1));
-	weight1_spin_ctrl = new  wxSpinCtrlDouble(this, ID_WEIGHT1);
+	weight1_spin_ctrl = new  wxSpinCtrlDouble(this, ID_WEIGHT1, wxEmptyString, wxDefaultPosition, wxDefaultSize, /*16384L*/ wxSP_ARROW_KEYS | wxALIGN_RIGHT);
 	weight1_spin_ctrl->SetValue(2.f);
 	weight1_spin_ctrl->SetIncrement(0.1f);
 	horizontal_sizers[1]->Add(weight1_label, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
@@ -57,7 +57,7 @@ CalendarSetupPanel::CalendarSetupPanel(wxWindow* parent) :
 
 	wxStaticText* weight2_label = new wxStaticText(this, wxID_ANY, L"Subrow Weight 2");
 	weight2_label->SetMinSize(wxSize(120, -1));
-	weight2_spin_ctrl = new  wxSpinCtrlDouble(this, ID_WEIGHT2);
+	weight2_spin_ctrl = new  wxSpinCtrlDouble(this, ID_WEIGHT2, wxEmptyString, wxDefaultPosition, wxDefaultSize, /*16384L*/ wxSP_ARROW_KEYS | wxALIGN_RIGHT);
 	weight2_spin_ctrl->SetValue(2.f);
 	weight2_spin_ctrl->SetIncrement(0.1f);
 	horizontal_sizers[0]->Add(weight2_label, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
@@ -65,7 +65,7 @@ CalendarSetupPanel::CalendarSetupPanel(wxWindow* parent) :
 
 	wxStaticText* gap_factor_label = new wxStaticText(this, wxID_ANY, L"Gap Factor");
 	gap_factor_label->SetMinSize(wxSize(120, -1));
-	gap_factor_spin_ctrl = new wxSpinCtrlDouble(this, ID_GAP_FACTOR);
+	gap_factor_spin_ctrl = new wxSpinCtrlDouble(this, ID_GAP_FACTOR, wxEmptyString, wxDefaultPosition, wxDefaultSize, /*16384L*/ wxSP_ARROW_KEYS | wxALIGN_RIGHT);
 	gap_factor_spin_ctrl->SetValue(0.15f);
 	gap_factor_spin_ctrl->SetIncrement(0.01f);
 	horizontal_sizers[3]->Add(gap_factor_label, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
@@ -73,7 +73,7 @@ CalendarSetupPanel::CalendarSetupPanel(wxWindow* parent) :
 
 	wxStaticText* calendar_span_from_label = new wxStaticText(this, wxID_ANY, L"Calendar From Year");
 	calendar_span_from_label->SetMinSize(wxSize(120, -1));
-	calendar_span_from_spin_ctrl = new wxSpinCtrl(this, ID_SPAN_FROM);
+	calendar_span_from_spin_ctrl = new wxSpinCtrl(this, ID_SPAN_FROM, wxEmptyString, wxDefaultPosition, wxDefaultSize, /*16384L*/ wxSP_ARROW_KEYS | wxALIGN_RIGHT);
 	calendar_span_from_spin_ctrl->SetRange(1400, 9999);
 	calendar_span_from_spin_ctrl->SetValue(2020);
 	//weight2_spin_ctrl->SetIncrement(0.1f);
@@ -82,7 +82,7 @@ CalendarSetupPanel::CalendarSetupPanel(wxWindow* parent) :
 
 	wxStaticText* calendar_span_to_label = new wxStaticText(this, wxID_ANY, L"Calendar To Year");
 	calendar_span_to_label->SetMinSize(wxSize(120, -1));
-	calendar_span_to_spin_ctrl = new wxSpinCtrl(this, ID_SPAN_TO);
+	calendar_span_to_spin_ctrl = new wxSpinCtrl(this, ID_SPAN_TO, wxEmptyString, wxDefaultPosition, wxDefaultSize, /*16384L*/ wxSP_ARROW_KEYS | wxALIGN_RIGHT);
 	calendar_span_to_spin_ctrl->SetRange(1400, 9999);
 	calendar_span_to_spin_ctrl->SetValue(2030);
 	//gap_factor_spin_ctrl->SetIncrement(0.01f);
