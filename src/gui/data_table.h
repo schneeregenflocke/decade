@@ -55,46 +55,30 @@ class DataTablePanel : public wxPanel
 public:
 
 	DataTablePanel(wxWindow* parent);
-
 	void SlotUpdateTable(const std::vector<date_period>& date_intervals, const std::vector<date_period>& date_inter_intervals);
-
-	//void SlotInitializeTable();
-	//const wxEventTypeTag<wxCommandEvent> GetDatesStoreChangedEventTag() const;
 
 	sigslot::signal<const std::vector<date_period>&> signal_table_date_intervals;
 
 private:
 
 	void UpdateValidRows();
+	void ScanTable();
+
+	void UpdateButtons();
+	void InsertRow(size_t row);
+	void RemoveRow(size_t row);
+
+	date ParseDateByCell(int row, int column);
 	
 	void OnItemActivated(wxDataViewEvent& event);
 	void OnItemEditing(wxDataViewEvent& event);
 	void OnSelectionChanged(wxDataViewEvent& event);
 	void OnButtonClicked(wxCommandEvent& event);
-	//void OnValueChanged(wxDataViewEvent& event);
-	
-	void UpdateButtons();
 
-	void InsertRow(size_t row);
-	void RemoveRow(size_t row);
-
-	//bool CheckDateInterval(date begin_date, date end_date);
-	date ParseDateByCell(int row, int column);
-
-	void ScanTable();
-	
 	wxDataViewListCtrl* data_table;
-	
 	date_format_descriptor dateFormat;
-
 	wxButton* addRowButton;
 	wxButton* deleteRowButton;
-
 	std::vector<size_t> valid_rows;
-
-
-	//void ScanStore();
-	//DateIntervalStore* data_store;
-	//const wxEventTypeTag<wxCommandEvent> datesStoreChangedEventTag;
 };
 

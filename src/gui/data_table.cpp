@@ -69,8 +69,6 @@ DataTablePanel::DataTablePanel(wxWindow* parent) :
 	dateFormat = InitDateFormat();
 }
 
-
-
 void DataTablePanel::OnItemActivated(wxDataViewEvent& event)
 {
 	if (event.GetItem().IsOk() && event.GetDataViewColumn())
@@ -152,14 +150,6 @@ void DataTablePanel::OnButtonClicked(wxCommandEvent& event)
 	}
 }
 
-/*void DataTablePanel::OnValueChanged(wxDataViewEvent& event)
-{}*/
-
-/*const wxEventTypeTag<wxCommandEvent> DataTablePanel::GetDatesStoreChangedEventTag() const
-{
-	return datesStoreChangedEventTag;
-}*/
-
 void DataTablePanel::UpdateButtons()
 {
 	if (data_table->GetSelectedRow() == wxNOT_FOUND)
@@ -190,30 +180,6 @@ void DataTablePanel::RemoveRow(size_t row)
 		ScanTable();
 	}
 }
-
-
-/*void DataTablePanel::InitializeTable()
-{
-	data_table->DeleteAllItems();
-
-	for (int index = 0; index < data_store->GetDateIntervalsSize(); ++index)
-	{
-		InsertRow(index);
-
-		data_table->SetValue(boost_date_to_string(data_store->GetDateIntervalConstRef(index).begin()), index, 1);
-		data_table->SetValue(boost_date_to_string(data_store->GetDateIntervalConstRef(index).end()), index, 2);
-		data_table->SetValue(std::to_string(index + 1), index, 0);
-		data_table->SetValue(std::to_string(data_store->GetDateIntervalConstRef(index).length().days()), index, 3);
-
-		if (index < (data_store->GetDateIntervalsSize() - 1))
-		{
-			data_table->SetValue(std::to_string(data_store->GetDateInterIntervalConstRef(index).length().days()), index, 4);
-		}
-	}
-	wxCommandEvent datesStoreChangedEvent(datesStoreChangedEventTag);
-	ProcessWindowEvent(datesStoreChangedEvent);
-}*/
-
 
 void DataTablePanel::SlotUpdateTable(const std::vector<date_period>& date_intervals, const std::vector<date_period>& date_inter_intervals)
 {
@@ -276,26 +242,6 @@ void DataTablePanel::SlotUpdateTable(const std::vector<date_period>& date_interv
 	}
 }
 
-
-/*void DataTablePanel::ScanStore()
-{
-	for (size_t index = 0; index < valid_rows.size(); ++index)
-	{
-		data_table->SetValue(boost_date_to_string(data_store->GetDateIntervalConstRef(index).begin()), valid_rows[index], 1);
-		data_table->SetValue(boost_date_to_string(data_store->GetDateIntervalConstRef(index).end()), valid_rows[index], 2);
-
-		data_table->SetValue(std::to_string(index + 1), valid_rows[index], 0);
-
-		data_table->SetValue(std::to_string(data_store->GetDateIntervalConstRef(index).length().days()), valid_rows[index], 3);
-
-		if (index < (data_store->GetDateIntervalsSize() - 1))
-		{
-			data_table->SetValue(std::to_string(data_store->GetDateInterIntervalConstRef(index).length().days()), valid_rows[index], 4);
-		}
-	}
-}*/
-
-
 void DataTablePanel::UpdateValidRows()
 {
 	valid_rows.clear();
@@ -317,7 +263,6 @@ void DataTablePanel::UpdateValidRows()
 	}
 }
 
-
 void DataTablePanel::ScanTable()
 {
 	UpdateValidRows();
@@ -338,28 +283,7 @@ void DataTablePanel::ScanTable()
 	}
 
 	signal_table_date_intervals(date_intervals);
-
-	//data_store->SetDateIntervals(local_date_intervals);
-	//wxCommandEvent datesStoreChangedEvent(datesStoreChangedEventTag);
-	//ProcessWindowEvent(datesStoreChangedEvent);
 }
-
-/*bool DataTablePanel::CheckDateInterval(date begin_date, date end_date)
-{
-	bool valid = false;
-
-	if ((begin_date.is_special() || end_date.is_special()) == false)
-	{
-		date_period period = date_period(begin_date, end_date);
-
-		if (period.is_null() == false)
-		{
-			valid = true;
-		}
-	}
-
-	return valid;
-}*/
 
 date DataTablePanel::ParseDateByCell(int row, int column)
 {
