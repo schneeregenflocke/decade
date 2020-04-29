@@ -80,8 +80,12 @@ void DateGroupsTablePanel::OnItemEditing(wxDataViewEvent& event)
 
 		if (event.IsEditCancelled() == false)
 		{
-			auto edited_string = event.GetValue().GetString().ToStdString();
+			auto edited_string = event.GetValue().GetString().ToStdWstring();
 			data_table->SetValue(edited_string.c_str(), data_table->GetSelectedRow(), event.GetColumn());
+
+			date_groups[data_table->GetSelectedRow()].name = edited_string;
+
+			signal_table_date_groups(date_groups);
 		}
 	}
 }
@@ -151,6 +155,9 @@ void DateGroupsTablePanel::InsertRow(size_t row)
 		std::vector<wxVariant> empty_row;
 		empty_row.resize(data_table->GetColumnCount());
 		data_table->InsertItem(row, empty_row);
+
+		date_groups.insert(date_groups.cbegin() + row, DateGroup(0, L""));
+		signal_table_date_groups(date_groups);
 	}
 }
 
@@ -159,6 +166,9 @@ void DateGroupsTablePanel::RemoveRow(size_t row)
 	if (row <= data_table->GetItemCount())
 	{
 		data_table->DeleteItem(row);
+
+		date_groups.erase(date_groups.cbegin() + row);
+		signal_table_date_groups(date_groups);
 	}
 }
 

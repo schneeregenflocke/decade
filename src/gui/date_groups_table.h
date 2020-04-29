@@ -18,7 +18,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #pragma once
 
-#include "../date_utils.h"
+#include "../date_group_store.h"
 
 #ifdef WX_PRECOMP
 #include <wx/wxprec.h>
@@ -38,6 +38,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include <string>
 
 
+
 class DateGroupsTablePanel : public wxPanel
 {
 public:
@@ -46,20 +47,26 @@ public:
 
 	std::wstring GetPanelName();
 
-	//sigslot::signal<const std::vector<date_period>&> signal_table_date_intervals;
+	sigslot::signal<const std::vector<DateGroup>&> signal_table_date_groups;
 
 private:
+
+	void UpdateTable(const std::vector<DateGroup>& date_groups);
+
 	void UpdateButtons();
 	void InsertRow(size_t row);
 	void RemoveRow(size_t row);
 
+	void OnButtonClicked(wxCommandEvent& event);
 	void OnItemActivated(wxDataViewEvent& event);
 	void OnItemEditing(wxDataViewEvent& event);
 	void OnSelectionChanged(wxDataViewEvent& event);
-	void OnButtonClicked(wxCommandEvent& event);
+	
 
 	wxDataViewListCtrl* data_table;
 	wxButton* addRowButton;
 	wxButton* deleteRowButton;
+
+	std::vector<DateGroup> date_groups;
 };
 
