@@ -132,8 +132,8 @@ MainWindow::MainWindow(const wxString& title, const wxPoint& pos, const wxSize& 
     elements_setup_panel = new ElementsSetupsPanel(book_panel);
     calendar_setup_panel = new CalendarSetupPanel(book_panel);
 
+    list_box->AppendString(L"Date Table");
     list_box->AppendString(L"Page Setup");
-    list_box->AppendString(L"Date Intervals Table");
     list_box->AppendString(L"Font Setup");
     list_box->AppendString(L"Title Setup");
     list_box->AppendString(L"Calendar Setup");
@@ -142,8 +142,8 @@ MainWindow::MainWindow(const wxString& title, const wxPoint& pos, const wxSize& 
     book_panel_sizer = new wxBoxSizer(wxVERTICAL);
     book_panel->SetSizer(book_panel_sizer);
 
-    book_panel_sizer->Add(page_setup_panel, 1, wxEXPAND | wxALL, 5);
     book_panel_sizer->Add(data_table_panel, 1, wxEXPAND | wxALL, 5);
+    book_panel_sizer->Add(page_setup_panel, 1, wxEXPAND | wxALL, 5);
     book_panel_sizer->Add(font_setup_panel, 1, wxEXPAND | wxALL, 5);
     book_panel_sizer->Add(title_setup_panel, 1, wxEXPAND | wxALL, 5);
     book_panel_sizer->Add(calendar_setup_panel, 1, wxEXPAND | wxALL, 5);
