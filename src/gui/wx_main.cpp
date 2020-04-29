@@ -125,6 +125,7 @@ MainWindow::MainWindow(const wxString& title, const wxPoint& pos, const wxSize& 
 
     ////////////////////////////////////////////////////////////////////////////////
 
+    date_groups_table_panel = new DateGroupsTablePanel(book_panel);
     page_setup_panel = new PageSetupPanel(book_panel);
     data_table_panel = new DataTablePanel(book_panel);
     font_setup_panel = new FontSetupPanel(book_panel);
@@ -132,6 +133,7 @@ MainWindow::MainWindow(const wxString& title, const wxPoint& pos, const wxSize& 
     elements_setup_panel = new ElementsSetupsPanel(book_panel);
     calendar_setup_panel = new CalendarSetupPanel(book_panel);
 
+    list_box->AppendString(date_groups_table_panel->GetPanelName());
     list_box->AppendString(L"Date Table");
     list_box->AppendString(L"Page Setup");
     list_box->AppendString(L"Font Setup");
@@ -142,12 +144,16 @@ MainWindow::MainWindow(const wxString& title, const wxPoint& pos, const wxSize& 
     book_panel_sizer = new wxBoxSizer(wxVERTICAL);
     book_panel->SetSizer(book_panel_sizer);
 
-    book_panel_sizer->Add(data_table_panel, 1, wxEXPAND | wxALL, 5);
-    book_panel_sizer->Add(page_setup_panel, 1, wxEXPAND | wxALL, 5);
-    book_panel_sizer->Add(font_setup_panel, 1, wxEXPAND | wxALL, 5);
-    book_panel_sizer->Add(title_setup_panel, 1, wxEXPAND | wxALL, 5);
-    book_panel_sizer->Add(calendar_setup_panel, 1, wxEXPAND | wxALL, 5);
-    book_panel_sizer->Add(elements_setup_panel, 1, wxEXPAND | wxALL, 5);
+    wxSizerFlags sizer_flags;
+    sizer_flags.Proportion(1).Expand().Border(wxALL, 5);
+
+    book_panel_sizer->Add(date_groups_table_panel, sizer_flags);
+    book_panel_sizer->Add(data_table_panel, sizer_flags);
+    book_panel_sizer->Add(page_setup_panel, sizer_flags);
+    book_panel_sizer->Add(font_setup_panel, sizer_flags);
+    book_panel_sizer->Add(title_setup_panel, sizer_flags);
+    book_panel_sizer->Add(calendar_setup_panel, sizer_flags);
+    book_panel_sizer->Add(elements_setup_panel, sizer_flags);
     
 
     book_panel_sizer->ShowItems(false);

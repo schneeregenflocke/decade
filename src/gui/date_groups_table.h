@@ -37,46 +37,29 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include <vector>
 #include <string>
 
-//#include <array>
-//#include <sstream>
-//#include <locale>
-//#include <ctime>
-//#include <iomanip>
-//#include <cctype>
-//#include <algorithm>
-//#include <utility>
 
-
-class DataTablePanel : public wxPanel
+class DateGroupsTablePanel : public wxPanel
 {
 public:
 
-	DataTablePanel(wxWindow* parent);
-	void SlotUpdateTable(const std::vector<date_period>& date_intervals, const std::vector<date_period>& date_inter_intervals);
+	DateGroupsTablePanel(wxWindow* parent);
+
 	std::wstring GetPanelName();
 
-	sigslot::signal<const std::vector<date_period>&> signal_table_date_intervals;
+	//sigslot::signal<const std::vector<date_period>&> signal_table_date_intervals;
 
 private:
-
-	void UpdateValidRows();
-	void ScanTable();
-
 	void UpdateButtons();
 	void InsertRow(size_t row);
 	void RemoveRow(size_t row);
 
-	date ParseDateByCell(int row, int column);
-	
 	void OnItemActivated(wxDataViewEvent& event);
 	void OnItemEditing(wxDataViewEvent& event);
 	void OnSelectionChanged(wxDataViewEvent& event);
 	void OnButtonClicked(wxCommandEvent& event);
 
 	wxDataViewListCtrl* data_table;
-	date_format_descriptor dateFormat;
 	wxButton* addRowButton;
 	wxButton* deleteRowButton;
-	std::vector<size_t> valid_rows;
 };
 

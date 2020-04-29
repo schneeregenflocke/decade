@@ -29,6 +29,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include "../calendar_page.h"
 #include "../date_utils.h"
 
+#include "date_groups_table.h"
 #include "data_table.h"
 #include "page_setup.h"
 #include "font_setup.h"
@@ -95,6 +96,7 @@ private:
 
     wxBoxSizer* book_panel_sizer;
 
+    DateGroupsTablePanel* date_groups_table_panel;
     DataTablePanel* data_table_panel;
     PageSetupPanel* page_setup_panel;
     FontSetupPanel* font_setup_panel;

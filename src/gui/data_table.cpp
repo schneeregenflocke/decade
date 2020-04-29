@@ -242,6 +242,11 @@ void DataTablePanel::SlotUpdateTable(const std::vector<date_period>& date_interv
 	}
 }
 
+std::wstring DataTablePanel::GetPanelName()
+{
+	return std::wstring(L"Date Table");
+}
+
 void DataTablePanel::UpdateValidRows()
 {
 	valid_rows.clear();
