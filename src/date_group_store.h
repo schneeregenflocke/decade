@@ -18,6 +18,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #pragma once
 
+#include <sigslot/signal.hpp>
+
 #include <string>
 #include <vector>
 
@@ -31,6 +33,7 @@ public:
 	int number;
 	std::wstring name;
 
+
 private:
 };
 
@@ -39,6 +42,8 @@ class DateGroupStore
 public:
 
 	void SetDateGroups(const std::vector<DateGroup>& date_groups);
+
+	sigslot::signal<const std::vector<DateGroup>&> signal_date_groups;
 
 private:
 

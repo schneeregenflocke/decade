@@ -36,6 +36,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include <vector>
 #include <string>
+#include <limits>
 
 
 
@@ -47,11 +48,13 @@ public:
 
 	std::wstring GetPanelName();
 
+	void UpdateTable(const std::vector<DateGroup>& date_groups);
+
 	sigslot::signal<const std::vector<DateGroup>&> signal_table_date_groups;
 
 private:
 
-	void UpdateTable(const std::vector<DateGroup>& date_groups);
+	
 
 	void UpdateButtons();
 	void InsertRow(size_t row);

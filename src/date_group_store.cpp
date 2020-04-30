@@ -30,6 +30,8 @@ void DateGroupStore::SetDateGroups(const std::vector<DateGroup>& date_groups)
 	this->date_groups = date_groups;
 
 	UpdateNumbers();
+
+	signal_date_groups(this->date_groups);
 }
 
 void DateGroupStore::UpdateNumbers()

@@ -2,8 +2,8 @@
 
 project(Decade)
 
-message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 message("CMAKE_VERSION: ${CMAKE_VERSION}")
+message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 message("CMAKE_CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID}")
 
 
@@ -31,16 +31,16 @@ message("Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
 message("Boost_LIBRARY_DIRS: ${Boost_LIBRARY_DIRS}")
 
 
-set(wxBUILD_SHARED		OFF		CACHE BOOL "wxBUILD_SHARED" FORCE)
-set(wxUSE_STL			ON		CACHE BOOL "wxUSE_STL" FORCE)
-set(wxUSE_GUI			ON		CACHE BOOL "wxUSE_GUI" FORCE)
-set(wxUSE_OPENGL		ON		CACHE BOOL "wxUSE_OPENGL" FORCE)
-set(wxUSE_WINRT			OFF		CACHE BOOL "wxUSE_WINRT" FORCE)
-set(wxUSE_EXCEPTIONS	OFF		CACHE BOOL "wxUSE_EXCEPTIONS" FORCE)
-set(wxUSE_CAIRO			OFF		CACHE BOOL "wxUSE_CAIRO" FORCE)
+set(wxBUILD_SHARED OFF CACHE BOOL "wxBUILD_SHARED" FORCE)
+set(wxUSE_STL ON CACHE BOOL "wxUSE_STL" FORCE)
+set(wxUSE_GUI ON CACHE BOOL "wxUSE_GUI" FORCE)
+set(wxUSE_OPENGL ON	CACHE BOOL "wxUSE_OPENGL" FORCE)
+set(wxUSE_WINRT	OFF CACHE BOOL "wxUSE_WINRT" FORCE)
+set(wxUSE_EXCEPTIONS OFF CACHE BOOL "wxUSE_EXCEPTIONS" FORCE)
+set(wxUSE_CAIRO	OFF CACHE BOOL "wxUSE_CAIRO" FORCE)
 #set(wxBUILD_CUSTOM_SETUP_HEADER_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/wx_custom_setup" CACHE PATH "wxBUILD_CUSTOM_SETUP_HEADER_PATH" FORCE)
-#set(wxUSE_CAIRO		OFF CACHE BOOL "wxUSE_CAIRO" FORCE)
-#set(wxUSE_NO_RTTI		ON CACHE BOOL "wxUSE_NO_RTTI" FORCE)
+#set(wxUSE_CAIRO OFF CACHE BOOL "wxUSE_CAIRO" FORCE)
+#set(wxUSE_NO_RTTI ON CACHE BOOL "wxUSE_NO_RTTI" FORCE)
 #set(wxUSE_ON_FATAL_EXCEPTION ON CACHE BOOL "wxUSE_ON_FATAL_EXCEPTION" FORCE)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
@@ -79,10 +79,11 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/lodepng")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/csv/include")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/csv")
 
-
+#-w dupbuild=err
+add_compile_definitions(PUGIXML_WCHAR_MODE)
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/pugixml/include")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/pugixml")
-target_compile_definitions(pugixml PUBLIC PUGIXML_WCHAR_MODE)
+
 
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource")
@@ -118,6 +119,7 @@ file(GLOB_RECURSE source_files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} CONFIGURE_DE
 message_list(source_files)
 
 add_executable(Decade ${source_files})
+target_compile_definitions(Decade PUBLIC _CRT_SECURE_NO_WARNINGS)
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
 	target_sources(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/include/wx/msw/amd64_dpi_aware.manifest")

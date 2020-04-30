@@ -106,7 +106,7 @@ private:
 
     std::unique_ptr<CalendarPage> calendar;
 
-    
+    DateGroupStore date_groups_store;
     DateIntervals date_intervals;
     DateIntervalStore transformed_dates_store;
 

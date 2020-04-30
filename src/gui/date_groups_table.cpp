@@ -136,6 +136,41 @@ void DateGroupsTablePanel::OnButtonClicked(wxCommandEvent& event)
 	}
 }
 
+void DateGroupsTablePanel::UpdateTable(const std::vector<DateGroup>& date_groups)
+{
+	int change_row_count = 0;
+	if (date_groups.size() <= std::numeric_limits<int>::max())
+	{
+		int change_row_count = static_cast<int>(date_groups.size()) - data_table->GetItemCount();
+	}
+	else
+	{
+		std::cerr << L"too large unsigend int" << '\n';
+	}
+
+	if (change_row_count > 0)
+	{
+		for (int index = 0; index < change_row_count; ++index)
+		{
+			InsertRow(data_table->GetItemCount() + index);
+		}
+	}
+
+	if (change_row_count < 0)
+	{
+		for (int index = 0; index > change_row_count; --index)
+		{
+			RemoveRow(data_table->GetItemCount() - 1);
+		}
+	}
+
+	for (size_t index = 0; index < data_table->GetItemCount(); ++index)
+	{
+		data_table->SetValue(std::to_wstring(date_groups[index].number), index, 0);
+		data_table->SetValue(date_groups[index].name, index, 1);
+	}
+}
+
 void DateGroupsTablePanel::UpdateButtons()
 {
 	if (data_table->GetSelectedRow() == wxNOT_FOUND)
@@ -157,6 +192,7 @@ void DateGroupsTablePanel::InsertRow(size_t row)
 		data_table->InsertItem(row, empty_row);
 
 		date_groups.insert(date_groups.cbegin() + row, DateGroup(0, L""));
+		
 		signal_table_date_groups(date_groups);
 	}
 }
@@ -168,6 +204,7 @@ void DateGroupsTablePanel::RemoveRow(size_t row)
 		data_table->DeleteItem(row);
 
 		date_groups.erase(date_groups.cbegin() + row);
+		
 		signal_table_date_groups(date_groups);
 	}
 }

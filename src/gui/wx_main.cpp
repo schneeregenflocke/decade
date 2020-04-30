@@ -223,6 +223,9 @@ void MainWindow::SlotGLReady()
     calendar = std::make_unique<CalendarPage>(gl_canvas->GetGraphicEngine());
     calendar->Update();
 
+    date_groups_table_panel->signal_table_date_groups.connect(&DateGroupStore::SetDateGroups, &date_groups_store);
+    date_groups_store.signal_date_groups.connect(&DateGroupsTablePanel::UpdateTable, date_groups_table_panel);
+
     date_intervals.signal_date_intervals.connect(&DataTablePanel::SlotUpdateTable, data_table_panel);
     data_table_panel->signal_table_date_intervals.connect(&DateIntervals::SetDateIntervals, &date_intervals);
     date_intervals.SetTransform(0, 1);
