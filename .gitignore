@@ -10,9 +10,12 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 
-.vs/
 
+CMakeSettings.json
+
+.vs/
+.vscode/
+out/
 build/
-/CMakeSettings.json
-/example_input/png_test.png
-/example_input/test_save.xml
+
+
