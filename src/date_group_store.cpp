@@ -19,11 +19,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include "date_group_store.h"
 
-// call after connections
+// call after connecting
 void DateGroupStore::InitDefaults()
 {
 	date_groups.push_back(DateGroup(0, L"Default"));
-	date_groups.push_back(DateGroup(0, L"Single Date"));
+	date_groups.push_back(DateGroup(0, L"Single"));
 
 	UpdateNumbers();
 

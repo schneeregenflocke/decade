@@ -63,26 +63,42 @@ DateTablePanel::DateTablePanel(wxWindow* parent) :
 
 	Layout();
 	
-	
+	SetupColumns();
 
-	wxArrayString test_string;
-	test_string.Add(L"choice A");
-	test_string.Add(L"choice B");
 
-	wxDataViewChoiceRenderer* group_choice_renderer = new wxDataViewChoiceRenderer(test_string);
+	dateFormat = InitDateFormat();
+}
+
+void DateTablePanel::SetupColumns()
+{
+	table_widget->ClearColumns();
+
+	wxDataViewChoiceRenderer* group_choice_renderer = new wxDataViewChoiceRenderer(group_choices);
 	wxDataViewColumn* group_column = new wxDataViewColumn(L"Group", group_choice_renderer, 3);
-	
 
 	table_widget->AppendTextColumn(L"From Date", wxDATAVIEW_CELL_EDITABLE);
 	table_widget->AppendTextColumn(L"To Date", wxDATAVIEW_CELL_EDITABLE);
 	table_widget->AppendTextColumn(L"Number", wxDATAVIEW_CELL_INERT);
-	table_widget->AppendColumn(group_column);
+
+	table_widget->InsertColumn(3, group_column);
+
 	table_widget->AppendTextColumn(L"Group Number", wxDATAVIEW_CELL_INERT);
 	table_widget->AppendTextColumn(L"Duration", wxDATAVIEW_CELL_INERT);
 	table_widget->AppendTextColumn(L"Duration to next", wxDATAVIEW_CELL_INERT);
 	table_widget->AppendTextColumn(L"Comment", wxDATAVIEW_CELL_EDITABLE);
 
-	dateFormat = InitDateFormat();
+	std::cout << table_widget->GetColumnCount() << " " << table_widget->GetModel()->GetColumnCount() << '\n';
+}
+
+void DateTablePanel::UpdateGroups(const std::vector<DateGroup>& date_groups)
+{
+	group_choices.clear();
+	for (const auto& date_group : date_groups)
+	{
+		group_choices.push_back(date_group.name);
+	}
+
+	SetupColumns();
 }
 
 
@@ -136,6 +152,8 @@ void DateTablePanel::UpdateTable(const std::vector<DateIntervalBundle>& date_int
 		}
 	}
 }
+
+
 
 
 void DateTablePanel::OnItemActivated(wxDataViewEvent& event)
@@ -299,6 +317,8 @@ void DateTablePanel::ScanTable()
 
 	signal_table_date_interval_bundles(date_intervals);
 }
+
+
 
 date DateTablePanel::ParseDateByCell(int row, int column)
 {

@@ -225,8 +225,8 @@ void MainWindow::SlotGLReady()
 
     date_groups_table_panel->signal_table_date_groups.connect(&DateGroupStore::SetDateGroups, &date_groups_store);
     date_groups_store.signal_date_groups.connect(&DateGroupsTablePanel::UpdateTable, date_groups_table_panel);
+    date_groups_store.signal_date_groups.connect(&DateTablePanel::UpdateGroups, data_table_panel);
     date_groups_store.InitDefaults();
-
 
 
     date_interval_bundle_store.signal_date_interval_bundles.connect(&DateTablePanel::UpdateTable, data_table_panel);
@@ -235,7 +235,6 @@ void MainWindow::SlotGLReady()
     transformed_date_interval_bundle.SetTransform(0, 1);
     date_interval_bundle_store.signal_date_interval_bundles.connect(&TransformDateIntervalBundle::InputDateIntervals, &transformed_date_interval_bundle);
     transformed_date_interval_bundle.signal_transformed_date_interval_bundles.connect(&CalendarPage::SetDateIntervalBundles, calendar.get());
-
 
 
     page_setup_panel->signal_page_size.connect(&CalendarPage::SlotPageSize, calendar.get());

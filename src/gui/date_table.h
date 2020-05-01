@@ -20,6 +20,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include "../date_utils.h"
 #include "../dates_store.h"
+#include "../date_group_store.h"
 
 #ifdef WX_PRECOMP
 #include <wx/wxprec.h>
@@ -46,6 +47,7 @@ public:
 	DateTablePanel(wxWindow* parent);
 
 	void UpdateTable(const std::vector<DateIntervalBundle>& date_interval_bundles);
+	void UpdateGroups(const std::vector<DateGroup>& date_groups);
 	
 	std::wstring GetPanelName();
 
@@ -55,6 +57,8 @@ private:
 
 	void UpdateValidRows();
 	void ScanTable();
+
+	void SetupColumns();
 
 	void UpdateButtons();
 	void InsertRow(size_t row);
@@ -74,5 +78,7 @@ private:
 	wxButton* deleteRowButton;
 
 	std::vector<size_t> valid_rows;
+
+	wxArrayString group_choices;
 };
 
