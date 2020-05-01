@@ -54,8 +54,6 @@ public:
 
 private:
 
-	
-
 	void UpdateButtons();
 	void InsertRow(size_t row);
 	void RemoveRow(size_t row);

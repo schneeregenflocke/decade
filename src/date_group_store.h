@@ -28,11 +28,13 @@ class DateGroup
 {
 public:
 
-	DateGroup(int number, std::wstring name);
+	DateGroup(int number, std::wstring name) :
+		number(number),
+		name(name)
+	{}
 
 	int number;
 	std::wstring name;
-
 
 private:
 };
@@ -40,6 +42,8 @@ private:
 class DateGroupStore
 {
 public:
+
+	void InitDefaults();
 
 	void SetDateGroups(const std::vector<DateGroup>& date_groups);
 

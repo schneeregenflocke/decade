@@ -225,6 +225,7 @@ void MainWindow::SlotGLReady()
 
     date_groups_table_panel->signal_table_date_groups.connect(&DateGroupStore::SetDateGroups, &date_groups_store);
     date_groups_store.signal_date_groups.connect(&DateGroupsTablePanel::UpdateTable, date_groups_table_panel);
+    date_groups_store.InitDefaults();
 
 
 

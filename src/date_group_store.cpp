@@ -16,14 +16,19 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 */
 
+
 #include "date_group_store.h"
 
+// call after connections
+void DateGroupStore::InitDefaults()
+{
+	date_groups.push_back(DateGroup(0, L"Default"));
+	date_groups.push_back(DateGroup(0, L"Single Date"));
 
-DateGroup::DateGroup(int number, std::wstring name) :
-	number(number),
-	name(name)
-{}
+	UpdateNumbers();
 
+	signal_date_groups(date_groups);
+}
 
 void DateGroupStore::SetDateGroups(const std::vector<DateGroup>& date_groups)
 {

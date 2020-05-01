@@ -65,15 +65,46 @@ DateGroupsTablePanel::DateGroupsTablePanel(wxWindow* parent) :
 	data_table->AppendTextColumn(L"Group Number", wxDATAVIEW_CELL_INERT);
 	data_table->AppendTextColumn(L"Group Name", wxDATAVIEW_CELL_EDITABLE);
 
-	/*
-	wxArrayString test_string;
-	test_string.Add(L"choice A");
-	test_string.Add(L"choice B");
-	wxDataViewChoiceRenderer* choice_renderer = new wxDataViewChoiceRenderer(test_string);
-	wxDataViewColumn* test_column = new wxDataViewColumn(L"test column", choice_renderer, 5);
-	data_table->AppendColumn(test_column);
-	*/
+	
 }
+
+void DateGroupsTablePanel::UpdateTable(const std::vector<DateGroup>& date_groups)
+{
+	this->date_groups = date_groups;
+	
+	int change_row_count = 0;
+	if (date_groups.size() <= std::numeric_limits<int>::max())
+	{
+		change_row_count = static_cast<int>(date_groups.size()) - data_table->GetItemCount();
+	}
+	else
+	{
+		std::cerr << L"too large unsigend int" << '\n';
+	}
+
+	if (change_row_count > 0)
+	{
+		for (int index = 0; index < change_row_count; ++index)
+		{
+			InsertRow(data_table->GetItemCount());
+		}
+	}
+
+	if (change_row_count < 0)
+	{
+		for (int index = 0; index > change_row_count; --index)
+		{
+			RemoveRow(data_table->GetItemCount() - 1);
+		}
+	}
+
+	for (size_t index = 0; index < data_table->GetItemCount(); ++index)
+	{
+		data_table->SetValue(std::to_wstring(date_groups[index].number), index, 0);
+		data_table->SetValue(date_groups[index].name, index, 1);
+	}
+}
+
 
 void DateGroupsTablePanel::OnItemActivated(wxDataViewEvent& event)
 {
@@ -89,7 +120,7 @@ void DateGroupsTablePanel::OnItemEditing(wxDataViewEvent& event)
 	{
 		event.Veto();
 
-		if (event.IsEditCancelled() == false)
+		if (event.IsEditCancelled() == false && data_table->GetSelectedRow() >= 2)
 		{
 			auto edited_string = event.GetValue().GetString().ToStdWstring();
 			data_table->SetValue(edited_string.c_str(), data_table->GetSelectedRow(), event.GetColumn());
@@ -116,20 +147,31 @@ void DateGroupsTablePanel::OnButtonClicked(wxCommandEvent& event)
 		{
 			selected_row = data_table->GetItemCount();
 		}
+		else if (selected_row < 2)
+		{
+			selected_row = 2;
+		}
 		else
 		{
 			++selected_row;
 		}
 
 		InsertRow(selected_row);
+
+		date_groups.insert(date_groups.cbegin() + selected_row, DateGroup(0, L""));
+		signal_table_date_groups(date_groups);
+
 		data_table->SelectRow(selected_row);
 		data_table->EnsureVisible(data_table->RowToItem(selected_row));
 		UpdateButtons();
 	}
 
-	if (event.GetId() == wxID_DELETE && selected_row != wxNOT_FOUND)
+	if (event.GetId() == wxID_DELETE && selected_row != wxNOT_FOUND && selected_row >= 2)
 	{
 		RemoveRow(selected_row);
+
+		date_groups.erase(date_groups.cbegin() + selected_row);
+		signal_table_date_groups(date_groups);
 
 		if (data_table->GetItemCount() > 0)
 		{
@@ -147,44 +189,9 @@ void DateGroupsTablePanel::OnButtonClicked(wxCommandEvent& event)
 	}
 }
 
-void DateGroupsTablePanel::UpdateTable(const std::vector<DateGroup>& date_groups)
-{
-	int change_row_count = 0;
-	if (date_groups.size() <= std::numeric_limits<int>::max())
-	{
-		int change_row_count = static_cast<int>(date_groups.size()) - data_table->GetItemCount();
-	}
-	else
-	{
-		std::cerr << L"too large unsigend int" << '\n';
-	}
-
-	if (change_row_count > 0)
-	{
-		for (int index = 0; index < change_row_count; ++index)
-		{
-			InsertRow(data_table->GetItemCount() + index);
-		}
-	}
-
-	if (change_row_count < 0)
-	{
-		for (int index = 0; index > change_row_count; --index)
-		{
-			RemoveRow(data_table->GetItemCount() - 1);
-		}
-	}
-
-	for (size_t index = 0; index < data_table->GetItemCount(); ++index)
-	{
-		data_table->SetValue(std::to_wstring(date_groups[index].number), index, 0);
-		data_table->SetValue(date_groups[index].name, index, 1);
-	}
-}
-
 void DateGroupsTablePanel::UpdateButtons()
 {
-	if (data_table->GetSelectedRow() == wxNOT_FOUND)
+	if (data_table->GetSelectedRow() == wxNOT_FOUND || data_table->GetSelectedRow() < 2)
 	{
 		deleteRowButton->Enable(false);
 	}
@@ -201,10 +208,6 @@ void DateGroupsTablePanel::InsertRow(size_t row)
 		std::vector<wxVariant> empty_row;
 		empty_row.resize(data_table->GetColumnCount());
 		data_table->InsertItem(row, empty_row);
-
-		date_groups.insert(date_groups.cbegin() + row, DateGroup(0, L""));
-		
-		signal_table_date_groups(date_groups);
 	}
 }
 
@@ -213,10 +216,6 @@ void DateGroupsTablePanel::RemoveRow(size_t row)
 	if (row <= data_table->GetItemCount())
 	{
 		data_table->DeleteItem(row);
-
-		date_groups.erase(date_groups.cbegin() + row);
-		
-		signal_table_date_groups(date_groups);
 	}
 }
 

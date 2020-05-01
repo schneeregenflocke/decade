@@ -106,10 +106,10 @@ private:
 
     std::unique_ptr<CalendarPage> calendar;
 
-    DateGroupStore date_groups_store;
-
     DateIntervalBundleStore date_interval_bundle_store;
     TransformDateIntervalBundle transformed_date_interval_bundle;
+
+    DateGroupStore date_groups_store;
 
     GLCanvas* gl_canvas;
 
