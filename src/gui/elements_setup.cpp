@@ -172,7 +172,7 @@ void ElementsSetupsPanel::UpdateWidgets(size_t config_index)
 	fill_color_picker->Enable(fill_visible);
 	fill_color_alpha_slider->Enable(fill_visible);
 
-	linewidth_ctrl->SetValue(current_element.LineWidth());
+	linewidth_ctrl->SetValue(current_element.LineWidthDisabled());
 
 	line_color_picker->SetColour(to_wx_color(current_element.OutlineColorDisabled()));
 	line_color_alpha_slider->SetValue(100 - static_cast<int>(current_element.OutlineColorDisabled().a * 100.f));

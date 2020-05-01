@@ -49,8 +49,11 @@ public:
 	glm::vec4 OutlineColor() const;
 	glm::vec4 FillColor() const;
 
+	float LineWidthDisabled() const;
+
 	glm::vec4 OutlineColorDisabled() const;
 	glm::vec4 FillColorDisabled() const;
+	
 
 	bool operator==(const RectangleShapeConfig& compare_object);
 

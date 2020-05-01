@@ -69,7 +69,12 @@ void RectangleShapeConfig::LineWidth(float value)
 
 float RectangleShapeConfig::LineWidth() const
 {
-	return linewidth;
+	float return_value = 0.f;
+	if (outline_visible == true)
+	{
+		return_value = linewidth;
+	}
+	return return_value;
 }
 
 void RectangleShapeConfig::OutlineColor(glm::vec4 value)
@@ -100,6 +105,11 @@ glm::vec4 RectangleShapeConfig::FillColor() const
 		return_value = fill_color;
 	}	
 	return return_value;
+}
+
+float RectangleShapeConfig::LineWidthDisabled() const
+{
+	return linewidth;
 }
 
 glm::vec4 RectangleShapeConfig::OutlineColorDisabled() const
