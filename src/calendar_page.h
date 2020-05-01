@@ -24,7 +24,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include "graphics/shapes.h"
 #include "graphics/font.h"
 
-#include "dates_storage.h"
+#include "dates_store.h"
 #include "shape_config.h"
 #include "calendar_config.h"
 
@@ -86,7 +86,7 @@ public:
 
 	CalendarPage(GraphicEngine* graphic_engine);
 
-	void SetDateIntervals(const std::vector<date_period>& date_intervals);
+	void SetDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles);
 
 	void SlotPageSize(const std::array<float, 2>& page_size);
 	void SlotPageMargins(const std::array<float, 4>& page_margins);
@@ -119,7 +119,7 @@ public:
 
 private:
 
-	DateIntervalStore data_store;
+	DateIntervalBundleBarStore data_store;
 
 	GraphicEngine* graphic_engine;
 	CalendarSpan calendarSpan;

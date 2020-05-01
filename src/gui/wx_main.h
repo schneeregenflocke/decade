@@ -30,7 +30,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include "../date_utils.h"
 
 #include "date_groups_table.h"
-#include "data_table.h"
+#include "date_table.h"
 #include "page_setup.h"
 #include "font_setup.h"
 #include "title_setup.h"
@@ -97,7 +97,7 @@ private:
     wxBoxSizer* book_panel_sizer;
 
     DateGroupsTablePanel* date_groups_table_panel;
-    DataTablePanel* data_table_panel;
+    DateTablePanel* data_table_panel;
     PageSetupPanel* page_setup_panel;
     FontSetupPanel* font_setup_panel;
     TitleSetupPanel* title_setup_panel;
@@ -107,8 +107,9 @@ private:
     std::unique_ptr<CalendarPage> calendar;
 
     DateGroupStore date_groups_store;
-    DateIntervals date_intervals;
-    DateIntervalStore transformed_dates_store;
+
+    DateIntervalBundleStore date_interval_bundle_store;
+    TransformDateIntervalBundle transformed_date_interval_bundle;
 
     GLCanvas* gl_canvas;
 

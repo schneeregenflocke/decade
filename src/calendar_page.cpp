@@ -153,9 +153,9 @@ CalendarPage::CalendarPage(GraphicEngine* graphic_engine) :
 	sub_frames_shape = graphic_engine->AddShape<RectanglesShape>();
 }
 
-void CalendarPage::SetDateIntervals(const std::vector<date_period>& date_intervals)
+void CalendarPage::SetDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles)
 {
-	data_store.SetDateIntervals(date_intervals);
+	data_store.SetDateIntervalBundles(date_interval_bundles);
 
 	Update();
 }
@@ -570,7 +570,7 @@ void CalendarPage::SetupBarsShape()
 			//bars_cells[index] = bar_cell;
 			bars_cells.push_back(bar_cell);
 
-			std::wstring numsText = std::to_wstring(data_store.GetBar(index).GetNumber() + 1);
+			std::wstring numsText = data_store.GetBar(index).GetText();
 
 			bar_labels_text[index]->SetFont(font.get());
 

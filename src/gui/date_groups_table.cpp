@@ -30,9 +30,9 @@ DateGroupsTablePanel::DateGroupsTablePanel(wxWindow* parent) :
 	Bind(wxEVT_DATAVIEW_ITEM_EDITING_DONE, &DateGroupsTablePanel::OnItemEditing, this);
 	Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &DateGroupsTablePanel::OnSelectionChanged, this);
 
-	// Bind(wxEVT_DATAVIEW_ITEM_START_EDITING, &DataTablePanel::OnItemEditing, this);
-	// Bind(wxEVT_DATAVIEW_ITEM_EDITING_STARTED, &DataTablePanel::OnItemEditing, this);
-	// Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED, &DataTablePanel::OnValueChanged, this);
+	// Bind(wxEVT_DATAVIEW_ITEM_START_EDITING, &DateTablePanel::OnItemEditing, this);
+	// Bind(wxEVT_DATAVIEW_ITEM_EDITING_STARTED, &DateTablePanel::OnItemEditing, this);
+	// Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED, &DateTablePanel::OnValueChanged, this);
 
 	addRowButton = new wxButton(this, wxID_ADD, "Add Row");
 	deleteRowButton = new wxButton(this, wxID_DELETE, "Delete Row");
@@ -41,15 +41,26 @@ DateGroupsTablePanel::DateGroupsTablePanel(wxWindow* parent) :
 	Bind(wxEVT_BUTTON, &DateGroupsTablePanel::OnButtonClicked, this);
 
 
-	wxBoxSizer* subSizer = new wxBoxSizer(wxHORIZONTAL);
-	subSizer->Add(addRowButton, 0, wxALL, 5);
-	subSizer->Add(deleteRowButton, 0, wxALL, 5);
-
-
 	wxBoxSizer* mainSizer = new wxBoxSizer(wxVERTICAL);
-	mainSizer->Add(data_table, 1, wxEXPAND | wxALL, 5);
-	mainSizer->Add(subSizer, 0, wxEXPAND);
 	SetSizer(mainSizer);
+
+	wxSizerFlags sizer_flags0;
+	sizer_flags0.Proportion(1).Expand().Border(wxALL, 0);
+
+	wxBoxSizer* table_sizer = new wxBoxSizer(wxHORIZONTAL);
+	table_sizer->Add(data_table, sizer_flags0);
+
+	wxSizerFlags sizer_flags1;
+	sizer_flags1.Proportion(0).Border(wxALL, 5);
+
+	wxBoxSizer* buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
+	buttons_sizer->Add(addRowButton, sizer_flags1);
+	buttons_sizer->Add(deleteRowButton, sizer_flags1);
+
+	mainSizer->Add(table_sizer, 1, wxEXPAND);
+	mainSizer->Add(buttons_sizer, 0, wxEXPAND);
+
+	Layout();
 
 	data_table->AppendTextColumn(L"Group Number", wxDATAVIEW_CELL_INERT);
 	data_table->AppendTextColumn(L"Group Name", wxDATAVIEW_CELL_EDITABLE);

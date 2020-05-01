@@ -127,7 +127,7 @@ MainWindow::MainWindow(const wxString& title, const wxPoint& pos, const wxSize& 
 
     date_groups_table_panel = new DateGroupsTablePanel(book_panel);
     page_setup_panel = new PageSetupPanel(book_panel);
-    data_table_panel = new DataTablePanel(book_panel);
+    data_table_panel = new DateTablePanel(book_panel);
     font_setup_panel = new FontSetupPanel(book_panel);
     title_setup_panel = new TitleSetupPanel(book_panel);
     elements_setup_panel = new ElementsSetupsPanel(book_panel);
@@ -226,10 +226,16 @@ void MainWindow::SlotGLReady()
     date_groups_table_panel->signal_table_date_groups.connect(&DateGroupStore::SetDateGroups, &date_groups_store);
     date_groups_store.signal_date_groups.connect(&DateGroupsTablePanel::UpdateTable, date_groups_table_panel);
 
-    date_intervals.signal_date_intervals.connect(&DataTablePanel::SlotUpdateTable, data_table_panel);
-    data_table_panel->signal_table_date_intervals.connect(&DateIntervals::SetDateIntervals, &date_intervals);
-    date_intervals.SetTransform(0, 1);
-    date_intervals.signal_transformed_date_intervals.connect(&CalendarPage::SetDateIntervals, calendar.get());
+
+
+    date_interval_bundle_store.signal_date_interval_bundles.connect(&DateTablePanel::UpdateTable, data_table_panel);
+    data_table_panel->signal_table_date_interval_bundles.connect(&DateIntervalBundleStore::SetDateIntervalBundles, &date_interval_bundle_store);
+
+    transformed_date_interval_bundle.SetTransform(0, 1);
+    date_interval_bundle_store.signal_date_interval_bundles.connect(&TransformDateIntervalBundle::InputDateIntervals, &transformed_date_interval_bundle);
+    transformed_date_interval_bundle.signal_transformed_date_interval_bundles.connect(&CalendarPage::SetDateIntervalBundles, calendar.get());
+
+
 
     page_setup_panel->signal_page_size.connect(&CalendarPage::SlotPageSize, calendar.get());
     page_setup_panel->signal_page_margins.connect(&CalendarPage::SlotPageMargins, calendar.get());
@@ -327,10 +333,10 @@ void MainWindow::SlotExportCSV(wxCommandEvent& event)
             .header(false)
             .skip_empty_rows(true);
 
-        for(size_t index = 0; index < date_intervals.GetDateIntervalsSize(); ++index)
+        for(size_t index = 0; index < date_interval_bundle_store.GetDateIntervalsSize(); ++index)
         {
-            auto begin_date = boost_date_to_string(date_intervals.GetDateIntervalConstRef(index).begin());
-            auto last_date = boost_date_to_string(date_intervals.GetDateIntervalConstRef(index).end());
+            auto begin_date = boost_date_to_string(date_interval_bundle_store.GetDateIntervalConstRef(index).begin());
+            auto last_date = boost_date_to_string(date_interval_bundle_store.GetDateIntervalConstRef(index).end());
             
             csv_writer.write_row(begin_date, last_date);
         }
@@ -352,7 +358,7 @@ void MainWindow::ImportCSV(const std::string& filepath)
 
     date_format_descriptor date_format = InitDateFormat();
 
-    std::vector<date_period> buffer;
+    std::vector<DateIntervalBundle> buffer;
    
     while (csv_reader.busy())
     {
@@ -388,7 +394,7 @@ void MainWindow::ImportCSV(const std::string& filepath)
         }
     }
 
-    date_intervals.SetDateIntervals(buffer);
+    date_interval_bundle_store.SetDateIntervalBundles(buffer);
 }
 
 void MainWindow::SlotExportPNG(wxCommandEvent& event)
@@ -436,7 +442,7 @@ void MainWindow::SaveXML(const std::wstring& filepath)
 {
     pugi::xml_document doc;
 
-    date_intervals.SaveXML(&doc);
+    date_interval_bundle_store.SaveXML(&doc);
     page_setup_panel->SaveXML(&doc);
     title_setup_panel->SaveToXML(&doc);
     elements_setup_panel->SaveToXML(&doc);
@@ -451,7 +457,7 @@ void MainWindow::LoadXML(const std::wstring& filepath)
     auto load_success = doc.load_file(filepath.c_str());
     if (load_success)
     {
-        date_intervals.LoadXML(doc);
+        date_interval_bundle_store.LoadXML(doc);
         page_setup_panel->LoadXML(doc);
         title_setup_panel->LoadFromXML(doc);
         elements_setup_panel->LoadFromXML(doc);
