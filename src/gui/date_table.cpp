@@ -262,8 +262,8 @@ void DateTablePanel::UpdateValidRows()
 	valid_rows.clear();
 	for (size_t row = 0; row < table_widget->GetItemCount(); ++row)
 	{
-		auto begin_date = ParseDateByCell(row, 1);
-		auto end_date = ParseDateByCell(row, 2);
+		auto begin_date = ParseDateByCell(row, 0);
+		auto end_date = ParseDateByCell(row, 1);
 
 		if (CheckDateInterval(begin_date, end_date) > 0)
 		{
@@ -271,9 +271,9 @@ void DateTablePanel::UpdateValidRows()
 		}
 		else
 		{
-			table_widget->SetValue(L"", row, 0);
-			table_widget->SetValue(L"", row, 3);
-			table_widget->SetValue(L"", row, 4);
+			table_widget->SetValue(L"", row, 2);
+			table_widget->SetValue(L"", row, 5);
+			table_widget->SetValue(L"", row, 6);
 		}
 	}
 }
@@ -286,8 +286,8 @@ void DateTablePanel::ScanTable()
 
 	for (size_t index = 0; index < valid_rows.size(); ++index)
 	{
-		auto begin_date = ParseDateByCell(valid_rows[index], 1);
-		auto end_date = ParseDateByCell(valid_rows[index], 2);
+		auto begin_date = ParseDateByCell(valid_rows[index], 0);
+		auto end_date = ParseDateByCell(valid_rows[index], 1);
 
 		date_period buffer = date_period(begin_date, end_date);
 		

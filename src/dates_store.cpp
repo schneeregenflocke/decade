@@ -64,7 +64,7 @@ void DateIntervalBundleStore::SetDateIntervalBundles(const std::vector<DateInter
 {
 	ProcessDateIntervalBundles(date_interval_bundles);
 
-	signal_date_interval_bundles(date_interval_bundles);
+	signal_date_interval_bundles(this->date_interval_bundles);
 }
 
 void DateIntervalBundleStore::ProcessDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles)
@@ -112,11 +112,11 @@ void DateIntervalBundleStore::Sort()
 
 void DateIntervalBundleStore::ProcessDateInterIntervals()
 {
-	for (size_t index = 0; index < date_interval_bundles.size() - 1; ++index)
+	for (size_t index = 1; index < date_interval_bundles.size(); ++index)
 	{
-		date_interval_bundles[index].date_inter_interval = date_period(
-			date_interval_bundles[index].date_interval.end(),
-			date_interval_bundles[index + 1].date_interval.begin());
+		date_interval_bundles[index - 1].date_inter_interval = date_period(
+			date_interval_bundles[index - 1].date_interval.end(),
+			date_interval_bundles[index].date_interval.begin());
 	}
 }
 
