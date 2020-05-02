@@ -78,17 +78,6 @@ std::wstring DateGroupStore::GetName(int number)
 	}
 }
 
-/*int DateGroupStore::CheckAndAdjustGroup(std::vector<DateIntervalBundle>* date_interval_bundles)
-{
-	for (auto& bundle : *date_interval_bundles)
-	{
-		if ((bundle.group < date_groups.size()) == false)
-		{
-			bundle.group = 0;
-		}
-	}
-}*/
-
 int DateGroupStore::GetMaxGroup()
 {
 	return date_groups.size() - 1;

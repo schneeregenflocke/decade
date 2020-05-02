@@ -138,7 +138,7 @@ void DateTablePanel::UpdateTable(const std::vector<DateIntervalBundle>& date_int
 
 		table_widget->SetValue(std::to_string(index + 1), valid_rows[index], 2);
 
-
+		// Check for group existing
 		if (date_interval_bundles[index].group > date_group_store.GetMaxGroup())
 		{
 			table_widget->SetValue(0, valid_rows[index], 3);
@@ -170,10 +170,14 @@ void DateTablePanel::UpdateGroups(const std::vector<DateGroup>& date_groups)
 	{
 		wxVariant value;
 		table_widget->GetValue(value, index, 3);
-		if (value.GetLong() > date_group_store.GetMaxGroup())
+		
+		if (value.IsNull() == false)
 		{
-			table_widget->SetValue(0, index, 3);
-		}
+			if (value.GetLong() > date_group_store.GetMaxGroup())
+			{
+				table_widget->SetValue(0, index, 3);
+			}
+		}	
 	}
 
 	UpdateColumns();
@@ -279,6 +283,7 @@ void DateTablePanel::InsertRow(size_t row)
 	{
 		wxVector<wxVariant> empty_row;
 		empty_row.resize(table_widget->GetColumnCount());
+		empty_row[3] = static_cast<long>(0);
 		table_widget->InsertItem(row, empty_row);
 	}
 }

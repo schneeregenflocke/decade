@@ -18,8 +18,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #pragma once
 
-#include "dates_store.h"
-
 #include <sigslot/signal.hpp>
 
 #include <string>
@@ -57,7 +55,6 @@ public:
 
 	sigslot::signal<const std::vector<DateGroup>&> signal_date_groups;
 
-	//int CheckAndAdjustGroup(std::vector<DateIntervalBundle>* date_interval_bundles);
 	int GetMaxGroup();
 
 private:
