@@ -38,6 +38,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include <vector>
 #include <string>
+#include <memory>
 
 
 class DateTablePanel : public wxPanel
@@ -58,7 +59,7 @@ private:
 	void UpdateValidRows();
 	void ScanTable();
 
-	void SetupColumns();
+	void UpdateColumns();
 
 	void UpdateButtons();
 	void InsertRow(size_t row);
@@ -71,7 +72,7 @@ private:
 	void OnSelectionChanged(wxDataViewEvent& event);
 	void OnButtonClicked(wxCommandEvent& event);
 
-	date_format_descriptor dateFormat;
+	date_format_descriptor date_format;
 
 	wxDataViewListCtrl* table_widget;
 	wxButton* addRowButton;
@@ -79,6 +80,9 @@ private:
 
 	std::vector<size_t> valid_rows;
 
-	wxArrayString group_choices;
+	DateGroupStore date_group_store;
+
+	wxDataViewChoiceByIndexRenderer* group_choice_renderer;
+	wxDataViewColumn* group_column;
 };
 

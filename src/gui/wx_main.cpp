@@ -55,6 +55,9 @@ int main(int argc, char* argv[])
     
     wxEntryCleanup();
 
+    // _CRTDBG_MAP_ALLOC
+    //_CrtDumpMemoryLeaks(); ??
+
     return EXIT_SUCCESS;
 }
 
@@ -226,7 +229,7 @@ void MainWindow::SlotGLReady()
     date_groups_table_panel->signal_table_date_groups.connect(&DateGroupStore::SetDateGroups, &date_groups_store);
     date_groups_store.signal_date_groups.connect(&DateGroupsTablePanel::UpdateTable, date_groups_table_panel);
     date_groups_store.signal_date_groups.connect(&DateTablePanel::UpdateGroups, data_table_panel);
-    date_groups_store.InitDefaults();
+    date_groups_store.InitDefault();
 
 
     date_interval_bundle_store.signal_date_interval_bundles.connect(&DateTablePanel::UpdateTable, data_table_panel);

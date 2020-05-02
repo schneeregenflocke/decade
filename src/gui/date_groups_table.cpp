@@ -64,8 +64,6 @@ DateGroupsTablePanel::DateGroupsTablePanel(wxWindow* parent) :
 
 	data_table->AppendTextColumn(L"Group Number", wxDATAVIEW_CELL_INERT);
 	data_table->AppendTextColumn(L"Group Name", wxDATAVIEW_CELL_EDITABLE);
-
-	
 }
 
 void DateGroupsTablePanel::UpdateTable(const std::vector<DateGroup>& date_groups)
@@ -120,7 +118,7 @@ void DateGroupsTablePanel::OnItemEditing(wxDataViewEvent& event)
 	{
 		event.Veto();
 
-		if (event.IsEditCancelled() == false && data_table->GetSelectedRow() >= 2)
+		if (event.IsEditCancelled() == false)
 		{
 			auto edited_string = event.GetValue().GetString().ToStdWstring();
 			data_table->SetValue(edited_string.c_str(), data_table->GetSelectedRow(), event.GetColumn());
@@ -147,9 +145,9 @@ void DateGroupsTablePanel::OnButtonClicked(wxCommandEvent& event)
 		{
 			selected_row = data_table->GetItemCount();
 		}
-		else if (selected_row < 2)
+		else if (selected_row < 1)
 		{
-			selected_row = 2;
+			selected_row = 1;
 		}
 		else
 		{
@@ -158,7 +156,7 @@ void DateGroupsTablePanel::OnButtonClicked(wxCommandEvent& event)
 
 		InsertRow(selected_row);
 
-		date_groups.insert(date_groups.cbegin() + selected_row, DateGroup(0, L""));
+		date_groups.insert(date_groups.cbegin() + selected_row, DateGroup(L""));
 		signal_table_date_groups(date_groups);
 
 		data_table->SelectRow(selected_row);
@@ -166,7 +164,7 @@ void DateGroupsTablePanel::OnButtonClicked(wxCommandEvent& event)
 		UpdateButtons();
 	}
 
-	if (event.GetId() == wxID_DELETE && selected_row != wxNOT_FOUND && selected_row >= 2)
+	if (event.GetId() == wxID_DELETE && selected_row != wxNOT_FOUND && selected_row >= 1)
 	{
 		RemoveRow(selected_row);
 
@@ -191,7 +189,7 @@ void DateGroupsTablePanel::OnButtonClicked(wxCommandEvent& event)
 
 void DateGroupsTablePanel::UpdateButtons()
 {
-	if (data_table->GetSelectedRow() == wxNOT_FOUND || data_table->GetSelectedRow() < 2)
+	if (data_table->GetSelectedRow() == wxNOT_FOUND || data_table->GetSelectedRow() < 1)
 	{
 		deleteRowButton->Enable(false);
 	}

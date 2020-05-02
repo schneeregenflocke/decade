@@ -36,17 +36,24 @@ struct DateIntervalBundle
 {
 	DateIntervalBundle() :
 		date_interval(date_period(date(boost::date_time::not_a_date_time), date(boost::date_time::not_a_date_time))),
-		date_inter_interval(date_period(date(boost::date_time::not_a_date_time), date(boost::date_time::not_a_date_time)))
+		date_inter_interval(date_period(date(boost::date_time::not_a_date_time), date(boost::date_time::not_a_date_time))),
+		group(0),
+		group_number(0),
+		comment(L"")
 	{};
 
 	DateIntervalBundle(date_period date_interval) :
 		date_interval(date_interval),
-		date_inter_interval(date_period(date(boost::date_time::not_a_date_time), date(boost::date_time::not_a_date_time)))
+		date_inter_interval(date_period(date(boost::date_time::not_a_date_time), date(boost::date_time::not_a_date_time))),
+		group(0),
+		group_number(0),
+		comment(L"")
 	{};
 
 	date_period date_interval;
 	date_period	date_inter_interval;
 	int group;
+	int group_number;
 	std::wstring comment;
 };
 
@@ -65,7 +72,6 @@ public:
 	sigslot::signal<const std::vector<DateIntervalBundle>&> signal_transformed_date_interval_bundles;
 
 private:
-
 	std::array<int, 2> date_shift;
 };
 
@@ -113,7 +119,6 @@ public:
 	int GetLenght() const;
 	float GetFirstDay() const;
 	float GetLastDay() const;
-	
 
 private:
 

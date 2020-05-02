@@ -59,7 +59,6 @@ void TransformDateIntervalBundle::SetTransform(int shift_begin_date, int shift_e
 }
 
 
-
 void DateIntervalBundleStore::SetDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles)
 {
 	ProcessDateIntervalBundles(date_interval_bundles);
@@ -75,9 +74,12 @@ void DateIntervalBundleStore::ProcessDateIntervalBundles(const std::vector<DateI
 	// copy, not const reference
 	for (auto date_interval_bundle : date_interval_bundles)
 	{
-		if (CheckAndAdjustDateInterval(&date_interval_bundle.date_interval) > 0)
+		auto case_id = CheckAndAdjustDateInterval(&date_interval_bundle.date_interval);
+		
+		if (case_id > 0)
 		{
 			DateIntervalBundle temporary_bundle;
+			
 			temporary_bundle.date_interval = date_interval_bundle.date_interval;
 			this->date_interval_bundles.push_back(temporary_bundle);
 		}
