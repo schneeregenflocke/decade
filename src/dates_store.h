@@ -27,6 +27,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include <fstream>
 #include <sstream>
 #include <array>
+#include <map>
 
 #include <pugixml.hpp>
 
@@ -101,6 +102,7 @@ protected:
 	void ProcessDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles);
 	void Sort();
 	void ProcessDateInterIntervals();
+	void ProcessDateGroupsNumber();
 
 	std::vector<DateIntervalBundle> date_interval_bundles;
 };

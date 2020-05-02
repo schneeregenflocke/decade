@@ -37,7 +37,7 @@ DateTablePanel::DateTablePanel(wxWindow* parent) :
 
 	// Bind(wxEVT_DATAVIEW_ITEM_START_EDITING, &DateTablePanel::OnItemEditing, this);
 	// Bind(wxEVT_DATAVIEW_ITEM_EDITING_STARTED, &DateTablePanel::OnItemEditing, this);
-	// Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED, &DateTablePanel::OnValueChanged, this);
+	Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED, &DateTablePanel::OnValueChanged, this);
 
 	Bind(wxEVT_BUTTON, &DateTablePanel::OnButtonClicked, this);
 	
@@ -147,6 +147,8 @@ void DateTablePanel::UpdateTable(const std::vector<DateIntervalBundle>& date_int
 		{
 			table_widget->SetValue(date_interval_bundles[index].group, valid_rows[index], 3);
 		}
+
+		table_widget->SetValue(std::to_string(date_interval_bundles[index].group_number), valid_rows[index], 4);
 		
 
 		table_widget->SetValue(std::to_string(date_interval_bundles[index].date_interval.length().days()), valid_rows[index], 5);
@@ -166,18 +168,20 @@ void DateTablePanel::UpdateGroups(const std::vector<DateGroup>& date_groups)
 {
 	date_group_store.SetDateGroups(date_groups);
 
+
+	// Check if group exists ... 
 	for (int index = 0; index < table_widget->GetItemCount(); ++index)
 	{
 		wxVariant value;
 		table_widget->GetValue(value, index, 3);
 		
-		if (value.IsNull() == false)
-		{
+		//if (value.IsNull() == false)
+		//{
 			if (value.GetLong() > date_group_store.GetMaxGroup())
 			{
 				table_widget->SetValue(0, index, 3);
 			}
-		}	
+		//}	
 	}
 
 	UpdateColumns();
@@ -190,6 +194,14 @@ void DateTablePanel::OnItemActivated(wxDataViewEvent& event)
 	{
 		table_widget->EditItem(event.GetItem(), event.GetDataViewColumn());
 	}
+
+	std::cout << "column check " << event.GetDataViewColumn() << '\n';
+	std::cout << "column " << event.GetColumn() << '\n';
+	//ScanTable();
+}
+
+void DateTablePanel::OnValueChanged(wxDataViewEvent& event)
+{
 }
 
 void DateTablePanel::OnItemEditing(wxDataViewEvent& event)
@@ -201,22 +213,34 @@ void DateTablePanel::OnItemEditing(wxDataViewEvent& event)
 		if (event.IsEditCancelled() == false)
 		{
 			auto edited_string = event.GetValue().GetString().ToStdString();
-			
+
 			// Check Date
 			auto edited_date = string_to_boost_date(edited_string, date_format);
 			if (edited_date.is_special() == false)
 			{
 				std::string parsed_string = boost_date_to_string(edited_date);
-				table_widget->SetValue(parsed_string.c_str(), table_widget->GetSelectedRow(), event.GetColumn());	
+				table_widget->SetValue(parsed_string.c_str(), table_widget->GetSelectedRow(), event.GetColumn());
 			}
 			else
 			{
 				table_widget->SetValue(edited_string.c_str(), table_widget->GetSelectedRow(), event.GetColumn());
-			}
-
-			ScanTable();
+			}	
 		}		
 	}
+
+	if (event.GetEventType() == wxEVT_DATAVIEW_ITEM_EDITING_DONE && event.GetColumn() == 3)
+	{
+		event.Veto();
+
+		if (event.IsEditCancelled() == false)
+		{
+			auto group_number = event.GetValue().GetLong();
+			//std::cout << __LINE__  << " " << group_number << '\n';
+			table_widget->SetValue(group_number, table_widget->GetSelectedRow(), event.GetColumn());
+		}
+	}
+
+	ScanTable();
 }
 
 void DateTablePanel::OnSelectionChanged(wxDataViewEvent& event)
@@ -339,16 +363,17 @@ void DateTablePanel::ScanTable()
 
 		if (CheckAndAdjustDateInterval(&temporary_date_interval) > 0)
 		{
-			DateIntervalBundle temporary;
+			DateIntervalBundle temporary_interval_bundle;
 
-			temporary.date_interval = temporary_date_interval;
+			temporary_interval_bundle.date_interval = temporary_date_interval;
 
 			wxVariant group_number;
 			table_widget->GetValue(group_number, valid_index, 3);
+			std::cout << __LINE__ << " " << index << " " << group_number.GetType() << " "  << group_number.GetLong() <<'\n';
 
-			temporary.group = group_number.GetLong();
+			temporary_interval_bundle.group = group_number.GetLong();
 
-			date_interval_bundles.push_back(temporary);
+			date_interval_bundles.push_back(temporary_interval_bundle);
 		}		
 	}
 

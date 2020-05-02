@@ -68,9 +68,11 @@ private:
 	date ParseDateByCell(int row, int column);
 	
 	void OnItemActivated(wxDataViewEvent& event);
+	void OnValueChanged(wxDataViewEvent& event);
 	void OnItemEditing(wxDataViewEvent& event);
 	void OnSelectionChanged(wxDataViewEvent& event);
 	void OnButtonClicked(wxCommandEvent& event);
+	
 
 	date_format_descriptor date_format;
 

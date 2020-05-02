@@ -81,6 +81,8 @@ void DateIntervalBundleStore::ProcessDateIntervalBundles(const std::vector<DateI
 			DateIntervalBundle temporary_bundle;
 			
 			temporary_bundle.date_interval = date_interval_bundle.date_interval;
+			temporary_bundle.group = date_interval_bundle.group;
+			temporary_bundle.comment = date_interval_bundle.comment;
 			this->date_interval_bundles.push_back(temporary_bundle);
 		}
 	}
@@ -89,6 +91,7 @@ void DateIntervalBundleStore::ProcessDateIntervalBundles(const std::vector<DateI
 
 	Sort();
 	ProcessDateInterIntervals();
+	ProcessDateGroupsNumber();
 }
 
 size_t DateIntervalBundleStore::GetDateIntervalsSize() const
@@ -119,6 +122,27 @@ void DateIntervalBundleStore::ProcessDateInterIntervals()
 		date_interval_bundles[index - 1].date_inter_interval = date_period(
 			date_interval_bundles[index - 1].date_interval.end(),
 			date_interval_bundles[index].date_interval.begin());
+	}
+}
+
+void DateIntervalBundleStore::ProcessDateGroupsNumber()
+{
+	std::map<int, int> groups_counter;
+
+	for (auto& date_interval_bundle : date_interval_bundles)
+	{
+		auto current_group = date_interval_bundle.group;
+		
+		if (groups_counter.count(current_group))
+		{
+			groups_counter[current_group] += 1;
+		}
+		else
+		{
+			groups_counter[current_group] = 1;
+		}
+
+		date_interval_bundle.group_number = groups_counter[current_group];
 	}
 }
 
