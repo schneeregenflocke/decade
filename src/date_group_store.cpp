@@ -83,6 +83,39 @@ int DateGroupStore::GetMaxGroup()
 	return date_groups.size() - 1;
 }
 
+void DateGroupStore::LoadXML(const pugi::xml_node& doc)
+{
+	std::vector<DateGroup> temporary_date_groups;
+
+	auto base_node = doc.child(L"date_group_store");
+
+	for (auto& node : base_node.children(L"date_group"))
+	{
+		DateGroup temporary_date_group;
+
+		temporary_date_group.name = node.attribute(L"name").value();
+		temporary_date_group.exclude = node.attribute(L"exclude").as_bool();
+
+		temporary_date_groups.push_back(temporary_date_group);
+	}
+
+	this->date_groups.clear();
+	SetDateGroups(temporary_date_groups);
+}
+
+void DateGroupStore::SaveXML(pugi::xml_node* doc)
+{
+	auto base_node = doc->append_child(L"date_group_store");
+
+	for (size_t index = 0; index < date_groups.size(); ++index)
+	{
+		auto node = base_node.append_child(L"date_group");
+
+		node.append_attribute(L"name").set_value(date_groups[index].name.c_str());
+		node.append_attribute(L"exclude").set_value(date_groups[index].exclude);
+	}
+}
+
 void DateGroupStore::UpdateNumbers()
 {
 	int number = 0;

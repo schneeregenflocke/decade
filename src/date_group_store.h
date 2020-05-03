@@ -20,6 +20,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include <sigslot/signal.hpp>
 
+#include <pugixml.hpp>
+
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -28,6 +30,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 class DateGroup
 {
 public:
+
+	DateGroup() :
+		name(L"no name"),
+		number(0),
+		exclude(false)
+	{}
 
 	DateGroup(std::wstring name) :
 		name(name),
@@ -56,6 +64,9 @@ public:
 	sigslot::signal<const std::vector<DateGroup>&> signal_date_groups;
 
 	int GetMaxGroup();
+
+	void LoadXML(const pugi::xml_node& doc);
+	void SaveXML(pugi::xml_node* doc);
 
 private:
 

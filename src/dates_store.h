@@ -122,13 +122,15 @@ public:
 	float GetFirstDay() const;
 	float GetLastDay() const;
 
+	int group;
+
 private:
 
 	date_period date_interval;
 	std::wstring text;
-	int admission;
-	int lenght;
-	int group;
+	//int admission;
+	//int lenght;
+	
 };
 
 

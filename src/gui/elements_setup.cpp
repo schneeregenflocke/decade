@@ -42,19 +42,14 @@ ElementsSetupsPanel::ElementsSetupsPanel(wxWindow* parent) :
 	element_configurations.emplace_back(L"Sunday Shapes", true, true, 0.2f, glm::vec4(0.75f, 0.75f, 0.75f, 1.f), glm::vec4(0.75f, 0.75f, 0.75f, 1.f));
 	element_configurations.emplace_back(L"Months Shapes", true, true, 0.2f, glm::vec4(0.25f, 0.25f, 0.25f, 1.f), glm::vec4(0.25f, 0.25f, 0.25f, 0.f));
 	element_configurations.emplace_back(L"Years Shapes", false, false, 0.2f, glm::vec4(0.25f, 0.25f, 0.25f, 1.f), glm::vec4(0.25f, 0.25f, 0.25f, 0.f));
-	element_configurations.emplace_back(L"Bars Shapes", true, true, 0.5f, glm::vec4(0.25f, 0.25f, 0.75f, 0.75f), glm::vec4(0.25f, 0.25f, 0.75f, 0.35f));
 	element_configurations.emplace_back(L"Years Totals", false, true, 0.2f, glm::vec4(0.25f, 0.75f, 0.25f, 1.f), glm::vec4(0.25f, 0.75f, 0.25f, 1.f));
+	
+	number_static_elements = element_configurations.size();
+	
+	
 
+	UpdateElementConfigurations();
 
-	for (size_t index = 0; index < element_configurations.size(); ++index)
-	{
-		elements_list_box->AppendString(element_configurations[index].Name());
-	}
-
-	size_t default_selection = 0;
-	elements_list_box->Select(default_selection);
-
-	////////////////////////////////////////
 	////////////////////////////////////////
 
 	Bind(wxEVT_LISTBOX, &ElementsSetupsPanel::SlotSelectListBook, this);
@@ -68,7 +63,7 @@ ElementsSetupsPanel::ElementsSetupsPanel(wxWindow* parent) :
 
 	////////////////////////////////////////
 
-	UpdateWidgets(default_selection);
+	
 }
 
 void ElementsSetupsPanel::InitWidgets()
@@ -145,14 +140,53 @@ void ElementsSetupsPanel::InitSizers()
 	horizontal_sizers_fill[1]->Add(fillcolor_label, sizer_flags[1]);
 	horizontal_sizers_fill[1]->Add(fill_color_picker, sizer_flags[2]);
 	horizontal_sizers_fill[2]->Add(fill_transparency_label, sizer_flags[1]);
-	horizontal_sizers_fill[2]->Add(fill_color_alpha_slider, sizer_flags[1]);
+	horizontal_sizers_fill[2]->Add(fill_color_alpha_slider, sizer_flags[2]);
 
 	vertical_sizer->Layout();
+}
+
+void ElementsSetupsPanel::UpdateElementConfigurations()
+{
+	elements_list_box->Clear();
+
+	for (size_t index = 0; index < element_configurations.size(); ++index)
+	{
+		elements_list_box->AppendString(element_configurations[index].Name());
+	}
+
+	size_t default_selection = 0;
+	elements_list_box->Select(default_selection);
+	UpdateWidgets(default_selection);
+
+	signal_shape_config(element_configurations);
 }
 
 void ElementsSetupsPanel::SendDefaultValues()
 {
 	signal_shape_config(element_configurations);
+}
+
+void ElementsSetupsPanel::UpdateGroups(const std::vector<DateGroup>& date_groups)
+{
+	auto current_dynamic_elements = element_configurations.size() - number_static_elements;
+
+	int adjust_number_elements = static_cast<int>(date_groups.size()) - static_cast<int>(current_dynamic_elements);
+
+	auto newsize = element_configurations.size() + adjust_number_elements;
+	element_configurations.resize(newsize);
+
+	if (adjust_number_elements > 0)
+	{
+		auto start_index = date_groups.size() - adjust_number_elements;
+
+		for (size_t index = start_index; index < date_groups.size(); ++index)
+		{
+			RectangleShapeConfig temporary(std::wstring(L"Bar Group ") + std::to_wstring(index), true, true, 0.5f, glm::vec4(0.25f, 0.25f, 0.75f, 0.75f), glm::vec4(0.25f, 0.25f, 0.75f, 0.35f));
+			element_configurations[number_static_elements + index] = temporary;
+		}
+	}
+
+	UpdateElementConfigurations();
 }
 
 void ElementsSetupsPanel::UpdateWidgets(size_t config_index)

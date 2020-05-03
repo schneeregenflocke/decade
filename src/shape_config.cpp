@@ -19,6 +19,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include "shape_config.h"
 
 
+RectangleShapeConfig::RectangleShapeConfig() :
+	name(L"no name"),
+	outline_visible(true),
+	fill_visible(false),
+	linewidth(0.1f),
+	outline_color(0.f, 0.f, 0.f, 1.f),
+	fill_color(1.f, 1.f, 1.f, 1.f)
+{}
+
+
+
 RectangleShapeConfig::RectangleShapeConfig(const std::wstring& name) :
 	name(name),
 	outline_visible(true),

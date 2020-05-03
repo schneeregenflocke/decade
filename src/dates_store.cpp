@@ -166,34 +166,14 @@ int DateIntervalBundleStore::GetLastYear() const
 	return date_interval_bundles.back().date_interval.last().year();
 }
 
-void DateIntervalBundleStore::LoadXML(const pugi::xml_node& doc)
-{
-	auto base_node = doc.child(L"date_intervals");
-
-	std::vector<DateIntervalBundle> buffer;
-
-	for (auto& node_interval : base_node.children(L"interval"))
-	{
-		std::wstring begin_date_string = node_interval.attribute(L"begin_date").value();
-		std::wstring end_date_string = node_interval.attribute(L"end_date").value();
-
-		date boost_begin_date = boost::gregorian::from_undelimited_string(std::string(begin_date_string.begin(), begin_date_string.end()));
-		date boost_end_date = boost::gregorian::from_undelimited_string(std::string(end_date_string.begin(), end_date_string.end()));
-
-		//copy constructor, default constructor, constructor??
-		buffer.push_back(date_period(boost_begin_date, boost_end_date));
-	}
-
-	SetDateIntervalBundles(buffer);
-}
 
 void DateIntervalBundleStore::SaveXML(pugi::xml_node* doc)
 {
-	auto base_node = doc->append_child(L"date_intervals");
+	auto base_node = doc->append_child(L"date_interval_bundles");
 
 	for (size_t index = 0; index < date_interval_bundles.size(); ++index)
 	{
-		auto node = base_node.append_child(L"interval");
+		auto node = base_node.append_child(L"date_interval_bundle");
 
 		auto attribute_begin_date = node.append_attribute(L"begin_date");
 		std::string begin_date_iso_string = boost::gregorian::to_iso_string(date_interval_bundles[index].date_interval.begin());
@@ -202,16 +182,50 @@ void DateIntervalBundleStore::SaveXML(pugi::xml_node* doc)
 		auto attribute_end_date = node.append_attribute(L"end_date");
 		std::string end_date_iso_string = boost::gregorian::to_iso_string(date_interval_bundles[index].date_interval.end());
 		attribute_end_date.set_value(std::wstring(end_date_iso_string.begin(), end_date_iso_string.end()).c_str());
+
+		node.append_attribute(L"group").set_value(date_interval_bundles[index].group);
+
+		node.append_attribute(L"comment").set_value(date_interval_bundles[index].comment.c_str());
 	}
 }
+
+
+void DateIntervalBundleStore::LoadXML(const pugi::xml_node& doc)
+{
+	auto base_node = doc.child(L"date_interval_bundles");
+
+	std::vector<DateIntervalBundle> temporary_date_interval_bundles;
+
+	for (auto& node_interval : base_node.children(L"date_interval_bundle"))
+	{
+		std::wstring begin_date_string = node_interval.attribute(L"begin_date").value();
+		std::wstring end_date_string = node_interval.attribute(L"end_date").value();
+
+		date boost_begin_date = boost::gregorian::from_undelimited_string(std::string(begin_date_string.begin(), begin_date_string.end()));
+		date boost_end_date = boost::gregorian::from_undelimited_string(std::string(end_date_string.begin(), end_date_string.end()));
+
+		DateIntervalBundle temporary_bundle;
+
+		temporary_bundle.date_interval = date_period(boost_begin_date, boost_end_date);
+		temporary_bundle.group = node_interval.attribute(L"group").as_int();
+		temporary_bundle.comment = node_interval.attribute(L"comment").value();
+		
+		//copy constructor, default constructor, constructor??
+		temporary_date_interval_bundles.push_back(temporary_bundle);
+	}
+
+	SetDateIntervalBundles(temporary_date_interval_bundles);
+}
+
+
 
 
 
 Bar::Bar(const date_period& date_interval) :
 	date_interval(date_interval),
 	text(L""),
-	admission(0),
-	lenght(0),
+	//admission(0),
+	//lenght(0),
 	group(0)
 {}
 
@@ -277,6 +291,7 @@ void DateIntervalBundleBarStore::ProcessBars()
 		{
 			Bar bar(splitDatePeriods[subindex]);
 			bar.SetText(std::to_wstring(index));
+			bar.group = date_interval_bundles[index].group;
 			bars.push_back(bar);
 		}	
 	}

@@ -19,6 +19,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #pragma once
 
 #include "../shape_config.h"
+#include "../date_group_store.h"
 
 
 #ifdef WX_PRECOMP
@@ -59,6 +60,9 @@ public:
 
 	void SendDefaultValues();
 
+	void UpdateGroups(const std::vector<DateGroup>& date_groups);
+	
+
 	void SaveToXML(pugi::xml_node* node);
 	void LoadFromXML(const pugi::xml_node& node);
 
@@ -68,6 +72,8 @@ private:
 
 	void InitWidgets();
 	void InitSizers();
+
+	void UpdateElementConfigurations();
 
 	void UpdateWidgets(size_t config_index);
 
@@ -97,6 +103,7 @@ private:
 	wxStaticText* fill_transparency_label;
 
 	std::vector<RectangleShapeConfig> element_configurations;
+	size_t number_static_elements;
 
 	const int ID_OUTLINE_VISIBLE;
 	const int ID_FILLING_VISIBLE;

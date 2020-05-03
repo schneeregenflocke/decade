@@ -212,7 +212,27 @@ void CalendarPage::SlotTitleTextColor(const std::array<float, 4>& title_text_col
 void CalendarPage::SlotRectangleShapeConfig(const std::vector<RectangleShapeConfig>& configs)
 {
 	element_configurations = configs;
+	
+	bar_shape_configs.clear();
+	bool run_loop = true;
+	size_t index = 0;
+	while(run_loop)
+	{
+		auto search_string = std::wstring(L"Bar Group ") + std::to_string(index);
+		
+		auto shape_config = GetShapeConfig(search_string);
 
+		if (shape_config.Name() != L"Not Found")
+		{
+			bar_shape_configs.push_back(shape_config);
+		}
+		else
+		{
+			run_loop = false;
+		}
+		++index;
+	} 
+	
 	Update();
 }
 
@@ -542,62 +562,64 @@ void CalendarPage::SetupDaysShapes()
 
 void CalendarPage::SetupBarsShape()
 {
+	auto number_bars = data_store.GetNumberBars();
+	
 	std::vector<rect4> bars_cells;
-	//bars_cells.resize(data_store->GetNumberBars());
-	bars_cells.reserve(data_store.GetNumberBars());
-	//std::vector<glm::vec3> bars_text_positions;
-	//bars_text_positions.resize(data_store->getBarsSize());
+	std::vector<float> bars_cells_shape_linewidths;
+	std::vector<vec4> bars_cells_shape_fillcolors;
+	std::vector<vec4> bars_cells_shape_outlinecolors;
+
+	bars_cells.reserve(number_bars);
+	bars_cells_shape_linewidths.reserve(number_bars);
+	bars_cells_shape_fillcolors.reserve(number_bars);
+	bars_cells_shape_outlinecolors.reserve(number_bars);
 
 	graphic_engine->RemoveShapes(bar_labels_text);
-	bar_labels_text = graphic_engine->AddShapes<FontShape>(data_store.GetNumberBars());
-
+	bar_labels_text.clear();
+	
 	for (size_t index = 0; index < data_store.GetNumberBars(); ++index)
 	{
-		//int row = data_store->GetBar(index).GetYear() - data_store->GetFirstYear();calendarSpan
-
 		if (calendarSpan.IsInSpan(data_store.GetBar(index).GetYear()))
 		{
+			auto current_group = data_store.GetBar(index).group;
+			auto current_shape_config = bar_shape_configs[current_group];
+
+			bars_cells_shape_linewidths.push_back(current_shape_config.LineWidth());
+			bars_cells_shape_fillcolors.push_back(current_shape_config.FillColor());
+			bars_cells_shape_outlinecolors.push_back(current_shape_config.OutlineColor());
+
 			int row = data_store.GetBar(index).GetYear() - calendarSpan.GetFirstYear();
 
-			auto current_cell = row_frames.GetSubFrame(row, 1);
+			auto current_sub_cell = row_frames.GetSubFrame(row, 1);
 
 			rect4 bar_cell;
-			bar_cell.Left(current_cell.Left() + data_store.GetBar(index).GetFirstDay() * day_width);
-			bar_cell.Bottom(current_cell.Bottom());
-			bar_cell.Right(current_cell.Left() + data_store.GetBar(index).GetLastDay() * day_width);
-			bar_cell.Top(current_cell.Top());
+			bar_cell.Left(current_sub_cell.Left() + data_store.GetBar(index).GetFirstDay() * day_width);
+			bar_cell.Bottom(current_sub_cell.Bottom());
+			bar_cell.Right(current_sub_cell.Left() + data_store.GetBar(index).GetLastDay() * day_width);
+			bar_cell.Top(current_sub_cell.Top());
 
-			//bars_cells[index] = bar_cell;
 			bars_cells.push_back(bar_cell);
 
 			std::wstring numsText = data_store.GetBar(index).GetText();
 
-			bar_labels_text[index]->SetFont(font.get());
-
-			//auto htl = bar_labels_text[index]->TextWidth(numsText, barsFontSize) / 2.f;
-			//auto hth = bar_labels_text[index]->TextHeight(barsFontSize) / 2.f;
-
-			////////////////////////////
+			bar_labels_text.push_back(graphic_engine->AddShape<FontShape>());
+			bar_labels_text.back()->SetFont(font.get());
 
 			auto current_text_cell = row_frames.GetSubFrame(row, 2);
 
-			//bars_text_positions[index] = glm::vec3(bar_cell.Left() + bar_cell.Width() / 2.f, bar_cell.Bottom() + bar_cell.Height() + row_height / 4.f - bar_labels_font_size / 2.f, 0.f);
-
 			current_text_cell.Left(bar_cell.Left());
 			current_text_cell.Right(bar_cell.Right());
-
-			//bars_text_positions[index] = bar_cell.Center();
-			//bars_text_positions[index].y = current_text_cell
 
 			bar_labels_text[index]->SetShapeHVCentered(numsText, current_text_cell.Center(), current_text_cell.Height());
 		}
 	}
 
 	bars_cells.shrink_to_fit();
+	bars_cells_shape_linewidths.shrink_to_fit();
+	bars_cells_shape_fillcolors.shrink_to_fit();
+	bars_cells_shape_outlinecolors.shrink_to_fit();
 
-	auto config = GetShapeConfig(L"Bars Shapes");
-
-	bars_cells_shape->SetShapes(bars_cells, config.LineWidth(), config.FillColor(), config.OutlineColor());
+	bars_cells_shape->SetShapes(bars_cells, bars_cells_shape_linewidths, bars_cells_shape_fillcolors, bars_cells_shape_outlinecolors);
 }
 
 

@@ -28,6 +28,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 class RectangleShapeConfig
 {
 public:
+
+	RectangleShapeConfig();
 	RectangleShapeConfig(const std::wstring& name);
 	RectangleShapeConfig(const std::wstring& name, bool outline_visible, bool fill_visible, float linewidth, const glm::vec4& outline_color, const glm::vec4& fill_color);
 

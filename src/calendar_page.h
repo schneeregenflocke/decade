@@ -158,6 +158,7 @@ private:
 
 	RectangleShapeConfig GetShapeConfig(const std::wstring& name);
 	std::vector<RectangleShapeConfig> element_configurations;
+	std::vector<RectangleShapeConfig> bar_shape_configs;
 
 	std::shared_ptr<QuadShape> page_shape;
 	std::shared_ptr<RectanglesShape> print_area_shape;

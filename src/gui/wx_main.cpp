@@ -227,8 +227,10 @@ void MainWindow::SlotGLReady()
     calendar->Update();
 
     date_groups_table_panel->signal_table_date_groups.connect(&DateGroupStore::SetDateGroups, &date_groups_store);
+    
     date_groups_store.signal_date_groups.connect(&DateGroupsTablePanel::UpdateTable, date_groups_table_panel);
     date_groups_store.signal_date_groups.connect(&DateTablePanel::UpdateGroups, data_table_panel);
+    date_groups_store.signal_date_groups.connect(&ElementsSetupsPanel::UpdateGroups, elements_setup_panel);
     date_groups_store.InitDefault();
 
 
@@ -445,6 +447,7 @@ void MainWindow::SaveXML(const std::wstring& filepath)
 {
     pugi::xml_document doc;
 
+    date_groups_store.SaveXML(&doc);
     date_interval_bundle_store.SaveXML(&doc);
     page_setup_panel->SaveXML(&doc);
     title_setup_panel->SaveToXML(&doc);
@@ -460,6 +463,7 @@ void MainWindow::LoadXML(const std::wstring& filepath)
     auto load_success = doc.load_file(filepath.c_str());
     if (load_success)
     {
+        date_groups_store.LoadXML(doc);
         date_interval_bundle_store.LoadXML(doc);
         page_setup_panel->LoadXML(doc);
         title_setup_panel->LoadFromXML(doc);
