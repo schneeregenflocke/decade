@@ -23,28 +23,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 DateTablePanel::DateTablePanel(wxWindow* parent) : 
 	wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxPanelNameStr)
 {
-
-	table_widget = new wxDataViewListCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxDV_SINGLE, wxDefaultValidator);
+	
+	table_widget = new wxDataViewListCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxDV_MULTIPLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES, wxDefaultValidator);
 	 
 	addRowButton = new wxButton(this, wxID_ADD, "Add Row");
 	deleteRowButton = new wxButton(this, wxID_DELETE, "Delete Row");
 	deleteRowButton->Disable();
 
-
-	Bind(wxEVT_DATAVIEW_ITEM_ACTIVATED, &DateTablePanel::OnItemActivated, this);
-	Bind(wxEVT_DATAVIEW_ITEM_EDITING_DONE, &DateTablePanel::OnItemEditing, this);
-	Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &DateTablePanel::OnSelectionChanged, this);
-
-	// Bind(wxEVT_DATAVIEW_ITEM_START_EDITING, &DateTablePanel::OnItemEditing, this);
-	// Bind(wxEVT_DATAVIEW_ITEM_EDITING_STARTED, &DateTablePanel::OnItemEditing, this);
-	Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED, &DateTablePanel::OnValueChanged, this);
-
-	Bind(wxEVT_BUTTON, &DateTablePanel::OnButtonClicked, this);
+	select_group_control = new wxComboBox(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, nullptr, 0L, wxDefaultValidator, wxChoiceNameStr);
 	
 
 	wxBoxSizer* mainSizer = new wxBoxSizer(wxVERTICAL);
 	SetSizer(mainSizer);
-
+	
 	wxSizerFlags sizer_flags0;
 	sizer_flags0.Proportion(1).Expand().Border(wxALL, 0);
 
@@ -57,46 +48,45 @@ DateTablePanel::DateTablePanel(wxWindow* parent) :
 	wxBoxSizer* buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
 	buttons_sizer->Add(addRowButton, sizer_flags1);
 	buttons_sizer->Add(deleteRowButton, sizer_flags1);
+	buttons_sizer->Add(select_group_control, sizer_flags1);
 
-	mainSizer->Add(table_sizer, 1, wxEXPAND);
 	mainSizer->Add(buttons_sizer, 0, wxEXPAND);
+	mainSizer->Add(table_sizer, 1, wxEXPAND);
+	
 
 	Layout();
 
 	//group_choices.push_back(L"uninitialized");
+
+	Bind(wxEVT_DATAVIEW_ITEM_ACTIVATED, &DateTablePanel::OnItemActivated, this);
+	Bind(wxEVT_DATAVIEW_ITEM_EDITING_DONE, &DateTablePanel::OnItemEditing, this);
+	Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &DateTablePanel::OnSelectionChanged, this);
+
+	// Bind(wxEVT_DATAVIEW_ITEM_START_EDITING, &DateTablePanel::OnItemEditing, this);
+	// Bind(wxEVT_DATAVIEW_ITEM_EDITING_STARTED, &DateTablePanel::OnItemEditing, this);
+	Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED, &DateTablePanel::OnValueChanged, this);
+
+	Bind(wxEVT_BUTTON, &DateTablePanel::OnButtonClicked, this);
+
+	Bind(wxEVT_COMBOBOX, &DateTablePanel::OnComboBoxSelection, this);
 	
-	UpdateColumns();
+	InitColumns();
 
 	date_format = InitDateFormat();
 }
 
-void DateTablePanel::UpdateColumns()
+void DateTablePanel::InitColumns()
 {
-	table_widget->ClearColumns();
-
-	auto date_groups_std_string = date_group_store.GetDateGroupsNames();
-	wxArrayString date_groups_strings;
-	date_groups_strings.assign(date_groups_std_string.cbegin(), date_groups_std_string.cend());
-
-	// memory leak?
-	group_choice_renderer = new wxDataViewChoiceByIndexRenderer(date_groups_strings);
-	group_column = new wxDataViewColumn(L"Group", group_choice_renderer, 3);
-
-	//group_choice_renderer = std::move(std::make_unique<wxDataViewChoiceRenderer>(group_choices));
-	//group_column = std::move(std::make_unique<wxDataViewColumn>(L"Group", group_choice_renderer.get(), 3));
+	// table_widget->ClearColumns();
 
 	table_widget->AppendTextColumn(L"From Date", wxDATAVIEW_CELL_EDITABLE);
 	table_widget->AppendTextColumn(L"To Date", wxDATAVIEW_CELL_EDITABLE);
 	table_widget->AppendTextColumn(L"Number", wxDATAVIEW_CELL_INERT);
-
-	table_widget->InsertColumn(3, group_column);
-
+	table_widget->AppendTextColumn(L"Group", wxDATAVIEW_CELL_INERT);
 	table_widget->AppendTextColumn(L"Group Number", wxDATAVIEW_CELL_INERT);
 	table_widget->AppendTextColumn(L"Duration", wxDATAVIEW_CELL_INERT);
 	table_widget->AppendTextColumn(L"Duration to next", wxDATAVIEW_CELL_INERT);
 	table_widget->AppendTextColumn(L"Comment", wxDATAVIEW_CELL_EDITABLE);
-
-	// std::cout << table_widget->GetColumnCount() << " " << table_widget->GetModel()->GetColumnCount() << '\n';
 }
 
 
@@ -141,11 +131,11 @@ void DateTablePanel::UpdateTable(const std::vector<DateIntervalBundle>& date_int
 		// Check for group existing
 		if (date_interval_bundles[index].group > date_group_store.GetMaxGroup())
 		{
-			table_widget->SetValue(0, valid_rows[index], 3);
+			table_widget->SetValue(std::to_string(0), valid_rows[index], 3);
 		}
 		else
 		{
-			table_widget->SetValue(date_interval_bundles[index].group, valid_rows[index], 3);
+			table_widget->SetValue(std::to_string(date_interval_bundles[index].group), valid_rows[index], 3);
 		}
 
 		table_widget->SetValue(std::to_string(date_interval_bundles[index].group_number), valid_rows[index], 4);
@@ -168,36 +158,34 @@ void DateTablePanel::UpdateGroups(const std::vector<DateGroup>& date_groups)
 {
 	date_group_store.SetDateGroups(date_groups);
 
-
 	// Check if group exists ... 
 	for (int index = 0; index < table_widget->GetItemCount(); ++index)
 	{
 		wxVariant value;
 		table_widget->GetValue(value, index, 3);
 		
-		//if (value.IsNull() == false)
-		//{
-			if (value.GetLong() > date_group_store.GetMaxGroup())
-			{
-				table_widget->SetValue(0, index, 3);
-			}
-		//}	
+		if (value.GetLong() > date_group_store.GetMaxGroup())
+		{
+			table_widget->SetValue(0, index, 3);
+		}
 	}
 
-	UpdateColumns();
+	auto date_groups_std_string = date_group_store.GetDateGroupsNames();
+	wxArrayString date_groups_strings;
+	date_groups_strings.assign(date_groups_std_string.cbegin(), date_groups_std_string.cend());
+
+	select_group_control->Set(date_groups_strings);
+	select_group_control->Select(0);
 }
 
 
 void DateTablePanel::OnItemActivated(wxDataViewEvent& event)
 {
+	// Change GUI interaction behavior
 	if (event.GetItem().IsOk() && event.GetDataViewColumn())
 	{
 		table_widget->EditItem(event.GetItem(), event.GetDataViewColumn());
 	}
-
-	std::cout << "column check " << event.GetDataViewColumn() << '\n';
-	std::cout << "column " << event.GetColumn() << '\n';
-	//ScanTable();
 }
 
 void DateTablePanel::OnValueChanged(wxDataViewEvent& event)
@@ -228,7 +216,7 @@ void DateTablePanel::OnItemEditing(wxDataViewEvent& event)
 		}		
 	}
 
-	if (event.GetEventType() == wxEVT_DATAVIEW_ITEM_EDITING_DONE && event.GetColumn() == 3)
+	/*if (event.GetEventType() == wxEVT_DATAVIEW_ITEM_EDITING_DONE && event.GetColumn() == 3)
 	{
 		event.Veto();
 
@@ -238,7 +226,7 @@ void DateTablePanel::OnItemEditing(wxDataViewEvent& event)
 			//std::cout << __LINE__  << " " << group_number << '\n';
 			table_widget->SetValue(group_number, table_widget->GetSelectedRow(), event.GetColumn());
 		}
-	}
+	}*/
 
 	ScanTable();
 }
@@ -250,48 +238,70 @@ void DateTablePanel::OnSelectionChanged(wxDataViewEvent& event)
 
 void DateTablePanel::OnButtonClicked(wxCommandEvent& event)
 {
-	auto selected_row = table_widget->GetSelectedRow();
+	auto selections = GetSelections();
 
 	if (event.GetId() == wxID_ADD)
 	{
-		if (selected_row == wxNOT_FOUND)
+		int insert_row = 0;
+		// if no selection do append
+		if (selections.size() == 0)
 		{
-			selected_row = table_widget->GetItemCount();
+			insert_row = table_widget->GetItemCount();
 		}
-		else 
+		else
 		{
-			++selected_row;
+			insert_row = selections.back() + 1;
 		}
 		
-		InsertRow(selected_row);
-		table_widget->SelectRow(selected_row);
-		table_widget->EnsureVisible(table_widget->RowToItem(selected_row));
+		InsertRow(insert_row);
+		table_widget->SelectRow(insert_row);
+		table_widget->EnsureVisible(table_widget->RowToItem(insert_row));
 		UpdateButtons();
 	}
 
-	if (event.GetId() == wxID_DELETE && selected_row != wxNOT_FOUND)
+	if (event.GetId() == wxID_DELETE && selections.size() > 0)
 	{
-		RemoveRow(selected_row);
-
+		auto post_remove_select = selections.front();
+		
+		for (auto riter = selections.rbegin(); riter != selections.rend(); ++riter)
+		{
+			RemoveRow(*riter);
+		}
+		
 		if (table_widget->GetItemCount() > 0)
 		{
-			if (table_widget->GetItemCount() == selected_row)
+			if (table_widget->GetItemCount() == post_remove_select)
 			{
-				table_widget->SelectRow(selected_row - 1);
+				table_widget->SelectRow(post_remove_select - 1);
 			}
 			else
 			{
-				table_widget->SelectRow(selected_row);
-			}		
+				table_widget->SelectRow(post_remove_select);
+			}	
 		}
 
 		UpdateButtons();
 	}
 }
 
+void DateTablePanel::OnComboBoxSelection(wxCommandEvent& event)
+{
+	auto selections = GetSelections();
+
+	auto group_number = event.GetSelection();
+	auto group_name = date_group_store.GetName(group_number);
+
+	for (size_t index = 0; index < selections.size(); ++index)
+	{
+		table_widget->SetValue(group_name, index, 3);
+	}
+}
+
 void DateTablePanel::UpdateButtons()
 {
-	if (table_widget->GetSelectedRow() == wxNOT_FOUND)
+	auto selections = GetSelections();
+
+	if (selections.size() == 0)
 	{
 		deleteRowButton->Enable(false);
 	}
@@ -314,10 +324,14 @@ void DateTablePanel::InsertRow(size_t row)
 
 void DateTablePanel::RemoveRow(size_t row)
 {
-	if (row <= table_widget->GetItemCount())
+	if (row < table_widget->GetItemCount())
 	{
 		table_widget->DeleteItem(row);
 		ScanTable();
+	}
+	else
+	{
+		std::cout << "try to remove not existent row" << '\n';
 	}
 }
 
@@ -378,6 +392,21 @@ void DateTablePanel::ScanTable()
 	}
 
 	signal_table_date_interval_bundles(date_interval_bundles);
+}
+
+std::vector<int> DateTablePanel::GetSelections()
+{
+	wxDataViewItemArray selection_array;
+	table_widget->GetSelections(selection_array);
+	
+	std::vector<int> selections;
+	for (const auto& selected_item : selection_array)
+	{
+		int selected_row = table_widget->ItemToRow(selected_item);
+		selections.push_back(selected_row);
+	}
+
+	return selections;
 }
 
 

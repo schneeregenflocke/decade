@@ -33,6 +33,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include <wx/datetime.h>
 #include <wx/intl.h>
 #include <wx/toolbar.h>
+#include <wx/combobox.h>
 
 #include <sigslot/signal.hpp>
 
@@ -59,7 +60,9 @@ private:
 	void UpdateValidRows();
 	void ScanTable();
 
-	void UpdateColumns();
+	std::vector<int> GetSelections();
+
+	void InitColumns();
 
 	void UpdateButtons();
 	void InsertRow(size_t row);
@@ -72,19 +75,17 @@ private:
 	void OnItemEditing(wxDataViewEvent& event);
 	void OnSelectionChanged(wxDataViewEvent& event);
 	void OnButtonClicked(wxCommandEvent& event);
-	
+	void OnComboBoxSelection(wxCommandEvent& event);
 
 	date_format_descriptor date_format;
 
 	wxDataViewListCtrl* table_widget;
 	wxButton* addRowButton;
 	wxButton* deleteRowButton;
+	wxComboBox* select_group_control;
 
 	std::vector<size_t> valid_rows;
 
 	DateGroupStore date_group_store;
-
-	wxDataViewChoiceByIndexRenderer* group_choice_renderer;
-	wxDataViewColumn* group_column;
 };
 
