@@ -57,14 +57,16 @@ public:
 
 private:
 
-	void UpdateValidRows();
 	void ScanTable();
+
+	void UpdateValidRows();
 
 	std::vector<int> GetSelections();
 
 	void InitColumns();
 
-	void UpdateButtons();
+	void UpdateWidgets();
+
 	void InsertRow(size_t row);
 	void RemoveRow(size_t row);
 
