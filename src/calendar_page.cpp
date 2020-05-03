@@ -644,13 +644,13 @@ void CalendarPage::SetupYearsTotals()
 
 void CalendarPage::SetupLegend()
 {
-	size_t number_entries = date_groups.size() + 1 /*annual_total*/;
+	size_t number_entrie_frames = (date_groups.size() + 1/*annual_total*/) * 2;
 	
-	std::vector<rect4> legend_entries_frames(number_entries);
+	std::vector<rect4> legend_entries_frames(number_entrie_frames);
 
-	auto entries_width = legend_frame.Width() / static_cast<float>(number_entries);
+	auto entries_width = legend_frame.Width() / static_cast<float>(number_entrie_frames);
 
-	for (size_t index = 0; index < number_entries; ++index)
+	for (size_t index = 0; index < number_entrie_frames; ++index)
 	{
 		auto float_index = static_cast<float>(index);
 		legend_entries_frames[index] = legend_frame;
@@ -658,6 +658,68 @@ void CalendarPage::SetupLegend()
 		legend_entries_frames[index].Right(legend_frame.Left() + entries_width * float_index + entries_width);
 	}
 
+	std::vector<rect4> bars_cells;
+	std::vector<float> bars_cells_shape_linewidths;
+	std::vector<vec4> bars_cells_shape_fillcolors;
+	std::vector<vec4> bars_cells_shape_outlinecolors;
+
+	if (font_loader)
+	{
+		auto legend_font_size = font_loader->AdjustTextSize(legend_entries_frames[0], L"Annual Sum", 0.5f, 0.75f);
+
+		graphic_engine->RemoveShapes(legend_text);
+		legend_text.clear();
+
+		for (size_t index = 0; index < date_groups.size(); ++index)
+		{
+			legend_text.push_back(graphic_engine->AddShape<FontShape>());
+			legend_text.back()->SetFont(font_loader);
+			legend_text.back()->SetShapeCentered(date_groups[index].name, legend_entries_frames[index * 2].Center(), legend_font_size);
+
+			if (calendarSpan.GetSpan() > 0)
+			{
+				auto current_height = row_frames.GetSubFrame(0, 1).Height();
+
+				auto current_cell = legend_entries_frames[index * 2 + 1];
+				auto current_vertical_center = current_cell.Center().y;
+				current_cell.Bottom(current_vertical_center - current_height / 2.f);
+				current_cell.Top(current_vertical_center + current_height / 2.f);
+
+				bars_cells.push_back(current_cell);
+
+				auto current_shape_config = bar_shape_configs[index];
+
+				bars_cells_shape_linewidths.push_back(current_shape_config.LineWidth());
+				bars_cells_shape_fillcolors.push_back(current_shape_config.FillColor());
+				bars_cells_shape_outlinecolors.push_back(current_shape_config.OutlineColor());
+			}
+		}
+
+		legend_text.push_back(graphic_engine->AddShape<FontShape>());
+		legend_text.back()->SetFont(font_loader);
+		legend_text.back()->SetShapeCentered(L"Annual Sums", legend_entries_frames[legend_entries_frames.size() - 2].Center(), legend_font_size);
+
+		if (calendarSpan.GetSpan() > 0)
+		{
+			auto current_height = row_frames.GetSubFrame(0, 0).Height();
+
+			auto current_cell = legend_entries_frames[legend_entries_frames.size() - 1];
+			auto current_vertical_center = current_cell.Center().y;
+			current_cell.Bottom(current_vertical_center - current_height / 2.f);
+			current_cell.Top(current_vertical_center + current_height / 2.f);
+
+			bars_cells.push_back(current_cell);
+
+			auto current_shape_config = GetShapeConfig(L"Years Totals");
+
+			bars_cells_shape_linewidths.push_back(current_shape_config.LineWidth());
+			bars_cells_shape_fillcolors.push_back(current_shape_config.FillColor());
+			bars_cells_shape_outlinecolors.push_back(current_shape_config.OutlineColor());
+		}
+
+	}
+
+	legend_entries_shape->SetShapes(bars_cells, bars_cells_shape_linewidths, bars_cells_shape_fillcolors, bars_cells_shape_outlinecolors);
 	legend_shape->SetShapes(legend_entries_frames, 0.15f, vec4(1.f, 1.f, 1.f, 0.f), vec4(0.f, 0.f, 0.f, 1.f));
 }
 

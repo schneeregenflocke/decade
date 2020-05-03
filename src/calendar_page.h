@@ -182,6 +182,8 @@ private:
 	std::vector< std::shared_ptr<FontShape> > annual_labels_text;
 	std::vector< std::shared_ptr<FontShape> > bar_labels_text;
 
+	std::vector< std::shared_ptr<FontShape> > legend_text;
+
 	std::shared_ptr<RectanglesShape> row_labels_shape;
 	std::shared_ptr<RectanglesShape> column_labels_shape;
 
