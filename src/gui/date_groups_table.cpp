@@ -24,7 +24,7 @@ DateGroupsTablePanel::DateGroupsTablePanel(wxWindow* parent) :
 	wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxPanelNameStr)
 {
 
-	data_table = new wxDataViewListCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxDV_SINGLE, wxDefaultValidator);
+	data_table = new wxDataViewListCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxDV_SINGLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES, wxDefaultValidator);
 
 	Bind(wxEVT_DATAVIEW_ITEM_ACTIVATED, &DateGroupsTablePanel::OnItemActivated, this);
 	Bind(wxEVT_DATAVIEW_ITEM_EDITING_DONE, &DateGroupsTablePanel::OnItemEditing, this);
@@ -57,9 +57,9 @@ DateGroupsTablePanel::DateGroupsTablePanel(wxWindow* parent) :
 	buttons_sizer->Add(addRowButton, sizer_flags1);
 	buttons_sizer->Add(deleteRowButton, sizer_flags1);
 
-	mainSizer->Add(table_sizer, 1, wxEXPAND);
 	mainSizer->Add(buttons_sizer, 0, wxEXPAND);
-
+	mainSizer->Add(table_sizer, 1, wxEXPAND);
+	
 	Layout();
 
 	data_table->AppendTextColumn(L"Group Number", wxDATAVIEW_CELL_INERT);
