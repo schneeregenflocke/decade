@@ -228,9 +228,10 @@ void MainWindow::SlotGLReady()
 
     date_groups_table_panel->signal_table_date_groups.connect(&DateGroupStore::SetDateGroups, &date_groups_store);
     
-    date_groups_store.signal_date_groups.connect(&DateGroupsTablePanel::UpdateTable, date_groups_table_panel);
+    date_groups_store.signal_date_groups.connect(&DateGroupsTablePanel::UpdateGroups, date_groups_table_panel);
     date_groups_store.signal_date_groups.connect(&DateTablePanel::UpdateGroups, data_table_panel);
     date_groups_store.signal_date_groups.connect(&ElementsSetupsPanel::UpdateGroups, elements_setup_panel);
+    date_groups_store.signal_date_groups.connect(&CalendarPage::UpdateGroups, calendar.get());
     date_groups_store.InitDefault();
 
 

@@ -182,42 +182,19 @@ Letter& FontLoader::GetLetterRef(size_t index)
 	return letters[index];
 }
 
-
-
-
-FontShape::FontShape()
+float FontLoader::TextWidth(const std::wstring& text, float size)
 {
-	font = nullptr;
-}
-
-void FontShape::SetFont(FontLoader* value)
-{
-	font = value;
-}
-
-/*float FontShape::CalcSizeAdjustment(float size)
-{
-	return (1.f / TextHeight(1.f)) * size;
-}*/
-
-float FontShape::TextWidth(const std::wstring& text, float size)
-{
-	//float size_adjustment = CalcSizeAdjustment(size);
-
 	float width = 0.f;
-
 	for (size_t index = 0; index < text.size(); ++index)
 	{
-		width += font->GetLetterRef(text[index]).advance * size;
+		width += GetLetterRef(text[index]).advance * size;
 	}
 
 	return width;
 }
 
-float FontShape::TextHeight(float size)
+float FontLoader::TextHeight(float size)
 {
-	float height = 0.f;
-
 	std::vector<size_t> index_list;
 
 	for (size_t index = 48; index <= 57; ++index)
@@ -233,9 +210,10 @@ float FontShape::TextHeight(float size)
 		index_list.push_back(index);
 	}
 
+	float height = 0.f;
 	for (size_t index = 0; index < index_list.size(); ++index)
 	{
-		float currentCharacterBearing = font->GetLetterRef(index).bearing.y * size;
+		float currentCharacterBearing = GetLetterRef(index).bearing.y * size;
 
 		if (currentCharacterBearing > height)
 		{
@@ -247,14 +225,21 @@ float FontShape::TextHeight(float size)
 }
 
 
-void FontShape::SetShapeHVCentered(const std::wstring& text, const glm::vec3& position, float size)
+
+
+
+void FontShape::SetFont(std::shared_ptr<FontLoader> font_loader)
 {
-	if (font != nullptr)
+	this->font_loader = font_loader;
+}
+
+
+void FontShape::SetShapeCentered(const std::wstring& text, const glm::vec3& position, float size)
+{
+	if (font_loader != nullptr)
 	{
-		auto half_wdith = TextWidth(text, size) / 2.f;
-		auto half_height = TextHeight(size) / 2.f;
-		//auto half_height = size / 2.f;
-		//auto half_height = 0;
+		auto half_wdith = font_loader->TextWidth(text, size) / 2.f;
+		auto half_height = font_loader->TextHeight(size) / 2.f;
 
 		SetShape(text, position - vec3(half_wdith, half_height, 0.f), size);
 	}
@@ -262,9 +247,7 @@ void FontShape::SetShapeHVCentered(const std::wstring& text, const glm::vec3& po
 
 void FontShape::SetShape(const std::wstring& text, const glm::vec3& position, float size)
 {
-	//float size_adjustment = CalcSizeAdjustment(size);
-
-	if (font != nullptr)
+	if (font_loader != nullptr)
 	{
 		SetBufferSize(text.size() * 6);
 
@@ -277,14 +260,14 @@ void FontShape::SetShape(const std::wstring& text, const glm::vec3& position, fl
 		{
 			size_t letter_index = text[index];
 
-			GLuint texture = font->GetLetterRef(letter_index).texture_object.Texture();
+			GLuint texture = font_loader->GetLetterRef(letter_index).texture_object.Texture();
 			textTextures[index] = texture;
 
-			GLfloat xpos = currentx + font->GetLetterRef(letter_index).bearing.x * size;
-			GLfloat ypos = currenty - (font->GetLetterRef(letter_index).size.y - font->GetLetterRef(letter_index).bearing.y) * size;
+			GLfloat xpos = currentx + font_loader->GetLetterRef(letter_index).bearing.x * size;
+			GLfloat ypos = currenty - (font_loader->GetLetterRef(letter_index).size.y - font_loader->GetLetterRef(letter_index).bearing.y) * size;
 
-			GLfloat width = font->GetLetterRef(letter_index).size.x * size;
-			GLfloat height = font->GetLetterRef(letter_index).size.y * size;
+			GLfloat width = font_loader->GetLetterRef(letter_index).size.x * size;
+			GLfloat height = font_loader->GetLetterRef(letter_index).size.y * size;
 
 			GetVertexRef(index * 6 + 0).position = glm::vec3(xpos, ypos + height, 0.f);
 			GetVertexRef(index * 6 + 1).position = glm::vec3(xpos, ypos, 0.f);
@@ -300,14 +283,12 @@ void FontShape::SetShape(const std::wstring& text, const glm::vec3& position, fl
 			GetVertexRef(index * 6 + 4).texturePosition = glm::vec2(1.0f, 1.0f);
 			GetVertexRef(index * 6 + 5).texturePosition = glm::vec2(1.0f, 0.0f);
 
-			currentx += font->GetLetterRef(letter_index).advance * size;
+			currentx += font_loader->GetLetterRef(letter_index).advance * size;
 		}
 
 		UpdateBuffer();
 
 	}
-	
-	
 }
 
 

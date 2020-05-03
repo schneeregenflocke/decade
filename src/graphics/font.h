@@ -44,6 +44,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include <cstring>
 #include <string>
 #include <fstream>
+#include <memory>
 
 
 struct Letter
@@ -79,6 +80,9 @@ class FontLoader
 public:
 	FontLoader(const std::string& font_path);
 	Letter& GetLetterRef(size_t index);
+
+	float TextWidth(const std::wstring& text, float size);
+	float TextHeight(float size);
 	
 private:
 	std::vector<Letter> letters;
@@ -89,14 +93,9 @@ class FontShape : public Shape<FontShader>
 {
 public:
 
-	FontShape();
+	void SetFont(std::shared_ptr<FontLoader> font_loader);
 
-	void SetFont(FontLoader* value);
-
-	float TextWidth(const std::wstring& text, float size);
-	float TextHeight(float size);
-
-	void SetShapeHVCentered(const std::wstring& text, const glm::vec3& position, float size);
+	void SetShapeCentered(const std::wstring& text, const glm::vec3& position, float size);
 	void SetShape(const std::wstring& text, const glm::vec3& position, float size);
 
 	void Draw() const override
@@ -120,11 +119,9 @@ public:
 	}
 
 private:
-	//float CalcSizeAdjustment(float size);
-	
 
 	std::vector<GLuint> textTextures;
-	FontLoader* font;
+	std::shared_ptr<FontLoader> font_loader;
 };
 
 

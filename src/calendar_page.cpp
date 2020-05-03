@@ -153,10 +153,15 @@ CalendarPage::CalendarPage(GraphicEngine* graphic_engine) :
 	sub_frames_shape = graphic_engine->AddShape<RectanglesShape>();
 }
 
+void CalendarPage::UpdateGroups(const std::vector<DateGroup>& date_groups)
+{
+	this->date_groups = date_groups;
+	Update();
+}
+
 void CalendarPage::SetDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles)
 {
 	data_store.SetDateIntervalBundles(date_interval_bundles);
-
 	Update();
 }
 
@@ -176,7 +181,7 @@ void CalendarPage::SlotPageMargins(const std::array<float, 4>& page_margins)
 
 void CalendarPage::SlotSelectFont(const std::string& font_path)
 {
-	font.reset(std::make_unique<FontLoader>(font_path).release());
+	font_loader.reset(std::make_unique<FontLoader>(font_path).release());
 
 	Update();
 }
@@ -328,7 +333,7 @@ void CalendarPage::Update()
 	
 //////////////////////////////////////
 
-	SetLegend();
+	SetupLegend();
 
 	graphic_engine->Refresh();
 }
@@ -347,8 +352,8 @@ void CalendarPage::SetupTitleShape()
 
 	title_area_shape->SetShapes(title_frame, config.LineWidth(), config.FillColor(), config.OutlineColor());
 
-	title_font_shape->SetFont(font.get());
-	title_font_shape->SetShapeHVCentered(title_text, title_frame.Center(), title_frame.Height() * title_font_size_ratio);
+	title_font_shape->SetFont(font_loader);
+	title_font_shape->SetShapeCentered(title_text, title_frame.Center(), title_frame.Height() * title_font_size_ratio);
 }
 
 
@@ -370,6 +375,8 @@ void CalendarPage::SetupCalendarLabelsShape()
 
 	std::vector<rect4> x_label_frames(12);
 
+	
+
 	for (size_t index = 0; index < months_names.size(); ++index)
 	{
 		float floatIndex = static_cast<float>(index);
@@ -382,26 +389,22 @@ void CalendarPage::SetupCalendarLabelsShape()
 		x_label_frames[index].Right(x_labels_frame.Left() + cell_width * floatIndex + cell_width);
 		x_label_frames[index].Top(x_labels_frame.Top());
 
-		labels_font_size = row_height * .5f;
-
-		month_label_text[index]->SetFont(font.get());
-		
 
 		//	provisional (better than nothing)
-		if (font)
+		labels_font_size = row_height * .5f;
+		month_label_text[index]->SetFont(font_loader);
+		if (font_loader)
 		{
-			auto text_width = month_label_text[index]->TextWidth(L"00000", labels_font_size);
+			auto text_width = font_loader->TextWidth(L"00000", labels_font_size);
 			auto hw_ratio = labels_font_size / text_width;
 
 			if (text_width > cell_width * 0.75f)
 			{
-				//auto overlapping_ratio = cell_width / text_width;
-				
 				labels_font_size = hw_ratio * cell_width * 0.75f;
 			}
 		}
 
-		month_label_text[index]->SetShapeHVCentered(months_names[index], x_label_frames[index].Center(), labels_font_size);
+		month_label_text[index]->SetShapeCentered(months_names[index], x_label_frames[index].Center(), labels_font_size);
 	}
 
 	auto config = GetShapeConfig(L"Calendar Labels");
@@ -426,8 +429,8 @@ void CalendarPage::SetupCalendarLabelsShape()
 
 		std::wstring current_year_text = std::to_wstring(calendarSpan.GetFirstYear() + index);
 
-		annual_labels_text[index]->SetFont(font.get());
-		annual_labels_text[index]->SetShapeHVCentered(current_year_text, y_labels_rows[index].Center(), labels_font_size);
+		annual_labels_text[index]->SetFont(font_loader);
+		annual_labels_text[index]->SetShapeCentered(current_year_text, y_labels_rows[index].Center(), labels_font_size);
 	}
 
 	row_labels_shape->SetShapes(y_labels_rows, config.LineWidth(), config.FillColor(), config.OutlineColor());
@@ -603,14 +606,14 @@ void CalendarPage::SetupBarsShape()
 			std::wstring numsText = data_store.GetBar(index).GetText();
 
 			bar_labels_text.push_back(graphic_engine->AddShape<FontShape>());
-			bar_labels_text.back()->SetFont(font.get());
+			bar_labels_text.back()->SetFont(font_loader);
 
 			auto current_text_cell = row_frames.GetSubFrame(row, 2);
 
 			current_text_cell.Left(bar_cell.Left());
 			current_text_cell.Right(bar_cell.Right());
 
-			bar_labels_text[index]->SetShapeHVCentered(numsText, current_text_cell.Center(), current_text_cell.Height());
+			bar_labels_text[index]->SetShapeCentered(numsText, current_text_cell.Center(), current_text_cell.Height());
 		}
 	}
 
@@ -655,22 +658,20 @@ void CalendarPage::SetupYearsTotals()
 	years_totals_shape->SetShapes(years_totals_cells, config.LineWidth(), config.FillColor(), config.OutlineColor());
 }
 
-void CalendarPage::SetLegend()
+void CalendarPage::SetupLegend()
 {
-	legend_shape->SetShapes(legend_frame, 0.15f, vec4(1.f, 1.f, 1.f, 0.f), vec4(0.f, 0.f, 0.f, 1.f));
-
+	size_t number_entries = date_groups.size() + 1 /*annual_total*/;
 	
-	size_t number_entries = 2;
 	std::vector<rect4> legend_entries_frames(number_entries);
 
 	auto entries_width = legend_frame.Width() / static_cast<float>(number_entries);
 
 	for (size_t index = 0; index < number_entries; ++index)
 	{
-		auto floatIndex = static_cast<float>(index);
+		auto float_index = static_cast<float>(index);
 		legend_entries_frames[index] = legend_frame;
-		legend_entries_frames[index].Left(legend_frame.Left() + entries_width * floatIndex);
-		legend_entries_frames[index].Right(legend_frame.Left() + entries_width * floatIndex + entries_width);
+		legend_entries_frames[index].Left(legend_frame.Left() + entries_width * float_index);
+		legend_entries_frames[index].Right(legend_frame.Left() + entries_width * float_index + entries_width);
 	}
 
 	legend_shape->SetShapes(legend_entries_frames, 0.15f, vec4(1.f, 1.f, 1.f, 0.f), vec4(0.f, 0.f, 0.f, 1.f));

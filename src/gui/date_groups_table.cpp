@@ -66,7 +66,7 @@ DateGroupsTablePanel::DateGroupsTablePanel(wxWindow* parent) :
 	data_table->AppendTextColumn(L"Group Name", wxDATAVIEW_CELL_EDITABLE);
 }
 
-void DateGroupsTablePanel::UpdateTable(const std::vector<DateGroup>& date_groups)
+void DateGroupsTablePanel::UpdateGroups(const std::vector<DateGroup>& date_groups)
 {
 	this->date_groups = date_groups;
 	

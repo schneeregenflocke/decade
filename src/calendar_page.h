@@ -24,6 +24,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include "graphics/shapes.h"
 #include "graphics/font.h"
 
+#include "date_group_store.h"
 #include "dates_store.h"
 #include "shape_config.h"
 #include "calendar_config.h"
@@ -86,6 +87,8 @@ public:
 
 	CalendarPage(GraphicEngine* graphic_engine);
 
+	void UpdateGroups(const std::vector<DateGroup>& date_groups);
+
 	void SetDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles);
 
 	void SlotPageSize(const std::array<float, 2>& page_size);
@@ -113,9 +116,7 @@ public:
 	void SetupBarsShape();
 	void SetupYearsTotals();
 
-	void SetLegend();
-
-	
+	void SetupLegend();
 
 private:
 
@@ -124,7 +125,7 @@ private:
 	GraphicEngine* graphic_engine;
 	CalendarSpan calendarSpan;
 
-	std::unique_ptr<FontLoader> font;
+	
 
 	rect4 page_size;
 	rect4 page_margin;
@@ -154,13 +155,21 @@ private:
 
 	RowFrames row_frames;
 
-	///////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////
 
 	RectangleShapeConfig GetShapeConfig(const std::wstring& name);
 	std::vector<RectangleShapeConfig> element_configurations;
 	std::vector<RectangleShapeConfig> bar_shape_configs;
 
+	std::vector<DateGroup> date_groups;
+	
+	////////////////////////////////////////////////////////////////////////////////
+
+	std::shared_ptr<FontLoader> font_loader;
+	std::shared_ptr<FontShape> title_font_shape;
+
 	std::shared_ptr<QuadShape> page_shape;
+
 	std::shared_ptr<RectanglesShape> print_area_shape;
 	std::shared_ptr<RectanglesShape> title_area_shape;
 	std::shared_ptr<RectanglesShape> years_cells_shape;
@@ -168,8 +177,6 @@ private:
 	std::shared_ptr<RectanglesShape> days_cells_shape;
 	std::shared_ptr<RectanglesShape> bars_cells_shape;
 	std::shared_ptr<RectanglesShape> years_totals_shape;
-
-	std::shared_ptr<FontShape> title_font_shape;
 
 	std::vector< std::shared_ptr<FontShape> > month_label_text;
 	std::vector< std::shared_ptr<FontShape> > annual_labels_text;

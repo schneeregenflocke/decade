@@ -57,6 +57,7 @@ public:
 	void SetDateGroups(const std::vector<DateGroup>& date_groups);
 
 	void InitDefault();
+
 	std::vector<std::wstring> GetDateGroupsNames();
 	int GetNumber(const std::wstring& name);
 	std::wstring GetName(int number);
