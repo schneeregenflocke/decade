@@ -372,45 +372,29 @@ void CalendarPage::SetupCalendarLabelsShape()
 		months_names[index] = buf;
 	}
 	
-
 	std::vector<rect4> x_label_frames(12);
 
+	if (font_loader)
+	{
+		labels_font_size = font_loader->AdjustTextSize(rect4(cell_width, row_height), L"00000", 0.5f, 0.75f);
+	}
 	
-
 	for (size_t index = 0; index < months_names.size(); ++index)
 	{
 		float floatIndex = static_cast<float>(index);
-
-		//float cell_xcenter = x_labels_frame.Left() + cell_width * floatIndex + cell_width / 2.f;
-		//float cell_ycenter = x_labels_frame.Bottom() + row_height / 2.f;
 
 		x_label_frames[index].Left(x_labels_frame.Left() + cell_width * floatIndex);
 		x_label_frames[index].Bottom(x_labels_frame.Bottom());
 		x_label_frames[index].Right(x_labels_frame.Left() + cell_width * floatIndex + cell_width);
 		x_label_frames[index].Top(x_labels_frame.Top());
 
-
-		//	provisional (better than nothing)
-		labels_font_size = row_height * .5f;
 		month_label_text[index]->SetFont(font_loader);
-		if (font_loader)
-		{
-			auto text_width = font_loader->TextWidth(L"00000", labels_font_size);
-			auto hw_ratio = labels_font_size / text_width;
-
-			if (text_width > cell_width * 0.75f)
-			{
-				labels_font_size = hw_ratio * cell_width * 0.75f;
-			}
-		}
-
 		month_label_text[index]->SetShapeCentered(months_names[index], x_label_frames[index].Center(), labels_font_size);
 	}
 
 	auto config = GetShapeConfig(L"Calendar Labels");
 
 	column_labels_shape->SetShapes(x_label_frames, config.LineWidth(), config.FillColor(), config.OutlineColor());
-
 
 	graphic_engine->RemoveShapes(annual_labels_text);
 	annual_labels_text = graphic_engine->AddShapes<FontShape>(calendarSpan.GetSpan());

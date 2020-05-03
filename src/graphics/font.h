@@ -23,6 +23,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include "shaders.h"
 #include "shapes_base.h"
 #include "texture_object.h"
+#include "rect4.h"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -83,6 +84,7 @@ public:
 
 	float TextWidth(const std::wstring& text, float size);
 	float TextHeight(float size);
+	float AdjustTextSize(const rect4& cell, std::wstring text, float height_ratio, float width_ratio);
 	
 private:
 	std::vector<Letter> letters;

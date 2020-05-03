@@ -224,6 +224,21 @@ float FontLoader::TextHeight(float size)
 	return height;
 }
 
+float FontLoader::AdjustTextSize(const rect4& cell, std::wstring text, float height_ratio, float width_ratio)
+{
+	float font_size = cell.Height() * height_ratio;
+
+	auto text_width = TextWidth(text, font_size);
+
+	auto ratio = font_size / text_width;
+
+	if (text_width > cell.Width() * width_ratio)
+	{
+		font_size = ratio * cell.Width() * width_ratio;
+	}
+	
+	return font_size;
+}
 
 
 
