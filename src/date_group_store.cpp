@@ -88,6 +88,11 @@ int DateGroupStore::GetGroupMax() const
 	return date_groups.size() - 1;
 }
 
+bool DateGroupStore::GetExclude(int number) const
+{
+	return date_groups[number].exclude;
+}
+
 void DateGroupStore::LoadXML(const pugi::xml_node& doc)
 {
 	std::vector<DateGroup> temporary_date_groups;

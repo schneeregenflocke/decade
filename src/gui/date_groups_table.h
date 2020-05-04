@@ -62,6 +62,7 @@ private:
 	void OnItemActivated(wxDataViewEvent& event);
 	void OnItemEditing(wxDataViewEvent& event);
 	void OnSelectionChanged(wxDataViewEvent& event);
+	void OnValueChanged(wxDataViewEvent& event);
 	
 
 	wxDataViewListCtrl* data_table;
@@ -69,5 +70,8 @@ private:
 	wxButton* deleteRowButton;
 
 	std::vector<DateGroup> date_groups;
+
+	// Please fix me, research in wxWidgets 
+	bool toggle_value_changed_by_function_call_and_not_by_user;
 };
 

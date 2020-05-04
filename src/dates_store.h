@@ -39,23 +39,29 @@ struct DateIntervalBundle
 	DateIntervalBundle() :
 		date_interval(date_period(date(boost::date_time::not_a_date_time), date(boost::date_time::not_a_date_time))),
 		date_inter_interval(date_period(date(boost::date_time::not_a_date_time), date(boost::date_time::not_a_date_time))),
+		number(0),
 		group(0),
 		group_number(0),
-		comment(L"")
+		comment(L""),
+		exclude(false)
 	{};
 
 	DateIntervalBundle(date_period date_interval) :
 		date_interval(date_interval),
 		date_inter_interval(date_period(date(boost::date_time::not_a_date_time), date(boost::date_time::not_a_date_time))),
+		number(0),
 		group(0),
 		group_number(0),
-		comment(L"")
+		comment(L""),
+		exclude(false)
 	{};
 
 	date_period date_interval;
 	date_period	date_inter_interval;
+	int number;
 	int group;
 	int group_number;
+	bool exclude;
 	std::wstring comment;
 };
 
@@ -82,10 +88,6 @@ class DateIntervalBundleStore
 {
 public:
 
-	DateIntervalBundleStore() :
-		group_max(0)
-	{};
-
 	virtual void SetDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles);
 
 	int GetSpan() const;
@@ -102,18 +104,26 @@ public:
 	const date_period& GetDateInterIntervalConstRef(size_t index) const;
 	////////////////////////////////////////////////////////////
 
-	void SetGroupIntegrity(const std::vector<DateGroup>& argument_date_groups);
+	void SetDateGroups(const std::vector<DateGroup>& argument_date_groups);
 
 protected:
 
 	void ProcessDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles);
+
+	std::vector<DateIntervalBundle> date_interval_bundles;
+
+	DateGroupStore date_group_store;
+
+private:
+
 	void Sort();
+	void ProcessNumbers();
 	void ProcessDateInterIntervals();
 	void ProcessDateGroupsNumber();
 	void CheckAndAdjustGroupIntegrity();
-
-	std::vector<DateIntervalBundle> date_interval_bundles;
-	int group_max;
+	void AdjustGroupExcludeFlag();
+	
+	
 };
 
 

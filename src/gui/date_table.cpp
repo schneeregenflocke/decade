@@ -126,7 +126,15 @@ void DateTablePanel::UpdateTable(const std::vector<DateIntervalBundle>& date_int
 			table_widget->SetValue(boost_date_to_string(date_interval_bundles[index].date_interval.end()), valid_rows[index], 1);
 		}
 
-		table_widget->SetValue(std::to_string(index + 1), valid_rows[index], 2);
+		if (date_interval_bundles[index].exclude == false)
+		{
+			table_widget->SetValue(std::to_string(date_interval_bundles[index].number + 1), valid_rows[index], 2);
+		}
+		else
+		{
+			table_widget->SetValue(L"", valid_rows[index], 2);
+		}
+		
 
 		// Check for group existing
 		if (date_interval_bundles[index].group > date_group_store.GetGroupMax())
@@ -142,11 +150,11 @@ void DateTablePanel::UpdateTable(const std::vector<DateIntervalBundle>& date_int
 		table_widget->SetValue(std::to_string(date_interval_bundles[index].group_number), valid_rows[index], 4);
 		
 
-		table_widget->SetValue(std::to_string(date_interval_bundles[index].date_interval.length().days()), valid_rows[index], 5);
+		table_widget->SetValue(std::to_string(date_interval_bundles[index].date_interval.length().days() + 1/*!!!*/), valid_rows[index], 5);
 
-		if (index < (date_interval_bundles.size() - 1))
+		if (index < (date_interval_bundles.size() - 1) && date_interval_bundles[index].exclude == false)
 		{
-			table_widget->SetValue(std::to_string(date_interval_bundles[index].date_inter_interval.length().days()), valid_rows[index], 6);
+			table_widget->SetValue(std::to_string(date_interval_bundles[index].date_inter_interval.length().days() - 1/*!!!*/), valid_rows[index], 6);
 		}
 		else
 		{

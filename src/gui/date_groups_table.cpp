@@ -21,7 +21,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 
 DateGroupsTablePanel::DateGroupsTablePanel(wxWindow* parent) :
-	wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxPanelNameStr)
+	wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxPanelNameStr),
+	toggle_value_changed_by_function_call_and_not_by_user(false)
 {
 
 	data_table = new wxDataViewListCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxDV_SINGLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES, wxDefaultValidator);
@@ -30,9 +31,9 @@ DateGroupsTablePanel::DateGroupsTablePanel(wxWindow* parent) :
 	Bind(wxEVT_DATAVIEW_ITEM_EDITING_DONE, &DateGroupsTablePanel::OnItemEditing, this);
 	Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &DateGroupsTablePanel::OnSelectionChanged, this);
 
-	// Bind(wxEVT_DATAVIEW_ITEM_START_EDITING, &DateTablePanel::OnItemEditing, this);
-	// Bind(wxEVT_DATAVIEW_ITEM_EDITING_STARTED, &DateTablePanel::OnItemEditing, this);
-	// Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED, &DateTablePanel::OnValueChanged, this);
+	// Bind(wxEVT_DATAVIEW_ITEM_START_EDITING, &DateGroupsTablePanel::OnItemEditing, this);
+	// Bind(wxEVT_DATAVIEW_ITEM_EDITING_STARTED, &DateGroupsTablePanel::OnItemEditing, this);
+	Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED, &DateGroupsTablePanel::OnValueChanged, this);
 
 	addRowButton = new wxButton(this, wxID_ADD, "Add Row");
 	deleteRowButton = new wxButton(this, wxID_DELETE, "Delete Row");
@@ -64,6 +65,7 @@ DateGroupsTablePanel::DateGroupsTablePanel(wxWindow* parent) :
 
 	data_table->AppendTextColumn(L"Group Number", wxDATAVIEW_CELL_INERT);
 	data_table->AppendTextColumn(L"Group Name", wxDATAVIEW_CELL_EDITABLE);
+	data_table->AppendToggleColumn(L"Exclude", wxDATAVIEW_CELL_ACTIVATABLE);
 }
 
 void DateGroupsTablePanel::UpdateGroups(const std::vector<DateGroup>& argument_date_groups)
@@ -100,6 +102,25 @@ void DateGroupsTablePanel::UpdateGroups(const std::vector<DateGroup>& argument_d
 	{
 		data_table->SetValue(std::to_wstring(date_groups[index].number), index, 0);
 		data_table->SetValue(date_groups[index].name, index, 1);
+
+		toggle_value_changed_by_function_call_and_not_by_user = true;
+		data_table->SetToggleValue(date_groups[index].exclude, index, 2);
+		toggle_value_changed_by_function_call_and_not_by_user = false;
+	}
+}
+
+
+void DateGroupsTablePanel::OnValueChanged(wxDataViewEvent& event)
+{
+	if (event.GetColumn() == 2 && data_table->GetSelectedRow() != wxNOT_FOUND)
+	{
+		if (toggle_value_changed_by_function_call_and_not_by_user == false)
+		{
+			auto value = data_table->GetToggleValue(data_table->GetSelectedRow(), 2);
+			// std::cout << "value " << value << '\n';
+			date_groups[data_table->GetSelectedRow()].exclude = value;
+			signal_table_date_groups(date_groups);
+		}
 	}
 }
 
@@ -110,6 +131,8 @@ void DateGroupsTablePanel::OnItemActivated(wxDataViewEvent& event)
 	{
 		data_table->EditItem(event.GetItem(), event.GetDataViewColumn());
 	}
+
+	
 }
 
 void DateGroupsTablePanel::OnItemEditing(wxDataViewEvent& event)
@@ -118,14 +141,17 @@ void DateGroupsTablePanel::OnItemEditing(wxDataViewEvent& event)
 	{
 		event.Veto();
 
-		if (event.IsEditCancelled() == false)
+		if (event.IsEditCancelled() == false )
 		{
-			auto edited_string = event.GetValue().GetString().ToStdWstring();
-			data_table->SetValue(edited_string.c_str(), data_table->GetSelectedRow(), event.GetColumn());
+			if (event.GetColumn() == 1)
+			{
+				auto edited_string = event.GetValue().GetString().ToStdWstring();
+				data_table->SetValue(edited_string.c_str(), data_table->GetSelectedRow(), event.GetColumn());
 
-			date_groups[data_table->GetSelectedRow()].name = edited_string;
+				date_groups[data_table->GetSelectedRow()].name = edited_string;
 
-			signal_table_date_groups(date_groups);
+				signal_table_date_groups(date_groups);
+			}	
 		}
 	}
 }
@@ -134,6 +160,8 @@ void DateGroupsTablePanel::OnSelectionChanged(wxDataViewEvent& event)
 {
 	UpdateButtons();
 }
+
+
 
 void DateGroupsTablePanel::OnButtonClicked(wxCommandEvent& event)
 {
@@ -207,6 +235,7 @@ void DateGroupsTablePanel::InsertRow(size_t row)
 	{
 		std::vector<wxVariant> empty_row;
 		empty_row.resize(data_table->GetColumnCount());
+		empty_row[2] = wxVariant(static_cast<bool>(false));
 		data_table->InsertItem(row, empty_row);
 	}
 }

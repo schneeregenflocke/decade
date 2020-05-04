@@ -230,7 +230,7 @@ void MainWindow::SlotGLReady()
     
     // Note the order, requires revision
     date_groups_store.signal_date_groups.connect(&DateGroupsTablePanel::UpdateGroups, date_groups_table_panel);
-    date_groups_store.signal_date_groups.connect(&DateIntervalBundleStore::SetGroupIntegrity, &date_interval_bundle_store);
+    date_groups_store.signal_date_groups.connect(&DateIntervalBundleStore::SetDateGroups, &date_interval_bundle_store);
     date_groups_store.signal_date_groups.connect(&CalendarPage::UpdateGroups, calendar.get());
     date_groups_store.signal_date_groups.connect(&DateTablePanel::UpdateGroups, data_table_panel);
     date_groups_store.signal_date_groups.connect(&ElementsSetupsPanel::UpdateGroups, elements_setup_panel);

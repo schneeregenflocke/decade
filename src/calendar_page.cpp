@@ -156,6 +156,7 @@ CalendarPage::CalendarPage(GraphicEngine* graphic_engine) :
 void CalendarPage::UpdateGroups(const std::vector<DateGroup>& argument_date_groups)
 {
 	date_group_store.SetDateGroups(argument_date_groups);
+	data_store.SetDateGroups(argument_date_groups);
 	Update();
 }
 
@@ -597,7 +598,7 @@ void CalendarPage::SetupBarsShape()
 			current_text_cell.Left(bar_cell.Left());
 			current_text_cell.Right(bar_cell.Right());
 
-			bar_labels_text[index]->SetShapeCentered(numsText, current_text_cell.Center(), current_text_cell.Height());
+			bar_labels_text.back()->SetShapeCentered(numsText, current_text_cell.Center(), current_text_cell.Height());
 		}
 	}
 
@@ -733,7 +734,7 @@ void CalendarPage::SetupLegend()
 	}
 
 	legend_entries_shape->SetShapes(bars_cells, bars_cells_shape_linewidths, bars_cells_shape_fillcolors, bars_cells_shape_outlinecolors);
-	legend_shape->SetShapes(legend_entries_frames, 0.15f, vec4(1.f, 1.f, 1.f, 0.f), vec4(0.f, 0.f, 0.f, 1.f));
+	//legend_shape->SetShapes(legend_entries_frames, 0.15f, vec4(1.f, 1.f, 1.f, 0.f), vec4(0.f, 0.f, 0.f, 1.f));
 }
 
 RectangleShapeConfig CalendarPage::GetShapeConfig(const std::wstring& name)

@@ -64,6 +64,7 @@ public:
 	std::wstring GetName(int number) const;
 	std::vector<std::wstring> GetDateGroupsNames() const;
 	int GetGroupMax() const;
+	bool GetExclude(int number) const;
 
 	sigslot::signal<const std::vector<DateGroup>&> signal_date_groups;
 

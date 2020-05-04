@@ -8,10 +8,11 @@ message("CMAKE_CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID}")
 
 
 function(message_list list_name)
-	message(${list_name})
+	message("List ${list_name}")
 	foreach(item IN LISTS ${list_name})
 		message(STATUS ${item})
 	endforeach()
+	message("End List ${list_name}")
 endfunction()
 
 

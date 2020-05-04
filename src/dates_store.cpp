@@ -78,20 +78,25 @@ void DateIntervalBundleStore::ProcessDateIntervalBundles(const std::vector<DateI
 		
 		if (case_id > 0)
 		{
-			DateIntervalBundle temporary_bundle;
+			//DateIntervalBundle temporary_bundle;
 			
-			temporary_bundle.date_interval = date_interval_bundle.date_interval;
-			temporary_bundle.group = date_interval_bundle.group;
-			temporary_bundle.comment = date_interval_bundle.comment;
-			this->date_interval_bundles.push_back(temporary_bundle);
+			//temporary_bundle.date_interval = date_interval_bundle.date_interval;
+			//temporary_bundle.group = date_interval_bundle.group;
+			//temporary_bundle.comment = date_interval_bundle.comment;
+
+			this->date_interval_bundles.push_back(date_interval_bundle);
 		}
 	}
 
 	this->date_interval_bundles.shrink_to_fit();
 
 	Sort();
-	ProcessDateInterIntervals();
+
 	CheckAndAdjustGroupIntegrity();
+	AdjustGroupExcludeFlag();
+
+	ProcessNumbers();
+	ProcessDateInterIntervals();
 	ProcessDateGroupsNumber();
 }
 
@@ -110,9 +115,9 @@ const date_period& DateIntervalBundleStore::GetDateInterIntervalConstRef(size_t 
 	return date_interval_bundles[index].date_inter_interval;
 }
 
-void DateIntervalBundleStore::SetGroupIntegrity(const std::vector<DateGroup>& argument_date_groups)
+void DateIntervalBundleStore::SetDateGroups(const std::vector<DateGroup>& argument_date_groups)
 {
-	group_max = argument_date_groups.size() - 1;
+	date_group_store.SetDateGroups(argument_date_groups);
 }
 
 void DateIntervalBundleStore::Sort()
@@ -121,14 +126,63 @@ void DateIntervalBundleStore::Sort()
 	std::sort(date_interval_bundles.begin(), date_interval_bundles.end(), sortfunc);
 }
 
+void DateIntervalBundleStore::ProcessNumbers()
+{
+	int current_number = 0;
+	for (auto& date_interval_bundle : date_interval_bundles)
+	{
+		if (date_interval_bundle.exclude == false)
+		{
+			date_interval_bundle.number = current_number;
+			++current_number;
+		}
+	}
+}
+
 void DateIntervalBundleStore::ProcessDateInterIntervals()
 {
-	for (size_t index = 1; index < date_interval_bundles.size(); ++index)
+	auto iterator_first = date_interval_bundles.begin();
+	int counter = 0;
+	
+	while (iterator_first != date_interval_bundles.end())
+	{
+		//std::cout << iterator_first - date_interval_bundles.begin() << '\n';
+
+		while (iterator_first != date_interval_bundles.end() && iterator_first->exclude == true)
+		{
+			++iterator_first;
+		}
+
+		if (iterator_first != date_interval_bundles.end())
+		{
+			auto iterator_second = iterator_first + 1;
+
+			while (iterator_second != date_interval_bundles.end() && iterator_second->exclude == true)
+			{
+				++iterator_second;
+			}
+
+			if (iterator_second != date_interval_bundles.end())
+			{
+				iterator_first->date_inter_interval = date_period(iterator_first->date_interval.end(), iterator_second->date_interval.begin());
+				
+
+				//std::cout << "wrote inter " << counter << '\n';
+				++counter;
+			}
+		}
+		++iterator_first;
+
+		
+		//std::cout << "iterator != end? "  << (iterator_first != date_interval_bundles.end()) << '\n';
+	}
+
+	/*for (size_t index = 1; index < date_interval_bundles.size(); ++index)
 	{
 		date_interval_bundles[index - 1].date_inter_interval = date_period(
 			date_interval_bundles[index - 1].date_interval.end(),
 			date_interval_bundles[index].date_interval.begin());
-	}
+	}*/
 }
 
 void DateIntervalBundleStore::ProcessDateGroupsNumber()
@@ -145,7 +199,7 @@ void DateIntervalBundleStore::ProcessDateGroupsNumber()
 		}
 		else
 		{
-			groups_counter[current_group] = 1;
+			groups_counter[current_group] = 0;
 		}
 
 		date_interval_bundle.group_number = groups_counter[current_group];
@@ -156,10 +210,18 @@ void DateIntervalBundleStore::CheckAndAdjustGroupIntegrity()
 {
 	for (auto& date_interval_bundle : date_interval_bundles)
 	{
-		if (date_interval_bundle.group > group_max)
+		if (date_interval_bundle.group > date_group_store.GetGroupMax())
 		{
 			date_interval_bundle.group = 0;
 		}
+	}
+}
+
+void DateIntervalBundleStore::AdjustGroupExcludeFlag()
+{
+	for (auto& bundle : date_interval_bundles)
+	{
+		bundle.exclude = date_group_store.GetExclude(bundle.group);
 	}
 }
 
@@ -307,7 +369,18 @@ void DateIntervalBundleBarStore::ProcessBars()
 		for (auto subindex = 0U; subindex < splitDatePeriods.size(); ++subindex)
 		{
 			Bar bar(splitDatePeriods[subindex]);
-			bar.SetText(std::to_wstring(index));
+			if (date_interval_bundles[index].exclude == false)
+			{
+				bar.SetText(std::to_wstring(date_interval_bundles[index].number + 1));
+			}
+			if (date_interval_bundles[index].exclude == true)
+			{
+				std::wstring text_part_0 = std::to_wstring(date_interval_bundles[index].group);
+				std::wstring text_part_1 = std::to_wstring(date_interval_bundles[index].group_number);
+				
+				bar.SetText(std::wstring(L"E") + text_part_0 + std::wstring(L"N") + text_part_1);
+			}
+			
 			bar.group = date_interval_bundles[index].group;
 			bars.push_back(bar);
 		}	
