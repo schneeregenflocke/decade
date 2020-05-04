@@ -663,9 +663,22 @@ void CalendarPage::SetupLegend()
 	std::vector<vec4> bars_cells_shape_fillcolors;
 	std::vector<vec4> bars_cells_shape_outlinecolors;
 
+	// find max lenght string
+	auto print_strings = date_group_store.GetDateGroupsNames();
+	print_strings.push_back(L"Annual Sums");
+
+	std::wstring string_max_lenght = L"";
+	for (const auto& current_string : print_strings)
+	{
+		if (current_string.length() > string_max_lenght.length())
+		{
+			string_max_lenght = current_string;
+		}
+	}
+
 	if (font_loader)
 	{
-		auto legend_font_size = font_loader->AdjustTextSize(legend_entries_frames[0], L"Annual Sum", 0.5f, 0.75f);
+		auto legend_font_size = font_loader->AdjustTextSize(legend_entries_frames[0], string_max_lenght, 0.5f, 0.75f);
 
 		graphic_engine->RemoveShapes(legend_text);
 		legend_text.clear();
