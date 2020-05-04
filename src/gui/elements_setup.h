@@ -60,7 +60,7 @@ public:
 
 	void SendDefaultValues();
 
-	void UpdateGroups(const std::vector<DateGroup>& date_groups);
+	void UpdateGroups(const std::vector<DateGroup>& argument_date_groups);
 	
 
 	void SaveToXML(pugi::xml_node* node);

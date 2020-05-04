@@ -48,7 +48,7 @@ public:
 
 	std::wstring GetPanelName();
 
-	void UpdateGroups(const std::vector<DateGroup>& date_groups);
+	void UpdateGroups(const std::vector<DateGroup>& argument_date_groups);
 
 	sigslot::signal<const std::vector<DateGroup>&> signal_table_date_groups;
 

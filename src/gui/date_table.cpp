@@ -129,7 +129,7 @@ void DateTablePanel::UpdateTable(const std::vector<DateIntervalBundle>& date_int
 		table_widget->SetValue(std::to_string(index + 1), valid_rows[index], 2);
 
 		// Check for group existing
-		if (date_interval_bundles[index].group > date_group_store.GetMaxGroup())
+		if (date_interval_bundles[index].group > date_group_store.GetGroupMax())
 		{
 			table_widget->SetValue(std::to_string(0), valid_rows[index], 3);
 		}
@@ -155,21 +155,11 @@ void DateTablePanel::UpdateTable(const std::vector<DateIntervalBundle>& date_int
 	}
 }
 
-void DateTablePanel::UpdateGroups(const std::vector<DateGroup>& date_groups)
+void DateTablePanel::UpdateGroups(const std::vector<DateGroup>& argument_date_groups)
 {
-	date_group_store.SetDateGroups(date_groups);
+	date_group_store.SetDateGroups(argument_date_groups);
 
-	// Check if group exists ... 
-	for (int index = 0; index < table_widget->GetItemCount(); ++index)
-	{
-		wxVariant value;
-		table_widget->GetValue(value, index, 3);
-		
-		if (value.GetLong() > date_group_store.GetMaxGroup())
-		{
-			table_widget->SetValue(0, index, 3);
-		}
-	}
+	ScanTable();
 
 	auto date_groups_std_string = date_group_store.GetDateGroupsNames();
 	wxArrayString date_groups_strings;
@@ -387,8 +377,17 @@ void DateTablePanel::ScanTable()
 			wxVariant group_string;
 			table_widget->GetValue(group_string, valid_index, 3);
 			// std::cout << __LINE__ << " " << index << " " << group_number.GetType() << " "  << group_number.GetLong() <<'\n';
-
-			auto group_number = date_group_store.GetNumber(group_string.GetString().ToStdWstring());
+			
+			int group_number;
+			try
+			{
+				group_number = date_group_store.GetNumber(group_string.GetString().ToStdWstring());
+			}
+			catch (...)
+			{
+				group_number = 0;
+			}
+			 
 			temporary_interval_bundle.group = group_number;
 
 			date_interval_bundles.push_back(temporary_interval_bundle);

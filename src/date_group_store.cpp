@@ -22,23 +22,28 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 // call after connecting
 void DateGroupStore::InitDefault()
 {
-	date_groups.push_back(DateGroup(L"Default"));
+	std::vector<DateGroup> temporary_date_groups;
+
+	temporary_date_groups.push_back(DateGroup(L"Default"));
+
+	SetDateGroups(temporary_date_groups);
+}
+
+void DateGroupStore::SetDateGroups(const std::vector<DateGroup>& argument_date_groups)
+{
+	date_groups = argument_date_groups;
 
 	UpdateNumbers();
 
 	signal_date_groups(date_groups);
 }
 
-void DateGroupStore::SetDateGroups(const std::vector<DateGroup>& date_groups)
+std::vector<DateGroup> DateGroupStore::GetDateGroups() const
 {
-	this->date_groups = date_groups;
-
-	UpdateNumbers();
-
-	signal_date_groups(this->date_groups);
+	return date_groups;
 }
 
-std::vector<std::wstring> DateGroupStore::GetDateGroupsNames()
+std::vector<std::wstring> DateGroupStore::GetDateGroupsNames() const
 {
 	std::vector<std::wstring> name_strings(date_groups.size());
 	auto iterator = name_strings.begin();
@@ -50,7 +55,7 @@ std::vector<std::wstring> DateGroupStore::GetDateGroupsNames()
 	return name_strings;
 }
 
-int DateGroupStore::GetNumber(const std::wstring& name)
+int DateGroupStore::GetNumber(const std::wstring& name) const
 {
 	auto find_lambda = [&](const DateGroup& compare) { return compare.name == name; };
 	auto found = std::find_if(date_groups.cbegin(), date_groups.cend(), find_lambda);
@@ -60,11 +65,11 @@ int DateGroupStore::GetNumber(const std::wstring& name)
 	}
 	else
 	{
-		throw std::exception("wstring not found");
+		throw std::exception("number not found");
 	}
 }
 
-std::wstring DateGroupStore::GetName(int number)
+std::wstring DateGroupStore::GetName(int number) const
 {
 	auto find_lambda = [&](const DateGroup& compare) { return compare.number == number; };
 	auto found = std::find_if(date_groups.cbegin(), date_groups.cend(), find_lambda);
@@ -78,7 +83,7 @@ std::wstring DateGroupStore::GetName(int number)
 	}
 }
 
-int DateGroupStore::GetMaxGroup()
+int DateGroupStore::GetGroupMax() const
 {
 	return date_groups.size() - 1;
 }
@@ -99,11 +104,11 @@ void DateGroupStore::LoadXML(const pugi::xml_node& doc)
 		temporary_date_groups.push_back(temporary_date_group);
 	}
 
-	this->date_groups.clear();
+	date_groups.clear();
 	SetDateGroups(temporary_date_groups);
 }
 
-void DateGroupStore::SaveXML(pugi::xml_node* doc)
+void DateGroupStore::SaveXML(pugi::xml_node* doc) const
 {
 	auto base_node = doc->append_child(L"date_group_store");
 

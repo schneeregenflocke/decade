@@ -49,7 +49,7 @@ public:
 	DateTablePanel(wxWindow* parent);
 
 	void UpdateTable(const std::vector<DateIntervalBundle>& date_interval_bundles);
-	void UpdateGroups(const std::vector<DateGroup>& date_groups);
+	void UpdateGroups(const std::vector<DateGroup>& argument_date_groups);
 	
 	std::wstring GetPanelName();
 

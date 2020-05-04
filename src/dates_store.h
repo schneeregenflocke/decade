@@ -21,6 +21,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #define DATES_H
 
 #include "date_utils.h"
+#include "date_group_store.h"
 
 #include <sigslot/signal.hpp>
 
@@ -81,6 +82,10 @@ class DateIntervalBundleStore
 {
 public:
 
+	DateIntervalBundleStore() :
+		group_max(0)
+	{};
+
 	virtual void SetDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles);
 
 	int GetSpan() const;
@@ -97,14 +102,18 @@ public:
 	const date_period& GetDateInterIntervalConstRef(size_t index) const;
 	////////////////////////////////////////////////////////////
 
+	void SetGroupIntegrity(const std::vector<DateGroup>& argument_date_groups);
+
 protected:
 
 	void ProcessDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles);
 	void Sort();
 	void ProcessDateInterIntervals();
 	void ProcessDateGroupsNumber();
+	void CheckAndAdjustGroupIntegrity();
 
 	std::vector<DateIntervalBundle> date_interval_bundles;
+	int group_max;
 };
 
 

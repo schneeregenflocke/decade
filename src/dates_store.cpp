@@ -91,6 +91,7 @@ void DateIntervalBundleStore::ProcessDateIntervalBundles(const std::vector<DateI
 
 	Sort();
 	ProcessDateInterIntervals();
+	CheckAndAdjustGroupIntegrity();
 	ProcessDateGroupsNumber();
 }
 
@@ -107,6 +108,11 @@ const date_period& DateIntervalBundleStore::GetDateIntervalConstRef(size_t index
 const date_period& DateIntervalBundleStore::GetDateInterIntervalConstRef(size_t index) const
 {
 	return date_interval_bundles[index].date_inter_interval;
+}
+
+void DateIntervalBundleStore::SetGroupIntegrity(const std::vector<DateGroup>& argument_date_groups)
+{
+	group_max = argument_date_groups.size() - 1;
 }
 
 void DateIntervalBundleStore::Sort()
@@ -143,6 +149,17 @@ void DateIntervalBundleStore::ProcessDateGroupsNumber()
 		}
 
 		date_interval_bundle.group_number = groups_counter[current_group];
+	}
+}
+
+void DateIntervalBundleStore::CheckAndAdjustGroupIntegrity()
+{
+	for (auto& date_interval_bundle : date_interval_bundles)
+	{
+		if (date_interval_bundle.group > group_max)
+		{
+			date_interval_bundle.group = 0;
+		}
 	}
 }
 

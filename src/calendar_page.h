@@ -87,7 +87,7 @@ public:
 
 	CalendarPage(GraphicEngine* graphic_engine);
 
-	void UpdateGroups(const std::vector<DateGroup>& date_groups);
+	void UpdateGroups(const std::vector<DateGroup>& argument_date_groups);
 
 	void SetDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles);
 
@@ -161,7 +161,7 @@ private:
 	std::vector<RectangleShapeConfig> element_configurations;
 	std::vector<RectangleShapeConfig> bar_shape_configs;
 
-	std::vector<DateGroup> date_groups;
+	DateGroupStore date_group_store;
 	
 	////////////////////////////////////////////////////////////////////////////////
 

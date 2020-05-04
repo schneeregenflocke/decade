@@ -54,24 +54,24 @@ class DateGroupStore
 {
 public:
 
-	void SetDateGroups(const std::vector<DateGroup>& date_groups);
+	void SetDateGroups(const std::vector<DateGroup>& argument_date_groups);
+
+	std::vector<DateGroup> GetDateGroups() const;
 
 	void InitDefault();
 
-	std::vector<std::wstring> GetDateGroupsNames();
-	int GetNumber(const std::wstring& name);
-	std::wstring GetName(int number);
+	int GetNumber(const std::wstring& name) const;
+	std::wstring GetName(int number) const;
+	std::vector<std::wstring> GetDateGroupsNames() const;
+	int GetGroupMax() const;
 
 	sigslot::signal<const std::vector<DateGroup>&> signal_date_groups;
 
-	int GetMaxGroup();
-
 	void LoadXML(const pugi::xml_node& doc);
-	void SaveXML(pugi::xml_node* doc);
+	void SaveXML(pugi::xml_node* doc) const;
 
 private:
 
 	void UpdateNumbers();
-
 	std::vector<DateGroup> date_groups;
 };

@@ -166,20 +166,20 @@ void ElementsSetupsPanel::SendDefaultValues()
 	signal_shape_config(element_configurations);
 }
 
-void ElementsSetupsPanel::UpdateGroups(const std::vector<DateGroup>& date_groups)
+void ElementsSetupsPanel::UpdateGroups(const std::vector<DateGroup>& argument_date_groups)
 {
 	auto current_dynamic_elements = element_configurations.size() - number_static_elements;
 
-	int adjust_number_elements = static_cast<int>(date_groups.size()) - static_cast<int>(current_dynamic_elements);
+	int adjust_number_elements = static_cast<int>(argument_date_groups.size()) - static_cast<int>(current_dynamic_elements);
 
 	auto newsize = element_configurations.size() + adjust_number_elements;
 	element_configurations.resize(newsize);
 
 	if (adjust_number_elements > 0)
 	{
-		auto start_index = date_groups.size() - adjust_number_elements;
+		auto start_index = argument_date_groups.size() - adjust_number_elements;
 
-		for (size_t index = start_index; index < date_groups.size(); ++index)
+		for (size_t index = start_index; index < argument_date_groups.size(); ++index)
 		{
 			RectangleShapeConfig temporary(std::wstring(L"Bar Group ") + std::to_wstring(index), true, true, 0.5f, glm::vec4(0.25f, 0.25f, 0.75f, 0.75f), glm::vec4(0.25f, 0.25f, 0.75f, 0.35f));
 			element_configurations[number_static_elements + index] = temporary;

@@ -153,9 +153,9 @@ CalendarPage::CalendarPage(GraphicEngine* graphic_engine) :
 	sub_frames_shape = graphic_engine->AddShape<RectanglesShape>();
 }
 
-void CalendarPage::UpdateGroups(const std::vector<DateGroup>& date_groups)
+void CalendarPage::UpdateGroups(const std::vector<DateGroup>& argument_date_groups)
 {
-	this->date_groups = date_groups;
+	date_group_store.SetDateGroups(argument_date_groups);
 	Update();
 }
 
@@ -644,7 +644,7 @@ void CalendarPage::SetupYearsTotals()
 
 void CalendarPage::SetupLegend()
 {
-	size_t number_entrie_frames = (date_groups.size() + 1/*annual_total*/) * 2;
+	size_t number_entrie_frames = (date_group_store.GetDateGroups().size() + 1/*annual_total*/) * 2;
 	
 	std::vector<rect4> legend_entries_frames(number_entrie_frames);
 
@@ -670,13 +670,13 @@ void CalendarPage::SetupLegend()
 		graphic_engine->RemoveShapes(legend_text);
 		legend_text.clear();
 
-		for (size_t index = 0; index < date_groups.size(); ++index)
+		for (size_t index = 0; index < date_group_store.GetDateGroups().size(); ++index)
 		{
 			legend_text.push_back(graphic_engine->AddShape<FontShape>());
 			legend_text.back()->SetFont(font_loader);
-			legend_text.back()->SetShapeCentered(date_groups[index].name, legend_entries_frames[index * 2].Center(), legend_font_size);
+			legend_text.back()->SetShapeCentered(date_group_store.GetDateGroups()[index].name, legend_entries_frames[index * 2].Center(), legend_font_size);
 
-			if (calendarSpan.GetSpan() > 0)
+			if (calendarSpan.GetSpan() > 0 && (bar_shape_configs.size() == date_group_store.GetDateGroups().size()))
 			{
 				auto current_height = row_frames.GetSubFrame(0, 1).Height();
 

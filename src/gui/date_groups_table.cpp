@@ -66,9 +66,9 @@ DateGroupsTablePanel::DateGroupsTablePanel(wxWindow* parent) :
 	data_table->AppendTextColumn(L"Group Name", wxDATAVIEW_CELL_EDITABLE);
 }
 
-void DateGroupsTablePanel::UpdateGroups(const std::vector<DateGroup>& date_groups)
+void DateGroupsTablePanel::UpdateGroups(const std::vector<DateGroup>& argument_date_groups)
 {
-	this->date_groups = date_groups;
+	date_groups = argument_date_groups;
 	
 	int change_row_count = 0;
 	if (date_groups.size() <= std::numeric_limits<int>::max())
@@ -157,6 +157,7 @@ void DateGroupsTablePanel::OnButtonClicked(wxCommandEvent& event)
 		InsertRow(selected_row);
 
 		date_groups.insert(date_groups.cbegin() + selected_row, DateGroup(L""));
+
 		signal_table_date_groups(date_groups);
 
 		data_table->SelectRow(selected_row);
@@ -169,6 +170,7 @@ void DateGroupsTablePanel::OnButtonClicked(wxCommandEvent& event)
 		RemoveRow(selected_row);
 
 		date_groups.erase(date_groups.cbegin() + selected_row);
+
 		signal_table_date_groups(date_groups);
 
 		if (data_table->GetItemCount() > 0)
