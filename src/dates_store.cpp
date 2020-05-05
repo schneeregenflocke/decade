@@ -142,38 +142,52 @@ void DateIntervalBundleStore::ProcessNumbers()
 void DateIntervalBundleStore::ProcessDateInterIntervals()
 {
 	auto iterator_first = date_interval_bundles.begin();
-	int counter = 0;
+	//int counter = 0;
 	
 	while (iterator_first != date_interval_bundles.end())
 	{
 		//std::cout << iterator_first - date_interval_bundles.begin() << '\n';
 
-		while (iterator_first != date_interval_bundles.end() && iterator_first->exclude == true)
+		bool loop = true;
+		while (iterator_first != date_interval_bundles.end() && loop)
 		{
-			++iterator_first;
+			if (iterator_first->exclude == true)
+			{
+				++iterator_first;
+			}
+			else
+			{
+				loop = false;
+			}
 		}
 
 		if (iterator_first != date_interval_bundles.end())
 		{
 			auto iterator_second = iterator_first + 1;
 
-			while (iterator_second != date_interval_bundles.end() && iterator_second->exclude == true)
+			loop = true;
+			while (iterator_second != date_interval_bundles.end() && loop)
 			{
-				++iterator_second;
+				if (iterator_second->exclude == true)
+				{
+					++iterator_second;
+				}
+				else
+				{
+					loop = false;
+				}
 			}
 
 			if (iterator_second != date_interval_bundles.end())
 			{
 				iterator_first->date_inter_interval = date_period(iterator_first->date_interval.end(), iterator_second->date_interval.begin());
 				
-
 				//std::cout << "wrote inter " << counter << '\n';
-				++counter;
+				//++counter;
 			}
-		}
-		++iterator_first;
 
-		
+			++iterator_first;
+		}
 		//std::cout << "iterator != end? "  << (iterator_first != date_interval_bundles.end()) << '\n';
 	}
 
