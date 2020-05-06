@@ -65,7 +65,7 @@ int DateGroupStore::GetNumber(const std::wstring& name) const
 	}
 	else
 	{
-		throw std::exception("number not found");
+		throw std::runtime_error("number not found");
 	}
 }
 
@@ -79,7 +79,7 @@ std::wstring DateGroupStore::GetName(int number) const
 	}
 	else
 	{
-		throw std::exception("wstring not found");
+		throw std::runtime_error("wstring not found");
 	}
 }
 
@@ -135,5 +135,3 @@ void DateGroupStore::UpdateNumbers()
 		++number;
 	}
 }
-
-
