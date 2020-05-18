@@ -21,7 +21,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 LicenseInformationDialog::LicenseInformationDialog() :
 	wxDialog(nullptr, wxID_ANY, L"Open Source Licenses Information", wxDefaultPosition, wxSize(800, 600)/*wxDefaultSize*/,
-			wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER | wxMAXIMIZE_BOX )
+		wxCAPTION | wxRESIZE_BORDER | wxMAXIMIZE_BOX )
 {
 
 	license_select_list_box = new wxListBox(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, nullptr, wxLB_SINGLE | wxLB_NEEDED_SB);
