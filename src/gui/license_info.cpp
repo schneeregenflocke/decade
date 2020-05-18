@@ -23,21 +23,39 @@ LicenseInformationDialog::LicenseInformationDialog() :
 	wxDialog(nullptr, wxID_ANY, L"Open Source Licenses Information", wxDefaultPosition, wxSize(800, 600)/*wxDefaultSize*/,
 			wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER | wxMAXIMIZE_BOX )
 {
+
+	license_select_list_box = new wxListBox(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, nullptr, wxLB_SINGLE | wxLB_NEEDED_SB);
+
+	text_view_ctrl = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY);
+
+
+	wxSizerFlags flags0 = wxSizerFlags().Proportion(1).Expand();
+	wxSizerFlags flags1 = wxSizerFlags().Proportion(1).Expand().Border(wxALL, 10);
+	wxSizerFlags flags2 = wxSizerFlags().Proportion(0).Expand().Border(wxALL, 10);
+	wxSizerFlags flags3 = wxSizerFlags().Proportion(0).Border(wxALL, 10).Right();
+
 	wxBoxSizer* vertical_sizer = new wxBoxSizer(wxVERTICAL);
 	SetSizer(vertical_sizer);
 
 	wxBoxSizer* horizontal_sizer = new wxBoxSizer(wxHORIZONTAL);
-	vertical_sizer->Add(horizontal_sizer, 1, wxEXPAND);
+	vertical_sizer->Add(horizontal_sizer, flags0);
 
-	license_select_list_box = new wxListBox(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, nullptr, wxLB_SINGLE | wxLB_NEEDED_SB);
+	horizontal_sizer->Add(license_select_list_box, flags2);
+	horizontal_sizer->Add(text_view_ctrl, flags1);
 
-	horizontal_sizer->Add(license_select_list_box, 0, wxEXPAND | wxALL, 10);
+	wxButton* close_button = new wxButton(this, wxID_CLOSE);
+	
+	wxStdDialogButtonSizer* button_sizer = new wxStdDialogButtonSizer();
+	button_sizer->AddButton(close_button);
+	button_sizer->Realize();
 
-	text_view_ctrl = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY);
+	vertical_sizer->Add(button_sizer, flags3);
 
-	horizontal_sizer->Add(text_view_ctrl, 1, wxEXPAND | wxALL, 10);
 
 	Bind(wxEVT_LISTBOX, &LicenseInformationDialog::SlotSelectLicense, this);
+	Bind(wxEVT_BUTTON, &LicenseInformationDialog::CloseDialog, this);
+
+
 
 	CollectLicenses();
 
@@ -71,6 +89,11 @@ void LicenseInformationDialog::CollectLicenses()
 void LicenseInformationDialog::SlotSelectLicense(wxCommandEvent& event)
 {
 	SelectLicense(event.GetString().ToStdString());
+}
+
+void LicenseInformationDialog::CloseDialog(wxCommandEvent& event)
+{
+	EndModal(0);
 }
 
 void LicenseInformationDialog::SelectLicense(const std::string& map_key)

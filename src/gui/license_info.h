@@ -24,6 +24,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include <wx/sizer.h>
 #include <wx/listbox.h>
 #include <wx/textctrl.h>
+#include <wx/button.h>
 
 #include <string>
 #include <vector>
@@ -42,6 +43,7 @@ private:
 	void CollectLicenses();
 
 	void SlotSelectLicense(wxCommandEvent& event);
+	void CloseDialog(wxCommandEvent& event);
 	void SelectLicense(const std::string& map_key);
 
 	wxListBox* license_select_list_box;
