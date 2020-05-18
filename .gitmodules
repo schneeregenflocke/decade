@@ -1,6 +1,3 @@
-[submodule "external/csv"]
-	path = external/csv
-	url = https://github.com/p-ranav/csv.git
 [submodule "external/embed-resource"]
 	path = external/embed-resource
 	url = https://github.com/schneeregenflocke/embed-resource.git
