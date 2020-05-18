@@ -22,3 +22,6 @@
 [submodule "external/sigslot"]
 	path = external/sigslot
 	url = https://github.com/palacaze/sigslot.git
+[submodule "external/csv"]
+	path = external/csv
+	url = https://github.com/p-ranav/csv
