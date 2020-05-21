@@ -55,9 +55,6 @@ int main(int argc, char* argv[])
     
     wxEntryCleanup();
 
-    // _CRTDBG_MAP_ALLOC
-    //_CrtDumpMemoryLeaks(); ??
-
     return EXIT_SUCCESS;
 }
 
@@ -177,7 +174,7 @@ MainWindow::MainWindow(const wxString& title, const wxPoint& pos, const wxSize& 
     wxGLAttributes attributes;
     attributes.PlatformDefaults().Defaults().EndList();
     bool display_supported = wxGLCanvas::IsDisplaySupported(attributes);
-    std::cout << "wxGLCanvas IsDisplaySupported " << display_supported << '\n';
+    std::cout << "wxGLCanvas IsDisplaySupported " << std::boolalpha << display_supported << '\n';
 
     wxPanel* gl_canvas_panel = new wxPanel(main_splitter, wxID_ANY);
 
