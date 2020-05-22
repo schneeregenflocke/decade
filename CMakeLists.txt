@@ -20,17 +20,21 @@ set(CMAKE_CXX_STANDARD 17)
 
 if(MSVC)
 	add_compile_options(/Zc:__cplusplus)
-	add_compile_options(/showIncludes)
+	#add_compile_options(/showIncludes)
 endif()
+
+
+add_executable(Decade)
 
 
 set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost REQUIRED)
-include_directories(${Boost_INCLUDE_DIRS})
-link_directories(${Boost_LIBRARY_DIRS})
 
 message("Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
 message("Boost_LIBRARY_DIRS: ${Boost_LIBRARY_DIRS}")
+
+target_include_directories(Decade PRIVATE ${Boost_INCLUDE_DIRS})
+target_link_directories(Decade PRIVATE ${Boost_LIBRARY_DIRS})
 
 
 
@@ -43,43 +47,42 @@ set(wxUSE_EXCEPTIONS OFF CACHE BOOL "wxUSE_EXCEPTIONS" FORCE)
 set(wxUSE_CAIRO	OFF CACHE BOOL "wxUSE_CAIRO" FORCE)
 
 
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets")
-
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets" EXCLUDE_FROM_ALL)
 
 
 
 set(GLAD_PROFILE "core" CACHE STRING "OpenGL profile" FORCE)
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/glad")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/glad" EXCLUDE_FROM_ALL)
 
 
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/glm")
+target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/glm")
 
 
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2/include")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2")
+target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2/include")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2" EXCLUDE_FROM_ALL)
 
 
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/lodepng")
+target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/lodepng")
 
 
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/csv/include")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/csv")
+target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/csv/include")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/csv" EXCLUDE_FROM_ALL)
 
-#-w dupbuild=err
+
 add_compile_definitions(PUGIXML_WCHAR_MODE)
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/pugixml/include")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/pugixml")
+target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/pugixml/include")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/pugixml" EXCLUDE_FROM_ALL)
 
 
+target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource" EXCLUDE_FROM_ALL)
 
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource")
 
-
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/include")
+target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/include")
 
 
 file(GLOB_RECURSE resource_files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} CONFIGURE_DEPENDS shaders/*.glsl)
+#message_list(resource_files)
 
 list(APPEND resource_files
 	LICENSE.txt
@@ -97,15 +100,16 @@ list(APPEND resource_files
 	external/sigslot/LICENSE
 )
 
-message_list(resource_files)
+
 embed_resources(resources ${resource_files})
 
 
 file(GLOB_RECURSE source_files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} CONFIGURE_DEPENDS src/*.h src/*.cpp)
-message_list(source_files)
+#message_list(source_files)
 
-add_executable(Decade ${source_files})
-#target_compile_definitions(Decade PUBLIC _CRT_SECURE_NO_WARNINGS)
+
+
+target_sources(Decade PRIVATE ${source_files})
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
 	target_sources(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/include/wx/msw/amd64_dpi_aware.manifest")
@@ -114,10 +118,10 @@ endif()
 target_sources(Decade PRIVATE ${resources})
 target_sources(Decade PRIVATE external/lodepng/lodepng.h external/lodepng/lodepng.cpp)
 
-target_link_libraries(Decade glad)
-target_link_libraries(Decade freetype)
+target_link_libraries(Decade PRIVATE glad)
+target_link_libraries(Decade PRIVATE freetype)
 
 #fixed library names https://github.com/wxWidgets/wxWidgets/commit/0f806ad96db4e22053769c0b2f3b7be4026ea8de
-target_link_libraries(Decade wxgl wxcore wxbase)
+target_link_libraries(Decade PRIVATE wxgl wxcore wxbase)
 
-target_link_libraries(Decade pugixml)
+target_link_libraries(Decade PRIVATE pugixml)
