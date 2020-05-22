@@ -55,9 +55,6 @@ int main(int argc, char* argv[])
     
     wxEntryCleanup();
 
-    // _CRTDBG_MAP_ALLOC
-    //_CrtDumpMemoryLeaks(); ??
-
     return EXIT_SUCCESS;
 }
 
@@ -177,7 +174,7 @@ MainWindow::MainWindow(const wxString& title, const wxPoint& pos, const wxSize& 
     wxGLAttributes attributes;
     attributes.PlatformDefaults().Defaults().EndList();
     bool display_supported = wxGLCanvas::IsDisplaySupported(attributes);
-    std::cout << "wxGLCanvas IsDisplaySupported " << display_supported << '\n';
+    std::cout << "wxGLCanvas IsDisplaySupported " << std::boolalpha << display_supported << '\n';
 
     wxPanel* gl_canvas_panel = new wxPanel(main_splitter, wxID_ANY);
 
@@ -187,8 +184,8 @@ MainWindow::MainWindow(const wxString& title, const wxPoint& pos, const wxSize& 
     gl_canvas_panel_sizer->Add(gl_canvas, 1, wxEXPAND | wxALL, 5);
     gl_canvas_panel->SetSizer(gl_canvas_panel_sizer);
 
-    //Bind(gl_canvas->GetGLReadyEventTag(), &MainWindow::SlotGLReady, this);
-    gl_canvas->signal_opengl_ready.connect(&MainWindow::SlotGLReady, this);
+
+    gl_canvas->signal_opengl_ready.connect(&MainWindow::OpenGLReady, this);
     ////////////////////////////////////////////////////////////////////////////////
 
     main_splitter->SplitVertically(list_book_splitter, gl_canvas_panel);
@@ -220,23 +217,23 @@ void MainWindow::SlotSelectListBook(wxCommandEvent& event)
 }
 
 
-void MainWindow::SlotGLReady()
+void MainWindow::OpenGLReady()
 {
-
     calendar = std::make_unique<CalendarPage>(gl_canvas->GetGraphicEngine());
     calendar->Update();
 
+    EstablishConnections();
+}
+
+void MainWindow::EstablishConnections()
+{
     date_groups_table_panel->signal_table_date_groups.connect(&DateGroupStore::SetDateGroups, &date_groups_store);
-    
-    // Note the order, requires revision
+
     date_groups_store.signal_date_groups.connect(&DateGroupsTablePanel::UpdateGroups, date_groups_table_panel);
     date_groups_store.signal_date_groups.connect(&DateIntervalBundleStore::SetDateGroups, &date_interval_bundle_store);
     date_groups_store.signal_date_groups.connect(&CalendarPage::UpdateGroups, calendar.get());
     date_groups_store.signal_date_groups.connect(&DateTablePanel::UpdateGroups, data_table_panel);
     date_groups_store.signal_date_groups.connect(&ElementsSetupsPanel::UpdateGroups, elements_setup_panel);
-    
-    date_groups_store.InitDefault();
-
 
     date_interval_bundle_store.signal_date_interval_bundles.connect(&DateTablePanel::UpdateTable, data_table_panel);
     data_table_panel->signal_table_date_interval_bundles.connect(&DateIntervalBundleStore::SetDateIntervalBundles, &date_interval_bundle_store);
@@ -245,25 +242,27 @@ void MainWindow::SlotGLReady()
     date_interval_bundle_store.signal_date_interval_bundles.connect(&TransformDateIntervalBundle::InputDateIntervals, &transformed_date_interval_bundle);
     transformed_date_interval_bundle.signal_transformed_date_interval_bundles.connect(&CalendarPage::SetDateIntervalBundles, calendar.get());
 
-
     page_setup_panel->signal_page_size.connect(&CalendarPage::SlotPageSize, calendar.get());
     page_setup_panel->signal_page_margins.connect(&CalendarPage::SlotPageMargins, calendar.get());
     page_setup_panel->signal_page_size.connect(&GraphicEngine::SlotPageSize, gl_canvas->GetGraphicEngine());
-    page_setup_panel->SendDefaultValues();
-
+    
     font_setup_panel->signal_font_file_path.connect(&CalendarPage::SlotSelectFont, calendar.get());
-    font_setup_panel->SendDefaultValues();
-
+    
     title_setup_panel->signal_frame_height.connect(&CalendarPage::SlotTitleFrameHeight, calendar.get());
     title_setup_panel->signal_font_size_ratio.connect(&CalendarPage::SlotTitleFontSizeRatio, calendar.get());
     title_setup_panel->signal_title_text.connect(&CalendarPage::SlotTitleText, calendar.get());
     title_setup_panel->signal_text_color.connect(&CalendarPage::SlotTitleTextColor, calendar.get());
-    title_setup_panel->SendDefaultValues();
-
+    
     elements_setup_panel->signal_shape_config.connect(&CalendarPage::SlotRectangleShapeConfig, calendar.get());
-    elements_setup_panel->SendDefaultValues();
-
+    
     calendar_setup_panel->signal_calendar_config.connect(&CalendarPage::SlotCalendarConfig, calendar.get());
+
+
+    date_groups_store.InitDefault();
+    page_setup_panel->SendDefaultValues();
+    font_setup_panel->SendDefaultValues();
+    title_setup_panel->SendDefaultValues();
+    elements_setup_panel->SendDefaultValues();
     calendar_setup_panel->SendDefaultValues();
 }
 

@@ -76,7 +76,9 @@ private:
 
     void InitMenu();
 
-    void SlotGLReady();
+    void OpenGLReady();
+
+    void EstablishConnections();
 
     void SlotSelectListBook(wxCommandEvent& event);
     void SlotExit(wxCommandEvent& event);
