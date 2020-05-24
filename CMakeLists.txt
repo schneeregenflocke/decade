@@ -28,10 +28,12 @@ add_executable(Decade)
 
 
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED COMPONENTS date_time)
 
+message("Boost_FOUND: ${Boost_FOUND}")
 message("Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
 message("Boost_LIBRARY_DIRS: ${Boost_LIBRARY_DIRS}")
+message("Boost_LIBRARIES: ${Boost_LIBRARIES}")
 
 target_include_directories(Decade PRIVATE ${Boost_INCLUDE_DIRS})
 target_link_directories(Decade PRIVATE ${Boost_LIBRARY_DIRS})
@@ -39,12 +41,12 @@ target_link_directories(Decade PRIVATE ${Boost_LIBRARY_DIRS})
 
 
 set(wxBUILD_SHARED OFF CACHE BOOL "wxBUILD_SHARED" FORCE)
+
 set(wxUSE_STL ON CACHE BOOL "wxUSE_STL" FORCE)
 set(wxUSE_GUI ON CACHE BOOL "wxUSE_GUI" FORCE)
 set(wxUSE_OPENGL ON	CACHE BOOL "wxUSE_OPENGL" FORCE)
 set(wxUSE_WINRT	OFF CACHE BOOL "wxUSE_WINRT" FORCE)
 set(wxUSE_EXCEPTIONS OFF CACHE BOOL "wxUSE_EXCEPTIONS" FORCE)
-set(wxUSE_CAIRO	OFF CACHE BOOL "wxUSE_CAIRO" FORCE)
 
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets" EXCLUDE_FROM_ALL)
@@ -117,6 +119,9 @@ endif()
 
 target_sources(Decade PRIVATE ${resources})
 target_sources(Decade PRIVATE external/lodepng/lodepng.h external/lodepng/lodepng.cpp)
+
+
+target_link_libraries(Decade PRIVATE ${Boost_LIBRARIES})
 
 target_link_libraries(Decade PRIVATE glad)
 target_link_libraries(Decade PRIVATE freetype)
