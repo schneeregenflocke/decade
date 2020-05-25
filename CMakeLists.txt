@@ -32,7 +32,7 @@ find_package(Boost COMPONENTS date_time)
 
 message("Boost_FOUND: ${Boost_FOUND}")
 if(NOT ${Boost_FOUND})
-	message(FATAL_ERROR "Try to set Boost_DIR to boost/stage/lib/cmake/Boost-1.74.0/BoostConfig.cmake. See https://cmake.org/cmake/help/latest/module/FindBoost.html")
+	message(FATAL_ERROR "Try to set Boost_DIR to boost/stage/lib/cmake/Boost-1.74.0 to file BoostConfig.cmake. See https://cmake.org/cmake/help/latest/module/FindBoost.html")
 endif()
 
 message("Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
