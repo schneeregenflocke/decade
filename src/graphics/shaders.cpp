@@ -49,8 +49,8 @@ void VertexVT::SetAttribPointers()
 {
 	GLsizei stride = sizeof(VertexVT);
 
-	auto offsetof0 = offsetof(VertexVT, position);
-	auto offsetof1 = offsetof(VertexVT, texturePosition);
+	//auto offsetof0 = offsetof(VertexVT, position);
+	//auto offsetof1 = offsetof(VertexVT, texturePosition);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void*>(offsetof(VertexVT, position)));
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void*>(offsetof(VertexVT, texturePosition)));

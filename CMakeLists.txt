@@ -28,15 +28,19 @@ add_executable(Decade)
 
 
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost REQUIRED COMPONENTS date_time)
+find_package(Boost COMPONENTS date_time)
 
 message("Boost_FOUND: ${Boost_FOUND}")
+if(NOT ${Boost_FOUND})
+	message(FATAL_ERROR "Try to set Boost_DIR to boost/stage/lib/cmake/Boost-1.74.0/BoostConfig.cmake. See https://cmake.org/cmake/help/latest/module/FindBoost.html")
+endif()
+
 message("Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
 message("Boost_LIBRARY_DIRS: ${Boost_LIBRARY_DIRS}")
 message("Boost_LIBRARIES: ${Boost_LIBRARIES}")
 
 target_include_directories(Decade PRIVATE ${Boost_INCLUDE_DIRS})
-target_link_directories(Decade PRIVATE ${Boost_LIBRARY_DIRS})
+#target_link_directories(Decade PRIVATE ${Boost_LIBRARY_DIRS})
 
 
 

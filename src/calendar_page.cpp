@@ -431,7 +431,7 @@ void CalendarPage::SetupYearsShapes()
 	
 	for (int index = 0; index < calendarSpan.GetSpan(); ++index)
 	{
-		float indexfloat = static_cast<float>(index);
+		//float indexfloat = static_cast<float>(index);
 		int current_year = calendarSpan.GetFirstYear() + index;
 		int number_days = boost::gregorian::date_period(boost::gregorian::date(current_year, 1, 1), boost::gregorian::date(current_year + 1, 1, 1)).length().days();
 		float year_lenght = static_cast<float>(number_days) * day_width;
@@ -462,7 +462,7 @@ void CalendarPage::SetupMonthsShapes()
 
 	for (int index = 0; index < calendarSpan.GetSpan(); ++index)
 	{
-		float indexfloat = static_cast<float>(index);
+		//float indexfloat = static_cast<float>(index);
 		int current_year = calendarSpan.GetFirstYear() + index;
 		boost::gregorian::date first_day_of_year = boost::gregorian::date(current_year, 1, 1);
 

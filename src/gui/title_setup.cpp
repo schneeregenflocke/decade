@@ -226,7 +226,7 @@ void TitleSetupPanel::SlotSliderControl(wxCommandEvent& event)
 
 float TitleSetupPanel::To_RGBA_float(unsigned char value)
 {
-	constexpr auto char_min_limit = std::numeric_limits<unsigned char>::min();
+	//constexpr auto char_min_limit = std::numeric_limits<unsigned char>::min();
 	constexpr auto char_max_limit = std::numeric_limits<unsigned char>::max();
 
 	auto float_step = 1.f / static_cast<float>(char_max_limit);
