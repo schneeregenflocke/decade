@@ -48,7 +48,7 @@ set(wxBUILD_SHARED OFF CACHE BOOL "wxBUILD_SHARED" FORCE)
 
 set(wxUSE_STL ON CACHE BOOL "wxUSE_STL" FORCE)
 set(wxUSE_GUI ON CACHE BOOL "wxUSE_GUI" FORCE)
-set(wxUSE_OPENGL ON	CACHE BOOL "wxUSE_OPENGL" FORCE)
+set(wxUSE_OPENGL ON CACHE BOOL "wxUSE_OPENGL" FORCE)
 set(wxUSE_WINRT	OFF CACHE BOOL "wxUSE_WINRT" FORCE)
 set(wxUSE_EXCEPTIONS OFF CACHE BOOL "wxUSE_EXCEPTIONS" FORCE)
 
@@ -117,9 +117,9 @@ file(GLOB_RECURSE source_files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} CONFIGURE_DE
 
 target_sources(Decade PRIVATE ${source_files})
 
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
+#if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
 	target_sources(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/include/wx/msw/amd64_dpi_aware.manifest")
-endif()
+#endif()
 
 target_sources(Decade PRIVATE ${resources})
 target_sources(Decade PRIVATE external/lodepng/lodepng.h external/lodepng/lodepng.cpp)
