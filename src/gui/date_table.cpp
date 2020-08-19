@@ -147,7 +147,7 @@ void DateTablePanel::UpdateTable(const std::vector<DateIntervalBundle>& date_int
 			table_widget->SetValue(group_name, valid_rows[index], 3);
 		}
 
-		table_widget->SetValue(std::to_string(date_interval_bundles[index].group_number), valid_rows[index], 4);
+		table_widget->SetValue(std::to_string(date_interval_bundles[index].group_number + 1), valid_rows[index], 4);
 		
 
 		table_widget->SetValue(std::to_string(date_interval_bundles[index].date_interval.length().days() + 1/*!!!*/), valid_rows[index], 5);
