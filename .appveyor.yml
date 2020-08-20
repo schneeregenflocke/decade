@@ -1,0 +1,41 @@
+
+version: 'build-{build}-{branch}'
+
+platform: x64
+
+configuration:
+  - Release
+
+build:
+  parallel: true
+
+image:
+  - Visual Studio 2017
+
+environment:
+  SHELL: "windows"
+  BOOST_ROOT: C:/Libraries/boost_1_67_0
+  matrix:
+    - GENERATOR: "Visual Studio 15 2017 Win64"
+      BUILDFLAGS: "/verbosity:normal"
+      CMAKEARGS: ""
+
+matrix:
+  fast_finish: true
+
+init: off
+
+
+before_build:
+  - cmake --version
+
+build_script:
+  - cmake -H. -Bbuild
+          -G"%GENERATOR%"
+          -DCMAKE_BUILD_TYPE=%CONFIGURATION%
+          %CMAKEARGS%
+  - cmake --build build
+          --config %CONFIGURATION%
+          -- %BUILDFLAGS%
+
+deploy: off
