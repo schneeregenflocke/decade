@@ -23,7 +23,7 @@ environment:
 matrix:
   fast_finish: true
 
-init: off
+
 
 
 before_build:
