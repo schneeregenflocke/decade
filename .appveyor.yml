@@ -23,7 +23,8 @@ environment:
 matrix:
   fast_finish: true
 
-
+init:
+- git submodule update --init --recursive
 
 
 before_build:
