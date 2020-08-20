@@ -182,6 +182,7 @@ void ElementsSetupsPanel::UpdateGroups(const std::vector<DateGroup>& argument_da
 		for (size_t index = start_index; index < argument_date_groups.size(); ++index)
 		{
 			RectangleShapeConfig temporary(std::wstring(L"Bar Group ") + std::to_wstring(index), true, true, 0.5f, glm::vec4(0.25f, 0.25f, 0.75f, 0.75f), glm::vec4(0.25f, 0.25f, 0.75f, 0.35f));
+			temporary.RandomColor(0.75f);
 			element_configurations[number_static_elements + index] = temporary;
 		}
 	}

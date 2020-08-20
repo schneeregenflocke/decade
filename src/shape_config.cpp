@@ -133,6 +133,15 @@ glm::vec4 RectangleShapeConfig::FillColorDisabled() const
 	return fill_color;
 }
 
+void RectangleShapeConfig::RandomColor(float dim_outline_color_factor)
+{
+	std::random_device rd;
+	std::uniform_real_distribution<float> dist(0.f, 1.f);
+
+	fill_color = glm::vec4(dist(rd), dist(rd), dist(rd), 0.5f);
+	outline_color = fill_color * dim_outline_color_factor;
+}
+
 bool RectangleShapeConfig::operator==(const RectangleShapeConfig& compare_object)
 {
 	bool return_value = false;

@@ -24,6 +24,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include <string>
 
+#include <random>
+
 
 class RectangleShapeConfig
 {
@@ -55,6 +57,8 @@ public:
 
 	glm::vec4 OutlineColorDisabled() const;
 	glm::vec4 FillColorDisabled() const;
+
+	void RandomColor(float dim_outline_color_factor);
 	
 
 	bool operator==(const RectangleShapeConfig& compare_object);
