@@ -124,21 +124,20 @@ MouseInteraction::MouseInteraction(wxGLCanvas* parent, GraphicEngine* graphic_en
 
 void MouseInteraction::OnMouse(wxMouseEvent& event)
 {
-    event.Skip(event.GetSkipped());
+    event.Skip();
 
     wxPoint MousePosPx = event.GetPosition();
+    double d_mouse_pos_x = static_cast<double>(MousePosPx.x);
+    double d_mouse_pos_y = static_cast<double>(MousePosPx.y);
 
     GLint viewport[4];
     glGetIntegerv(GL_VIEWPORT, viewport);
-    float width = static_cast<float>(viewport[2]);
-    float height = static_cast<float>(viewport[3]);
+    double width = static_cast<double>(viewport[2]);
+    double height = static_cast<double>(viewport[3]);
 
-    glm::vec4 viewportvec(0.f, 0.f, width, height);
-    glm::mat4 projection_matrix = graphic_engine->GetViewRef().GetProjectionMatrix();
-    glm::vec3 mousePos = glm::unProject(vec3(MousePosPx.x, height - MousePosPx.y, 0.f), glm::mat4(1.f), projection_matrix, viewportvec);
-
-    //wxString mousePosStr = std::string("x ") + std::to_string(mousePos.x) + std::string("  y ") + std::to_string(mousePos.y);
-    //static_cast<wxFrame*>(GetParent())->SetStatusText(mousePosStr);
+    glm::dvec4 viewportvec(0.0, 0.0, width, height);
+    glm::dmat4 projection_matrix = graphic_engine->GetViewRef().GetProjectionMatrix();
+    glm::dvec3 mousePos = glm::unProject(glm::dvec3(d_mouse_pos_x, height - d_mouse_pos_y, 0.0), glm::dmat4(1.0), projection_matrix, viewportvec);
 
     if (!event.LeftIsDown())
     {
@@ -149,39 +148,42 @@ void MouseInteraction::OnMouse(wxMouseEvent& event)
         }
 
         mouse_position_button_up = mousePos;
-        move_view = vec3(0.f);
+        move_view = glm::dvec3(0.0);
     }
 
     if (event.LeftIsDown())
     {
-        move_view = mousePos - mouse_position_button_up;
+        move_view = mousePos - glm::dvec3(mouse_position_button_up);
         switch_to_button_up = true;
     }
 
-
-
     if (event.GetWheelRotation() != 0)
     {
-        glm::vec4 preScaledMousePos = glm::inverse(glm::scale(scale_view)) * glm::inverse(glm::translate(translate_view)) * glm::vec4(mousePos, 1);
+        glm::dvec4 preScaledMousePos =
+            glm::inverse(glm::scale(glm::dvec3(scale_view))) *
+            glm::inverse(glm::translate(glm::dvec3(translate_view))) *
+            glm::dvec4(mousePos, 1);
+
 
         int wheel_rotation = event.GetWheelRotation();
 
-        scale += static_cast<float>(wheel_rotation) / 1200.f;
-        auto factor = std::exp(scale);
-        scale_view = vec3(factor, factor, 1.f);
-
+        scale += static_cast<double>(wheel_rotation) / 1200.0;
+        double factor = std::exp(scale);
+        scale_view = glm::dvec3(factor, factor, 1.0);
+        //std::wcout << "zoom factor " << factor << "\n";
 
         graphic_engine->GetViewRef().Scale(scale_view);
 
-        glm::vec4 postScaleMousePos = glm::inverse(glm::translate(translate_view) * glm::scale(scale_view)) * glm::vec4(mousePos, 1);
+        glm::dvec4 postScaleMousePos =
+            glm::inverse(glm::translate(translate_view) *
+            glm::scale(scale_view)) *
+            glm::dvec4(mousePos, 1);
 
-        auto correction = postScaleMousePos - preScaledMousePos;
-        auto back_calc = glm::scale(scale_view) * glm::translate(translate_view) * correction;
 
-        translate_view += vec3(back_calc);
+        glm::dvec4 correction = postScaleMousePos - preScaledMousePos;
+        glm::dvec4 back_calc = glm::scale(scale_view) * glm::translate(translate_view) * correction;
 
-        //std::string statusText = std::string("zoom factor ") + std::to_string(factor * 100.f) + std::string("%");
-        //static_cast<wxFrame*>(GetParent())->SetStatusText(statusText);
+        translate_view += glm::dvec3(back_calc);
     }
 
     graphic_engine->GetViewRef().Translate(translate_view + move_view);
@@ -189,7 +191,7 @@ void MouseInteraction::OnMouse(wxMouseEvent& event)
     parent->Refresh(false);
 }
 
-/*wxGLContextAttrs GLCanvas::defaultAttrs()
+/*constexpr wxGLContextAttrs GLCanvas::defaultAttrs()
 {
     /home/titan99/code/decade/src/gui/gl_canvas.cpp: In Konstruktor »GLCanvas::GLCanvas(wxWindow*, const wxGLAttributes&)«:
     /home/titan99/code/decade/src/gui/gl_canvas.cpp:24:42: Fehler: Adresse eines rvalues wird ermittelt [-fpermissive]

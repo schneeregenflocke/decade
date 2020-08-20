@@ -34,12 +34,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include <sigslot/signal.hpp>
 
 #include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
+#include <glm/mat4x4.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include <memory>
 #include <array>
 #include <string>
-
-
 
 
 
@@ -55,12 +56,12 @@ private:
     wxGLCanvas* parent;
     GraphicEngine* graphic_engine;
 
-    glm::vec3 mouse_position_button_up;
-    glm::vec3 move_view;
-    glm::vec3 translate_view;
-    glm::vec3 scale_view;
+    glm::dvec3 mouse_position_button_up;
+    glm::dvec3 move_view;
+    glm::dvec3 translate_view;
+    glm::dvec3 scale_view;
     bool switch_to_button_up;
-    float scale;
+    double scale;
 };
 
 
@@ -88,6 +89,5 @@ private:
     int openGL_ready;
 
     std::unique_ptr<GraphicEngine> graphic_engine;
-
     std::unique_ptr<MouseInteraction> mouse_interaction;
 };
