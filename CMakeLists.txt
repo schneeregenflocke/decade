@@ -3,6 +3,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_compile_definitions(HAVE_TYPE_TRAITS)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(Decade)
 add_executable(Decade)
@@ -35,7 +36,7 @@ find_package(Boost COMPONENTS date_time)
 
 message("Boost_FOUND: ${Boost_FOUND}")
 if(NOT ${Boost_FOUND})
-	message(FATAL_ERROR "Try to set Boost_DIR to boost/stage/lib/cmake/Boost-1.74.0 to file BoostConfig.cmake. See https://cmake.org/cmake/help/latest/module/FindBoost.html")
+	message(FATAL_ERROR "Set directory path variable Boost_DIR to the directory containing the file BoostConfig.cmake (boost/stage/lib/cmake/Boost-1.74.0)")
 endif()
 
 message("Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
