@@ -1,0 +1,1 @@
+Checks:              'cppcoreguidelines-*,-cppcoreguidelines-owning-memory,performance-*,portability-*,readability-*'

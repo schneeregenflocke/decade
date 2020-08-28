@@ -33,13 +33,13 @@ void GraphicEngine::Refresh()
 
 void GraphicEngine::Render()
 {
-	glClearColor(0.75f, 0.75f, 1.0f, 1.0f);
+	glClearColor(.9F, 1.F, .9F, 1.0F);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	simple_shader.UseProgram();
 	simple_shader.SetProjectionMatrix(view.GetProjectionMatrix());
 	simple_shader.SetViewMatrix(view.GetViewMatrix());
-	simple_shader.SetModelMatrix(glm::mat4(1.f));
+	simple_shader.SetModelMatrix(glm::mat4(1.F));
 
 	font_shader.UseProgram();
 	font_shader.SetProjectionMatrix(view.GetProjectionMatrix());
@@ -55,7 +55,7 @@ void GraphicEngine::Render()
 
 void GraphicEngine::ProvisionalRenderToPNGRender()
 {
-	glClearColor(0.75f, 0.75f, 1.0f, 1.0f);
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	simple_shader.UseProgram();
