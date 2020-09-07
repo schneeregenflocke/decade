@@ -19,6 +19,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include "gl_canvas.h"
 
+std::ostream& operator<<(std::ostream& out, const glm::dvec4& value)
+{
+    out << "x: " << value.x << " y: " << value.y << " z: " << value.z << " w: " << value.w;
+    return out;
+}
+
 
 GLCanvas::GLCanvas(wxWindow* parent, const wxGLAttributes& canvas_attributes) : 
     wxGLCanvas(parent, canvas_attributes),
@@ -180,8 +186,11 @@ void MouseInteraction::OnMouse(wxMouseEvent& event)
             glm::scale(scale_view)) *
             glm::dvec4(mousePos, 1);
 
+        
 
         glm::dvec4 correction = postScaleMousePos - preScaledMousePos;
+
+
         glm::dvec4 back_calc = glm::scale(scale_view) * glm::translate(translate_view) * correction;
 
         translate_view += glm::dvec3(back_calc);

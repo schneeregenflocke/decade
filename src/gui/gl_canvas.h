@@ -42,6 +42,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include <array>
 #include <string>
 
+std::ostream& operator<<(std::ostream& out, const glm::dvec4& value);
+
 
 
 class MouseInteraction
