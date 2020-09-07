@@ -74,7 +74,7 @@ public:
     GraphicEngine* GetGraphicEngine();
 
     void LoadOpenGL(const std::array<int, 2>& version);
-    std::string GetGLVersionString();
+    static std::string GetGLVersionString();
 
     sigslot::signal<> signal_opengl_ready;
 

@@ -22,7 +22,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 GLCanvas::GLCanvas(wxWindow* parent, const wxGLAttributes& canvas_attributes) : 
     wxGLCanvas(parent, canvas_attributes),
-    openGL_ready(false)
+    openGL_ready(0)
 {}
 
 GraphicEngine* GLCanvas::GetGraphicEngine()
@@ -38,7 +38,7 @@ void GLCanvas::LoadOpenGL(const std::array<int, 2>& version)
     {
         std::cerr << "Try wxFrame::Raise after WxFrame::Show" << '\n';
     }
-	if (openGL_ready == false && canvas_shown_on_screen)
+	if (openGL_ready == 0 && canvas_shown_on_screen)
     {
 		context_attributes.PlatformDefaults().CoreProfile().OGLVersion(version[0], version[1]).EndList();
 		context = std::make_unique<wxGLContext>(this, nullptr, &context_attributes);
@@ -56,7 +56,7 @@ void GLCanvas::LoadOpenGL(const std::array<int, 2>& version)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_MULTISAMPLE);
 
-        GLint sample_buffers;
+        GLint sample_buffers = 0;
         glGetIntegerv(GL_SAMPLES, &sample_buffers);
         std::cout << "sample_buffers " << sample_buffers << '\n';
 
@@ -130,10 +130,10 @@ void MouseInteraction::OnMouse(wxMouseEvent& event)
     double d_mouse_pos_x = static_cast<double>(MousePosPx.x);
     double d_mouse_pos_y = static_cast<double>(MousePosPx.y);
 
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
-    double width = static_cast<double>(viewport[2]);
-    double height = static_cast<double>(viewport[3]);
+    std::array<GLint, 4> viewport;
+    glGetIntegerv(GL_VIEWPORT, viewport.data());
+    const double width = static_cast<double>(viewport[2]);
+    const double height = static_cast<double>(viewport[3]);
 
     glm::dvec4 viewportvec(0.0, 0.0, width, height);
     glm::dmat4 projection_matrix = graphic_engine->GetViewRef().GetProjectionMatrix();
@@ -167,8 +167,9 @@ void MouseInteraction::OnMouse(wxMouseEvent& event)
 
         int wheel_rotation = event.GetWheelRotation();
 
-        scale += static_cast<double>(wheel_rotation) / 1200.0;
-        double factor = std::exp(scale);
+        const double mouse_wheel_step = 1200.0;
+        scale += static_cast<double>(wheel_rotation) / mouse_wheel_step;
+        const double factor(std::exp(scale));
         scale_view = glm::dvec3(factor, factor, 1.0);
         //std::wcout << "zoom factor " << factor << "\n";
 
