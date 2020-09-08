@@ -162,8 +162,9 @@ boost::gregorian::date string_to_boost_date(std::string date_string, const date_
 }
 
 /// case_id 0: invalid date_interval
-/// case_id 1: valid date_interval
-/// case_id 2: single date
+/// case_id 1: valid date_interval (both dates of the interval are valid, second date greater than first date)
+/// case_id 2: valid single date (both dates of the interval are valid and equal)
+/// case_id 3: valid single date (first date of the interval is valid)
 int CheckDateInterval(const boost::gregorian::date& begin_date, const boost::gregorian::date& end_date)
 {
 	int case_id = 0;
@@ -176,12 +177,12 @@ int CheckDateInterval(const boost::gregorian::date& begin_date, const boost::gre
 		{
 			case_id = 1;
 		}
-		if (begin_date == end_date)
+		else if (begin_date == end_date)
 		{
 			case_id = 2;
 		}
 	}
-	else if (begin_date.is_special() == false /*&& date_interval->end().is_special() == true*/)
+	else if (begin_date.is_special() == false)
 	{
 		case_id = 3;
 	}
@@ -189,6 +190,10 @@ int CheckDateInterval(const boost::gregorian::date& begin_date, const boost::gre
 	return case_id;
 }
 
+/// case_id 0: invalid date_interval
+/// case_id 1: valid date_interval (both dates of the interval are valid, second date greater than first date)
+/// case_id 2: valid single date (both dates of the interval are valid and equal)
+/// case_id 3: valid single date, adjust second date to first date (first date of the interval is valid)
 int CheckAndAdjustDateInterval(boost::gregorian::date_period* date_interval)
 {
 	int case_id = 0;
@@ -199,13 +204,12 @@ int CheckAndAdjustDateInterval(boost::gregorian::date_period* date_interval)
 		{
 			case_id = 1;
 		}
-
-		if (date_interval->begin() == date_interval->end())
+		else if (date_interval->begin() == date_interval->end())
 		{
 			case_id = 2;
 		}
 	}
-	else if (date_interval->begin().is_special() == false /*&& date_interval->end().is_special() == true*/)
+	else if (date_interval->begin().is_special() == false)
 	{
 		*date_interval = boost::gregorian::date_period(date_interval->begin(), date_interval->begin());
 		case_id = 3;
