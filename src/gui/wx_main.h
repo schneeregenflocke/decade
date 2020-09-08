@@ -73,26 +73,27 @@ public:
     GLCanvas* GetGLCanvas();
     
 private:
-
     void InitMenu();
 
     void OpenGLReady();
-
     void EstablishConnections();
 
     void SlotSelectListBook(wxCommandEvent& event);
-    void SlotExit(wxCommandEvent& event);
     
-    void SlotExportPNG(wxCommandEvent& event);
     void SlotLoadXML(wxCommandEvent& event);
     void SlotSaveXML(wxCommandEvent& event);
-    void SlotLicenseInfo(wxCommandEvent& event);
-
-    void SaveXML(const std::wstring& filepath);
     void LoadXML(const std::wstring& filepath);
+    void SaveXML(const std::wstring& filepath);
+    
     void SlotImportCSV(wxCommandEvent& event);
     void SlotExportCSV(wxCommandEvent& event);
     void ImportCSV(const std::string& filepath);
+
+    void SlotExportPNG(wxCommandEvent& event);
+
+    void SlotExit(wxCommandEvent& event);
+
+    void SlotLicenseInfo(wxCommandEvent& event);
     
     std::wstring current_xml_file;
 
@@ -108,10 +109,9 @@ private:
 
     std::unique_ptr<CalendarPage> calendar;
 
+    DateGroupStore date_groups_store;
     DateIntervalBundleStore date_interval_bundle_store;
     TransformDateIntervalBundle transformed_date_interval_bundle;
-
-    DateGroupStore date_groups_store;
 
     GLCanvas* gl_canvas;
 
