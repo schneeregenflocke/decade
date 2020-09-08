@@ -21,10 +21,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 //#define BOOST_DATE_TIME_NO_LIB
 #include <boost/date_time/gregorian/gregorian.hpp>
 
+/*namespace gregorian = boost::gregorian;
+
 using date = boost::gregorian::date;
 using date_period = boost::gregorian::date_period;
 using date_duration = boost::gregorian::date_duration;
-using months = boost::gregorian::months;
+using months = boost::gregorian::months;*/
 
 #include <string>
 #include <array>
@@ -39,9 +41,9 @@ struct date_format_descriptor
 
 date_format_descriptor InitDateFormat();
 
-std::string boost_date_to_string(const date& date_variable);
-date string_to_boost_date(std::string date_string, const date_format_descriptor& format);
+std::string boost_date_to_string(const boost::gregorian::date& date_variable);
+boost::gregorian::date string_to_boost_date(std::string date_string, const date_format_descriptor& format);
 
-int CheckDateInterval(const date& begin_date, const date& end_date);
+int CheckDateInterval(const boost::gregorian::date& begin_date, const boost::gregorian::date& end_date);
 
-int CheckAndAdjustDateInterval(date_period* date_interval);
+int CheckAndAdjustDateInterval(boost::gregorian::date_period* date_interval);

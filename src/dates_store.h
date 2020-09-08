@@ -37,8 +37,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 struct DateIntervalBundle
 {
 	DateIntervalBundle() :
-		date_interval(date_period(date(boost::date_time::not_a_date_time), date(boost::date_time::not_a_date_time))),
-		date_inter_interval(date_period(date(boost::date_time::not_a_date_time), date(boost::date_time::not_a_date_time))),
+		date_interval(boost::gregorian::date_period(boost::gregorian::date(boost::date_time::not_a_date_time), boost::gregorian::date(boost::date_time::not_a_date_time))),
+		date_inter_interval(boost::gregorian::date_period(boost::gregorian::date(boost::date_time::not_a_date_time), boost::gregorian::date(boost::date_time::not_a_date_time))),
 		number(0),
 		group(0),
 		group_number(0),
@@ -46,9 +46,9 @@ struct DateIntervalBundle
 		exclude(false)
 	{};
 
-	DateIntervalBundle(date_period date_interval) :
+	DateIntervalBundle(boost::gregorian::date_period date_interval) :
 		date_interval(date_interval),
-		date_inter_interval(date_period(date(boost::date_time::not_a_date_time), date(boost::date_time::not_a_date_time))),
+		date_inter_interval(boost::gregorian::date_period(boost::gregorian::date(boost::date_time::not_a_date_time), boost::gregorian::date(boost::date_time::not_a_date_time))),
 		number(0),
 		group(0),
 		group_number(0),
@@ -56,8 +56,8 @@ struct DateIntervalBundle
 		exclude(false)
 	{};
 
-	date_period date_interval;
-	date_period	date_inter_interval;
+	boost::gregorian::date_period date_interval;
+	boost::gregorian::date_period date_inter_interval;
 	int number;
 	int group;
 	int group_number;
@@ -100,8 +100,8 @@ public:
 	void SaveXML(pugi::xml_node* doc);
 	////////////////////////////////////////////////////////////
 	size_t GetDateIntervalsSize() const;
-	const date_period& GetDateIntervalConstRef(size_t index) const;
-	const date_period& GetDateInterIntervalConstRef(size_t index) const;
+	const boost::gregorian::date_period& GetDateIntervalConstRef(size_t index) const;
+	const boost::gregorian::date_period& GetDateInterIntervalConstRef(size_t index) const;
 	////////////////////////////////////////////////////////////
 
 	void SetDateGroups(const std::vector<DateGroup>& argument_date_groups);
@@ -131,7 +131,7 @@ class Bar
 {
 public:
 
-	Bar(const date_period& date_interval);
+	Bar(const boost::gregorian::date_period& date_interval);
 
 	void SetText(const std::wstring text);
 	std::wstring GetText() const;
@@ -145,7 +145,7 @@ public:
 
 private:
 
-	date_period date_interval;
+	boost::gregorian::date_period date_interval;
 	std::wstring text;
 	//int admission;
 	//int lenght;

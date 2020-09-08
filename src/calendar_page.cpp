@@ -471,7 +471,7 @@ void CalendarPage::SetupMonthsShapes()
 			auto current_cell = row_frames.GetSubFrame(index, 1);
 			
 			rect4 month_cell;
-			month_cell.Left(current_cell.Left() + static_cast<float>(date_period(first_day_of_year, first_day_of_year + months(subindex)).length().days())* day_width);
+			month_cell.Left(current_cell.Left() + static_cast<float>(boost::gregorian::date_period(first_day_of_year, first_day_of_year + boost::gregorian::months(subindex)).length().days())* day_width);
 			month_cell.Bottom(current_cell.Bottom());
 			month_cell.Right(current_cell.Left() + static_cast<float>(boost::gregorian::date_period(first_day_of_year, first_day_of_year + boost::gregorian::months(subindex + 1)).length().days())* day_width);
 			month_cell.Top(current_cell.Top());
@@ -497,7 +497,7 @@ void CalendarPage::SetupDaysShapes()
 
 	if (calendarSpan.GetSpan() > 0)
 	{
-		number_days_cells = date_period(date(calendarSpan.GetFirstYear(), 1, 1), date(calendarSpan.GetLastYear() + 1, 1, 1)).length().days();
+		number_days_cells = boost::gregorian::date_period(boost::gregorian::date(calendarSpan.GetFirstYear(), 1, 1), boost::gregorian::date(calendarSpan.GetLastYear() + 1, 1, 1)).length().days();
 	}
 
 	std::vector<rect4> days_cells(number_days_cells);
@@ -511,7 +511,7 @@ void CalendarPage::SetupDaysShapes()
 	for (int index = 0; index < calendarSpan.GetSpan(); ++index)
 	{
 		int current_year = calendarSpan.GetFirstYear() + index;
-		int number_days = date_period(date(current_year, 1, 1), date(current_year + 1, 1, 1)).length().days();
+		int number_days = boost::gregorian::date_period(boost::gregorian::date(current_year, 1, 1), boost::gregorian::date(current_year + 1, 1, 1)).length().days();
 
 		for (int subindex = 0; subindex < number_days; ++subindex)
 		{
@@ -527,7 +527,7 @@ void CalendarPage::SetupDaysShapes()
 			
 			days_cells[days_index] = day_cell;
 
-			date current_date = date(calendarSpan.GetFirstYear(), 1, 1) + date_duration(days_index);
+			boost::gregorian::date current_date = boost::gregorian::date(calendarSpan.GetFirstYear(), 1, 1) + boost::gregorian::date_duration(days_index);
 			if (current_date.day_of_week() == boost::date_time::Sunday)
 			{
 				days_cells_shape_linewidths[days_index] = sunday_config.LineWidth();

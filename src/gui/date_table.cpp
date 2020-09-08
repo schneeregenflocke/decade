@@ -374,7 +374,7 @@ void DateTablePanel::ScanTable()
 		
 		auto begin_date = ParseDateByCell(valid_index, 0);
 		auto end_date = ParseDateByCell(valid_index, 1);
-		date_period temporary_date_interval = date_period(begin_date, end_date);
+		boost::gregorian::date_period temporary_date_interval = boost::gregorian::date_period(begin_date, end_date);
 
 		if (CheckAndAdjustDateInterval(&temporary_date_interval) > 0)
 		{
@@ -422,7 +422,7 @@ std::vector<int> DateTablePanel::GetSelections()
 
 
 
-date DateTablePanel::ParseDateByCell(int row, int column)
+boost::gregorian::date DateTablePanel::ParseDateByCell(int row, int column)
 {
 	wxVariant cell_value;
 	table_widget->GetStore()->GetValueByRow(cell_value, row, column);

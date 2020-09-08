@@ -26,7 +26,7 @@ date_format_descriptor InitDateFormat()
 	const int testmonth = 4;
 	const int testday = 23;
 
-	std::tm test_tm = boost::gregorian::to_tm(date(testyear, testmonth, testday));
+	std::tm test_tm = boost::gregorian::to_tm(boost::gregorian::date(testyear, testmonth, testday));
 	std::ostringstream ostrm;
 	ostrm << std::put_time(&test_tm, "%x");
 	std::string date_string = ostrm.str();
@@ -68,7 +68,7 @@ date_format_descriptor InitDateFormat()
 }
 
 
-std::string boost_date_to_string(const date& date_variable)
+std::string boost_date_to_string(const boost::gregorian::date& date_variable)
 {
 	std::ostringstream ostrm;
 
@@ -94,7 +94,7 @@ boost::gregorian::date string_to_boost_date(std::string date_string, const date_
 	bool failed = false;
 	std::array<int, 3> date_parts;
 	size_t delimPos = 0;
-	date date_variable;
+	boost::gregorian::date date_variable;
 
 	for(size_t index = 0; index < 3; ++index)
 	{
@@ -144,17 +144,17 @@ boost::gregorian::date string_to_boost_date(std::string date_string, const date_
 
 	if (failed)
 	{
-		date_variable = date(boost::date_time::not_a_date_time);
+		date_variable = boost::gregorian::date(boost::date_time::not_a_date_time);
 	}
 	else
 	{
 		try
 		{
-			date_variable = date(date_parts[0], date_parts[1], date_parts[2]);
+			date_variable = boost::gregorian::date(date_parts[0], date_parts[1], date_parts[2]);
 		}
 		catch (const std::exception&)
 		{
-			date_variable = date(boost::date_time::not_a_date_time);
+			date_variable = boost::gregorian::date(boost::date_time::not_a_date_time);
 		}	
 	}
 	
@@ -164,13 +164,13 @@ boost::gregorian::date string_to_boost_date(std::string date_string, const date_
 /// case_id 0: invalid date_interval
 /// case_id 1: valid date_interval
 /// case_id 2: single date
-int CheckDateInterval(const date& begin_date, const date& end_date)
+int CheckDateInterval(const boost::gregorian::date& begin_date, const boost::gregorian::date& end_date)
 {
 	int case_id = 0;
 
 	if (begin_date.is_special() == false && end_date.is_special() == false)
 	{
-		date_period period = date_period(begin_date, end_date);
+		boost::gregorian::date_period period = boost::gregorian::date_period(begin_date, end_date);
 
 		if (period.is_null() == false)
 		{
@@ -189,7 +189,7 @@ int CheckDateInterval(const date& begin_date, const date& end_date)
 	return case_id;
 }
 
-int CheckAndAdjustDateInterval(date_period* date_interval)
+int CheckAndAdjustDateInterval(boost::gregorian::date_period* date_interval)
 {
 	int case_id = 0;
 
@@ -207,7 +207,7 @@ int CheckAndAdjustDateInterval(date_period* date_interval)
 	}
 	else if (date_interval->begin().is_special() == false /*&& date_interval->end().is_special() == true*/)
 	{
-		*date_interval = date_period(date_interval->begin(), date_interval->begin());
+		*date_interval = boost::gregorian::date_period(date_interval->begin(), date_interval->begin());
 		case_id = 3;
 	}
 

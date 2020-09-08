@@ -27,9 +27,9 @@ void TransformDateIntervalBundle::InputDateIntervals(const std::vector<DateInter
 
 	for (const auto& date_interval_bundle : date_interval_bundles) 
 	{
-		bundles_iterator->date_interval = date_period(
-			date_interval_bundle.date_interval.begin() + date_duration(date_shift[0]), 
-			date_interval_bundle.date_interval.end() + date_duration(date_shift[1]));
+		bundles_iterator->date_interval = boost::gregorian::date_period(
+			date_interval_bundle.date_interval.begin() + boost::gregorian::date_duration(date_shift[0]),
+			date_interval_bundle.date_interval.end() + boost::gregorian::date_duration(date_shift[1]));
 		++bundles_iterator;
 	}
 
@@ -43,9 +43,9 @@ void TransformDateIntervalBundle::InputTransformedDateIntervals(const std::vecto
 
 	for (const auto& date_interval_bundle : date_interval_bundles)
 	{
-		bundles_iterator->date_interval = date_period(
-			date_interval_bundle.date_interval.begin() - date_duration(date_shift[0]),
-			date_interval_bundle.date_interval.end() - date_duration(date_shift[1]));
+		bundles_iterator->date_interval = boost::gregorian::date_period(
+			date_interval_bundle.date_interval.begin() - boost::gregorian::date_duration(date_shift[0]),
+			date_interval_bundle.date_interval.end() - boost::gregorian::date_duration(date_shift[1]));
 		++bundles_iterator;
 	}
 
@@ -105,12 +105,12 @@ size_t DateIntervalBundleStore::GetDateIntervalsSize() const
 	return date_interval_bundles.size();
 }
 
-const date_period& DateIntervalBundleStore::GetDateIntervalConstRef(size_t index) const
+const boost::gregorian::date_period& DateIntervalBundleStore::GetDateIntervalConstRef(size_t index) const
 {
 	return date_interval_bundles[index].date_interval;
 }
 
-const date_period& DateIntervalBundleStore::GetDateInterIntervalConstRef(size_t index) const
+const boost::gregorian::date_period& DateIntervalBundleStore::GetDateInterIntervalConstRef(size_t index) const
 {
 	return date_interval_bundles[index].date_inter_interval;
 }
@@ -180,7 +180,7 @@ void DateIntervalBundleStore::ProcessDateInterIntervals()
 
 			if (iterator_second != date_interval_bundles.end())
 			{
-				iterator_first->date_inter_interval = date_period(iterator_first->date_interval.end(), iterator_second->date_interval.begin());
+				iterator_first->date_inter_interval = boost::gregorian::date_period(iterator_first->date_interval.end(), iterator_second->date_interval.begin());
 				
 				//std::cout << "wrote inter " << counter << '\n';
 				//++counter;
@@ -294,12 +294,12 @@ void DateIntervalBundleStore::LoadXML(const pugi::xml_node& doc)
 		std::wstring begin_date_string = node_interval.attribute(L"begin_date").value();
 		std::wstring end_date_string = node_interval.attribute(L"end_date").value();
 
-		date boost_begin_date = boost::gregorian::from_undelimited_string(std::string(begin_date_string.begin(), begin_date_string.end()));
-		date boost_end_date = boost::gregorian::from_undelimited_string(std::string(end_date_string.begin(), end_date_string.end()));
+		boost::gregorian::date boost_begin_date = boost::gregorian::from_undelimited_string(std::string(begin_date_string.begin(), begin_date_string.end()));
+		boost::gregorian::date boost_end_date = boost::gregorian::from_undelimited_string(std::string(end_date_string.begin(), end_date_string.end()));
 
 		DateIntervalBundle temporary_bundle;
 
-		temporary_bundle.date_interval = date_period(boost_begin_date, boost_end_date);
+		temporary_bundle.date_interval = boost::gregorian::date_period(boost_begin_date, boost_end_date);
 		temporary_bundle.group = node_interval.attribute(L"group").as_int();
 		temporary_bundle.comment = node_interval.attribute(L"comment").value();
 		
@@ -314,7 +314,7 @@ void DateIntervalBundleStore::LoadXML(const pugi::xml_node& doc)
 
 
 
-Bar::Bar(const date_period& date_interval) :
+Bar::Bar(const boost::gregorian::date_period& date_interval) :
 	date_interval(date_interval),
 	text(L""),
 	//admission(0),
@@ -370,14 +370,14 @@ void DateIntervalBundleBarStore::ProcessBars()
 	{
 		int span = date_interval_bundles[index].date_interval.last().year() - date_interval_bundles[index].date_interval.begin().year();
 
-		std::vector<date_period> splitDatePeriods;
+		std::vector<boost::gregorian::date_period> splitDatePeriods;
 		splitDatePeriods.push_back(date_interval_bundles[index].date_interval);
 
 		for (auto subIndex = 0; subIndex < span; ++subIndex)
 		{
-			date split_date = date(splitDatePeriods[subIndex].begin().year() + 1, 1, 1);
-			splitDatePeriods.push_back(date_period(split_date, splitDatePeriods[subIndex].end()));
-			splitDatePeriods[subIndex] = date_period(splitDatePeriods[subIndex].begin(), split_date);
+			boost::gregorian::date split_date = boost::gregorian::date(splitDatePeriods[subIndex].begin().year() + 1, 1, 1);
+			splitDatePeriods.push_back(boost::gregorian::date_period(split_date, splitDatePeriods[subIndex].end()));
+			splitDatePeriods[subIndex] = boost::gregorian::date_period(splitDatePeriods[subIndex].begin(), split_date);
 		}
 
 		for (auto subindex = 0U; subindex < splitDatePeriods.size(); ++subindex)

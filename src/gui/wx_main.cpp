@@ -384,7 +384,7 @@ void MainWindow::ImportCSV(const std::string& filepath)
             // check for date_period
             if ( (begin_date.is_special() || end_date.is_special() ) == false)
             {
-                date_period date_interval(begin_date, end_date);
+                boost::gregorian::date_period date_interval(begin_date, end_date);
 
                 if (date_interval.is_null() == false)
                 {
@@ -395,7 +395,7 @@ void MainWindow::ImportCSV(const std::string& filepath)
             // check for single date
             if ( begin_date.is_special() == false && end_date_string.empty() )
             {
-                date_period date_interval(begin_date, begin_date);
+                boost::gregorian::date_period date_interval(begin_date, begin_date);
 
                 buffer.push_back(date_interval);
             }
