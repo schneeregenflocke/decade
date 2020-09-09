@@ -30,7 +30,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include "../date_utils.h"
 
 #include "date_groups_table.h"
-#include "date_table.h"
+#include "date_table_panel.h"
 #include "page_setup.h"
 #include "font_setup.h"
 #include "title_setup.h"

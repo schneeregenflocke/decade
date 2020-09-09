@@ -41,6 +41,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include <string>
 #include <memory>
 
+#include <boost/bimap.hpp>
+
 
 class DateTablePanel : public wxPanel
 {
@@ -48,8 +50,9 @@ public:
 
 	DateTablePanel(wxWindow* parent);
 
-	void UpdateTable(const std::vector<DateIntervalBundle>& date_interval_bundles);
-	void UpdateGroups(const std::vector<DateGroup>& argument_date_groups);
+	void ReceiveDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles);
+	
+	void UpdateGroups(const std::vector<DateGroup>& date_groups);
 	
 	std::wstring GetPanelName();
 
@@ -57,15 +60,14 @@ public:
 
 private:
 
-	void ScanTable();
-
-	void UpdateValidRows();
-
-	std::vector<int> GetSelections();
-
 	void InitColumns();
 
+	void SendDateIntervalBundles();
+
 	void UpdateWidgets();
+
+	std::vector<size_t> BuildValidRowsList();
+	std::vector<int> GetSelectionList();
 
 	void InsertRow(size_t row);
 	void RemoveRow(size_t row);
@@ -86,8 +88,18 @@ private:
 	wxButton* deleteRowButton;
 	wxComboBox* select_group_control;
 
-	std::vector<size_t> valid_rows;
-
 	DateGroupStore date_group_store;
+
+	enum columns : unsigned int
+	{
+		first_date,
+		second_date,
+		number,
+		group,
+		group_number,
+		duration,
+		duration_to_next,
+		comment
+	};
 };
 

@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 */
 
 
-#include "date_table.h"
+#include "date_table_panel.h"
 
 
 DateTablePanel::DateTablePanel(wxWindow* parent) : 
@@ -56,8 +56,6 @@ DateTablePanel::DateTablePanel(wxWindow* parent) :
 
 	Layout();
 
-	//group_choices.push_back(L"uninitialized");
-
 	Bind(wxEVT_DATAVIEW_ITEM_ACTIVATED, &DateTablePanel::OnItemActivated, this);
 	Bind(wxEVT_DATAVIEW_ITEM_EDITING_DONE, &DateTablePanel::OnItemEditing, this);
 	Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &DateTablePanel::OnSelectionChanged, this);
@@ -77,7 +75,7 @@ DateTablePanel::DateTablePanel(wxWindow* parent) :
 
 void DateTablePanel::InitColumns()
 {
-	// table_widget->ClearColumns();
+	//table_widget->ClearColumns();
 
 	table_widget->AppendTextColumn(L"From Date", wxDATAVIEW_CELL_EDITABLE);
 	table_widget->AppendTextColumn(L"To Date", wxDATAVIEW_CELL_EDITABLE);
@@ -90,84 +88,84 @@ void DateTablePanel::InitColumns()
 }
 
 
-void DateTablePanel::UpdateTable(const std::vector<DateIntervalBundle>& date_interval_bundles)
+void DateTablePanel::ReceiveDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles)
 {
-	UpdateValidRows();
+	auto valid_rows_list = BuildValidRowsList();
 
-	int change_row_number = date_interval_bundles.size() - valid_rows.size();
+	int change_row_number = date_interval_bundles.size() - valid_rows_list.size();
 
 	if (change_row_number > 0)
 	{
 		for (int index = 0; index < change_row_number; ++index)
 		{
 			InsertRow(index);
-			valid_rows.push_back(index);
+			valid_rows_list.push_back(index);
 		}
 	}
 	if (change_row_number < 0)
 	{
 		for (int index = change_row_number; index < 0; ++index)
 		{
-			RemoveRow(valid_rows.back());
-			valid_rows.pop_back();
+			RemoveRow(valid_rows_list.back());
+			valid_rows_list.pop_back();
 		}
 	}
 
-	for (size_t index = 0; index < valid_rows.size(); ++index)
+	for (size_t index = 0; index < valid_rows_list.size(); ++index)
 	{
-		table_widget->SetValue(boost_date_to_string(date_interval_bundles[index].date_interval.begin()), valid_rows[index], 0);
+		table_widget->SetValue(boost_date_to_string(date_interval_bundles[index].date_interval.begin()), valid_rows_list[index], columns::first_date);
 
 		if (date_interval_bundles[index].date_interval.begin() == date_interval_bundles[index].date_interval.end())
 		{
-			table_widget->SetValue(L"", valid_rows[index], 1);
+			table_widget->SetValue(L"", valid_rows_list[index], columns::second_date);
 		}
 		else
 		{
-			table_widget->SetValue(boost_date_to_string(date_interval_bundles[index].date_interval.end()), valid_rows[index], 1);
+			table_widget->SetValue(boost_date_to_string(date_interval_bundles[index].date_interval.end()), valid_rows_list[index], columns::second_date);
 		}
 
 		if (date_interval_bundles[index].exclude == false)
 		{
-			table_widget->SetValue(std::to_string(date_interval_bundles[index].number + 1), valid_rows[index], 2);
+			table_widget->SetValue(std::to_string(date_interval_bundles[index].number + 1), valid_rows_list[index], columns::number);
 		}
 		else
 		{
-			table_widget->SetValue(L"", valid_rows[index], 2);
+			table_widget->SetValue(L"", valid_rows_list[index], columns::number);
 		}
 		
 
 		// Check for group existing
 		if (date_interval_bundles[index].group > date_group_store.GetGroupMax())
 		{
-			table_widget->SetValue(std::to_string(0), valid_rows[index], 3);
+			table_widget->SetValue(std::to_string(0), valid_rows_list[index], columns::group);
 		}
 		else
 		{
 			auto group_name = date_group_store.GetName(date_interval_bundles[index].group);
-			table_widget->SetValue(group_name, valid_rows[index], 3);
+			table_widget->SetValue(group_name, valid_rows_list[index], columns::group);
 		}
 
-		table_widget->SetValue(std::to_string(date_interval_bundles[index].group_number + 1), valid_rows[index], 4);
+		table_widget->SetValue(std::to_string(date_interval_bundles[index].group_number + 1), valid_rows_list[index], columns::group_number);
 		
 
-		table_widget->SetValue(std::to_string(date_interval_bundles[index].date_interval.length().days() + 1/*!!!*/), valid_rows[index], 5);
+		table_widget->SetValue(std::to_string(date_interval_bundles[index].date_interval.length().days() + 1/*!!!*/), valid_rows_list[index], columns::duration);
 
 		if (index < (date_interval_bundles.size() - 1) && date_interval_bundles[index].exclude == false)
 		{
-			table_widget->SetValue(std::to_string(date_interval_bundles[index].date_inter_interval.length().days() - 1/*!!!*/), valid_rows[index], 6);
+			table_widget->SetValue(std::to_string(date_interval_bundles[index].date_inter_interval.length().days() - 1/*!!!*/), valid_rows_list[index], columns::duration_to_next);
 		}
 		else
 		{
-			table_widget->SetValue(L"", valid_rows[index], 6);
+			table_widget->SetValue(L"", valid_rows_list[index], columns::duration_to_next);
 		}
 	}
 }
 
-void DateTablePanel::UpdateGroups(const std::vector<DateGroup>& argument_date_groups)
+void DateTablePanel::UpdateGroups(const std::vector<DateGroup>& date_groups)
 {
-	date_group_store.SetDateGroups(argument_date_groups);
+	date_group_store.SetDateGroups(date_groups);
 
-	ScanTable();
+	SendDateIntervalBundles();
 
 	auto date_groups_std_string = date_group_store.GetDateGroupsNames();
 	wxArrayString date_groups_strings;
@@ -227,7 +225,7 @@ void DateTablePanel::OnItemEditing(wxDataViewEvent& event)
 		}
 	}*/
 
-	ScanTable();
+	SendDateIntervalBundles();
 }
 
 void DateTablePanel::OnSelectionChanged(wxDataViewEvent& event)
@@ -237,7 +235,7 @@ void DateTablePanel::OnSelectionChanged(wxDataViewEvent& event)
 
 void DateTablePanel::OnButtonClicked(wxCommandEvent& event)
 {
-	auto selections = GetSelections();
+	auto selections = GetSelectionList();
 
 	if (event.GetId() == wxID_ADD)
 	{
@@ -285,7 +283,7 @@ void DateTablePanel::OnButtonClicked(wxCommandEvent& event)
 
 void DateTablePanel::OnComboBoxSelection(wxCommandEvent& event)
 {
-	auto selections = GetSelections();
+	auto selections = GetSelectionList();
 
 	auto group_number = event.GetSelection();
 	auto group_name = date_group_store.GetName(group_number);
@@ -295,12 +293,12 @@ void DateTablePanel::OnComboBoxSelection(wxCommandEvent& event)
 		table_widget->SetValue(group_name, selections[index], 3);
 	}
 
-	ScanTable();
+	SendDateIntervalBundles();
 }
 
 void DateTablePanel::UpdateWidgets()
 {
-	auto selections = GetSelections();
+	auto selections = GetSelectionList();
 
 	if (selections.size() == 0)
 	{
@@ -328,7 +326,7 @@ void DateTablePanel::RemoveRow(size_t row)
 	if (row < table_widget->GetItemCount())
 	{
 		table_widget->DeleteItem(row);
-		ScanTable();
+		SendDateIntervalBundles();
 	}
 	else
 	{
@@ -341,9 +339,10 @@ std::wstring DateTablePanel::GetPanelName()
 	return std::wstring(L"Date Table");
 }
 
-void DateTablePanel::UpdateValidRows()
+std::vector<size_t> DateTablePanel::BuildValidRowsList()
 {
-	valid_rows.clear();
+	std::vector<size_t> valid_rows_list;
+	//valid_rows_list.clear();
 	for (size_t row = 0; row < table_widget->GetItemCount(); ++row)
 	{
 		auto begin_date = GetDateByCell(row, 0);
@@ -351,7 +350,7 @@ void DateTablePanel::UpdateValidRows()
 
 		if (CheckDateInterval(begin_date, end_date) > 0)
 		{
-			valid_rows.push_back(row);
+			valid_rows_list.push_back(row);
 		}
 		else
 		{
@@ -360,17 +359,19 @@ void DateTablePanel::UpdateValidRows()
 			table_widget->SetValue(L"", row, 6);
 		}
 	}
+
+	return valid_rows_list;
 }
 
-void DateTablePanel::ScanTable()
+void DateTablePanel::SendDateIntervalBundles()
 {
-	UpdateValidRows();
+	auto valid_rows_list = BuildValidRowsList();
 
 	std::vector<DateIntervalBundle> date_interval_bundles;
 
-	for (size_t index = 0; index < valid_rows.size(); ++index)
+	for (size_t index = 0; index < valid_rows_list.size(); ++index)
 	{
-		auto valid_index = valid_rows[index];
+		auto valid_index = valid_rows_list[index];
 		
 		auto begin_date = GetDateByCell(valid_index, 0);
 		auto end_date = GetDateByCell(valid_index, 1);
@@ -384,7 +385,6 @@ void DateTablePanel::ScanTable()
 
 			wxVariant group_string;
 			table_widget->GetValue(group_string, valid_index, 3);
-			// std::cout << __LINE__ << " " << index << " " << group_number.GetType() << " "  << group_number.GetLong() <<'\n';
 			
 			int group_number;
 			try
@@ -405,7 +405,7 @@ void DateTablePanel::ScanTable()
 	signal_table_date_interval_bundles(date_interval_bundles);
 }
 
-std::vector<int> DateTablePanel::GetSelections()
+std::vector<int> DateTablePanel::GetSelectionList()
 {
 	wxDataViewItemArray selection_array;
 	table_widget->GetSelections(selection_array);

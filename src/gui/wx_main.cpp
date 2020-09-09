@@ -235,7 +235,7 @@ void MainWindow::EstablishConnections()
     date_groups_store.signal_date_groups.connect(&DateTablePanel::UpdateGroups, data_table_panel);
     date_groups_store.signal_date_groups.connect(&ElementsSetupsPanel::UpdateGroups, elements_setup_panel);
 
-    date_interval_bundle_store.signal_date_interval_bundles.connect(&DateTablePanel::UpdateTable, data_table_panel);
+    date_interval_bundle_store.signal_date_interval_bundles.connect(&DateTablePanel::ReceiveDateIntervalBundles, data_table_panel);
     data_table_panel->signal_table_date_interval_bundles.connect(&DateIntervalBundleStore::SetDateIntervalBundles, &date_interval_bundle_store);
 
     transformed_date_interval_bundle.SetTransform(0, 1);
