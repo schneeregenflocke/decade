@@ -70,7 +70,7 @@ private:
 	void InsertRow(size_t row);
 	void RemoveRow(size_t row);
 
-	boost::gregorian::date ParseDateByCell(int row, int column);
+	boost::gregorian::date GetDateByCell(int row, int column);
 	
 	void OnItemActivated(wxDataViewEvent& event);
 	void OnValueChanged(wxDataViewEvent& event);

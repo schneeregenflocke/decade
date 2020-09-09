@@ -346,8 +346,8 @@ void DateTablePanel::UpdateValidRows()
 	valid_rows.clear();
 	for (size_t row = 0; row < table_widget->GetItemCount(); ++row)
 	{
-		auto begin_date = ParseDateByCell(row, 0);
-		auto end_date = ParseDateByCell(row, 1);
+		auto begin_date = GetDateByCell(row, 0);
+		auto end_date = GetDateByCell(row, 1);
 
 		if (CheckDateInterval(begin_date, end_date) > 0)
 		{
@@ -372,8 +372,8 @@ void DateTablePanel::ScanTable()
 	{
 		auto valid_index = valid_rows[index];
 		
-		auto begin_date = ParseDateByCell(valid_index, 0);
-		auto end_date = ParseDateByCell(valid_index, 1);
+		auto begin_date = GetDateByCell(valid_index, 0);
+		auto end_date = GetDateByCell(valid_index, 1);
 		boost::gregorian::date_period temporary_date_interval = boost::gregorian::date_period(begin_date, end_date);
 
 		if (CheckAndAdjustDateInterval(&temporary_date_interval) > 0)
@@ -422,7 +422,7 @@ std::vector<int> DateTablePanel::GetSelections()
 
 
 
-boost::gregorian::date DateTablePanel::ParseDateByCell(int row, int column)
+boost::gregorian::date DateTablePanel::GetDateByCell(int row, int column)
 {
 	wxVariant cell_value;
 	table_widget->GetStore()->GetValueByRow(cell_value, row, column);
