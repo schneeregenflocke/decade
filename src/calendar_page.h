@@ -87,7 +87,7 @@ public:
 
 	CalendarPage(GraphicEngine* graphic_engine);
 
-	void UpdateGroups(const std::vector<DateGroup>& argument_date_groups);
+	void ReceiveDateGroups(const std::vector<DateGroup>& argument_date_groups);
 
 	void SetDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles);
 

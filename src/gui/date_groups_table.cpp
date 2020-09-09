@@ -68,7 +68,7 @@ DateGroupsTablePanel::DateGroupsTablePanel(wxWindow* parent) :
 	data_table->AppendToggleColumn(L"Exclude", wxDATAVIEW_CELL_ACTIVATABLE);
 }
 
-void DateGroupsTablePanel::UpdateGroups(const std::vector<DateGroup>& argument_date_groups)
+void DateGroupsTablePanel::ReceiveDateGroups(const std::vector<DateGroup>& argument_date_groups)
 {
 	date_groups = argument_date_groups;
 	

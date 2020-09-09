@@ -153,7 +153,7 @@ CalendarPage::CalendarPage(GraphicEngine* graphic_engine) :
 	sub_frames_shape = graphic_engine->AddShape<RectanglesShape>();
 }
 
-void CalendarPage::UpdateGroups(const std::vector<DateGroup>& argument_date_groups)
+void CalendarPage::ReceiveDateGroups(const std::vector<DateGroup>& argument_date_groups)
 {
 	date_group_store.SetDateGroups(argument_date_groups);
 	data_store.SetDateGroups(argument_date_groups);

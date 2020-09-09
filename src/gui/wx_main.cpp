@@ -229,10 +229,10 @@ void MainWindow::EstablishConnections()
 {
     date_groups_table_panel->signal_table_date_groups.connect(&DateGroupStore::SetDateGroups, &date_groups_store);
 
-    date_groups_store.signal_date_groups.connect(&DateGroupsTablePanel::UpdateGroups, date_groups_table_panel);
+    date_groups_store.signal_date_groups.connect(&DateGroupsTablePanel::ReceiveDateGroups, date_groups_table_panel);
     date_groups_store.signal_date_groups.connect(&DateIntervalBundleStore::SetDateGroups, &date_interval_bundle_store);
-    date_groups_store.signal_date_groups.connect(&CalendarPage::UpdateGroups, calendar.get());
-    date_groups_store.signal_date_groups.connect(&DateTablePanel::UpdateGroups, data_table_panel);
+    date_groups_store.signal_date_groups.connect(&CalendarPage::ReceiveDateGroups, calendar.get());
+    date_groups_store.signal_date_groups.connect(&DateTablePanel::ReceiveDateGroups, data_table_panel);
     date_groups_store.signal_date_groups.connect(&ElementsSetupsPanel::UpdateGroups, elements_setup_panel);
 
     date_interval_bundle_store.signal_date_interval_bundles.connect(&DateTablePanel::ReceiveDateIntervalBundles, data_table_panel);

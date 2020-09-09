@@ -161,7 +161,7 @@ void DateTablePanel::ReceiveDateIntervalBundles(const std::vector<DateIntervalBu
 	}
 }
 
-void DateTablePanel::UpdateGroups(const std::vector<DateGroup>& date_groups)
+void DateTablePanel::ReceiveDateGroups(const std::vector<DateGroup>& date_groups)
 {
 	date_group_store.SetDateGroups(date_groups);
 

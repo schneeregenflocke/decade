@@ -52,7 +52,7 @@ public:
 
 	void ReceiveDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles);
 	
-	void UpdateGroups(const std::vector<DateGroup>& date_groups);
+	void ReceiveDateGroups(const std::vector<DateGroup>& date_groups);
 	
 	std::wstring GetPanelName();
 
