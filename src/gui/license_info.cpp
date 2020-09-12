@@ -69,11 +69,11 @@ void LicenseInformationDialog::CollectLicenses()
 	collected_licenses.reserve(10);
 
 	collected_licenses.emplace_back("Decade", LOAD_RESOURCE(LICENSE_txt).toString());
-	collected_licenses.emplace_back("Boost", LOAD_RESOURCE(external_provisional_license_collection_Boost_LICENSE_1_0_txt).toString());
+	collected_licenses.emplace_back("Boost", LOAD_RESOURCE(___boost_LICENSE_1_0_txt).toString());
 	collected_licenses.emplace_back("glm", LOAD_RESOURCE(external_glm_copying_txt).toString());
 	collected_licenses.emplace_back("glad", LOAD_RESOURCE(external_glad_LICENSE).toString());
-	collected_licenses.emplace_back("wxWidgets", LOAD_RESOURCE(external_provisional_license_collection_wxWidgets_licence_txt).toString());
-	collected_licenses.emplace_back("embed_resource", LOAD_RESOURCE(external_provisional_license_collection_embed_resource_LICENSE_txt).toString());
+	collected_licenses.emplace_back("wxWidgets", LOAD_RESOURCE(external_wxWidgets_docs_licence_txt).toString());
+	collected_licenses.emplace_back("embed-resource", LOAD_RESOURCE(external_embed_resource_LICENSE_txt).toString());
 	collected_licenses.emplace_back("csv", LOAD_RESOURCE(external_csv_LICENSE).toString());
 	collected_licenses.emplace_back("pugixml", LOAD_RESOURCE(external_pugixml_LICENSE_md).toString());
 	collected_licenses.emplace_back("lodepng", LOAD_RESOURCE(external_lodepng_LICENSE).toString());

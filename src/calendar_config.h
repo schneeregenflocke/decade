@@ -18,25 +18,41 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #pragma once
 
-#include <vector>
+#include "date_utils.h"
 
-struct CalendarConfig
+#include <vector>
+#include <utility>
+#include <algorithm>
+
+
+class CalendarConfig
 {
-	CalendarConfig()
+public:
+	CalendarConfig() :
+		subrow_proportions({25, 100, 50, 100, 50, 100, 25}),
+		calendar_range(2010, 2020),
+		auto_calendar_range(false)
 	{
-		sub_row_weights.resize(3);
-		sub_row_weights[0] = 1.f;
-		sub_row_weights[1] = 2.f;
-		sub_row_weights[2] = 2.f;
-		gap_factor = 0.15f;
-		min_calendar_range = 2020;
-		max_calendar_range = 2030;
-		auto_calendar_range = true;
+		min_year = boost::gregorian::date(boost::gregorian::min_date_time).year();
+		max_year = boost::gregorian::date(boost::gregorian::max_date_time).year();
 	}
 
-	std::vector<float> sub_row_weights;
-	float gap_factor;
-	int min_calendar_range;
-	int max_calendar_range;
+	std::vector<float> subrow_proportions;
 	bool auto_calendar_range;
+
+	void SetCalendarRange(const int lower_limit, const int upper_limit)
+	{
+		calendar_range.first = std::clamp(lower_limit, min_year, max_year);
+		calendar_range.second = std::clamp(upper_limit, min_year, max_year);
+	}
+
+	std::pair<int, int> GetCalendarRange() const
+	{
+		return calendar_range;
+	}
+
+private:
+	std::pair<int, int> calendar_range;
+	int min_year;
+	int max_year;
 };

@@ -18,8 +18,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #pragma once
 
-//#define BOOST_DATE_TIME_NO_LIB
 #include <boost/date_time/gregorian/gregorian.hpp>
+#include <boost/date_time/gregorian/gregorian_types.hpp>
 
 #include <string>
 #include <array>
@@ -38,5 +38,4 @@ std::string boost_date_to_string(const boost::gregorian::date& date_variable);
 boost::gregorian::date string_to_boost_date(std::string date_string, const date_format_descriptor& format);
 
 int CheckDateInterval(const boost::gregorian::date& begin_date, const boost::gregorian::date& end_date);
-
 int CheckAndAdjustDateInterval(boost::gregorian::date_period* date_interval);

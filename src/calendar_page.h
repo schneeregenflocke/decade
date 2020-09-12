@@ -67,7 +67,7 @@ class RowFrames
 public:
 
 	void SetupRowFrames(const rect4& main_frame, size_t num_frames);
-	void SetupSubFrames(std::vector<float> weights, float gap_factor);
+	void SetupSubFrames(const std::vector<float>& proportions);
 
 	rect4 GetSubFrame(size_t row, size_t sub);
 	std::vector<rect4> GetSubFrames();
@@ -87,9 +87,9 @@ public:
 
 	CalendarPage(GraphicEngine* graphic_engine);
 
-	void ReceiveDateGroups(const std::vector<DateGroup>& argument_date_groups);
+	void ReceiveDateGroups(const std::vector<DateGroup>& date_groups);
 
-	void SetDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles);
+	void ReceiveDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles);
 
 	void SlotPageSize(const std::array<float, 2>& page_size);
 	void SlotPageMargins(const std::array<float, 4>& page_margins);
@@ -176,7 +176,9 @@ private:
 	std::shared_ptr<RectanglesShape> months_cells_shape;
 	std::shared_ptr<RectanglesShape> days_cells_shape;
 	std::shared_ptr<RectanglesShape> bars_cells_shape;
+
 	std::shared_ptr<RectanglesShape> years_totals_shape;
+	std::vector< std::shared_ptr<FontShape> > years_totals_text;
 
 	std::vector< std::shared_ptr<FontShape> > month_label_text;
 	std::vector< std::shared_ptr<FontShape> > annual_labels_text;

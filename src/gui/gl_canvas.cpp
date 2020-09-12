@@ -130,7 +130,7 @@ MouseInteraction::MouseInteraction(wxGLCanvas* parent, GraphicEngine* graphic_en
 
 void MouseInteraction::OnMouse(wxMouseEvent& event)
 {
-    event.Skip();
+    //event.Skip();
 
     wxPoint MousePosPx = event.GetPosition();
     double d_mouse_pos_x = static_cast<double>(MousePosPx.x);

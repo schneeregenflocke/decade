@@ -19,200 +19,41 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include "calendar_setup.h"
 
 
-CalendarSetupPanel::CalendarSetupPanel(wxWindow* parent) :
-	wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxPanelNameStr),
-	ID_WEIGHT0(wxNewId()),
-	ID_WEIGHT1(wxNewId()),
-	ID_WEIGHT2(wxNewId()),
-	ID_GAP_FACTOR(wxNewId()),
-	ID_SPAN_FROM(wxNewId()),
-	ID_SPAN_TO(wxNewId()),
-	ID_AUTO_SPAN(wxNewId())
+void CalendarSetupPanel::LoadXML(const pugi::xml_node& node)
 {
-	wxBoxSizer* vertical_sizer = new wxBoxSizer(wxVERTICAL);
-	SetSizer(vertical_sizer);
+	auto calendar_setup_node = node.child(L"calendar_setup");
 
-	std::array<wxBoxSizer*, 7> horizontal_sizers;
-	for (auto& sizer : horizontal_sizers)
+	calendar_config.subrow_proportions.clear();
+
+	auto subrow_proportions_node = calendar_setup_node.child(L"subrow_proportions");
+	for (auto& proportion : subrow_proportions_node.children(L"proportion"))
 	{
-		sizer = new wxBoxSizer(wxHORIZONTAL);
-		vertical_sizer->Add(sizer, 0, wxEXPAND);
+		calendar_config.subrow_proportions.push_back(proportion.attribute(L"proportion").as_double());
 	}
 
-	wxStaticText* weight0_label = new wxStaticText(this, wxID_ANY, L"Subrow Weight 0");
-	weight0_label->SetMinSize(wxSize(120, -1));
-	weight0_spin_ctrl = new  wxSpinCtrlDouble(this, ID_WEIGHT0, wxEmptyString, wxDefaultPosition, wxDefaultSize, /*16384L*/ wxSP_ARROW_KEYS | wxALIGN_RIGHT);
-	weight0_spin_ctrl->SetValue(1.f);
-	weight0_spin_ctrl->SetIncrement(0.1f);
-	horizontal_sizers[2]->Add(weight0_label, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
-	horizontal_sizers[2]->Add(weight0_spin_ctrl, 1, wxEXPAND | wxALL, 5);
+	calendar_config.auto_calendar_range = calendar_setup_node.child(L"auto_calendar_range").attribute(L"auto_calendar_range").as_bool();
 
-	wxStaticText* weight1_label = new wxStaticText(this, wxID_ANY, L"Subrow Weight 1");
-	weight1_label->SetMinSize(wxSize(120, -1));
-	weight1_spin_ctrl = new  wxSpinCtrlDouble(this, ID_WEIGHT1, wxEmptyString, wxDefaultPosition, wxDefaultSize, /*16384L*/ wxSP_ARROW_KEYS | wxALIGN_RIGHT);
-	weight1_spin_ctrl->SetValue(2.f);
-	weight1_spin_ctrl->SetIncrement(0.1f);
-	horizontal_sizers[1]->Add(weight1_label, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
-	horizontal_sizers[1]->Add(weight1_spin_ctrl, 1, wxEXPAND | wxALL, 5);
-
-	wxStaticText* weight2_label = new wxStaticText(this, wxID_ANY, L"Subrow Weight 2");
-	weight2_label->SetMinSize(wxSize(120, -1));
-	weight2_spin_ctrl = new  wxSpinCtrlDouble(this, ID_WEIGHT2, wxEmptyString, wxDefaultPosition, wxDefaultSize, /*16384L*/ wxSP_ARROW_KEYS | wxALIGN_RIGHT);
-	weight2_spin_ctrl->SetValue(2.f);
-	weight2_spin_ctrl->SetIncrement(0.1f);
-	horizontal_sizers[0]->Add(weight2_label, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
-	horizontal_sizers[0]->Add(weight2_spin_ctrl, 1, wxEXPAND | wxALL, 5);
-
-	wxStaticText* gap_factor_label = new wxStaticText(this, wxID_ANY, L"Gap Factor");
-	gap_factor_label->SetMinSize(wxSize(120, -1));
-	gap_factor_spin_ctrl = new wxSpinCtrlDouble(this, ID_GAP_FACTOR, wxEmptyString, wxDefaultPosition, wxDefaultSize, /*16384L*/ wxSP_ARROW_KEYS | wxALIGN_RIGHT);
-	gap_factor_spin_ctrl->SetValue(0.15f);
-	gap_factor_spin_ctrl->SetIncrement(0.01f);
-	horizontal_sizers[3]->Add(gap_factor_label, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
-	horizontal_sizers[3]->Add(gap_factor_spin_ctrl, 1, wxEXPAND | wxALL, 5);
-
-	wxStaticText* calendar_span_from_label = new wxStaticText(this, wxID_ANY, L"Calendar From Year");
-	calendar_span_from_label->SetMinSize(wxSize(120, -1));
-	calendar_span_from_spin_ctrl = new wxSpinCtrl(this, ID_SPAN_FROM, wxEmptyString, wxDefaultPosition, wxDefaultSize, /*16384L*/ wxSP_ARROW_KEYS | wxALIGN_RIGHT);
-	calendar_span_from_spin_ctrl->SetRange(1400, 9999);
-	calendar_span_from_spin_ctrl->SetValue(2020);
-	//weight2_spin_ctrl->SetIncrement(0.1f);
-	horizontal_sizers[4]->Add(calendar_span_from_label, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
-	horizontal_sizers[4]->Add(calendar_span_from_spin_ctrl, 1, wxEXPAND | wxALL, 5);
-
-	wxStaticText* calendar_span_to_label = new wxStaticText(this, wxID_ANY, L"Calendar To Year");
-	calendar_span_to_label->SetMinSize(wxSize(120, -1));
-	calendar_span_to_spin_ctrl = new wxSpinCtrl(this, ID_SPAN_TO, wxEmptyString, wxDefaultPosition, wxDefaultSize, /*16384L*/ wxSP_ARROW_KEYS | wxALIGN_RIGHT);
-	calendar_span_to_spin_ctrl->SetRange(1400, 9999);
-	calendar_span_to_spin_ctrl->SetValue(2030);
-	//gap_factor_spin_ctrl->SetIncrement(0.01f);
-	horizontal_sizers[5]->Add(calendar_span_to_label, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
-	horizontal_sizers[5]->Add(calendar_span_to_spin_ctrl, 1, wxEXPAND | wxALL, 5);
-
-	auto_span_check_box = new wxCheckBox(this, ID_AUTO_SPAN, L"Auto");
+	auto lower_limit = calendar_setup_node.child(L"calendar_range_lower").attribute(L"calendar_range_lower").as_int();
+	auto upper_limit = calendar_setup_node.child(L"calendar_range_upper").attribute(L"calendar_range_upper").as_int();
+	calendar_config.SetCalendarRange(lower_limit, upper_limit);
 	
-	horizontal_sizers[6]->Add(auto_span_check_box, 1, wxEXPAND | wxALL, 5);
-	auto_span_check_box->SetValue(true);
-
-	//////////////////////////////////////////////////
-
-	Bind(wxEVT_SPINCTRLDOUBLE, &CalendarSetupPanel::SlotWeightCtrls, this, ID_WEIGHT0);
-	Bind(wxEVT_SPINCTRLDOUBLE, &CalendarSetupPanel::SlotWeightCtrls, this, ID_WEIGHT1);
-	Bind(wxEVT_SPINCTRLDOUBLE, &CalendarSetupPanel::SlotWeightCtrls, this, ID_WEIGHT2);
-	Bind(wxEVT_SPINCTRLDOUBLE, &CalendarSetupPanel::SlotWeightCtrls, this, ID_GAP_FACTOR);
-	Bind(wxEVT_SPINCTRL, &CalendarSetupPanel::SlotSpanSpinCtrls, this, ID_SPAN_FROM);
-	Bind(wxEVT_SPINCTRL, &CalendarSetupPanel::SlotSpanSpinCtrls, this, ID_SPAN_TO); 
-	Bind(wxEVT_CHECKBOX, &CalendarSetupPanel::SlotAutoSpanCheckBox, this, ID_AUTO_SPAN);
-
-	//////////////////////////////////////////////////
-
-	UpdateControls();
-}
-
-void CalendarSetupPanel::SendDefaultValues()
-{
-	calendar_span_from_spin_ctrl->Enable(!calendar_config.auto_calendar_range);
-	calendar_span_to_spin_ctrl->Enable(!calendar_config.auto_calendar_range);
+	ActualizePropertyGridValues();
 
 	signal_calendar_config(calendar_config);
 }
 
-void CalendarSetupPanel::SaveToXML(pugi::xml_node* node)
+void CalendarSetupPanel::SaveXML(pugi::xml_node* node) 
 {
-	auto child_node = node->append_child(L"calendar_setup");
+	auto calendar_setup_node = node->append_child(L"calendar_setup");
 
-	auto sub_row_weights_node = child_node.append_child(L"sub_row_weights");
-	for (const auto& sub_row_weight : calendar_config.sub_row_weights)
+	auto subrow_proportions_node = calendar_setup_node.append_child(L"subrow_proportions");
+	for (const auto& proportion : calendar_config.subrow_proportions)
 	{
-		auto weight_node = sub_row_weights_node.append_child(L"sub_row_weight");
-		weight_node.append_attribute(L"weight").set_value(sub_row_weight);
+		auto proportion_node = subrow_proportions_node.append_child(L"proportion");
+		proportion_node.append_attribute(L"proportion").set_value(proportion);
 	}
 
-	child_node.append_child(L"gap_factor").append_attribute(L"gap_factor").set_value(calendar_config.gap_factor);
-	child_node.append_child(L"min_calendar_range").append_attribute(L"min_calendar_range").set_value(calendar_config.min_calendar_range);
-	child_node.append_child(L"max_calendar_range").append_attribute(L"max_calendar_range").set_value(calendar_config.max_calendar_range);
-	child_node.append_child(L"auto_calendar_range").append_attribute(L"auto_calendar_range").set_value(calendar_config.auto_calendar_range);
-}
-
-void CalendarSetupPanel::LoadFromXML(const pugi::xml_node& node)
-{
-	auto child_node = node.child(L"calendar_setup");
-
-	calendar_config.sub_row_weights.clear();
-	auto sub_row_weights_node = child_node.child(L"sub_row_weights");
-	for (auto& sub_row_weight : sub_row_weights_node.children(L"sub_row_weight"))
-	{
-		calendar_config.sub_row_weights.push_back(sub_row_weight.attribute(L"weight").as_float());
-	}
-
-	calendar_config.gap_factor = child_node.child(L"gap_factor").attribute(L"gap_factor").as_float();
-	calendar_config.min_calendar_range = child_node.child(L"min_calendar_range").attribute(L"min_calendar_range").as_int();
-	calendar_config.max_calendar_range = child_node.child(L"max_calendar_range").attribute(L"max_calendar_range").as_int();
-	calendar_config.auto_calendar_range = child_node.child(L"auto_calendar_range").attribute(L"auto_calendar_range").as_bool();
-
-	signal_calendar_config(calendar_config);
-	UpdateControls();
-}
-
-void CalendarSetupPanel::SlotWeightCtrls(wxSpinDoubleEvent& event)
-{
-	if (event.GetId() == ID_WEIGHT0)
-	{
-		calendar_config.sub_row_weights[0] = event.GetValue();
-	}
-	if (event.GetId() == ID_WEIGHT1)
-	{
-		calendar_config.sub_row_weights[1] = event.GetValue();
-	}
-	if (event.GetId() == ID_WEIGHT2)
-	{
-		calendar_config.sub_row_weights[2] = event.GetValue();
-	}
-	if (event.GetId() == ID_GAP_FACTOR)
-	{
-		calendar_config.gap_factor = event.GetValue();
-	}
-
-	signal_calendar_config(calendar_config);
-}
-
-void CalendarSetupPanel::SlotSpanSpinCtrls(wxSpinEvent& event)
-{
-	if (ID_SPAN_FROM == event.GetId())
-	{
-		calendar_config.min_calendar_range = event.GetValue();
-	}
-	if (ID_SPAN_TO == event.GetId())
-	{
-		calendar_config.max_calendar_range = event.GetValue();
-	}
-
-	signal_calendar_config(calendar_config);
-}
-
-void CalendarSetupPanel::SlotAutoSpanCheckBox(wxCommandEvent& event)
-{
-	if (ID_AUTO_SPAN == event.GetId())
-	{
-		calendar_config.auto_calendar_range = event.IsChecked();
-
-		calendar_span_from_spin_ctrl->Enable(!calendar_config.auto_calendar_range);
-		calendar_span_to_spin_ctrl->Enable(!calendar_config.auto_calendar_range);
-	}
-
-	signal_calendar_config(calendar_config);
-}
-
-void CalendarSetupPanel::UpdateControls()
-{
-	weight0_spin_ctrl->SetValue(calendar_config.sub_row_weights[0]);
-	weight1_spin_ctrl->SetValue(calendar_config.sub_row_weights[1]);
-	weight2_spin_ctrl->SetValue(calendar_config.sub_row_weights[2]);
-	gap_factor_spin_ctrl->SetValue(calendar_config.gap_factor);
-	calendar_span_from_spin_ctrl->SetValue(calendar_config.min_calendar_range);
-	calendar_span_to_spin_ctrl->SetValue(calendar_config.max_calendar_range);
-	auto_span_check_box->SetValue(calendar_config.auto_calendar_range);
-
-	calendar_span_from_spin_ctrl->Enable(!calendar_config.auto_calendar_range);
-	calendar_span_to_spin_ctrl->Enable(!calendar_config.auto_calendar_range);
+	calendar_setup_node.append_child(L"auto_calendar_range").append_attribute(L"auto_calendar_range").set_value(calendar_config.auto_calendar_range);
+	calendar_setup_node.append_child(L"calendar_range_lower").append_attribute(L"calendar_range_lower").set_value(calendar_config.GetCalendarRange().first);
+	calendar_setup_node.append_child(L"calendar_range_upper").append_attribute(L"calendar_range_upper").set_value(calendar_config.GetCalendarRange().second);
 }

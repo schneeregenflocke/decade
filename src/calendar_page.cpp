@@ -20,8 +20,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 void CalendarSpan::SetSpan(int first_year, int last_year)
 {
-	first = first_year;
-	last = last_year;
+	int span = last_year - first_year;
+	
+	if (span >= 0)
+	{
+		first = first_year;
+		last = last_year;
+	}
+	else
+	{
+		first = 0;
+		last = -1;
+	}
 }
 
 bool CalendarSpan::IsInSpan(int year)
@@ -85,30 +95,29 @@ void RowFrames::SetupRowFrames(const rect4& main_frame, size_t num_row_frames)
 
 
 
-void RowFrames::SetupSubFrames(std::vector<float> weights, float gap_factor)
+void RowFrames::SetupSubFrames(const std::vector<float>& proportions)
 {
-	number_sub_frames = weights.size();
-	sub_frames.resize(row_frames.size() * weights.size());
+	number_sub_frames = (proportions.size() - 1) / 2;
+	sub_frames.resize(row_frames.size() * number_sub_frames);
 
 	for (size_t index = 0; index < row_frames.size(); ++index)
 	{
-		auto sections = Section(weights, row_frames[index].Height());
+		auto sections = Section(proportions, row_frames[index].Height());
 
-		std::vector<float> cumulative_sections(sections.size() + 1);
-		cumulative_sections[0] = 0.f;
-		for (size_t subindex = 1; subindex < cumulative_sections.size(); ++subindex)
+		std::vector<float> cumulative_sections(sections.size());
+
+		for (size_t subindex = 0; subindex < cumulative_sections.size(); ++subindex)
 		{
 			cumulative_sections[subindex] = std::accumulate(sections.cbegin(), sections.cbegin() + subindex, 0.f);
 		}
 
-		for (size_t subindex = 0; subindex < sections.size(); ++subindex)
+		for (size_t subindex = 0; subindex < number_sub_frames; ++subindex)
 		{
-			auto gap = sections[subindex] * gap_factor;
+			sub_frames[index * number_sub_frames + subindex].Left(row_frames[index].Left());
+			sub_frames[index * number_sub_frames + subindex].Right(row_frames[index].Right());
 
-			sub_frames[index * weights.size() + subindex].Left(row_frames[index].Left());
-			sub_frames[index * weights.size() + subindex].Bottom(row_frames[index].Bottom() + cumulative_sections[subindex] + gap);
-			sub_frames[index * weights.size() + subindex].Right(row_frames[index].Right());
-			sub_frames[index * weights.size() + subindex].Top(row_frames[index].Bottom() + cumulative_sections[subindex + 1] - gap);
+			sub_frames[index * number_sub_frames + subindex].Bottom(row_frames[index].Bottom() + cumulative_sections[subindex * 2 + 1]);
+			sub_frames[index * number_sub_frames + subindex].Top(row_frames[index].Bottom() + cumulative_sections[subindex * 2 + 2]);
 		}
 	}
 }
@@ -153,14 +162,14 @@ CalendarPage::CalendarPage(GraphicEngine* graphic_engine) :
 	sub_frames_shape = graphic_engine->AddShape<RectanglesShape>();
 }
 
-void CalendarPage::ReceiveDateGroups(const std::vector<DateGroup>& argument_date_groups)
+void CalendarPage::ReceiveDateGroups(const std::vector<DateGroup>& date_groups)
 {
-	date_group_store.SetDateGroups(argument_date_groups);
-	data_store.SetDateGroups(argument_date_groups);
+	date_group_store.SetDateGroups(date_groups);
+	data_store.SetDateGroups(date_groups);
 	Update();
 }
 
-void CalendarPage::SetDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles)
+void CalendarPage::ReceiveDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles)
 {
 	data_store.SetDateIntervalBundles(date_interval_bundles);
 	Update();
@@ -276,26 +285,14 @@ void CalendarPage::Update()
 
 
 ////////////////////////////////////////
-	if (calendar_config.auto_calendar_range == true && data_store.GetSpan() > 0)
+	if (calendar_config.auto_calendar_range == true && data_store.GetDateIntervalsSize() > 0)
 	{
 		calendarSpan.SetSpan(data_store.GetFirstYear(), data_store.GetLastYear());
 	}
-	else
-	{
-		calendarSpan.SetSpan(0, -1);
-	}
-	
+
 	if (calendar_config.auto_calendar_range == false)
 	{
-		int config_range = calendar_config.max_calendar_range - calendar_config.min_calendar_range;
-		if (config_range >= 0)
-		{
-			calendarSpan.SetSpan(calendar_config.min_calendar_range, calendar_config.max_calendar_range);
-		}
-		else
-		{
-			calendarSpan.SetSpan(0, -1);
-		}
+		calendarSpan.SetSpan(calendar_config.GetCalendarRange().first, calendar_config.GetCalendarRange().second);	
 	}
 ////////////////////////////////////////	
 
@@ -308,7 +305,7 @@ void CalendarPage::Update()
 	cells_frame = calendar_frame.Reduce(rect4(cell_width, row_height * 2.f, 0.f, 0.f));
 
 	row_frames.SetupRowFrames(cells_frame, calendarSpan.GetSpan());
-	row_frames.SetupSubFrames(calendar_config.sub_row_weights, calendar_config.gap_factor);
+	row_frames.SetupSubFrames(calendar_config.subrow_proportions);
 	
 	day_width = cells_frame.Width() / 366.f;
 
@@ -331,10 +328,11 @@ void CalendarPage::Update()
 	SetupYearsShapes();
 	SetupBarsShape();
 	SetupYearsTotals();
+	SetupLegend();
 	
 //////////////////////////////////////
 
-	SetupLegend();
+	
 
 	graphic_engine->Refresh();
 }
@@ -614,6 +612,9 @@ void CalendarPage::SetupBarsShape()
 
 void CalendarPage::SetupYearsTotals()
 {
+	graphic_engine->RemoveShapes(years_totals_text);
+	years_totals_text.clear();
+
 	std::vector<rect4> years_totals_cells;
 	years_totals_cells.resize(data_store.GetSpan());
 
@@ -634,6 +635,19 @@ void CalendarPage::SetupYearsTotals()
 			year_total_cell.Top(current_cell.Top());
 
 			years_totals_cells[index] = year_total_cell;
+
+			auto year_total_text = std::to_wstring(data_store.GetAnnualTotal(index));
+			auto year_total_text_width = font_loader->TextWidth(year_total_text, year_total_cell.Height());
+
+			rect4 year_total_text_cell;
+			year_total_text_cell.Left(year_total_cell.Right() + current_cell.Height());
+			year_total_text_cell.Bottom(year_total_cell.Bottom());
+			year_total_text_cell.Right(year_total_text_cell.Left() + year_total_text_width);
+			year_total_text_cell.Top(year_total_cell.Top());
+
+			years_totals_text.push_back(graphic_engine->AddShape<FontShape>());
+			years_totals_text.back()->SetFont(font_loader);
+			years_totals_text.back()->SetShapeCentered(year_total_text, year_total_text_cell.Center(), year_total_text_cell.Height());
 
 		}
 	}

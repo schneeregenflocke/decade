@@ -29,9 +29,9 @@ void DateGroupStore::InitDefault()
 	SetDateGroups(temporary_date_groups);
 }
 
-void DateGroupStore::SetDateGroups(const std::vector<DateGroup>& argument_date_groups)
+void DateGroupStore::SetDateGroups(const std::vector<DateGroup>& date_groups)
 {
-	date_groups = argument_date_groups;
+	this->date_groups = date_groups;
 
 	UpdateNumbers();
 

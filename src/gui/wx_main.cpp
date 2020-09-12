@@ -61,8 +61,14 @@ int main(int argc, char* argv[])
 
 bool App::OnInit()
 {
+    auto language = wxLocale::GetSystemLanguage();
+    locale = std::make_unique<wxLocale>();
+    auto init_locale_succeeded = locale->Init(language);
     std::locale::global(std::locale(""));
-    std::wcout << "current locale name " << std::locale("").name() << '\n';
+
+    std::wcout << "init_locale_succeeded " << init_locale_succeeded << '\n';
+    std::wcout << "current locale name " << locale->GetLanguageName(language) << '\n';
+    
 
     std::wcout << "OperatingSystemIdName " << wxPlatformInfo::Get().GetOperatingSystemIdName() << '\n';
     std::wcout << "ArchName " << wxPlatformInfo::Get().GetArchName() << '\n';
@@ -75,7 +81,7 @@ bool App::OnInit()
 
     ////////////////////////////////////////////////////////////////////////////////
     
-    main_window = new MainWindow("Decade", wxPoint(100, 100), wxSize(800, 600));
+    main_window = new MainWindow("Decade", wxPoint(100, 100), wxSize(1280, 800));
     //main_window->Maximize();
     main_window->Show();
     main_window->Raise();
@@ -94,7 +100,7 @@ bool App::OnInit()
 
 MainWindow::MainWindow(const wxString& title, const wxPoint& pos, const wxSize& size) :
     wxFrame(nullptr, wxID_ANY, title, pos, size),
-    current_xml_file(L""),
+    current_xml_file_path(L""),
     ID_SAVE_XML(NewControlId()),
     ID_SAVE_AS_XML(NewControlId())
 {
@@ -107,7 +113,7 @@ MainWindow::MainWindow(const wxString& title, const wxPoint& pos, const wxSize& 
     wxSplitterWindow* list_book_splitter;
     list_book_splitter = new wxSplitterWindow(main_splitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE | wxCLIP_CHILDREN);
     list_book_splitter->SetMinimumPaneSize(20);
-    list_book_splitter->SetSashGravity(0.25);
+    list_book_splitter->SetSashGravity(0.5);
 
     wxPanel* list_panel;
     list_panel = new wxPanel(list_book_splitter, wxID_ANY);
@@ -240,7 +246,7 @@ void MainWindow::EstablishConnections()
 
     transformed_date_interval_bundle.SetTransform(0, 1);
     date_interval_bundle_store.signal_date_interval_bundles.connect(&TransformDateIntervalBundle::InputDateIntervals, &transformed_date_interval_bundle);
-    transformed_date_interval_bundle.signal_transformed_date_interval_bundles.connect(&CalendarPage::SetDateIntervalBundles, calendar.get());
+    transformed_date_interval_bundle.signal_transformed_date_interval_bundles.connect(&CalendarPage::ReceiveDateIntervalBundles, calendar.get());
 
     page_setup_panel->signal_page_size.connect(&CalendarPage::SlotPageSize, calendar.get());
     page_setup_panel->signal_page_margins.connect(&CalendarPage::SlotPageMargins, calendar.get());
@@ -259,11 +265,12 @@ void MainWindow::EstablishConnections()
 
 
     date_groups_store.InitDefault();
+
     page_setup_panel->SendDefaultValues();
     font_setup_panel->SendDefaultValues();
     title_setup_panel->SendDefaultValues();
     elements_setup_panel->SendDefaultValues();
-    calendar_setup_panel->SendDefaultValues();
+    calendar_setup_panel->SendCalendarConfig();
 }
 
 
@@ -419,21 +426,26 @@ void MainWindow::SlotExportPNG(wxCommandEvent& event)
 void MainWindow::SlotLoadXML(wxCommandEvent& event)
 {
     wxFileDialog openFileDialog(this, "Open File", wxEmptyString, wxEmptyString, "XML Files (*.xml)|*.xml", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+    
+    //auto window_disabler = wxWindowDisabler(&openFileDialog);
+    
     if (openFileDialog.ShowModal() == wxID_OK)
     {
         std::wstring file_path = openFileDialog.GetPath().ToStdWstring();
         LoadXML(file_path);
-        current_xml_file = file_path;
-    }   
+        current_xml_file_path = file_path;
+    }
+
+
 }
 
 void MainWindow::SlotSaveXML(wxCommandEvent& event)
 {
-    if (event.GetId() == ID_SAVE_XML && current_xml_file != std::wstring(L""))
+    if (event.GetId() == ID_SAVE_XML && current_xml_file_path.empty() == false)
     {
-        SaveXML(current_xml_file);
+        SaveXML(current_xml_file_path);
     }
-    else
+    else if (event.GetId() == ID_SAVE_AS_XML || current_xml_file_path.empty() == true)
     {
         wxFileDialog saveFileDialog(this, "Save File", wxEmptyString, wxEmptyString, "XML Files (*.xml)|*.xml", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
 
@@ -441,7 +453,7 @@ void MainWindow::SlotSaveXML(wxCommandEvent& event)
         {
             std::wstring file_path = saveFileDialog.GetPath().ToStdWstring();
             SaveXML(file_path);
-            current_xml_file = file_path;
+            current_xml_file_path = file_path;
         }
     }
 }
@@ -455,7 +467,7 @@ void MainWindow::SaveXML(const std::wstring& filepath)
     page_setup_panel->SaveXML(&doc);
     title_setup_panel->SaveToXML(&doc);
     elements_setup_panel->SaveToXML(&doc);
-    calendar_setup_panel->SaveToXML(&doc);
+    calendar_setup_panel->SaveXML(&doc);
     
     doc.save_file(filepath.c_str());
 }
@@ -471,7 +483,7 @@ void MainWindow::LoadXML(const std::wstring& filepath)
         page_setup_panel->LoadXML(doc);
         title_setup_panel->LoadFromXML(doc);
         elements_setup_panel->LoadFromXML(doc);
-        calendar_setup_panel->LoadFromXML(doc);
+        calendar_setup_panel->LoadXML(doc);
     }
 }
 

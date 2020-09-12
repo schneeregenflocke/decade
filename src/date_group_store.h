@@ -54,7 +54,7 @@ class DateGroupStore
 {
 public:
 
-	void SetDateGroups(const std::vector<DateGroup>& argument_date_groups);
+	void SetDateGroups(const std::vector<DateGroup>& date_groups);
 
 	std::vector<DateGroup> GetDateGroups() const;
 

@@ -46,11 +46,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include <wx/activityindicator.h>
 #include <wx/choicebk.h>
 #include <wx/listbook.h>
+#include <wx/utils.h>
+#include <wx/intl.h>
 
 #include <cmath>
 #include <memory>
 #include <string>
 #include <map>
+#include <memory>
 
 #include <csv/reader.hpp>
 #include <csv/writer.hpp>
@@ -95,7 +98,7 @@ private:
 
     void SlotLicenseInfo(wxCommandEvent& event);
     
-    std::wstring current_xml_file;
+    std::wstring current_xml_file_path;
 
     wxBoxSizer* book_panel_sizer;
 
@@ -124,10 +127,16 @@ class App : public wxApp
 {
 public:
 
+    App() :
+        main_window(nullptr)
+    {}
+
     bool OnInit() override;
 
 private:
 
     MainWindow* main_window;
+
+    std::unique_ptr<wxLocale> locale;
 };
 

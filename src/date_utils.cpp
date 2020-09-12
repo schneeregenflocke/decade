@@ -157,7 +157,7 @@ boost::gregorian::date string_to_boost_date(std::string date_string, const date_
 			date_variable = boost::gregorian::date(boost::date_time::not_a_date_time);
 		}	
 	}
-	
+
 	return date_variable;
 }
 
