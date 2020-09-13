@@ -90,25 +90,37 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource" EXCLUDE_F
 target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/include")
 
 
-#file(GLOB RESOURCE_FILES_PATHS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} CONFIGURE_DEPENDS shaders/*.glsl)
-file(GLOB RESOURCE_FILES_PATHS CONFIGURE_DEPENDS shaders/*.glsl)
+
+list(APPEND SHADER_FILES_PATHS
+	${CMAKE_CURRENT_SOURCE_DIR}/shaders/font_fragment_shader.glsl shader
+	${CMAKE_CURRENT_SOURCE_DIR}/shaders/font_vertex_shader.glsl shader
+	${CMAKE_CURRENT_SOURCE_DIR}/shaders/phong_fragment_shader.glsl shader
+	${CMAKE_CURRENT_SOURCE_DIR}/shaders/phong_vertex_shader.glsl shader
+	${CMAKE_CURRENT_SOURCE_DIR}/shaders/simple_fragment_shader.glsl shader
+	${CMAKE_CURRENT_SOURCE_DIR}/shaders/simple_vertex_shader.glsl shader
+)
+
 
 list(APPEND LICENSE_FILES_PATHS
-	"${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt"
-	"${CMAKE_CURRENT_SOURCE_DIR}/external/csv/LICENSE"
-	"${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2/docs/LICENSE.TXT"
-	"${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource/LICENSE.txt"		
-	"${CMAKE_CURRENT_SOURCE_DIR}/external/glad/LICENSE"
-	"${CMAKE_CURRENT_SOURCE_DIR}/external/glm/copying.txt"
-	"${CMAKE_CURRENT_SOURCE_DIR}/external/lodepng/LICENSE"
-	"${CMAKE_CURRENT_SOURCE_DIR}/external/pugixml/LICENSE.md"
-	"${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/docs/licence.txt"
-	"${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/LICENSE"
-	"${Boost_INCLUDE_DIRS}/LICENSE_1_0.txt"
+	"${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt" decade
+	"${CMAKE_CURRENT_SOURCE_DIR}/external/csv/LICENSE" csv 
+	"${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2/docs/LICENSE.TXT" freetype2
+	"${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource/LICENSE.txt" "embed-resource"		 
+	"${CMAKE_CURRENT_SOURCE_DIR}/external/glad/LICENSE" glad
+	"${CMAKE_CURRENT_SOURCE_DIR}/external/glm/copying.txt" glm
+	"${CMAKE_CURRENT_SOURCE_DIR}/external/lodepng/LICENSE" lodepng
+	"${CMAKE_CURRENT_SOURCE_DIR}/external/pugixml/LICENSE.md" pugixml
+	"${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/docs/licence.txt" wxWidgets
+	"${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/LICENSE" sigslot
+	"${Boost_INCLUDE_DIRS}/LICENSE_1_0.txt" boost
 )
-message("Resource Files: ${RESOURCE_FILES_PATHS} ${LICENSE_FILES_PATHS}")
-embed_resources(RESOURCES ${RESOURCE_FILES_PATHS} ${LICENSE_FILES_PATHS})
-target_sources(Decade PRIVATE ${RESOURCES})
+
+embed_resources(SHADERS ${SHADER_FILES_PATHS})
+embed_resources(RESOURCES ${LICENSE_FILES_PATHS})
+
+message("RESOURCES: ${RESOURCES}")
+
+target_sources(Decade PRIVATE ${SHADERS} ${RESOURCES})
 
 
 file(GLOB_RECURSE source_files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} CONFIGURE_DEPENDS src/*.h src/*.cpp)

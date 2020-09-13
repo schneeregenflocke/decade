@@ -68,17 +68,17 @@ void LicenseInformationDialog::CollectLicenses()
 	collected_licenses.clear();
 	collected_licenses.reserve(10);
 
-	collected_licenses.emplace_back("Decade", LOAD_RESOURCE(LICENSE_txt).toString());
-	collected_licenses.emplace_back("Boost", LOAD_RESOURCE(___boost_LICENSE_1_0_txt).toString());
-	collected_licenses.emplace_back("glm", LOAD_RESOURCE(external_glm_copying_txt).toString());
-	collected_licenses.emplace_back("glad", LOAD_RESOURCE(external_glad_LICENSE).toString());
-	collected_licenses.emplace_back("wxWidgets", LOAD_RESOURCE(external_wxWidgets_docs_licence_txt).toString());
-	collected_licenses.emplace_back("embed-resource", LOAD_RESOURCE(external_embed_resource_LICENSE_txt).toString());
-	collected_licenses.emplace_back("csv", LOAD_RESOURCE(external_csv_LICENSE).toString());
-	collected_licenses.emplace_back("pugixml", LOAD_RESOURCE(external_pugixml_LICENSE_md).toString());
-	collected_licenses.emplace_back("lodepng", LOAD_RESOURCE(external_lodepng_LICENSE).toString());
-	collected_licenses.emplace_back("freetype2", LOAD_RESOURCE(external_freetype2_docs_LICENSE_TXT).toString());
-	collected_licenses.emplace_back("sigslot", LOAD_RESOURCE(external_sigslot_LICENSE).toString());
+	collected_licenses.emplace_back("Decade", LOAD_RESOURCE(decade_LICENSE).toString());
+	collected_licenses.emplace_back("Boost", LOAD_RESOURCE(boost_LICENSE_1_0).toString());
+	collected_licenses.emplace_back("glm", LOAD_RESOURCE(glm_copying).toString());
+	collected_licenses.emplace_back("glad", LOAD_RESOURCE(glad_LICENSE).toString());
+	collected_licenses.emplace_back("wxWidgets", LOAD_RESOURCE(wxWidgets_licence).toString());
+	collected_licenses.emplace_back("embed-resource", LOAD_RESOURCE(embed_resource_LICENSE).toString());
+	collected_licenses.emplace_back("csv", LOAD_RESOURCE(csv_LICENSE).toString());
+	collected_licenses.emplace_back("pugixml", LOAD_RESOURCE(pugixml_LICENSE).toString());
+	collected_licenses.emplace_back("lodepng", LOAD_RESOURCE(lodepng_LICENSE).toString());
+	collected_licenses.emplace_back("freetype2", LOAD_RESOURCE(freetype2_LICENSE).toString());
+	collected_licenses.emplace_back("sigslot", LOAD_RESOURCE(sigslot_LICENSE).toString());
 	
 	for (const auto& license : collected_licenses)
 	{

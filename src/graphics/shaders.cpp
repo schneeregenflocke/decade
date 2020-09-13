@@ -132,8 +132,8 @@ void LightShader::SetLightPosition(const vec3& position) const
 
 SimpleShader::SimpleShader()
 {
-	auto simple_vertex_shader_resource = LOAD_RESOURCE(shaders_simple_vertex_shader_glsl);
-	auto simple_fragment_shader_resource = LOAD_RESOURCE(shaders_simple_fragment_shader_glsl);
+	auto simple_vertex_shader_resource = LOAD_RESOURCE(shader_simple_vertex_shader);
+	auto simple_fragment_shader_resource = LOAD_RESOURCE(shader_simple_fragment_shader);
 
 	CompileProgram(simple_vertex_shader_resource, simple_fragment_shader_resource);
 	GetProjectionLocations(GetProgram());
@@ -149,8 +149,8 @@ PhongShader::PhongShader()
 
 FontShader::FontShader()
 {
-	auto font_vertex_shader_resource = LOAD_RESOURCE(shaders_font_vertex_shader_glsl);
-	auto font_fragment_shader_resource = LOAD_RESOURCE(shaders_font_fragment_shader_glsl);
+	auto font_vertex_shader_resource = LOAD_RESOURCE(shader_font_vertex_shader);
+	auto font_fragment_shader_resource = LOAD_RESOURCE(shader_font_fragment_shader);
 
 	CompileProgram(font_vertex_shader_resource, font_fragment_shader_resource);
 	GetProjectionLocations(GetProgram());
