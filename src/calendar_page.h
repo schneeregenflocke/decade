@@ -47,19 +47,30 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 class CalendarSpan
 {
 public:
-	void SetSpan(int first_year, int last_year);
-	bool IsInSpan(int year);
-	int GetFirstYear();
-	int GetLastYear();
-	int GetSpan();
 
+	CalendarSpan() :
+		lower_limit(0),
+		upper_limit(0),
+		valid_span(false)
+	{}
+
+	void SetSpan(const int lower_limit, const int upper_limit);
+	int GetSpanSize() const;
+	
+	bool IsValidSpan() const;
+	bool IsInSpan(const int year) const;
+	
+	int GetFirstYear() const;
+	int GetLastYear() const;
+	
 private:
-	int first;
-	int last;
+	int lower_limit;
+	int upper_limit;
+	bool valid_span;
 };
 
 
-std::vector<float> Section(const std::vector<float>& weights, float value);
+
 
 
 class RowFrames
@@ -72,6 +83,8 @@ public:
 	rect4 GetSubFrame(size_t row, size_t sub);
 	std::vector<rect4> GetSubFrames();
 
+	std::vector<float> Section(const std::vector<float>& weights, float value);
+
 private:
 
 	std::vector<rect4> row_frames;
@@ -79,6 +92,8 @@ private:
 
 	size_t number_sub_frames;
 };
+
+
 
 
 class CalendarPage
@@ -123,7 +138,7 @@ private:
 	DateIntervalBundleBarStore data_store;
 
 	GraphicEngine* graphic_engine;
-	CalendarSpan calendarSpan;
+	CalendarSpan calendar_span;
 
 	
 
