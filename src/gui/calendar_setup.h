@@ -27,21 +27,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #endif
 
 #include <wx/sizer.h>
-#include <wx/stattext.h>
-#include <wx/spinctrl.h>
-#include <wx/checkbox.h>
+//#include <wx/stattext.h>
+//#include <wx/spinctrl.h>
+//#include <wx/checkbox.h>
 #include <wx/propgrid/propgrid.h>
 #include <wx/propgrid/manager.h>
+
+#include <sigslot/signal.hpp>
+
+#include <pugixml.hpp>
 
 #include <array>
 #include <vector>
 #include <memory>
 #include <functional>
 #include <iostream>
-
-#include <sigslot/signal.hpp>
-
-#include <pugixml.hpp>
 
 
 class PropertyGridPanel : public wxPropertyGrid
@@ -58,57 +58,84 @@ public:
 
 		SetVerticalSpacing(2);
 
-		Append(new wxPropertyCategory("Subrow Proportions", wxPG_LABEL));
-		Append(new wxIntProperty("Number Subrows", wxPG_LABEL, 0));
-		DisableProperty("Number Subrows");
+		Append(new wxPropertyCategory("Calendar Span", wxPG_LABEL));
 		
-		Append(new wxPropertyCategory("Calendar Range", wxPG_LABEL));
-		Append(new wxBoolProperty("Auto", wxPG_LABEL, false));
+		gui_auto_span = new wxBoolProperty("Auto", wxPG_LABEL, false);
+		gui_lower_limit = new wxIntProperty("Lower Limit", wxPG_LABEL, 0);
+		gui_upper_limit = new wxIntProperty("Upper Limit", wxPG_LABEL, 0);
 
-		Append(new wxIntProperty("Lower Limit", wxPG_LABEL, 0));
-		Append(new wxIntProperty("Upper Limit", wxPG_LABEL, 0));
-		DisableProperty("Lower Limit");
-		DisableProperty("Upper Limit");
+		Append(gui_auto_span);
+		Append(gui_lower_limit);
+		Append(gui_upper_limit);
+		DisableProperty(gui_lower_limit);
+		DisableProperty(gui_upper_limit);
+
+
+		Append(new wxPropertyCategory("Row Spacing Proportions", wxPG_LABEL));
+
+		gui_number_spacings = new wxIntProperty("Number Spacings", wxPG_LABEL, 0);
+		Append(gui_number_spacings);
+		DisableProperty(gui_number_spacings);
 		
 		RefreshPropertyGrid();
 	}
 
 	void RefreshPropertyGrid()
 	{
-		if (GetProperty("Auto")->GetValue() == true)
+		bool auto_span = GetPropertyValue(gui_auto_span).GetBool();
+
+		if (auto_span == true)
 		{
-			DisableProperty("Lower Limit");
-			DisableProperty("Upper Limit");
+			DisableProperty(gui_lower_limit);
+			DisableProperty(gui_upper_limit);
 		}
-		if (GetProperty("Auto")->GetValue() == false)
+		if (auto_span == false)
 		{
-			EnableProperty("Lower Limit");
-			EnableProperty("Upper Limit");
+			EnableProperty(gui_lower_limit);
+			EnableProperty(gui_upper_limit);
 		}
 
-		auto number_subrows = GetProperty("Number Subrows")->GetValue().GetLong();
+		long number_spacings = GetPropertyValue(gui_number_spacings).GetInteger();
 
-		if (number_subrows > subrow_property_array.size())
+		if (number_spacings > gui_spacings_array.size())
 		{
-			for (size_t index = subrow_property_array.size(); index < number_subrows; ++index)
+			for (size_t index = gui_spacings_array.size(); index < number_spacings; ++index)
 			{
-				subrow_property_array.push_back(new wxFloatProperty(std::string("Subrow ") + std::to_string(index + 1), wxPG_LABEL, 10.0));
-				Insert("Calendar Range", subrow_property_array[index]);
+				int index_parity = index % 2;
+				std::string label_number_postfix = std::to_string((index - index_parity) / 2 + 1);
+				std::string label;
+
+				if (index_parity == 0)
+				{
+					label = std::string("Gap ") + label_number_postfix;
+				}
+				if (index_parity == 1)
+				{
+					label = std::string("Subrow ") + label_number_postfix;
+				}
+
+				gui_spacings_array.push_back(new wxFloatProperty(label, wxPG_LABEL, 10.0));
+				Append(gui_spacings_array[index]);
 			}
 		}
 
-		if (number_subrows < subrow_property_array.size())
+		if (number_spacings < gui_spacings_array.size())
 		{
-			for (size_t index = number_subrows; index < subrow_property_array.size();)
+			for (size_t index = number_spacings; index < gui_spacings_array.size();)
 			{
-				DeleteProperty(subrow_property_array[index]);
-				subrow_property_array.pop_back();
+				DeleteProperty(gui_spacings_array[index]);
+				gui_spacings_array.pop_back();
 			}
 		}
 	}
 
 	wxBoxSizer* box_sizer;
-	std::vector<wxFloatProperty*> subrow_property_array;
+	
+	wxBoolProperty* gui_auto_span;
+	wxIntProperty* gui_lower_limit;
+	wxIntProperty* gui_upper_limit;
+	wxIntProperty* gui_number_spacings;
+	std::vector<wxFloatProperty*> gui_spacings_array;
 };
 
 
@@ -136,19 +163,18 @@ public:
 
 		//auto current_property = event.GetProperty();
 
-		long number_subrows = property_grid->GetProperty("Number Subrows")->GetValue();
+		long number_subrows = property_grid->GetPropertyValue(property_grid->gui_number_spacings).GetInteger();
 		calendar_config.subrow_proportions.resize(number_subrows);
 
 		for (size_t index = 0; index < number_subrows; ++index)
 		{
-			const std::string current_property_id = std::string("Subrow ") + std::to_string(index + 1);
-			calendar_config.subrow_proportions[index] = static_cast<float>(property_grid->GetPropertyValue(current_property_id.c_str()).GetDouble());
+			calendar_config.subrow_proportions[index] = static_cast<float>(property_grid->GetPropertyValue(property_grid->gui_spacings_array[index]).GetDouble());
 		}
 
-		calendar_config.auto_calendar_range = property_grid->GetProperty("Auto")->GetValue();
+		calendar_config.auto_calendar_range = property_grid->GetPropertyValue(property_grid->gui_auto_span).GetBool();
 
-		long lower_limit = property_grid->GetProperty("Lower Limit")->GetValue();
-		long upper_limit = property_grid->GetProperty("Upper Limit")->GetValue();
+		long lower_limit = property_grid->GetPropertyValue(property_grid->gui_lower_limit).GetInteger();
+		long upper_limit = property_grid->GetPropertyValue(property_grid->gui_upper_limit).GetInteger();
 		
 		calendar_config.SetCalendarRange(lower_limit, upper_limit);
 
@@ -157,19 +183,18 @@ public:
 
 	void ActualizePropertyGridValues()
 	{
-		property_grid->SetPropertyValue("Number Subrows", static_cast<int>(calendar_config.subrow_proportions.size()));
+		property_grid->SetPropertyValue(property_grid->gui_number_spacings, static_cast<int>(calendar_config.subrow_proportions.size()));
 
 		property_grid->RefreshPropertyGrid();
 
 		for (size_t index = 0; index < calendar_config.subrow_proportions.size(); ++index)
 		{
-			const std::string current_property_id = std::string("Subrow ") + std::to_string(index + 1);
-			property_grid->SetPropertyValue(current_property_id.c_str(), calendar_config.subrow_proportions[index]);
+			property_grid->SetPropertyValue(property_grid->gui_spacings_array[index], calendar_config.subrow_proportions[index]);
 		}
 		
-		property_grid->SetPropertyValue("Auto", calendar_config.auto_calendar_range);
-		property_grid->SetPropertyValue("Lower Limit", calendar_config.GetCalendarRange().first);
-		property_grid->SetPropertyValue("Upper Limit", calendar_config.GetCalendarRange().second);
+		property_grid->SetPropertyValue(property_grid->gui_auto_span, calendar_config.auto_calendar_range);
+		property_grid->SetPropertyValue(property_grid->gui_lower_limit, calendar_config.GetCalendarRange().first);
+		property_grid->SetPropertyValue(property_grid->gui_upper_limit, calendar_config.GetCalendarRange().second);
 	}
 	
 	void SendCalendarConfig()
