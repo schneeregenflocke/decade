@@ -164,37 +164,37 @@ public:
 		//auto current_property = event.GetProperty();
 
 		long number_subrows = property_grid->GetPropertyValue(property_grid->gui_number_spacings).GetInteger();
-		calendar_config.subrow_proportions.resize(number_subrows);
+		calendar_config.spacing_proportions.resize(number_subrows);
 
 		for (size_t index = 0; index < number_subrows; ++index)
 		{
-			calendar_config.subrow_proportions[index] = static_cast<float>(property_grid->GetPropertyValue(property_grid->gui_spacings_array[index]).GetDouble());
+			calendar_config.spacing_proportions[index] = static_cast<float>(property_grid->GetPropertyValue(property_grid->gui_spacings_array[index]).GetDouble());
 		}
 
-		calendar_config.auto_calendar_range = property_grid->GetPropertyValue(property_grid->gui_auto_span).GetBool();
+		calendar_config.auto_calendar_span = property_grid->GetPropertyValue(property_grid->gui_auto_span).GetBool();
 
 		long lower_limit = property_grid->GetPropertyValue(property_grid->gui_lower_limit).GetInteger();
 		long upper_limit = property_grid->GetPropertyValue(property_grid->gui_upper_limit).GetInteger();
 		
-		calendar_config.SetCalendarRange(lower_limit, upper_limit);
+		calendar_config.SetCalendarSpan(lower_limit, upper_limit);
 
 		signal_calendar_config(calendar_config);
 	}
 
 	void ActualizePropertyGridValues()
 	{
-		property_grid->SetPropertyValue(property_grid->gui_number_spacings, static_cast<int>(calendar_config.subrow_proportions.size()));
+		property_grid->SetPropertyValue(property_grid->gui_number_spacings, static_cast<int>(calendar_config.spacing_proportions.size()));
 
 		property_grid->RefreshPropertyGrid();
 
-		for (size_t index = 0; index < calendar_config.subrow_proportions.size(); ++index)
+		for (size_t index = 0; index < calendar_config.spacing_proportions.size(); ++index)
 		{
-			property_grid->SetPropertyValue(property_grid->gui_spacings_array[index], calendar_config.subrow_proportions[index]);
+			property_grid->SetPropertyValue(property_grid->gui_spacings_array[index], calendar_config.spacing_proportions[index]);
 		}
 		
-		property_grid->SetPropertyValue(property_grid->gui_auto_span, calendar_config.auto_calendar_range);
-		property_grid->SetPropertyValue(property_grid->gui_lower_limit, calendar_config.GetCalendarRange().first);
-		property_grid->SetPropertyValue(property_grid->gui_upper_limit, calendar_config.GetCalendarRange().second);
+		property_grid->SetPropertyValue(property_grid->gui_auto_span, calendar_config.auto_calendar_span);
+		property_grid->SetPropertyValue(property_grid->gui_lower_limit, calendar_config.GetCalendarSpan().first);
+		property_grid->SetPropertyValue(property_grid->gui_upper_limit, calendar_config.GetCalendarSpan().second);
 	}
 	
 	void SendCalendarConfig()

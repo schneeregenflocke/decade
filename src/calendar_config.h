@@ -29,30 +29,29 @@ class CalendarConfig
 {
 public:
 	CalendarConfig() :
-		subrow_proportions({25, 100, 50, 100, 50, 100, 25}),
-		calendar_range(2010, 2020),
-		auto_calendar_range(false)
+		auto_calendar_span(false),
+		spacing_proportions({25, 100, 50, 100, 50, 100, 25}),
+		calendar_span(2010, 2020),
+		min_year(boost::gregorian::date(boost::gregorian::min_date_time).year()),
+		max_year(boost::gregorian::date(boost::gregorian::max_date_time).year())
+	{}
+
+	void SetCalendarSpan(const int lower_limit, const int upper_limit)
 	{
-		min_year = boost::gregorian::date(boost::gregorian::min_date_time).year();
-		max_year = boost::gregorian::date(boost::gregorian::max_date_time).year();
+		calendar_span.first = std::clamp(lower_limit, min_year, max_year);
+		calendar_span.second = std::clamp(upper_limit, min_year, max_year);
 	}
 
-	std::vector<float> subrow_proportions;
-	bool auto_calendar_range;
-
-	void SetCalendarRange(const int lower_limit, const int upper_limit)
+	std::pair<int, int> GetCalendarSpan() const
 	{
-		calendar_range.first = std::clamp(lower_limit, min_year, max_year);
-		calendar_range.second = std::clamp(upper_limit, min_year, max_year);
+		return calendar_span;
 	}
 
-	std::pair<int, int> GetCalendarRange() const
-	{
-		return calendar_range;
-	}
-
+	bool auto_calendar_span;
+	std::vector<float> spacing_proportions;
+	
 private:
-	std::pair<int, int> calendar_range;
+	std::pair<int, int> calendar_span;
 	int min_year;
 	int max_year;
 };

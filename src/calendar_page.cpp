@@ -285,14 +285,14 @@ void CalendarPage::Update()
 
 
 ////////////////////////////////////////
-	if (calendar_config.auto_calendar_range == true && data_store.GetDateIntervalsSize() > 0)
+	if (calendar_config.auto_calendar_span == true && data_store.GetDateIntervalsSize() > 0)
 	{
 		calendarSpan.SetSpan(data_store.GetFirstYear(), data_store.GetLastYear());
 	}
 
-	if (calendar_config.auto_calendar_range == false)
+	if (calendar_config.auto_calendar_span == false)
 	{
-		calendarSpan.SetSpan(calendar_config.GetCalendarRange().first, calendar_config.GetCalendarRange().second);	
+		calendarSpan.SetSpan(calendar_config.GetCalendarSpan().first, calendar_config.GetCalendarSpan().second);	
 	}
 ////////////////////////////////////////	
 
@@ -305,7 +305,7 @@ void CalendarPage::Update()
 	cells_frame = calendar_frame.Reduce(rect4(cell_width, row_height * 2.f, 0.f, 0.f));
 
 	row_frames.SetupRowFrames(cells_frame, calendarSpan.GetSpan());
-	row_frames.SetupSubFrames(calendar_config.subrow_proportions);
+	row_frames.SetupSubFrames(calendar_config.spacing_proportions);
 	
 	day_width = cells_frame.Width() / 366.f;
 

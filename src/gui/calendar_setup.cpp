@@ -23,19 +23,19 @@ void CalendarSetupPanel::LoadXML(const pugi::xml_node& node)
 {
 	auto calendar_setup_node = node.child(L"calendar_setup");
 
-	calendar_config.subrow_proportions.clear();
+	calendar_config.spacing_proportions.clear();
 
 	auto subrow_proportions_node = calendar_setup_node.child(L"spacing_proportions");
 	for (auto& proportion : subrow_proportions_node.children(L"proportion"))
 	{
-		calendar_config.subrow_proportions.push_back(proportion.attribute(L"proportion").as_double());
+		calendar_config.spacing_proportions.push_back(proportion.attribute(L"proportion").as_double());
 	}
 
-	calendar_config.auto_calendar_range = calendar_setup_node.child(L"auto_calendar_span").attribute(L"auto_calendar_span").as_bool();
+	calendar_config.auto_calendar_span = calendar_setup_node.child(L"auto_calendar_span").attribute(L"auto_calendar_span").as_bool();
 
 	auto lower_limit = calendar_setup_node.child(L"span_lower_limit").attribute(L"span_lower_limit").as_int();
 	auto upper_limit = calendar_setup_node.child(L"span_upper_limit").attribute(L"span_upper_limit").as_int();
-	calendar_config.SetCalendarRange(lower_limit, upper_limit);
+	calendar_config.SetCalendarSpan(lower_limit, upper_limit);
 	
 	ActualizePropertyGridValues();
 
@@ -47,13 +47,13 @@ void CalendarSetupPanel::SaveXML(pugi::xml_node* node)
 	auto calendar_setup_node = node->append_child(L"calendar_setup");
 
 	auto subrow_proportions_node = calendar_setup_node.append_child(L"spacing_proportions");
-	for (const auto& proportion : calendar_config.subrow_proportions)
+	for (const auto& proportion : calendar_config.spacing_proportions)
 	{
 		auto proportion_node = subrow_proportions_node.append_child(L"proportion");
 		proportion_node.append_attribute(L"proportion").set_value(proportion);
 	}
 
-	calendar_setup_node.append_child(L"auto_calendar_span").append_attribute(L"auto_calendar_span").set_value(calendar_config.auto_calendar_range);
-	calendar_setup_node.append_child(L"span_lower_limit").append_attribute(L"span_lower_limit").set_value(calendar_config.GetCalendarRange().first);
-	calendar_setup_node.append_child(L"span_upper_limit").append_attribute(L"span_upper_limit").set_value(calendar_config.GetCalendarRange().second);
+	calendar_setup_node.append_child(L"auto_calendar_span").append_attribute(L"auto_calendar_span").set_value(calendar_config.auto_calendar_span);
+	calendar_setup_node.append_child(L"span_lower_limit").append_attribute(L"span_lower_limit").set_value(calendar_config.GetCalendarSpan().first);
+	calendar_setup_node.append_child(L"span_upper_limit").append_attribute(L"span_upper_limit").set_value(calendar_config.GetCalendarSpan().second);
 }
