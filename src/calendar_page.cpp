@@ -636,7 +636,14 @@ void CalendarPage::SetupYearsTotals()
 
 			years_totals_cells[index] = year_total_cell;
 
-			auto year_total_text = std::to_wstring(data_store.GetAnnualTotal(index));
+			
+
+			auto current_year = data_store.GetFirstYear() + index;
+			int number_days = boost::gregorian::date_period(boost::gregorian::date(current_year, 1, 1), boost::gregorian::date(current_year + 1, 1, 1)).length().days();
+
+
+			float percent = static_cast<float>(data_store.GetAnnualTotal(index)) / static_cast<float>(number_days);
+			auto year_total_text = std::to_wstring(percent * 100.0f);
 			auto year_total_text_width = font_loader->TextWidth(year_total_text, year_total_cell.Height());
 
 			rect4 year_total_text_cell;
