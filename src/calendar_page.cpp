@@ -642,7 +642,7 @@ void CalendarPage::SetupYearsTotals()
 			float percent = static_cast<float>(data_store.GetAnnualTotal(index)) / static_cast<float>(number_days);
 			
 			std::array<wchar_t, 100> year_total_text_buffer;
-			auto text_lenght = swprintf_s(year_total_text_buffer.data(), year_total_text_buffer.size(), L"%.*f %%", 1, percent * 100.0f);
+			auto text_lenght = swprintf(year_total_text_buffer.data(), year_total_text_buffer.size(), L"%.*f %%", 1, percent * 100.0f);
 			auto year_total_text = std::wstring(year_total_text_buffer.data());
 			auto year_total_text_width = font_loader->TextWidth(year_total_text, year_total_cell.Height());
 

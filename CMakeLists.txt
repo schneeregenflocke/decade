@@ -112,8 +112,17 @@ list(APPEND LICENSE_FILES_PATHS
 	"${CMAKE_CURRENT_SOURCE_DIR}/external/pugixml/LICENSE.md" pugixml
 	"${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/docs/licence.txt" wxWidgets
 	"${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/LICENSE" sigslot
-	"${Boost_INCLUDE_DIRS}/LICENSE_1_0.txt" boost
 )
+
+if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
+	list(APPEND LICENSE_FILES_PATHS "${Boost_INCLUDE_DIRS}/LICENSE_1_0.txt" boost)
+endif()
+
+if(${CMAKE_SYSTEM_NAME} STREQUAL Linux)
+	list(APPEND LICENSE_FILES_PATHS "/usr/share/licenses/boost/LICENSE_1_0.txt" boost)
+endif()
+
+
 
 embed_resources(SHADERS ${SHADER_FILES_PATHS})
 embed_resources(RESOURCES ${LICENSE_FILES_PATHS})
