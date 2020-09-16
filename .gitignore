@@ -17,5 +17,6 @@ CMakeSettings.json
 .vscode/
 out/
 build/
+.clangd/
 
 
