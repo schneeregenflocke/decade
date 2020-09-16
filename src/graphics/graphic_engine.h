@@ -108,7 +108,7 @@ public:
 	}
 
 	void RenderToPNG(const std::wstring& file_path);
-	void SlotPageSize(const std::array<float, 2> page_size);
+	void ReceivePageSize(const std::array<float, 2> page_size);
 
 private:
 
