@@ -29,7 +29,7 @@ void CalendarSpan::SetSpan(const int lower_limit, const int upper_limit)
 
 		valid_span = true;
 	}
-	
+	 
 	else
 	{
 		valid_span = false;
@@ -68,35 +68,22 @@ int CalendarSpan::GetSpanSize() const
 }
 
 
-std::vector<float> RowFrames::Section(const std::vector<float>& weights, float value)
+
+void RowFrames::SetupRowFrames(const rect4& main_frame, const size_t number_row_frames)
 {
-	auto sum = std::accumulate(weights.cbegin(), weights.cend(), 0.f);
+	row_frames.resize(number_row_frames);
 	
-	std::vector<float> sections;
-
-	for (const auto& weight : weights)
-	{
-		sections.push_back((weight / sum) * value);
-	}
-
-	return sections;
-}
-
-
-
-void RowFrames::SetupRowFrames(const rect4& main_frame, size_t num_row_frames)
-{
-	row_frames.resize(num_row_frames);
-	
-	auto row_height = main_frame.Height() / static_cast<float>(num_row_frames);
+	auto row_height = main_frame.Height() / static_cast<float>(number_row_frames);
 
 	for (size_t index = 0; index < row_frames.size(); ++index)
 	{
 		auto float_index = static_cast<float>(index);
-		auto current_bottom = main_frame.Bottom() + float_index * row_height;
+
 		row_frames[index].Left(main_frame.Left());
-		row_frames[index].Bottom(current_bottom);
 		row_frames[index].Right(main_frame.Right());
+
+		auto current_bottom = main_frame.Bottom() + float_index * row_height;
+		row_frames[index].Bottom(current_bottom);
 		row_frames[index].Top(current_bottom + row_height);
 	}
 }
@@ -106,11 +93,12 @@ void RowFrames::SetupRowFrames(const rect4& main_frame, size_t num_row_frames)
 void RowFrames::SetupSubFrames(const std::vector<float>& proportions)
 {
 	number_sub_frames = (proportions.size() - 1) / 2;
+
 	sub_frames.resize(row_frames.size() * number_sub_frames);
 
 	for (size_t index = 0; index < row_frames.size(); ++index)
 	{
-		auto sections = Section(proportions, row_frames[index].Height());
+		std::vector<float> sections = Section(proportions, row_frames[index].Height());
 
 		std::vector<float> cumulative_sections(sections.size());
 
@@ -130,15 +118,26 @@ void RowFrames::SetupSubFrames(const std::vector<float>& proportions)
 	}
 }
 
-rect4 RowFrames::GetSubFrame(size_t row, size_t sub)
+std::vector<float> RowFrames::Section(const std::vector<float>& proportions, float value) const
+{
+	auto sum = std::accumulate(proportions.cbegin(), proportions.cend(), 0.f);
+
+	std::vector<float> sections;
+	sections.reserve(proportions.size());
+
+	for (const auto& proportion : proportions)
+	{
+		sections.push_back((proportion / sum) * value);
+	}
+
+	return sections;
+}
+
+rect4 RowFrames::GetSubFrame(const size_t row, const size_t sub) const
 {
 	return sub_frames[number_sub_frames * row + sub];
 }
 
-std::vector<rect4> RowFrames::GetSubFrames()
-{
-	return sub_frames;
-}
 
 
 
@@ -269,10 +268,11 @@ void CalendarPage::SlotCalendarConfig(const CalendarConfig& config)
 
 void CalendarPage::Update()
 {
-	rect4 view_size = page_size.Scale(1.1f);
+	const float view_size_scale = 1.1f;
+	rect4 view_size = page_size.Scale(view_size_scale);
 	graphic_engine->GetViewRef().SetOrthoMatrix(view_size);
 
-	glm::vec4 page_shape_color = vec4(1.f, 1.f, 1.f, 1.f);
+	glm::vec4 page_shape_color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	page_shape->SetShape(page_size, page_shape_color);
 
 	print_area = page_size.Reduce(page_margin);
@@ -280,19 +280,16 @@ void CalendarPage::Update()
 	title_frame = print_area;
 	title_frame.Bottom(title_frame.Top() - title_frame_height);
 
-	
 	page_margin_frame = print_area;
 	page_margin_frame.Top(title_frame.Bottom());
-	rect4 page_margin_frame_margin = rect4(0.f, 0.f, 0.f, 5.f);
+	rect4 page_margin_frame_margin = rect4(0.0f, 0.0f, 0.0f, 5.f);
 	page_margin_frame = page_margin_frame.Reduce(page_margin_frame_margin);
 
-
 	calendar_frame = page_margin_frame;
-	rect4 calendar_frame_margin = rect4(0.f, 0.f, 3.f, 2.f);
+	rect4 calendar_frame_margin = rect4(0.0f, 0.0f, 3.0f, 2.0f);
 	calendar_frame = calendar_frame.Reduce(calendar_frame_margin);
 
 
-////////////////////////////////////////
 	if (calendar_config.auto_calendar_span == true && data_store.GetDateIntervalsSize() > 0)
 	{
 		calendar_span.SetSpan(data_store.GetFirstYear(), data_store.GetLastYear());
@@ -302,15 +299,15 @@ void CalendarPage::Update()
 	{
 		calendar_span.SetSpan(calendar_config.GetCalendarSpan().first, calendar_config.GetCalendarSpan().second);
 	}
-////////////////////////////////////////	
+	
 
+	const size_t additional_rows = 2;
+	size_t number_rows = additional_rows + calendar_span.GetSpanSize();
 
-	size_t number_rows = calendar_span.GetSpanSize() + 2;
-
-	cell_width = calendar_frame.Width() / 13.f;
+	cell_width = calendar_frame.Width() / 13.0f;
 	row_height = calendar_frame.Height() / static_cast<float>(number_rows);
 
-	cells_frame = calendar_frame.Reduce(rect4(cell_width, row_height * 2.f, 0.f, 0.f));
+	cells_frame = calendar_frame.Reduce(rect4(cell_width, row_height * 2.0f, 0.0f, 0.0f));
 
 	row_frames.SetupRowFrames(cells_frame, calendar_span.GetSpanSize());
 	row_frames.SetupSubFrames(calendar_config.spacing_proportions);
@@ -322,8 +319,6 @@ void CalendarPage::Update()
 
 	legend_frame = calendar_frame.Reduce(rect4(cell_width, 0.f, 0.f, cells_frame.Height() + row_height));
 
-	
-	
 ///////////////////////////////////////
 
 	//sub_frames_shape->SetShapes(row_frames.GetSubFrames(), 0.1f, vec4(1.f, 1.f, 1.f, 0.f), vec4(0.25f, 0.25f, 0.75f, 1.f));
@@ -338,10 +333,6 @@ void CalendarPage::Update()
 	SetupYearsTotals();
 	SetupLegend();
 	
-//////////////////////////////////////
-
-	
-
 	graphic_engine->Refresh();
 }
 
@@ -366,7 +357,7 @@ void CalendarPage::SetupTitleShape()
 
 void CalendarPage::SetupCalendarLabelsShape()
 {
-	wchar_t buf[100];
+	std::array<wchar_t, 100> buf;
 	std::wstring format = L"%b";
 
 	std::array<std::wstring, 12> months_names;
@@ -374,9 +365,9 @@ void CalendarPage::SetupCalendarLabelsShape()
 	{
 		std::tm month_tm = { 0 };
 		month_tm.tm_mon = index;
-		auto len = std::wcsftime(buf, sizeof(buf), format.c_str(), &month_tm);
+		auto len = std::wcsftime(buf.data(), sizeof(buf), format.c_str(), &month_tm);
 
-		months_names[index] = buf;
+		months_names[index] = buf.data();
 	}
 	
 	std::vector<rect4> x_label_frames(12);
@@ -388,11 +379,11 @@ void CalendarPage::SetupCalendarLabelsShape()
 	
 	for (size_t index = 0; index < months_names.size(); ++index)
 	{
-		float floatIndex = static_cast<float>(index);
+		float float_index = static_cast<float>(index);
 
-		x_label_frames[index].Left(x_labels_frame.Left() + cell_width * floatIndex);
+		x_label_frames[index].Left(x_labels_frame.Left() + cell_width * float_index);
 		x_label_frames[index].Bottom(x_labels_frame.Bottom());
-		x_label_frames[index].Right(x_labels_frame.Left() + cell_width * floatIndex + cell_width);
+		x_label_frames[index].Right(x_labels_frame.Left() + cell_width * float_index + cell_width);
 		x_label_frames[index].Top(x_labels_frame.Top());
 
 		month_label_text[index]->SetFont(font_loader);
@@ -409,13 +400,13 @@ void CalendarPage::SetupCalendarLabelsShape()
 	std::vector<rect4> y_labels_rows(calendar_span.GetSpanSize());
 	for (int index = 0; index < calendar_span.GetSpanSize(); ++index)
 	{
-		float floatIndex = static_cast<float>(index);
+		float float_index = static_cast<float>(index);
 
 		y_labels_rows[index] = rect4(
 			y_labels_frame.Left(),
-			y_labels_frame.Bottom() + row_height * floatIndex,
+			y_labels_frame.Bottom() + row_height * float_index,
 			y_labels_frame.Right(),
-			y_labels_frame.Bottom() + row_height * floatIndex + row_height
+			y_labels_frame.Bottom() + row_height * float_index + row_height
 		);
 
 		std::wstring current_year_text = std::to_wstring(calendar_span.GetFirstYear() + index);
@@ -462,13 +453,14 @@ void CalendarPage::SetupYearsShapes()
 
 void CalendarPage::SetupMonthsShapes()
 {
-	size_t store_size = calendar_span.GetSpanSize() * 12;
+	const size_t number_months = 12;
+	size_t store_size = number_months * calendar_span.GetSpanSize();
 	std::vector<rect4> months_cells;
 	months_cells.resize(store_size);
 
 	for (int index = 0; index < calendar_span.GetSpanSize(); ++index)
 	{
-		//float indexfloat = static_cast<float>(index);
+		//float index_float = static_cast<float>(index);
 		int current_year = calendar_span.GetFirstYear() + index;
 		boost::gregorian::date first_day_of_year = boost::gregorian::date(current_year, 1, 1);
 

@@ -40,8 +40,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include <iterator>
 #include <numeric>
 
-////////////////////////////////////////
-
 
 
 class CalendarSpan
@@ -70,29 +68,24 @@ private:
 };
 
 
-
-
-
 class RowFrames
 {
 public:
 
-	void SetupRowFrames(const rect4& main_frame, size_t num_frames);
+	void SetupRowFrames(const rect4& main_frame, const size_t number_row_frames);
 	void SetupSubFrames(const std::vector<float>& proportions);
 
-	rect4 GetSubFrame(size_t row, size_t sub);
-	std::vector<rect4> GetSubFrames();
-
-	std::vector<float> Section(const std::vector<float>& weights, float value);
+	rect4 GetSubFrame(const size_t row, const size_t sub) const;
 
 private:
+
+	std::vector<float> Section(const std::vector<float>& proportions, float value) const;
 
 	std::vector<rect4> row_frames;
 	std::vector<rect4> sub_frames;
 
 	size_t number_sub_frames;
 };
-
 
 
 
@@ -103,22 +96,18 @@ public:
 	CalendarPage(GraphicEngine* graphic_engine);
 
 	void ReceiveDateGroups(const std::vector<DateGroup>& date_groups);
-
 	void ReceiveDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles);
-
 	void SlotPageSize(const std::array<float, 2>& page_size);
 	void SlotPageMargins(const std::array<float, 4>& page_margins);
-
 	void SlotSelectFont(const std::string& font_path);
-
 	void SlotTitleFrameHeight(float height);
 	void SlotTitleFontSizeRatio(float ratio);
 	void SlotTitleText(const std::wstring& text);
 	void SlotTitleTextColor(const std::array<float, 4>& title_text_color);
+	void SlotCalendarConfig(const CalendarConfig& config);
 
 	void SlotRectangleShapeConfig(const std::vector<RectangleShapeConfig>& configs);
-
-	void SlotCalendarConfig(const CalendarConfig& config);
+	RectangleShapeConfig GetShapeConfig(const std::wstring& name);
 
 	void Update();
 
@@ -130,21 +119,20 @@ public:
 	void SetupDaysShapes();
 	void SetupBarsShape();
 	void SetupYearsTotals();
-
 	void SetupLegend();
 
 private:
 
-	DateIntervalBundleBarStore data_store;
-
 	GraphicEngine* graphic_engine;
-	CalendarSpan calendar_span;
 
+	DateIntervalBundleBarStore data_store;
+	CalendarConfig calendar_config;
 	
-
+	CalendarSpan calendar_span;
+	RowFrames row_frames;
+	
 	rect4 page_size;
 	rect4 page_margin;
-
 	rect4 print_area;
 	float title_frame_height;
 	rect4 title_frame;
@@ -154,25 +142,17 @@ private:
 	rect4 x_labels_frame;
 	rect4 y_labels_frame;
 	rect4 legend_frame;
-
-	CalendarConfig calendar_config;
-	
 	float cell_width;
 	float row_height;
 	float day_width;
-
 	float title_font_size_ratio;
-
 	std::wstring title_text;
 	glm::vec4 title_text_color;
-
 	float labels_font_size;
-
-	RowFrames row_frames;
 
 	////////////////////////////////////////////////////////////////////////////////
 
-	RectangleShapeConfig GetShapeConfig(const std::wstring& name);
+	
 	std::vector<RectangleShapeConfig> element_configurations;
 	std::vector<RectangleShapeConfig> bar_shape_configs;
 
