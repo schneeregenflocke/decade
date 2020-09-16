@@ -1,1 +1,1 @@
-Checks:              'cppcoreguidelines-*,-cppcoreguidelines-owning-memory,performance-*,portability-*,readability-*'
+Checks:					'cppcoreguidelines-*,-cppcoreguidelines-owning-memory,performance-*,portability-*,readability-*,-readability-simplify-boolean-expr,-readability-uppercase-literal-suffix,-readability-avoid-const-params-in-decls'
