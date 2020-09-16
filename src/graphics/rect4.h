@@ -41,13 +41,13 @@ public:
 		top(top)
 	{}
 	
-	/*rect4(float width, float height)
+	rect4(float width, float height)
 	{
 		left = -width / 2.0f;
 		right = width / 2.0f;
 		bottom = -height / 2.0f;
 		top = height / 2.0f;
-	}*/
+	}
 
 	float Left() const
 	{
