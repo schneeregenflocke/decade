@@ -22,43 +22,133 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 
-//typedef glm::vec3 vec3;
-//typedef glm::vec3 vec2;
-
-
 
 
 class rect4
 {
 public:
-	rect4();
-	rect4(float left, float bottom, float right, float top);
+	rect4() :
+		left(0.f),
+		bottom(0.f),
+		right(0.f),
+		top(0.f)
+	{}
+
+	rect4(float left, float bottom, float right, float top) :
+		left(left), 
+		bottom(bottom), 
+		right(right), 
+		top(top)
+	{}
 	
-	rect4(float width, float height);
+	/*rect4(float width, float height)
+	{
+		left = -width / 2.0f;
+		right = width / 2.0f;
+		bottom = -height / 2.0f;
+		top = height / 2.0f;
+	}*/
 
-	float Left() const;
-	float Bottom() const;
-	float Right() const;
-	float Top() const;
+	float Left() const
+	{
+		return left;
+	}
 
-	void Left(float value);
-	void Bottom(float value);
-	void Right(float value);
-	void Top(float value);
+	float Bottom() const
+	{
+		return bottom;
+	}
 
-	float Width() const;
-	float Height() const;
+	float Right() const
+	{
+		return right;
+	}
+
+	float Top() const
+	{
+		return top;
+	}
+
+	void Left(float value)
+	{
+		left = value;
+	}
+
+	void Bottom(float value)
+	{
+		bottom = value;
+	}
+
+	void Right(float value)
+	{
+		right = value;
+	}
+
+	void Top(float value)
+	{
+		top = value;
+	}
+
+	float Width() const
+	{
+		return right - left;
+	}
+
+	float Height() const
+	{
+		return top - bottom;
+	}
 	
-	rect4 Expand(const rect4& expand) const;
-	rect4 Reduce(const rect4& reduce) const;
-	rect4 Scale(float factor) const;
+	rect4 Expand(const rect4& expand) const
+	{
+		rect4 expanded;
+		expanded.Left(left - expand.left);
+		expanded.Bottom(bottom - expand.bottom);
+		expanded.Right(right + expand.right);
+		expanded.Top(top + expand.top);
+		return expanded;
+	}
 
-	glm::vec3 Center() const;
+	rect4 Reduce(const rect4& reduce) const
+	{
+		rect4 reduced;
+		reduced.Left(left + reduce.left);
+		reduced.Bottom(bottom + reduce.bottom);
+		reduced.Right(right - reduce.right);
+		reduced.Top(top - reduce.top);
+		return reduced;
+	}
+
+	rect4 Scale(float factor) const
+	{
+		float halfWidthDiff = ((Width() * factor) - Width()) / 2.f;
+		float halfHeightDiff = ((Height() * factor) - Height()) / 2.f;
+		rect4 scaled = Expand(rect4(halfWidthDiff, halfWidthDiff, halfHeightDiff, halfHeightDiff));
+		return scaled;
+	}
+
+	glm::vec3 Center() const
+	{
+		return glm::vec3(left + Width() / 2.f, bottom + Height() / 2.f, 0.f);
+	}
 	
-	glm::vec3 GetLB() const;
-	glm::vec3 GetRB() const;
-	glm::vec3 GetLT() const;
-	glm::vec3 GetRT() const;
+	glm::vec3 GetLB() const
+	{
+		//return vec3(left, bottom, 0.f);
+		return glm::vec3(glm::vec2(left, bottom), 0.f);
+	}
+	glm::vec3 GetRB() const
+	{
+		return glm::vec3(right, bottom, 0.f);
+	}
+	glm::vec3 GetLT() const
+	{
+		return glm::vec3(left, top, 0.f);
+	}
+	glm::vec3 GetRT() const
+	{
+		return glm::vec3(right, top, 0.f);
+	}
 
 private:
 	float left;
