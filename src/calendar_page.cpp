@@ -182,7 +182,7 @@ void CalendarPage::ReceiveDateIntervalBundles(const std::vector<DateIntervalBund
 	Update();
 }
 
-void CalendarPage::SlotPageSize(const std::array<float, 2>& page_size)
+void CalendarPage::ReceivePageSize(const std::array<float, 2>& page_size)
 {
 	this->page_size = rect4(page_size[0], page_size[1]);
 
@@ -620,30 +620,30 @@ void CalendarPage::SetupYearsTotals()
 
 	for (size_t index = 0; index < data_store.GetSpan(); ++index)
 	{
-		//int row = data_store->GetBar(index).GetYear() - calendarSpan.GetFirstYear();
-
 		if (calendar_span.IsInSpan(data_store.GetFirstYear() + index))
 		{
 			int row = data_store.GetFirstYear() + index - calendar_span.GetFirstYear();
 
 			auto current_cell = row_frames.GetSubFrame(row, 0);
 
-			rect4 year_total_cell;
-			year_total_cell.Left(current_cell.Left());
-			year_total_cell.Bottom(current_cell.Bottom());
+			rect4 year_total_cell = current_cell;
+			//year_total_cell.Left(current_cell.Left());
+			//year_total_cell.Bottom(current_cell.Bottom());
 			year_total_cell.Right(current_cell.Left() + static_cast<float>(data_store.GetAnnualTotal(index)) * day_width);
-			year_total_cell.Top(current_cell.Top());
+			//year_total_cell.Top(current_cell.Top());
 
 			years_totals_cells[index] = year_total_cell;
 
 			
-
 			auto current_year = data_store.GetFirstYear() + index;
 			int number_days = boost::gregorian::date_period(boost::gregorian::date(current_year, 1, 1), boost::gregorian::date(current_year + 1, 1, 1)).length().days();
 
 
 			float percent = static_cast<float>(data_store.GetAnnualTotal(index)) / static_cast<float>(number_days);
-			auto year_total_text = std::to_wstring(percent * 100.0f);
+			
+			std::array<wchar_t, 100> year_total_text_buffer;
+			auto text_lenght = swprintf_s(year_total_text_buffer.data(), year_total_text_buffer.size(), L"%.*f %%", 1, percent * 100.0f);
+			auto year_total_text = std::wstring(year_total_text_buffer.data());
 			auto year_total_text_width = font_loader->TextWidth(year_total_text, year_total_cell.Height());
 
 			rect4 year_total_text_cell;

@@ -248,9 +248,9 @@ void MainWindow::EstablishConnections()
     date_interval_bundle_store.signal_date_interval_bundles.connect(&TransformDateIntervalBundle::InputDateIntervals, &transformed_date_interval_bundle);
     transformed_date_interval_bundle.signal_transformed_date_interval_bundles.connect(&CalendarPage::ReceiveDateIntervalBundles, calendar.get());
 
-    page_setup_panel->signal_page_size.connect(&CalendarPage::SlotPageSize, calendar.get());
+    page_setup_panel->signal_page_size.connect(&CalendarPage::ReceivePageSize, calendar.get());
     page_setup_panel->signal_page_margins.connect(&CalendarPage::SlotPageMargins, calendar.get());
-    page_setup_panel->signal_page_size.connect(&GraphicEngine::SlotPageSize, gl_canvas->GetGraphicEngine());
+    page_setup_panel->signal_page_size.connect(&GraphicEngine::ReceivePageSize, gl_canvas->GetGraphicEngine());
     
     font_setup_panel->signal_font_file_path.connect(&CalendarPage::SlotSelectFont, calendar.get());
     

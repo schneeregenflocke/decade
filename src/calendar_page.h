@@ -97,7 +97,7 @@ public:
 
 	void ReceiveDateGroups(const std::vector<DateGroup>& date_groups);
 	void ReceiveDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles);
-	void SlotPageSize(const std::array<float, 2>& page_size);
+	void ReceivePageSize(const std::array<float, 2>& page_size);
 	void SlotPageMargins(const std::array<float, 4>& page_margins);
 	void SlotSelectFont(const std::string& font_path);
 	void SlotTitleFrameHeight(float height);
