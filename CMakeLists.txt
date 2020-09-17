@@ -14,13 +14,13 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(Decade)
 
-#set(CMAKE_CXX_STANDARD 17) 
-#-lstdc++fs
 
+#-lstdc++fs
+#set(CMAKE_CXX_STANDARD 17) 
 target_compile_features(Decade PUBLIC cxx_std_17)
 
-get_target_property(current_target_cxx_standard Decade CXX_STANDARD)
-message("current_target_cxx_standard: ${current_target_cxx_standard}")
+get_target_property(decade_target_cxx_standard Decade CXX_STANDARD)
+message("decade_target_cxx_standard: ${current_target_cxx_standard}")
 
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
@@ -71,7 +71,7 @@ target_link_libraries(Decade PRIVATE glad)
 
 target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/glm")
 
-
+set(FT_WITH_HARFBUZZ OFF CACHE BOOL "FT_WITH_HARFBUZZ" FORCE)
 target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2/include")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2" EXCLUDE_FROM_ALL)
 target_link_libraries(Decade PRIVATE freetype)

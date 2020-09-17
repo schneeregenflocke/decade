@@ -3,7 +3,7 @@ language: cpp
 dist: bionic
 
 script:
-- gcc-8 --version
+- gcc-9 --version
 - mkdir build
 - cd build
 - cmake ..
