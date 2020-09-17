@@ -19,7 +19,7 @@ matrix:
           packages:
             - g++-8
       env:
-         - MATRIX_EVAL="CC=gcc-8.0 && CXX=g++-8.0"
+         - MATRIX_EVAL="CC=gcc-8.4 && CXX=g++-8.4"
 
 before_install:
 - eval "${MATRIX_EVAL}"
