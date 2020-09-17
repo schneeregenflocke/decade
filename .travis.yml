@@ -5,4 +5,5 @@ script:
   - cmake --build .
 
 before_install:
-- sudo apt-get -y install libboost-all-dev
+- sudo apt-get -y install libboost-all-dev 
+- sudo apt-get -y install libgtk-3-dev
