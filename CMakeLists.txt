@@ -14,16 +14,24 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(Decade)
 
-#set(CMAKE_CXX_STANDARD 17)
+#set(CMAKE_CXX_STANDARD 17) -lstdc++fs
 target_compile_features(Decade PUBLIC cxx_std_17)
 
 get_target_property(current_target_cxx_standard Decade CXX_STANDARD)
 message("current_target_cxx_standard: ${current_target_cxx_standard}")
 
+if(${CMAKE_CXX_COMPILER_ID} STREQUAL GNU)
+	set(CMAKE_SHARED_LINKER_FLAGS ${CMAKE_SHARED_LINKER_FLAGS} stdc++fs)
+	set(CMAKE_SHARED_STATIC_FLAGS ${CMAKE_SHARED_STATIC_FLAGS} stdc++fs)
 
-if(MSVC)
+	message("CMAKE_SHARED_LINKER_FLAGS: ${CMAKE_SHARED_LINKER_FLAGS}")
+	message("CMAKE_SHARED_STATIC_FLAGS: ${CMAKE_SHARED_LINKER_FLAGS}")
+endif()
+
+if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
 	add_compile_options(/Zc:__cplusplus)
 endif()
+
 target_compile_definitions(Decade PUBLIC _CRT_SECURE_NO_WARNINGS)
 
 
