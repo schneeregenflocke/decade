@@ -1,20 +1,24 @@
 ﻿cmake_minimum_required (VERSION 3.8)
 
-set(CMAKE_CXX_STANDARD 17)
-
 project(Decade)
 
 message("CMAKE_VERSION: ${CMAKE_VERSION}")
 message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 message("CMAKE_CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID}")
 message("CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
-
+#message("CMAKE_CXX_COMPILE_FEATURES: ${CMAKE_CXX_COMPILE_FEATURES}")
 
 add_compile_definitions(HAVE_TYPE_TRAITS)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(Decade)
+
+#set(CMAKE_CXX_STANDARD 17)
+target_compile_features(Decade PUBLIC cxx_std_17)
+
+get_target_property(current_target_cxx_standard Decade CXX_STANDARD)
+message("current_target_cxx_standard: ${current_target_cxx_standard}")
 
 
 if(MSVC)
