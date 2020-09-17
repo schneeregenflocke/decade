@@ -56,6 +56,7 @@ set(wxUSE_OPENGL ON CACHE BOOL "wxUSE_OPENGL" FORCE)
 set(wxBUILD_SHARED OFF CACHE BOOL "wxBUILD_SHARED" FORCE)
 set(wxUSE_WINRT	OFF CACHE BOOL "wxUSE_WINRT" FORCE)
 set(wxUSE_EXCEPTIONS OFF CACHE BOOL "wxUSE_EXCEPTIONS" FORCE)
+set(wxUSE_GLCANVAS_EGL OFF CACHE BOOL "wxUSE_GLCANVAS_EGL" FORCE)
 
 
 
@@ -71,7 +72,6 @@ target_link_libraries(Decade PRIVATE glad)
 
 target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/glm")
 
-set(FT_WITH_HARFBUZZ OFF CACHE BOOL "FT_WITH_HARFBUZZ" FORCE)
 target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2/include")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2" EXCLUDE_FROM_ALL)
 target_link_libraries(Decade PRIVATE freetype)
