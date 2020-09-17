@@ -6,7 +6,7 @@ script:
 - mkdir build
 - cd build
 - cmake ..
-- cmake --build
+- cmake --build .
 
 before_install:
 - sudo apt-get -y install libboost-all-dev 
