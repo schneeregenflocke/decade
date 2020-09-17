@@ -1,8 +1,12 @@
 language: cpp
 
+dist: bionic
+
 script:
-  - cmake .
-  - cmake --build .
+- mkdir build
+- cd build
+- cmake ..
+- cmake --build
 
 before_install:
 - sudo apt-get -y install libboost-all-dev 
