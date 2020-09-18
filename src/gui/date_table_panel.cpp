@@ -32,29 +32,30 @@ DateTablePanel::DateTablePanel(wxWindow* parent) :
 
 	select_group_control = new wxComboBox(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, nullptr, 0L, wxDefaultValidator, wxChoiceNameStr);
 	
+	////////////////////////////////////////////////////////////////////////////////
 
-	wxBoxSizer* mainSizer = new wxBoxSizer(wxVERTICAL);
-	SetSizer(mainSizer);
-	
-	wxSizerFlags sizer_flags0;
-	sizer_flags0.Proportion(1).Expand().Border(wxALL, 0);
+	wxBoxSizer* buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
+	wxSizerFlags buttons_flags = wxSizerFlags().Proportion(0).Border(wxALL, 5);
+	buttons_sizer->Add(addRowButton, buttons_flags);
+	buttons_sizer->Add(deleteRowButton, buttons_flags);
+	buttons_sizer->Add(select_group_control, buttons_flags);
+
 
 	wxBoxSizer* table_sizer = new wxBoxSizer(wxHORIZONTAL);
-	table_sizer->Add(table_widget, sizer_flags0);
+	wxSizerFlags data_table_flags = wxSizerFlags().Proportion(1).Expand().Border(wxALL, 5);
+	table_sizer->Add(table_widget, data_table_flags);
 
-	wxSizerFlags sizer_flags1;
-	sizer_flags1.Proportion(0).Border(wxALL, 5);
-	
-	wxBoxSizer* buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
-	buttons_sizer->Add(addRowButton, sizer_flags1);
-	buttons_sizer->Add(deleteRowButton, sizer_flags1);
-	buttons_sizer->Add(select_group_control, sizer_flags1);
 
-	mainSizer->Add(buttons_sizer, 0, wxEXPAND);
-	mainSizer->Add(table_sizer, 1, wxEXPAND);
-	
+	wxBoxSizer* main_sizer = new wxBoxSizer(wxVERTICAL);
+	wxSizerFlags buttons_sizer_flags = wxSizerFlags().Proportion(0).Expand().Border(wxALL, 0);
+	wxSizerFlags table_sizer_flags = wxSizerFlags().Proportion(1).Expand().Border(wxALL, 0);
+	main_sizer->Add(buttons_sizer, buttons_sizer_flags);
+	main_sizer->Add(table_sizer, table_sizer_flags);
 
-	Layout();
+	SetSizer(main_sizer);
+	//Layout();
+
+	////////////////////////////////////////////////////////////////////////////////
 
 	Bind(wxEVT_DATAVIEW_ITEM_ACTIVATED, &DateTablePanel::OnItemActivated, this);
 	Bind(wxEVT_DATAVIEW_ITEM_EDITING_DONE, &DateTablePanel::OnItemEditing, this);
@@ -67,6 +68,8 @@ DateTablePanel::DateTablePanel(wxWindow* parent) :
 	Bind(wxEVT_BUTTON, &DateTablePanel::OnButtonClicked, this);
 
 	Bind(wxEVT_COMBOBOX, &DateTablePanel::OnComboBoxSelection, this);
+
+	////////////////////////////////////////////////////////////////////////////////
 	
 	InitColumns();
 

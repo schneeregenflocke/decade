@@ -41,27 +41,29 @@ DateGroupsTablePanel::DateGroupsTablePanel(wxWindow* parent) :
 
 	Bind(wxEVT_BUTTON, &DateGroupsTablePanel::OnButtonClicked, this);
 
-
-	wxBoxSizer* mainSizer = new wxBoxSizer(wxVERTICAL);
-	SetSizer(mainSizer);
-
-	wxSizerFlags sizer_flags0;
-	sizer_flags0.Proportion(1).Expand().Border(wxALL, 0);
-
-	wxBoxSizer* table_sizer = new wxBoxSizer(wxHORIZONTAL);
-	table_sizer->Add(data_table, sizer_flags0);
-
-	wxSizerFlags sizer_flags1;
-	sizer_flags1.Proportion(0).Border(wxALL, 5);
+	////////////////////////////////////////////////////////////////////////////////
 
 	wxBoxSizer* buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
-	buttons_sizer->Add(addRowButton, sizer_flags1);
-	buttons_sizer->Add(deleteRowButton, sizer_flags1);
+	wxSizerFlags buttons_flags = wxSizerFlags().Proportion(0).Border(wxALL, 5);
+	buttons_sizer->Add(addRowButton, buttons_flags);
+	buttons_sizer->Add(deleteRowButton, buttons_flags);
 
-	mainSizer->Add(buttons_sizer, 0, wxEXPAND);
-	mainSizer->Add(table_sizer, 1, wxEXPAND);
+
+	wxBoxSizer* table_sizer = new wxBoxSizer(wxHORIZONTAL);
+	wxSizerFlags data_table_flags = wxSizerFlags().Proportion(1).Expand().Border(wxALL, 5);
+	table_sizer->Add(data_table, data_table_flags);
+
+
+	wxBoxSizer* main_sizer = new wxBoxSizer(wxVERTICAL);
+	wxSizerFlags buttons_sizer_flags = wxSizerFlags().Proportion(0).Expand().Border(wxALL, 0);
+	wxSizerFlags table_sizer_flags = wxSizerFlags().Proportion(1).Expand().Border(wxALL, 0);
+	main_sizer->Add(buttons_sizer, buttons_sizer_flags);
+	main_sizer->Add(table_sizer, table_sizer_flags);
 	
-	Layout();
+	SetSizer(main_sizer);
+	//Layout();
+
+	////////////////////////////////////////////////////////////////////////////////
 
 	data_table->AppendTextColumn(L"Group Number", wxDATAVIEW_CELL_INERT);
 	data_table->AppendTextColumn(L"Group Name", wxDATAVIEW_CELL_EDITABLE);
