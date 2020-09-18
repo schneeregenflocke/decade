@@ -19,16 +19,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #pragma once
 
-#ifdef WX_PRECOMP
-#include <wx/wxprec.h>
-#else 
-#include <wx/wx.h>
-#endif
-
 #include "gl_canvas.h"
 #include "../calendar_page.h"
 #include "../date_utils.h"
-
 #include "date_groups_table.h"
 #include "date_table_panel.h"
 #include "page_setup.h"
@@ -36,24 +29,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include "title_setup.h"
 #include "elements_setup.h"
 #include "calendar_setup.h"
-
 #include "license_info.h"
+
+
+#ifdef WX_PRECOMP
+#include <wx/wxprec.h>
+#else 
+#include <wx/wx.h>
+#endif
 
 #include <wx/notebook.h>
 #include <wx/splitter.h>
-#include <wx/listctrl.h>
 #include <wx/platinfo.h>
 #include <wx/activityindicator.h>
-#include <wx/choicebk.h>
-#include <wx/listbook.h>
 #include <wx/utils.h>
 #include <wx/intl.h>
-
-#include <cmath>
-#include <memory>
-#include <string>
-#include <map>
-#include <memory>
 
 #include <csv/reader.hpp>
 #include <csv/writer.hpp>
@@ -62,12 +52,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include <sigslot/signal.hpp>
 
+#include <cmath>
+#include <memory>
+#include <string>
+#include <memory>
+
 
 // Reason for use of raw pointers instead of smart_pointers:
 // https://wiki.wxwidgets.org/Avoiding_Memory_Leaks 
 
 
-class MainWindow : public wxFrame
+class MainWindow : 
+    public wxFrame
 {
 public:
 
@@ -81,8 +77,6 @@ private:
     void OpenGLReady();
     void EstablishConnections();
 
-    void SlotSelectListBook(wxCommandEvent& event);
-    
     void SlotLoadXML(wxCommandEvent& event);
     void SlotSaveXML(wxCommandEvent& event);
     void LoadXML(const std::wstring& filepath);
@@ -100,15 +94,14 @@ private:
     
     std::wstring current_xml_file_path;
 
-    wxBoxSizer* book_panel_sizer;
-
     DateGroupsTablePanel* date_groups_table_panel;
     DateTablePanel* data_table_panel;
+    CalendarSetupPanel* calendar_setup_panel;
+    ElementsSetupsPanel* elements_setup_panel;
     PageSetupPanel* page_setup_panel;
     FontSetupPanel* font_setup_panel;
     TitleSetupPanel* title_setup_panel;
-    ElementsSetupsPanel* elements_setup_panel;
-    CalendarSetupPanel* calendar_setup_panel;
+    
 
     std::unique_ptr<CalendarPage> calendar;
 
@@ -116,14 +109,15 @@ private:
     DateIntervalBundleStore date_interval_bundle_store;
     TransformDateIntervalBundle transformed_date_interval_bundle;
 
-    GLCanvas* gl_canvas;
+    GLCanvas* glcanvas;
 
     const int ID_SAVE_XML;
     const int ID_SAVE_AS_XML;
 };
 
 
-class App : public wxApp
+class App : 
+    public wxApp
 {
 public:
 
@@ -139,4 +133,3 @@ private:
 
     std::unique_ptr<wxLocale> locale;
 };
-

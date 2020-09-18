@@ -22,7 +22,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #ifdef _WIN32
 
-extern "C" 
+extern "C"
 {
     __declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
     __declspec(dllexport) DWORD AmdPowerXpressRequestHighPerformance = 0x00000001;
@@ -30,21 +30,20 @@ extern "C"
 
 #endif
 
-
 wxIMPLEMENT_APP_NO_MAIN(App);
 
 
 int main(int argc, char* argv[])
 {
-    std::wcout << "__cplusplus " + std::to_string(__cplusplus) + '\n';
+    std::wcout << std::wstring(L"__cplusplus ") + std::to_wstring(__cplusplus) + '\n';
 
 #if defined _WIN32
-    std::wcout << "_WIN32 " << _WIN32 << '\n';
+    std::wcout << L"_WIN32 " << _WIN32 << '\n';
 #endif
 
 #if defined _MSC_VER && _MSVC_LANG
-    std::wcout << "_MSC_VER " << _MSC_VER << '\n';
-    std::wcout << "_MSVC_LANG " << _MSVC_LANG << '\n';
+    std::wcout << L"_MSC_VER " << _MSC_VER << '\n';
+    std::wcout << L"_MSVC_LANG " << _MSVC_LANG << '\n';
 #endif
 
     wxEntryStart(argc, argv);
@@ -66,18 +65,17 @@ bool App::OnInit()
     auto init_locale_succeeded = locale->Init(language);
     std::locale::global(std::locale(""));
 
-    std::wcout << "init_locale_succeeded " << init_locale_succeeded << '\n';
-    std::wcout << "current locale name " << locale->GetLanguageName(language) << '\n';
+    std::wcout << L"init_locale_succeeded " << init_locale_succeeded << '\n';
+    std::wcout << L"current locale name " << locale->GetLanguageName(language) << '\n';
     
+    std::wcout << L"OperatingSystemIdName " << wxPlatformInfo::Get().GetOperatingSystemIdName() << '\n';
+    std::wcout << L"ArchName " << wxPlatformInfo::Get().GetArchName() << '\n';
 
-    std::wcout << "OperatingSystemIdName " << wxPlatformInfo::Get().GetOperatingSystemIdName() << '\n';
-    std::wcout << "ArchName " << wxPlatformInfo::Get().GetArchName() << '\n';
-
-    std::wcout << "OSMajorVersion.OSMinorVersion.OSMicroVersion " << wxPlatformInfo::Get().GetOSMajorVersion() << '.' <<
+    std::wcout << L"OSMajorVersion.OSMinorVersion.OSMicroVersion " << wxPlatformInfo::Get().GetOSMajorVersion() << '.' <<
         wxPlatformInfo::Get().GetOSMinorVersion() << '.' <<
         wxPlatformInfo::Get().GetOSMicroVersion() << '\n';
 
-    std::wcout << "wxVERSION_STRING " << wxVERSION_STRING << '\n';
+    std::wcout << L"wxVERSION_STRING " << wxVERSION_STRING << '\n';
 
     ////////////////////////////////////////////////////////////////////////////////
     
@@ -104,103 +102,73 @@ MainWindow::MainWindow(const wxString& title, const wxPoint& pos, const wxSize& 
     ID_SAVE_XML(NewControlId()),
     ID_SAVE_AS_XML(NewControlId())
 {
+    ////////////////////////////////////////////////////////////////////////////////
+
     wxSplitterWindow* main_splitter = new wxSplitterWindow(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE | wxCLIP_CHILDREN);
     main_splitter->SetMinimumPaneSize(20); 
     main_splitter->SetSashGravity(0.25);
 
     ////////////////////////////////////////////////////////////////////////////////
 
-    wxSplitterWindow* list_book_splitter;
-    list_book_splitter = new wxSplitterWindow(main_splitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE | wxCLIP_CHILDREN);
-    list_book_splitter->SetMinimumPaneSize(20);
-    list_book_splitter->SetSashGravity(0.5);
-
-    wxPanel* list_panel;
-    list_panel = new wxPanel(list_book_splitter, wxID_ANY);
-
-    wxListBox* list_box = new wxListBox(list_panel, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, nullptr, wxLB_SINGLE | wxLB_NEEDED_SB, wxDefaultValidator, wxListBoxNameStr);
-    
-    wxBoxSizer* list_panel_sizer = new wxBoxSizer(wxVERTICAL);
-    list_panel_sizer->Add(list_box, 1, wxEXPAND | wxALL, 5);
-    list_panel->SetSizer(list_panel_sizer);
-
-    ////////////////////////////////////////////////////////////////////////////////
-
-    wxPanel* book_panel;
-    book_panel = new wxPanel(list_book_splitter, wxID_ANY);
-
-    ////////////////////////////////////////////////////////////////////////////////
-
-    date_groups_table_panel = new DateGroupsTablePanel(book_panel);
-    page_setup_panel = new PageSetupPanel(book_panel);
-    data_table_panel = new DateTablePanel(book_panel);
-    font_setup_panel = new FontSetupPanel(book_panel);
-    title_setup_panel = new TitleSetupPanel(book_panel);
-    elements_setup_panel = new ElementsSetupsPanel(book_panel);
-    calendar_setup_panel = new CalendarSetupPanel(book_panel);
-
-    list_box->AppendString(date_groups_table_panel->GetPanelName());
-    list_box->AppendString(L"Date Table");
-    list_box->AppendString(L"Page Setup");
-    list_box->AppendString(L"Font Setup");
-    list_box->AppendString(L"Title Setup");
-    list_box->AppendString(L"Calendar Setup");
-    list_box->AppendString(L"Elements Setup");
-    
-    book_panel_sizer = new wxBoxSizer(wxVERTICAL);
-    book_panel->SetSizer(book_panel_sizer);
-
     wxSizerFlags sizer_flags;
     sizer_flags.Proportion(1).Expand().Border(wxALL, 5);
 
-    book_panel_sizer->Add(date_groups_table_panel, sizer_flags);
-    book_panel_sizer->Add(data_table_panel, sizer_flags);
-    book_panel_sizer->Add(page_setup_panel, sizer_flags);
-    book_panel_sizer->Add(font_setup_panel, sizer_flags);
-    book_panel_sizer->Add(title_setup_panel, sizer_flags);
-    book_panel_sizer->Add(calendar_setup_panel, sizer_flags);
-    book_panel_sizer->Add(elements_setup_panel, sizer_flags);
-    
+    ////////////////////////////////////////////////////////////////////////////////
 
-    book_panel_sizer->ShowItems(false);
+    wxPanel* notebook_panel = new wxPanel(main_splitter, wxID_ANY);
 
-    Bind(wxEVT_LISTBOX, &MainWindow::SlotSelectListBook, this);
+    wxBoxSizer* notebook_panel_sizer = new wxBoxSizer(wxVERTICAL);
+    notebook_panel->SetSizer(notebook_panel_sizer);
 
-    const size_t default_list_box_selection = 0;
-    list_box->Select(default_list_box_selection);
-    book_panel_sizer->Show(default_list_box_selection, true);
-    book_panel_sizer->Layout();
+    wxNotebook* notebook = new wxNotebook(notebook_panel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP);
+    notebook_panel_sizer->Add(notebook, sizer_flags);
 
     ////////////////////////////////////////////////////////////////////////////////
 
-    list_book_splitter->SplitVertically(list_panel, book_panel);
-
-    ////////////////////////////////////////////////////////////////////////////////
+    date_groups_table_panel = new DateGroupsTablePanel(notebook);
+    data_table_panel = new DateTablePanel(notebook);
+    calendar_setup_panel = new CalendarSetupPanel(notebook);
+    elements_setup_panel = new ElementsSetupsPanel(notebook);
+    page_setup_panel = new PageSetupPanel(notebook);
+    font_setup_panel = new FontSetupPanel(notebook);
+    title_setup_panel = new TitleSetupPanel(notebook);
     
+    notebook->AddPage(date_groups_table_panel, date_groups_table_panel->GetPanelName());
+    notebook->AddPage(data_table_panel, L"Date Table");
+    notebook->AddPage(calendar_setup_panel, L"Calendar Setup");
+    notebook->AddPage(elements_setup_panel, L"Elements Setup");
+    notebook->AddPage(page_setup_panel, L"Page Setup");
+    notebook->AddPage(font_setup_panel, L"Font Setup");
+    notebook->AddPage(title_setup_panel, L"Title Setup");
+    
+    ////////////////////////////////////////////////////////////////////////////////
+
     wxGLAttributes attributes;
     attributes.PlatformDefaults().Defaults().EndList();
     bool display_supported = wxGLCanvas::IsDisplaySupported(attributes);
     std::cout << "wxGLCanvas IsDisplaySupported " << std::boolalpha << display_supported << '\n';
 
-    wxPanel* gl_canvas_panel = new wxPanel(main_splitter, wxID_ANY);
-
-    gl_canvas = new GLCanvas(gl_canvas_panel, attributes);
-
-    wxBoxSizer* gl_canvas_panel_sizer = new wxBoxSizer(wxVERTICAL);
-    gl_canvas_panel_sizer->Add(gl_canvas, 1, wxEXPAND | wxALL, 5);
-    gl_canvas_panel->SetSizer(gl_canvas_panel_sizer);
-
-
-    gl_canvas->signal_opengl_ready.connect(&MainWindow::OpenGLReady, this);
     ////////////////////////////////////////////////////////////////////////////////
 
-    main_splitter->SplitVertically(list_book_splitter, gl_canvas_panel);
+    wxPanel* glcanvas_panel = new wxPanel(main_splitter, wxID_ANY);
+
+    wxBoxSizer* glcanvas_panel_sizer = new wxBoxSizer(wxVERTICAL);
+    glcanvas_panel->SetSizer(glcanvas_panel_sizer);
+
+    glcanvas = new GLCanvas(glcanvas_panel, attributes);
+    glcanvas_panel_sizer->Add(glcanvas, sizer_flags);
+    
+    glcanvas->signal_opengl_ready.connect(&MainWindow::OpenGLReady, this);
+
+    ////////////////////////////////////////////////////////////////////////////////
+
+    main_splitter->SplitVertically(notebook_panel, glcanvas_panel);
+
+    //Layout();
 
     ////////////////////////////////////////////////////////////////////////////////
 
     InitMenu();
-
-    ////////////////////////////////////////////////////////////////////////////////
 
     CreateStatusBar(1);
 }
@@ -208,24 +176,13 @@ MainWindow::MainWindow(const wxString& title, const wxPoint& pos, const wxSize& 
 
 GLCanvas* MainWindow::GetGLCanvas()
 {
-    return gl_canvas;
-}
-
-
-void MainWindow::SlotSelectListBook(wxCommandEvent& event)
-{
-    book_panel_sizer->ShowItems(false);
-    
-    auto selection = event.GetSelection();
-    book_panel_sizer->Show(selection, true);
-
-    book_panel_sizer->Layout();
+    return glcanvas;
 }
 
 
 void MainWindow::OpenGLReady()
 {
-    calendar = std::make_unique<CalendarPage>(gl_canvas->GetGraphicEngine());
+    calendar = std::make_unique<CalendarPage>(glcanvas->GetGraphicEngine());
     calendar->Update();
 
     EstablishConnections();
@@ -250,7 +207,7 @@ void MainWindow::EstablishConnections()
 
     page_setup_panel->signal_page_size.connect(&CalendarPage::ReceivePageSize, calendar.get());
     page_setup_panel->signal_page_margins.connect(&CalendarPage::SlotPageMargins, calendar.get());
-    page_setup_panel->signal_page_size.connect(&GraphicEngine::ReceivePageSize, gl_canvas->GetGraphicEngine());
+    page_setup_panel->signal_page_size.connect(&GraphicEngine::ReceivePageSize, glcanvas->GetGraphicEngine());
     
     font_setup_panel->signal_font_file_path.connect(&CalendarPage::SlotSelectFont, calendar.get());
     
@@ -419,7 +376,7 @@ void MainWindow::SlotExportPNG(wxCommandEvent& event)
     if (file_dialog.ShowModal() == wxID_OK)
     {
         std::wstring file_path = file_dialog.GetPath().ToStdWstring();
-        gl_canvas->GetGraphicEngine()->RenderToPNG(file_path);
+        glcanvas->GetGraphicEngine()->RenderToPNG(file_path);
     }
 }
 
