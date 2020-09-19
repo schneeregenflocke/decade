@@ -72,9 +72,20 @@ void LicenseInformationDialog::CollectLicenses()
 	collected_licenses.emplace_back("Boost", LOAD_RESOURCE(boost_LICENSE_1_0).toString());
 	collected_licenses.emplace_back("glm", LOAD_RESOURCE(glm_copying).toString());
 	collected_licenses.emplace_back("glad", LOAD_RESOURCE(glad_LICENSE).toString());
+	
 	collected_licenses.emplace_back("wxWidgets", LOAD_RESOURCE(wxWidgets_licence).toString());
+	collected_licenses.emplace_back("Catch2", LOAD_RESOURCE(Catch2_LICENSE).toString());
+	collected_licenses.emplace_back("expat", LOAD_RESOURCE(expat_COPYING).toString());
+	collected_licenses.emplace_back("libjpeg_turbo", LOAD_RESOURCE(libjpeg_turbo_README).toString());
+	collected_licenses.emplace_back("libtiff", LOAD_RESOURCE(libtiff_COPYRIGHT).toString());
+	collected_licenses.emplace_back("libpng", LOAD_RESOURCE(libpng_LICENSE).toString());
+	collected_licenses.emplace_back("zlib", LOAD_RESOURCE(zlib_README).toString());
+
 	collected_licenses.emplace_back("embed-resource", LOAD_RESOURCE(embed_resource_LICENSE).toString());
+
 	collected_licenses.emplace_back("csv", LOAD_RESOURCE(csv_LICENSE).toString());
+	collected_licenses.emplace_back("catch", LOAD_RESOURCE(catch_LICENSE).toString());
+
 	collected_licenses.emplace_back("pugixml", LOAD_RESOURCE(pugixml_LICENSE).toString());
 	collected_licenses.emplace_back("lodepng", LOAD_RESOURCE(lodepng_LICENSE).toString());
 	collected_licenses.emplace_back("freetype2", LOAD_RESOURCE(freetype2_LICENSE).toString());

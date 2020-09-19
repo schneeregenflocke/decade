@@ -112,14 +112,21 @@ list(APPEND SHADER_FILES_PATHS
 list(APPEND LICENSE_FILES_PATHS
 	"${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt" decade
 	"${CMAKE_CURRENT_SOURCE_DIR}/external/csv/LICENSE" csv 
+	"${CMAKE_CURRENT_SOURCE_DIR}/external/csv/vendor/Catch2/LICENSE.txt" Catch2
 	"${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2/docs/LICENSE.TXT" freetype2
 	"${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource/LICENSE.txt" "embed-resource"		 
 	"${CMAKE_CURRENT_SOURCE_DIR}/external/glad/LICENSE" glad
 	"${CMAKE_CURRENT_SOURCE_DIR}/external/glm/copying.txt" glm
 	"${CMAKE_CURRENT_SOURCE_DIR}/external/lodepng/LICENSE" lodepng
 	"${CMAKE_CURRENT_SOURCE_DIR}/external/pugixml/LICENSE.md" pugixml
-	"${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/docs/licence.txt" wxWidgets
 	"${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/LICENSE" sigslot
+	"${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/docs/licence.txt" wxWidgets
+	"${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/3rdparty/catch/LICENSE.txt" catch
+	"${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/src/expat/expat/COPYING" expat
+	"${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/src/jpeg/README" libjpeg_turbo
+	"${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/src/tiff/COPYRIGHT" libtiff
+	"${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/src/png/LICENSE" libpng
+	"${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/src/zlib/README" zlib
 )
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
