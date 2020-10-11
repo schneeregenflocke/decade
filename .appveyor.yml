@@ -24,7 +24,7 @@ matrix:
 
 install:
 - cd %APPVEYOR_BUILD_FOLDER%
-- git submodule update --init --depth 4 --recursive --remote
+- git submodule update --init --depth 4 --recursive
 
 
 before_build:
