@@ -8,19 +8,21 @@ message("CMAKE_CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID}")
 message("CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
 #message("CMAKE_CXX_COMPILE_FEATURES: ${CMAKE_CXX_COMPILE_FEATURES}")
 
-add_compile_definitions(HAVE_TYPE_TRAITS)
+
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(Decade)
 
 
-#-lstdc++fs
-#set(CMAKE_CXX_STANDARD 17) 
-target_compile_features(Decade PUBLIC cxx_std_17)
 
+target_compile_features(Decade PUBLIC cxx_std_17)
 get_target_property(decade_target_cxx_standard Decade CXX_STANDARD)
 message("decade_target_cxx_standard: ${current_target_cxx_standard}")
+
+add_compile_definitions(HAVE_TYPE_TRAITS)
+add_compile_definitions(GLM_FORCE_MESSAGES)
+add_compile_definitions(GLM_FORCE_CXX17)
 
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)

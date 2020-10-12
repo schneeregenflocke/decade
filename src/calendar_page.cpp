@@ -270,7 +270,7 @@ void CalendarPage::Update()
 {
 	const float view_size_scale = 1.1f;
 	rect4 view_size = page_size.Scale(view_size_scale);
-	graphic_engine->GetViewRef().SetOrthoMatrix(view_size);
+	graphic_engine->GetViewRef().SetMinRect(view_size);
 
 	glm::vec4 page_shape_color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	page_shape->SetShape(page_size, page_shape_color);

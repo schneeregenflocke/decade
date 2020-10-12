@@ -16,19 +16,16 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 */
 
-#ifndef PROJECTION_H
-#define PROJECTION_H
+
+#pragma once
 
 
 #include "rect4.h"
 
-#include <glm/mat4x4.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/ext/matrix_projection.hpp>
-
-//#define GLEW_STATIC
-//#include <GL/glew.h>
 #include <glad/glad.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include <iostream>
 
@@ -36,11 +33,58 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 class Projection
 {
 public:
-	static glm::mat4 OrthoMatrix(const rect4& viewSize);
-	static glm::mat4 PerspectiveMatrix(float fovy, float near, float far);
-	static float AspectRatio();
-	static glm::mat4 OrthoMatrixWidth(float width);
-	static glm::mat4 OrthoMatrixHeight(float height);
+	static float AspectRatio()
+	{
+		GLint viewport[4];
+		glGetIntegerv(GL_VIEWPORT, viewport);
+
+		float width = static_cast<float>(viewport[2]);
+		float height = static_cast<float>(viewport[3]);
+
+		return width / height;
+	}
+
+	static glm::mat4 OrthoMatrix(const rect4& viewSize)
+	{
+		float page_height_ratio = viewSize.Width() / viewSize.Height();
+		float viewport_height_ratio = AspectRatio();
+
+		glm::mat4 ortho_matrix;
+		if (page_height_ratio >= viewport_height_ratio)
+		{
+			ortho_matrix = OrthoMatrixWidth(viewSize.Width());
+		}
+		else
+		{
+			ortho_matrix = OrthoMatrixHeight(viewSize.Height());
+		}
+		return ortho_matrix;
+	}
+
+	static glm::mat4 PerspectiveMatrix(const float fovy, const float near, const float far)
+	{
+		return glm::perspective(fovy, AspectRatio(), near, far);
+	}
+
+	static glm::mat4 OrthoMatrixWidth(float width)
+	{
+		float x_half_size = width / 2.f;
+		float y_half_size = width / AspectRatio() / 2.f;
+		//float z_half_size = 100.f;
+
+		//return glm::ortho(-x_half_size, x_half_size, -y_half_size, y_half_size, -z_half_size, z_half_size);
+		return glm::ortho(-x_half_size, x_half_size, -y_half_size, y_half_size);
+	}
+
+	static glm::mat4 OrthoMatrixHeight(float height)
+	{
+		float x_half_size = height * AspectRatio() / 2.f;
+		float y_half_size = height / 2.f;
+		//float z_half_size = 100.f;
+
+		//return glm::ortho(-x_half_size, x_half_size, -y_half_size, y_half_size, -z_half_size, z_half_size);
+		return glm::ortho(-x_half_size, x_half_size, -y_half_size, y_half_size);
+	}
 };
 
 
@@ -48,26 +92,41 @@ class View
 {
 public:
 
-	View();
+	View() : 
+		projection_matrix(1.f),
+		view_matrix(1.f)
+	{}
 
-	void SetOrthoMatrix(const rect4& size);
-	void SetViewMatrix(const glm::mat4& matrix);
+	void SetMinRect(const rect4& min_rect)
+	{
+		this->min_rect = min_rect;
+	}
 
-	glm::mat4& GetProjectionMatrix();
-	glm::mat4& GetViewMatrix();
+	void UpdateOrthoMatrix()
+	{
+		projection_matrix = Projection::OrthoMatrix(min_rect);
+	}
 
-	void Translate(const glm::vec3& translate);
-	void Scale(const glm::vec3& scale);
+	void SetViewMatrix(const glm::mat4& view_matrix)
+	{
+		this->view_matrix = view_matrix;
+	}
+
+	glm::mat4& GetProjectionMatrix()
+	{
+		UpdateOrthoMatrix();
+		return projection_matrix;
+	}
+
+	glm::mat4& GetViewMatrix()
+	{
+		return view_matrix;
+	}
 
 private:
 	glm::mat4 projection_matrix;
 	glm::mat4 view_matrix;
-	glm::mat4 processed_view;
-	
-	glm::vec3 translate_view;
-	glm::vec3 scale_view;
 
-	rect4 view_size;
+	rect4 min_rect;
 };
 
-#endif /*PROJECTION_H*/
