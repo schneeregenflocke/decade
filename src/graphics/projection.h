@@ -26,6 +26,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/ext/matrix_clip_space.hpp>
 
 #include <iostream>
 
