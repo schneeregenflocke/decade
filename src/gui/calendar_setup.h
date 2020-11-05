@@ -31,7 +31,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 //#include <wx/spinctrl.h>
 //#include <wx/checkbox.h>
 #include <wx/propgrid/propgrid.h>
-#include <wx/propgrid/manager.h>
+//#include <wx/propgrid/manager.h>
 
 #include <sigslot/signal.hpp>
 
@@ -67,9 +67,8 @@ public:
 		Append(gui_auto_span);
 		Append(gui_lower_limit);
 		Append(gui_upper_limit);
-		DisableProperty(gui_lower_limit);
-		DisableProperty(gui_upper_limit);
-
+		//DisableProperty(gui_lower_limit);
+		//DisableProperty(gui_upper_limit);
 
 		Append(new wxPropertyCategory("Row Spacing Proportions", wxPG_LABEL));
 
@@ -159,9 +158,9 @@ public:
 
 	void OnPropertyGridChanging(wxPropertyGridEvent& event)
 	{
-		property_grid->RefreshPropertyGrid();
-
 		//auto current_property = event.GetProperty();
+
+		property_grid->RefreshPropertyGrid();
 
 		long number_subrows = property_grid->GetPropertyValue(property_grid->gui_number_spacings).GetInteger();
 		calendar_config.spacing_proportions.resize(number_subrows);
@@ -176,7 +175,7 @@ public:
 		long lower_limit = property_grid->GetPropertyValue(property_grid->gui_lower_limit).GetInteger();
 		long upper_limit = property_grid->GetPropertyValue(property_grid->gui_upper_limit).GetInteger();
 		
-		calendar_config.SetCalendarSpan(lower_limit, upper_limit);
+		calendar_config.SetSpan(lower_limit, upper_limit);
 
 		signal_calendar_config(calendar_config);
 	}
@@ -193,11 +192,13 @@ public:
 		}
 		
 		property_grid->SetPropertyValue(property_grid->gui_auto_span, calendar_config.auto_calendar_span);
-		property_grid->SetPropertyValue(property_grid->gui_lower_limit, calendar_config.GetCalendarSpan().first);
-		property_grid->SetPropertyValue(property_grid->gui_upper_limit, calendar_config.GetCalendarSpan().second);
+		property_grid->SetPropertyValue(property_grid->gui_lower_limit, calendar_config.GetSpanLimitsYears()[0]);
+		property_grid->SetPropertyValue(property_grid->gui_upper_limit, calendar_config.GetSpanLimitsYears()[1]);
+
+		property_grid->RefreshPropertyGrid();
 	}
 	
-	void SendCalendarConfig()
+	void SendDefaultValues()
 	{
 		signal_calendar_config(calendar_config);
 	}

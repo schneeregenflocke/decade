@@ -16,9 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 */
 
-
-#ifndef CALENDAR_H
-#define CALENDAR_H
+#pragma once
 
 #include "graphics/graphic_engine.h"
 #include "graphics/shapes.h"
@@ -39,33 +37,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include <algorithm>
 #include <iterator>
 #include <numeric>
-
-
-
-class CalendarSpan
-{
-public:
-
-	CalendarSpan() :
-		lower_limit(0),
-		upper_limit(0),
-		valid_span(false)
-	{}
-
-	void SetSpan(const int lower_limit, const int upper_limit);
-	int GetSpanSize() const;
-	
-	bool IsValidSpan() const;
-	bool IsInSpan(const int year) const;
-	
-	int GetFirstYear() const;
-	int GetLastYear() const;
-	
-private:
-	int lower_limit;
-	int upper_limit;
-	bool valid_span;
-};
 
 
 class RowFrames
@@ -98,15 +69,15 @@ public:
 	void ReceiveDateGroups(const std::vector<DateGroup>& date_groups);
 	void ReceiveDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles);
 	void ReceivePageSize(const std::array<float, 2>& page_size);
-	void SlotPageMargins(const std::array<float, 4>& page_margins);
-	void SlotSelectFont(const std::string& font_path);
-	void SlotTitleFrameHeight(float height);
-	void SlotTitleFontSizeRatio(float ratio);
-	void SlotTitleText(const std::wstring& text);
-	void SlotTitleTextColor(const std::array<float, 4>& title_text_color);
-	void SlotCalendarConfig(const CalendarConfig& config);
+	void ReceivePageMargins(const std::array<float, 4>& page_margins);
+	void ReceiveFont(const std::string& font_path);
+	void ReceiveTitleFrameHeight(float height);
+	void ReceiveTitleFontSizeRatio(float ratio);
+	void ReceiveTitleText(const std::wstring& text);
+	void ReceiveTitleTextColor(const std::array<float, 4>& title_text_color);
+	void ReceiveCalendarConfig(const CalendarConfig& calendar_config);
 
-	void SlotRectangleShapeConfig(const std::vector<RectangleShapeConfig>& configs);
+	void ReceiveRectangleShapeConfig(const std::vector<RectangleShapeConfig>& configs);
 	RectangleShapeConfig GetShapeConfig(const std::wstring& name);
 
 	void Update();
@@ -128,7 +99,7 @@ private:
 	DateIntervalBundleBarStore data_store;
 	CalendarConfig calendar_config;
 	
-	CalendarSpan calendar_span;
+	//CalendarSpan calendar_span;
 	RowFrames row_frames;
 	
 	rect4 page_size;
@@ -190,5 +161,3 @@ private:
 	std::shared_ptr<RectanglesShape> sub_frames_shape;
 };
 
-
-#endif /* CALENDAR_H */

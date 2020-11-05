@@ -86,9 +86,8 @@ std::string boost_date_to_string(const boost::gregorian::date& date_variable)
 }
 
 
-boost::gregorian::date string_to_boost_date(std::string date_string, const date_format_descriptor& format)
+boost::gregorian::date string_to_boost_date(const std::string& date_string, const date_format_descriptor& format)
 {
-
 	std::string non_const_date_string = date_string;
 
 	bool failed = false;

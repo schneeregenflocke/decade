@@ -18,55 +18,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include "calendar_page.h"
 
-void CalendarSpan::SetSpan(const int lower_limit, const int upper_limit)
-{
-	int span_size = upper_limit - lower_limit + 1;
-	
-	if (span_size > 0)
-	{
-		this->lower_limit = lower_limit;
-		this->upper_limit = upper_limit;
-
-		valid_span = true;
-	}
-	 
-	else
-	{
-		valid_span = false;
-	}
-}
-
-bool CalendarSpan::IsValidSpan() const
-{
-	return valid_span;
-}
-
-bool CalendarSpan::IsInSpan(const int year) const
-{
-	bool is_in_span = false;
-
-	if (year >= lower_limit && year <= upper_limit)
-	{
-		is_in_span = true;
-	}
-	return is_in_span;
-}
-
-int CalendarSpan::GetFirstYear() const
-{
-	return lower_limit;
-}
-
-int CalendarSpan::GetLastYear() const
-{
-	return upper_limit;
-}
-
-int CalendarSpan::GetSpanSize() const
-{
-	return upper_limit - lower_limit + 1;
-}
-
 
 
 void RowFrames::SetupRowFrames(const rect4& main_frame, const size_t number_row_frames)
@@ -171,14 +122,14 @@ CalendarPage::CalendarPage(GraphicEngine* graphic_engine) :
 
 void CalendarPage::ReceiveDateGroups(const std::vector<DateGroup>& date_groups)
 {
-	date_group_store.SetDateGroups(date_groups);
-	data_store.SetDateGroups(date_groups);
+	date_group_store.ReceiveDateGroups(date_groups);
+	data_store.ReceiveDateGroups(date_groups);
 	Update();
 }
 
 void CalendarPage::ReceiveDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles)
 {
-	data_store.SetDateIntervalBundles(date_interval_bundles);
+	data_store.ReceiveDateIntervalBundles(date_interval_bundles);
 	Update();
 }
 
@@ -189,49 +140,49 @@ void CalendarPage::ReceivePageSize(const std::array<float, 2>& page_size)
 	Update();
 }
 
-void CalendarPage::SlotPageMargins(const std::array<float, 4>& page_margins)
+void CalendarPage::ReceivePageMargins(const std::array<float, 4>& page_margins)
 {
 	page_margin = rect4(page_margins[0], page_margins[1], page_margins[2], page_margins[3]);
 	
 	Update();
 }
 
-void CalendarPage::SlotSelectFont(const std::string& font_path)
+void CalendarPage::ReceiveFont(const std::string& font_path)
 {
 	font_loader.reset(std::make_unique<FontLoader>(font_path).release());
 
 	Update();
 }
 
-void CalendarPage::SlotTitleFrameHeight(float height)
+void CalendarPage::ReceiveTitleFrameHeight(float height)
 {
 	title_frame_height = height;
 
 	Update();
 }
 
-void CalendarPage::SlotTitleFontSizeRatio(float ratio)
+void CalendarPage::ReceiveTitleFontSizeRatio(float ratio)
 {
 	title_font_size_ratio = ratio;
 
 	Update();
 }
 
-void CalendarPage::SlotTitleText(const std::wstring& text)
+void CalendarPage::ReceiveTitleText(const std::wstring& text)
 {
 	title_text = text;
 
 	Update();
 }
 
-void CalendarPage::SlotTitleTextColor(const std::array<float, 4>& title_text_color)
+void CalendarPage::ReceiveTitleTextColor(const std::array<float, 4>& title_text_color)
 {
 	this->title_text_color = glm::vec4(title_text_color[0], title_text_color[1], title_text_color[2], title_text_color[3]);
 
 	Update();
 }
 
-void CalendarPage::SlotRectangleShapeConfig(const std::vector<RectangleShapeConfig>& configs)
+void CalendarPage::ReceiveRectangleShapeConfig(const std::vector<RectangleShapeConfig>& configs)
 {
 	element_configurations = configs;
 	
@@ -258,9 +209,9 @@ void CalendarPage::SlotRectangleShapeConfig(const std::vector<RectangleShapeConf
 	Update();
 }
 
-void CalendarPage::SlotCalendarConfig(const CalendarConfig& config)
+void CalendarPage::ReceiveCalendarConfig(const CalendarConfig& calendar_config)
 {
-	calendar_config = config;
+	this->calendar_config = calendar_config;
 
 	Update();
 }
@@ -290,26 +241,21 @@ void CalendarPage::Update()
 	calendar_frame = calendar_frame.Reduce(calendar_frame_margin);
 
 
-	if (calendar_config.auto_calendar_span == true && data_store.GetDateIntervalsSize() > 0)
+	if (calendar_config.auto_calendar_span == true && data_store.is_empty() == false)
 	{
-		calendar_span.SetSpan(data_store.GetFirstYear(), data_store.GetLastYear());
+		calendar_config.SetSpan(data_store.GetFirstYear(), data_store.GetLastYear());
 	}
 
-	if (calendar_config.auto_calendar_span == false)
-	{
-		calendar_span.SetSpan(calendar_config.GetCalendarSpan().first, calendar_config.GetCalendarSpan().second);
-	}
-	
 
 	const size_t additional_rows = 2;
-	size_t number_rows = additional_rows + calendar_span.GetSpanSize();
+	size_t number_rows = additional_rows + calendar_config.GetSpanLengthYears();
 
 	cell_width = calendar_frame.Width() / 13.0f;
 	row_height = calendar_frame.Height() / static_cast<float>(number_rows);
 
 	cells_frame = calendar_frame.Reduce(rect4(cell_width, row_height * 2.0f, 0.0f, 0.0f));
 
-	row_frames.SetupRowFrames(cells_frame, calendar_span.GetSpanSize());
+	row_frames.SetupRowFrames(cells_frame, calendar_config.GetSpanLengthYears());
 	row_frames.SetupSubFrames(calendar_config.spacing_proportions);
 	
 	day_width = cells_frame.Width() / 366.f;
@@ -395,10 +341,10 @@ void CalendarPage::SetupCalendarLabelsShape()
 	column_labels_shape->SetShapes(x_label_frames, config.LineWidth(), config.FillColor(), config.OutlineColor());
 
 	graphic_engine->RemoveShapes(annual_labels_text);
-	annual_labels_text = graphic_engine->AddShapes<FontShape>(calendar_span.GetSpanSize());
+	annual_labels_text = graphic_engine->AddShapes<FontShape>(calendar_config.GetSpanLengthYears());
 
-	std::vector<rect4> y_labels_rows(calendar_span.GetSpanSize());
-	for (int index = 0; index < calendar_span.GetSpanSize(); ++index)
+	std::vector<rect4> y_labels_rows(calendar_config.GetSpanLengthYears());
+	for (int index = 0; index < calendar_config.GetSpanLengthYears(); ++index)
 	{
 		float float_index = static_cast<float>(index);
 
@@ -409,7 +355,7 @@ void CalendarPage::SetupCalendarLabelsShape()
 			y_labels_frame.Bottom() + row_height * float_index + row_height
 		);
 
-		std::wstring current_year_text = std::to_wstring(calendar_span.GetFirstYear() + index);
+		std::wstring current_year_text = std::to_wstring(calendar_config.GetYear(index));
 
 		annual_labels_text[index]->SetFont(font_loader);
 		annual_labels_text[index]->SetShapeCentered(current_year_text, y_labels_rows[index].Center(), labels_font_size);
@@ -424,12 +370,12 @@ void CalendarPage::SetupYearsShapes()
 	
 	
 	std::vector<rect4> years_cells;
-	years_cells.resize(calendar_span.GetSpanSize());
+	years_cells.resize(calendar_config.GetSpanLengthYears());
 	
-	for (int index = 0; index < calendar_span.GetSpanSize(); ++index)
+	for (int index = 0; index < calendar_config.GetSpanLengthYears(); ++index)
 	{
 		//float indexfloat = static_cast<float>(index);
-		int current_year = calendar_span.GetFirstYear() + index;
+		int current_year = calendar_config.GetYear(index);
 		int number_days = boost::gregorian::date_period(boost::gregorian::date(current_year, 1, 1), boost::gregorian::date(current_year + 1, 1, 1)).length().days();
 		float year_lenght = static_cast<float>(number_days) * day_width;
 
@@ -454,14 +400,14 @@ void CalendarPage::SetupYearsShapes()
 void CalendarPage::SetupMonthsShapes()
 {
 	const size_t number_months = 12;
-	size_t store_size = number_months * calendar_span.GetSpanSize();
+	size_t store_size = number_months * calendar_config.GetSpanLengthYears();
 	std::vector<rect4> months_cells;
 	months_cells.resize(store_size);
 
-	for (int index = 0; index < calendar_span.GetSpanSize(); ++index)
+	for (int index = 0; index < calendar_config.GetSpanLengthYears(); ++index)
 	{
 		//float index_float = static_cast<float>(index);
-		int current_year = calendar_span.GetFirstYear() + index;
+		int current_year = calendar_config.GetYear(index);
 		boost::gregorian::date first_day_of_year = boost::gregorian::date(current_year, 1, 1);
 
 		for (auto subindex = 0U; subindex < 12; ++subindex)
@@ -487,7 +433,7 @@ void CalendarPage::SetupMonthsShapes()
 
 inline void CalendarPage::SetupDaysShapes()
 {
-	if (calendar_span.IsValidSpan() == false)
+	if (calendar_config.IsValidSpan() == false)
 	{
 		return;
 	}
@@ -495,7 +441,7 @@ inline void CalendarPage::SetupDaysShapes()
 	int days_index = 0;
 	int number_days_cells = 0;
 
-	number_days_cells = boost::gregorian::date_period(boost::gregorian::date(calendar_span.GetFirstYear(), 1, 1), boost::gregorian::date(calendar_span.GetLastYear() + 1, 1, 1)).length().days();
+	number_days_cells = calendar_config.GetSpanLengthDays();
 
 	std::vector<rect4> days_cells(number_days_cells);
 	std::vector<float> days_cells_shape_linewidths(number_days_cells);
@@ -505,9 +451,9 @@ inline void CalendarPage::SetupDaysShapes()
 	auto config = GetShapeConfig(L"Day Shapes");
 	auto sunday_config = GetShapeConfig(L"Sunday Shapes");
 
-	for (int index = 0; index < calendar_span.GetSpanSize(); ++index)
+	for (int index = 0; index < calendar_config.GetSpanLengthYears(); ++index)
 	{
-		int current_year = calendar_span.GetFirstYear() + index;
+		int current_year = calendar_config.GetYear(index);
 		int number_days = boost::gregorian::date_period(boost::gregorian::date(current_year, 1, 1), boost::gregorian::date(current_year + 1, 1, 1)).length().days();
 
 		for (int subindex = 0; subindex < number_days; ++subindex)
@@ -524,7 +470,8 @@ inline void CalendarPage::SetupDaysShapes()
 
 			days_cells[days_index] = day_cell;
 
-			boost::gregorian::date current_date = boost::gregorian::date(calendar_span.GetFirstYear(), 1, 1) + boost::gregorian::date_duration(days_index);
+			boost::gregorian::date current_date = calendar_config.GetSpanLimitsDate()[0] + boost::gregorian::date_duration(days_index);
+
 			if (current_date.day_of_week() == boost::date_time::Sunday)
 			{
 				days_cells_shape_linewidths[days_index] = sunday_config.LineWidth();
@@ -565,7 +512,7 @@ void CalendarPage::SetupBarsShape()
 	
 	for (size_t index = 0; index < data_store.GetNumberBars(); ++index)
 	{
-		if (calendar_span.IsInSpan(data_store.GetBar(index).GetYear()))
+		if (calendar_config.IsInSpan(data_store.GetBar(index).GetYear()))
 		{
 			auto current_group = data_store.GetBar(index).group;
 			auto current_shape_config = bar_shape_configs[current_group];
@@ -574,7 +521,7 @@ void CalendarPage::SetupBarsShape()
 			bars_cells_shape_fillcolors.push_back(current_shape_config.FillColor());
 			bars_cells_shape_outlinecolors.push_back(current_shape_config.OutlineColor());
 
-			int row = data_store.GetBar(index).GetYear() - calendar_span.GetFirstYear();
+			int row = data_store.GetBar(index).GetYear() - calendar_config.GetSpanLimitsYears()[0];
 
 			auto current_sub_cell = row_frames.GetSubFrame(row, 1);
 
@@ -620,9 +567,9 @@ void CalendarPage::SetupYearsTotals()
 
 	for (size_t index = 0; index < data_store.GetSpan(); ++index)
 	{
-		if (calendar_span.IsInSpan(data_store.GetFirstYear() + index))
+		if (calendar_config.IsInSpan(data_store.GetFirstYear() + index))
 		{
-			int row = data_store.GetFirstYear() + index - calendar_span.GetFirstYear();
+			int row = data_store.GetFirstYear() + index - calendar_config.GetSpanLimitsYears()[0];
 
 			auto current_cell = row_frames.GetSubFrame(row, 0);
 
@@ -711,7 +658,7 @@ void CalendarPage::SetupLegend()
 			legend_text.back()->SetFont(font_loader);
 			legend_text.back()->SetShapeCentered(date_group_store.GetDateGroups()[index].name, legend_entries_frames[index * 2].Center(), legend_font_size);
 
-			if (calendar_span.GetSpanSize() > 0 && (bar_shape_configs.size() == date_group_store.GetDateGroups().size()))
+			if (calendar_config.GetSpanLengthYears() > 0 && (bar_shape_configs.size() == date_group_store.GetDateGroups().size()))
 			{
 				auto current_height = row_frames.GetSubFrame(0, 1).Height();
 
@@ -734,7 +681,7 @@ void CalendarPage::SetupLegend()
 		legend_text.back()->SetFont(font_loader);
 		legend_text.back()->SetShapeCentered(L"Annual Sums", legend_entries_frames[legend_entries_frames.size() - 2].Center(), legend_font_size);
 
-		if (calendar_span.GetSpanSize() > 0)
+		if (calendar_config.GetSpanLengthYears() > 0)
 		{
 			auto current_height = row_frames.GetSubFrame(0, 0).Height();
 

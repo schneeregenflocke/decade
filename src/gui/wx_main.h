@@ -19,6 +19,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #pragma once
 
+
 #include "gl_canvas.h"
 #include "../calendar_page.h"
 #include "../date_utils.h"
@@ -40,10 +41,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include <wx/notebook.h>
 #include <wx/splitter.h>
-#include <wx/platinfo.h>
-#include <wx/activityindicator.h>
-#include <wx/utils.h>
-#include <wx/intl.h>
+//#include <wx/platinfo.h>
+//#include <wx/activityindicator.h>
+//#include <wx/utils.h>
+//#include <wx/intl.h>
 
 #include <csv/reader.hpp>
 #include <csv/writer.hpp>
@@ -52,9 +53,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include <sigslot/signal.hpp>
 
-#include <cmath>
-#include <memory>
+#include <iostream>
 #include <string>
+#include <locale>
+#include <cmath>
 #include <memory>
 
 
@@ -84,7 +86,6 @@ private:
     
     void SlotImportCSV(wxCommandEvent& event);
     void SlotExportCSV(wxCommandEvent& event);
-    void ImportCSV(const std::string& filepath);
 
     void SlotExportPNG(wxCommandEvent& event);
 
@@ -107,7 +108,7 @@ private:
 
     DateGroupStore date_groups_store;
     DateIntervalBundleStore date_interval_bundle_store;
-    TransformDateIntervalBundle transformed_date_interval_bundle;
+    TransformDateIntervalBundle transform_date_interval_bundle;
 
     GLCanvas* glcanvas;
 

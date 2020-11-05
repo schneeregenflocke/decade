@@ -166,7 +166,7 @@ void ElementsSetupsPanel::SendDefaultValues()
 	signal_shape_config(element_configurations);
 }
 
-void ElementsSetupsPanel::UpdateGroups(const std::vector<DateGroup>& argument_date_groups)
+void ElementsSetupsPanel::ReceiveDateGroups(const std::vector<DateGroup>& argument_date_groups)
 {
 	auto current_dynamic_elements = element_configurations.size() - number_static_elements;
 

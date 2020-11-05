@@ -20,16 +20,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include "date_group_store.h"
 
 // call after connecting
-void DateGroupStore::InitDefault()
+void DateGroupStore::SendDefaultValues()
 {
 	std::vector<DateGroup> temporary_date_groups;
 
 	temporary_date_groups.push_back(DateGroup(L"Default"));
 
-	SetDateGroups(temporary_date_groups);
+	ReceiveDateGroups(temporary_date_groups);
 }
 
-void DateGroupStore::SetDateGroups(const std::vector<DateGroup>& date_groups)
+void DateGroupStore::ReceiveDateGroups(const std::vector<DateGroup>& date_groups)
 {
 	this->date_groups = date_groups;
 
@@ -110,7 +110,7 @@ void DateGroupStore::LoadXML(const pugi::xml_node& doc)
 	}
 
 	date_groups.clear();
-	SetDateGroups(temporary_date_groups);
+	ReceiveDateGroups(temporary_date_groups);
 }
 
 void DateGroupStore::SaveXML(pugi::xml_node* doc) const

@@ -35,7 +35,7 @@ struct date_format_descriptor
 date_format_descriptor InitDateFormat();
 
 std::string boost_date_to_string(const boost::gregorian::date& date_variable);
-boost::gregorian::date string_to_boost_date(std::string date_string, const date_format_descriptor& format);
+boost::gregorian::date string_to_boost_date(const std::string& date_string, const date_format_descriptor& format);
 
 int CheckDateInterval(const boost::gregorian::date& begin_date, const boost::gregorian::date& end_date);
 int CheckAndAdjustDateInterval(boost::gregorian::date_period* date_interval);

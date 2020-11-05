@@ -30,22 +30,12 @@ extern "C"
 
 #endif
 
+
 wxIMPLEMENT_APP_NO_MAIN(App);
 
 
 int main(int argc, char* argv[])
 {
-    std::wcout << std::wstring(L"__cplusplus ") + std::to_wstring(__cplusplus) + '\n';
-
-#if defined _WIN32
-    std::wcout << L"_WIN32 " << _WIN32 << '\n';
-#endif
-
-#if defined _MSC_VER && _MSVC_LANG
-    std::wcout << L"_MSC_VER " << _MSC_VER << '\n';
-    std::wcout << L"_MSVC_LANG " << _MSVC_LANG << '\n';
-#endif
-
     wxEntryStart(argc, argv);
 
     wxTheApp->CallOnInit();
@@ -60,6 +50,8 @@ int main(int argc, char* argv[])
 
 bool App::OnInit()
 {
+    std::cout << std::wstring(L"__cplusplus ") + std::to_wstring(__cplusplus) + '\n';
+
     auto language = wxLocale::GetSystemLanguage();
     locale = std::make_unique<wxLocale>();
     auto init_locale_succeeded = locale->Init(language);
@@ -76,21 +68,21 @@ bool App::OnInit()
         wxPlatformInfo::Get().GetOSMicroVersion() << '\n';
 
     std::wcout << L"wxVERSION_STRING " << wxVERSION_STRING << '\n';
-
+    
     ////////////////////////////////////////////////////////////////////////////////
     
     main_window = new MainWindow("Decade", wxPoint(100, 100), wxSize(1280, 800));
+
     //main_window->Maximize();
     main_window->Show();
     main_window->Raise();
 
-    std::array<int, 2> gl_version{ 3, 2 };
-    
-    main_window->GetGLCanvas()->LoadOpenGL(gl_version);
+    std::wcout << "ContentScaleFactor " << main_window->GetContentScaleFactor() << '\n';
 
     ////////////////////////////////////////////////////////////////////////////////
 
-    std::wcout << "ContentScaleFactor " << main_window->GetContentScaleFactor() << '\n';
+    std::array<int, 2> gl_version{ 3, 2 };
+    main_window->GetGLCanvas()->LoadOpenGL(gl_version);
 
     return true;
 }
@@ -125,16 +117,16 @@ MainWindow::MainWindow(const wxString& title, const wxPoint& pos, const wxSize& 
 
     ////////////////////////////////////////////////////////////////////////////////
 
-    date_groups_table_panel = new DateGroupsTablePanel(notebook);
     data_table_panel = new DateTablePanel(notebook);
+    date_groups_table_panel = new DateGroupsTablePanel(notebook);
     calendar_setup_panel = new CalendarSetupPanel(notebook);
     elements_setup_panel = new ElementsSetupsPanel(notebook);
     page_setup_panel = new PageSetupPanel(notebook);
     font_setup_panel = new FontSetupPanel(notebook);
     title_setup_panel = new TitleSetupPanel(notebook);
     
-    notebook->AddPage(date_groups_table_panel, date_groups_table_panel->GetPanelName());
     notebook->AddPage(data_table_panel, L"Date Table");
+    notebook->AddPage(date_groups_table_panel, L"Date Table");
     notebook->AddPage(calendar_setup_panel, L"Calendar Setup");
     notebook->AddPage(elements_setup_panel, L"Elements Setup");
     notebook->AddPage(page_setup_panel, L"Page Setup");
@@ -148,13 +140,9 @@ MainWindow::MainWindow(const wxString& title, const wxPoint& pos, const wxSize& 
     bool display_supported = wxGLCanvas::IsDisplaySupported(attributes);
     std::cout << "wxGLCanvas IsDisplaySupported " << std::boolalpha << display_supported << '\n';
 
-    ////////////////////////////////////////////////////////////////////////////////
-
     wxPanel* glcanvas_panel = new wxPanel(main_splitter, wxID_ANY);
-
     wxBoxSizer* glcanvas_panel_sizer = new wxBoxSizer(wxVERTICAL);
     glcanvas_panel->SetSizer(glcanvas_panel_sizer);
-
     glcanvas = new GLCanvas(glcanvas_panel, attributes);
     glcanvas_panel_sizer->Add(glcanvas, sizer_flags);
     
@@ -190,44 +178,52 @@ void MainWindow::OpenGLReady()
 
 void MainWindow::EstablishConnections()
 {
-    date_groups_table_panel->signal_table_date_groups.connect(&DateGroupStore::SetDateGroups, &date_groups_store);
-
-    date_groups_store.signal_date_groups.connect(&DateGroupsTablePanel::ReceiveDateGroups, date_groups_table_panel);
-    date_groups_store.signal_date_groups.connect(&DateIntervalBundleStore::SetDateGroups, &date_interval_bundle_store);
-    date_groups_store.signal_date_groups.connect(&CalendarPage::ReceiveDateGroups, calendar.get());
-    date_groups_store.signal_date_groups.connect(&DateTablePanel::ReceiveDateGroups, data_table_panel);
-    date_groups_store.signal_date_groups.connect(&ElementsSetupsPanel::UpdateGroups, elements_setup_panel);
-
+    // Connections date_interval_bundle_store <-> data_table_panel
     date_interval_bundle_store.signal_date_interval_bundles.connect(&DateTablePanel::ReceiveDateIntervalBundles, data_table_panel);
-    data_table_panel->signal_table_date_interval_bundles.connect(&DateIntervalBundleStore::SetDateIntervalBundles, &date_interval_bundle_store);
+    data_table_panel->signal_table_date_interval_bundles.connect(&DateIntervalBundleStore::ReceiveDateIntervalBundles, &date_interval_bundle_store);
 
-    transformed_date_interval_bundle.SetTransform(0, 1);
-    date_interval_bundle_store.signal_date_interval_bundles.connect(&TransformDateIntervalBundle::InputDateIntervals, &transformed_date_interval_bundle);
-    transformed_date_interval_bundle.signal_transformed_date_interval_bundles.connect(&CalendarPage::ReceiveDateIntervalBundles, calendar.get());
-
+    // Connect date_interval_bundle_store -> transform_date_interval_bundle -> calendar
+    date_interval_bundle_store.signal_date_interval_bundles.connect(&TransformDateIntervalBundle::ReceiveDateIntervalBundles, &transform_date_interval_bundle);
+    transform_date_interval_bundle.SetTransform(0, 1);
+    transform_date_interval_bundle.signal_transform_date_interval_bundles.connect(&CalendarPage::ReceiveDateIntervalBundles, calendar.get());
+    
+    // Connections date_groups_store <-> date_groups_panel
+    date_groups_store.signal_date_groups.connect(&DateGroupsTablePanel::ReceiveDateGroups, date_groups_table_panel);
+    date_groups_table_panel->signal_table_date_groups.connect(&DateGroupStore::ReceiveDateGroups, &date_groups_store);
+    
+    // Connections date_groups_store -> ...
+    date_groups_store.signal_date_groups.connect(&DateIntervalBundleStore::ReceiveDateGroups, &date_interval_bundle_store);
+    date_groups_store.signal_date_groups.connect(&DateTablePanel::ReceiveDateGroups, data_table_panel);
+    date_groups_store.signal_date_groups.connect(&ElementsSetupsPanel::ReceiveDateGroups, elements_setup_panel);
+    date_groups_store.signal_date_groups.connect(&CalendarPage::ReceiveDateGroups, calendar.get());
+    
+    // Connections page_setup_panel -> ...
     page_setup_panel->signal_page_size.connect(&CalendarPage::ReceivePageSize, calendar.get());
-    page_setup_panel->signal_page_margins.connect(&CalendarPage::SlotPageMargins, calendar.get());
+    page_setup_panel->signal_page_margins.connect(&CalendarPage::ReceivePageMargins, calendar.get());
     page_setup_panel->signal_page_size.connect(&GraphicEngine::ReceivePageSize, glcanvas->GetGraphicEngine());
     
-    font_setup_panel->signal_font_file_path.connect(&CalendarPage::SlotSelectFont, calendar.get());
+    // Connections font_setup_panel -> ...
+    font_setup_panel->signal_font_file_path.connect(&CalendarPage::ReceiveFont, calendar.get());
     
-    title_setup_panel->signal_frame_height.connect(&CalendarPage::SlotTitleFrameHeight, calendar.get());
-    title_setup_panel->signal_font_size_ratio.connect(&CalendarPage::SlotTitleFontSizeRatio, calendar.get());
-    title_setup_panel->signal_title_text.connect(&CalendarPage::SlotTitleText, calendar.get());
-    title_setup_panel->signal_text_color.connect(&CalendarPage::SlotTitleTextColor, calendar.get());
+    // Connections title_setup_panel -> ...
+    title_setup_panel->signal_frame_height.connect(&CalendarPage::ReceiveTitleFrameHeight, calendar.get());
+    title_setup_panel->signal_font_size_ratio.connect(&CalendarPage::ReceiveTitleFontSizeRatio, calendar.get());
+    title_setup_panel->signal_title_text.connect(&CalendarPage::ReceiveTitleText, calendar.get());
+    title_setup_panel->signal_text_color.connect(&CalendarPage::ReceiveTitleTextColor, calendar.get());
     
-    elements_setup_panel->signal_shape_config.connect(&CalendarPage::SlotRectangleShapeConfig, calendar.get());
+    // Connections elements_setup_panel -> ...
+    elements_setup_panel->signal_shape_config.connect(&CalendarPage::ReceiveRectangleShapeConfig, calendar.get());
     
-    calendar_setup_panel->signal_calendar_config.connect(&CalendarPage::SlotCalendarConfig, calendar.get());
+    // Connections calendar_setup_panel -> ...
+    calendar_setup_panel->signal_calendar_config.connect(&CalendarPage::ReceiveCalendarConfig, calendar.get());
 
-
-    date_groups_store.InitDefault();
-
+    // Send Default Values
+    date_groups_store.SendDefaultValues();
     page_setup_panel->SendDefaultValues();
     font_setup_panel->SendDefaultValues();
     title_setup_panel->SendDefaultValues();
     elements_setup_panel->SendDefaultValues();
-    calendar_setup_panel->SendCalendarConfig();
+    calendar_setup_panel->SendDefaultValues();
 }
 
 
@@ -261,7 +257,7 @@ void MainWindow::InitMenu()
     menu_file->Append(ID_SAVE_XML, L"&Save");
     menu_file->Append(ID_SAVE_AS_XML, L"&Save As...");
     menu_file->AppendSeparator();
-    menu_file->Append(ID_IMPORT_CSV, L"&Import csv...");
+    menu_file->Append(ID_IMPORT_CSV, L"&Append csv...");
     menu_file->Append(ID_EXPORT_CSV, L"&Export csv...");
     menu_file->AppendSeparator();
     menu_file->Append(ID_EXPORT_PNG, L"&Export png...");
@@ -280,36 +276,67 @@ void MainWindow::SlotExit(wxCommandEvent& event)
 
 void MainWindow::SlotImportCSV(wxCommandEvent& event)
 {
-    wxFileDialog openFileDialog(this, "Import file", wxEmptyString, wxEmptyString, "CSV and TXT files (*.csv;*.txt)|*.csv;*.txt", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+    wxFileDialog open_file_dialog(this, "Import file", wxEmptyString, wxEmptyString, "CSV and TXT files (*.csv;*.txt)|*.csv;*.txt", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 
-    if (openFileDialog.ShowModal() == wxID_OK)
+    if (open_file_dialog.ShowModal() == wxID_OK)
     {
-        std::string filePath = openFileDialog.GetPath().ToStdString();
+        std::string file_path = open_file_dialog.GetPath().ToStdString();
+        
+        csv::Reader csv_reader;
+        csv_reader.configure_dialect("custom_dialect")
+            .delimiter(",")
+            .header(false)
+            .skip_empty_rows(true);
 
-        ImportCSV(filePath);
+        csv_reader.read(file_path);
+
+        date_format_descriptor date_format = InitDateFormat();
+
+        std::vector<DateIntervalBundle> date_interval_bundles = date_interval_bundle_store.GetDateIntervalBundles();
+
+        while (csv_reader.busy())
+        {
+            if (csv_reader.ready())
+            {
+                auto row = csv_reader.next_row(); // auto& row = csv_reader.next_row();
+                
+                const auto begin_date_string = row[std::to_string(0)];
+                const auto end_date_string = row[std::to_string(1)];
+
+                const auto begin_date = string_to_boost_date(begin_date_string, date_format);
+                const auto end_date = string_to_boost_date(end_date_string, date_format);
+
+                DateIntervalBundle date_interval_bundle;
+                date_interval_bundle.date_interval = boost::gregorian::date_period(begin_date, end_date);
+                date_interval_bundles.push_back(date_interval_bundle);
+            }
+        }
+
+        date_interval_bundle_store.ReceiveDateIntervalBundles(date_interval_bundles);
     }
 }
 
 void MainWindow::SlotExportCSV(wxCommandEvent& event)
 {
-    wxFileDialog saveFileDialog(this, "Export file", wxEmptyString, wxEmptyString, "CSV and TXT files (*.csv;*.txt)|*.csv;*.txt", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+    wxFileDialog save_file_dialog(this, "Export file", wxEmptyString, wxEmptyString, "CSV and TXT files (*.csv;*.txt)|*.csv;*.txt", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
 
-    if (saveFileDialog.ShowModal() == wxID_OK)
+    if (save_file_dialog.ShowModal() == wxID_OK)
     {
-        std::string filePath = saveFileDialog.GetPath().ToStdString();
+        const std::string file_path = save_file_dialog.GetPath().ToStdString();
 
-        csv::Writer csv_writer(filePath.c_str());
+        csv::Writer csv_writer(file_path.c_str());
 
         csv_writer.configure_dialect("custom_dialect")
-            .delimiter("\t")
+            .delimiter(",")
             .header(false)
             .skip_empty_rows(true);
 
-        for(size_t index = 0; index < date_interval_bundle_store.GetDateIntervalsSize(); ++index)
+        const auto date_interval_bundles = date_interval_bundle_store.GetDateIntervalBundles();
+
+        for (size_t index = 0; index < date_interval_bundles.size(); ++index)
         {
-            auto begin_date = boost_date_to_string(date_interval_bundle_store.GetDateIntervalConstRef(index).begin());
-            auto last_date = boost_date_to_string(date_interval_bundle_store.GetDateIntervalConstRef(index).end());
-            
+            const auto begin_date = boost_date_to_string(date_interval_bundles[index].date_interval.begin());
+            const auto last_date = boost_date_to_string(date_interval_bundles[index].date_interval.end());
             csv_writer.write_row(begin_date, last_date);
         }
 
@@ -317,57 +344,6 @@ void MainWindow::SlotExportCSV(wxCommandEvent& event)
     }
 }
 
-void MainWindow::ImportCSV(const std::string& filepath)
-{
-    csv::Reader csv_reader;
-
-    csv_reader.configure_dialect("custom_dialect")
-        .delimiter("\t")
-        .header(false)
-        .skip_empty_rows(true);
-
-    csv_reader.read(filepath);
-
-    date_format_descriptor date_format = InitDateFormat();
-
-    std::vector<DateIntervalBundle> buffer;
-   
-    while (csv_reader.busy())
-    {
-        if (csv_reader.ready())
-        {
-            ////////////////////////////////////////////////////////////////////////////////
-            auto row = csv_reader.next_row(); // auto& row = csv_reader.next_row();
-
-            auto begin_date_string = row[std::to_string(0)];
-            auto end_date_string = row[std::to_string(1)];
-            
-            auto begin_date = string_to_boost_date(begin_date_string, date_format);
-            auto end_date = string_to_boost_date(end_date_string, date_format);
-            
-            // check for date_period
-            if ( (begin_date.is_special() || end_date.is_special() ) == false)
-            {
-                boost::gregorian::date_period date_interval(begin_date, end_date);
-
-                if (date_interval.is_null() == false)
-                {
-                    buffer.push_back(date_interval);
-                }
-            }
-
-            // check for single date
-            if ( begin_date.is_special() == false && end_date_string.empty() )
-            {
-                boost::gregorian::date_period date_interval(begin_date, begin_date);
-
-                buffer.push_back(date_interval);
-            }
-        }
-    }
-
-    date_interval_bundle_store.SetDateIntervalBundles(buffer);
-}
 
 void MainWindow::SlotExportPNG(wxCommandEvent& event)
 {
@@ -429,6 +405,7 @@ void MainWindow::SaveXML(const std::wstring& filepath)
     doc.save_file(filepath.c_str());
 }
 
+
 void MainWindow::LoadXML(const std::wstring& filepath)
 {
     pugi::xml_document doc;
@@ -443,6 +420,7 @@ void MainWindow::LoadXML(const std::wstring& filepath)
         calendar_setup_panel->LoadXML(doc);
     }
 }
+
 
 void MainWindow::SlotLicenseInfo(wxCommandEvent& event)
 {

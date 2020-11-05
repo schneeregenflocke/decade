@@ -35,7 +35,7 @@ void CalendarSetupPanel::LoadXML(const pugi::xml_node& node)
 
 	auto lower_limit = calendar_setup_node.child(L"span_lower_limit").attribute(L"span_lower_limit").as_int();
 	auto upper_limit = calendar_setup_node.child(L"span_upper_limit").attribute(L"span_upper_limit").as_int();
-	calendar_config.SetCalendarSpan(lower_limit, upper_limit);
+	calendar_config.SetSpan(lower_limit, upper_limit);
 	
 	ActualizePropertyGridValues();
 
@@ -54,6 +54,6 @@ void CalendarSetupPanel::SaveXML(pugi::xml_node* node)
 	}
 
 	calendar_setup_node.append_child(L"auto_calendar_span").append_attribute(L"auto_calendar_span").set_value(calendar_config.auto_calendar_span);
-	calendar_setup_node.append_child(L"span_lower_limit").append_attribute(L"span_lower_limit").set_value(calendar_config.GetCalendarSpan().first);
-	calendar_setup_node.append_child(L"span_upper_limit").append_attribute(L"span_upper_limit").set_value(calendar_config.GetCalendarSpan().second);
+	calendar_setup_node.append_child(L"span_lower_limit").append_attribute(L"span_lower_limit").set_value(calendar_config.GetSpanLimitsYears()[0]);
+	calendar_setup_node.append_child(L"span_upper_limit").append_attribute(L"span_upper_limit").set_value(calendar_config.GetSpanLimitsYears()[1]);
 }

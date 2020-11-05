@@ -54,11 +54,11 @@ class DateGroupStore
 {
 public:
 
-	void SetDateGroups(const std::vector<DateGroup>& date_groups);
+	void ReceiveDateGroups(const std::vector<DateGroup>& date_groups);
 
 	std::vector<DateGroup> GetDateGroups() const;
 
-	void InitDefault();
+	void SendDefaultValues();
 
 	int GetNumber(const std::wstring& name) const;
 	std::wstring GetName(int number) const;
