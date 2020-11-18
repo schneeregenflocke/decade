@@ -21,20 +21,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 void CalendarSetupPanel::LoadXML(const pugi::xml_node& node)
 {
-	auto calendar_setup_node = node.child(L"calendar_setup");
+	auto calendar_setup_node = node.child("calendar_setup");
 
 	calendar_config.spacing_proportions.clear();
 
-	auto subrow_proportions_node = calendar_setup_node.child(L"spacing_proportions");
-	for (auto& proportion : subrow_proportions_node.children(L"proportion"))
+	auto subrow_proportions_node = calendar_setup_node.child("spacing_proportions");
+	for (auto& proportion : subrow_proportions_node.children("proportion"))
 	{
-		calendar_config.spacing_proportions.push_back(proportion.attribute(L"proportion").as_double());
+		calendar_config.spacing_proportions.push_back(proportion.attribute("proportion").as_double());
 	}
 
-	calendar_config.auto_calendar_span = calendar_setup_node.child(L"auto_calendar_span").attribute(L"auto_calendar_span").as_bool();
+	calendar_config.auto_calendar_span = calendar_setup_node.child("auto_calendar_span").attribute("auto_calendar_span").as_bool();
 
-	auto lower_limit = calendar_setup_node.child(L"span_lower_limit").attribute(L"span_lower_limit").as_int();
-	auto upper_limit = calendar_setup_node.child(L"span_upper_limit").attribute(L"span_upper_limit").as_int();
+	auto lower_limit = calendar_setup_node.child("span_lower_limit").attribute("span_lower_limit").as_int();
+	auto upper_limit = calendar_setup_node.child("span_upper_limit").attribute("span_upper_limit").as_int();
 	calendar_config.SetSpan(lower_limit, upper_limit);
 	
 	ActualizePropertyGridValues();
@@ -44,16 +44,16 @@ void CalendarSetupPanel::LoadXML(const pugi::xml_node& node)
 
 void CalendarSetupPanel::SaveXML(pugi::xml_node* node) 
 {
-	auto calendar_setup_node = node->append_child(L"calendar_setup");
+	auto calendar_setup_node = node->append_child("calendar_setup");
 
-	auto subrow_proportions_node = calendar_setup_node.append_child(L"spacing_proportions");
+	auto subrow_proportions_node = calendar_setup_node.append_child("spacing_proportions");
 	for (const auto& proportion : calendar_config.spacing_proportions)
 	{
-		auto proportion_node = subrow_proportions_node.append_child(L"proportion");
-		proportion_node.append_attribute(L"proportion").set_value(proportion);
+		auto proportion_node = subrow_proportions_node.append_child("proportion");
+		proportion_node.append_attribute("proportion").set_value(proportion);
 	}
 
-	calendar_setup_node.append_child(L"auto_calendar_span").append_attribute(L"auto_calendar_span").set_value(calendar_config.auto_calendar_span);
-	calendar_setup_node.append_child(L"span_lower_limit").append_attribute(L"span_lower_limit").set_value(calendar_config.GetSpanLimitsYears()[0]);
-	calendar_setup_node.append_child(L"span_upper_limit").append_attribute(L"span_upper_limit").set_value(calendar_config.GetSpanLimitsYears()[1]);
+	calendar_setup_node.append_child("auto_calendar_span").append_attribute("auto_calendar_span").set_value(calendar_config.auto_calendar_span);
+	calendar_setup_node.append_child("span_lower_limit").append_attribute("span_lower_limit").set_value(calendar_config.GetSpanLimitsYears()[0]);
+	calendar_setup_node.append_child("span_upper_limit").append_attribute("span_upper_limit").set_value(calendar_config.GetSpanLimitsYears()[1]);
 }

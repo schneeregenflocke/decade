@@ -105,10 +105,3 @@ void GraphicEngine::RenderToPNG(const std::wstring& file_path)
 	renderToPng.SavePicture(file_path);
 }
 
-void GraphicEngine::ReceivePageSize(const std::array<float, 2> page_size)
-{
-	this->page_size = rect4(page_size[0], page_size[1]);
-}
-
-
-

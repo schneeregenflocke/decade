@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 */
 
 
-#include "wx_main.h"
+#include "main.h"
 
 
 #ifdef _WIN32
@@ -90,7 +90,7 @@ bool App::OnInit()
 
 MainWindow::MainWindow(const wxString& title, const wxPoint& pos, const wxSize& size) :
     wxFrame(nullptr, wxID_ANY, title, pos, size),
-    current_xml_file_path(L""),
+    current_xml_file_path(""),
     ID_SAVE_XML(NewControlId()),
     ID_SAVE_AS_XML(NewControlId())
 {
@@ -125,13 +125,13 @@ MainWindow::MainWindow(const wxString& title, const wxPoint& pos, const wxSize& 
     font_setup_panel = new FontSetupPanel(notebook);
     title_setup_panel = new TitleSetupPanel(notebook);
     
-    notebook->AddPage(data_table_panel, L"Date Table");
-    notebook->AddPage(date_groups_table_panel, L"Date Table");
-    notebook->AddPage(calendar_setup_panel, L"Calendar Setup");
-    notebook->AddPage(elements_setup_panel, L"Elements Setup");
-    notebook->AddPage(page_setup_panel, L"Page Setup");
-    notebook->AddPage(font_setup_panel, L"Font Setup");
-    notebook->AddPage(title_setup_panel, L"Title Setup");
+    notebook->AddPage(data_table_panel, "Date Table");
+    notebook->AddPage(date_groups_table_panel, "Date Groups");
+    notebook->AddPage(calendar_setup_panel, "Calendar Setup");
+    notebook->AddPage(elements_setup_panel, "Elements Setup");
+    notebook->AddPage(page_setup_panel, "Page Setup");
+    notebook->AddPage(font_setup_panel, "Font Setup");
+    notebook->AddPage(title_setup_panel, "Title Setup");
     
     ////////////////////////////////////////////////////////////////////////////////
 
@@ -196,11 +196,14 @@ void MainWindow::EstablishConnections()
     date_groups_store.signal_date_groups.connect(&DateTablePanel::ReceiveDateGroups, data_table_panel);
     date_groups_store.signal_date_groups.connect(&ElementsSetupsPanel::ReceiveDateGroups, elements_setup_panel);
     date_groups_store.signal_date_groups.connect(&CalendarPage::ReceiveDateGroups, calendar.get());
+
+    // Connections page_setup_store <-> page_setup_panel
+    page_setup_store.signal_page_setup_config.connect(&PageSetupPanel::ReceivePageSetup, page_setup_panel);
+    page_setup_panel->signal_page_setup_config.connect(&PageSetupStore::ReceivePageSetup, &page_setup_store);
     
-    // Connections page_setup_panel -> ...
-    page_setup_panel->signal_page_size.connect(&CalendarPage::ReceivePageSize, calendar.get());
-    page_setup_panel->signal_page_margins.connect(&CalendarPage::ReceivePageMargins, calendar.get());
-    page_setup_panel->signal_page_size.connect(&GraphicEngine::ReceivePageSize, glcanvas->GetGraphicEngine());
+    // Connections page_setup -> ...
+    page_setup_store.signal_page_setup_config.connect(&CalendarPage::ReceivePageSetup, calendar.get());
+    page_setup_store.signal_page_setup_config.connect(&GraphicEngine::ReceivePageSetup, glcanvas->GetGraphicEngine());
     
     // Connections font_setup_panel -> ...
     font_setup_panel->signal_font_file_path.connect(&CalendarPage::ReceiveFont, calendar.get());
@@ -360,11 +363,9 @@ void MainWindow::SlotLoadXML(wxCommandEvent& event)
 {
     wxFileDialog openFileDialog(this, "Open File", wxEmptyString, wxEmptyString, "XML Files (*.xml)|*.xml", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
     
-    //auto window_disabler = wxWindowDisabler(&openFileDialog);
-    
     if (openFileDialog.ShowModal() == wxID_OK)
     {
-        std::wstring file_path = openFileDialog.GetPath().ToStdWstring();
+        std::string file_path = openFileDialog.GetPath().ToStdString();
         LoadXML(file_path);
         current_xml_file_path = file_path;
     }
@@ -384,21 +385,30 @@ void MainWindow::SlotSaveXML(wxCommandEvent& event)
 
         if (saveFileDialog.ShowModal() == wxID_OK)
         {
-            std::wstring file_path = saveFileDialog.GetPath().ToStdWstring();
+            std::string file_path = saveFileDialog.GetPath().ToStdString();
             SaveXML(file_path);
             current_xml_file_path = file_path;
         }
     }
 }
 
-void MainWindow::SaveXML(const std::wstring& filepath)
+void MainWindow::SaveXML(const std::string& filepath)
 {
+    
+    std::ofstream filestream("testfile.txt");
+    boost::archive::text_oarchive oarchive(filestream);
+    oarchive << date_groups_store;
+    oarchive << date_interval_bundle_store;
+    oarchive << page_setup_store;
+    
+    
     pugi::xml_document doc;
 
-    date_groups_store.SaveXML(&doc);
-    date_interval_bundle_store.SaveXML(&doc);
-    page_setup_panel->SaveXML(&doc);
-    title_setup_panel->SaveToXML(&doc);
+    //date_groups_store.SaveXML(&doc);
+    //date_interval_bundle_store.SaveXML(&doc);
+    //page_setup_panel->SaveXML(&doc);
+    //
+    //title_setup_panel->SaveToXML(&doc);
     elements_setup_panel->SaveToXML(&doc);
     calendar_setup_panel->SaveXML(&doc);
     
@@ -406,16 +416,25 @@ void MainWindow::SaveXML(const std::wstring& filepath)
 }
 
 
-void MainWindow::LoadXML(const std::wstring& filepath)
+void MainWindow::LoadXML(const std::string& filepath)
 {
+    
+    std::ifstream filestream("testfile.txt");
+    boost::archive::text_iarchive oarchive(filestream);
+    oarchive >> date_groups_store;
+    oarchive >> date_interval_bundle_store;
+    oarchive >> page_setup_store;
+    
+
     pugi::xml_document doc;
     auto load_success = doc.load_file(filepath.c_str());
     if (load_success)
     {
-        date_groups_store.LoadXML(doc);
-        date_interval_bundle_store.LoadXML(doc);
-        page_setup_panel->LoadXML(doc);
-        title_setup_panel->LoadFromXML(doc);
+        //date_groups_store.LoadXML(doc);
+        //date_interval_bundle_store.LoadXML(doc);
+        //page_setup_panel->LoadXML(doc);
+        //
+        //title_setup_panel->LoadFromXML(doc);
         elements_setup_panel->LoadFromXML(doc);
         calendar_setup_panel->LoadXML(doc);
     }

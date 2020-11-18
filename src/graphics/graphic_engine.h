@@ -24,6 +24,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include "font.h"
 #include "RenderToTexture.h"
 
+#include "../page_config.h"
+
 #include <glm/ext/matrix_projection.hpp>
 
 #include <iostream>
@@ -108,7 +110,11 @@ public:
 	}
 
 	void RenderToPNG(const std::wstring& file_path);
-	void ReceivePageSize(const std::array<float, 2> page_size);
+
+	void ReceivePageSetup(const PageSetupConfig& page_setup_config)
+	{
+		this->page_size = rect4(page_setup_config.size[0], page_setup_config.size[1]);
+	}
 
 private:
 

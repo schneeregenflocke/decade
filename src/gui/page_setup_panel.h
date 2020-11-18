@@ -16,7 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 */
 
+
 #pragma once
+
+
+#include "../page_config.h"
+
+
 
 #ifdef WX_PRECOMP
 	#include <wx/wxprec.h>
@@ -39,55 +45,52 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include <wx/statbox.h>
 #include <wx/sizer.h>
 
-#include <memory>
-#include <array>
 
 #include <sigslot/signal.hpp>
 
-#include <pugixml.hpp>
 
 
-
-
-class PageSetupPanel : private wxPanel
+class PageSetupPanel : public wxPanel
 {
 public:
+
 	PageSetupPanel(wxWindow* parent);
 
-	friend class MainWindow;
+	void SendPageSetup();
+	void ReceivePageSetup(const PageSetupConfig& page_setup_config);
 
 	void SendDefaultValues();
 
-	void SaveXML(pugi::xml_node* doc);
-	void LoadXML(const pugi::xml_node& doc);
-
-	//std::array<float, 2> GetPageSize();
-	//std::array<float, 4> GetPageMargins();
-	//void SetPageSize(const std::array<float, 2>& value);
-	//void SetPageMargins(const std::array<float, 4>& value);
+	sigslot::signal<const PageSetupConfig&> signal_page_setup_config;
 
 private:
 
-	std::array<float, 2> page_size;
-	std::array<float, 4> page_margins;
+	void UpdateSpinControl()
+	{
+		const wxPrintData print_data = dialog_data.GetPrintData();
+		const wxSize paper_size = dialog_data.GetPaperSize();
 
-	void ScanPageSetupDialogData(const wxPageSetupDialogData& dialog_data);
-	void ScanData();
+		if (print_data.GetOrientation() == wxPORTRAIT)
+		{
+			page_width_spinctrl->SetValue(paper_size.x);
+			page_height_spinctrl->SetValue(paper_size.y);
+		}
+		if (print_data.GetOrientation() == wxLANDSCAPE)
+		{
+			page_width_spinctrl->SetValue(paper_size.y);
+			page_height_spinctrl->SetValue(paper_size.x);
+		}
+	}
 
 	void OnButtonClicked(wxCommandEvent& event);
 	void OnCheckboxClicked(wxCommandEvent& event);
 	void OnSpinControl(wxSpinDoubleEvent& event);
 
-	const int ID_PAGE_SETUP;
-	const int ID_CUSTOM_SIZE;
 	const int ID_PAGE_WIDTH;
 	const int ID_PAGE_HEIGHT;
 
-	std::unique_ptr<wxPageSetupDialogData> page_setup_dialog_data;
+	wxPageSetupDialogData dialog_data;
 
 	wxSpinCtrlDouble* page_width_spinctrl;
 	wxSpinCtrlDouble* page_height_spinctrl;
-
-	sigslot::signal<const std::array<float, 2>&> signal_page_size;
-	sigslot::signal<const std::array<float, 4>&> signal_page_margins;
 };

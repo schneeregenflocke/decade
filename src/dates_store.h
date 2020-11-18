@@ -25,6 +25,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include <sigslot/signal.hpp>
 
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/string.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/split_member.hpp>
+#include <boost/date_time/gregorian/greg_serialize.hpp>
+
 #include <fstream>
 #include <sstream>
 #include <array>
@@ -34,15 +40,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 
 
-struct DateIntervalBundle
+class DateIntervalBundle
 {
+public:
+
 	DateIntervalBundle() :
 		date_interval(boost::gregorian::date_period(boost::gregorian::date(boost::date_time::not_a_date_time), boost::gregorian::date(boost::date_time::not_a_date_time))),
 		date_inter_interval(boost::gregorian::date_period(boost::gregorian::date(boost::date_time::not_a_date_time), boost::gregorian::date(boost::date_time::not_a_date_time))),
 		number(0),
 		group(0),
 		group_number(0),
-		comment(L""),
+		comment(""),
 		exclude(false)
 	{};
 
@@ -52,7 +60,21 @@ struct DateIntervalBundle
 	int group;
 	int group_number;
 	bool exclude;
-	std::wstring comment;
+	std::string comment;
+
+private:
+	friend class boost::serialization::access;
+	template<class Archive>
+	void serialize(Archive& ar, const unsigned int version)
+	{
+		ar& date_interval;
+		ar& date_inter_interval;
+		ar& number;
+		ar& group;
+		ar& group_number;
+		ar& exclude;
+		ar& comment;
+	}
 };
 
 
@@ -61,16 +83,16 @@ class Bar
 public:
 	Bar(const boost::gregorian::date_period& date_interval) :
 		date_interval(date_interval),
-		text(L""),
+		text(""),
 		group(0)
 	{}
 
-	void SetText(const std::wstring text)
+	void SetText(const std::string text)
 	{
 		this->text = text;
 	}
 
-	std::wstring GetText() const
+	std::string GetText() const
 	{
 		return text;
 	}
@@ -99,7 +121,7 @@ public:
 
 private:
 	boost::gregorian::date_period date_interval;
-	std::wstring text;
+	std::string text;
 };
 
 
@@ -109,7 +131,6 @@ public:
 	virtual void ReceiveDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles)
 	{
 		ProcessDateIntervalBundles(date_interval_bundles);
-
 		signal_date_interval_bundles(this->date_interval_bundles);
 	}
 
@@ -150,16 +171,16 @@ public:
 
 	sigslot::signal<const std::vector<DateIntervalBundle>&> signal_date_interval_bundles;
 
-	void LoadXML(const pugi::xml_node& doc)
+	/*void LoadXML(const pugi::xml_node& doc)
 	{
-		auto base_node = doc.child(L"date_interval_bundles");
+		auto base_node = doc.child("date_interval_bundles");
 
 		std::vector<DateIntervalBundle> temporary_date_interval_bundles;
 
-		for (auto& node_interval : base_node.children(L"date_interval_bundle"))
+		for (auto& node_interval : base_node.children("date_interval_bundle"))
 		{
-			std::wstring begin_date_string = node_interval.attribute(L"begin_date").value();
-			std::wstring end_date_string = node_interval.attribute(L"end_date").value();
+			std::string begin_date_string = node_interval.attribute("begin_date").value();
+			std::string end_date_string = node_interval.attribute("end_date").value();
 
 			boost::gregorian::date boost_begin_date = boost::gregorian::from_undelimited_string(std::string(begin_date_string.begin(), begin_date_string.end()));
 			boost::gregorian::date boost_end_date = boost::gregorian::from_undelimited_string(std::string(end_date_string.begin(), end_date_string.end()));
@@ -167,37 +188,37 @@ public:
 			DateIntervalBundle temporary_bundle;
 
 			temporary_bundle.date_interval = boost::gregorian::date_period(boost_begin_date, boost_end_date);
-			temporary_bundle.group = node_interval.attribute(L"group").as_int();
-			temporary_bundle.comment = node_interval.attribute(L"comment").value();
+			temporary_bundle.group = node_interval.attribute("group").as_int();
+			temporary_bundle.comment = node_interval.attribute("comment").value();
 
 			//copy constructor, default constructor, constructor??
 			temporary_date_interval_bundles.push_back(temporary_bundle);
 		}
 
 		ReceiveDateIntervalBundles(temporary_date_interval_bundles);
-	}
+	}*/
 
-	void SaveXML(pugi::xml_node* doc)
+	/*void SaveXML(pugi::xml_node* doc)
 	{
-		auto base_node = doc->append_child(L"date_interval_bundles");
+		auto base_node = doc->append_child("date_interval_bundles");
 
 		for (size_t index = 0; index < date_interval_bundles.size(); ++index)
 		{
-			auto node = base_node.append_child(L"date_interval_bundle");
+			auto node = base_node.append_child("date_interval_bundle");
 
-			auto attribute_begin_date = node.append_attribute(L"begin_date");
+			auto attribute_begin_date = node.append_attribute("begin_date");
 			std::string begin_date_iso_string = boost::gregorian::to_iso_string(date_interval_bundles[index].date_interval.begin());
 			attribute_begin_date.set_value(std::wstring(begin_date_iso_string.begin(), begin_date_iso_string.end()).c_str());
 
-			auto attribute_end_date = node.append_attribute(L"end_date");
+			auto attribute_end_date = node.append_attribute("end_date");
 			std::string end_date_iso_string = boost::gregorian::to_iso_string(date_interval_bundles[index].date_interval.end());
 			attribute_end_date.set_value(std::wstring(end_date_iso_string.begin(), end_date_iso_string.end()).c_str());
 
-			node.append_attribute(L"group").set_value(date_interval_bundles[index].group);
+			node.append_attribute("group").set_value(date_interval_bundles[index].group);
 
-			node.append_attribute(L"comment").set_value(date_interval_bundles[index].comment.c_str());
+			node.append_attribute("comment").set_value(date_interval_bundles[index].comment.c_str());
 		}
-	}
+	}*/
 
 protected:
 
@@ -232,6 +253,20 @@ protected:
 	DateGroupStore date_group_store;
 
 private:
+
+	friend class boost::serialization::access;
+	template<class Archive>
+	void save(Archive& ar, const unsigned int version) const
+	{
+		ar& date_interval_bundles;
+	}
+	template<class Archive>
+	void load(Archive& ar, const unsigned int version)
+	{
+		ar& date_interval_bundles;
+		signal_date_interval_bundles(date_interval_bundles);
+	}
+	BOOST_SERIALIZATION_SPLIT_MEMBER()
 
 	void Sort()
 	{
@@ -410,14 +445,14 @@ private:
 				Bar bar(splitDatePeriods[subindex]);
 				if (date_interval_bundles[index].exclude == false)
 				{
-					bar.SetText(std::to_wstring(date_interval_bundles[index].number + 1));
+					bar.SetText(std::to_string(date_interval_bundles[index].number + 1));
 				}
 				if (date_interval_bundles[index].exclude == true)
 				{
-					std::wstring text_part_0 = std::to_wstring(date_interval_bundles[index].group);
-					std::wstring text_part_1 = std::to_wstring(date_interval_bundles[index].group_number);
+					std::string text_part_0 = std::to_string(date_interval_bundles[index].group);
+					std::string text_part_1 = std::to_string(date_interval_bundles[index].group_number);
 
-					bar.SetText(std::wstring(L"E") + text_part_0 + std::wstring(L"N") + text_part_1);
+					bar.SetText(std::string("E") + text_part_0 + std::string("N") + text_part_1);
 				}
 
 				bar.group = date_interval_bundles[index].group;

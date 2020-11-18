@@ -35,14 +35,14 @@ ElementsSetupsPanel::ElementsSetupsPanel(wxWindow* parent) :
 
 	////////////////////////////////////////
 
-	element_configurations.emplace_back(L"Page Margin", true, false, 0.2f, glm::vec4(0.f, 0.f, 0.f, 1.f), glm::vec4(1.f, 1.f, 1.f, 0.f));
-	element_configurations.emplace_back(L"Title Frame", true, false, 0.5f, glm::vec4(0.1f, 0.1f, 0.1f, 1.f), glm::vec4(1.f, 1.f, 1.f, 0.f));
-	element_configurations.emplace_back(L"Calendar Labels", true, false, 0.1f, glm::vec4(0.75f, 0.75f, 0.75f, 0.25f), glm::vec4(0.f, 0.f, 0.f, 1.f));
-	element_configurations.emplace_back(L"Day Shapes", true, true, 0.2f, glm::vec4(0.85f, 0.85f, 0.85f, 1.f), glm::vec4(0.f, 0.f, 0.f, 0.f));
-	element_configurations.emplace_back(L"Sunday Shapes", true, true, 0.2f, glm::vec4(0.85f, 0.85f, 0.85f, 1.f), glm::vec4(0.85f, 0.85f, 0.85f, 1.f));
-	element_configurations.emplace_back(L"Months Shapes", true, false, 0.2f, glm::vec4(0.4f, 0.4f, 0.4f, 1.0f), glm::vec4(0.5f, 0.5f, 0.5f, 0.f));
-	element_configurations.emplace_back(L"Years Shapes", false, false, 0.2f, glm::vec4(0.25f, 0.25f, 0.25f, 1.f), glm::vec4(0.25f, 0.25f, 0.25f, 0.f));
-	element_configurations.emplace_back(L"Years Totals", false, true, 0.2f, glm::vec4(0.25f, 0.75f, 0.25f, 1.f), glm::vec4(0.25f, 0.75f, 0.25f, 1.f));
+	element_configurations.emplace_back("Page Margin", true, false, 0.2f, glm::vec4(0.f, 0.f, 0.f, 1.f), glm::vec4(1.f, 1.f, 1.f, 0.f));
+	element_configurations.emplace_back("Title Frame", true, false, 0.5f, glm::vec4(0.1f, 0.1f, 0.1f, 1.f), glm::vec4(1.f, 1.f, 1.f, 0.f));
+	element_configurations.emplace_back("Calendar Labels", true, false, 0.1f, glm::vec4(0.75f, 0.75f, 0.75f, 0.25f), glm::vec4(0.f, 0.f, 0.f, 1.f));
+	element_configurations.emplace_back("Day Shapes", true, true, 0.2f, glm::vec4(0.85f, 0.85f, 0.85f, 1.f), glm::vec4(0.f, 0.f, 0.f, 0.f));
+	element_configurations.emplace_back("Sunday Shapes", true, true, 0.2f, glm::vec4(0.85f, 0.85f, 0.85f, 1.f), glm::vec4(0.85f, 0.85f, 0.85f, 1.f));
+	element_configurations.emplace_back("Months Shapes", true, false, 0.2f, glm::vec4(0.4f, 0.4f, 0.4f, 1.0f), glm::vec4(0.5f, 0.5f, 0.5f, 0.f));
+	element_configurations.emplace_back("Years Shapes", false, false, 0.2f, glm::vec4(0.25f, 0.25f, 0.25f, 1.f), glm::vec4(0.25f, 0.25f, 0.25f, 0.f));
+	element_configurations.emplace_back("Years Totals", false, true, 0.2f, glm::vec4(0.25f, 0.75f, 0.25f, 1.f), glm::vec4(0.25f, 0.75f, 0.25f, 1.f));
 	
 	number_static_elements = element_configurations.size();
 	
@@ -82,11 +82,11 @@ void ElementsSetupsPanel::InitWidgets()
 	linewidth_ctrl->SetIncrement(0.05);
 
 	wxSize default_label_size(150, -1);
-	linewidth_label = new wxStaticText(this, wxID_ANY, L"Line Width", wxDefaultPosition, default_label_size);
-	linecolor_label = new wxStaticText(this, wxID_ANY, L"Line Color", wxDefaultPosition, default_label_size);
-	fillcolor_label = new wxStaticText(this, wxID_ANY, L"Fill Color", wxDefaultPosition, default_label_size);
-	line_transparency_label = new wxStaticText(this, wxID_ANY, L"Transparency", wxDefaultPosition, default_label_size);
-	fill_transparency_label = new wxStaticText(this, wxID_ANY, L"Transparency", wxDefaultPosition, default_label_size);
+	linewidth_label = new wxStaticText(this, wxID_ANY, "Line Width", wxDefaultPosition, default_label_size);
+	linecolor_label = new wxStaticText(this, wxID_ANY, "Line Color", wxDefaultPosition, default_label_size);
+	fillcolor_label = new wxStaticText(this, wxID_ANY, "Fill Color", wxDefaultPosition, default_label_size);
+	line_transparency_label = new wxStaticText(this, wxID_ANY, "Transparency", wxDefaultPosition, default_label_size);
+	fill_transparency_label = new wxStaticText(this, wxID_ANY, "Transparency", wxDefaultPosition, default_label_size);
 
 	line_color_alpha_slider = new wxSlider(this, ID_LINE_ALPHA_SLIDER, 0, 0, 100, wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL );
 	fill_color_alpha_slider = new wxSlider(this, ID_FILL_ALPHA_SLIDER, 0, 0, 100, wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL );
@@ -103,9 +103,9 @@ void ElementsSetupsPanel::InitSizers()
 	SetSizer(vertical_sizer);
 
 
-	wxStaticBoxSizer* static_box_sizer_elements = new wxStaticBoxSizer(wxVERTICAL, this, L"Elements");
-	wxStaticBoxSizer* static_box_sizer_outline = new wxStaticBoxSizer(wxVERTICAL, this, L"Outline");
-	wxStaticBoxSizer* static_box_sizer_fill = new wxStaticBoxSizer(wxVERTICAL, this, L"Fill");
+	wxStaticBoxSizer* static_box_sizer_elements = new wxStaticBoxSizer(wxVERTICAL, this, "Elements");
+	wxStaticBoxSizer* static_box_sizer_outline = new wxStaticBoxSizer(wxVERTICAL, this, "Outline");
+	wxStaticBoxSizer* static_box_sizer_fill = new wxStaticBoxSizer(wxVERTICAL, this, "Fill");
 	
 	vertical_sizer->Add(static_box_sizer_elements, sizer_flags[0]);
 	vertical_sizer->Add(static_box_sizer_outline, sizer_flags[0]);
@@ -181,7 +181,7 @@ void ElementsSetupsPanel::ReceiveDateGroups(const std::vector<DateGroup>& argume
 
 		for (size_t index = start_index; index < argument_date_groups.size(); ++index)
 		{
-			RectangleShapeConfig temporary(std::wstring(L"Bar Group ") + std::to_wstring(index), true, true, 0.5f, glm::vec4(0.25f, 0.25f, 0.75f, 0.75f), glm::vec4(0.25f, 0.25f, 0.75f, 0.35f));
+			RectangleShapeConfig temporary(std::string("Bar Group ") + std::to_string(index), true, true, 0.5f, glm::vec4(0.25f, 0.25f, 0.75f, 0.75f), glm::vec4(0.25f, 0.25f, 0.75f, 0.35f));
 			temporary.RandomColor(0.75f);
 			element_configurations[number_static_elements + index] = temporary;
 		}
@@ -306,57 +306,57 @@ void ElementsSetupsPanel::SlotFillColorAlpha(wxCommandEvent& event)
 
 void ElementsSetupsPanel::SaveToXML(pugi::xml_node* node)
 {
-	auto child_node = node->append_child(L"elements_setup");
+	auto child_node = node->append_child("elements_setup");
 
 	for (const auto& element : element_configurations)
 	{
-		auto element_node = child_node.append_child(L"element");
+		auto element_node = child_node.append_child("element");
 
-		element_node.append_attribute(L"name").set_value(element.Name().c_str());
-		element_node.append_attribute(L"outline_visible").set_value(element.OutlineVisible());
-		element_node.append_attribute(L"fill_visible").set_value(element.FillVisible());
-		element_node.append_attribute(L"linewidth").set_value(element.LineWidth());
+		element_node.append_attribute("name").set_value(element.Name().c_str());
+		element_node.append_attribute("outline_visible").set_value(element.OutlineVisible());
+		element_node.append_attribute("fill_visible").set_value(element.FillVisible());
+		element_node.append_attribute("linewidth").set_value(element.LineWidth());
 
-		element_node.append_attribute(L"outline_color_r").set_value(element.OutlineColor().r);
-		element_node.append_attribute(L"outline_color_g").set_value(element.OutlineColor().g);
-		element_node.append_attribute(L"outline_color_b").set_value(element.OutlineColor().b);
-		element_node.append_attribute(L"outline_color_a").set_value(element.OutlineColor().a);
+		element_node.append_attribute("outline_color_r").set_value(element.OutlineColor().r);
+		element_node.append_attribute("outline_color_g").set_value(element.OutlineColor().g);
+		element_node.append_attribute("outline_color_b").set_value(element.OutlineColor().b);
+		element_node.append_attribute("outline_color_a").set_value(element.OutlineColor().a);
 
-		element_node.append_attribute(L"fill_color_r").set_value(element.FillColor().r);
-		element_node.append_attribute(L"fill_color_g").set_value(element.FillColor().g);
-		element_node.append_attribute(L"fill_color_b").set_value(element.FillColor().b);
-		element_node.append_attribute(L"fill_color_a").set_value(element.FillColor().a);
+		element_node.append_attribute("fill_color_r").set_value(element.FillColor().r);
+		element_node.append_attribute("fill_color_g").set_value(element.FillColor().g);
+		element_node.append_attribute("fill_color_b").set_value(element.FillColor().b);
+		element_node.append_attribute("fill_color_a").set_value(element.FillColor().a);
 	}
 }
 
 
 void ElementsSetupsPanel::LoadFromXML(const pugi::xml_node& node)
 {
-	auto child_node = node.child(L"elements_setup");
+	auto child_node = node.child("elements_setup");
 
-	for (auto& element_node : child_node.children(L"element"))
+	for (auto& element_node : child_node.children("element"))
 	{
-		auto element_name = element_node.attribute(L"name").as_string();
+		auto element_name = element_node.attribute("name").as_string();
 
 		auto config_iterator = RectangleShapeConfig::GetShapeConfig(element_name, &element_configurations);
 
-		config_iterator->OutlineVisible(element_node.attribute(L"outline_visible").as_bool());
-		config_iterator->FillVisible(element_node.attribute(L"fill_visible").as_bool());
-		config_iterator->LineWidth(element_node.attribute(L"linewidth").as_float());
+		config_iterator->OutlineVisible(element_node.attribute("outline_visible").as_bool());
+		config_iterator->FillVisible(element_node.attribute("fill_visible").as_bool());
+		config_iterator->LineWidth(element_node.attribute("linewidth").as_float());
 
 		glm::vec4 outline_color;
-		outline_color.r = element_node.attribute(L"outline_color_r").as_float();
-		outline_color.g = element_node.attribute(L"outline_color_g").as_float();
-		outline_color.b = element_node.attribute(L"outline_color_b").as_float();
-		outline_color.a = element_node.attribute(L"outline_color_a").as_float();
+		outline_color.r = element_node.attribute("outline_color_r").as_float();
+		outline_color.g = element_node.attribute("outline_color_g").as_float();
+		outline_color.b = element_node.attribute("outline_color_b").as_float();
+		outline_color.a = element_node.attribute("outline_color_a").as_float();
 
 		config_iterator->OutlineColor(outline_color);
 
 		glm::vec4 fill_color;
-		fill_color.r = element_node.attribute(L"fill_color_r").as_float();
-		fill_color.g = element_node.attribute(L"fill_color_g").as_float();
-		fill_color.b = element_node.attribute(L"fill_color_b").as_float();
-		fill_color.a = element_node.attribute(L"fill_color_a").as_float();
+		fill_color.r = element_node.attribute("fill_color_r").as_float();
+		fill_color.g = element_node.attribute("fill_color_g").as_float();
+		fill_color.b = element_node.attribute("fill_color_b").as_float();
+		fill_color.a = element_node.attribute("fill_color_a").as_float();
 
 		config_iterator->FillColor(fill_color);
 

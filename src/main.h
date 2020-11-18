@@ -19,18 +19,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #pragma once
 
+#include "calendar_page.h"
+#include "date_utils.h"
 
-#include "gl_canvas.h"
-#include "../calendar_page.h"
-#include "../date_utils.h"
-#include "date_groups_table.h"
-#include "date_table_panel.h"
-#include "page_setup.h"
-#include "font_setup.h"
-#include "title_setup.h"
-#include "elements_setup.h"
-#include "calendar_setup.h"
-#include "license_info.h"
+#include "gui/gl_canvas.h"
+#include "gui/date_groups_table.h"
+#include "gui/date_table_panel.h"
+#include "gui/page_setup_panel.h"
+#include "gui/font_setup.h"
+#include "gui/title_setup_panel.h"
+#include "gui/elements_setup.h"
+#include "gui/calendar_setup.h"
+#include "gui/license_info.h"
 
 
 #ifdef WX_PRECOMP
@@ -50,6 +50,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include <csv/writer.hpp>
 
 #include <pugixml.hpp>
+
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
 
 #include <sigslot/signal.hpp>
 
@@ -81,20 +84,21 @@ private:
 
     void SlotLoadXML(wxCommandEvent& event);
     void SlotSaveXML(wxCommandEvent& event);
-    void LoadXML(const std::wstring& filepath);
-    void SaveXML(const std::wstring& filepath);
+    void LoadXML(const std::string& filepath);
+    void SaveXML(const std::string& filepath);
+
+    const int ID_SAVE_XML;
+    const int ID_SAVE_AS_XML;
     
     void SlotImportCSV(wxCommandEvent& event);
     void SlotExportCSV(wxCommandEvent& event);
-
     void SlotExportPNG(wxCommandEvent& event);
-
     void SlotExit(wxCommandEvent& event);
-
     void SlotLicenseInfo(wxCommandEvent& event);
     
-    std::wstring current_xml_file_path;
+    std::string current_xml_file_path;
 
+    // wxWidgets Panels
     DateGroupsTablePanel* date_groups_table_panel;
     DateTablePanel* data_table_panel;
     CalendarSetupPanel* calendar_setup_panel;
@@ -102,18 +106,16 @@ private:
     PageSetupPanel* page_setup_panel;
     FontSetupPanel* font_setup_panel;
     TitleSetupPanel* title_setup_panel;
+    GLCanvas* glcanvas;
     
-
+    // 
     std::unique_ptr<CalendarPage> calendar;
 
     DateGroupStore date_groups_store;
     DateIntervalBundleStore date_interval_bundle_store;
     TransformDateIntervalBundle transform_date_interval_bundle;
 
-    GLCanvas* glcanvas;
-
-    const int ID_SAVE_XML;
-    const int ID_SAVE_AS_XML;
+    PageSetupStore page_setup_store;
 };
 
 

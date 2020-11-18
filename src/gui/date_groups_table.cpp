@@ -147,7 +147,7 @@ void DateGroupsTablePanel::OnItemEditing(wxDataViewEvent& event)
 		{
 			if (event.GetColumn() == 1)
 			{
-				auto edited_string = event.GetValue().GetString().ToStdWstring();
+				auto edited_string = event.GetValue().GetString().ToStdString();
 				data_table->SetValue(edited_string.c_str(), data_table->GetSelectedRow(), event.GetColumn());
 
 				date_groups[data_table->GetSelectedRow()].name = edited_string;
@@ -186,7 +186,7 @@ void DateGroupsTablePanel::OnButtonClicked(wxCommandEvent& event)
 
 		InsertRow(selected_row);
 
-		date_groups.insert(date_groups.cbegin() + selected_row, DateGroup(L""));
+		date_groups.insert(date_groups.cbegin() + selected_row, DateGroup(""));
 
 		signal_table_date_groups(date_groups);
 

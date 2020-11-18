@@ -80,11 +80,11 @@ class FontLoader
 {
 public:
 	FontLoader(const std::string& font_path);
-	Letter& GetLetterRef(size_t index);
+	Letter& GetLetterRef(const unsigned char index);
 
-	float TextWidth(const std::wstring& text, float size);
+	float TextWidth(const std::string& text, float size);
 	float TextHeight(float size);
-	float AdjustTextSize(const rect4& cell, std::wstring text, float height_ratio, float width_ratio);
+	float AdjustTextSize(const rect4& cell, std::string text, float height_ratio, float width_ratio);
 	
 private:
 	std::vector<Letter> letters;
@@ -97,8 +97,8 @@ public:
 
 	void SetFont(std::shared_ptr<FontLoader> font_loader);
 
-	void SetShapeCentered(const std::wstring& text, const glm::vec3& position, float size);
-	void SetShape(const std::wstring& text, const glm::vec3& position, float size);
+	void SetShapeCentered(const std::string& text, const glm::vec3& position, float size);
+	void SetShape(const std::string& text, const glm::vec3& position, float size);
 
 	void Draw() const override
 	{

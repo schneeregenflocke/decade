@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<title_setup frame_height="10" font_size_ratio="0.5" title_text="Title Text" />
+<elements_setup>
+	<element name="Page Margin" outline_visible="true" fill_visible="false" linewidth="0.200000003" outline_color_r="0" outline_color_g="0" outline_color_b="0" outline_color_a="1" fill_color_r="0" fill_color_g="0" fill_color_b="0" fill_color_a="0" />
+	<element name="Title Frame" outline_visible="true" fill_visible="false" linewidth="0.5" outline_color_r="0.100000001" outline_color_g="0.100000001" outline_color_b="0.100000001" outline_color_a="1" fill_color_r="0" fill_color_g="0" fill_color_b="0" fill_color_a="0" />
+	<element name="Calendar Labels" outline_visible="true" fill_visible="false" linewidth="0.100000001" outline_color_r="0.75" outline_color_g="0.75" outline_color_b="0.75" outline_color_a="0.25" fill_color_r="0" fill_color_g="0" fill_color_b="0" fill_color_a="0" />
+	<element name="Day Shapes" outline_visible="true" fill_visible="true" linewidth="0.200000003" outline_color_r="0.850000024" outline_color_g="0.850000024" outline_color_b="0.850000024" outline_color_a="1" fill_color_r="0" fill_color_g="0" fill_color_b="0" fill_color_a="0" />
+	<element name="Sunday Shapes" outline_visible="true" fill_visible="true" linewidth="0.200000003" outline_color_r="0.850000024" outline_color_g="0.850000024" outline_color_b="0.850000024" outline_color_a="1" fill_color_r="0.850000024" fill_color_g="0.850000024" fill_color_b="0.850000024" fill_color_a="1" />
+	<element name="Months Shapes" outline_visible="true" fill_visible="false" linewidth="0.200000003" outline_color_r="0.400000006" outline_color_g="0.400000006" outline_color_b="0.400000006" outline_color_a="1" fill_color_r="0" fill_color_g="0" fill_color_b="0" fill_color_a="0" />
+	<element name="Years Shapes" outline_visible="false" fill_visible="false" linewidth="0" outline_color_r="0" outline_color_g="0" outline_color_b="0" outline_color_a="0" fill_color_r="0" fill_color_g="0" fill_color_b="0" fill_color_a="0" />
+	<element name="Years Totals" outline_visible="false" fill_visible="true" linewidth="0" outline_color_r="0" outline_color_g="0" outline_color_b="0" outline_color_a="0" fill_color_r="0.25" fill_color_g="0.75" fill_color_b="0.25" fill_color_a="1" />
+	<element name="Bar Group 0" outline_visible="true" fill_visible="true" linewidth="0.5" outline_color_r="0.368441761" outline_color_g="0.261513978" outline_color_b="0.441438943" outline_color_a="0.375" fill_color_r="0.491255671" fill_color_g="0.348685294" fill_color_b="0.588585258" fill_color_a="0.5" />
+</elements_setup>
+<calendar_setup>
+	<spacing_proportions>
+		<proportion proportion="25" />
+		<proportion proportion="100" />
+		<proportion proportion="50" />
+		<proportion proportion="100" />
+		<proportion proportion="50" />
+		<proportion proportion="100" />
+		<proportion proportion="25" />
+	</spacing_proportions>
+	<auto_calendar_span auto_calendar_span="true" />
+	<span_lower_limit span_lower_limit="2000" />
+	<span_upper_limit span_upper_limit="2009" />
+</calendar_setup>

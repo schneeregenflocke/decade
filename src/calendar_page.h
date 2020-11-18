@@ -26,6 +26,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include "dates_store.h"
 #include "shape_config.h"
 #include "calendar_config.h"
+#include "page_config.h"
 
 #include <string>
 #include <memory>
@@ -68,17 +69,16 @@ public:
 
 	void ReceiveDateGroups(const std::vector<DateGroup>& date_groups);
 	void ReceiveDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles);
-	void ReceivePageSize(const std::array<float, 2>& page_size);
-	void ReceivePageMargins(const std::array<float, 4>& page_margins);
+	void ReceivePageSetup(const PageSetupConfig& page_setup_config);
 	void ReceiveFont(const std::string& font_path);
 	void ReceiveTitleFrameHeight(float height);
 	void ReceiveTitleFontSizeRatio(float ratio);
-	void ReceiveTitleText(const std::wstring& text);
+	void ReceiveTitleText(const std::string& text);
 	void ReceiveTitleTextColor(const std::array<float, 4>& title_text_color);
 	void ReceiveCalendarConfig(const CalendarConfig& calendar_config);
 
 	void ReceiveRectangleShapeConfig(const std::vector<RectangleShapeConfig>& configs);
-	RectangleShapeConfig GetShapeConfig(const std::wstring& name);
+	RectangleShapeConfig GetShapeConfig(const std::string& name);
 
 	void Update();
 
@@ -117,7 +117,7 @@ private:
 	float row_height;
 	float day_width;
 	float title_font_size_ratio;
-	std::wstring title_text;
+	std::string title_text;
 	glm::vec4 title_text_color;
 	float labels_font_size;
 

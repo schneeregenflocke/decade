@@ -133,17 +133,10 @@ void CalendarPage::ReceiveDateIntervalBundles(const std::vector<DateIntervalBund
 	Update();
 }
 
-void CalendarPage::ReceivePageSize(const std::array<float, 2>& page_size)
+void CalendarPage::ReceivePageSetup(const PageSetupConfig& page_setup_config)
 {
-	this->page_size = rect4(page_size[0], page_size[1]);
-
-	Update();
-}
-
-void CalendarPage::ReceivePageMargins(const std::array<float, 4>& page_margins)
-{
-	page_margin = rect4(page_margins[0], page_margins[1], page_margins[2], page_margins[3]);
-	
+	this->page_size = rect4(page_setup_config.size[0], page_setup_config.size[1]);
+	this->page_margin = rect4(page_setup_config.margins[0], page_setup_config.margins[1], page_setup_config.margins[2], page_setup_config.margins[3]);
 	Update();
 }
 
@@ -168,7 +161,7 @@ void CalendarPage::ReceiveTitleFontSizeRatio(float ratio)
 	Update();
 }
 
-void CalendarPage::ReceiveTitleText(const std::wstring& text)
+void CalendarPage::ReceiveTitleText(const std::string& text)
 {
 	title_text = text;
 
@@ -285,14 +278,14 @@ void CalendarPage::Update()
 
 void CalendarPage::SetupPrintAreaShape()
 {
-	auto config = GetShapeConfig(L"Page Margin");
+	auto config = GetShapeConfig("Page Margin");
 	
 	print_area_shape->SetShapes(page_margin_frame, config.LineWidth(), config.FillColor(), config.OutlineColor());
 }
 
 void CalendarPage::SetupTitleShape()
 {
-	auto config = GetShapeConfig(L"Title Frame");
+	auto config = GetShapeConfig("Title Frame");
 
 	title_area_shape->SetShapes(title_frame, config.LineWidth(), config.FillColor(), config.OutlineColor());
 
@@ -303,15 +296,15 @@ void CalendarPage::SetupTitleShape()
 
 void CalendarPage::SetupCalendarLabelsShape()
 {
-	std::array<wchar_t, 100> buf;
-	std::wstring format = L"%b";
+	std::array<char, 100> buf;
+	std::string format = "%b";
 
-	std::array<std::wstring, 12> months_names;
+	std::array<std::string, 12> months_names;
 	for (size_t index = 0; index < months_names.size(); ++index)
 	{
 		std::tm month_tm = { 0 };
 		month_tm.tm_mon = index;
-		auto len = std::wcsftime(buf.data(), sizeof(buf), format.c_str(), &month_tm);
+		auto len = std::strftime(buf.data(), sizeof(buf), format.c_str(), &month_tm);
 
 		months_names[index] = buf.data();
 	}
@@ -320,7 +313,7 @@ void CalendarPage::SetupCalendarLabelsShape()
 
 	if (font_loader)
 	{
-		labels_font_size = font_loader->AdjustTextSize(rect4(cell_width, row_height), L"00000", 0.5f, 0.75f);
+		labels_font_size = font_loader->AdjustTextSize(rect4(cell_width, row_height), "00000", 0.5f, 0.75f);
 	}
 	
 	for (size_t index = 0; index < months_names.size(); ++index)
@@ -336,7 +329,7 @@ void CalendarPage::SetupCalendarLabelsShape()
 		month_label_text[index]->SetShapeCentered(months_names[index], x_label_frames[index].Center(), labels_font_size);
 	}
 
-	auto config = GetShapeConfig(L"Calendar Labels");
+	auto config = GetShapeConfig("Calendar Labels");
 
 	column_labels_shape->SetShapes(x_label_frames, config.LineWidth(), config.FillColor(), config.OutlineColor());
 
@@ -355,7 +348,7 @@ void CalendarPage::SetupCalendarLabelsShape()
 			y_labels_frame.Bottom() + row_height * float_index + row_height
 		);
 
-		std::wstring current_year_text = std::to_wstring(calendar_config.GetYear(index));
+		std::string current_year_text = std::to_string(calendar_config.GetYear(index));
 
 		annual_labels_text[index]->SetFont(font_loader);
 		annual_labels_text[index]->SetShapeCentered(current_year_text, y_labels_rows[index].Center(), labels_font_size);
@@ -390,7 +383,7 @@ void CalendarPage::SetupYearsShapes()
 		years_cells[index] = year_cell;		
 	}
 
-	auto config = GetShapeConfig(L"Years Shapes");
+	auto config = GetShapeConfig("Years Shapes");
 
 	years_cells_shape->SetShapes(years_cells, config.LineWidth(), config.FillColor(), config.OutlineColor());
 }
@@ -426,7 +419,7 @@ void CalendarPage::SetupMonthsShapes()
 		}
 	}
 
-	auto config = GetShapeConfig(L"Months Shapes");
+	auto config = GetShapeConfig("Months Shapes");
 
 	months_cells_shape->SetShapes(months_cells, config.LineWidth(), config.FillColor(), config.OutlineColor());
 }
@@ -448,8 +441,8 @@ inline void CalendarPage::SetupDaysShapes()
 	std::vector<vec4> days_cells_shape_fillcolors(number_days_cells);
 	std::vector<vec4> days_cells_shape_outlinecolors(number_days_cells);
 
-	auto config = GetShapeConfig(L"Day Shapes");
-	auto sunday_config = GetShapeConfig(L"Sunday Shapes");
+	auto config = GetShapeConfig("Day Shapes");
+	auto sunday_config = GetShapeConfig("Sunday Shapes");
 
 	for (int index = 0; index < calendar_config.GetSpanLengthYears(); ++index)
 	{
@@ -533,7 +526,7 @@ void CalendarPage::SetupBarsShape()
 
 			bars_cells.push_back(bar_cell);
 
-			std::wstring numsText = data_store.GetBar(index).GetText();
+			std::string numsText = data_store.GetBar(index).GetText();
 
 			bar_labels_text.push_back(graphic_engine->AddShape<FontShape>());
 			bar_labels_text.back()->SetFont(font_loader);
@@ -588,9 +581,9 @@ void CalendarPage::SetupYearsTotals()
 
 			float percent = static_cast<float>(data_store.GetAnnualTotal(index)) / static_cast<float>(number_days);
 			
-			std::array<wchar_t, 100> year_total_text_buffer;
-			auto text_lenght = swprintf(year_total_text_buffer.data(), year_total_text_buffer.size(), L"%.*f %%", 1, percent * 100.0f);
-			auto year_total_text = std::wstring(year_total_text_buffer.data());
+			std::array<char, 100> year_total_text_buffer;
+			auto text_lenght = snprintf(year_total_text_buffer.data(), year_total_text_buffer.size(), "%.*f %%", 1, percent * 100.0f);
+			auto year_total_text = std::string(year_total_text_buffer.data());
 			auto year_total_text_width = font_loader->TextWidth(year_total_text, year_total_cell.Height());
 
 			rect4 year_total_text_cell;
@@ -606,7 +599,7 @@ void CalendarPage::SetupYearsTotals()
 		}
 	}
 
-	auto config = GetShapeConfig(L"Years Totals");
+	auto config = GetShapeConfig("Years Totals");
 
 	years_totals_shape->SetShapes(years_totals_cells, config.LineWidth(), config.FillColor(), config.OutlineColor());
 }
@@ -634,9 +627,9 @@ void CalendarPage::SetupLegend()
 
 	// find max lenght string
 	auto print_strings = date_group_store.GetDateGroupsNames();
-	print_strings.push_back(L"Annual Sums");
+	print_strings.push_back("Annual Sums");
 
-	std::wstring string_max_lenght = L"";
+	std::string string_max_lenght = "";
 	for (const auto& current_string : print_strings)
 	{
 		if (current_string.length() > string_max_lenght.length())
@@ -679,7 +672,7 @@ void CalendarPage::SetupLegend()
 
 		legend_text.push_back(graphic_engine->AddShape<FontShape>());
 		legend_text.back()->SetFont(font_loader);
-		legend_text.back()->SetShapeCentered(L"Annual Sums", legend_entries_frames[legend_entries_frames.size() - 2].Center(), legend_font_size);
+		legend_text.back()->SetShapeCentered("Annual Sums", legend_entries_frames[legend_entries_frames.size() - 2].Center(), legend_font_size);
 
 		if (calendar_config.GetSpanLengthYears() > 0)
 		{
@@ -692,7 +685,7 @@ void CalendarPage::SetupLegend()
 
 			bars_cells.push_back(current_cell);
 
-			auto current_shape_config = GetShapeConfig(L"Years Totals");
+			auto current_shape_config = GetShapeConfig("Years Totals");
 
 			bars_cells_shape_linewidths.push_back(current_shape_config.LineWidth());
 			bars_cells_shape_fillcolors.push_back(current_shape_config.FillColor());
@@ -705,7 +698,7 @@ void CalendarPage::SetupLegend()
 	//legend_shape->SetShapes(legend_entries_frames, 0.15f, vec4(1.f, 1.f, 1.f, 0.f), vec4(0.f, 0.f, 0.f, 1.f));
 }
 
-RectangleShapeConfig CalendarPage::GetShapeConfig(const std::wstring& name)
+RectangleShapeConfig CalendarPage::GetShapeConfig(const std::string& name)
 {
 	auto found = std::find(element_configurations.begin(), element_configurations.end(), name);
 	if (found != element_configurations.end())
@@ -713,7 +706,7 @@ RectangleShapeConfig CalendarPage::GetShapeConfig(const std::wstring& name)
 		return *found;
 	}
 	
-	return RectangleShapeConfig(L"Not Found");
+	return RectangleShapeConfig("Not Found");
 }
 
 

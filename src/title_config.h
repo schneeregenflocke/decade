@@ -16,5 +16,23 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 */
 
-#include "calendar_config.h"
+#pragma once
 
+
+struct TitleConfig
+{
+	float frame_height;
+	float font_size_ratio;
+	std::string title_text;
+	std::array<float, 4> text_color;
+};
+
+
+class TitleConfigStore
+{
+public:
+
+
+private:
+
+};

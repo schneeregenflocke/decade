@@ -246,7 +246,7 @@ private:
 				int group_number;
 				try
 				{
-					group_number = date_group_store.GetNumber(group_string.GetString().ToStdWstring());
+					group_number = date_group_store.GetNumber(group_string.GetString().ToStdString());
 				}
 				catch (...)
 				{

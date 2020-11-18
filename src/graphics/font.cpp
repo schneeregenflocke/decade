@@ -177,17 +177,18 @@ FontLoader::FontLoader(const std::string& font_path)
 	FT_Done_FreeType(ftlibrary);
 }
 
-Letter& FontLoader::GetLetterRef(size_t index)
+Letter& FontLoader::GetLetterRef(const unsigned char index)
 {
 	return letters[index];
 }
 
-float FontLoader::TextWidth(const std::wstring& text, float size)
+float FontLoader::TextWidth(const std::string& text, float size)
 {
 	float width = 0.f;
-	for (size_t index = 0; index < text.size(); ++index)
+	for (char index = 0; index < text.size(); ++index)
 	{
-		width += GetLetterRef(text[index]).advance * size;
+		const char letter_number = text[index];
+		width += GetLetterRef(letter_number).advance * size;
 	}
 
 	return width;
@@ -224,7 +225,7 @@ float FontLoader::TextHeight(float size)
 	return height;
 }
 
-float FontLoader::AdjustTextSize(const rect4& cell, std::wstring text, float height_ratio, float width_ratio)
+float FontLoader::AdjustTextSize(const rect4& cell, std::string text, float height_ratio, float width_ratio)
 {
 	float font_size = cell.Height() * height_ratio;
 
@@ -249,7 +250,7 @@ void FontShape::SetFont(std::shared_ptr<FontLoader> font_loader)
 }
 
 
-void FontShape::SetShapeCentered(const std::wstring& text, const glm::vec3& position, float size)
+void FontShape::SetShapeCentered(const std::string& text, const glm::vec3& position, float size)
 {
 	if (font_loader != nullptr)
 	{
@@ -260,7 +261,7 @@ void FontShape::SetShapeCentered(const std::wstring& text, const glm::vec3& posi
 	}
 }
 
-void FontShape::SetShape(const std::wstring& text, const glm::vec3& position, float size)
+void FontShape::SetShape(const std::string& text, const glm::vec3& position, float size)
 {
 	if (font_loader != nullptr)
 	{

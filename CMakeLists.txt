@@ -32,11 +32,11 @@ target_compile_definitions(Decade PUBLIC _CRT_SECURE_NO_WARNINGS)
 
 
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost COMPONENTS date_time)
+find_package(Boost REQUIRED COMPONENTS date_time serialization wserialization)
 
 message("Boost_FOUND: ${Boost_FOUND}")
 if(NOT ${Boost_FOUND})
-	message(FATAL_ERROR "Set directory path variable Boost_DIR to the directory containing the file BoostConfig.cmake (e.g. boost/stage/lib/cmake/Boost-1.74.0)")
+	message(FATAL_ERROR "Set directory path variable Boost_DIR to the directory containing the file BoostConfig.cmake (e.g. boost/stage/lib/cmake/Boost-x.xx.x)")
 endif()
 
 message("Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
@@ -44,7 +44,7 @@ message("Boost_LIBRARY_DIRS: ${Boost_LIBRARY_DIRS}")
 message("Boost_LIBRARIES: ${Boost_LIBRARIES}")
 
 target_include_directories(Decade PRIVATE ${Boost_INCLUDE_DIRS})
-#target_link_directories(Decade PRIVATE ${Boost_LIBRARY_DIRS})
+target_link_directories(Decade PRIVATE ${Boost_LIBRARY_DIRS})
 target_link_libraries(Decade PRIVATE ${Boost_LIBRARIES})
 
 
@@ -90,7 +90,7 @@ target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/csv" EXCLUDE_FROM_ALL)
 
 
-add_compile_definitions(PUGIXML_WCHAR_MODE)
+#add_compile_definitions(PUGIXML_WCHAR_MODE)
 target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/pugixml/include")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/pugixml" EXCLUDE_FROM_ALL)
 target_link_libraries(Decade PRIVATE pugixml)

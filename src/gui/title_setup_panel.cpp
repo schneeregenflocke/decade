@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 */
 
-#include "title_setup.h"
+#include "title_setup_panel.h"
 
 
 TitleSetupPanel::TitleSetupPanel(wxWindow* parent) :
@@ -29,7 +29,7 @@ TitleSetupPanel::TitleSetupPanel(wxWindow* parent) :
 	text_color{ 0.f, 0.f, 0.f, 1.f },
 	frame_height(10.f),
 	font_size_ratio(.5f),
-	title_text(L"Title Text")
+	title_text("Title Text")
 
 {
 	wxBoxSizer* vertical_sizer = new wxBoxSizer(wxVERTICAL);
@@ -103,58 +103,6 @@ TitleSetupPanel::TitleSetupPanel(wxWindow* parent) :
 	text_color_picker->SetColour(wxColour(0, 0, 0, 1));
 }
 
-/*float TitleSetupPanel::GetFrameHeight()
-{
-	return frame_height;
-}
-
-float TitleSetupPanel::GetFontSizeRatio()
-{
-	return font_size_ratio;
-}
-
-std::wstring TitleSetupPanel::GetTitleText()
-{
-	return title_text;
-}
-
-void TitleSetupPanel::SetFrameHeight(float value)
-{
-	frame_height = value;
-	UpdateWidgets();
-}
-
-void TitleSetupPanel::SetFontSizeRatio(float value)
-{
-	font_size_ratio = value;
-	UpdateWidgets();
-}
-
-void TitleSetupPanel::SetTitleText(const std::wstring& value)
-{
-	title_text = value;
-	UpdateWidgets();
-}*/
-
-void TitleSetupPanel::SaveToXML(pugi::xml_node* node)
-{
-	auto child_node = node->append_child(L"title_setup");
-
-	child_node.append_attribute(L"frame_height").set_value(frame_height);
-	child_node.append_attribute(L"font_size_ratio").set_value(font_size_ratio);
-	child_node.append_attribute(L"title_text").set_value(title_text.c_str());
-}
-
-void TitleSetupPanel::LoadFromXML(const pugi::xml_node& node)
-{
-	auto child_node = node.child(L"title_setup");
-
-	frame_height = child_node.attribute(L"frame_height").as_float();
-	font_size_ratio = child_node.attribute(L"font_size_ratio").as_float();
-	title_text = child_node.attribute(L"title_text").as_string();
-
-	UpdateWidgets();
-}
 
 void TitleSetupPanel::SendDefaultValues()
 {

@@ -41,7 +41,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include <sigslot/signal.hpp>
 
-#include <pugixml.hpp>
+
 
 
 
@@ -51,28 +51,19 @@ public:
 
 	TitleSetupPanel(wxWindow* parent);
 
-	//float GetFrameHeight();
-	//float GetFontSizeRatio();
-	//std::wstring GetTitleText();
-	//void SetFrameHeight(float value);
-	//void SetFontSizeRatio(float value);
-	//void SetTitleText(const std::wstring& value);
-
-	void SaveToXML(pugi::xml_node* node);
-	void LoadFromXML(const pugi::xml_node& node);
 
 	void SendDefaultValues();
 
 	sigslot::signal<float> signal_frame_height;
 	sigslot::signal<float> signal_font_size_ratio;
-	sigslot::signal<const std::wstring&> signal_title_text;
+	sigslot::signal<const std::string&> signal_title_text;
 	sigslot::signal<const std::array<float, 4>&> signal_text_color;
 
 private:
 
 	float frame_height;
 	float font_size_ratio;
-	std::wstring title_text;
+	std::string title_text;
 	std::array<float, 4> text_color;
 
 	void UpdateWidgets();
