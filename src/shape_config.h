@@ -175,7 +175,7 @@ private:
 };
 
 
-glm::vec4 to_glm_color(const wxColour& color)
+inline glm::vec4 to_glm_color(const wxColour& color)
 {
 	float ratio = 1.f / 255.f;
 
@@ -188,7 +188,7 @@ glm::vec4 to_glm_color(const wxColour& color)
 }
 
 
-wxColour to_wx_color(const glm::vec4& color)
+inline wxColour to_wx_color(const glm::vec4& color)
 {
 	unsigned char red = static_cast<unsigned char>(color.r * 255.f);
 	unsigned char green = static_cast<unsigned char>(color.g * 255.f);
