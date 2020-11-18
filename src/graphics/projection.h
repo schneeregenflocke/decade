@@ -62,9 +62,9 @@ public:
 		return ortho_matrix;
 	}
 
-	static glm::mat4 PerspectiveMatrix(const float fovy, const float near, const float far)
+	static glm::mat4 PerspectiveMatrix(const float fovy, const float z_near, const float z_far)
 	{
-		return glm::perspective(fovy, AspectRatio(), near, far);
+		return glm::perspective(fovy, AspectRatio(), z_near, z_far);
 	}
 
 	static glm::mat4 OrthoMatrixWidth(float width)

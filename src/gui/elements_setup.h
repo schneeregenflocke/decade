@@ -22,22 +22,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include "../date_group_store.h"
 
 
-#ifdef WX_PRECOMP
-#include <wx/wxprec.h>
-#else 
-#include <wx/wx.h>
-#endif
-
-#include <wx/panel.h>
-#include <wx/window.h>
-#include <wx/sizer.h>
-#include <wx/listbox.h>
-#include <wx/checkbox.h>
-#include <wx/stattext.h>
-#include <wx/spinctrl.h>
-#include <wx/clrpicker.h>
-#include <wx/slider.h>
-#include <wx/statbox.h>
+#include "wx_widgets_include.h"
 
 #include <array>
 #include <vector>
@@ -50,6 +35,30 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include <sigslot/signal.hpp>
 
 #include <pugixml.hpp>
+
+
+inline glm::vec4 to_glm_color(const wxColour& color)
+{
+	float ratio = 1.f / 255.f;
+
+	float red = static_cast<float>(color.Red()) * ratio;
+	float green = static_cast<float>(color.Green()) * ratio;
+	float blue = static_cast<float>(color.Blue()) * ratio;
+	float alpha = static_cast<float>(color.Alpha()) * ratio;
+
+	return glm::vec4(red, green, blue, alpha);
+}
+
+
+inline wxColour to_wx_color(const glm::vec4& color)
+{
+	unsigned char red = static_cast<unsigned char>(color.r * 255.f);
+	unsigned char green = static_cast<unsigned char>(color.g * 255.f);
+	unsigned char blue = static_cast<unsigned char>(color.b * 255.f);
+	unsigned char alpha = static_cast<unsigned char>(color.a * 255.f);
+
+	return wxColour(red, green, blue, alpha);
+}
 
 
 class ElementsSetupsPanel : public wxPanel

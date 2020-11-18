@@ -19,35 +19,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #pragma once
 
-
 #include "../page_config.h"
 
-
-
-#ifdef WX_PRECOMP
-	#include <wx/wxprec.h>
-#else 
-	#include <wx/wx.h>
-#endif
-
-#include <wx/button.h>
-#include <wx/checkbox.h>
-#include <wx/stattext.h>
-
-#include <wx/print.h>
-#include <wx/printdlg.h>
-#include <wx/cmndata.h>
-#include <wx/paper.h>
-
-#include <wx/choice.h>
-#include <wx/spinctrl.h>
-
-#include <wx/statbox.h>
-#include <wx/sizer.h>
-
+#include "wx_widgets_include.h"
 
 #include <sigslot/signal.hpp>
-
 
 
 class PageSetupPanel : public wxPanel

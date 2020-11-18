@@ -18,19 +18,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #pragma once
 
-#ifdef WX_PRECOMP
-#include <wx/wxprec.h>
-#else 
-#include <wx/wx.h>
-#endif
-
-#include <wx/sizer.h>
-#include <wx/stattext.h>
-#include <wx/textctrl.h>
-#include <wx/spinctrl.h>
-#include <wx/clrpicker.h>
-#include <wx/colour.h>
-#include <wx/slider.h>
+#include "wx_widgets_include.h"
 
 #include <array>
 #include <algorithm>

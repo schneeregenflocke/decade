@@ -20,18 +20,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include "../calendar_config.h"
 
-#ifdef WX_PRECOMP
-#include <wx/wxprec.h>
-#else 
-#include <wx/wx.h>
-#endif
-
-#include <wx/sizer.h>
-//#include <wx/stattext.h>
-//#include <wx/spinctrl.h>
-//#include <wx/checkbox.h>
-#include <wx/propgrid/propgrid.h>
-//#include <wx/propgrid/manager.h>
+#include "wx_widgets_include.h"
 
 #include <sigslot/signal.hpp>
 

@@ -20,14 +20,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include "../graphics/font.h"
 
-#ifdef WX_PRECOMP
-#include <wx/wxprec.h>
-#else 
-#include <wx/wx.h>
-#endif
-
-#include <wx/fontpicker.h>
-#include <wx/font.h>
+#include "wx_widgets_include.h"
 
 #include <string>
 #include <memory>

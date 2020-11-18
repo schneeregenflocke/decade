@@ -20,11 +20,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include "Resource.h"
 
-#include <wx/dialog.h>
-#include <wx/sizer.h>
-#include <wx/listbox.h>
-#include <wx/textctrl.h>
-#include <wx/button.h>
+#include "wx_widgets_include.h"
 
 #include <string>
 #include <vector>

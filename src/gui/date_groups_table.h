@@ -20,17 +20,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include "../date_group_store.h"
 
-#ifdef WX_PRECOMP
-#include <wx/wxprec.h>
-#else 
-#include <wx/wx.h>
-#endif
-
-#include <wx/dataview.h>
-#include <wx/filedlg.h>
-#include <wx/datetime.h>
-#include <wx/intl.h>
-#include <wx/toolbar.h>
+#include "wx_widgets_include.h"
 
 #include <sigslot/signal.hpp>
 

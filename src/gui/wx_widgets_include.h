@@ -1,4 +1,4 @@
-﻿/*
+/*
 Decade
 Copyright (c) 2019-2020 Marco Peyer
 
@@ -19,33 +19,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #pragma once
 
-#include "gui/wx_widgets_include.h"
 
-#include "main_window.h"
+#ifdef WX_PRECOMP
+	#include <wx/wxprec.h>
+#else 
+	#include <wx/wx.h>
+#endif
 
-#include <iostream>
-#include <string>
-#include <locale>
-
-
-// Reason for use of raw pointers instead of smart_pointers:
-// https://wiki.wxwidgets.org/Avoiding_Memory_Leaks 
-
-
-class App : 
-    public wxApp
-{
-public:
-
-    App() :
-        main_window(nullptr)
-    {}
-
-    bool OnInit() override;
-
-private:
-
-    MainWindow* main_window;
-
-    std::unique_ptr<wxLocale> locale;
-};
+#include <wx/dataview.h>
+#include <wx/spinctrl.h>
+#include <wx/cmndata.h>
+#include <wx/printdlg.h>
+#include <wx/fontpicker.h>
+#include <wx/clrpicker.h>
+#include <wx/propgrid/propgrid.h>
+#include <wx/splitter.h>
+#include <wx/notebook.h>

@@ -19,6 +19,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #pragma once
 
 
+#include <array>
+#include <string>
+
+
 struct TitleConfig
 {
 	float frame_height;
