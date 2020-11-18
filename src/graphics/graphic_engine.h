@@ -44,15 +44,64 @@ public:
 
 /////////////////////////////////////
 
-	void SetRefreshCallback(wxGLCanvas* wx_gl_canvas);
-	void Refresh();
+	void SetRefreshCallback(wxGLCanvas* wx_gl_canvas)
+	{
+		this->wx_gl_canvas = wx_gl_canvas;
+	}
+	void Refresh()
+	{
+		wx_gl_canvas->Refresh(false);
+	}
 
 /////////////////////////////////////
 
-	void Render();
-	void ProvisionalRenderToPNGRender();
+	void Render()
+	{
+		glClearColor(.9F, 1.F, .9F, 1.0F);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	View& GetViewRef();
+		simple_shader.UseProgram();
+		simple_shader.SetProjectionMatrix(view.GetProjectionMatrix());
+		simple_shader.SetViewMatrix(view.GetViewMatrix());
+		simple_shader.SetModelMatrix(glm::mat4(1.F));
+
+		font_shader.UseProgram();
+		font_shader.SetProjectionMatrix(view.GetProjectionMatrix());
+		font_shader.SetViewMatrix(view.GetViewMatrix());
+		font_shader.SetModelMatrix(glm::mat4(1.f));
+
+
+		for (size_t index = 0; index < shapes.size(); ++index)
+		{
+			shapes[index]->Draw();
+		}
+	}
+	void ProvisionalRenderToPNGRender()
+	{
+		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		simple_shader.UseProgram();
+		simple_shader.SetProjectionMatrix(Projection::OrthoMatrix(page_size));
+		simple_shader.SetViewMatrix(glm::translate(glm::mat4(1.f), glm::vec3(0.f, 0.f, 0.f)));
+		simple_shader.SetModelMatrix(glm::mat4(1.f));
+
+		font_shader.UseProgram();
+		font_shader.SetProjectionMatrix(Projection::OrthoMatrix(page_size));
+		font_shader.SetViewMatrix(glm::translate(glm::mat4(1.f), glm::vec3(0.f, 0.f, 0.f)));
+		font_shader.SetModelMatrix(glm::mat4(1.f));
+
+
+		for (size_t index = 0; index < shapes.size(); ++index)
+		{
+			shapes[index]->Draw();
+		}
+	}
+
+	View& GetViewRef()
+	{
+		return view;
+	}
 
 	template<typename T> 
 	std::shared_ptr<T> AddShape()
@@ -109,7 +158,26 @@ public:
 		}
 	}
 
-	void RenderToPNG(const std::wstring& file_path);
+	void RenderToPNG(const std::wstring& file_path)
+	{
+
+		/////////////////////////////////////
+		int multiplier = 16;
+
+		/////////////////////////////////////
+		GLsizei pixel_width = static_cast<GLsizei>(page_size.Width());
+		GLsizei pixel_height = static_cast<GLsizei>(page_size.Height());
+
+		RenderTexture renderToPng;
+		renderToPng.Initialize(pixel_width * multiplier, pixel_height * multiplier);
+		renderToPng.BeginRender();
+
+		ProvisionalRenderToPNGRender();
+
+		renderToPng.EndRender();
+		renderToPng.GetPicture();
+		renderToPng.SavePicture(file_path);
+	}
 
 	void ReceivePageSetup(const PageSetupConfig& page_setup_config)
 	{

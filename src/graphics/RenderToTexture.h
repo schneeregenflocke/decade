@@ -39,8 +39,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 class FrameBufferObject
 {
 public:
-	FrameBufferObject();
-	~FrameBufferObject();
+	FrameBufferObject()
+	{
+		glGenFramebuffers(1, &FBO);
+	}
+	~FrameBufferObject()
+	{
+		glDeleteFramebuffers(1, &FBO);
+	}
 
 	GLuint FBO;
 };
@@ -49,10 +55,26 @@ public:
 class RenderBufferObject
 {
 public:
-	RenderBufferObject();
-	~RenderBufferObject();
-	void SetRenderBufferObject(GLsizei width, GLsizei height);
-	void SetRenderBufferObjectMultisample(GLsizei width, GLsizei height);
+	RenderBufferObject()
+	{
+		glGenRenderbuffers(1, &RBO);
+	}
+	~RenderBufferObject()
+	{
+		glDeleteRenderbuffers(1, &RBO);
+	}
+	void SetRenderBufferObject(GLsizei width, GLsizei height)
+	{
+		glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+		glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	}
+	void SetRenderBufferObjectMultisample(GLsizei width, GLsizei height)
+	{
+		glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+		glRenderbufferStorageMultisample(GL_RENDERBUFFER, 8, GL_DEPTH24_STENCIL8, width, height);
+		glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	}
 
 	GLuint RBO;
 };
@@ -68,14 +90,90 @@ public:
 	RenderBufferObject rbo, rbo_msaa;
 	TextureObject tex, tex_msaa;
 
-	void Initialize(GLsizei width, GLsizei height);
+	void Initialize(GLsizei width, GLsizei height)
+	{
+		this->width = width;
+		this->height = height;
 
-	void BeginRender();
-	void EndRender();
+		rbo.SetRenderBufferObject(width, height);
+		rbo_msaa.SetRenderBufferObjectMultisample(width, height);
 
-	void GetPicture();
-	void SavePicture(const std::wstring& filename);
-	void VerticalFlip();
+		tex.SetTexture2D(width, height);
+		tex_msaa.SetTexture2DMultisample(width, height);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo.FBO);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo.RBO);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex.Texture(), 0);
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		{
+			throw std::runtime_error("glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE");
+		}
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo_msaa.FBO);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo_msaa.RBO);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, tex_msaa.Texture(), 0);
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		{
+			throw std::runtime_error("glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE");
+		}
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+	void BeginRender()
+	{
+		GLint viewport[4];
+		glGetIntegerv(GL_VIEWPORT, viewport);
+
+		restorewidth = viewport[2];
+		restoreheight = viewport[3];
+
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo_msaa.FBO);
+		glViewport(0, 0, width, height);
+	}
+	void EndRender()
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glViewport(0, 0, restorewidth, restoreheight);
+
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo_msaa.FBO);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo.FBO);
+		glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+	void GetPicture()
+	{
+		pixelsize = 4 * sizeof(GLubyte);
+		imagesize = width * height * pixelsize;
+
+		image.resize(imagesize);
+
+		//glGetTextureImage(tex.texture, 0, GL_RGBA, GL_UNSIGNED_BYTE, imagesize, image.data());
+
+		glBindTexture(GL_TEXTURE_2D, tex.Texture());
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.data());
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+	void SavePicture(const std::wstring& filename)
+	{
+		VerticalFlip();
+
+		lodepng::encode(std::string(filename.begin(), filename.end()), image.data(), width, height, LCT_RGBA);
+	}
+	void VerticalFlip()
+	{
+		std::vector<unsigned char> buffer(image);
+
+		for (auto index = 0; index < height; ++index)
+		{
+			auto rowsize = width * pixelsize;
+			auto subindex0 = index * rowsize;
+			auto subindex1 = subindex0 + rowsize;
+
+			std::copy(buffer.cbegin() + subindex0, buffer.cbegin() + subindex1, image.end() - subindex1);
+		}
+	}
 
 private:
 	GLsizei width;

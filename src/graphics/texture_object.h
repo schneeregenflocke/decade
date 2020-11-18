@@ -23,16 +23,37 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 class TextureObject
 {
 public:
-	explicit TextureObject();
-	~TextureObject();
+	explicit TextureObject()
+	{
+		glGenTextures(1, &texture);
+	}
+	~TextureObject()
+	{
+		glDeleteTextures(1, &texture);
+	}
 
 	//TextureObject(const TextureObject&) = delete;
 	//TextureObject& operator=(const TextureObject&) = delete;
 
-	GLuint Texture();
+	GLuint Texture()
+	{
+		return texture;
+	}
 
-	void SetTexture2D(GLsizei width, GLsizei height);
-	void SetTexture2DMultisample(GLsizei width, GLsizei height);
+	void SetTexture2D(GLsizei width, GLsizei height)
+	{
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+	void SetTexture2DMultisample(GLsizei width, GLsizei height)
+	{
+		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texture);
+		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 8, GL_RGBA, width, height, GL_TRUE);
+		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+	}
 
 private:
 	GLuint texture;

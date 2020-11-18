@@ -52,9 +52,26 @@ struct VertexVC
 	vec3 point;
 	vec4 color;
 
-	static void SetAttribPointers();
-	static void EnableVertexAttribArrays();
-	static void DisableVertexAttribArrays();
+	static void SetAttribPointers()
+	{
+		GLsizei stride = sizeof(VertexVC);
+
+		auto offsetof0 = offsetof(VertexVC, point);
+		auto offsetof1 = offsetof(VertexVC, color);
+
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void*>(offsetof0));
+		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void*>(offsetof1));
+	}
+	static void EnableVertexAttribArrays()
+	{
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(1);
+	}
+	static void DisableVertexAttribArrays()
+	{
+		glDisableVertexAttribArray(0);
+		glDisableVertexAttribArray(1);
+	}
 };
 
 
@@ -63,9 +80,26 @@ struct VertexVT
 	glm::vec3 position;
 	glm::vec2 texturePosition;
 
-	static void SetAttribPointers();
-	static void EnableVertexAttribArrays();
-	static void DisableVertexAttribArrays();
+	static void SetAttribPointers()
+	{
+		GLsizei stride = sizeof(VertexVT);
+
+		//auto offsetof0 = offsetof(VertexVT, position);
+		//auto offsetof1 = offsetof(VertexVT, texturePosition);
+
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void*>(offsetof(VertexVT, position)));
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void*>(offsetof(VertexVT, texturePosition)));
+	}
+	static void EnableVertexAttribArrays()
+	{
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(1);
+	}
+	static void DisableVertexAttribArrays()
+	{
+		glDisableVertexAttribArray(0);
+		glDisableVertexAttribArray(1);
+	}
 };
 
 
@@ -75,13 +109,77 @@ class Shader
 {
 public:
 
-	void UseProgram();
-	GLuint GetProgram();
+	void UseProgram()
+	{
+		glUseProgram(program);
+	}
+	GLuint GetProgram()
+	{
+		return program;
+	}
 
 protected:
-	void CompileProgram(Resource vertexshaderfile, Resource fragmentshaderfile);
-	static GLuint LinkShaders(const GLuint vertexshader, const GLuint fragmentshader);
-	static GLuint CompileShader(const Resource& resource, const GLuint shadertype);
+	void CompileProgram(Resource vertexshaderfile, Resource fragmentshaderfile)
+	{
+		GLuint vertexshader = CompileShader(vertexshaderfile, GL_VERTEX_SHADER);
+		GLuint fragmentshader = CompileShader(fragmentshaderfile, GL_FRAGMENT_SHADER);
+		program = LinkShaders(vertexshader, fragmentshader);
+	}
+	static GLuint LinkShaders(const GLuint vertexshader, const GLuint fragmentshader)
+	{
+		GLuint program = glCreateProgram();
+
+		glAttachShader(program, vertexshader);
+		glAttachShader(program, fragmentshader);
+
+		glLinkProgram(program);
+
+		GLint linkstatus;
+		glGetProgramiv(program, GL_LINK_STATUS, &linkstatus);
+		std::cout << "GL_LINK_STATUS " << program << " " << std::boolalpha << static_cast<bool>(linkstatus) << std::noboolalpha << '\n';
+
+		GLint infolenght;
+		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infolenght);
+
+		if (infolenght > 0)
+		{
+			char* infolog = new char[infolenght];
+			glGetProgramInfoLog(program, infolenght, NULL, infolog);
+			std::cout << infolog;
+			delete[] infolog;
+		}
+
+		glDetachShader(program, vertexshader);
+		glDetachShader(program, fragmentshader);
+		glDeleteShader(vertexshader);
+		glDeleteShader(fragmentshader);
+
+		return program;
+	}
+	static GLuint CompileShader(const Resource& resource, const GLuint shadertype)
+	{
+		GLuint simple_shader = glCreateShader(shadertype);
+		const char* sourcepointer = resource.data();
+		glShaderSource(simple_shader, 1, &sourcepointer, NULL);
+		glCompileShader(simple_shader);
+
+		GLint compilestatus;
+		glGetShaderiv(simple_shader, GL_COMPILE_STATUS, &compilestatus);
+		std::cout << "GL_COMPILE_STATUS " << simple_shader << " " << std::boolalpha << static_cast<bool>(compilestatus) << std::noboolalpha << '\n';
+
+		GLint infolenght;
+		glGetShaderiv(simple_shader, GL_INFO_LOG_LENGTH, &infolenght);
+
+		if (infolenght > 0)
+		{
+			char* infolog = new char[infolenght];
+			glGetShaderInfoLog(simple_shader, infolenght, NULL, infolog);
+			std::cout << infolog;
+			delete[] infolog;
+		}
+
+		return simple_shader;
+	}
 
 private:
 	GLuint program;
@@ -91,23 +189,43 @@ private:
 class ProjectionShader
 {
 public:
-	void GetProjectionLocations(GLuint program);
+	void GetProjectionLocations(GLuint program)
+	{
+		model = glGetUniformLocation(program, "model");
+		view = glGetUniformLocation(program, "view");
+		projection = glGetUniformLocation(program, "projection");
+	}
 
 	GLint model;
 	GLint view;
 	GLint projection;
 
-	void SetModelMatrix(const mat4& matrix) const;
-	void SetViewMatrix(const mat4& matrix) const;
-	void SetProjectionMatrix(const mat4& matrix) const;
+	void SetModelMatrix(const mat4& matrix) const
+	{
+		glUniformMatrix4fv(model, 1, GL_FALSE, glm::value_ptr(matrix));
+	}
+	void SetViewMatrix(const mat4& matrix) const
+	{
+		glUniformMatrix4fv(view, 1, GL_FALSE, glm::value_ptr(matrix));
+	}
+	void SetProjectionMatrix(const mat4& matrix) const
+	{
+		glUniformMatrix4fv(projection, 1, GL_FALSE, glm::value_ptr(matrix));
+	}
 };
 
 
 class LightShader
 {
 public:
-	void GetLightLocations(GLuint program);
-	void SetLightPosition(const vec3& position) const;
+	void GetLightLocations(GLuint program)
+	{
+		lightposition = glGetUniformLocation(program, "lightposition");
+	}
+	void SetLightPosition(const vec3& position) const
+	{
+		glUniform3fv(lightposition, 1, glm::value_ptr(position));
+	}
 
 	GLint lightposition;
 };
@@ -117,14 +235,26 @@ class SimpleShader : public Shader, public ProjectionShader
 {
 public:
 	using VertexType = VertexVC;
-	SimpleShader();
+	SimpleShader()
+	{
+		auto simple_vertex_shader_resource = LOAD_RESOURCE(shader_simple_vertex_shader);
+		auto simple_fragment_shader_resource = LOAD_RESOURCE(shader_simple_fragment_shader);
+
+		CompileProgram(simple_vertex_shader_resource, simple_fragment_shader_resource);
+		GetProjectionLocations(GetProgram());
+	}
 };
 
 
 class PhongShader : public Shader, public ProjectionShader, public LightShader
 {
 public:
-	PhongShader();
+	PhongShader()
+	{
+		//CompileProgram("VertexShaderPhong.glsl", "FragmentShaderPhong.glsl");
+		GetProjectionLocations(GetProgram());
+		GetLightLocations(GetProgram());
+	}
 };
 
 
@@ -132,7 +262,15 @@ class FontShader : public Shader, public ProjectionShader
 {
 public:
 	using VertexType = VertexVT;
-	FontShader();
+	FontShader()
+	{
+		auto font_vertex_shader_resource = LOAD_RESOURCE(shader_font_vertex_shader);
+		auto font_fragment_shader_resource = LOAD_RESOURCE(shader_font_fragment_shader);
+
+		CompileProgram(font_vertex_shader_resource, font_fragment_shader_resource);
+		GetProjectionLocations(GetProgram());
+		textColorLocation = glGetUniformLocation(GetProgram(), "texColor");
+	}
 	GLint textColorLocation;
 };
 

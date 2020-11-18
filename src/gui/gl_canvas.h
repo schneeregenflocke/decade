@@ -247,3 +247,12 @@ private:
     std::unique_ptr<GraphicEngine> graphic_engine;
     std::unique_ptr<MouseInteraction> mouse_interaction;
 };
+
+/*constexpr wxGLContextAttrs GLCanvas::defaultAttrs()
+{
+    /home/titan99/code/decade/src/gui/gl_canvas.cpp: In Konstruktor »GLCanvas::GLCanvas(wxWindow*, const wxGLAttributes&)«:
+    /home/titan99/code/decade/src/gui/gl_canvas.cpp:24:42: Fehler: Adresse eines rvalues wird ermittelt [-fpermissive]
+    context(this, nullptr, &defaultAttrs()),
+    context_attributes.PlatformDefaults().CoreProfile().OGLVersion(3, 2).EndList();
+    return context_attributes;
+}*/

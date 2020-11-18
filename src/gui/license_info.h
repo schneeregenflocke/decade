@@ -36,15 +36,102 @@ class LicenseInformationDialog : public wxDialog
 {
 public:
 
-	LicenseInformationDialog();
+	LicenseInformationDialog() :
+		wxDialog(nullptr, wxID_ANY, L"Open Source Licenses Information", wxDefaultPosition, wxSize(800, 600)/*wxDefaultSize*/,
+			wxCAPTION | wxRESIZE_BORDER | wxMAXIMIZE_BOX)
+	{
+
+		license_select_list_box = new wxListBox(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, nullptr, wxLB_SINGLE | wxLB_NEEDED_SB);
+
+		text_view_ctrl = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY);
+
+
+		wxSizerFlags flags0 = wxSizerFlags().Proportion(1).Expand();
+		wxSizerFlags flags1 = wxSizerFlags().Proportion(1).Expand().Border(wxALL, 10);
+		wxSizerFlags flags2 = wxSizerFlags().Proportion(0).Expand().Border(wxALL, 10);
+		wxSizerFlags flags3 = wxSizerFlags().Proportion(0).Border(wxALL, 10).Right();
+
+		wxBoxSizer* vertical_sizer = new wxBoxSizer(wxVERTICAL);
+		SetSizer(vertical_sizer);
+
+		wxBoxSizer* horizontal_sizer = new wxBoxSizer(wxHORIZONTAL);
+		vertical_sizer->Add(horizontal_sizer, flags0);
+
+		horizontal_sizer->Add(license_select_list_box, flags2);
+		horizontal_sizer->Add(text_view_ctrl, flags1);
+
+		wxButton* close_button = new wxButton(this, wxID_CLOSE);
+
+		wxStdDialogButtonSizer* button_sizer = new wxStdDialogButtonSizer();
+		button_sizer->AddButton(close_button);
+		button_sizer->Realize();
+
+		vertical_sizer->Add(button_sizer, flags3);
+
+
+		Bind(wxEVT_LISTBOX, &LicenseInformationDialog::SlotSelectLicense, this);
+		Bind(wxEVT_BUTTON, &LicenseInformationDialog::CloseDialog, this);
+
+
+
+		CollectLicenses();
+
+		license_select_list_box->Select(0);
+		SelectLicense(collected_licenses.begin()->first);
+	}
 
 private:
 
-	void CollectLicenses();
+	void CollectLicenses()
+	{
+		collected_licenses.clear();
+		collected_licenses.reserve(10);
 
-	void SlotSelectLicense(wxCommandEvent& event);
-	void CloseDialog(wxCommandEvent& event);
-	void SelectLicense(const std::string& map_key);
+		collected_licenses.emplace_back("Decade", LOAD_RESOURCE(decade_LICENSE).toString());
+		collected_licenses.emplace_back("Boost", LOAD_RESOURCE(boost_LICENSE_1_0).toString());
+		collected_licenses.emplace_back("glm", LOAD_RESOURCE(glm_copying).toString());
+		collected_licenses.emplace_back("glad", LOAD_RESOURCE(glad_LICENSE).toString());
+
+		collected_licenses.emplace_back("wxWidgets", LOAD_RESOURCE(wxWidgets_licence).toString());
+		collected_licenses.emplace_back("Catch2", LOAD_RESOURCE(Catch2_LICENSE).toString());
+		collected_licenses.emplace_back("expat", LOAD_RESOURCE(expat_COPYING).toString());
+		collected_licenses.emplace_back("libjpeg_turbo", LOAD_RESOURCE(libjpeg_turbo_README).toString());
+		collected_licenses.emplace_back("libtiff", LOAD_RESOURCE(libtiff_COPYRIGHT).toString());
+		collected_licenses.emplace_back("libpng", LOAD_RESOURCE(libpng_LICENSE).toString());
+		collected_licenses.emplace_back("zlib", LOAD_RESOURCE(zlib_README).toString());
+
+		collected_licenses.emplace_back("embed-resource", LOAD_RESOURCE(embed_resource_LICENSE).toString());
+
+		collected_licenses.emplace_back("csv", LOAD_RESOURCE(csv_LICENSE).toString());
+		collected_licenses.emplace_back("catch", LOAD_RESOURCE(catch_LICENSE).toString());
+
+		collected_licenses.emplace_back("pugixml", LOAD_RESOURCE(pugixml_LICENSE).toString());
+		collected_licenses.emplace_back("lodepng", LOAD_RESOURCE(lodepng_LICENSE).toString());
+		collected_licenses.emplace_back("freetype2", LOAD_RESOURCE(freetype2_LICENSE).toString());
+		collected_licenses.emplace_back("sigslot", LOAD_RESOURCE(sigslot_LICENSE).toString());
+
+		for (const auto& license : collected_licenses)
+		{
+			license_select_list_box->AppendString(license.first);
+		}
+	}
+
+	void SlotSelectLicense(wxCommandEvent& event)
+	{
+		SelectLicense(event.GetString().ToStdString());
+	}
+	void CloseDialog(wxCommandEvent& event)
+	{
+		EndModal(0);
+	}
+	void SelectLicense(const std::string& map_key)
+	{
+		auto iter = std::find_if(collected_licenses.cbegin(), collected_licenses.cend(), [&](const string_pair& compare) { return compare.first == map_key; });
+
+		text_view_ctrl->Clear();
+		*text_view_ctrl << iter->second;
+		text_view_ctrl->ShowPosition(0);
+	}
 
 	wxListBox* license_select_list_box;
 	wxTextCtrl* text_view_ctrl;

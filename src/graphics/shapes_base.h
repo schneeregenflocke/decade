@@ -47,8 +47,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 class VertexArrayObject
 {
 public:
-	VertexArrayObject();
-	virtual ~VertexArrayObject();
+	VertexArrayObject()
+	{
+		glGenVertexArrays(1, &VAO);
+	}
+	virtual ~VertexArrayObject()
+	{
+		glDeleteVertexArrays(1, &VAO);
+	}
 protected:
 	GLuint VAO;
 };
@@ -57,8 +63,14 @@ protected:
 class VertexBufferObject
 {
 public:
-	VertexBufferObject();
-	virtual ~VertexBufferObject();
+	VertexBufferObject()
+	{
+		glGenBuffers(1, &VBO);
+	}
+	virtual ~VertexBufferObject()
+	{
+		glDeleteBuffers(1, &VBO);
+	}
 protected:
 	GLuint VBO;
 };
@@ -98,11 +110,17 @@ public:
 	using ShaderType = T;
 	using U = typename T::VertexType;
 
-	Shape()
-		: buffersize(0)
+	Shape() : 
+		buffersize(0)
 	{
 		InitializeBuffer();
 	}
+
+	/*Shape::Shape()
+	{
+		buffersize = 0;
+		InitializeBuffer();
+	}*/
 	
 	Shape(const Shape& shape) = delete;
 	Shape& operator=(const Shape&) = delete;
@@ -163,5 +181,108 @@ private:
 	//GLint GetBufferSize();
 	//void CalcNormals();
 };
+
+
+
+
+
+
+/*Shape::Shape(const Shape& shape)
+{
+	InitializeBuffer();
+	vertices = shape.vertices;
+	SetBufferSize(shape.vertices.size(), GL_DYNAMIC_DRAW);
+	UpdateBuffer();
+}*/
+
+
+/*void Shape::InitializeBuffer()
+{
+	glBindVertexArray(VAO);
+	VertexVC::EnableVertexAttribArrays();
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	VertexVC::SetAttribPointers();
+	glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_DYNAMIC_DRAW);
+	glBindVertexArray(0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}*/
+
+
+/*void Shape::SetBufferSize(GLsizeiptr verticessize, GLenum bufferusage = GL_DYNAMIC_DRAW)
+{
+	buffersize = verticessize * sizeof(VertexVC);
+	vertices.resize(verticessize);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, buffersize, nullptr, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}*/
+
+
+/*void Shape::UpdateBuffer()
+{
+	//CalcNormals();
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, buffersize, vertices.data());
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}*/
+
+
+/*vec3& Shape::GetPointRef(size_t index)
+{
+	return vertices[index].point;
+}
+
+
+vec4& Shape::GetColorRef(size_t index)
+{
+	return vertices[index].color;
+}*/
+
+/*VertexVC& Shape::GetVertexRef(size_t index)
+{
+	return vertices[index];
+}*/
+
+
+/*size_t Shape::GetVerticesSize() const
+{
+	return vertices.size();
+}*/
+
+
+/*void Shape::Draw() const
+{
+	glBindVertexArray(VAO);
+
+	glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+}*/
+
+/*GLint Shape::GetBufferSize()
+{
+	GLint data;
+	glGetNamedBufferParameteriv(VAO, GL_BUFFER_SIZE, &data);
+	return data;
+}*/
+
+/*void Shape::CalcNormals()
+{
+	for (auto index = 0U; index < vertices.size(); index += 3)
+	{
+		vec3 subvector0 = vertices[index].point - vertices[index + 1].point;
+		vec3 subvector1 = vertices[index].point - vertices[index + 2].point;
+
+		vec3 cross = glm::cross(subvector0, subvector1);
+		vec3 normal = glm::normalize(cross);
+
+		vertices[index + 0].normal = normal;
+		vertices[index + 1].normal = normal;
+		vertices[index + 2].normal = normal;
+	}
+}*/
+
 
 #endif /*SHAPES_BASE_H*/
