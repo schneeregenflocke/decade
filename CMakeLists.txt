@@ -53,27 +53,27 @@ target_link_libraries(Decade PRIVATE ${Boost_LIBRARIES})
 
 ### wxWidgets ###
 
-find_package(wxWidgets REQUIRED gl core base propgrid)
-include(${wxWidgets_USE_FILE})
+#find_package(wxWidgets REQUIRED gl core base propgrid)
+#include(${wxWidgets_USE_FILE})
 # and for each of your dependent executable/library targets:
-target_link_libraries(Decade PRIVATE ${wxWidgets_LIBRARIES})
+#target_link_libraries(Decade PRIVATE ${wxWidgets_LIBRARIES})
 
 target_compile_definitions(Decade PRIVATE _CRT_SECURE_NO_WARNINGS)
 
 #WxWidgets ON
-#set(wxUSE_STL ON CACHE BOOL "wxUSE_STL" FORCE)
-#set(wxUSE_GUI ON CACHE BOOL "wxUSE_GUI" FORCE)
-#set(wxUSE_OPENGL ON CACHE BOOL "wxUSE_OPENGL" FORCE)
+set(wxUSE_STL ON CACHE BOOL "wxUSE_STL" FORCE)
+set(wxUSE_GUI ON CACHE BOOL "wxUSE_GUI" FORCE)
+set(wxUSE_OPENGL ON CACHE BOOL "wxUSE_OPENGL" FORCE)
 
 #WxWidgets OFF
-#set(wxBUILD_SHARED OFF CACHE BOOL "wxBUILD_SHARED" FORCE)
-#set(wxUSE_WINRT	OFF CACHE BOOL "wxUSE_WINRT" FORCE)
-#set(wxUSE_EXCEPTIONS OFF CACHE BOOL "wxUSE_EXCEPTIONS" FORCE)
-#set(wxUSE_GLCANVAS_EGL OFF CACHE BOOL "wxUSE_GLCANVAS_EGL" FORCE)
+set(wxBUILD_SHARED OFF CACHE BOOL "wxBUILD_SHARED" FORCE)
+set(wxUSE_WINRT	OFF CACHE BOOL "wxUSE_WINRT" FORCE)
+set(wxUSE_EXCEPTIONS OFF CACHE BOOL "wxUSE_EXCEPTIONS" FORCE)
+set(wxUSE_GLCANVAS_EGL OFF CACHE BOOL "wxUSE_GLCANVAS_EGL" FORCE)
 
-#add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets" EXCLUDE_FROM_ALL)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets" EXCLUDE_FROM_ALL)
 #fixed library names https://github.com/wxWidgets/wxWidgets/commit/0f806ad96db4e22053769c0b2f3b7be4026ea8de
-#target_link_libraries(Decade PRIVATE wxpropgrid wxgl wxcore wxbase)
+target_link_libraries(Decade PRIVATE wxpropgrid wxgl wxcore wxbase)
 
 
 
@@ -88,29 +88,36 @@ add_compile_definitions(GLM_FORCE_CXX17)
 target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/glm")
 
 ### freetype ###
+
+set(FT_WITH_BROTLI OFF CACHE BOOL "FT_WITH_BROTLI" FORCE)
+set(FT_WITH_BZIP2 OFF CACHE BOOL "FT_WITH_BZIP2" FORCE)
+set(FT_WITH_HARFBUZZ OFF CACHE BOOL "FT_WITH_HARFBUZZ" FORCE)
+set(FT_WITH_PNG OFF CACHE BOOL "FT_WITH_PNG" FORCE)
+set(FT_WITH_ZLIB OFF CACHE BOOL "FT_WITH_ZLIB" FORCE)
+
 target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2/include")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2" EXCLUDE_FROM_ALL)
 target_link_libraries(Decade PRIVATE freetype)
 
-
+### lodepng ###
 target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/lodepng")
 target_sources(Decade PRIVATE external/lodepng/lodepng.h external/lodepng/lodepng.cpp)
 
-
+### csv ###
 target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/csv/include")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/csv" EXCLUDE_FROM_ALL)
 
-
+### pugixml ###
 #add_compile_definitions(PUGIXML_WCHAR_MODE)
 target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/pugixml/include")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/pugixml" EXCLUDE_FROM_ALL)
 target_link_libraries(Decade PRIVATE pugixml)
 
-
+### embed-resource ###
 target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource" EXCLUDE_FROM_ALL)
 
-
+### sigslot ###
 target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/include")
 
 
