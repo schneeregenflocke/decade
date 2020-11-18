@@ -48,7 +48,9 @@ message("Boost_LIBRARY_DIRS: ${Boost_LIBRARY_DIRS}")
 message("Boost_LIBRARIES: ${Boost_LIBRARIES}")
 
 target_include_directories(Decade PRIVATE ${Boost_INCLUDE_DIRS})
-target_link_directories(Decade PRIVATE ${Boost_LIBRARY_DIRS})
+#if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
+#	target_link_directories(Decade PRIVATE ${Boost_LIBRARY_DIRS})
+#endif()
 target_link_libraries(Decade PRIVATE ${Boost_LIBRARIES})
 
 ### wxWidgets ###
