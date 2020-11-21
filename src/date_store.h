@@ -21,7 +21,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 
 #include "date_utils.h"
-#include "date_group_store.h"
+#include "group_store.h"
 
 #include <sigslot/signal.hpp>
 

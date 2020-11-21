@@ -19,20 +19,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #pragma once
 
-#include "calendar_page.h"
+#include "calendar_view.h"
 #include "date_utils.h"
 
 #include "gui/wx_widgets_include.h"
 
-#include "gui/gl_canvas.h"
-#include "gui/date_groups_table.h"
-#include "gui/date_table_panel.h"
-#include "gui/page_setup_panel.h"
-#include "gui/font_setup.h"
-#include "gui/title_setup_panel.h"
-#include "gui/elements_setup.h"
-#include "gui/calendar_setup.h"
-#include "gui/license_info.h"
+#include "gui/opengl_panel.h"
+#include "gui/groups_panel.h"
+#include "gui/date_panel.h"
+#include "gui/page_panel.h"
+#include "gui/font_panel.h"
+#include "gui/title_panel.h"
+#include "gui/shape_panel.h"
+#include "gui/calendar_panel.h"
+#include "gui/license_panel.h"
 
 
 #include <sigslot/signal.hpp>

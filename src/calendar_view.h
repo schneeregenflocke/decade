@@ -22,8 +22,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include "graphics/shapes.h"
 #include "graphics/font.h"
 
-#include "date_group_store.h"
-#include "dates_store.h"
+#include "group_store.h"
+#include "date_store.h"
 #include "shape_config.h"
 #include "calendar_config.h"
 #include "page_config.h"
