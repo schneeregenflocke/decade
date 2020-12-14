@@ -27,6 +27,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include "shape_config.h"
 #include "calendar_config.h"
 #include "page_config.h"
+#include "title_config.h"
 
 #include <string>
 #include <memory>
@@ -158,47 +159,34 @@ public:
 		data_store.ReceiveDateGroups(date_groups);
 		Update();
 	}
+
 	void ReceiveDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles)
 	{
 		data_store.ReceiveDateIntervalBundles(date_interval_bundles);
 		Update();
 	}
+
 	void ReceivePageSetup(const PageSetupConfig& page_setup_config)
 	{
 		this->page_size = rect4(page_setup_config.size[0], page_setup_config.size[1]);
 		this->page_margin = rect4(page_setup_config.margins[0], page_setup_config.margins[1], page_setup_config.margins[2], page_setup_config.margins[3]);
 		Update();
 	}
+
 	void ReceiveFont(const std::string& font_path)
 	{
 		font_loader.reset(std::make_unique<FontLoader>(font_path).release());
 
 		Update();
 	}
-	void ReceiveTitleFrameHeight(float height)
-	{
-		title_frame_height = height;
 
+	void ReceiveTitleConfig(const TitleConfig& title_config)
+	{
+		std::cout << "CalendarView: Receive" << '\n';
+		this->title_config = title_config;
 		Update();
 	}
-	void ReceiveTitleFontSizeRatio(float ratio)
-	{
-		title_font_size_ratio = ratio;
 
-		Update();
-	}
-	void ReceiveTitleText(const std::string& text)
-	{
-		title_text = text;
-
-		Update();
-	}
-	void ReceiveTitleTextColor(const std::array<float, 4>& title_text_color)
-	{
-		this->title_text_color = glm::vec4(title_text_color[0], title_text_color[1], title_text_color[2], title_text_color[3]);
-
-		Update();
-	}
 	void ReceiveCalendarConfig(const CalendarConfig& calendar_config)
 	{
 		this->calendar_config = calendar_config;
@@ -255,7 +243,7 @@ public:
 		print_area = page_size.Reduce(page_margin);
 
 		title_frame = print_area;
-		title_frame.Bottom(title_frame.Top() - title_frame_height);
+		title_frame.Bottom(title_frame.Top() - title_config.frame_height);
 
 		page_margin_frame = print_area;
 		page_margin_frame.Top(title_frame.Bottom());
@@ -321,8 +309,9 @@ public:
 		title_area_shape->SetShapes(title_frame, config.LineWidth(), config.FillColor(), config.OutlineColor());
 
 		title_font_shape->SetFont(font_loader);
-		title_font_shape->SetShapeCentered(title_text, title_frame.Center(), title_frame.Height() * title_font_size_ratio);
+		title_font_shape->SetShapeCentered(title_config.title_text, title_frame.Center(), title_frame.Height() * title_config.font_size_ratio);
 	}
+
 	void SetupCalendarLabelsShape()
 	{
 		std::array<char, 100> buf;
@@ -728,7 +717,7 @@ private:
 	rect4 page_size;
 	rect4 page_margin;
 	rect4 print_area;
-	float title_frame_height;
+	
 	rect4 title_frame;
 	rect4 page_margin_frame;
 	rect4 calendar_frame;
@@ -739,10 +728,12 @@ private:
 	float cell_width;
 	float row_height;
 	float day_width;
-	float title_font_size_ratio;
-	std::string title_text;
-	glm::vec4 title_text_color;
+
+	TitleConfig title_config;
+
 	float labels_font_size;
+
+	
 
 	////////////////////////////////////////////////////////////////////////////////
 

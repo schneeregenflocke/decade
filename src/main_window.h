@@ -21,6 +21,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include "calendar_view.h"
 #include "date_utils.h"
+#include "title_config.h"
 
 #include "gui/wx_widgets_include.h"
 
@@ -94,13 +95,13 @@ public:
         font_setup_panel = new FontSetupPanel(notebook);
         title_setup_panel = new TitleSetupPanel(notebook);
 
-        notebook->AddPage(data_table_panel, "Date Table");
-        notebook->AddPage(date_groups_table_panel, "Date Groups");
-        notebook->AddPage(calendar_setup_panel, "Calendar Setup");
-        notebook->AddPage(elements_setup_panel, "Elements Setup");
-        notebook->AddPage(page_setup_panel, "Page Setup");
-        notebook->AddPage(font_setup_panel, "Font Setup");
-        notebook->AddPage(title_setup_panel, "Title Setup");
+        notebook->AddPage(data_table_panel, "Dates");
+        notebook->AddPage(date_groups_table_panel, "Groups");
+        notebook->AddPage(calendar_setup_panel, "Calendar");
+        notebook->AddPage(elements_setup_panel, "Shapes");
+        notebook->AddPage(page_setup_panel, "Page");
+        notebook->AddPage(font_setup_panel, "Font");
+        notebook->AddPage(title_setup_panel, "Title");
 
         ////////////////////////////////////////////////////////////////////////////////
 
@@ -136,6 +137,7 @@ public:
     }
 
 private:
+
     void InitMenu()
     {
         const int ID_EXPORT_PNG = NewControlId();
@@ -185,6 +187,7 @@ private:
 
         EstablishConnections();
     }
+
     void EstablishConnections()
     {
         // Connections date_interval_bundle_store <-> data_table_panel
@@ -217,11 +220,12 @@ private:
         // Connections font_setup_panel -> ...
         font_setup_panel->signal_font_file_path.connect(&CalendarPage::ReceiveFont, calendar.get());
 
-        // Connections title_setup_panel -> ...
-        title_setup_panel->signal_frame_height.connect(&CalendarPage::ReceiveTitleFrameHeight, calendar.get());
-        title_setup_panel->signal_font_size_ratio.connect(&CalendarPage::ReceiveTitleFontSizeRatio, calendar.get());
-        title_setup_panel->signal_title_text.connect(&CalendarPage::ReceiveTitleText, calendar.get());
-        title_setup_panel->signal_text_color.connect(&CalendarPage::ReceiveTitleTextColor, calendar.get());
+        // Connections title_config_store <-> title_setup_panel
+        title_config_store.signal_title_config.connect(&TitleSetupPanel::ReceiveTitleConfig, title_setup_panel);
+        title_setup_panel->signal_title_config.connect(&TitleConfigStore::ReceiveTitleConfig, &title_config_store);
+
+        // Connections title_config_store -> ...
+        title_config_store.signal_title_config.connect(&CalendarPage::ReceiveTitleConfig, calendar.get());
 
         // Connections elements_setup_panel -> ...
         elements_setup_panel->signal_shape_config.connect(&CalendarPage::ReceiveRectangleShapeConfig, calendar.get());
@@ -251,6 +255,7 @@ private:
 
 
     }
+
     void SlotSaveXML(wxCommandEvent& event)
     {
         if (event.GetId() == ID_SAVE_XML && current_xml_file_path.empty() == false)
@@ -269,6 +274,7 @@ private:
             }
         }
     }
+
     void LoadXML(const std::string& filepath)
     {
 
@@ -277,21 +283,18 @@ private:
         oarchive >> date_groups_store;
         oarchive >> date_interval_bundle_store;
         oarchive >> page_setup_store;
+        oarchive >> title_config_store;
 
 
         pugi::xml_document doc;
         auto load_success = doc.load_file(filepath.c_str());
         if (load_success)
         {
-            //date_groups_store.LoadXML(doc);
-            //date_interval_bundle_store.LoadXML(doc);
-            //page_setup_panel->LoadXML(doc);
-            //
-            //title_setup_panel->LoadFromXML(doc);
             elements_setup_panel->LoadFromXML(doc);
             calendar_setup_panel->LoadXML(doc);
         }
     }
+
     void SaveXML(const std::string& filepath)
     {
 
@@ -300,15 +303,10 @@ private:
         oarchive << date_groups_store;
         oarchive << date_interval_bundle_store;
         oarchive << page_setup_store;
-
+        oarchive << title_config_store;
 
         pugi::xml_document doc;
 
-        //date_groups_store.SaveXML(&doc);
-        //date_interval_bundle_store.SaveXML(&doc);
-        //page_setup_panel->SaveXML(&doc);
-        //
-        //title_setup_panel->SaveToXML(&doc);
         elements_setup_panel->SaveToXML(&doc);
         calendar_setup_panel->SaveXML(&doc);
 
@@ -359,6 +357,7 @@ private:
             date_interval_bundle_store.ReceiveDateIntervalBundles(date_interval_bundles);
         }
     }
+
     void SlotExportCSV(wxCommandEvent& event)
     {
         wxFileDialog save_file_dialog(this, "Export file", wxEmptyString, wxEmptyString, "CSV and TXT files (*.csv;*.txt)|*.csv;*.txt", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
@@ -386,6 +385,7 @@ private:
             csv_writer.close();
         }
     }
+
     void SlotExportPNG(wxCommandEvent& event)
     {
         wxFileDialog file_dialog(this, "Export PNG file", wxEmptyString, wxEmptyString, "PNG files (*.png)|*.png", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
@@ -426,4 +426,5 @@ private:
     TransformDateIntervalBundle transform_date_interval_bundle;
 
     PageSetupStore page_setup_store;
+    TitleConfigStore title_config_store;
 };
