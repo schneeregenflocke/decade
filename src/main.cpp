@@ -17,7 +17,38 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 */
 
 
-#include "main.h"
+#pragma once
+
+#include "gui/wx_widgets_include.h"
+
+#include "main_window.h"
+
+#include <iostream>
+#include <string>
+#include <locale>
+
+
+// Reason for use of raw pointers instead of smart_pointers:
+// https://wiki.wxwidgets.org/Avoiding_Memory_Leaks 
+
+
+class App :
+    public wxApp
+{
+public:
+
+    App() :
+        main_window(nullptr)
+    {}
+
+    bool OnInit() override;
+
+private:
+
+    MainWindow* main_window;
+
+    std::unique_ptr<wxLocale> locale;
+};
 
 
 #ifdef _WIN32
