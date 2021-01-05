@@ -101,7 +101,6 @@ private:
 		collected_licenses.emplace_back("csv", LOAD_RESOURCE(csv_LICENSE).toString());
 		collected_licenses.emplace_back("catch", LOAD_RESOURCE(catch_LICENSE).toString());
 
-		collected_licenses.emplace_back("pugixml", LOAD_RESOURCE(pugixml_LICENSE).toString());
 		collected_licenses.emplace_back("lodepng", LOAD_RESOURCE(lodepng_LICENSE).toString());
 		collected_licenses.emplace_back("freetype2", LOAD_RESOURCE(freetype2_LICENSE).toString());
 		collected_licenses.emplace_back("sigslot", LOAD_RESOURCE(sigslot_LICENSE).toString());

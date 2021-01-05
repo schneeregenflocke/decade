@@ -109,12 +109,6 @@ target_sources(Decade PRIVATE external/lodepng/lodepng.h external/lodepng/lodepn
 target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/csv/include")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/csv" EXCLUDE_FROM_ALL)
 
-### pugixml ###
-#add_compile_definitions(PUGIXML_WCHAR_MODE)
-target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/pugixml/include")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/pugixml" EXCLUDE_FROM_ALL)
-target_link_libraries(Decade PRIVATE pugixml)
-
 ### embed-resource ###
 target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource" EXCLUDE_FROM_ALL)
@@ -143,7 +137,6 @@ list(APPEND LICENSE_FILES_PATHS
 	"${CMAKE_CURRENT_SOURCE_DIR}/external/glad/LICENSE" glad
 	"${CMAKE_CURRENT_SOURCE_DIR}/external/glm/copying.txt" glm
 	"${CMAKE_CURRENT_SOURCE_DIR}/external/lodepng/LICENSE" lodepng
-	"${CMAKE_CURRENT_SOURCE_DIR}/external/pugixml/LICENSE.md" pugixml
 	"${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/LICENSE" sigslot
 	"${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/docs/licence.txt" wxWidgets
 	"${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/3rdparty/catch/LICENSE.txt" catch

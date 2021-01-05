@@ -18,10 +18,6 @@
 	path = external/lodepng
 	url = https://github.com/lvandeve/lodepng.git
 	branch = master
-[submodule "external/pugixml"]
-	path = external/pugixml
-	url = https://github.com/zeux/pugixml.git
-	branch = master
 [submodule "external/wxWidgets"]
 	path = external/wxWidgets
 	url = https://github.com/wxWidgets/wxWidgets.git
