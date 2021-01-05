@@ -182,53 +182,20 @@ public:
 
 	void ReceiveTitleConfig(const TitleConfig& title_config)
 	{
-		std::cout << "CalendarView: Receive" << '\n';
 		this->title_config = title_config;
 		Update();
 	}
 
-	void ReceiveCalendarConfig(const CalendarConfig& calendar_config)
+	void ReceiveCalendarConfig(const CalendarConfigStorage& calendar_config)
 	{
 		this->calendar_config = calendar_config;
-
 		Update();
 	}
 
-	void ReceiveRectangleShapeConfig(const std::vector<RectangleShapeConfig>& configs)
+	void ReceiveShapeConfigurationStorage(const ShapeConfigurationStorage& shape_configuration_storage)
 	{
-		element_configurations = configs;
-
-		bar_shape_configs.clear();
-		bool run_loop = true;
-		size_t index = 0;
-		while (run_loop)
-		{
-			auto search_string = std::wstring(L"Bar Group ") + std::to_string(index);
-
-			auto shape_config = GetShapeConfig(search_string);
-
-			if (shape_config.Name() != L"Not Found")
-			{
-				bar_shape_configs.push_back(shape_config);
-			}
-			else
-			{
-				run_loop = false;
-			}
-			++index;
-		}
-
+		this->shape_configuration_storage = shape_configuration_storage;
 		Update();
-	}
-	RectangleShapeConfig GetShapeConfig(const std::string& name)
-	{
-		auto found = std::find(element_configurations.begin(), element_configurations.end(), name);
-		if (found != element_configurations.end())
-		{
-			return *found;
-		}
-
-		return RectangleShapeConfig("Not Found");
 	}
 
 	void Update()
@@ -298,13 +265,13 @@ public:
 
 	void SetupPrintAreaShape()
 	{
-		auto config = GetShapeConfig("Page Margin");
-
+		auto config = shape_configuration_storage.GetShapeConfiguration("Page Margin");
 		print_area_shape->SetShapes(page_margin_frame, config.LineWidth(), config.FillColor(), config.OutlineColor());
 	}
+
 	void SetupTitleShape()
 	{
-		auto config = GetShapeConfig("Title Frame");
+		auto config = shape_configuration_storage.GetShapeConfiguration("Title Frame");
 
 		title_area_shape->SetShapes(title_frame, config.LineWidth(), config.FillColor(), config.OutlineColor());
 
@@ -347,7 +314,7 @@ public:
 			month_label_text[index]->SetShapeCentered(months_names[index], x_label_frames[index].Center(), labels_font_size);
 		}
 
-		auto config = GetShapeConfig("Calendar Labels");
+		auto config = shape_configuration_storage.GetShapeConfiguration("Calendar Labels");
 
 		column_labels_shape->SetShapes(x_label_frames, config.LineWidth(), config.FillColor(), config.OutlineColor());
 
@@ -374,10 +341,9 @@ public:
 
 		row_labels_shape->SetShapes(y_labels_rows, config.LineWidth(), config.FillColor(), config.OutlineColor());
 	}
+
 	void SetupYearsShapes()
 	{
-
-
 		std::vector<rect4> years_cells;
 		years_cells.resize(calendar_config.GetSpanLengthYears());
 
@@ -399,10 +365,11 @@ public:
 			years_cells[index] = year_cell;
 		}
 
-		auto config = GetShapeConfig("Years Shapes");
+		auto config = shape_configuration_storage.GetShapeConfiguration("Years Shapes");
 
 		years_cells_shape->SetShapes(years_cells, config.LineWidth(), config.FillColor(), config.OutlineColor());
 	}
+
 	void SetupMonthsShapes()
 	{
 		const size_t number_months = 12;
@@ -432,10 +399,11 @@ public:
 			}
 		}
 
-		auto config = GetShapeConfig("Months Shapes");
+		auto config = shape_configuration_storage.GetShapeConfiguration("Months Shapes");
 
 		months_cells_shape->SetShapes(months_cells, config.LineWidth(), config.FillColor(), config.OutlineColor());
 	}
+
 	void SetupDaysShapes()
 	{
 		if (calendar_config.IsValidSpan() == false)
@@ -453,8 +421,8 @@ public:
 		std::vector<vec4> days_cells_shape_fillcolors(number_days_cells);
 		std::vector<vec4> days_cells_shape_outlinecolors(number_days_cells);
 
-		auto config = GetShapeConfig("Day Shapes");
-		auto sunday_config = GetShapeConfig("Sunday Shapes");
+		auto config = shape_configuration_storage.GetShapeConfiguration("Day Shapes");
+		auto sunday_config = shape_configuration_storage.GetShapeConfiguration("Sunday Shapes");
 
 		for (int index = 0; index < calendar_config.GetSpanLengthYears(); ++index)
 		{
@@ -496,6 +464,7 @@ public:
 
 		days_cells_shape->SetShapes(days_cells, days_cells_shape_linewidths, days_cells_shape_fillcolors, days_cells_shape_outlinecolors);
 	}
+
 	void SetupBarsShape()
 	{
 		auto number_bars = data_store.GetNumberBars();
@@ -518,7 +487,9 @@ public:
 			if (calendar_config.IsInSpan(data_store.GetBar(index).GetYear()))
 			{
 				auto current_group = data_store.GetBar(index).group;
-				auto current_shape_config = bar_shape_configs[current_group];
+
+				auto search_string = std::wstring(L"Bar Group ") + std::to_string(current_group);
+				auto current_shape_config = shape_configuration_storage.GetShapeConfiguration(search_string);
 
 				bars_cells_shape_linewidths.push_back(current_shape_config.LineWidth());
 				bars_cells_shape_fillcolors.push_back(current_shape_config.FillColor());
@@ -557,6 +528,7 @@ public:
 
 		bars_cells_shape->SetShapes(bars_cells, bars_cells_shape_linewidths, bars_cells_shape_fillcolors, bars_cells_shape_outlinecolors);
 	}
+
 	void SetupYearsTotals()
 	{
 		graphic_engine->RemoveShapes(years_totals_text);
@@ -574,17 +546,11 @@ public:
 				auto current_cell = row_frames.GetSubFrame(row, 0);
 
 				rect4 year_total_cell = current_cell;
-				//year_total_cell.Left(current_cell.Left());
-				//year_total_cell.Bottom(current_cell.Bottom());
 				year_total_cell.Right(current_cell.Left() + static_cast<float>(data_store.GetAnnualTotal(index)) * day_width);
-				//year_total_cell.Top(current_cell.Top());
-
 				years_totals_cells[index] = year_total_cell;
-
 
 				auto current_year = data_store.GetFirstYear() + index;
 				int number_days = boost::gregorian::date_period(boost::gregorian::date(current_year, 1, 1), boost::gregorian::date(current_year + 1, 1, 1)).length().days();
-
 
 				float percent = static_cast<float>(data_store.GetAnnualTotal(index)) / static_cast<float>(number_days);
 
@@ -602,14 +568,14 @@ public:
 				years_totals_text.push_back(graphic_engine->AddShape<FontShape>());
 				years_totals_text.back()->SetFont(font_loader);
 				years_totals_text.back()->SetShapeCentered(year_total_text, year_total_text_cell.Center(), year_total_text_cell.Height());
-
 			}
 		}
 
-		auto config = GetShapeConfig("Years Totals");
+		auto config = shape_configuration_storage.GetShapeConfiguration("Years Totals");
 
 		years_totals_shape->SetShapes(years_totals_cells, config.LineWidth(), config.FillColor(), config.OutlineColor());
 	}
+
 	void SetupLegend()
 	{
 		size_t number_entrie_frames = (date_group_store.GetDateGroups().size() + 1/*annual_total*/) * 2;
@@ -657,7 +623,8 @@ public:
 				legend_text.back()->SetFont(font_loader);
 				legend_text.back()->SetShapeCentered(date_group_store.GetDateGroups()[index].name, legend_entries_frames[index * 2].Center(), legend_font_size);
 
-				if (calendar_config.GetSpanLengthYears() > 0 && (bar_shape_configs.size() == date_group_store.GetDateGroups().size()))
+				//if (calendar_config.GetSpanLengthYears() > 0 && (bar_shape_configs.size() == date_group_store.GetDateGroups().size()))
+				if (calendar_config.GetSpanLengthYears() > 0)
 				{
 					auto current_height = row_frames.GetSubFrame(0, 1).Height();
 
@@ -668,7 +635,8 @@ public:
 
 					bars_cells.push_back(current_cell);
 
-					auto current_shape_config = bar_shape_configs[index];
+					auto search_string = std::wstring(L"Bar Group ") + std::to_string(index);
+					auto current_shape_config = shape_configuration_storage.GetShapeConfiguration(search_string);
 
 					bars_cells_shape_linewidths.push_back(current_shape_config.LineWidth());
 					bars_cells_shape_fillcolors.push_back(current_shape_config.FillColor());
@@ -691,7 +659,7 @@ public:
 
 				bars_cells.push_back(current_cell);
 
-				auto current_shape_config = GetShapeConfig("Years Totals");
+				auto current_shape_config = shape_configuration_storage.GetShapeConfiguration("Years Totals");
 
 				bars_cells_shape_linewidths.push_back(current_shape_config.LineWidth());
 				bars_cells_shape_fillcolors.push_back(current_shape_config.FillColor());
@@ -709,9 +677,8 @@ private:
 	GraphicEngine* graphic_engine;
 
 	DateIntervalBundleBarStore data_store;
-	CalendarConfig calendar_config;
+	CalendarConfigStorage calendar_config;
 	
-	//CalendarSpan calendar_span;
 	RowFrames row_frames;
 	
 	rect4 page_size;
@@ -733,13 +700,9 @@ private:
 
 	float labels_font_size;
 
-	
-
 	////////////////////////////////////////////////////////////////////////////////
 
-	
-	std::vector<RectangleShapeConfig> element_configurations;
-	std::vector<RectangleShapeConfig> bar_shape_configs;
+	ShapeConfigurationStorage shape_configuration_storage;
 
 	DateGroupStore date_group_store;
 	

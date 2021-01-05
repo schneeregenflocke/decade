@@ -129,7 +129,7 @@ public:
 	void ReceiveTitleConfig(const TitleConfig& title_config)
 	{
 		this->title_config = title_config;
-		UpdateWidgets();
+		UpdateWidgetForSelection();
 	}
 
 	sigslot::signal<const TitleConfig&> signal_title_config;
@@ -146,7 +146,7 @@ private:
 	wxColourPickerCtrl* text_color_picker;
 	wxSlider* alpha_slider;
 
-	void UpdateWidgets()
+	void UpdateWidgetForSelection()
 	{
 		std::cout << "TitlePanel: UpdateWidgets" << '\n';
 

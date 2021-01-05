@@ -142,98 +142,59 @@ public:
 
 		Bind(wxEVT_PG_CHANGED, &CalendarSetupPanel::OnPropertyGridChanging, this);
 
-		ActualizePropertyGridValues();
+		UpdatePropertyGrid();
+	}
+
+	void ReceiveCalendarConfigStorage(const CalendarConfigStorage& calendar_config_storage)
+	{
+		this->calendar_config_storage = calendar_config_storage;
+		UpdatePropertyGrid();
 	}
 
 	void OnPropertyGridChanging(wxPropertyGridEvent& event)
 	{
-		//auto current_property = event.GetProperty();
-
 		property_grid->RefreshPropertyGrid();
 
 		long number_subrows = property_grid->GetPropertyValue(property_grid->gui_number_spacings).GetInteger();
-		calendar_config.spacing_proportions.resize(number_subrows);
+		calendar_config_storage.spacing_proportions.resize(number_subrows);
 
 		for (size_t index = 0; index < number_subrows; ++index)
 		{
-			calendar_config.spacing_proportions[index] = static_cast<float>(property_grid->GetPropertyValue(property_grid->gui_spacings_array[index]).GetDouble());
+			calendar_config_storage.spacing_proportions[index] = static_cast<float>(property_grid->GetPropertyValue(property_grid->gui_spacings_array[index]).GetDouble());
 		}
 
-		calendar_config.auto_calendar_span = property_grid->GetPropertyValue(property_grid->gui_auto_span).GetBool();
+		calendar_config_storage.auto_calendar_span = property_grid->GetPropertyValue(property_grid->gui_auto_span).GetBool();
 
 		long lower_limit = property_grid->GetPropertyValue(property_grid->gui_lower_limit).GetInteger();
 		long upper_limit = property_grid->GetPropertyValue(property_grid->gui_upper_limit).GetInteger();
 		
-		calendar_config.SetSpan(lower_limit, upper_limit);
+		calendar_config_storage.SetSpan(lower_limit, upper_limit);
 
-		signal_calendar_config(calendar_config);
+		signal_calendar_config_storage(calendar_config_storage);
 	}
 
-	void ActualizePropertyGridValues()
+	void UpdatePropertyGrid()
 	{
-		property_grid->SetPropertyValue(property_grid->gui_number_spacings, static_cast<int>(calendar_config.spacing_proportions.size()));
+		property_grid->SetPropertyValue(property_grid->gui_number_spacings, static_cast<int>(calendar_config_storage.spacing_proportions.size()));
 
 		property_grid->RefreshPropertyGrid();
 
-		for (size_t index = 0; index < calendar_config.spacing_proportions.size(); ++index)
+		for (size_t index = 0; index < calendar_config_storage.spacing_proportions.size(); ++index)
 		{
-			property_grid->SetPropertyValue(property_grid->gui_spacings_array[index], calendar_config.spacing_proportions[index]);
+			property_grid->SetPropertyValue(property_grid->gui_spacings_array[index], calendar_config_storage.spacing_proportions[index]);
 		}
 		
-		property_grid->SetPropertyValue(property_grid->gui_auto_span, calendar_config.auto_calendar_span);
-		property_grid->SetPropertyValue(property_grid->gui_lower_limit, calendar_config.GetSpanLimitsYears()[0]);
-		property_grid->SetPropertyValue(property_grid->gui_upper_limit, calendar_config.GetSpanLimitsYears()[1]);
+		property_grid->SetPropertyValue(property_grid->gui_auto_span, calendar_config_storage.auto_calendar_span);
+		property_grid->SetPropertyValue(property_grid->gui_lower_limit, calendar_config_storage.GetSpanLimitsYears()[0]);
+		property_grid->SetPropertyValue(property_grid->gui_upper_limit, calendar_config_storage.GetSpanLimitsYears()[1]);
 
 		property_grid->RefreshPropertyGrid();
 	}
 	
-	void SendDefaultValues()
-	{
-		signal_calendar_config(calendar_config);
-	}
-
-	void LoadXML(const pugi::xml_node& node)
-	{
-		auto calendar_setup_node = node.child("calendar_setup");
-
-		calendar_config.spacing_proportions.clear();
-
-		auto subrow_proportions_node = calendar_setup_node.child("spacing_proportions");
-		for (auto& proportion : subrow_proportions_node.children("proportion"))
-		{
-			calendar_config.spacing_proportions.push_back(proportion.attribute("proportion").as_double());
-		}
-
-		calendar_config.auto_calendar_span = calendar_setup_node.child("auto_calendar_span").attribute("auto_calendar_span").as_bool();
-
-		auto lower_limit = calendar_setup_node.child("span_lower_limit").attribute("span_lower_limit").as_int();
-		auto upper_limit = calendar_setup_node.child("span_upper_limit").attribute("span_upper_limit").as_int();
-		calendar_config.SetSpan(lower_limit, upper_limit);
-
-		ActualizePropertyGridValues();
-
-		signal_calendar_config(calendar_config);
-	}
-	void SaveXML(pugi::xml_node* node)
-	{
-		auto calendar_setup_node = node->append_child("calendar_setup");
-
-		auto subrow_proportions_node = calendar_setup_node.append_child("spacing_proportions");
-		for (const auto& proportion : calendar_config.spacing_proportions)
-		{
-			auto proportion_node = subrow_proportions_node.append_child("proportion");
-			proportion_node.append_attribute("proportion").set_value(proportion);
-		}
-
-		calendar_setup_node.append_child("auto_calendar_span").append_attribute("auto_calendar_span").set_value(calendar_config.auto_calendar_span);
-		calendar_setup_node.append_child("span_lower_limit").append_attribute("span_lower_limit").set_value(calendar_config.GetSpanLimitsYears()[0]);
-		calendar_setup_node.append_child("span_upper_limit").append_attribute("span_upper_limit").set_value(calendar_config.GetSpanLimitsYears()[1]);
-	}
-	
-	sigslot::signal<const CalendarConfig&> signal_calendar_config;
+	sigslot::signal<const CalendarConfigStorage&> signal_calendar_config_storage;
 
 private:
 
 	PropertyGridPanel* property_grid;
-	CalendarConfig calendar_config;
+	CalendarConfigStorage calendar_config_storage;
 };

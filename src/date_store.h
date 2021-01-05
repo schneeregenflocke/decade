@@ -36,8 +36,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include <array>
 #include <map>
 
-#include <pugixml.hpp>
-
 
 
 class DateIntervalBundle
@@ -170,55 +168,6 @@ public:
 	}
 
 	sigslot::signal<const std::vector<DateIntervalBundle>&> signal_date_interval_bundles;
-
-	/*void LoadXML(const pugi::xml_node& doc)
-	{
-		auto base_node = doc.child("date_interval_bundles");
-
-		std::vector<DateIntervalBundle> temporary_date_interval_bundles;
-
-		for (auto& node_interval : base_node.children("date_interval_bundle"))
-		{
-			std::string begin_date_string = node_interval.attribute("begin_date").value();
-			std::string end_date_string = node_interval.attribute("end_date").value();
-
-			boost::gregorian::date boost_begin_date = boost::gregorian::from_undelimited_string(std::string(begin_date_string.begin(), begin_date_string.end()));
-			boost::gregorian::date boost_end_date = boost::gregorian::from_undelimited_string(std::string(end_date_string.begin(), end_date_string.end()));
-
-			DateIntervalBundle temporary_bundle;
-
-			temporary_bundle.date_interval = boost::gregorian::date_period(boost_begin_date, boost_end_date);
-			temporary_bundle.group = node_interval.attribute("group").as_int();
-			temporary_bundle.comment = node_interval.attribute("comment").value();
-
-			//copy constructor, default constructor, constructor??
-			temporary_date_interval_bundles.push_back(temporary_bundle);
-		}
-
-		ReceiveDateIntervalBundles(temporary_date_interval_bundles);
-	}*/
-
-	/*void SaveXML(pugi::xml_node* doc)
-	{
-		auto base_node = doc->append_child("date_interval_bundles");
-
-		for (size_t index = 0; index < date_interval_bundles.size(); ++index)
-		{
-			auto node = base_node.append_child("date_interval_bundle");
-
-			auto attribute_begin_date = node.append_attribute("begin_date");
-			std::string begin_date_iso_string = boost::gregorian::to_iso_string(date_interval_bundles[index].date_interval.begin());
-			attribute_begin_date.set_value(std::wstring(begin_date_iso_string.begin(), begin_date_iso_string.end()).c_str());
-
-			auto attribute_end_date = node.append_attribute("end_date");
-			std::string end_date_iso_string = boost::gregorian::to_iso_string(date_interval_bundles[index].date_interval.end());
-			attribute_end_date.set_value(std::wstring(end_date_iso_string.begin(), end_date_iso_string.end()).c_str());
-
-			node.append_attribute("group").set_value(date_interval_bundles[index].group);
-
-			node.append_attribute("comment").set_value(date_interval_bundles[index].comment.c_str());
-		}
-	}*/
 
 protected:
 

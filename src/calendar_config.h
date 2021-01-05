@@ -20,6 +20,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 #include "date_utils.h"
 
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/split_member.hpp>
+#include <boost/serialization/string.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/date_time/gregorian/greg_serialize.hpp>
+
 #include <vector>
 #include <utility>
 #include <algorithm>
@@ -31,9 +38,10 @@ class CalendarSpan
 {
 public:
 	CalendarSpan() :
-		span(boost::gregorian::date(2000, 1, 1), boost::gregorian::date(2010, 1, 1)),
-		valid_id(0)
-	{}
+		span(boost::gregorian::date(2000, 1, 1), boost::gregorian::date(2010, 1, 1))
+	{
+		valid_id = CheckAndAdjustDateInterval(&span);
+	}
 
 	void SetSpan(const int first_year, const int last_year)
 	{
@@ -104,20 +112,68 @@ public:
 private:
 	boost::gregorian::date_period span;
 	int valid_id;
+
+	friend class boost::serialization::access;
+	template<class Archive>
+	void serialize(Archive& ar, const unsigned int version)
+	{
+		ar& span;
+		ar& valid_id;
+	}
 };
 
 
-class CalendarConfig : public CalendarSpan
+class CalendarConfigStorage : public CalendarSpan
 {
 public:
-	CalendarConfig() :
+	CalendarConfigStorage() :
 		auto_calendar_span(true),
-		spacing_proportions({ 25, 100, 50, 100, 50, 100, 25 })	
+		spacing_proportions({ 25, 100, 50, 100, 50, 100, 25 })
 	{}
+
+	void ReceiveCalendarConfigStorage(const CalendarConfigStorage& calendar_config_storage)
+	{
+		*this = calendar_config_storage;
+		SendCalendarConfigStorage();
+	}
+
+	void SendCalendarConfigStorage()
+	{
+		signal_calendar_config_storage(*this);
+	}
+
+	CalendarConfigStorage& operator=(const CalendarConfigStorage& other)
+	{
+		auto_calendar_span = other.auto_calendar_span;
+		spacing_proportions = other.spacing_proportions;
+		
+		CalendarSpan::operator=(other);
+
+		return *this;
+	}
 
 	bool auto_calendar_span;
 	std::vector<float> spacing_proportions;
+
+	sigslot::signal<const CalendarConfigStorage&> signal_calendar_config_storage;
 	
 private:
-	
+
+	friend class boost::serialization::access;
+	template<class Archive>
+	void save(Archive& ar, const unsigned int version) const
+	{
+		ar& auto_calendar_span;
+		ar& spacing_proportions;
+		ar& boost::serialization::base_object<CalendarSpan>(*this);
+	}
+	template<class Archive>
+	void load(Archive& ar, const unsigned int version)
+	{
+		ar& auto_calendar_span;
+		ar& spacing_proportions;
+		ar& boost::serialization::base_object<CalendarSpan>(*this);
+		SendCalendarConfigStorage();
+	}
+	BOOST_SERIALIZATION_SPLIT_MEMBER()
 };

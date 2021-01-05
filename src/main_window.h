@@ -22,6 +22,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include "calendar_view.h"
 #include "date_utils.h"
 #include "title_config.h"
+#include "shape_config.h"
 
 #include "gui/wx_widgets_include.h"
 
@@ -35,10 +36,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include "gui/calendar_panel.h"
 #include "gui/license_panel.h"
 
-
 #include <sigslot/signal.hpp>
-
-#include <pugixml.hpp>
 
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
@@ -46,15 +44,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 #include <csv/reader.hpp>
 #include <csv/writer.hpp>
 
-
 #include <iostream>
 #include <string>
 #include <cmath>
 #include <memory>
 
 
-class MainWindow :
-    public wxFrame
+class MainWindow : public wxFrame
 {
 public:
 
@@ -199,6 +195,8 @@ private:
         transform_date_interval_bundle.SetTransform(0, 1);
         transform_date_interval_bundle.signal_transform_date_interval_bundles.connect(&CalendarPage::ReceiveDateIntervalBundles, calendar.get());
 
+        ////////////////////////////////////////////////////////////////////////////////
+
         // Connections date_groups_store <-> date_groups_panel
         date_groups_store.signal_date_groups.connect(&DateGroupsTablePanel::ReceiveDateGroups, date_groups_table_panel);
         date_groups_table_panel->signal_table_date_groups.connect(&DateGroupStore::ReceiveDateGroups, &date_groups_store);
@@ -209,6 +207,8 @@ private:
         date_groups_store.signal_date_groups.connect(&ElementsSetupsPanel::ReceiveDateGroups, elements_setup_panel);
         date_groups_store.signal_date_groups.connect(&CalendarPage::ReceiveDateGroups, calendar.get());
 
+        ////////////////////////////////////////////////////////////////////////////////
+
         // Connections page_setup_store <-> page_setup_panel
         page_setup_store.signal_page_setup_config.connect(&PageSetupPanel::ReceivePageSetup, page_setup_panel);
         page_setup_panel->signal_page_setup_config.connect(&PageSetupStore::ReceivePageSetup, &page_setup_store);
@@ -217,8 +217,12 @@ private:
         page_setup_store.signal_page_setup_config.connect(&CalendarPage::ReceivePageSetup, calendar.get());
         page_setup_store.signal_page_setup_config.connect(&GraphicEngine::ReceivePageSetup, glcanvas->GetGraphicEngine());
 
+        ////////////////////////////////////////////////////////////////////////////////
+
         // Connections font_setup_panel -> ...
         font_setup_panel->signal_font_file_path.connect(&CalendarPage::ReceiveFont, calendar.get());
+
+        ////////////////////////////////////////////////////////////////////////////////
 
         // Connections title_config_store <-> title_setup_panel
         title_config_store.signal_title_config.connect(&TitleSetupPanel::ReceiveTitleConfig, title_setup_panel);
@@ -227,19 +231,34 @@ private:
         // Connections title_config_store -> ...
         title_config_store.signal_title_config.connect(&CalendarPage::ReceiveTitleConfig, calendar.get());
 
+        ////////////////////////////////////////////////////////////////////////////////
+
+        // Connections title_config_store <-> elements_setup_panel
+        shape_configuration_storage.signal_shape_configuration_storage.connect(&ElementsSetupsPanel::ReceiveShapeConfigurationStorage, elements_setup_panel);
+        elements_setup_panel->signal_shape_configuration_storage.connect(&ShapeConfigurationStorage::ReceiveShapeConfigurationStorage, &shape_configuration_storage);
+
         // Connections elements_setup_panel -> ...
-        elements_setup_panel->signal_shape_config.connect(&CalendarPage::ReceiveRectangleShapeConfig, calendar.get());
+        shape_configuration_storage.signal_shape_configuration_storage.connect(&CalendarPage::ReceiveShapeConfigurationStorage, calendar.get());
 
-        // Connections calendar_setup_panel -> ...
-        calendar_setup_panel->signal_calendar_config.connect(&CalendarPage::ReceiveCalendarConfig, calendar.get());
+        ////////////////////////////////////////////////////////////////////////////////
 
-        // Send Default Values
+        // Connections calendar_configuration_storage <-> calendar_panel
+        calendar_configuration_storage.signal_calendar_config_storage.connect(&CalendarSetupPanel::ReceiveCalendarConfigStorage, calendar_setup_panel);
+        calendar_setup_panel->signal_calendar_config_storage.connect(&CalendarConfigStorage::ReceiveCalendarConfigStorage, &calendar_configuration_storage);
+
+        // Connections calendar_configuration_storage -> ...
+        calendar_configuration_storage.signal_calendar_config_storage.connect(&CalendarPage::ReceiveCalendarConfig, calendar.get());
+     
+        ////////////////////////////////////////////////////////////////////////////////
+
+        shape_configuration_storage.SendShapeConfigurationStorage();
+
         date_groups_store.SendDefaultValues();
         page_setup_panel->SendDefaultValues();
         font_setup_panel->SendDefaultValues();
         title_setup_panel->SendDefaultValues();
-        elements_setup_panel->SendDefaultValues();
-        calendar_setup_panel->SendDefaultValues();
+        
+        calendar_configuration_storage.SendCalendarConfigStorage();
     }
 
     void SlotLoadXML(wxCommandEvent& event)
@@ -252,8 +271,6 @@ private:
             LoadXML(file_path);
             current_xml_file_path = file_path;
         }
-
-
     }
 
     void SlotSaveXML(wxCommandEvent& event)
@@ -262,6 +279,7 @@ private:
         {
             SaveXML(current_xml_file_path);
         }
+
         else if (event.GetId() == ID_SAVE_AS_XML || current_xml_file_path.empty() == true)
         {
             wxFileDialog saveFileDialog(this, "Save File", wxEmptyString, wxEmptyString, "XML Files (*.xml)|*.xml", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
@@ -277,44 +295,29 @@ private:
 
     void LoadXML(const std::string& filepath)
     {
-
         std::ifstream filestream("testfile.txt");
         boost::archive::text_iarchive oarchive(filestream);
+
         oarchive >> date_groups_store;
         oarchive >> date_interval_bundle_store;
         oarchive >> page_setup_store;
         oarchive >> title_config_store;
-
-
-        pugi::xml_document doc;
-        auto load_success = doc.load_file(filepath.c_str());
-        if (load_success)
-        {
-            elements_setup_panel->LoadFromXML(doc);
-            calendar_setup_panel->LoadXML(doc);
-        }
+        oarchive >> shape_configuration_storage;
+        oarchive >> calendar_configuration_storage;
     }
 
     void SaveXML(const std::string& filepath)
     {
-
         std::ofstream filestream("testfile.txt");
         boost::archive::text_oarchive oarchive(filestream);
+
         oarchive << date_groups_store;
         oarchive << date_interval_bundle_store;
         oarchive << page_setup_store;
         oarchive << title_config_store;
-
-        pugi::xml_document doc;
-
-        elements_setup_panel->SaveToXML(&doc);
-        calendar_setup_panel->SaveXML(&doc);
-
-        doc.save_file(filepath.c_str());
+        oarchive << shape_configuration_storage;
+        oarchive << calendar_configuration_storage;
     }
-
-    const int ID_SAVE_XML;
-    const int ID_SAVE_AS_XML;
 
     void SlotImportCSV(wxCommandEvent& event)
     {
@@ -396,10 +399,12 @@ private:
             glcanvas->GetGraphicEngine()->RenderToPNG(file_path);
         }
     }
+
     void SlotExit(wxCommandEvent& event)
     {
         Close(true);
     }
+
     void SlotLicenseInfo(wxCommandEvent& event)
     {
         LicenseInformationDialog dialog;
@@ -418,7 +423,6 @@ private:
     TitleSetupPanel* title_setup_panel;
     GLCanvas* glcanvas;
 
-    // 
     std::unique_ptr<CalendarPage> calendar;
 
     DateGroupStore date_groups_store;
@@ -427,4 +431,9 @@ private:
 
     PageSetupStore page_setup_store;
     TitleConfigStore title_config_store;
+    ShapeConfigurationStorage shape_configuration_storage;
+    CalendarConfigStorage calendar_configuration_storage;
+
+    const int ID_SAVE_XML;
+    const int ID_SAVE_AS_XML;
 };

@@ -66,6 +66,9 @@ private:
 class DateGroupStore
 {
 public:
+
+
+
 	void ReceiveDateGroups(const std::vector<DateGroup>& date_groups)
 	{
 		this->date_groups = date_groups;

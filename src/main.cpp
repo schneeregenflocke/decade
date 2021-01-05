@@ -92,7 +92,7 @@ bool App::OnInit()
     std::wcout << L"current locale name " << locale->GetLanguageName(language) << '\n';
     
     std::wcout << L"OperatingSystemIdName " << wxPlatformInfo::Get().GetOperatingSystemIdName() << '\n';
-    std::wcout << L"ArchName " << wxPlatformInfo::Get().GetArchName() << '\n';
+    std::wcout << L"ArchName " << wxPlatformInfo::Get().GetBitnessName() << '\n';
 
     std::wcout << L"OSMajorVersion.OSMinorVersion.OSMicroVersion " << wxPlatformInfo::Get().GetOSMajorVersion() << '.' <<
         wxPlatformInfo::Get().GetOSMinorVersion() << '.' <<
