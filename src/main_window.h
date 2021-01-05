@@ -295,7 +295,7 @@ private:
 
     void LoadXML(const std::string& filepath)
     {
-        std::ifstream filestream("testfile.txt");
+        std::ifstream filestream(filepath);
         boost::archive::text_iarchive oarchive(filestream);
 
         oarchive >> date_groups_store;
@@ -308,7 +308,7 @@ private:
 
     void SaveXML(const std::string& filepath)
     {
-        std::ofstream filestream("testfile.txt");
+        std::ofstream filestream(filepath);
         boost::archive::text_oarchive oarchive(filestream);
 
         oarchive << date_groups_store;
