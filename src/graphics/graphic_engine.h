@@ -25,7 +25,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "font.h"
 #include "RenderToTexture.h"
 
-#include "../page_config.h"
+#include "../packages/page_config.h"
 
 #include <glm/ext/matrix_projection.hpp>
 

@@ -21,7 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "wx_widgets_include.h"
 
-#include "../title_config.h"
+#include "../packages/title_config.h"
 
 #include <array>
 #include <algorithm>

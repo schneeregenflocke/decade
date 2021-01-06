@@ -19,8 +19,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #pragma once
 
-#include "../shape_config.h"
-#include "../group_store.h"
+#include "../packages/shape_config.h"
+#include "../packages/group_store.h"
 #include "../casts.h"
 
 #include "wx_widgets_include.h"

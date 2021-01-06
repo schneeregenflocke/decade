@@ -19,7 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #pragma once
 
-#include "../page_config.h"
+#include "../packages/page_config.h"
 
 #include "wx_widgets_include.h"
 

@@ -23,12 +23,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "graphics/shapes.h"
 #include "graphics/font.h"
 
-#include "group_store.h"
-#include "date_store.h"
-#include "shape_config.h"
-#include "calendar_config.h"
-#include "page_config.h"
-#include "title_config.h"
+#include "packages/group_store.h"
+#include "packages/date_store.h"
+#include "packages/shape_config.h"
+#include "packages/calendar_config.h"
+#include "packages/page_config.h"
+#include "packages/title_config.h"
 
 #include <string>
 #include <memory>

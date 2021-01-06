@@ -21,8 +21,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "calendar_view.h"
 #include "date_utils.h"
-#include "title_config.h"
-#include "shape_config.h"
+#include "packages/title_config.h"
+#include "packages/shape_config.h"
 
 #include "gui/wx_widgets_include.h"
 

@@ -20,8 +20,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #pragma once
 
 #include "../date_utils.h"
-#include "../date_store.h"
-#include "../group_store.h"
+#include "../packages/date_store.h"
+#include "../packages/group_store.h"
 
 #include "wx_widgets_include.h"
 
