@@ -26,9 +26,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <sigslot/signal.hpp>
 
 #include <boost/serialization/access.hpp>
+#include <boost/serialization/split_member.hpp>
+#include <boost/serialization/nvp.hpp>
 #include <boost/serialization/array.hpp>
 #include <boost/serialization/string.hpp>
-#include <boost/serialization/split_member.hpp>
 
 
 struct TitleConfig
@@ -50,10 +51,10 @@ private:
 	template<class Archive>
 	void serialize(Archive& ar, const unsigned int version)
 	{
-		ar& frame_height;
-		ar& font_size_ratio;
-		ar& title_text;
-		ar& text_color;
+		ar& BOOST_SERIALIZATION_NVP(frame_height);
+		ar& BOOST_SERIALIZATION_NVP(font_size_ratio);
+		ar& BOOST_SERIALIZATION_NVP(title_text);
+		ar& BOOST_SERIALIZATION_NVP(text_color);
 	}
 };
 
@@ -84,14 +85,13 @@ private:
 	template<class Archive>
 	void save(Archive& ar, const unsigned int version) const
 	{
-		ar& title_config;
+		ar& BOOST_SERIALIZATION_NVP(title_config);
 	}
 	template<class Archive>
 	void load(Archive& ar, const unsigned int version)
 	{
-		ar& title_config;
+		ar& BOOST_SERIALIZATION_NVP(title_config);
 		signal_title_config(title_config);
 	}
 	BOOST_SERIALIZATION_SPLIT_MEMBER()
-
 };

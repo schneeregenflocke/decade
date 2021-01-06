@@ -21,12 +21,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include <sigslot/signal.hpp>
 
-//#include <pugixml.hpp>
-
 #include <boost/serialization/access.hpp>
+#include <boost/serialization/split_member.hpp>
+#include <boost/serialization/nvp.hpp>
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/vector.hpp>
-#include <boost/serialization/split_member.hpp>
 
 #include <string>
 #include <vector>
@@ -58,18 +57,15 @@ private:
 	template<class Archive>
 	void serialize(Archive& ar, const unsigned int version)
 	{
-		ar& number;
-		ar& name;
-		ar& exclude;
+		ar& BOOST_SERIALIZATION_NVP(number);
+		ar& BOOST_SERIALIZATION_NVP(name);
+		ar& BOOST_SERIALIZATION_NVP(exclude);
 	}
 };
 
 class DateGroupStore
 {
 public:
-
-
-
 	void ReceiveDateGroups(const std::vector<DateGroup>& date_groups)
 	{
 		this->date_groups = date_groups;
@@ -142,51 +138,18 @@ public:
 
 	sigslot::signal<const std::vector<DateGroup>&> signal_date_groups;
 
-	/*void LoadXML(const pugi::xml_node& doc)
-	{
-		std::vector<DateGroup> temporary_date_groups;
-
-		auto base_node = doc.child("date_group_store");
-
-		for (auto& node : base_node.children("date_group"))
-		{
-			DateGroup temporary_date_group;
-
-			temporary_date_group.name = node.attribute("name").value();
-			temporary_date_group.exclude = node.attribute("exclude").as_bool();
-
-			temporary_date_groups.push_back(temporary_date_group);
-		}
-
-		date_groups.clear();
-		ReceiveDateGroups(temporary_date_groups);
-	}*/
-
-	/*void SaveXML(pugi::xml_node* doc) const
-	{
-		auto base_node = doc->append_child("date_group_store");
-
-		for (size_t index = 0; index < date_groups.size(); ++index)
-		{
-			auto node = base_node.append_child("date_group");
-
-			node.append_attribute("name").set_value(date_groups[index].name.c_str());
-			node.append_attribute("exclude").set_value(date_groups[index].exclude);
-		}
-	}*/
-
 private:
 
 	friend class boost::serialization::access;
 	template<class Archive>
 	void save(Archive& ar, const unsigned int version) const
 	{
-		ar& date_groups;
+		ar& BOOST_SERIALIZATION_NVP(date_groups);
 	}
 	template<class Archive>
 	void load(Archive& ar, const unsigned int version)
 	{
-		ar& date_groups;
+		ar& BOOST_SERIALIZATION_NVP(date_groups);
 		signal_date_groups(date_groups);
 	}
 	BOOST_SERIALIZATION_SPLIT_MEMBER()

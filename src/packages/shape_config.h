@@ -21,25 +21,22 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "casts.h"
 
-
 #include <sigslot/signal.hpp>
 
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/split_member.hpp>
-#include <boost/serialization/string.hpp>
+#include <boost/serialization/nvp.hpp>
 #include <boost/serialization/array.hpp>
+#include <boost/serialization/string.hpp>
 #include <boost/serialization/vector.hpp>
 
 #include <glm/vec4.hpp>
-
 
 #include <array>
 #include <vector>
 #include <string>
 #include <random>
 #include <exception>
-
-
 
 
 class ShapeConfiguration
@@ -55,7 +52,6 @@ public:
 		this->outline_color = { 0.f, 0.f, 0.f, 1.f };
 		this->fill_color = { 0.f, 0.f, 0.f, 1.f };
 	}
-
 
 	ShapeConfiguration(const std::string& name, bool outline_visible, bool fill_visible, float line_width, const glm::vec4& outline_color, const glm::vec4& fill_color) :
 		name(name),
@@ -187,12 +183,12 @@ private:
 	template<class Archive>
 	void serialize(Archive& ar, const unsigned int version)
 	{
-		ar& name;
-		ar& outline_visible;
-		ar& fill_visible;
-		ar& line_width;
-		ar& outline_color;
-		ar& fill_color;
+		ar& BOOST_SERIALIZATION_NVP(name);
+		ar& BOOST_SERIALIZATION_NVP(outline_visible);
+		ar& BOOST_SERIALIZATION_NVP(fill_visible);
+		ar& BOOST_SERIALIZATION_NVP(line_width);
+		ar& BOOST_SERIALIZATION_NVP(outline_color);
+		ar& BOOST_SERIALIZATION_NVP(fill_color);
 	}
 };
 
@@ -280,14 +276,14 @@ private:
 	template<class Archive>
 	void save(Archive& ar, const unsigned int version) const
 	{
-		ar& shape_configurations;
-		ar& number_persistent_configurations;
+		ar& BOOST_SERIALIZATION_NVP(shape_configurations);
+		ar& BOOST_SERIALIZATION_NVP(number_persistent_configurations);
 	}
 	template<class Archive>
 	void load(Archive& ar, const unsigned int version)
 	{
-		ar& shape_configurations;
-		ar& number_persistent_configurations;
+		ar& BOOST_SERIALIZATION_NVP(shape_configurations);
+		ar& BOOST_SERIALIZATION_NVP(number_persistent_configurations);
 		SendShapeConfigurationStorage();
 	}
 	BOOST_SERIALIZATION_SPLIT_MEMBER()

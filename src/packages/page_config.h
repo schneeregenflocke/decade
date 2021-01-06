@@ -24,8 +24,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <sigslot/signal.hpp>
 
 #include <boost/serialization/access.hpp>
-#include <boost/serialization/array.hpp>
 #include <boost/serialization/split_member.hpp>
+#include <boost/serialization/nvp.hpp>
+#include <boost/serialization/array.hpp>
 
 
 struct PageSetupConfig
@@ -39,9 +40,9 @@ private:
 	template<class Archive>
 	void serialize(Archive& ar, const unsigned int version)
 	{
-		ar& size;
-		ar& margins;
-		ar& orientation;
+		ar& BOOST_SERIALIZATION_NVP(size);
+		ar& BOOST_SERIALIZATION_NVP(margins);
+		ar& BOOST_SERIALIZATION_NVP(orientation);
 	}
 };
 
@@ -70,12 +71,12 @@ private:
 	template<class Archive>
 	void save(Archive& ar, const unsigned int version) const
 	{
-		ar& page_setup_config;
+		ar& BOOST_SERIALIZATION_NVP(page_setup_config);
 	}
 	template<class Archive>
 	void load(Archive& ar, const unsigned int version)
 	{
-		ar& page_setup_config;
+		ar& BOOST_SERIALIZATION_NVP(page_setup_config);
 		signal_page_setup_config(page_setup_config);
 	}
 	BOOST_SERIALIZATION_SPLIT_MEMBER()

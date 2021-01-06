@@ -38,8 +38,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include <sigslot/signal.hpp>
 
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
+//#include <boost/archive/text_oarchive.hpp>
+//#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/xml_oarchive.hpp>
+#include <boost/archive/xml_iarchive.hpp>
 
 #include <csv/reader.hpp>
 #include <csv/writer.hpp>
@@ -296,27 +298,29 @@ private:
     void LoadXML(const std::string& filepath)
     {
         std::ifstream filestream(filepath);
-        boost::archive::text_iarchive oarchive(filestream);
-
-        oarchive >> date_groups_store;
-        oarchive >> date_interval_bundle_store;
-        oarchive >> page_setup_store;
-        oarchive >> title_config_store;
-        oarchive >> shape_configuration_storage;
-        oarchive >> calendar_configuration_storage;
+        //boost::archive::text_iarchive oarchive(filestream);
+        boost::archive::xml_iarchive oarchive(filestream);
+        
+        oarchive >> BOOST_SERIALIZATION_NVP(date_groups_store);
+        oarchive >> BOOST_SERIALIZATION_NVP(date_interval_bundle_store);
+        oarchive >> BOOST_SERIALIZATION_NVP(page_setup_store);
+        oarchive >> BOOST_SERIALIZATION_NVP(title_config_store);
+        oarchive >> BOOST_SERIALIZATION_NVP(shape_configuration_storage);
+        oarchive >> BOOST_SERIALIZATION_NVP(calendar_configuration_storage);
     }
 
     void SaveXML(const std::string& filepath)
     {
         std::ofstream filestream(filepath);
-        boost::archive::text_oarchive oarchive(filestream);
+        //boost::archive::text_oarchive oarchive(filestream);
+        boost::archive::xml_oarchive oarchive(filestream);
 
-        oarchive << date_groups_store;
-        oarchive << date_interval_bundle_store;
-        oarchive << page_setup_store;
-        oarchive << title_config_store;
-        oarchive << shape_configuration_storage;
-        oarchive << calendar_configuration_storage;
+        oarchive << BOOST_SERIALIZATION_NVP(date_groups_store);
+        oarchive << BOOST_SERIALIZATION_NVP(date_interval_bundle_store);
+        oarchive << BOOST_SERIALIZATION_NVP(page_setup_store);
+        oarchive << BOOST_SERIALIZATION_NVP(title_config_store);
+        oarchive << BOOST_SERIALIZATION_NVP(shape_configuration_storage);
+        oarchive << BOOST_SERIALIZATION_NVP(calendar_configuration_storage);
     }
 
     void SlotImportCSV(wxCommandEvent& event)

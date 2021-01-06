@@ -22,8 +22,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "date_utils.h"
 
 #include <boost/serialization/access.hpp>
-#include <boost/serialization/base_object.hpp>
 #include <boost/serialization/split_member.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/nvp.hpp>
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/date_time/gregorian/greg_serialize.hpp>
@@ -118,8 +119,8 @@ private:
 	template<class Archive>
 	void serialize(Archive& ar, const unsigned int version)
 	{
-		ar& span;
-		ar& valid_id;
+		ar& BOOST_SERIALIZATION_NVP(span);
+		ar& BOOST_SERIALIZATION_NVP(valid_id);
 	}
 };
 
@@ -164,16 +165,18 @@ private:
 	template<class Archive>
 	void save(Archive& ar, const unsigned int version) const
 	{
-		ar& auto_calendar_span;
-		ar& spacing_proportions;
-		ar& boost::serialization::base_object<CalendarSpan>(*this);
+		ar& BOOST_SERIALIZATION_NVP(auto_calendar_span);
+		ar& BOOST_SERIALIZATION_NVP(spacing_proportions);
+		//boost::serialization::base_object<CalendarSpan>(*this);
+		ar& BOOST_SERIALIZATION_BASE_OBJECT_NVP(CalendarSpan);
 	}
 	template<class Archive>
 	void load(Archive& ar, const unsigned int version)
 	{
-		ar& auto_calendar_span;
-		ar& spacing_proportions;
-		ar& boost::serialization::base_object<CalendarSpan>(*this);
+		ar& BOOST_SERIALIZATION_NVP(auto_calendar_span);
+		ar& BOOST_SERIALIZATION_NVP(spacing_proportions);
+		//boost::serialization::base_object<CalendarSpan>(*this);
+		ar& BOOST_SERIALIZATION_BASE_OBJECT_NVP(CalendarSpan);
 		SendCalendarConfigStorage();
 	}
 	BOOST_SERIALIZATION_SPLIT_MEMBER()

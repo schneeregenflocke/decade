@@ -19,23 +19,22 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #pragma once
 
-
 #include "date_utils.h"
 #include "group_store.h"
 
 #include <sigslot/signal.hpp>
 
 #include <boost/serialization/access.hpp>
+#include <boost/serialization/split_member.hpp>
+#include <boost/serialization/nvp.hpp>
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/vector.hpp>
-#include <boost/serialization/split_member.hpp>
 #include <boost/date_time/gregorian/greg_serialize.hpp>
 
 #include <fstream>
 #include <sstream>
 #include <array>
 #include <map>
-
 
 
 class DateIntervalBundle
@@ -65,13 +64,13 @@ private:
 	template<class Archive>
 	void serialize(Archive& ar, const unsigned int version)
 	{
-		ar& date_interval;
-		ar& date_inter_interval;
-		ar& number;
-		ar& group;
-		ar& group_number;
-		ar& exclude;
-		ar& comment;
+		ar& BOOST_SERIALIZATION_NVP(date_interval);
+		ar& BOOST_SERIALIZATION_NVP(date_inter_interval);
+		ar& BOOST_SERIALIZATION_NVP(number);
+		ar& BOOST_SERIALIZATION_NVP(group);
+		ar& BOOST_SERIALIZATION_NVP(group_number);
+		ar& BOOST_SERIALIZATION_NVP(exclude);
+		ar& BOOST_SERIALIZATION_NVP(comment);
 	}
 };
 
@@ -207,12 +206,12 @@ private:
 	template<class Archive>
 	void save(Archive& ar, const unsigned int version) const
 	{
-		ar& date_interval_bundles;
+		ar& BOOST_SERIALIZATION_NVP(date_interval_bundles);
 	}
 	template<class Archive>
 	void load(Archive& ar, const unsigned int version)
 	{
-		ar& date_interval_bundles;
+		ar& BOOST_SERIALIZATION_NVP(date_interval_bundles);
 		signal_date_interval_bundles(date_interval_bundles);
 	}
 	BOOST_SERIALIZATION_SPLIT_MEMBER()
