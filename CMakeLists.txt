@@ -5,8 +5,6 @@ project(Decade)
 add_executable(Decade)
 
 
-
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "CMAKE_EXPORT_COMPILE_COMMANDS" FORCE)
 
 
@@ -25,13 +23,9 @@ message("decade_target_cxx_standard: ${decade_target_cxx_standard}")
 add_compile_definitions(HAVE_TYPE_TRAITS)
 
 
-
-
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
 	add_compile_options(/Zc:__cplusplus)
 endif()
-
-
 
 
 ### boost ###
@@ -73,7 +67,7 @@ set(wxUSE_WINRT	OFF CACHE BOOL "wxUSE_WINRT" FORCE)
 set(wxUSE_EXCEPTIONS OFF CACHE BOOL "wxUSE_EXCEPTIONS" FORCE)
 set(wxUSE_GLCANVAS_EGL OFF CACHE BOOL "wxUSE_GLCANVAS_EGL" FORCE)
 
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets" EXCLUDE_FROM_ALL)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets")
 #fixed library names https://github.com/wxWidgets/wxWidgets/commit/0f806ad96db4e22053769c0b2f3b7be4026ea8de
 target_link_libraries(Decade PRIVATE wxpropgrid wxgl wxcore wxbase)
 
@@ -81,37 +75,43 @@ target_link_libraries(Decade PRIVATE wxpropgrid wxgl wxcore wxbase)
 
 ### glad ###
 set(GLAD_PROFILE "core" CACHE STRING "OpenGL profile" FORCE)
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/glad" EXCLUDE_FROM_ALL)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/glad")
 target_link_libraries(Decade PRIVATE glad)
+
 
 ### glm ###
 #add_compile_definitions(GLM_FORCE_MESSAGES)
 add_compile_definitions(GLM_FORCE_CXX17)
 target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/glm")
 
+
 ### freetype ###
 
-set(FT_WITH_BROTLI OFF CACHE BOOL "FT_WITH_BROTLI" FORCE)
-set(FT_WITH_BZIP2 OFF CACHE BOOL "FT_WITH_BZIP2" FORCE)
-set(FT_WITH_HARFBUZZ OFF CACHE BOOL "FT_WITH_HARFBUZZ" FORCE)
-set(FT_WITH_PNG OFF CACHE BOOL "FT_WITH_PNG" FORCE)
-set(FT_WITH_ZLIB OFF CACHE BOOL "FT_WITH_ZLIB" FORCE)
+#set(FT_WITH_BROTLI OFF CACHE BOOL "FT_WITH_BROTLI" FORCE)
+#set(FT_WITH_BZIP2 OFF CACHE BOOL "FT_WITH_BZIP2" FORCE)
+#set(FT_WITH_HARFBUZZ OFF CACHE BOOL "FT_WITH_HARFBUZZ" FORCE)
+#set(FT_WITH_PNG OFF CACHE BOOL "FT_WITH_PNG" FORCE)
+#set(FT_WITH_ZLIB OFF CACHE BOOL "FT_WITH_ZLIB" FORCE)
 
 target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2/include")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2" EXCLUDE_FROM_ALL)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2")
 target_link_libraries(Decade PRIVATE freetype)
+
 
 ### lodepng ###
 target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/lodepng")
 target_sources(Decade PRIVATE external/lodepng/lodepng.h external/lodepng/lodepng.cpp)
 
+
 ### csv ###
 target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/csv/include")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/csv" EXCLUDE_FROM_ALL)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/csv")
+
 
 ### embed-resource ###
 target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource" EXCLUDE_FROM_ALL)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource")
+
 
 ### sigslot ###
 target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/include")
@@ -154,7 +154,6 @@ endif()
 if(${CMAKE_SYSTEM_NAME} STREQUAL Linux)
 	list(APPEND LICENSE_FILES_PATHS "/usr/share/licenses/boost/LICENSE_1_0.txt" boost)
 endif()
-
 
 
 embed_resources(SHADERS ${SHADER_FILES_PATHS})
