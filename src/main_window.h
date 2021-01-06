@@ -425,10 +425,10 @@ private:
 
     std::unique_ptr<CalendarPage> calendar;
 
+    // Storages
     DateGroupStore date_groups_store;
     DateIntervalBundleStore date_interval_bundle_store;
     TransformDateIntervalBundle transform_date_interval_bundle;
-
     PageSetupStore page_setup_store;
     TitleConfigStore title_config_store;
     ShapeConfigurationStorage shape_configuration_storage;

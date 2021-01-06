@@ -2,6 +2,10 @@ language: cpp
 
 dist: bionic
 
+git:
+  depth: 1
+  submodules: true
+
 script:
 - gcc-10 --version
 - mkdir build
@@ -23,6 +27,8 @@ matrix:
          - MATRIX_EVAL="CC=gcc-10 && CXX=g++-10"
 
 before_install:
-- eval "${MATRIX_EVAL}"
+- sudo apt-get -qq update && sudo apt-get install -y autoconf cmake libtool
 - sudo apt-get -y install libboost-all-dev 
 - sudo apt-get -y install libgtk-3-dev
+- eval "${MATRIX_EVAL}"
+
