@@ -1,3 +1,7 @@
+Decade
+Copyright (c) 2019-2021 Marco Peyer
+
+
                     GNU GENERAL PUBLIC LICENSE
                        Version 2, June 1991
 
