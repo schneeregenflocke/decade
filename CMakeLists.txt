@@ -1,22 +1,25 @@
-﻿cmake_minimum_required (VERSION 3.8)
+﻿cmake_minimum_required(VERSION 3.8)
+message("CMAKE_VERSION: ${CMAKE_VERSION}")
 
-project(Decade)
 
-add_executable(Decade)
+project(Decade_Project VERSION 5.0.1)
+message("CMAKE_PROJECT_VERSION: ${CMAKE_PROJECT_VERSION}")
+message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
+message("CMAKE_CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID}")
+message("CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
+#message("CMAKE_CXX_COMPILE_FEATURES: ${CMAKE_CXX_COMPILE_FEATURES}")
 
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "CMAKE_EXPORT_COMPILE_COMMANDS" FORCE)
+
+
+add_executable(Decade)
 
 
 target_compile_features(Decade PUBLIC cxx_std_17)
 get_target_property(decade_target_cxx_standard Decade CXX_STANDARD)
 
 
-message("CMAKE_VERSION: ${CMAKE_VERSION}")
-message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
-message("CMAKE_CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID}")
-message("CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
-#message("CMAKE_CXX_COMPILE_FEATURES: ${CMAKE_CXX_COMPILE_FEATURES}")
 
 message("decade_target_cxx_standard: ${decade_target_cxx_standard}")
 
@@ -172,4 +175,27 @@ target_sources(Decade PRIVATE ${source_files})
 if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
 	target_sources(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/include/wx/msw/amd64_dpi_aware.manifest")
 endif()
+
+
+### CPACK
+#include(GNUInstallDirs)
+
+install(
+	TARGETS Decade
+	#EXPORT Decade_Project 
+	#DESTINATION bin
+	COMPONENT executable
+	)
+
+get_cmake_property(CPACK_COMPONENTS_ALL COMPONENTS)
+list(REMOVE_ITEM CPACK_COMPONENTS_ALL "Unspecified" "headers")
+message("CPACK_COMPONENTS_ALL: ${CPACK_COMPONENTS_ALL}")
+
+#include(InstallRequiredSystemLibraries)
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/License.txt")
+set(CPACK_PACKAGE_VERSION_MAJOR "5")
+set(CPACK_PACKAGE_VERSION_MINOR "0")
+include(CPack)
+
+
 
