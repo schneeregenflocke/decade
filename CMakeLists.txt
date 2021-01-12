@@ -30,7 +30,7 @@ endif()
 
 ### boost ###
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost REQUIRED COMPONENTS date_time serialization wserialization)
+find_package(Boost COMPONENTS date_time serialization wserialization)
 
 message("Boost_FOUND: ${Boost_FOUND}")
 if(NOT ${Boost_FOUND})
