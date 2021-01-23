@@ -17,7 +17,7 @@ environment:
   matrix:
     - GENERATOR: "Visual Studio 16 2019"
       BUILDFLAGS: "/verbosity:normal"
-      CMAKEARGS: ""
+      CMAKEARGS: -Dqt_installation_prefix=C:\Qt\6.0.0\msvc2019_64
 
 matrix:
   fast_finish: true
