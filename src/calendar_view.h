@@ -2,9 +2,9 @@
 Decade
 Copyright (c) 2019-2021 Marco Peyer
 
-This program is free software; you can redistribute it and/or modify
+This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
@@ -12,16 +12,15 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110 - 1301 USA.
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
 
-#include "graphics/graphic_engine.h"
-#include "graphics/shapes.h"
-#include "graphics/font.h"
+#include "graphics_engine/graphics_engine.h"
+#include "graphics_engine/shapes.h"
+#include "graphics_engine/font.h"
 
 #include "packages/group_store.h"
 #include "packages/date_store.h"
@@ -261,7 +260,7 @@ public:
 		SetupYearsTotals();
 		SetupLegend();
 
-		graphic_engine->Refresh();
+		//graphic_engine->Refresh();
 	}
 
 	void SetupPrintAreaShape()
@@ -489,7 +488,7 @@ public:
 			{
 				auto current_group = data_store.GetBar(index).group;
 
-				auto search_string = std::wstring(L"Bar Group ") + std::to_string(current_group);
+				auto search_string = std::string("Bar Group ") + std::to_string(current_group);
 				auto current_shape_config = shape_configuration_storage.GetShapeConfiguration(search_string);
 
 				bars_cells_shape_linewidths.push_back(current_shape_config.LineWidth());
@@ -636,7 +635,7 @@ public:
 
 					bars_cells.push_back(current_cell);
 
-					auto search_string = std::wstring(L"Bar Group ") + std::to_string(index);
+					auto search_string = std::string("Bar Group ") + std::to_string(index);
 					auto current_shape_config = shape_configuration_storage.GetShapeConfiguration(search_string);
 
 					bars_cells_shape_linewidths.push_back(current_shape_config.LineWidth());

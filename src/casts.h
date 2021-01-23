@@ -2,9 +2,9 @@
 Decade
 Copyright (c) 2019-2021 Marco Peyer
 
-This program is free software; you can redistribute it and/or modify
+This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
@@ -12,15 +12,14 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110 - 1301 USA.
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
 
 
-#include "gui/wx_widgets_include.h"
+//#include "gui/wx_widgets_include.h"
 
 #include <glm/vec4.hpp>
 
@@ -28,7 +27,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 
 
-inline glm::vec4 to_glm_vec4(const wxColour& color)
+/*inline glm::vec4 to_glm_vec4(const wxColour& color)
 {
 	const float ratio = 1.f / 255.f;
 
@@ -38,7 +37,7 @@ inline glm::vec4 to_glm_vec4(const wxColour& color)
 	float alpha = static_cast<float>(color.Alpha()) * ratio;
 
 	return glm::vec4(red, green, blue, alpha);
-}
+}*/
 
 
 inline glm::vec4 to_glm_vec4(const std::array<float, 4> values)
@@ -47,7 +46,7 @@ inline glm::vec4 to_glm_vec4(const std::array<float, 4> values)
 }
 
 
-inline wxColour to_wx_color(const glm::vec4& color)
+/*inline wxColour to_wx_color(const glm::vec4& color)
 {
 	unsigned char red = static_cast<unsigned char>(color.r * 255.f);
 	unsigned char green = static_cast<unsigned char>(color.g * 255.f);
@@ -55,7 +54,7 @@ inline wxColour to_wx_color(const glm::vec4& color)
 	unsigned char alpha = static_cast<unsigned char>(color.a * 255.f);
 
 	return wxColour(red, green, blue, alpha);
-}
+}*/
 
 
 

@@ -2,9 +2,9 @@
 Decade
 Copyright (c) 2019-2021 Marco Peyer
 
-This program is free software; you can redistribute it and/or modify
+This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
@@ -12,9 +12,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110 - 1301 USA.
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
@@ -23,7 +22,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "projection.h"
 #include "shapes.h"
 #include "font.h"
-#include "RenderToTexture.h"
+#include "render_to_texture.h"
 
 #include "../packages/page_config.h"
 
@@ -36,7 +35,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <string>
 #include <memory>
 
-#include <wx/glcanvas.h>
+//#include <wx/glcanvas.h>
 
 
 class GraphicEngine
@@ -45,14 +44,14 @@ public:
 
 /////////////////////////////////////
 
-	void SetRefreshCallback(wxGLCanvas* wx_gl_canvas)
+	/*void SetRefreshCallback(wxGLCanvas* wx_gl_canvas)
 	{
 		this->wx_gl_canvas = wx_gl_canvas;
-	}
-	void Refresh()
+	}*/
+	/*void Refresh()
 	{
 		wx_gl_canvas->Refresh(false);
-	}
+	}*/
 
 /////////////////////////////////////
 
@@ -193,7 +192,7 @@ private:
 
 	std::vector< std::shared_ptr<ShapeBase> > shapes;
 
-	wxGLCanvas* wx_gl_canvas;
+	//wxGLCanvas* wx_gl_canvas;
 	rect4 page_size;
 
 /////////////////////////////////////	
