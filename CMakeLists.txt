@@ -146,8 +146,17 @@ list(APPEND SHADER_FILES_PATHS
 	${CMAKE_CURRENT_SOURCE_DIR}/shaders/simple_vertex_shader.glsl shader
 )
 
+file(DOWNLOAD https://code.qt.io/cgit/qt/qt5.git/plain/LICENSE.GPLv3?h=6.0 ${CMAKE_CURRENT_BINARY_DIR}/LICENSE.GPLv3)
+
+#add_custom_command(
+#    OUTPUT LICENSE.GPLv3
+#    PRE_BUILD
+#    COMMAND wget "https://code.qt.io/cgit/qt/qt5.git/plain/LICENSE.GPLv3?h=6.0" -O ${CMAKE_CURRENT_BINARY_DIR}/LICENSE.GPLv3
+#    )
+
 
 list(APPEND LICENSE_FILES_PATHS
+	"${CMAKE_CURRENT_BINARY_DIR}/LICENSE.GPLv3" qt
 	"${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt" decade
 	"${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2/docs/LICENSE.TXT" freetype2
 	"${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource/LICENSE.txt" "embed-resource"		 
@@ -159,7 +168,7 @@ list(APPEND LICENSE_FILES_PATHS
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
 	list(APPEND LICENSE_FILES_PATHS "${Boost_INCLUDE_DIRS}/LICENSE_1_0.txt" boost)
-	list(APPEND LICENSE_FILES_PATHS "${qt_installation_prefix}/../Src/LICENSE.GPLv3" qt)
+	#list(APPEND LICENSE_FILES_PATHS "${qt_installation_prefix}/../Src/LICENSE.LGPLv3" qt)
 endif()
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL Linux)
