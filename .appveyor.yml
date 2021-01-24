@@ -37,7 +37,6 @@ build_script:
           -DCMAKE_BUILD_TYPE=%CONFIGURATION%
           %CMAKEARGS%
   - cmake --build build
-
           -- %BUILDFLAGS%
 
 deploy: off
