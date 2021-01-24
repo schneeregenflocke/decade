@@ -31,13 +31,13 @@ before_build:
   - cmake --version
 
 build_script:
-  - cmake -S. -Bbuild
-          -G"%GENERATOR%"
+  - cmake -S . -B build
+          -G "%GENERATOR%"
           -A x64
           -DCMAKE_BUILD_TYPE=%CONFIGURATION%
           %CMAKEARGS%
   - cmake --build build
-          --config %CONFIGURATION%
+#          --config %CONFIGURATION%
           -- %BUILDFLAGS%
 
 deploy: off
