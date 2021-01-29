@@ -7,6 +7,8 @@ message("CMAKE_PROJECT_VERSION: ${CMAKE_PROJECT_VERSION}")
 message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 message("CMAKE_CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID}")
 message("CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
+message("CMAKE_CURRENT_BINARY_DIR: ${CMAKE_CURRENT_BINARY_DIR}")
+message("CMAKE_CFG_INTDIR: ${CMAKE_CFG_INTDIR}")
 #message("CMAKE_CXX_COMPILE_FEATURES: ${CMAKE_CXX_COMPILE_FEATURES}")
 
 
@@ -72,7 +74,7 @@ add_custom_command(
     TARGET Decade
     POST_BUILD
     COMMAND ${qt_installation_prefix}/bin/qtenv2.bat 
-    COMMAND ${qt_installation_prefix}/bin/windeployqt.exe ${CMAKE_CURRENT_BINARY_DIR}
+    COMMAND ${qt_installation_prefix}/bin/windeployqt.exe ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}
     )
 
 
