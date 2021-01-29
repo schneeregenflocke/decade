@@ -3,6 +3,8 @@ message("CMAKE_VERSION: ${CMAKE_VERSION}")
 
 
 project(Decade_Project VERSION 5.0.1)
+
+
 message("CMAKE_PROJECT_VERSION: ${CMAKE_PROJECT_VERSION}")
 message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 message("CMAKE_CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID}")
@@ -201,7 +203,7 @@ message("QT_MOC_FILES: ${QT_MOC_FILES}")
 install(
 	TARGETS Decade
 	#EXPORT Decade_Project 
-	#DESTINATION bin
+	DESTINATION bin
 	COMPONENT executable
 	)
 
