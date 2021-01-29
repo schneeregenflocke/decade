@@ -201,7 +201,7 @@ message("QT_MOC_FILES: ${QT_MOC_FILES}")
 install(
 	TARGETS Decade
 	#EXPORT Decade_Project 
-	#DESTINATION bin
+	DESTINATION bin
 	COMPONENT executable
 	)
 
