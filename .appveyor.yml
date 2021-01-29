@@ -17,7 +17,7 @@ environment:
   matrix:
     - GENERATOR: "Visual Studio 16 2019"
       BUILDFLAGS: "/verbosity:normal"
-      CMAKEARGS: ""
+      CMAKEARGS: -Dqt_installation_prefix=C:\Qt\6.0.0\msvc2019_64
 
 matrix:
   fast_finish: true
@@ -31,13 +31,12 @@ before_build:
   - cmake --version
 
 build_script:
-  - cmake -S. -Bbuild
-          -G"%GENERATOR%"
+  - cmake -S . -B build
+          -G "%GENERATOR%"
           -A x64
           -DCMAKE_BUILD_TYPE=%CONFIGURATION%
           %CMAKEARGS%
   - cmake --build build
-          --config %CONFIGURATION%
           -- %BUILDFLAGS%
 
 deploy: off

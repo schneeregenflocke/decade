@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.8)
+﻿cmake_minimum_required(VERSION 3.16.0)
 message("CMAKE_VERSION: ${CMAKE_VERSION}")
 
 
@@ -7,6 +7,8 @@ message("CMAKE_PROJECT_VERSION: ${CMAKE_PROJECT_VERSION}")
 message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 message("CMAKE_CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID}")
 message("CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
+message("CMAKE_CURRENT_BINARY_DIR: ${CMAKE_CURRENT_BINARY_DIR}")
+message("CMAKE_CFG_INTDIR: ${CMAKE_CFG_INTDIR}")
 #message("CMAKE_CXX_COMPILE_FEATURES: ${CMAKE_CXX_COMPILE_FEATURES}")
 
 
@@ -15,23 +17,69 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "CMAKE_EXPORT_COMPILE_COMMANDS" 
 
 add_executable(Decade)
 
-
 target_compile_features(Decade PUBLIC cxx_std_17)
 get_target_property(decade_target_cxx_standard Decade CXX_STANDARD)
-
-
-
 message("decade_target_cxx_standard: ${decade_target_cxx_standard}")
 
 add_compile_definitions(HAVE_TYPE_TRAITS)
-
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
 	add_compile_options(/Zc:__cplusplus)
 endif()
 
 
+set(SOURCE_FILES_DECADE
+	src/main.cpp
+	src/calendar_view.h
+	src/casts.h
+	src/date_utils.h
+	src/packages/calendar_config.h
+	src/packages/date_store.h
+	src/packages/group_store.h
+	src/packages/page_config.h
+	src/packages/shape_config.h
+	src/packages/title_config.h
+	src/graphics_engine/font.h
+	src/graphics_engine/graphics_engine.h
+	src/graphics_engine/projection.h
+	src/graphics_engine/rect4.h
+	src/graphics_engine/render_to_texture.h
+	src/graphics_engine/shaders.h
+	src/graphics_engine/shapes.h
+	src/graphics_engine/shapes_base.h
+	src/graphics_engine/texture_object.h
+)
+
+set(SOURCE_FILES_QT_GUI
+	src/gui/main_window.h
+	src/gui/license_info_dialog.h
+)
+
+
+### qt ###
+
+#set(CMAKE_AUTOMOC ON)
+#set(CMAKE_AUTORCC ON)
+#set(CMAKE_AUTOUIC ON)
+
+set(qt_installation_prefix CACHE PATH "Set your CMAKE_PREFIX_PATH environment variable to the Qt 5 installation prefix (e.g. ../Qt/6.0.0/msvc2019_64)")
+list(APPEND CMAKE_PREFIX_PATH ${qt_installation_prefix})
+
+find_package(Qt6 COMPONENTS Widgets REQUIRED)
+
+target_link_libraries(Decade PRIVATE Qt6::Widgets)
+
+
+add_custom_command(
+    TARGET Decade
+    POST_BUILD
+    COMMAND ${qt_installation_prefix}/bin/qtenv2.bat 
+    COMMAND ${qt_installation_prefix}/bin/windeployqt.exe ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}
+    )
+
+
 ### boost ###
+
 set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost COMPONENTS date_time serialization wserialization)
 
@@ -49,31 +97,6 @@ target_include_directories(Decade PRIVATE ${Boost_INCLUDE_DIRS})
 #	target_link_directories(Decade PRIVATE ${Boost_LIBRARY_DIRS})
 #endif()
 target_link_libraries(Decade PRIVATE ${Boost_LIBRARIES})
-
-### wxWidgets ###
-
-#find_package(wxWidgets REQUIRED gl core base propgrid)
-#include(${wxWidgets_USE_FILE})
-# and for each of your dependent executable/library targets:
-#target_link_libraries(Decade PRIVATE ${wxWidgets_LIBRARIES})
-
-target_compile_definitions(Decade PRIVATE _CRT_SECURE_NO_WARNINGS)
-
-#WxWidgets ON
-set(wxUSE_STL ON CACHE BOOL "wxUSE_STL" FORCE)
-set(wxUSE_GUI ON CACHE BOOL "wxUSE_GUI" FORCE)
-set(wxUSE_OPENGL ON CACHE BOOL "wxUSE_OPENGL" FORCE)
-
-#WxWidgets OFF
-set(wxBUILD_SHARED OFF CACHE BOOL "wxBUILD_SHARED" FORCE)
-set(wxUSE_WINRT	OFF CACHE BOOL "wxUSE_WINRT" FORCE)
-set(wxUSE_EXCEPTIONS OFF CACHE BOOL "wxUSE_EXCEPTIONS" FORCE)
-set(wxUSE_GLCANVAS_EGL OFF CACHE BOOL "wxUSE_GLCANVAS_EGL" FORCE)
-
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets")
-#fixed library names https://github.com/wxWidgets/wxWidgets/commit/0f806ad96db4e22053769c0b2f3b7be4026ea8de
-target_link_libraries(Decade PRIVATE wxpropgrid wxgl wxcore wxbase)
-
 
 
 ### glad ###
@@ -106,11 +129,6 @@ target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/
 target_sources(Decade PRIVATE external/lodepng/lodepng.h external/lodepng/lodepng.cpp)
 
 
-### csv ###
-target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/csv/include")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/csv")
-
-
 ### embed-resource ###
 target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource")
@@ -130,34 +148,34 @@ list(APPEND SHADER_FILES_PATHS
 	${CMAKE_CURRENT_SOURCE_DIR}/shaders/simple_vertex_shader.glsl shader
 )
 
+file(DOWNLOAD https://code.qt.io/cgit/qt/qt5.git/plain/LICENSE.GPLv3?h=6.0 ${CMAKE_CURRENT_BINARY_DIR}/LICENSE.GPLv3)
+
+#add_custom_command(
+#    OUTPUT LICENSE.GPLv3
+#    PRE_BUILD
+#    COMMAND wget "https://code.qt.io/cgit/qt/qt5.git/plain/LICENSE.GPLv3?h=6.0" -O ${CMAKE_CURRENT_BINARY_DIR}/LICENSE.GPLv3
+#    )
+
 
 list(APPEND LICENSE_FILES_PATHS
+	"${CMAKE_CURRENT_BINARY_DIR}/LICENSE.GPLv3" qt
 	"${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt" decade
-	"${CMAKE_CURRENT_SOURCE_DIR}/external/csv/LICENSE" csv 
-	"${CMAKE_CURRENT_SOURCE_DIR}/external/csv/vendor/Catch2/LICENSE.txt" Catch2
 	"${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2/docs/LICENSE.TXT" freetype2
 	"${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource/LICENSE.txt" "embed-resource"		 
 	"${CMAKE_CURRENT_SOURCE_DIR}/external/glad/LICENSE" glad
 	"${CMAKE_CURRENT_SOURCE_DIR}/external/glm/copying.txt" glm
 	"${CMAKE_CURRENT_SOURCE_DIR}/external/lodepng/LICENSE" lodepng
 	"${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/LICENSE" sigslot
-	"${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/docs/licence.txt" wxWidgets
-	"${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/3rdparty/catch/LICENSE.txt" catch
-	"${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/src/expat/expat/COPYING" expat
-	"${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/src/jpeg/README" libjpeg_turbo
-	"${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/src/tiff/COPYRIGHT" libtiff
-	"${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/src/png/LICENSE" libpng
-	"${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/src/zlib/README" zlib
 )
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
 	list(APPEND LICENSE_FILES_PATHS "${Boost_INCLUDE_DIRS}/LICENSE_1_0.txt" boost)
+	#list(APPEND LICENSE_FILES_PATHS "${qt_installation_prefix}/../Src/LICENSE.LGPLv3" qt)
 endif()
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL Linux)
 	list(APPEND LICENSE_FILES_PATHS "/usr/share/licenses/boost/LICENSE_1_0.txt" boost)
 endif()
-
 
 embed_resources(SHADERS ${SHADER_FILES_PATHS})
 embed_resources(RESOURCES ${LICENSE_FILES_PATHS})
@@ -167,14 +185,14 @@ message("RESOURCES: ${RESOURCES}")
 target_sources(Decade PRIVATE ${SHADERS} ${RESOURCES})
 
 
-file(GLOB_RECURSE source_files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} CONFIGURE_DEPENDS src/*.h src/*.cpp)
-#message_list(source_files)
-target_sources(Decade PRIVATE ${source_files})
 
+### sources ###
+qt_wrap_cpp(QT_MOC_FILES ${SOURCE_FILES_QT_GUI})
+target_sources(Decade PRIVATE ${SOURCE_FILES_DECADE} ${SOURCE_FILES_QT_GUI} ${QT_MOC_FILES})
 
-if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
-	target_sources(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/include/wx/msw/amd64_dpi_aware.manifest")
-endif()
+message("SOURCE_FILES_DECADE: ${SOURCE_FILES_DECADE}")
+message("SOURCE_FILES_QT_GUI: ${SOURCE_FILES_QT_GUI}")
+message("QT_MOC_FILES: ${QT_MOC_FILES}")
 
 
 ### CPACK
@@ -196,6 +214,3 @@ set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/License.txt")
 set(CPACK_PACKAGE_VERSION_MAJOR "5")
 set(CPACK_PACKAGE_VERSION_MINOR "0")
 include(CPack)
-
-
-
