@@ -26,6 +26,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include <QVBoxLayout>
 #include <QTextEdit>
 #include <QLabel>
+#include <QPushButton>
 
 #include <string>
 #include <vector>
@@ -43,31 +44,42 @@ public:
 		QDialog(parent)
 	{
 		setMinimumSize(600, 400);
-		//setContentsMargins(10, 10, 10, 10);
+		setWindowTitle(tr("Open Source Licenses"));
 
-		QVBoxLayout* vbox_layout = new QVBoxLayout(this);
-		//vbox_layout->setContentsMargins(20, 20, 20, 20);
-		setLayout(vbox_layout);
+		auto flags = windowFlags();
+		flags |= Qt::WindowMinMaxButtonsHint;
+		setWindowFlags(flags);
 
-
-		QLabel* license_list_label = new QLabel(tr("Licenses:"), this);
 	
 		license_list = new QListWidget(this);
 		license_list->setFrameStyle(QFrame::NoFrame | QFrame::Plain);
 
-		QLabel* license_text_label = new QLabel(tr("License detail:"), this);
-		
 		license_text = new QTextEdit(this);
 		license_text->setReadOnly(true);
 		license_text->setFrameStyle(QFrame::NoFrame | QFrame::Plain);
-		
+		license_text->setLineWrapMode(QTextEdit::NoWrap);
 
-		layout()->addWidget(license_list_label);
-		layout()->addWidget(license_list);
-		layout()->addWidget(license_text_label);
-		layout()->addWidget(license_text);
+		close_button = new QPushButton(tr("OK"), this);
+		close_button->setDefault(true);
+
+
+		
+		QVBoxLayout* vbox_layout = new QVBoxLayout(this);
+		setLayout(vbox_layout);
+
+		vbox_layout->addWidget(new QLabel(tr("Licenses:")), 0);
+		vbox_layout->addWidget(license_list, 0);
+		vbox_layout->addWidget(new QLabel(tr("License detail:")), 0);
+		vbox_layout->addWidget(license_text, 1);
+		vbox_layout->addWidget(close_button, 0, Qt::AlignRight);
+
 
 		layout()->update();
+
+
+		connect(license_list, &QListWidget::currentRowChanged, this, &LicenseDialog::SelectTextSlot);
+		connect(close_button, &QPushButton::clicked, this, &QDialog::close);
+
 
 		license_text_array.resize(9);
 
@@ -91,7 +103,7 @@ public:
 		license_list->addItem(tr("lodepng"));
 		license_list->addItem(tr("sigslot"));
 
-		connect(license_list, &QListWidget::currentRowChanged, this, &LicenseDialog::SelectTextSlot);
+		
 		
 	}
 
@@ -106,6 +118,7 @@ private:
 
 	QListWidget* license_list;
 	QTextEdit* license_text;
+	QPushButton* close_button;
 
 	std::vector<std::string> license_text_array;
 };
