@@ -24,7 +24,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include "font.h"
 #include "render_to_texture.h"
 
-#include "../packages/page_config.h"
+#include "../signal_packages/page_config.h"
 
 #include <glm/ext/matrix_projection.hpp>
 

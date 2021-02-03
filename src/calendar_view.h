@@ -22,12 +22,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include "graphics_engine/shapes.h"
 #include "graphics_engine/font.h"
 
-#include "packages/group_store.h"
-#include "packages/date_store.h"
-#include "packages/shape_config.h"
-#include "packages/calendar_config.h"
-#include "packages/page_config.h"
-#include "packages/title_config.h"
+#include "signal_packages/group_store.h"
+#include "signal_packages/date_store.h"
+#include "signal_packages/shape_config.h"
+#include "signal_packages/calendar_config.h"
+#include "signal_packages/page_config.h"
+#include "signal_packages/title_config.h"
 
 #include <string>
 #include <memory>

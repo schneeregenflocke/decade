@@ -18,22 +18,26 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "../packages/calendar_config.h"
-#include "../packages/date_store.h"
-#include "../packages/group_store.h"
-#include "../packages/page_config.h"
-#include "../packages/shape_config.h"
-#include "../packages/title_config.h"
+#include "../signal_packages/calendar_config.h"
+#include "../signal_packages/date_store.h"
+#include "../signal_packages/group_store.h"
+#include "../signal_packages/page_config.h"
+#include "../signal_packages/shape_config.h"
+#include "../signal_packages/title_config.h"
 
 #include "../calendar_view.h"
 
 #include "license_info_dialog.h"
+#include "tools_tabs.h"
+#include "date_table.h"
 
 #include <QWidget>
 #include <QMainWindow>
 #include <QMenuBar>
 #include <QStatusBar>
 #include <QAction>
+#include <QTabWidget>
+#include <QDockWidget>
 
 #include <sigslot/signal.hpp>
 
@@ -58,18 +62,20 @@ public:
     {
         setMinimumSize(800, 600);
         setCentralWidget(new QWidget);
-        
-        QMenu* file_menu = menuBar()->addMenu(tr("&File"));
-        QMenu* info_menu = menuBar()->addMenu(tr("&Info"));
-        QAction* open_license_dialog = info_menu->addAction(tr("&Open Source Licenses"));
-        
 
-        
         QStatusBar* status_bar = new QStatusBar(this);
         setStatusBar(status_bar);
 
-        LicenseDialog* license_dialog = new LicenseDialog(this);
-        connect(open_license_dialog, &QAction::triggered, license_dialog, &LicenseDialog::open);
+
+
+        date_table_dock = new DateTableDock(this);
+
+        addDockWidget(Qt::LeftDockWidgetArea, date_table_dock);
+
+        
+        license_dialog = new LicenseDialog(this);
+
+        InitMenu();
     }
 
 
@@ -77,6 +83,16 @@ private:
 
     void InitMenu()
     {
+        QMenu* file_menu = menuBar()->addMenu(tr("&File"));
+        QAction* action_exit = file_menu->addAction(tr("&Exit"));
+
+        connect(action_exit, &QAction::triggered, this, &QMainWindow::close);
+
+
+        QMenu* info_menu = menuBar()->addMenu(tr("&Info"));
+        QAction* open_license_dialog = info_menu->addAction(tr("&Open Source Licenses"));
+
+        connect(open_license_dialog, &QAction::triggered, license_dialog, &LicenseDialog::open);
     }
 
     void OpenGLReady()
@@ -138,4 +154,8 @@ private:
     TitleConfigStore title_config_store;
     ShapeConfigurationStorage shape_configuration_storage;
     CalendarConfigStorage calendar_configuration_storage;
+
+    // Widgets
+    LicenseDialog* license_dialog;
+    DateTableDock* date_table_dock;
 };

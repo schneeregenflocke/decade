@@ -35,12 +35,12 @@ set(SOURCE_FILES_DECADE
 	src/calendar_view.h
 	src/casts.h
 	src/date_utils.h
-	src/packages/calendar_config.h
-	src/packages/date_store.h
-	src/packages/group_store.h
-	src/packages/page_config.h
-	src/packages/shape_config.h
-	src/packages/title_config.h
+	src/signal_packages/calendar_config.h
+	src/signal_packages/date_store.h
+	src/signal_packages/group_store.h
+	src/signal_packages/page_config.h
+	src/signal_packages/shape_config.h
+	src/signal_packages/title_config.h
 	src/graphics_engine/font.h
 	src/graphics_engine/graphics_engine.h
 	src/graphics_engine/projection.h
@@ -55,6 +55,8 @@ set(SOURCE_FILES_DECADE
 set(SOURCE_FILES_QT_GUI
 	src/gui/main_window.h
 	src/gui/license_info_dialog.h
+	src/gui/date_table.h
+	src/gui/tools_tabs.h
 )
 
 
@@ -64,7 +66,7 @@ set(SOURCE_FILES_QT_GUI
 #set(CMAKE_AUTORCC ON)
 #set(CMAKE_AUTOUIC ON)
 
-set(qt_installation_prefix CACHE PATH "Set your CMAKE_PREFIX_PATH environment variable to the Qt 5 installation prefix (e.g. ../Qt/6.0.0/msvc2019_64)")
+set(qt_installation_prefix CACHE PATH "Set your CMAKE_PREFIX_PATH environment variable to the Qt installation prefix (e.g. /Qt/6.0.0/msvc2019_64)")
 list(APPEND CMAKE_PREFIX_PATH ${qt_installation_prefix})
 
 find_package(Qt6 COMPONENTS Widgets REQUIRED)
