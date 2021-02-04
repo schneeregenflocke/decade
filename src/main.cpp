@@ -35,15 +35,24 @@ extern "C"
 
 #include <QApplication>
 #include <QPushButton>
+#include <QWindow>
+#include <QScreen>
 
 #include <iostream>
 
 
 int main(int argc, char** argv)
 {
+	//QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+	auto high_dpi_policy = QApplication::highDpiScaleFactorRoundingPolicy();
+	QApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::Round);
+
 	QApplication app(argc, argv);
 
+	//auto primary_screen = QApplication::primaryScreen();
+
 	MainWindow main_window;
+	auto window_device_pixel_ratio = main_window.devicePixelRatio();
 	main_window.show();
 
 	return app.exec();
