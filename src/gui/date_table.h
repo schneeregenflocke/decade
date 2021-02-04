@@ -37,10 +37,23 @@ public:
 	explicit DateTable(QWidget* parent = nullptr) :
 		QWidget(parent)
 	{
+		//setAutoFillBackground(true);
+
 		tool_bar = new QToolBar(tr("tool_bar"), this);
 
 		tool_bar->addAction(tr("Add Row"));
 		tool_bar->addAction(tr("Delete Row"));
+
+
+		table_view = new QTableView(this);
+
+		QVBoxLayout* vbox_layout = new QVBoxLayout(this);
+
+		vbox_layout->addWidget(tool_bar);
+		vbox_layout->addWidget(table_view);
+
+		setLayout(vbox_layout);
+		layout()->update();
 
 		//layout()->addWidget(tool_bar);
 
@@ -51,6 +64,7 @@ public:
 private:
 
 	QToolBar* tool_bar;
+	QTableView* table_view;
 };
 
 
@@ -65,6 +79,9 @@ public:
 	explicit DateTableDock(QWidget* parent = nullptr) :
 		QDockWidget(parent)
 	{
+		setMinimumWidth(300);
+
+
 		date_table = new DateTable(this);
 		
 		setWidget(date_table);
