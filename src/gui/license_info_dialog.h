@@ -33,8 +33,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 
 
-
-
 class LicenseDialog : public QDialog
 {
 	Q_OBJECT
@@ -50,20 +48,20 @@ public:
 		flags |= Qt::WindowMinMaxButtonsHint;
 		setWindowFlags(flags);
 
-	
 		license_list = new QListWidget(this);
-		license_list->setFrameStyle(QFrame::NoFrame | QFrame::Plain);
-
+		//license_list->setFrameStyle(QFrame::Box | QFrame::Plain);
+		license_list->setStyleSheet("QFrame { border: 1px solid silver; }");
+		
 		license_text = new QTextEdit(this);
 		license_text->setReadOnly(true);
-		license_text->setFrameStyle(QFrame::NoFrame | QFrame::Plain);
+		//license_text->setFrameStyle(QFrame::Box | QFrame::Plain);
+		license_text->setStyleSheet("QFrame { border: 2px solid silver; }");
 		license_text->setLineWrapMode(QTextEdit::NoWrap);
 
 		close_button = new QPushButton(tr("OK"), this);
 		close_button->setDefault(true);
 
 
-		
 		QVBoxLayout* vbox_layout = new QVBoxLayout(this);
 		setLayout(vbox_layout);
 
@@ -72,7 +70,6 @@ public:
 		vbox_layout->addWidget(new QLabel(tr("License detail:")), 0);
 		vbox_layout->addWidget(license_text, 1);
 		vbox_layout->addWidget(close_button, 0, Qt::AlignRight);
-
 
 		layout()->update();
 
@@ -102,9 +99,6 @@ public:
 		license_list->addItem(tr("freetype2"));
 		license_list->addItem(tr("lodepng"));
 		license_list->addItem(tr("sigslot"));
-
-		
-		
 	}
 
 private slots:
