@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.12.4)
+﻿cmake_minimum_required(VERSION 3.16.0)
 message("CMAKE_VERSION: ${CMAKE_VERSION}")
 
 
@@ -66,8 +66,8 @@ set(SOURCE_FILES_QT_GUI
 #set(CMAKE_AUTORCC ON)
 #set(CMAKE_AUTOUIC ON)
 
-set(qt_installation_prefix CACHE PATH "Set your CMAKE_PREFIX_PATH environment variable to the Qt installation prefix (e.g. /Qt/6.0.0/msvc2019_64)")
-list(APPEND CMAKE_PREFIX_PATH ${qt_installation_prefix})
+set(QT_INSTALLATION_PREFIX CACHE PATH "Set your CMAKE_PREFIX_PATH environment variable to the Qt installation prefix (e.g. /Qt/6.0.0/msvc2019_64)")
+list(APPEND CMAKE_PREFIX_PATH ${QT_INSTALLATION_PREFIX})
 
 find_package(Qt6 COMPONENTS Widgets REQUIRED)
 
@@ -77,8 +77,8 @@ target_link_libraries(Decade PRIVATE Qt6::Widgets)
 add_custom_command(
     TARGET Decade
     POST_BUILD
-    COMMAND ${qt_installation_prefix}/bin/qtenv2.bat 
-    COMMAND ${qt_installation_prefix}/bin/windeployqt.exe ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}
+    COMMAND ${QT_INSTALLATION_PREFIX}/bin/qtenv2.bat 
+    COMMAND ${QT_INSTALLATION_PREFIX}/bin/windeployqt.exe ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}
     )
 
 
@@ -123,9 +123,16 @@ target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/
 #set(FT_WITH_PNG OFF CACHE BOOL "FT_WITH_PNG" FORCE)
 #set(FT_WITH_ZLIB OFF CACHE BOOL "FT_WITH_ZLIB" FORCE)
 
-target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2/include")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2")
-target_link_libraries(Decade PRIVATE freetype)
+#target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2/include")
+#add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2")
+#target_link_libraries(Decade PRIVATE freetype)
+
+set(FREETYPE_DIR CACHE PATH "The user may set the environment variable FREETYPE_DIR to the root directory of a Freetype installation.")
+
+find_package(Freetype REQUIRED)
+message("FREETYPE_FOUND: ${FREETYPE_FOUND}")
+target_include_directories(Decade PRIVATE ${FREETYPE_INCLUDE_DIRS})
+target_link_libraries(Decade PRIVATE ${FREETYPE_LIBRARIES})
 
 
 ### lodepng ###
