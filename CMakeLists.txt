@@ -20,8 +20,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "CMAKE_EXPORT_COMPILE_COMMANDS" 
 add_executable(Decade)
 
 target_compile_features(Decade PUBLIC cxx_std_17)
-get_target_property(decade_target_cxx_standard Decade CXX_STANDARD)
-message("decade_target_cxx_standard: ${decade_target_cxx_standard}")
+get_target_property(DECADE_TARGET_CXX_STANDARD Decade CXX_STANDARD)
+message("DECADE_TARGET_CXX_STANDARD: ${DECADE_TARGET_CXX_STANDARD}")
 
 add_compile_definitions(HAVE_TYPE_TRAITS)
 
@@ -68,6 +68,8 @@ set(SOURCE_FILES_QT_GUI
 
 set(QT_INSTALLATION_PREFIX CACHE PATH "Set your CMAKE_PREFIX_PATH environment variable to the Qt installation prefix (e.g. /Qt/6.0.0/msvc2019_64)")
 list(APPEND CMAKE_PREFIX_PATH ${QT_INSTALLATION_PREFIX})
+message("QT_INSTALLATION_PREFIX: ${QT_INSTALLATION_PREFIX}")
+message("CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
 
 find_package(Qt6 COMPONENTS Widgets REQUIRED)
 
