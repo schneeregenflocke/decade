@@ -36,7 +36,7 @@ before_install:
 - apt list --upgradable
 - sudo apt install cmake
 - sudo cmake --version
-- sudo which --all cmake
+- sudo which -a cmake
 - sudo apt-get install -y autoconf libtool
 - sudo apt-get install -y libboost-all-dev 
 - sudo apt-get install -y libbrotli-dev
