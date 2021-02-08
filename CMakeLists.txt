@@ -125,16 +125,20 @@ target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/
 #set(FT_WITH_PNG OFF CACHE BOOL "FT_WITH_PNG" FORCE)
 #set(FT_WITH_ZLIB OFF CACHE BOOL "FT_WITH_ZLIB" FORCE)
 
-#target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2/include")
-#add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2")
-#target_link_libraries(Decade PRIVATE freetype)
+set(FREETYPE_FROM_SUBDIRECTORY ON CACHE BOOL "add freetype from subdirectory.")
+message("FREETYPE_FROM_SUBDIRECTORY: ${FREETYPE_FROM_SUBDIRECTORY}")
 
-set(FREETYPE_DIR CACHE PATH "The user may set the environment variable FREETYPE_DIR to the root directory of a Freetype installation.")
-
-find_package(Freetype REQUIRED)
-message("FREETYPE_FOUND: ${FREETYPE_FOUND}")
-target_include_directories(Decade PRIVATE ${FREETYPE_INCLUDE_DIRS})
-target_link_libraries(Decade PRIVATE ${FREETYPE_LIBRARIES})
+if(${FREETYPE_FROM_SUBDIRECTORY})
+	target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2/include")
+	add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2")
+	target_link_libraries(Decade PRIVATE freetype)
+else()
+	set(FREETYPE_DIR CACHE PATH "The user may set the environment variable FREETYPE_DIR to the root directory of a Freetype installation.")
+	find_package(Freetype REQUIRED)
+	message("FREETYPE_FOUND: ${FREETYPE_FOUND}")
+	target_include_directories(Decade PRIVATE ${FREETYPE_INCLUDE_DIRS})
+	target_link_libraries(Decade PRIVATE ${FREETYPE_LIBRARIES})
+endif()
 
 
 ### lodepng ###
