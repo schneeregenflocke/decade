@@ -60,24 +60,21 @@ public:
     explicit MainWindow(QWidget* parent = nullptr) :
         QMainWindow(parent)
     {
-        setMinimumSize(800, 600);
+        setMinimumSize(1024, 800);
+        
         setCentralWidget(new QWidget);
 
         QStatusBar* status_bar = new QStatusBar(this);
         setStatusBar(status_bar);
 
-
-
         date_table_dock = new DateTableDock(this);
 
         addDockWidget(Qt::LeftDockWidgetArea, date_table_dock);
 
-        
         license_dialog = new LicenseDialog(this);
 
         InitMenu();
     }
-
 
 private:
 
@@ -141,8 +138,6 @@ private:
     void SlotExportPNG()
     {
     }
-
-    
 
     std::unique_ptr<CalendarPage> calendar;
 

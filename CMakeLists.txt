@@ -11,7 +11,7 @@ message("CMAKE_CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID}")
 message("CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
 message("CMAKE_CURRENT_BINARY_DIR: ${CMAKE_CURRENT_BINARY_DIR}")
 message("CMAKE_CFG_INTDIR: ${CMAKE_CFG_INTDIR}")
-#message("CMAKE_CXX_COMPILE_FEATURES: ${CMAKE_CXX_COMPILE_FEATURES}")
+message("CMAKE_CXX_COMPILE_FEATURES: ${CMAKE_CXX_COMPILE_FEATURES}")
 
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "CMAKE_EXPORT_COMPILE_COMMANDS" FORCE)
@@ -23,41 +23,14 @@ target_compile_features(Decade PUBLIC cxx_std_17)
 get_target_property(DECADE_TARGET_CXX_STANDARD Decade CXX_STANDARD)
 message("DECADE_TARGET_CXX_STANDARD: ${DECADE_TARGET_CXX_STANDARD}")
 
-add_compile_definitions(HAVE_TYPE_TRAITS)
+#add_compile_definitions(HAVE_TYPE_TRAITS)
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
 	add_compile_options(/Zc:__cplusplus)
 endif()
 
 
-set(SOURCE_FILES_DECADE
-	src/main.cpp
-	src/calendar_view.h
-	src/casts.h
-	src/date_utils.h
-	src/signal_packages/calendar_config.h
-	src/signal_packages/date_store.h
-	src/signal_packages/group_store.h
-	src/signal_packages/page_config.h
-	src/signal_packages/shape_config.h
-	src/signal_packages/title_config.h
-	src/graphics_engine/font.h
-	src/graphics_engine/graphics_engine.h
-	src/graphics_engine/projection.h
-	src/graphics_engine/rect4.h
-	src/graphics_engine/render_to_texture.h
-	src/graphics_engine/shaders.h
-	src/graphics_engine/shapes.h
-	src/graphics_engine/shapes_base.h
-	src/graphics_engine/texture_object.h
-)
 
-set(SOURCE_FILES_QT_GUI
-	src/gui/main_window.h
-	src/gui/license_info_dialog.h
-	src/gui/date_table.h
-	src/gui/tools_tabs.h
-)
 
 
 ### qt ###
@@ -167,12 +140,6 @@ list(APPEND SHADER_FILES_PATHS
 
 file(DOWNLOAD https://code.qt.io/cgit/qt/qt5.git/plain/LICENSE.GPLv3?h=6.0 ${CMAKE_CURRENT_BINARY_DIR}/LICENSE.GPLv3)
 
-#add_custom_command(
-#    OUTPUT LICENSE.GPLv3
-#    PRE_BUILD
-#    COMMAND wget "https://code.qt.io/cgit/qt/qt5.git/plain/LICENSE.GPLv3?h=6.0" -O ${CMAKE_CURRENT_BINARY_DIR}/LICENSE.GPLv3
-#    )
-
 
 list(APPEND LICENSE_FILES_PATHS
 	"${CMAKE_CURRENT_BINARY_DIR}/LICENSE.GPLv3" qt
@@ -187,7 +154,6 @@ list(APPEND LICENSE_FILES_PATHS
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
 	list(APPEND LICENSE_FILES_PATHS "${Boost_INCLUDE_DIRS}/LICENSE_1_0.txt" boost)
-	#list(APPEND LICENSE_FILES_PATHS "${qt_installation_prefix}/../Src/LICENSE.LGPLv3" qt)
 endif()
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL Linux)
@@ -196,23 +162,52 @@ endif()
 
 embed_resources(SHADERS ${SHADER_FILES_PATHS})
 embed_resources(RESOURCES ${LICENSE_FILES_PATHS})
-
 message("RESOURCES: ${RESOURCES}")
-
 target_sources(Decade PRIVATE ${SHADERS} ${RESOURCES})
 
 
-
 ### sources ###
-qt_wrap_cpp(QT_MOC_FILES ${SOURCE_FILES_QT_GUI})
-target_sources(Decade PRIVATE ${SOURCE_FILES_DECADE} ${SOURCE_FILES_QT_GUI} ${QT_MOC_FILES})
+
+set(SOURCE_FILES_DECADE
+	src/main.cpp
+	src/calendar_view.h
+	src/casts.h
+	src/date_utils.h
+	src/signal_packages/calendar_config.h
+	src/signal_packages/date_store.h
+	src/signal_packages/group_store.h
+	src/signal_packages/page_config.h
+	src/signal_packages/shape_config.h
+	src/signal_packages/title_config.h
+	src/graphics_engine/font.h
+	src/graphics_engine/graphics_engine.h
+	src/graphics_engine/projection.h
+	src/graphics_engine/rect4.h
+	src/graphics_engine/render_to_texture.h
+	src/graphics_engine/shaders.h
+	src/graphics_engine/shapes.h
+	src/graphics_engine/shapes_base.h
+	src/graphics_engine/texture_object.h
+)
+
+set(SOURCE_FILES_QT_GUI
+	src/gui/main_window.h
+	src/gui/license_info_dialog.h
+	src/gui/date_table.h
+	src/gui/tools_tabs.h
+)
+
+qt6_wrap_cpp(SOURCE_FILES_MOC_FILES ${SOURCE_FILES_QT_GUI})
+target_sources(Decade PRIVATE ${SOURCE_FILES_DECADE} ${SOURCE_FILES_MOC_FILES})
 
 message("SOURCE_FILES_DECADE: ${SOURCE_FILES_DECADE}")
 message("SOURCE_FILES_QT_GUI: ${SOURCE_FILES_QT_GUI}")
-message("QT_MOC_FILES: ${QT_MOC_FILES}")
+message("SOURCE_FILES_MOC_FILES: ${SOURCE_FILES_MOC_FILES}")
 
 
-### CPACK
+
+### CPACK ###
+
 #include(GNUInstallDirs)
 
 install(
@@ -227,7 +222,7 @@ list(REMOVE_ITEM CPACK_COMPONENTS_ALL "Unspecified" "headers")
 message("CPACK_COMPONENTS_ALL: ${CPACK_COMPONENTS_ALL}")
 
 #include(InstallRequiredSystemLibraries)
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/License.txt")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
 set(CPACK_PACKAGE_VERSION_MAJOR "5")
 set(CPACK_PACKAGE_VERSION_MINOR "0")
 include(CPack)

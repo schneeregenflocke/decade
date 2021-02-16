@@ -43,7 +43,6 @@ extern "C"
 
 int main(int argc, char** argv)
 {
-	//QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 	auto high_dpi_policy = QApplication::highDpiScaleFactorRoundingPolicy();
 	QApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::Round);
 

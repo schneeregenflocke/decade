@@ -25,6 +25,39 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include <QAbstractTableModel>
 #include <QToolBar>
 #include <QVBoxLayout>
+#include <QAction>
+
+
+class TableModel : public QAbstractTableModel
+{
+	Q_OBJECT
+
+public: 
+	explicit TableModel(QObject* parent = nullptr) :
+		QAbstractTableModel(parent)
+	{
+	}
+
+	int QAbstractItemModel::rowCount(const QModelIndex& parent = QModelIndex()) const override
+	{
+		return 2;
+	}
+
+	int QAbstractItemModel::columnCount(const QModelIndex& parent = QModelIndex()) const override
+	{
+		return 3;
+	}
+
+	QVariant QAbstractItemModel::data(const QModelIndex& index, int role = Qt::DisplayRole) const override
+	{
+		if (role == Qt::DisplayRole)
+			return QString("Row%1, Column%2")
+			.arg(index.row() + 1)
+			.arg(index.column() + 1);
+
+		return QVariant();
+	}
+};
 
 
 
@@ -37,15 +70,17 @@ public:
 	explicit DateTable(QWidget* parent = nullptr) :
 		QWidget(parent)
 	{
-		//setAutoFillBackground(true);
 
 		tool_bar = new QToolBar(tr("tool_bar"), this);
 
-		tool_bar->addAction(tr("Add Row"));
-		tool_bar->addAction(tr("Delete Row"));
+		add_row = tool_bar->addAction(tr("Add Row"));
+		delete_row = tool_bar->addAction(tr("Delete Row"));
 
 
 		table_view = new QTableView(this);
+
+		table_model = new TableModel(this);
+		table_view->setModel(table_model);
 
 		QVBoxLayout* vbox_layout = new QVBoxLayout(this);
 
@@ -54,17 +89,16 @@ public:
 
 		setLayout(vbox_layout);
 		layout()->update();
-
-		//layout()->addWidget(tool_bar);
-
-
-		//layout()->update();
 	}
 
 private:
 
 	QToolBar* tool_bar;
 	QTableView* table_view;
+	TableModel* table_model;
+
+	QAction* add_row;
+	QAction* delete_row;
 };
 
 
