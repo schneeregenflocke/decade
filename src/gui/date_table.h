@@ -26,29 +26,38 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include <QToolBar>
 #include <QVBoxLayout>
 #include <QAction>
+#include <QVector>
+#include <QVariant>
+#include <QString>
+
+#include <string>
 
 
 class TableModel : public QAbstractTableModel
 {
 	Q_OBJECT
 
-public: 
-	explicit TableModel(QObject* parent = nullptr) :
-		QAbstractTableModel(parent)
+public:
+
+	explicit TableModel(const int column_count, QObject* parent = nullptr) :
+		QAbstractTableModel(parent),
+		row_count(0),
+		column_count(column_count),
+		column_labels(column_count)
 	{
 	}
 
-	int QAbstractItemModel::rowCount(const QModelIndex& parent = QModelIndex()) const override
+	int rowCount(const QModelIndex& parent = QModelIndex()) const override
 	{
-		return 2;
+		return row_count;
 	}
 
-	int QAbstractItemModel::columnCount(const QModelIndex& parent = QModelIndex()) const override
+	int columnCount(const QModelIndex& parent = QModelIndex()) const override
 	{
-		return 3;
+		return column_count;
 	}
 
-	QVariant QAbstractItemModel::data(const QModelIndex& index, int role = Qt::DisplayRole) const override
+	QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override
 	{
 		if (role == Qt::DisplayRole)
 			return QString("Row%1, Column%2")
@@ -57,6 +66,69 @@ public:
 
 		return QVariant();
 	}
+
+	QVariant headerData(int section, Qt::Orientation orientation, int role) const
+	{
+		QVariant header_data = QVariant();
+
+		if (role == Qt::DisplayRole && orientation == Qt::Horizontal)
+		{
+			auto test = column_labels[section];
+			header_data = column_labels[section];
+		}
+
+		return header_data;
+	}
+
+	void SetColumnLabels(const QVector<QString>& column_labels)
+	{
+		this->column_labels = column_labels;
+	}
+
+public slots:
+
+	void InsertRowAtSelection()
+	{
+		insertRow(0);
+	}
+
+	bool insertRows(int row, int count, const QModelIndex& parent = QModelIndex()) override
+	{
+		beginInsertRows(parent, row, row + (count - 1));
+
+		for (int count_index = 0; count_index < count; ++count_index)
+		{
+			data_store.insert(row + count_index, column_count, QVariant());
+			row_count += 1;
+		}
+
+		endInsertRows();
+
+		return true;
+	}
+
+	bool removeRows(int row, int count, const QModelIndex& parent = QModelIndex()) override
+	{
+		beginRemoveRows(parent, row, row + (count - 1));
+
+		for (int count_index = 0; count_index < count; ++count_index)
+		{
+			data_store.remove(row + count_index, column_count);
+			row_count -= 1;
+		}
+
+		endRemoveRows();
+
+		return true;
+	}
+
+private:
+
+	int row_count;
+	const int column_count;
+	
+	QVector<QVariant> data_store;
+	QVector<QString> column_labels;
 };
 
 
@@ -79,8 +151,16 @@ public:
 
 		table_view = new QTableView(this);
 
-		table_model = new TableModel(this);
+		table_model = new TableModel(5, this);
+		
+		QStringList column_labels;
+		column_labels << tr("Hallo") << tr("die") << tr("Tabelle") << tr("ist") << tr("unzufrieden");
+		
+		table_model->SetColumnLabels(column_labels);
+		
 		table_view->setModel(table_model);
+
+		connect(add_row, &QAction::triggered, table_model, &TableModel::InsertRowAtSelection);
 
 		QVBoxLayout* vbox_layout = new QVBoxLayout(this);
 
