@@ -27,24 +27,19 @@ matrix:
          - MATRIX_EVAL="CC=gcc-10 && CXX=g++-10"
 
 before_install:
-- sudo apt-get -y update
-- sudo apt-get -y upgrade
-- sudo apt purge --auto-remove cmake
-- wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
-- sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
-- sudo apt update
-- apt list --upgradable
-- sudo apt install cmake
-- sudo cmake --version
-- sudo which -a cmake
-- sudo apt-get install -y autoconf libtool
-- sudo apt-get install -y libboost-all-dev 
-- sudo apt-get install -y libbrotli-dev
-- sudo apt-get install -y libbz2-dev
-- sudo apt-get install -y libharfbuzz-dev
-- sudo apt-get install -y zlib1g-dev
-- sudo apt-get install -y libpng-dev
 - eval "${MATRIX_EVAL}"
+
+install:
+- |
+    if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then
+      CMAKE_URL="https://cmake.org/files/v3.10/cmake-3.16.0-Linux-x86_64.tar.gz"
+      mkdir cmake && travis_retry wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C cmake
+      export PATH=${DEPS_DIR}/cmake/bin:${PATH}
+    else
+      brew install cmake || brew upgrade cmake
+    fi
+  - cmake --version
+  - sudo which -a cmake
 
 branches:
   only:
