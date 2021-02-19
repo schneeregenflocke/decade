@@ -60,16 +60,19 @@ public:
 	QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override
 	{
 		if (role == Qt::DisplayRole)
+		{
 			return QString("Row%1, Column%2")
-			.arg(index.row() + 1)
-			.arg(index.column() + 1);
-
+				.arg(index.row() + 1)
+				.arg(index.column() + 1);
+		}
+			
 		return QVariant();
 	}
 
-	QVariant headerData(int section, Qt::Orientation orientation, int role) const
+	QVariant headerData(int section, Qt::Orientation orientation, int role) const override
 	{
 		QVariant header_data = QVariant();
+		
 
 		if (role == Qt::DisplayRole && orientation == Qt::Horizontal)
 		{
@@ -91,6 +94,8 @@ public slots:
 	{
 		insertRow(0);
 	}
+
+	
 
 	bool insertRows(int row, int count, const QModelIndex& parent = QModelIndex()) override
 	{
