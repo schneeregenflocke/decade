@@ -38,8 +38,8 @@ install:
     else
       brew install cmake || brew upgrade cmake
     fi
-  - cmake --version
-  - sudo which -a cmake
+ - cmake --version
+ - sudo which -a cmake
 
 branches:
   only:
