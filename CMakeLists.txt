@@ -19,26 +19,13 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "CMAKE_EXPORT_COMPILE_COMMANDS" 
 
 add_executable(Decade)
 
+
 target_compile_features(Decade PUBLIC cxx_std_17)
 get_target_property(DECADE_TARGET_CXX_STANDARD Decade CXX_STANDARD)
 message("DECADE_TARGET_CXX_STANDARD: ${DECADE_TARGET_CXX_STANDARD}")
 
-#add_compile_definitions(HAVE_TYPE_TRAITS)
 
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
-	add_compile_options(/Zc:__cplusplus)
-endif()
-
-
-
-
-
-### qt ###
-
-#set(CMAKE_AUTOMOC ON)
-#set(CMAKE_AUTORCC ON)
-#set(CMAKE_AUTOUIC ON)
-
+# qt
 set(QT_INSTALLATION_PREFIX CACHE PATH "Set your CMAKE_PREFIX_PATH environment variable to the Qt installation prefix (e.g. /Qt/6.0.0/msvc2019_64)")
 list(APPEND CMAKE_PREFIX_PATH ${QT_INSTALLATION_PREFIX})
 message("QT_INSTALLATION_PREFIX: ${QT_INSTALLATION_PREFIX}")
@@ -48,17 +35,18 @@ find_package(Qt6 COMPONENTS Widgets REQUIRED)
 
 target_link_libraries(Decade PRIVATE Qt6::Widgets)
 
+target_include_directories(Decade PRIVATE Qt6Widgets_INCLUDE_DIRS)
+message("Qt6Widgets_INCLUDE_DIRS: ${Qt6Widgets_INCLUDE_DIRS}")
 
 add_custom_command(
     TARGET Decade
     POST_BUILD
     COMMAND ${QT_INSTALLATION_PREFIX}/bin/qtenv2.bat 
     COMMAND ${QT_INSTALLATION_PREFIX}/bin/windeployqt.exe ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}
-    )
+	)
 
 
-### boost ###
-
+# boost
 set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost COMPONENTS date_time serialization wserialization)
 
@@ -72,26 +60,22 @@ message("Boost_LIBRARY_DIRS: ${Boost_LIBRARY_DIRS}")
 message("Boost_LIBRARIES: ${Boost_LIBRARIES}")
 
 target_include_directories(Decade PRIVATE ${Boost_INCLUDE_DIRS})
-#if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
-#	target_link_directories(Decade PRIVATE ${Boost_LIBRARY_DIRS})
-#endif()
 target_link_libraries(Decade PRIVATE ${Boost_LIBRARIES})
 
 
-### glad ###
+# glad
 set(GLAD_PROFILE "core" CACHE STRING "OpenGL profile" FORCE)
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/glad")
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/glad)
 target_link_libraries(Decade PRIVATE glad)
 
 
-### glm ###
+# glm
 #add_compile_definitions(GLM_FORCE_MESSAGES)
 add_compile_definitions(GLM_FORCE_CXX17)
-target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/glm")
+target_include_directories(Decade PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/glm)
 
 
-### freetype ###
-
+# freetype
 #set(FT_WITH_BROTLI OFF CACHE BOOL "FT_WITH_BROTLI" FORCE)
 #set(FT_WITH_BZIP2 OFF CACHE BOOL "FT_WITH_BZIP2" FORCE)
 #set(FT_WITH_HARFBUZZ OFF CACHE BOOL "FT_WITH_HARFBUZZ" FORCE)
@@ -102,8 +86,8 @@ set(FREETYPE_FROM_SUBDIRECTORY ON CACHE BOOL "add freetype from subdirectory.")
 message("FREETYPE_FROM_SUBDIRECTORY: ${FREETYPE_FROM_SUBDIRECTORY}")
 
 if(${FREETYPE_FROM_SUBDIRECTORY})
-	target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2/include")
-	add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2")
+	target_include_directories(Decade PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2/include)
+	add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2)
 	target_link_libraries(Decade PRIVATE freetype)
 else()
 	set(FREETYPE_DIR CACHE PATH "The user may set the environment variable FREETYPE_DIR to the root directory of a Freetype installation.")
@@ -114,21 +98,21 @@ else()
 endif()
 
 
-### lodepng ###
-target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/lodepng")
+# lodepng
+target_include_directories(Decade PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/lodepng)
 target_sources(Decade PRIVATE external/lodepng/lodepng.h external/lodepng/lodepng.cpp)
 
 
-### embed-resource ###
-target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource")
+# embed-resource
+target_include_directories(Decade PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)
 
 
-### sigslot ###
-target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/include")
+# sigslot
+target_include_directories(Decade PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/include)
 
 
-
+# resource paths
 list(APPEND SHADER_FILES_PATHS
 	${CMAKE_CURRENT_SOURCE_DIR}/shaders/font_fragment_shader.glsl shader
 	${CMAKE_CURRENT_SOURCE_DIR}/shaders/font_vertex_shader.glsl shader
@@ -142,32 +126,32 @@ file(DOWNLOAD https://code.qt.io/cgit/qt/qt5.git/plain/LICENSE.GPLv3?h=6.0 ${CMA
 
 
 list(APPEND LICENSE_FILES_PATHS
-	"${CMAKE_CURRENT_BINARY_DIR}/LICENSE.GPLv3" qt
-	"${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt" decade
-	"${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2/docs/LICENSE.TXT" freetype2
-	"${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource/LICENSE.txt" "embed-resource"		 
-	"${CMAKE_CURRENT_SOURCE_DIR}/external/glad/LICENSE" glad
-	"${CMAKE_CURRENT_SOURCE_DIR}/external/glm/copying.txt" glm
-	"${CMAKE_CURRENT_SOURCE_DIR}/external/lodepng/LICENSE" lodepng
-	"${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/LICENSE" sigslot
+	${CMAKE_CURRENT_BINARY_DIR}/LICENSE.GPLv3 qt
+	${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt decade
+	${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2/docs/LICENSE.TXT freetype2
+	${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource/LICENSE.txt embed-resource	 
+	${CMAKE_CURRENT_SOURCE_DIR}/external/glad/LICENSE glad
+	${CMAKE_CURRENT_SOURCE_DIR}/external/glm/copying.txt glm
+	${CMAKE_CURRENT_SOURCE_DIR}/external/lodepng/LICENSE lodepng
+	${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/LICENSE sigslot
 )
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
-	list(APPEND LICENSE_FILES_PATHS "${Boost_INCLUDE_DIRS}/LICENSE_1_0.txt" boost)
+	list(APPEND LICENSE_FILES_PATHS ${Boost_INCLUDE_DIRS}/LICENSE_1_0.txt boost)
 endif()
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL Linux)
-	list(APPEND LICENSE_FILES_PATHS "/usr/share/licenses/boost/LICENSE_1_0.txt" boost)
+	list(APPEND LICENSE_FILES_PATHS /usr/share/licenses/boost/LICENSE_1_0.txt boost)
 endif()
 
 embed_resources(SHADERS ${SHADER_FILES_PATHS})
 embed_resources(RESOURCES ${LICENSE_FILES_PATHS})
 message("RESOURCES: ${RESOURCES}")
+
 target_sources(Decade PRIVATE ${SHADERS} ${RESOURCES})
 
 
-### sources ###
-
+# sources
 set(SOURCE_FILES_DECADE
 	src/main.cpp
 	src/calendar_view.h
@@ -206,10 +190,8 @@ message("SOURCE_FILES_MOC_FILES: ${SOURCE_FILES_MOC_FILES}")
 
 
 
-### CPACK ###
-
+# CPACK
 #include(GNUInstallDirs)
-
 install(
 	TARGETS Decade
 	#EXPORT Decade_Project 
@@ -222,7 +204,7 @@ list(REMOVE_ITEM CPACK_COMPONENTS_ALL "Unspecified" "headers")
 message("CPACK_COMPONENTS_ALL: ${CPACK_COMPONENTS_ALL}")
 
 #include(InstallRequiredSystemLibraries)
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
-set(CPACK_PACKAGE_VERSION_MAJOR "5")
-set(CPACK_PACKAGE_VERSION_MINOR "0")
+set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt)
+set(CPACK_PACKAGE_VERSION_MAJOR 5)
+set(CPACK_PACKAGE_VERSION_MINOR 0)
 include(CPack)
