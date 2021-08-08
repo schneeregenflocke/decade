@@ -215,8 +215,8 @@ public:
 
 		page_margin_frame = print_area;
 		page_margin_frame.Top(title_frame.Bottom());
-		rect4 page_margin_frame_margin = rect4(0.0f, 0.0f, 0.0f, 5.f);
-		page_margin_frame = page_margin_frame.Reduce(page_margin_frame_margin);
+		//rect4 page_margin_frame_margin = rect4(0.0f, 0.0f, 0.0f, 5.f);
+		//page_margin_frame = page_margin_frame.Reduce(page_margin_frame_margin);
 
 		calendar_frame = page_margin_frame;
 		rect4 calendar_frame_margin = rect4(0.0f, 0.0f, 3.0f, 2.0f);
