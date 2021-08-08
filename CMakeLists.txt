@@ -2,12 +2,9 @@
 
 include(CMakePrintHelpers)
 
-cmake_print_variables(CMAKE_VERSION)
-
 project(Decade VERSION 5.0.2)
 
-cmake_print_variables(CMAKE_PROJECT_VERSION CMAKE_SYSTEM_NAME CMAKE_CXX_COMPILER_ID)
-
+cmake_print_variables(CMAKE_VERSION CMAKE_PROJECT_VERSION CMAKE_SYSTEM_NAME CMAKE_CXX_COMPILER_ID)
 
 add_executable(${PROJECT_NAME})
 
