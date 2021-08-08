@@ -103,7 +103,7 @@ private:
 		collected_licenses.emplace_back("catch", LOAD_RESOURCE(catch_LICENSE).toString());
 
 		collected_licenses.emplace_back("lodepng", LOAD_RESOURCE(lodepng_LICENSE).toString());
-		collected_licenses.emplace_back("freetype2", LOAD_RESOURCE(freetype2_LICENSE).toString());
+		collected_licenses.emplace_back("freetype2", LOAD_RESOURCE(freetype2_GPLv2).toString());
 		collected_licenses.emplace_back("sigslot", LOAD_RESOURCE(sigslot_LICENSE).toString());
 
 		for (const auto& license : collected_licenses)

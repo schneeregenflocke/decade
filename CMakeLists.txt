@@ -130,7 +130,7 @@ list(APPEND RESOURCE_FILES
 	${CMAKE_CURRENT_LIST_DIR}/LICENSE.txt decade
 	${CMAKE_CURRENT_LIST_DIR}/external/csv/LICENSE csv 
 	${CMAKE_CURRENT_LIST_DIR}/external/csv/vendor/Catch2/LICENSE.txt Catch2
-	${CMAKE_CURRENT_LIST_DIR}/external/freetype2/docs/LICENSE.TXT freetype2
+	${CMAKE_CURRENT_LIST_DIR}/external/freetype2/docs/GPLv2.TXT freetype2
 	${CMAKE_CURRENT_LIST_DIR}/external/embed-resource/LICENSE.txt embed-resource	 
 	${CMAKE_CURRENT_LIST_DIR}/external/glad/LICENSE glad
 	${CMAKE_CURRENT_LIST_DIR}/external/glm/copying.txt glm
