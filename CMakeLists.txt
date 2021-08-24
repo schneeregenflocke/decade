@@ -12,10 +12,11 @@ add_executable(${PROJECT_NAME})
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 get_target_property(${PROJECT_NAME}_CXX_STANDARD ${PROJECT_NAME} CXX_STANDARD)
 cmake_print_variables(${PROJECT_NAME}_CXX_STANDARD)
+cmake_print_variables(CMAKE_EXPORT_COMPILE_COMMANDS)
 
 
-add_compile_definitions(HAVE_TYPE_TRAITS)
-target_compile_definitions(${PROJECT_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
+#add_compile_definitions(HAVE_TYPE_TRAITS)
+#target_compile_definitions(${PROJECT_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
 	target_compile_options(${PROJECT_NAME} PRIVATE /Zc:__cplusplus)
@@ -31,7 +32,7 @@ cmake_print_variables(${PROJECT_NAME}_COMPILE_DEFINITIONS)
 
 # boost
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost COMPONENTS date_time serialization wserialization)
+find_package(Boost REQUIRED COMPONENTS date_time serialization wserialization)
 
 cmake_print_variables(Boost_FOUND)
 if(NOT ${Boost_FOUND})
@@ -41,9 +42,9 @@ endif()
 cmake_print_variables(Boost_INCLUDE_DIRS Boost_LIBRARY_DIRS Boost_LIBRARIES)
 target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${Boost_LIBRARIES})
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
-	target_link_directories(Decade PRIVATE ${Boost_LIBRARY_DIRS})
-endif()
+#if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
+#	target_link_directories(Decade PRIVATE ${Boost_LIBRARY_DIRS})
+#endif()
 
 
 
@@ -54,23 +55,22 @@ endif()
 # and for each of your dependent executable/library targets:
 #target_link_libraries(Decade PRIVATE ${wxWidgets_LIBRARIES})
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
+target_compile_definitions(Decade PRIVATE _CRT_SECURE_NO_WARNINGS)
 
-# WxWidgets Configuration ON
+#WxWidgets ON
 set(wxUSE_STL ON CACHE BOOL "wxUSE_STL" FORCE)
 set(wxUSE_GUI ON CACHE BOOL "wxUSE_GUI" FORCE)
 set(wxUSE_OPENGL ON CACHE BOOL "wxUSE_OPENGL" FORCE)
 
-# WxWidgets Configuration OFF
+#WxWidgets OFF
 set(wxBUILD_SHARED OFF CACHE BOOL "wxBUILD_SHARED" FORCE)
 set(wxUSE_WINRT	OFF CACHE BOOL "wxUSE_WINRT" FORCE)
 set(wxUSE_EXCEPTIONS OFF CACHE BOOL "wxUSE_EXCEPTIONS" FORCE)
 set(wxUSE_GLCANVAS_EGL OFF CACHE BOOL "wxUSE_GLCANVAS_EGL" FORCE)
 
-add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/wxWidgets)
-# fixed library names https://github.com/wxWidgets/wxWidgets/commit/0f806ad96db4e22053769c0b2f3b7be4026ea8de
-target_link_libraries(${PROJECT_NAME} PRIVATE wxpropgrid wxgl wxcore wxbase)
-
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets")
+#fixed library names https://github.com/wxWidgets/wxWidgets/commit/0f806ad96db4e22053769c0b2f3b7be4026ea8de
+target_link_libraries(Decade PRIVATE wxpropgrid wxgl wxcore wxbase)
 
 
 # glad
@@ -85,14 +85,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/ext
 
 
 # freetype
-#set(FT_WITH_BROTLI OFF CACHE BOOL "FT_WITH_BROTLI" FORCE)
-#set(FT_WITH_BZIP2 OFF CACHE BOOL "FT_WITH_BZIP2" FORCE)
-#set(FT_WITH_HARFBUZZ OFF CACHE BOOL "FT_WITH_HARFBUZZ" FORCE)
-#set(FT_WITH_PNG OFF CACHE BOOL "FT_WITH_PNG" FORCE)
-#set(FT_WITH_ZLIB OFF CACHE BOOL "FT_WITH_ZLIB" FORCE)
-
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/external/freetype2/include)
-add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/freetype2)
+target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2/include")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2")
 target_link_libraries(Decade PRIVATE freetype)
 
 

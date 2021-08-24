@@ -438,8 +438,8 @@ public:
 
 				rect4 day_cell;
 				day_cell.Left(current_cell.Left() + float_subindex * day_width);
-				day_cell.Bottom(current_cell.Bottom());
 				day_cell.Right(day_cell.Left() + day_width);
+				day_cell.Bottom(current_cell.Bottom());
 				day_cell.Top(current_cell.Top());
 
 				days_cells[days_index] = day_cell;

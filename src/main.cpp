@@ -84,7 +84,7 @@ bool App::OnInit()
 
     auto language = wxLocale::GetSystemLanguage();
     locale = std::make_unique<wxLocale>();
-    auto init_locale_succeeded = locale->Init(language);
+    auto init_locale_succeeded = locale->Init();
     std::locale::global(std::locale(""));
 
     std::wcout << L"init_locale_succeeded " << init_locale_succeeded << '\n';

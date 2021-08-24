@@ -84,7 +84,7 @@ private:
 		collected_licenses.clear();
 		collected_licenses.reserve(10);
 
-		collected_licenses.emplace_back("Decade", LOAD_RESOURCE(decade_LICENSE).toString());
+		/*collected_licenses.emplace_back("Decade", LOAD_RESOURCE(decade_LICENSE).toString());
 		collected_licenses.emplace_back("Boost", LOAD_RESOURCE(boost_LICENSE_1_0).toString());
 		collected_licenses.emplace_back("glm", LOAD_RESOURCE(glm_copying).toString());
 		collected_licenses.emplace_back("glad", LOAD_RESOURCE(glad_LICENSE).toString());
@@ -104,7 +104,7 @@ private:
 
 		collected_licenses.emplace_back("lodepng", LOAD_RESOURCE(lodepng_LICENSE).toString());
 		collected_licenses.emplace_back("freetype2", LOAD_RESOURCE(freetype2_GPLv2).toString());
-		collected_licenses.emplace_back("sigslot", LOAD_RESOURCE(sigslot_LICENSE).toString());
+		collected_licenses.emplace_back("sigslot", LOAD_RESOURCE(sigslot_LICENSE).toString());*/
 
 		for (const auto& license : collected_licenses)
 		{

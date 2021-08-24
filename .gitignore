@@ -18,5 +18,8 @@ CMakeSettings.json
 out/
 build/
 .clangd/
+.cache/
+
+compile_commands.json
 
 
