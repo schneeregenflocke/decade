@@ -40,3 +40,4 @@ before_install:
 branches:
   only:
   - main
+  - wx_gui

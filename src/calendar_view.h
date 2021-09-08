@@ -241,6 +241,7 @@ public:
 		row_frames.SetupSubFrames(calendar_config.spacing_proportions);
 
 		day_width = cells_frame.Width() / 366.f;
+		//day_width = row_frames.GetSubFrame(3, 0).Height();
 
 		x_labels_frame = calendar_frame.Reduce(rect4(cell_width, row_height, 0.f, cells_frame.Height()));
 		y_labels_frame = calendar_frame.Reduce(rect4(0.f, row_height * 2.f, cells_frame.Width(), 0.f));
