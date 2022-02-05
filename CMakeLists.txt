@@ -181,7 +181,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
-	target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/include/wx/msw/amd64_dpi_aware.manifest)
+	target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/include/wx/msw/wx_dpi_aware.manifest)
 endif()
 
 
