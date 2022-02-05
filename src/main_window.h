@@ -43,13 +43,15 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <boost/archive/xml_oarchive.hpp>
 #include <boost/archive/xml_iarchive.hpp>
 
-#include <csv/reader.hpp>
-#include <csv/writer.hpp>
+#include <csv2/reader.hpp>
+#include <csv2/writer.hpp>
 
 #include <iostream>
 #include <string>
 #include <cmath>
 #include <memory>
+#include <fstream>
+#include <array>
 
 
 class MainWindow : public wxFrame
@@ -166,7 +168,7 @@ private:
         menu_file->Append(ID_SAVE_XML, L"&Save");
         menu_file->Append(ID_SAVE_AS_XML, L"&Save As...");
         menu_file->AppendSeparator();
-        menu_file->Append(ID_IMPORT_CSV, L"&Append csv...");
+        menu_file->Append(ID_IMPORT_CSV, L"&Import csv...");
         menu_file->Append(ID_EXPORT_CSV, L"&Export csv...");
         menu_file->AppendSeparator();
         menu_file->Append(ID_EXPORT_PNG, L"&Export png...");
@@ -331,26 +333,37 @@ private:
         {
             std::string file_path = open_file_dialog.GetPath().ToStdString();
 
-            csv::Reader csv_reader;
-            csv_reader.configure_dialect("custom_dialect")
-                .delimiter(",")
-                .header(false)
-                .skip_empty_rows(true);
+            csv2::Reader<csv2::delimiter<','>, csv2::quote_character<'"'>, csv2::first_row_is_header<false>, csv2::trim_policy::trim_whitespace> csv_reader;
 
-            csv_reader.read(file_path);
+            csv_reader.mmap(file_path);
 
             date_format_descriptor date_format = InitDateFormat();
 
-            std::vector<DateIntervalBundle> date_interval_bundles = date_interval_bundle_store.GetDateIntervalBundles();
+            std::vector<DateIntervalBundle> date_interval_bundles;
 
-            while (csv_reader.busy())
+            if (csv_reader.mmap(file_path)) 
             {
-                if (csv_reader.ready())
+                for (const auto row : csv_reader)
                 {
-                    auto row = csv_reader.next_row(); // auto& row = csv_reader.next_row();
+                    size_t current_col = 0;
 
-                    const auto begin_date_string = row[std::to_string(0)];
-                    const auto end_date_string = row[std::to_string(1)];
+                    std::string begin_date_string;
+                    std::string end_date_string;
+                    
+                    for (const auto cell : row)
+                    {
+                        if (current_col == 0)
+                        {
+                            cell.read_value(begin_date_string);
+                        }
+                        
+                        if (current_col == 1)
+                        {
+                            cell.read_value(end_date_string);
+                        }
+
+                        ++current_col;
+                    }
 
                     const auto begin_date = string_to_boost_date(begin_date_string, date_format);
                     const auto end_date = string_to_boost_date(end_date_string, date_format);
@@ -373,23 +386,22 @@ private:
         {
             const std::string file_path = save_file_dialog.GetPath().ToStdString();
 
-            csv::Writer csv_writer(file_path.c_str());
+            std::ofstream file_stream(file_path, std::ios_base::trunc);
+            bool file_open = file_stream.is_open();
 
-            csv_writer.configure_dialect("custom_dialect")
-                .delimiter(",")
-                .header(false)
-                .skip_empty_rows(true);
+            csv2::Writer<csv2::delimiter<','>> csv_writer(file_stream);
 
             const auto date_interval_bundles = date_interval_bundle_store.GetDateIntervalBundles();
 
             for (size_t index = 0; index < date_interval_bundles.size(); ++index)
             {
-                const auto begin_date = boost_date_to_string(date_interval_bundles[index].date_interval.begin());
-                const auto last_date = boost_date_to_string(date_interval_bundles[index].date_interval.end());
-                csv_writer.write_row(begin_date, last_date);
+                std::array<std::string, 2> date_interval_strings;
+                date_interval_strings[0] = boost_date_to_string(date_interval_bundles[index].date_interval.begin());
+                date_interval_strings[1] = boost_date_to_string(date_interval_bundles[index].date_interval.end());
+                csv_writer.write_row(date_interval_strings);
             }
 
-            csv_writer.close();
+            file_stream.close();
         }
     }
 

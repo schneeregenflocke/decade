@@ -2,7 +2,7 @@
 
 include(CMakePrintHelpers)
 
-project(Decade VERSION 5.0.2)
+project(Decade VERSION 0.6.0)
 
 cmake_print_variables(CMAKE_VERSION CMAKE_PROJECT_VERSION CMAKE_SYSTEM_NAME CMAKE_CXX_COMPILER_ID)
 
@@ -55,14 +55,14 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${Boost_LIBRARIES})
 # and for each of your dependent executable/library targets:
 #target_link_libraries(Decade PRIVATE ${wxWidgets_LIBRARIES})
 
-target_compile_definitions(Decade PRIVATE _CRT_SECURE_NO_WARNINGS)
+target_compile_definitions(${PROJECT_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
 
-#WxWidgets ON
+# wx ON
 set(wxUSE_STL ON CACHE BOOL "wxUSE_STL" FORCE)
 set(wxUSE_GUI ON CACHE BOOL "wxUSE_GUI" FORCE)
 set(wxUSE_OPENGL ON CACHE BOOL "wxUSE_OPENGL" FORCE)
 
-#WxWidgets OFF
+# wx OFF
 set(wxBUILD_SHARED OFF CACHE BOOL "wxBUILD_SHARED" FORCE)
 set(wxUSE_WINRT	OFF CACHE BOOL "wxUSE_WINRT" FORCE)
 set(wxUSE_EXCEPTIONS OFF CACHE BOOL "wxUSE_EXCEPTIONS" FORCE)
@@ -72,38 +72,31 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets")
 #fixed library names https://github.com/wxWidgets/wxWidgets/commit/0f806ad96db4e22053769c0b2f3b7be4026ea8de
 target_link_libraries(Decade PRIVATE wxpropgrid wxgl wxcore wxbase)
 
-
 # glad
 set(GLAD_PROFILE "core" CACHE STRING "OpenGL profile" FORCE)
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/glad)
 target_link_libraries(${PROJECT_NAME} PRIVATE glad)
 
-
 # glm 
 add_compile_definitions(GLM_FORCE_CXX17)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/external/glm)
 
-
 # freetype
-target_include_directories(Decade PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2/include")
+#target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2/include")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2")
-target_link_libraries(Decade PRIVATE freetype)
-
+target_link_libraries(${PROJECT_NAME} PRIVATE freetype)
 
 # lodepng 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/external/lodepng)
 target_sources(${PROJECT_NAME} PRIVATE external/lodepng/lodepng.h external/lodepng/lodepng.cpp)
 
-
-# csv
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/external/csv/include)
-add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/csv)
-
+# csv2
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/csv2)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/external/csv2/include)
 
 # embed-resource
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/external/embed-resource)
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/embed-resource)
-
 
 # sigslot
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/external/sigslot/include)
@@ -122,8 +115,8 @@ list(APPEND RESOURCE_FILES
 
 list(APPEND RESOURCE_FILES
 	${CMAKE_CURRENT_LIST_DIR}/LICENSE.txt decade
-	${CMAKE_CURRENT_LIST_DIR}/external/csv/LICENSE csv 
-	${CMAKE_CURRENT_LIST_DIR}/external/csv/vendor/Catch2/LICENSE.txt Catch2
+	${CMAKE_CURRENT_LIST_DIR}/external/csv2/LICENSE csv2
+	${CMAKE_CURRENT_LIST_DIR}/external/csv2/LICENSE.mio csv2mio
 	${CMAKE_CURRENT_LIST_DIR}/external/freetype2/docs/GPLv2.TXT freetype2
 	${CMAKE_CURRENT_LIST_DIR}/external/embed-resource/LICENSE.txt embed-resource	 
 	${CMAKE_CURRENT_LIST_DIR}/external/glad/LICENSE glad
