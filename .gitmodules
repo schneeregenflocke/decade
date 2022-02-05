@@ -26,8 +26,6 @@
 	path = external/sigslot
 	url = https://github.com/palacaze/sigslot.git
 	branch = master
-[submodule "external/csv"]
-	path = external/csv
-	url = https://github.com/p-ranav/csv
-	branch = master
-
+[submodule "external/csv2"]
+	path = external/csv2
+	url = https://github.com/p-ranav/csv2.git
