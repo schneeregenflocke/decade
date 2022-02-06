@@ -42,7 +42,6 @@ public:
 
 		text_view_ctrl = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY);
 
-
 		wxSizerFlags flags0 = wxSizerFlags().Proportion(1).Expand();
 		wxSizerFlags flags1 = wxSizerFlags().Proportion(1).Expand().Border(wxALL, 10);
 		wxSizerFlags flags2 = wxSizerFlags().Proportion(0).Expand().Border(wxALL, 10);
@@ -65,11 +64,8 @@ public:
 
 		vertical_sizer->Add(button_sizer, flags3);
 
-
 		Bind(wxEVT_LISTBOX, &LicenseInformationDialog::SlotSelectLicense, this);
 		Bind(wxEVT_BUTTON, &LicenseInformationDialog::CloseDialog, this);
-
-
 
 		CollectLicenses();
 
@@ -84,7 +80,7 @@ private:
 		collected_licenses.clear();
 
 		collected_licenses.emplace_back("Decade", LOAD_RESOURCE(decade_LICENSE).toString());
-		collected_licenses.emplace_back("Boost", LOAD_RESOURCE(boost_LICENSE_1_0).toString());
+
 		collected_licenses.emplace_back("glm", LOAD_RESOURCE(glm_copying).toString());
 		collected_licenses.emplace_back("glad", LOAD_RESOURCE(glad_LICENSE).toString());
 
@@ -101,8 +97,10 @@ private:
 		collected_licenses.emplace_back("csv2mio", LOAD_RESOURCE(csv2mio_LICENSE).toString());
 
 		collected_licenses.emplace_back("lodepng", LOAD_RESOURCE(lodepng_LICENSE).toString());
-		collected_licenses.emplace_back("freetype2", LOAD_RESOURCE(freetype2_GPLv2).toString());
 		collected_licenses.emplace_back("sigslot", LOAD_RESOURCE(sigslot_LICENSE).toString());
+
+		collected_licenses.emplace_back("boost", LOAD_RESOURCE(boost_copyright).toString());
+		collected_licenses.emplace_back("freetype", LOAD_RESOURCE(freetype_copyright).toString());
 
 		for (const auto& license : collected_licenses)
 		{

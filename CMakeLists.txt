@@ -1,6 +1,12 @@
-﻿cmake_minimum_required(VERSION 3.8)
+﻿cmake_minimum_required(VERSION 3.15)
+
+set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/external/vcpkg/scripts/buildsystems/vcpkg.cmake CACHE STRING "Vcpkg toolchain file")
 
 include(CMakePrintHelpers)
+
+cmake_policy(SET CMP0091 NEW)
+
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 project(Decade VERSION 0.6.0)
 
@@ -8,19 +14,19 @@ cmake_print_variables(CMAKE_VERSION CMAKE_PROJECT_VERSION CMAKE_SYSTEM_NAME CMAK
 
 add_executable(${PROJECT_NAME})
 
+#set_property(TARGET ${PROJECT_NAME} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 get_target_property(${PROJECT_NAME}_CXX_STANDARD ${PROJECT_NAME} CXX_STANDARD)
 cmake_print_variables(${PROJECT_NAME}_CXX_STANDARD)
 cmake_print_variables(CMAKE_EXPORT_COMPILE_COMMANDS)
 
-
 #add_compile_definitions(HAVE_TYPE_TRAITS)
 #target_compile_definitions(${PROJECT_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
 	target_compile_options(${PROJECT_NAME} PRIVATE /Zc:__cplusplus)
-	target_compile_options(${PROJECT_NAME} PRIVATE /bigobj)
+	#target_compile_options(${PROJECT_NAME} PRIVATE /bigobj)
 endif()
 
 get_target_property(${PROJECT_NAME}_COMPILE_OPTIONS ${PROJECT_NAME} COMPILE_OPTIONS)
@@ -30,123 +36,67 @@ get_target_property(${PROJECT_NAME}_COMPILE_DEFINITIONS ${PROJECT_NAME} COMPILE_
 cmake_print_variables(${PROJECT_NAME}_COMPILE_DEFINITIONS)
 
 
-# boost
-set(Boost_USE_STATIC_LIBS ON)
+#set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost REQUIRED COMPONENTS date_time serialization wserialization)
-
-cmake_print_variables(Boost_FOUND)
-if(NOT ${Boost_FOUND})
-	message(FATAL_ERROR "Set directory path variable Boost_DIR to the directory containing the file BoostConfig.cmake (e.g. boost/stage/lib/cmake/Boost-x.xx.x)")
+cmake_print_variables(Boost_FOUND Boost_INCLUDE_DIRS Boost_LIBRARY_DIRS Boost_LIBRARIES)
+if(${Boost_FOUND})
+	target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
+	target_link_libraries(${PROJECT_NAME} PRIVATE ${Boost_LIBRARIES})
 endif()
 
-cmake_print_variables(Boost_INCLUDE_DIRS Boost_LIBRARY_DIRS Boost_LIBRARIES)
-target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${Boost_LIBRARIES})
-#if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
-#	target_link_directories(Decade PRIVATE ${Boost_LIBRARY_DIRS})
+#find_package(wxWidgets REQUIRED propgrid gl core base)
+#cmake_print_variables(wxWidgets_FOUND wxWidgets_INCLUDE_DIRS wxWidgets_LIBRARIES wxWidgets_LIBRARY_DIRS wxWidgets_DEFINITIONS wxWidgets_DEFINITIONS_DEBUG wxWidgets_CXX_FLAGS wxWidgets_USE_FILE)
+#if(wxWidgets_FOUND)
+#  include(${wxWidgets_USE_FILE})
+#  #target_include_directories(${PROJECT_NAME} PRIVATE ${wxWidgets_INCLUDE_DIRS})
+#  target_link_libraries(${PROJECT_NAME} PRIVATE ${wxWidgets_LIBRARIES})
 #endif()
 
-
-
-# wxWidgets
-
-#find_package(wxWidgets REQUIRED gl core base propgrid)
-#include(${wxWidgets_USE_FILE})
-# and for each of your dependent executable/library targets:
-#target_link_libraries(Decade PRIVATE ${wxWidgets_LIBRARIES})
-
-target_compile_definitions(${PROJECT_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
-
-# wx ON
 set(wxUSE_STL ON CACHE BOOL "wxUSE_STL" FORCE)
 set(wxUSE_GUI ON CACHE BOOL "wxUSE_GUI" FORCE)
 set(wxUSE_OPENGL ON CACHE BOOL "wxUSE_OPENGL" FORCE)
-
-# wx OFF
-set(wxBUILD_SHARED OFF CACHE BOOL "wxBUILD_SHARED" FORCE)
 set(wxUSE_WINRT	OFF CACHE BOOL "wxUSE_WINRT" FORCE)
 set(wxUSE_EXCEPTIONS OFF CACHE BOOL "wxUSE_EXCEPTIONS" FORCE)
 set(wxUSE_GLCANVAS_EGL OFF CACHE BOOL "wxUSE_GLCANVAS_EGL" FORCE)
+set(wxBUILD_SHARED OFF CACHE BOOL "wxBUILD_SHARED" FORCE)
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets")
-#fixed library names https://github.com/wxWidgets/wxWidgets/commit/0f806ad96db4e22053769c0b2f3b7be4026ea8de
 target_link_libraries(Decade PRIVATE wxpropgrid wxgl wxcore wxbase)
 
-# glad
-set(GLAD_PROFILE "core" CACHE STRING "OpenGL profile" FORCE)
-add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/glad)
-target_link_libraries(${PROJECT_NAME} PRIVATE glad)
+if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
+	target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/include/wx/msw/wx_dpi_aware.manifest)
+endif()
 
-# glm 
-add_compile_definitions(GLM_FORCE_CXX17)
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/external/glm)
 
-# freetype
-#target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2/include")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/freetype2")
+find_package(freetype CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE freetype)
 
-# lodepng 
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/external/lodepng)
+
+set(GLAD_PROFILE "core" CACHE STRING "OpenGL profile" FORCE)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/glad)
+target_link_libraries(${PROJECT_NAME} PRIVATE glad)
+
+
+add_compile_definitions(GLM_FORCE_CXX17)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/glm)
+
+
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/lodepng)
 target_sources(${PROJECT_NAME} PRIVATE external/lodepng/lodepng.h external/lodepng/lodepng.cpp)
 
-# csv2
-add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/csv2)
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/external/csv2/include)
 
-# embed-resource
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/external/embed-resource)
-add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/embed-resource)
-
-# sigslot
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/external/sigslot/include)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/csv2)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/csv2/include)
 
 
-
-list(APPEND RESOURCE_FILES
-	${CMAKE_CURRENT_LIST_DIR}/shaders/font_fragment_shader.glsl shader
-	${CMAKE_CURRENT_LIST_DIR}/shaders/font_vertex_shader.glsl shader
-	${CMAKE_CURRENT_LIST_DIR}/shaders/phong_fragment_shader.glsl shader
-	${CMAKE_CURRENT_LIST_DIR}/shaders/phong_vertex_shader.glsl shader
-	${CMAKE_CURRENT_LIST_DIR}/shaders/simple_fragment_shader.glsl shader
-	${CMAKE_CURRENT_LIST_DIR}/shaders/simple_vertex_shader.glsl shader
-)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)
 
 
-list(APPEND RESOURCE_FILES
-	${CMAKE_CURRENT_LIST_DIR}/LICENSE.txt decade
-	${CMAKE_CURRENT_LIST_DIR}/external/csv2/LICENSE csv2
-	${CMAKE_CURRENT_LIST_DIR}/external/csv2/LICENSE.mio csv2mio
-	${CMAKE_CURRENT_LIST_DIR}/external/freetype2/docs/GPLv2.TXT freetype2
-	${CMAKE_CURRENT_LIST_DIR}/external/embed-resource/LICENSE.txt embed-resource	 
-	${CMAKE_CURRENT_LIST_DIR}/external/glad/LICENSE glad
-	${CMAKE_CURRENT_LIST_DIR}/external/glm/copying.txt glm
-	${CMAKE_CURRENT_LIST_DIR}/external/lodepng/LICENSE lodepng
-	${CMAKE_CURRENT_LIST_DIR}/external/sigslot/LICENSE sigslot
-	${CMAKE_CURRENT_LIST_DIR}/external/wxWidgets/docs/licence.txt wxWidgets
-	${CMAKE_CURRENT_LIST_DIR}/external/wxWidgets/3rdparty/catch/LICENSE.txt catch
-	${CMAKE_CURRENT_LIST_DIR}/external/wxWidgets/src/expat/expat/COPYING expat
-	${CMAKE_CURRENT_LIST_DIR}/external/wxWidgets/src/jpeg/README libjpeg_turbo
-	${CMAKE_CURRENT_LIST_DIR}/external/wxWidgets/src/tiff/COPYRIGHT libtiff
-	${CMAKE_CURRENT_LIST_DIR}/external/wxWidgets/src/png/LICENSE libpng
-	${CMAKE_CURRENT_LIST_DIR}/external/wxWidgets/src/zlib/README zlib
-)
-
-if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
-	list(APPEND RESOURCE_FILES ${Boost_INCLUDE_DIRS}/LICENSE_1_0.txt boost)
-endif()
-
-if(${CMAKE_SYSTEM_NAME} STREQUAL Linux)
-	list(APPEND RESOURCE_FILES /usr/share/licenses/boost/LICENSE_1_0.txt boost)
-endif()
-
-
-embed_resources(${PROJECT_NAME}_RESOURCES ${RESOURCE_FILES})
-cmake_print_variables(${PROJECT_NAME}_RESOURCES)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/include)
 
 
 target_sources(${PROJECT_NAME} PRIVATE 
-	${${PROJECT_NAME}_RESOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/main_window.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/date_utils.h
@@ -180,25 +130,36 @@ target_sources(${PROJECT_NAME} PRIVATE
 )
 
 
-if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
-	target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/include/wx/msw/wx_dpi_aware.manifest)
-endif()
+list(APPEND RESOURCE_FILES
+	${CMAKE_CURRENT_SOURCE_DIR}/shaders/font_fragment_shader.glsl shader
+	${CMAKE_CURRENT_SOURCE_DIR}/shaders/font_vertex_shader.glsl shader
+	${CMAKE_CURRENT_SOURCE_DIR}/shaders/phong_fragment_shader.glsl shader
+	${CMAKE_CURRENT_SOURCE_DIR}/shaders/phong_vertex_shader.glsl shader
+	${CMAKE_CURRENT_SOURCE_DIR}/shaders/simple_fragment_shader.glsl shader
+	${CMAKE_CURRENT_SOURCE_DIR}/shaders/simple_vertex_shader.glsl shader
+)
 
+list(APPEND RESOURCE_FILES
+	${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt decade
+	${CMAKE_CURRENT_SOURCE_DIR}/external/csv2/LICENSE csv2
+	${CMAKE_CURRENT_SOURCE_DIR}/external/csv2/LICENSE.mio csv2mio
+	${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource/LICENSE.txt embed-resource	 
+	${CMAKE_CURRENT_SOURCE_DIR}/external/glad/LICENSE glad
+	${CMAKE_CURRENT_SOURCE_DIR}/external/glm/copying.txt glm
+	${CMAKE_CURRENT_SOURCE_DIR}/external/lodepng/LICENSE lodepng
+	${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/LICENSE sigslot
+	${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/docs/licence.txt wxWidgets
+	${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/3rdparty/catch/LICENSE.txt catch
+	${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/src/expat/expat/COPYING expat
+	${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/src/jpeg/README libjpeg_turbo
+	${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/src/tiff/COPYRIGHT libtiff
+	${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/src/png/LICENSE libpng
+	${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/src/zlib/README zlib
+	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/boost-date-time/copyright boost
+	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/freetype/copyright freetype
+)
 
-# CPack
-#include(GNUInstallDirs)
+embed_resources(${PROJECT_NAME}_RESOURCES ${RESOURCE_FILES})
+cmake_print_variables(${PROJECT_NAME}_RESOURCES)
+target_sources(${PROJECT_NAME} PRIVATE ${${PROJECT_NAME}_RESOURCES})
 
-#install(
-#	TARGETS ${PROJECT_NAME}
-#	COMPONENT executable
-#)
-
-#get_cmake_property(CPACK_COMPONENTS_ALL COMPONENTS)
-#list(REMOVE_ITEM CPACK_COMPONENTS_ALL "Unspecified" "headers")
-#cmake_print_variables(CPACK_COMPONENTS_ALL)
-
-#include(InstallRequiredSystemLibraries)
-#set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt)
-#set(CPACK_PACKAGE_VERSION_MAJOR ${${PROJECT_NAME}_VERSION_MAJOR})
-#set(CPACK_PACKAGE_VERSION_MINOR ${${PROJECT_NAME}_VERSION_MINOR})
-#include(CPack)
