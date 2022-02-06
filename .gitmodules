@@ -1,9 +1,6 @@
 [submodule "external/embed-resource"]
 	path = external/embed-resource
 	url = https://github.com/schneeregenflocke/embed-resource.git
-[submodule "external/freetype2"]
-	path = external/freetype2
-	url = git://git.sv.nongnu.org/freetype/freetype2.git
 [submodule "external/glad"]
 	path = external/glad
 	url = https://github.com/Dav1dde/glad.git
