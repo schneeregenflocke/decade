@@ -1,0 +1,9 @@
+{
+  "name": "decade",
+  "version-string": "0.6.0",
+  "dependencies": [
+    "boost-date-time",
+    "boost-serialization",
+    "freetype"
+  ]
+}
