@@ -10,9 +10,6 @@
 [submodule "external/lodepng"]
 	path = external/lodepng
 	url = https://github.com/lvandeve/lodepng.git
-[submodule "external/wxWidgets"]
-	path = external/wxWidgets
-	url = https://github.com/wxWidgets/wxWidgets.git
 [submodule "external/sigslot"]
 	path = external/sigslot
 	url = https://github.com/palacaze/sigslot.git
