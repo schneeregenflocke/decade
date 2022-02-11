@@ -4,9 +4,10 @@ set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/external/vcpkg/scripts/buil
 
 include(CMakePrintHelpers)
 
-cmake_policy(SET CMP0091 NEW)
-
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+#-DUSE_MSVC_RUNTIME_LIBRARY_DLL=false
+#-DVCPKG_TARGET_TRIPLET=x64-windows-static-md
+#cmake_policy(SET CMP0091 NEW)
+#set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 project(Decade VERSION 0.6.0)
 
@@ -21,13 +22,11 @@ get_target_property(${PROJECT_NAME}_CXX_STANDARD ${PROJECT_NAME} CXX_STANDARD)
 cmake_print_variables(${PROJECT_NAME}_CXX_STANDARD)
 cmake_print_variables(CMAKE_EXPORT_COMPILE_COMMANDS)
 
-#add_compile_definitions(HAVE_TYPE_TRAITS)
-#target_compile_definitions(${PROJECT_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
 	target_compile_options(${PROJECT_NAME} PRIVATE /Zc:__cplusplus)
-	#target_compile_options(${PROJECT_NAME} PRIVATE /bigobj)
 endif()
+
 
 get_target_property(${PROJECT_NAME}_COMPILE_OPTIONS ${PROJECT_NAME} COMPILE_OPTIONS)
 cmake_print_variables(${PROJECT_NAME}_COMPILE_OPTIONS)
@@ -48,7 +47,7 @@ endif()
 #cmake_print_variables(wxWidgets_FOUND wxWidgets_INCLUDE_DIRS wxWidgets_LIBRARIES wxWidgets_LIBRARY_DIRS wxWidgets_DEFINITIONS wxWidgets_DEFINITIONS_DEBUG wxWidgets_CXX_FLAGS wxWidgets_USE_FILE)
 #if(wxWidgets_FOUND)
 #  include(${wxWidgets_USE_FILE})
-#  #target_include_directories(${PROJECT_NAME} PRIVATE ${wxWidgets_INCLUDE_DIRS})
+#  target_include_directories(${PROJECT_NAME} PRIVATE ${wxWidgets_INCLUDE_DIRS})
 #  target_link_libraries(${PROJECT_NAME} PRIVATE ${wxWidgets_LIBRARIES})
 #endif()
 
@@ -59,10 +58,8 @@ set(wxUSE_WINRT	OFF CACHE BOOL "wxUSE_WINRT" FORCE)
 set(wxUSE_EXCEPTIONS OFF CACHE BOOL "wxUSE_EXCEPTIONS" FORCE)
 set(wxUSE_GLCANVAS_EGL OFF CACHE BOOL "wxUSE_GLCANVAS_EGL" FORCE)
 set(wxBUILD_SHARED OFF CACHE BOOL "wxBUILD_SHARED" FORCE)
-
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets")
 target_link_libraries(Decade PRIVATE wxpropgrid wxgl wxcore wxbase)
-
 if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
 	target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/include/wx/msw/wx_dpi_aware.manifest)
 endif()
@@ -70,6 +67,12 @@ endif()
 
 find_package(freetype CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE freetype)
+
+#find_package(zlib CONFIG REQUIRED)
+#target_link_libraries(${PROJECT_NAME} PRIVATE zlib)
+
+#find_package(libpng CONFIG REQUIRED)
+#target_link_libraries(${PROJECT_NAME} PRIVATE libpng)
 
 
 set(GLAD_PROFILE "core" CACHE STRING "OpenGL profile" FORCE)
@@ -118,15 +121,17 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/shape_panel.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/title_panel.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/wx_widgets_include.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/font.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/graphic_engine.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/projection.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/rect4.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/RenderToTexture.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/shaders.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/shapes.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/shapes_base.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/texture_object.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/font.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/graphics_engine.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/projection.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/rect.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/render_to_texture.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/render_to_png.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/shaders.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/shapes.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/shapes_base.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/texture_object.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/mvp_matrices.hpp
 )
 
 
@@ -148,18 +153,14 @@ list(APPEND RESOURCE_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/external/glm/copying.txt glm
 	${CMAKE_CURRENT_SOURCE_DIR}/external/lodepng/LICENSE lodepng
 	${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/LICENSE sigslot
-	${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/docs/licence.txt wxWidgets
-	${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/3rdparty/catch/LICENSE.txt catch
-	${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/src/expat/expat/COPYING expat
-	${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/src/jpeg/README libjpeg_turbo
-	${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/src/tiff/COPYRIGHT libtiff
-	${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/src/png/LICENSE libpng
-	${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/src/zlib/README zlib
+	${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/docs/licence.txt wxwidgets
+
 	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/boost-date-time/copyright boost
 	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/freetype/copyright freetype
+	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/zlib/copyright zlib
+	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/libpng/copyright libpng
 )
 
 embed_resources(${PROJECT_NAME}_RESOURCES ${RESOURCE_FILES})
 cmake_print_variables(${PROJECT_NAME}_RESOURCES)
 target_sources(${PROJECT_NAME} PRIVATE ${${PROJECT_NAME}_RESOURCES})
-

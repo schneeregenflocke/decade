@@ -1,10 +1,10 @@
 /*
 Decade
-Copyright (c) 2019-2021 Marco Peyer
+Copyright (c) 2019-2022 Marco Peyer
 
-This program is free software; you can redistribute it and/or modify
+This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
@@ -12,17 +12,20 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110 - 1301 USA.
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
+
 
 #pragma once
 
+
 #include <glad/glad.h>
 
-#include "../graphics/graphic_engine.h"
-
+#include "../graphics/graphics_engine.hpp"
+#include "../graphics/mvp_matrices.hpp"
+#include "../graphics/render_to_png.hpp"
+#include "../packages/page_config.h"
 
 #include "wx_widgets_include.h"
 
@@ -38,71 +41,58 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <string>
 
 
+
 class MouseInteraction
 {
 public:
 
-    MouseInteraction(wxGLCanvas* parent, GraphicEngine* graphic_engine) :
-        parent(parent),
-        graphic_engine(graphic_engine),
-        previous_mouse_pos(0.f),
-        scale_factor(1.f),
+    MouseInteraction() :
+        persistent_mouse_pos(0.f),
+        persistent_scale_factor(1.f),
         translate_pre_scaled(0.f),
         translate_post_scaled(0.f)
     {}
 
-    void OnMouse(wxMouseEvent& event)
+    void Interaction(MVP& mvp, wxPoint mouse_position, bool dragging, int wheel_rotation)
     {
-        auto should_skip = event.GetSkipped();
-        event.Skip(should_skip);
+        glm::vec3 current_mouse_pos = MouseWorldSpacePos(mouse_position, mvp);
 
-        glm::vec3 current_mouse_pos = MouseWorldSpacePos(event.GetPosition());
-
-        if (event.Dragging())
+        if (dragging)
         {
-            translate_pre_scaled += current_mouse_pos - previous_mouse_pos;
+            translate_pre_scaled += current_mouse_pos - persistent_mouse_pos;
         }
 
-        if (event.GetWheelRotation() != 0)
+        if (wheel_rotation)
         {
             const float mouse_wheel_step = 1200.f;
-            const int wheel_rotation = event.GetWheelRotation();
             const auto scale = static_cast<float>(wheel_rotation) / mouse_wheel_step;
             
-            const auto pre_scale_mouse_pos = MouseViewSpacePos(current_mouse_pos, CalculateViewMatrix());
+            const auto pre_scale_view_matrix = CalculateViewMatrix(persistent_scale_factor);
+            const auto pre_scale_mouse_pos = MouseViewSpacePos(current_mouse_pos, pre_scale_view_matrix);
 
-            scale_factor *= std::exp(scale);
+            persistent_scale_factor *= std::exp(scale);
 
-            const auto post_scale_mouse_pos = MouseViewSpacePos(current_mouse_pos, CalculateViewMatrix());
+            const auto post_scale_view_matrix = CalculateViewMatrix(persistent_scale_factor);
+            const auto post_scale_mouse_pos = MouseViewSpacePos(current_mouse_pos, post_scale_view_matrix);
 
             const glm::vec3 view_space_correction = post_scale_mouse_pos - pre_scale_mouse_pos;
-
             translate_post_scaled += view_space_correction;
         }
 
-        previous_mouse_pos = current_mouse_pos;
+        auto view_matrix = CalculateViewMatrix(persistent_scale_factor);
+        mvp.SetView(view_matrix);
 
-        graphic_engine->GetViewRef().SetViewMatrix(CalculateViewMatrix());
-
-        parent->Refresh(false);
+        persistent_mouse_pos = current_mouse_pos;
     }
 
 private:
 
-    wxGLCanvas* parent;
-    GraphicEngine* graphic_engine;
-
-    glm::vec3 previous_mouse_pos;
-
-    glm::vec3 translate_pre_scaled;
-    glm::vec3 translate_post_scaled;
-    float scale_factor;
-
-    glm::mat4 CalculateViewMatrix()
+    glm::mat4 CalculateViewMatrix(float scale_factor)
     {
         auto pre_scaled = glm::translate(glm::mat4(1.f), translate_pre_scaled);
         auto post_scaled = glm::scale(pre_scaled, glm::vec3(scale_factor, scale_factor, 1.f));
-        return glm::translate(post_scaled, translate_post_scaled);
+        auto view_matrix = glm::translate(post_scaled, translate_post_scaled);
+        return view_matrix;
     }
 
     glm::vec3 MouseClipSpace(const wxPoint& mouse_pos_px)
@@ -118,9 +108,9 @@ private:
         return mouse_pos_clip_space;
     }
 
-    glm::vec3 MouseWorldSpacePos(const wxPoint& mouse_pos_px)
+    glm::vec3 MouseWorldSpacePos(const wxPoint& mouse_pos_px, const MVP& mvp)
     {
-        const glm::mat4 projection_matrix = graphic_engine->GetViewRef().GetProjectionMatrix();
+        const glm::mat4 projection_matrix = mvp.GetProjection();
         const auto inverse_projection_matrix = glm::inverse(projection_matrix);
 
         const auto mouse_pos = inverse_projection_matrix * glm::vec4(MouseClipSpace(mouse_pos_px), 1.f);
@@ -134,6 +124,11 @@ private:
         const auto mouse_pos = inverse_view_matrix * glm::vec4(mouse_world_space_pos, 1.f);
         return glm::vec3(mouse_pos.x, mouse_pos.y, 0.f);
     }
+
+    float persistent_scale_factor;
+    glm::vec3 persistent_mouse_pos;
+    glm::vec3 translate_pre_scaled;
+    glm::vec3 translate_post_scaled; 
 };
 
 
@@ -143,12 +138,12 @@ public:
 
     GLCanvas(wxWindow* parent, const wxGLAttributes& canvas_attributes) :
         wxGLCanvas(parent, canvas_attributes),
-        openGL_ready(0)
+        openGL_loaded(0)
     {}
 
-    GraphicEngine* GetGraphicEngine()
+    GraphicsEngine* GetGraphicsEngine()
     {
-        return graphic_engine.get();
+        return graphics_engine.get();
     }
 
     void LoadOpenGL(const std::array<int, 2>& version)
@@ -159,16 +154,17 @@ public:
         {
             std::cerr << "Try wxFrame::Raise after WxFrame::Show" << '\n';
         }
-        if (openGL_ready == 0 && canvas_shown_on_screen)
+
+        if (openGL_loaded == 0 && canvas_shown_on_screen)
         {
             context_attributes.PlatformDefaults().CoreProfile().OGLVersion(version[0], version[1]).EndList();
             context = std::make_unique<wxGLContext>(this, nullptr, &context_attributes);
             std::cout << "context IsOK " << context->IsOK() << '\n';
 
             SetCurrent(*context);
-            openGL_ready = gladLoadGL();
+            openGL_loaded = gladLoadGL();
 
-            std::cout << "OpenGL ready: " << openGL_ready << " version: " << GetGLVersionString() << '\n';
+            std::cout << "OpenGL loaded: " << openGL_loaded << " version: " << GetGLVersionString() << '\n';
 
             glEnable(GL_CULL_FACE);
             glEnable(GL_DEPTH_TEST);
@@ -181,23 +177,22 @@ public:
             glGetIntegerv(GL_SAMPLES, &sample_buffers);
             std::cout << "sample_buffers " << sample_buffers << '\n';
 
-            graphic_engine = std::make_unique<GraphicEngine>();
+            graphics_engine = std::make_unique<GraphicsEngine>();
 
-            graphic_engine->SetRefreshCallback(this);
+            Bind(wxEVT_SIZE, &GLCanvas::SizeCallback, this);
+            Bind(wxEVT_PAINT, &GLCanvas::PaintCallback, this);
 
-            Bind(wxEVT_SIZE, &GLCanvas::OnSize, this);
-            Bind(wxEVT_PAINT, &GLCanvas::OnPaint, this);
+            mouse_interaction = std::make_unique<MouseInteraction>();
 
-            mouse_interaction = std::make_unique<MouseInteraction>(this, graphic_engine.get());
-
-            Bind(wxEVT_MOTION, &MouseInteraction::OnMouse, mouse_interaction.get());
-            Bind(wxEVT_LEFT_DOWN, &MouseInteraction::OnMouse, mouse_interaction.get());
-            Bind(wxEVT_LEFT_UP, &MouseInteraction::OnMouse, mouse_interaction.get());
-            Bind(wxEVT_MOUSEWHEEL, &MouseInteraction::OnMouse, mouse_interaction.get());
+            Bind(wxEVT_MOTION, &GLCanvas::MouseCallback, this);
+            Bind(wxEVT_LEFT_DOWN, &GLCanvas::MouseCallback, this);
+            Bind(wxEVT_LEFT_UP, &GLCanvas::MouseCallback, this);
+            Bind(wxEVT_MOUSEWHEEL, &GLCanvas::MouseCallback, this);
 
             signal_opengl_ready();
         }
     }
+
     static std::string GetGLVersionString()
     {
         std::string version_string;
@@ -207,39 +202,65 @@ public:
         return version_string;
     }
 
-    sigslot::signal<> signal_opengl_ready;
-
-private:
-
-    std::unique_ptr<wxGLContext> context;
-	wxGLContextAttrs context_attributes;
-
-    void OnPaint(wxPaintEvent& event)
+    void ReceivePageSetup(const PageSetupConfig& page_setup_config)
     {
-        event.Skip();
-
-        wxPaintDC dc(this);
-
-        graphic_engine->Render();
-
-        SwapBuffers();
+        page_size = rectf(page_setup_config.size[0], page_setup_config.size[1]);    
     }
-    void OnSize(wxSizeEvent& event)
+
+    void RefreshMVP()
     {
-        event.Skip();
+        const float view_size_scale = 1.1f;
 
         wxSize size = GetClientSize();
         glViewport(0, 0, size.GetWidth(), size.GetHeight());
 
-        //graphic_engine->GetViewRef().UpdateOrthoMatrix();
+        rectf view_size = page_size.scale(view_size_scale);
+        mvp.SetProjection(Projection::OrthoMatrix(view_size));
+        
+        graphics_engine->SetMVP(mvp);
 
-        Refresh(false);
+        Refresh(false); //??
     }
-    
-    int openGL_ready;
 
-    std::unique_ptr<GraphicEngine> graphic_engine;
+    void SavePNG(std::string file_path)
+    {
+        RenderToPNG render_to_png(file_path, page_size, 600, graphics_engine);
+    }
+
+    sigslot::signal<> signal_opengl_ready;
+
+private:
+
+    void PaintCallback(wxPaintEvent& event)
+    {
+        wxPaintDC dc(this);
+        graphics_engine->SetMVP(mvp);
+        graphics_engine->Render();
+        SwapBuffers();
+    }
+
+    void SizeCallback(wxSizeEvent& event)
+    {
+        RefreshMVP();
+        Refresh(false); //??
+    }
+
+    void MouseCallback(wxMouseEvent& event)
+    {
+        mouse_interaction->Interaction(mvp, event.GetPosition(), event.Dragging(), event.GetWheelRotation());
+        RefreshMVP();
+    }
+
+    int openGL_loaded;
+
+    wxGLContextAttrs context_attributes;
+    std::unique_ptr<wxGLContext> context;
+    
+    std::shared_ptr<GraphicsEngine> graphics_engine;
     std::unique_ptr<MouseInteraction> mouse_interaction;
+
+    rectf page_size;
+    MVP mvp;
 };
 
 /*constexpr wxGLContextAttrs GLCanvas::defaultAttrs()
