@@ -20,18 +20,42 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 
-#ifdef WX_PRECOMP
-	#include <wx/wxprec.h>
-#else 
-	#include <wx/wx.h>
-#endif
+#include <glm/glm.hpp>
 
-#include <wx/dataview.h>
-#include <wx/spinctrl.h>
-#include <wx/cmndata.h>
-#include <wx/printdlg.h>
-#include <wx/fontpicker.h>
-#include <wx/clrpicker.h>
-#include <wx/propgrid/propgrid.h>
-#include <wx/splitter.h>
-#include <wx/notebook.h>
+
+class MVP
+{
+public:
+
+	MVP() :
+		projection(1.f),
+		view(1.f),
+		model(1.f)
+	{}
+
+	void SetProjection(const glm::mat4& projection)
+	{
+		this->projection = projection;
+	}
+
+	void SetView(const glm::mat4& view)
+	{
+		this->view = view;
+	}
+
+	glm::mat4 GetProjection() const
+	{
+		return projection;
+	}
+
+	glm::mat4 GetView() const
+	{
+		return view;
+	}
+
+private:
+
+	glm::mat4 projection;
+	glm::mat4 view;
+	glm::mat4 model;
+};

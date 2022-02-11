@@ -4,6 +4,8 @@
   "dependencies": [
     "boost-date-time",
     "boost-serialization",
+    "zlib",
+    "libpng",
     "freetype"
   ]
 }

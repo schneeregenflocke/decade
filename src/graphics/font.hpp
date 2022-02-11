@@ -1,10 +1,10 @@
 /*
 Decade
-Copyright (c) 2019-2021 Marco Peyer
+Copyright (c) 2019-2022 Marco Peyer
 
-This program is free software; you can redistribute it and/or modify
+This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
@@ -12,17 +12,18 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110 - 1301 USA.
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
+
 
 #pragma once
 
-#include "shaders.h"
-#include "shapes_base.h"
-#include "texture_object.h"
-#include "rect4.h"
+
+#include "shaders.hpp"
+#include "shapes_base.hpp"
+#include "texture_object.hpp"
+#include "rect.hpp"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -49,7 +50,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 struct Letter
 {
-	TextureObject texture_object;
+	Texture texture_object;
 	glm::vec2 size;
 	glm::vec2 bearing;
 	float advance;
@@ -67,6 +68,7 @@ public:
 		EnumerateDirectory();
 		ReleaseFreetype();
 	}
+
 	std::string GetFilepath(std::string fontname)
 	{
 		std::string filepath = "NotFound";
@@ -97,10 +99,12 @@ private:
 			std::cout << "Failed to init FreeType Library" << '\n';
 		}
 	}
+
 	void ReleaseFreetype()
 	{
 		FT_Done_FreeType(ftlibrary);
 	}
+
 	void EnumerateDirectory()
 	{
 		std::regex rgx(R"(([\w\-]+).(otf|ttf))", std::regex::icase);
@@ -145,6 +149,7 @@ private:
 class FontLoader
 {
 public:
+
 	FontLoader(const std::string& font_path)
 	{
 		FT_Library ftlibrary;
@@ -194,7 +199,7 @@ public:
 			}
 
 			GLuint texture;
-			texture = letters[index].texture_object.Texture();
+			texture = letters[index].texture_object.Name();
 			glBindTexture(GL_TEXTURE_2D, texture);
 
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, ftface->glyph->bitmap.width, ftface->glyph->bitmap.rows, 0, GL_RED, GL_UNSIGNED_BYTE, ftface->glyph->bitmap.buffer);
@@ -224,6 +229,7 @@ public:
 		FT_Done_Face(ftface);
 		FT_Done_FreeType(ftlibrary);
 	}
+
 	Letter& GetLetterRef(const unsigned char index)
 	{
 		return letters[index];
@@ -240,6 +246,7 @@ public:
 
 		return width;
 	}
+
 	float TextHeight(float size)
 	{
 		std::vector<size_t> index_list;
@@ -270,17 +277,18 @@ public:
 
 		return height;
 	}
-	float AdjustTextSize(const rect4& cell, std::string text, float height_ratio, float width_ratio)
+
+	float AdjustTextSize(const rectf& cell, std::string text, float height_ratio, float width_ratio)
 	{
-		float font_size = cell.Height() * height_ratio;
+		float font_size = cell.height() * height_ratio;
 
 		auto text_width = TextWidth(text, font_size);
 
 		auto ratio = font_size / text_width;
 
-		if (text_width > cell.Width() * width_ratio)
+		if (text_width > cell.width() * width_ratio)
 		{
-			font_size = ratio * cell.Width() * width_ratio;
+			font_size = ratio * cell.width() * width_ratio;
 		}
 
 		return font_size;
@@ -307,9 +315,10 @@ public:
 			auto half_wdith = font_loader->TextWidth(text, size) / 2.f;
 			auto half_height = font_loader->TextHeight(size) / 2.f;
 
-			SetShape(text, position - vec3(half_wdith, half_height, 0.f), size);
+			SetShape(text, position - glm::vec3(half_wdith, half_height, 0.f), size);
 		}
 	}
+
 	void SetShape(const std::string& text, const glm::vec3& position, float size)
 	{
 		if (font_loader != nullptr)
@@ -325,7 +334,7 @@ public:
 			{
 				size_t letter_index = text[index];
 
-				GLuint texture = font_loader->GetLetterRef(letter_index).texture_object.Texture();
+				GLuint texture = font_loader->GetLetterRef(letter_index).texture_object.Name();
 				textTextures[index] = texture;
 
 				GLfloat xpos = currentx + font_loader->GetLetterRef(letter_index).bearing.x * size;

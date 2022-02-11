@@ -1,10 +1,10 @@
 /*
 Decade
-Copyright (c) 2019-2021 Marco Peyer
+Copyright (c) 2019-2022 Marco Peyer
 
-This program is free software; you can redistribute it and/or modify
+This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
@@ -12,16 +12,17 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110 - 1301 USA.
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
+
 
 #pragma once
 
-#include "graphics/graphic_engine.h"
-#include "graphics/shapes.h"
-#include "graphics/font.h"
+
+#include "gui/opengl_panel.h"
+#include "graphics/shapes.hpp"
+#include "graphics/font.hpp"
 
 #include "packages/group_store.h"
 #include "packages/date_store.h"
@@ -46,24 +47,25 @@ class RowFrames
 {
 public:
 
-	void SetupRowFrames(const rect4& main_frame, const size_t number_row_frames)
+	void SetupRowFrames(const rectf& main_frame, const size_t number_row_frames)
 	{
 		row_frames.resize(number_row_frames);
 
-		auto row_height = main_frame.Height() / static_cast<float>(number_row_frames);
+		auto row_height = main_frame.height() / static_cast<float>(number_row_frames);
 
 		for (size_t index = 0; index < row_frames.size(); ++index)
 		{
 			auto float_index = static_cast<float>(index);
 
-			row_frames[index].Left(main_frame.Left());
-			row_frames[index].Right(main_frame.Right());
+			row_frames[index].setL(main_frame.l());
+			row_frames[index].setR(main_frame.r());
 
-			auto current_bottom = main_frame.Bottom() + float_index * row_height;
-			row_frames[index].Bottom(current_bottom);
-			row_frames[index].Top(current_bottom + row_height);
+			auto current_bottom = main_frame.b() + float_index * row_height;
+			row_frames[index].setB(current_bottom);
+			row_frames[index].setT(current_bottom + row_height);
 		}
 	}
+
 	void SetupSubFrames(const std::vector<float>& proportions)
 	{
 		number_sub_frames = (proportions.size() - 1) / 2;
@@ -72,7 +74,7 @@ public:
 
 		for (size_t index = 0; index < row_frames.size(); ++index)
 		{
-			std::vector<float> sections = Section(proportions, row_frames[index].Height());
+			std::vector<float> sections = Section(proportions, row_frames[index].height());
 
 			std::vector<float> cumulative_sections(sections.size());
 
@@ -83,16 +85,16 @@ public:
 
 			for (size_t subindex = 0; subindex < number_sub_frames; ++subindex)
 			{
-				sub_frames[index * number_sub_frames + subindex].Left(row_frames[index].Left());
-				sub_frames[index * number_sub_frames + subindex].Right(row_frames[index].Right());
+				sub_frames[index * number_sub_frames + subindex].setL(row_frames[index].l());
+				sub_frames[index * number_sub_frames + subindex].setR(row_frames[index].r());
 
-				sub_frames[index * number_sub_frames + subindex].Bottom(row_frames[index].Bottom() + cumulative_sections[subindex * 2 + 1]);
-				sub_frames[index * number_sub_frames + subindex].Top(row_frames[index].Bottom() + cumulative_sections[subindex * 2 + 2]);
+				sub_frames[index * number_sub_frames + subindex].setB(row_frames[index].b() + cumulative_sections[subindex * 2 + 1]);
+				sub_frames[index * number_sub_frames + subindex].setT(row_frames[index].b() + cumulative_sections[subindex * 2 + 2]);
 			}
 		}
 	}
 
-	rect4 GetSubFrame(const size_t row, const size_t sub) const
+	rectf GetSubFrame(const size_t row, const size_t sub) const
 	{
 		return sub_frames[number_sub_frames * row + sub];
 	}
@@ -114,8 +116,8 @@ private:
 		return sections;
 	}
 
-	std::vector<rect4> row_frames;
-	std::vector<rect4> sub_frames;
+	std::vector<rectf> row_frames;
+	std::vector<rectf> sub_frames;
 
 	size_t number_sub_frames;
 };
@@ -126,32 +128,34 @@ class CalendarPage
 {
 public:
 
-	CalendarPage(GraphicEngine* graphic_engine) :
-		graphic_engine(graphic_engine)
+	CalendarPage(GLCanvas* gl_canvas) :
+		gl_canvas(gl_canvas)
 	{
-		page_shape = graphic_engine->AddShape<QuadShape>();
+		graphics_engine = gl_canvas->GetGraphicsEngine();
+		
+		page_shape = graphics_engine->AddShape<QuadShape>();
 
-		print_area_shape = graphic_engine->AddShape<RectanglesShape>();
-		title_area_shape = graphic_engine->AddShape<RectanglesShape>();
+		print_area_shape = graphics_engine->AddShape<RectanglesShape>();
+		title_area_shape = graphics_engine->AddShape<RectanglesShape>();
 
-		days_cells_shape = graphic_engine->AddShape<RectanglesShape>();
-		months_cells_shape = graphic_engine->AddShape<RectanglesShape>();
-		years_cells_shape = graphic_engine->AddShape<RectanglesShape>();
+		days_cells_shape = graphics_engine->AddShape<RectanglesShape>();
+		months_cells_shape = graphics_engine->AddShape<RectanglesShape>();
+		years_cells_shape = graphics_engine->AddShape<RectanglesShape>();
 
-		bars_cells_shape = graphic_engine->AddShape<RectanglesShape>();
-		years_totals_shape = graphic_engine->AddShape<RectanglesShape>();
+		bars_cells_shape = graphics_engine->AddShape<RectanglesShape>();
+		years_totals_shape = graphics_engine->AddShape<RectanglesShape>();
 
-		title_font_shape = graphic_engine->AddShape<FontShape>();
+		title_font_shape = graphics_engine->AddShape<FontShape>();
 
-		month_label_text = graphic_engine->AddShapes<FontShape>(12);
+		month_label_text = graphics_engine->AddShapes<FontShape>(12);
 
-		row_labels_shape = graphic_engine->AddShape<RectanglesShape>();
-		column_labels_shape = graphic_engine->AddShape<RectanglesShape>();
+		row_labels_shape = graphics_engine->AddShape<RectanglesShape>();
+		column_labels_shape = graphics_engine->AddShape<RectanglesShape>();
 
-		legend_shape = graphic_engine->AddShape<RectanglesShape>();
-		legend_entries_shape = graphic_engine->AddShape<RectanglesShape>();
+		legend_shape = graphics_engine->AddShape<RectanglesShape>();
+		legend_entries_shape = graphics_engine->AddShape<RectanglesShape>();
 
-		sub_frames_shape = graphic_engine->AddShape<RectanglesShape>();
+		sub_frames_shape = graphics_engine->AddShape<RectanglesShape>();
 	}
 
 	void ReceiveDateGroups(const std::vector<DateGroup>& date_groups)
@@ -169,8 +173,8 @@ public:
 
 	void ReceivePageSetup(const PageSetupConfig& page_setup_config)
 	{
-		this->page_size = rect4(page_setup_config.size[0], page_setup_config.size[1]);
-		this->page_margin = rect4(page_setup_config.margins[0], page_setup_config.margins[1], page_setup_config.margins[2], page_setup_config.margins[3]);
+		this->page_size = rectf(page_setup_config.size[0], page_setup_config.size[1]);
+		this->page_margin = rectf(page_setup_config.margins[0], page_setup_config.margins[1], page_setup_config.margins[2], page_setup_config.margins[3]);
 		Update();
 	}
 
@@ -201,26 +205,26 @@ public:
 
 	void Update()
 	{
-		const float view_size_scale = 1.1f;
-		rect4 view_size = page_size.Scale(view_size_scale);
-		graphic_engine->GetViewRef().SetMinRect(view_size);
+		//const float view_size_scale = 1.1f;
+		//rectf view_size = page_size.scale(view_size_scale);
+		//graphics_engine->MVP_Ref().SetProjection(Projection::OrthoMatrix(view_size));
 
-		glm::vec4 page_shape_color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		glm::vec4 page_shape_color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		page_shape->SetShape(page_size, page_shape_color);
 
-		print_area = page_size.Reduce(page_margin);
+		print_area = page_size.reduce(page_margin);
 
 		title_frame = print_area;
-		title_frame.Bottom(title_frame.Top() - title_config.frame_height);
+		title_frame.setB(title_frame.t() - title_config.frame_height);
 
 		page_margin_frame = print_area;
-		page_margin_frame.Top(title_frame.Bottom());
-		//rect4 page_margin_frame_margin = rect4(0.0f, 0.0f, 0.0f, 5.f);
+		page_margin_frame.setT(title_frame.b());
+		//rectf page_margin_frame_margin = rectf(0.0f, 0.0f, 0.0f, 5.f);
 		//page_margin_frame = page_margin_frame.Reduce(page_margin_frame_margin);
 
 		calendar_frame = page_margin_frame;
-		rect4 calendar_frame_margin = rect4(0.0f, 0.0f, 3.0f, 2.0f);
-		calendar_frame = calendar_frame.Reduce(calendar_frame_margin);
+		rectf calendar_frame_margin = rectf(0.0f, 0.0f, 0.0f, 0.0f);
+		calendar_frame = calendar_frame.reduce(calendar_frame_margin);
 
 
 		if (calendar_config.auto_calendar_span == true && data_store.is_empty() == false)
@@ -232,21 +236,21 @@ public:
 		const size_t additional_rows = 2;
 		size_t number_rows = additional_rows + calendar_config.GetSpanLengthYears();
 
-		cell_width = calendar_frame.Width() / 13.0f;
-		row_height = calendar_frame.Height() / static_cast<float>(number_rows);
+		cell_width = calendar_frame.width() / 13.0f;
+		row_height = calendar_frame.height() / static_cast<float>(number_rows);
 
-		cells_frame = calendar_frame.Reduce(rect4(cell_width, row_height * 2.0f, 0.0f, 0.0f));
+		cells_frame = calendar_frame.reduce(rectf(cell_width, 0.f, row_height * 2.0f, 0.f));
 
 		row_frames.SetupRowFrames(cells_frame, calendar_config.GetSpanLengthYears());
 		row_frames.SetupSubFrames(calendar_config.spacing_proportions);
 
-		day_width = cells_frame.Width() / 366.f;
+		day_width = cells_frame.width() / 366.f;
 		//day_width = row_frames.GetSubFrame(3, 0).Height();
 
-		x_labels_frame = calendar_frame.Reduce(rect4(cell_width, row_height, 0.f, cells_frame.Height()));
-		y_labels_frame = calendar_frame.Reduce(rect4(0.f, row_height * 2.f, cells_frame.Width(), 0.f));
+		x_labels_frame = calendar_frame.reduce(rectf(cell_width, 0.f, row_height, cells_frame.height()));
+		y_labels_frame = calendar_frame.reduce(rectf(0.f, cells_frame.width(), row_height * 2.f, 0.f));
 
-		legend_frame = calendar_frame.Reduce(rect4(cell_width, 0.f, 0.f, cells_frame.Height() + row_height));
+		legend_frame = calendar_frame.reduce(rectf(cell_width, 0.f, 0.f, cells_frame.height() + row_height));
 
 		///////////////////////////////////////
 
@@ -262,7 +266,7 @@ public:
 		SetupYearsTotals();
 		SetupLegend();
 
-		graphic_engine->Refresh();
+		gl_canvas->RefreshMVP();
 	}
 
 	void SetupPrintAreaShape()
@@ -278,7 +282,7 @@ public:
 		title_area_shape->SetShapes(title_frame, config.LineWidth(), config.FillColor(), config.OutlineColor());
 
 		title_font_shape->SetFont(font_loader);
-		title_font_shape->SetShapeCentered(title_config.title_text, title_frame.Center(), title_frame.Height() * title_config.font_size_ratio);
+		title_font_shape->SetShapeCentered(title_config.title_text, title_frame.getCenter(), title_frame.height() * title_config.font_size_ratio);
 	}
 
 	void SetupCalendarLabelsShape()
@@ -296,49 +300,49 @@ public:
 			months_names[index] = buf.data();
 		}
 
-		std::vector<rect4> x_label_frames(12);
+		std::vector<rectf> x_label_frames(12);
 
 		if (font_loader)
 		{
-			labels_font_size = font_loader->AdjustTextSize(rect4(cell_width, row_height), "00000", 0.5f, 0.75f);
+			labels_font_size = font_loader->AdjustTextSize(rectf(cell_width, row_height), "00000", 0.5f, 0.75f);
 		}
 
 		for (size_t index = 0; index < months_names.size(); ++index)
 		{
 			float float_index = static_cast<float>(index);
 
-			x_label_frames[index].Left(x_labels_frame.Left() + cell_width * float_index);
-			x_label_frames[index].Bottom(x_labels_frame.Bottom());
-			x_label_frames[index].Right(x_labels_frame.Left() + cell_width * float_index + cell_width);
-			x_label_frames[index].Top(x_labels_frame.Top());
+			x_label_frames[index].setL(x_labels_frame.l() + cell_width * float_index);
+			x_label_frames[index].setB(x_labels_frame.b());
+			x_label_frames[index].setR(x_labels_frame.l() + cell_width * float_index + cell_width);
+			x_label_frames[index].setT(x_labels_frame.t());
 
 			month_label_text[index]->SetFont(font_loader);
-			month_label_text[index]->SetShapeCentered(months_names[index], x_label_frames[index].Center(), labels_font_size);
+			month_label_text[index]->SetShapeCentered(months_names[index], x_label_frames[index].getCenter(), labels_font_size);
 		}
 
 		auto config = shape_configuration_storage.GetShapeConfiguration("Calendar Labels");
 
 		column_labels_shape->SetShapes(x_label_frames, config.LineWidth(), config.FillColor(), config.OutlineColor());
 
-		graphic_engine->RemoveShapes(annual_labels_text);
-		annual_labels_text = graphic_engine->AddShapes<FontShape>(calendar_config.GetSpanLengthYears());
+		graphics_engine->RemoveShapes(annual_labels_text);
+		annual_labels_text = graphics_engine->AddShapes<FontShape>(calendar_config.GetSpanLengthYears());
 
-		std::vector<rect4> y_labels_rows(calendar_config.GetSpanLengthYears());
+		std::vector<rectf> y_labels_rows(calendar_config.GetSpanLengthYears());
 		for (int index = 0; index < calendar_config.GetSpanLengthYears(); ++index)
 		{
 			float float_index = static_cast<float>(index);
 
-			y_labels_rows[index] = rect4(
-				y_labels_frame.Left(),
-				y_labels_frame.Bottom() + row_height * float_index,
-				y_labels_frame.Right(),
-				y_labels_frame.Bottom() + row_height * float_index + row_height
+			y_labels_rows[index] = rectf(
+				y_labels_frame.l(),
+				y_labels_frame.r(),
+				y_labels_frame.b() + row_height * float_index,
+				y_labels_frame.b() + row_height * float_index + row_height
 			);
 
 			std::string current_year_text = std::to_string(calendar_config.GetYear(index));
 
 			annual_labels_text[index]->SetFont(font_loader);
-			annual_labels_text[index]->SetShapeCentered(current_year_text, y_labels_rows[index].Center(), labels_font_size);
+			annual_labels_text[index]->SetShapeCentered(current_year_text, y_labels_rows[index].getCenter(), labels_font_size);
 		}
 
 		row_labels_shape->SetShapes(y_labels_rows, config.LineWidth(), config.FillColor(), config.OutlineColor());
@@ -346,7 +350,7 @@ public:
 
 	void SetupYearsShapes()
 	{
-		std::vector<rect4> years_cells;
+		std::vector<rectf> years_cells;
 		years_cells.resize(calendar_config.GetSpanLengthYears());
 
 		for (int index = 0; index < calendar_config.GetSpanLengthYears(); ++index)
@@ -358,10 +362,10 @@ public:
 
 			row_frames.GetSubFrame(index, 1);
 
-			rect4 year_cell = row_frames.GetSubFrame(index, 1);
+			rectf year_cell = row_frames.GetSubFrame(index, 1);
 			//year_cell.Left(cells_frame.Left());
 			//year_cell.Bottom(cells_frame.Bottom() + row_height * float_index + row_height / 4.f);
-			year_cell.Right(year_cell.Left() + year_lenght);
+			year_cell.setR(year_cell.l() + year_lenght);
 			//year_cell.Top(year_cell.Bottom() + row_height / 4.f);
 
 			years_cells[index] = year_cell;
@@ -376,7 +380,7 @@ public:
 	{
 		const size_t number_months = 12;
 		size_t store_size = number_months * calendar_config.GetSpanLengthYears();
-		std::vector<rect4> months_cells;
+		std::vector<rectf> months_cells;
 		months_cells.resize(store_size);
 
 		for (int index = 0; index < calendar_config.GetSpanLengthYears(); ++index)
@@ -389,11 +393,11 @@ public:
 			{
 				auto current_cell = row_frames.GetSubFrame(index, 1);
 
-				rect4 month_cell;
-				month_cell.Left(current_cell.Left() + static_cast<float>(boost::gregorian::date_period(first_day_of_year, first_day_of_year + boost::gregorian::months(subindex)).length().days()) * day_width);
-				month_cell.Bottom(current_cell.Bottom());
-				month_cell.Right(current_cell.Left() + static_cast<float>(boost::gregorian::date_period(first_day_of_year, first_day_of_year + boost::gregorian::months(subindex + 1)).length().days()) * day_width);
-				month_cell.Top(current_cell.Top());
+				rectf month_cell;
+				month_cell.setL(current_cell.l() + static_cast<float>(boost::gregorian::date_period(first_day_of_year, first_day_of_year + boost::gregorian::months(subindex)).length().days()) * day_width);
+				month_cell.setR(current_cell.l() + static_cast<float>(boost::gregorian::date_period(first_day_of_year, first_day_of_year + boost::gregorian::months(subindex + 1)).length().days()) * day_width);
+				month_cell.setB(current_cell.b());
+				month_cell.setT(current_cell.t());
 
 				size_t store_index = index * 12 + subindex;
 
@@ -418,10 +422,10 @@ public:
 
 		number_days_cells = calendar_config.GetSpanLengthDays();
 
-		std::vector<rect4> days_cells(number_days_cells);
+		std::vector<rectf> days_cells(number_days_cells);
 		std::vector<float> days_cells_shape_linewidths(number_days_cells);
-		std::vector<vec4> days_cells_shape_fillcolors(number_days_cells);
-		std::vector<vec4> days_cells_shape_outlinecolors(number_days_cells);
+		std::vector<glm::vec4> days_cells_shape_fillcolors(number_days_cells);
+		std::vector<glm::vec4> days_cells_shape_outlinecolors(number_days_cells);
 
 		auto config = shape_configuration_storage.GetShapeConfiguration("Day Shapes");
 		auto sunday_config = shape_configuration_storage.GetShapeConfiguration("Sunday Shapes");
@@ -437,11 +441,11 @@ public:
 
 				auto current_cell = row_frames.GetSubFrame(index, 1);
 
-				rect4 day_cell;
-				day_cell.Left(current_cell.Left() + float_subindex * day_width);
-				day_cell.Right(day_cell.Left() + day_width);
-				day_cell.Bottom(current_cell.Bottom());
-				day_cell.Top(current_cell.Top());
+				rectf day_cell;
+				day_cell.setL(current_cell.l() + float_subindex * day_width);
+				day_cell.setR(day_cell.l() + day_width);
+				day_cell.setB(current_cell.b());
+				day_cell.setT(current_cell.t());
 
 				days_cells[days_index] = day_cell;
 
@@ -471,17 +475,17 @@ public:
 	{
 		auto number_bars = data_store.GetNumberBars();
 
-		std::vector<rect4> bars_cells;
+		std::vector<rectf> bars_cells;
 		std::vector<float> bars_cells_shape_linewidths;
-		std::vector<vec4> bars_cells_shape_fillcolors;
-		std::vector<vec4> bars_cells_shape_outlinecolors;
+		std::vector<glm::vec4> bars_cells_shape_fillcolors;
+		std::vector<glm::vec4> bars_cells_shape_outlinecolors;
 
 		bars_cells.reserve(number_bars);
 		bars_cells_shape_linewidths.reserve(number_bars);
 		bars_cells_shape_fillcolors.reserve(number_bars);
 		bars_cells_shape_outlinecolors.reserve(number_bars);
 
-		graphic_engine->RemoveShapes(bar_labels_text);
+		graphics_engine->RemoveShapes(bar_labels_text);
 		bar_labels_text.clear();
 
 		for (size_t index = 0; index < data_store.GetNumberBars(); ++index)
@@ -490,7 +494,7 @@ public:
 			{
 				auto current_group = data_store.GetBar(index).group;
 
-				auto search_string = std::wstring(L"Bar Group ") + std::to_string(current_group);
+				auto search_string = std::string("Bar Group ") + std::to_string(current_group);
 				auto current_shape_config = shape_configuration_storage.GetShapeConfiguration(search_string);
 
 				bars_cells_shape_linewidths.push_back(current_shape_config.LineWidth());
@@ -501,42 +505,42 @@ public:
 
 				auto current_sub_cell = row_frames.GetSubFrame(row, 1);
 
-				rect4 bar_cell;
-				bar_cell.Left(current_sub_cell.Left() + data_store.GetBar(index).GetFirstDay() * day_width);
-				bar_cell.Bottom(current_sub_cell.Bottom());
-				bar_cell.Right(current_sub_cell.Left() + data_store.GetBar(index).GetLastDay() * day_width);
-				bar_cell.Top(current_sub_cell.Top());
+				rectf bar_cell;
+				bar_cell.setL(current_sub_cell.l() + data_store.GetBar(index).GetFirstDay() * day_width);
+				bar_cell.setR(current_sub_cell.l() + data_store.GetBar(index).GetLastDay() * day_width);
+				bar_cell.setB(current_sub_cell.b());
+				bar_cell.setT(current_sub_cell.t());
 
 				bars_cells.push_back(bar_cell);
 
 				std::string numsText = data_store.GetBar(index).GetText();
 
-				bar_labels_text.push_back(graphic_engine->AddShape<FontShape>());
+				bar_labels_text.push_back(graphics_engine->AddShape<FontShape>());
 				bar_labels_text.back()->SetFont(font_loader);
 
 				auto current_text_cell = row_frames.GetSubFrame(row, 2);
 
-				current_text_cell.Left(bar_cell.Left());
-				current_text_cell.Right(bar_cell.Right());
+				current_text_cell.setL(bar_cell.l());
+				current_text_cell.setR(bar_cell.r());
 
-				bar_labels_text.back()->SetShapeCentered(numsText, current_text_cell.Center(), current_text_cell.Height());
+				bar_labels_text.back()->SetShapeCentered(numsText, current_text_cell.getCenter(), current_text_cell.height());
 			}
 		}
 
-		bars_cells.shrink_to_fit();
-		bars_cells_shape_linewidths.shrink_to_fit();
-		bars_cells_shape_fillcolors.shrink_to_fit();
-		bars_cells_shape_outlinecolors.shrink_to_fit();
+		//bars_cells.shrink_to_fit();
+		//bars_cells_shape_linewidths.shrink_to_fit();
+		//bars_cells_shape_fillcolors.shrink_to_fit();
+		//bars_cells_shape_outlinecolors.shrink_to_fit();
 
 		bars_cells_shape->SetShapes(bars_cells, bars_cells_shape_linewidths, bars_cells_shape_fillcolors, bars_cells_shape_outlinecolors);
 	}
 
 	void SetupYearsTotals()
 	{
-		graphic_engine->RemoveShapes(years_totals_text);
+		graphics_engine->RemoveShapes(years_totals_text);
 		years_totals_text.clear();
 
-		std::vector<rect4> years_totals_cells;
+		std::vector<rectf> years_totals_cells;
 		years_totals_cells.resize(data_store.GetSpan());
 
 		for (size_t index = 0; index < data_store.GetSpan(); ++index)
@@ -547,8 +551,8 @@ public:
 
 				auto current_cell = row_frames.GetSubFrame(row, 0);
 
-				rect4 year_total_cell = current_cell;
-				year_total_cell.Right(current_cell.Left() + static_cast<float>(data_store.GetAnnualTotal(index)) * day_width);
+				rectf year_total_cell = current_cell;
+				year_total_cell.setR(current_cell.l() + static_cast<float>(data_store.GetAnnualTotal(index)) * day_width);
 				years_totals_cells[index] = year_total_cell;
 
 				auto current_year = data_store.GetFirstYear() + index;
@@ -559,17 +563,17 @@ public:
 				std::array<char, 100> year_total_text_buffer;
 				auto text_lenght = snprintf(year_total_text_buffer.data(), year_total_text_buffer.size(), "%.*f %%", 1, percent * 100.0f);
 				auto year_total_text = std::string(year_total_text_buffer.data());
-				auto year_total_text_width = font_loader->TextWidth(year_total_text, year_total_cell.Height());
+				auto year_total_text_width = font_loader->TextWidth(year_total_text, year_total_cell.height());
 
-				rect4 year_total_text_cell;
-				year_total_text_cell.Left(year_total_cell.Right() + current_cell.Height());
-				year_total_text_cell.Bottom(year_total_cell.Bottom());
-				year_total_text_cell.Right(year_total_text_cell.Left() + year_total_text_width);
-				year_total_text_cell.Top(year_total_cell.Top());
+				rectf year_total_text_cell;
+				year_total_text_cell.setL(year_total_cell.r() + current_cell.height());
+				year_total_text_cell.setR(year_total_text_cell.l() + year_total_text_width);
+				year_total_text_cell.setB(year_total_cell.b());
+				year_total_text_cell.setT(year_total_cell.t());
 
-				years_totals_text.push_back(graphic_engine->AddShape<FontShape>());
+				years_totals_text.push_back(graphics_engine->AddShape<FontShape>());
 				years_totals_text.back()->SetFont(font_loader);
-				years_totals_text.back()->SetShapeCentered(year_total_text, year_total_text_cell.Center(), year_total_text_cell.Height());
+				years_totals_text.back()->SetShapeCentered(year_total_text, year_total_text_cell.getCenter(), year_total_text_cell.height());
 			}
 		}
 
@@ -582,22 +586,22 @@ public:
 	{
 		size_t number_entrie_frames = (date_group_store.GetDateGroups().size() + 1/*annual_total*/) * 2;
 
-		std::vector<rect4> legend_entries_frames(number_entrie_frames);
+		std::vector<rectf> legend_entries_frames(number_entrie_frames);
 
-		auto entries_width = legend_frame.Width() / static_cast<float>(number_entrie_frames);
+		auto entries_width = legend_frame.width() / static_cast<float>(number_entrie_frames);
 
 		for (size_t index = 0; index < number_entrie_frames; ++index)
 		{
 			auto float_index = static_cast<float>(index);
 			legend_entries_frames[index] = legend_frame;
-			legend_entries_frames[index].Left(legend_frame.Left() + entries_width * float_index);
-			legend_entries_frames[index].Right(legend_frame.Left() + entries_width * float_index + entries_width);
+			legend_entries_frames[index].setL(legend_frame.l() + entries_width * float_index);
+			legend_entries_frames[index].setR(legend_frame.l() + entries_width * float_index + entries_width);
 		}
 
-		std::vector<rect4> bars_cells;
+		std::vector<rectf> bars_cells;
 		std::vector<float> bars_cells_shape_linewidths;
-		std::vector<vec4> bars_cells_shape_fillcolors;
-		std::vector<vec4> bars_cells_shape_outlinecolors;
+		std::vector<glm::vec4> bars_cells_shape_fillcolors;
+		std::vector<glm::vec4> bars_cells_shape_outlinecolors;
 
 		// find max lenght string
 		auto print_strings = date_group_store.GetDateGroupsNames();
@@ -616,28 +620,28 @@ public:
 		{
 			auto legend_font_size = font_loader->AdjustTextSize(legend_entries_frames[0], string_max_lenght, 0.5f, 0.75f);
 
-			graphic_engine->RemoveShapes(legend_text);
+			graphics_engine->RemoveShapes(legend_text);
 			legend_text.clear();
 
 			for (size_t index = 0; index < date_group_store.GetDateGroups().size(); ++index)
 			{
-				legend_text.push_back(graphic_engine->AddShape<FontShape>());
+				legend_text.push_back(graphics_engine->AddShape<FontShape>());
 				legend_text.back()->SetFont(font_loader);
-				legend_text.back()->SetShapeCentered(date_group_store.GetDateGroups()[index].name, legend_entries_frames[index * 2].Center(), legend_font_size);
+				legend_text.back()->SetShapeCentered(date_group_store.GetDateGroups()[index].name, legend_entries_frames[index * 2].getCenter(), legend_font_size);
 
 				//if (calendar_config.GetSpanLengthYears() > 0 && (bar_shape_configs.size() == date_group_store.GetDateGroups().size()))
 				if (calendar_config.GetSpanLengthYears() > 0)
 				{
-					auto current_height = row_frames.GetSubFrame(0, 1).Height();
+					auto current_height = row_frames.GetSubFrame(0, 1).height();
 
 					auto current_cell = legend_entries_frames[index * 2 + 1];
-					auto current_vertical_center = current_cell.Center().y;
-					current_cell.Bottom(current_vertical_center - current_height / 2.f);
-					current_cell.Top(current_vertical_center + current_height / 2.f);
+					auto current_vertical_center = current_cell.getCenter().y;
+					current_cell.setB(current_vertical_center - current_height / 2.f);
+					current_cell.setT(current_vertical_center + current_height / 2.f);
 
 					bars_cells.push_back(current_cell);
 
-					auto search_string = std::wstring(L"Bar Group ") + std::to_string(index);
+					auto search_string = std::string("Bar Group ") + std::to_string(index);
 					auto current_shape_config = shape_configuration_storage.GetShapeConfiguration(search_string);
 
 					bars_cells_shape_linewidths.push_back(current_shape_config.LineWidth());
@@ -646,18 +650,18 @@ public:
 				}
 			}
 
-			legend_text.push_back(graphic_engine->AddShape<FontShape>());
+			legend_text.push_back(graphics_engine->AddShape<FontShape>());
 			legend_text.back()->SetFont(font_loader);
-			legend_text.back()->SetShapeCentered("Annual Sums", legend_entries_frames[legend_entries_frames.size() - 2].Center(), legend_font_size);
+			legend_text.back()->SetShapeCentered("Annual Sums", legend_entries_frames[legend_entries_frames.size() - 2].getCenter(), legend_font_size);
 
 			if (calendar_config.GetSpanLengthYears() > 0)
 			{
-				auto current_height = row_frames.GetSubFrame(0, 0).Height();
+				auto current_height = row_frames.GetSubFrame(0, 0).height();
 
 				auto current_cell = legend_entries_frames[legend_entries_frames.size() - 1];
-				auto current_vertical_center = current_cell.Center().y;
-				current_cell.Bottom(current_vertical_center - current_height / 2.f);
-				current_cell.Top(current_vertical_center + current_height / 2.f);
+				auto current_vertical_center = current_cell.getCenter().y;
+				current_cell.setB(current_vertical_center - current_height / 2.f);
+				current_cell.setT(current_vertical_center + current_height / 2.f);
 
 				bars_cells.push_back(current_cell);
 
@@ -676,24 +680,25 @@ public:
 
 private:
 
-	GraphicEngine* graphic_engine;
+	GLCanvas* gl_canvas;
+	GraphicsEngine* graphics_engine;
 
 	DateIntervalBundleBarStore data_store;
 	CalendarConfigStorage calendar_config;
 	
 	RowFrames row_frames;
 	
-	rect4 page_size;
-	rect4 page_margin;
-	rect4 print_area;
+	rectf page_size;
+	rectf page_margin;
+	rectf print_area;
 	
-	rect4 title_frame;
-	rect4 page_margin_frame;
-	rect4 calendar_frame;
-	rect4 cells_frame;
-	rect4 x_labels_frame;
-	rect4 y_labels_frame;
-	rect4 legend_frame;
+	rectf title_frame;
+	rectf page_margin_frame;
+	rectf calendar_frame;
+	rectf cells_frame;
+	rectf x_labels_frame;
+	rectf y_labels_frame;
+	rectf legend_frame;
 	float cell_width;
 	float row_height;
 	float day_width;

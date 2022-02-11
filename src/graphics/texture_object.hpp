@@ -20,18 +20,29 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 
-#ifdef WX_PRECOMP
-	#include <wx/wxprec.h>
-#else 
-	#include <wx/wx.h>
-#endif
+#include <glad/glad.h>
 
-#include <wx/dataview.h>
-#include <wx/spinctrl.h>
-#include <wx/cmndata.h>
-#include <wx/printdlg.h>
-#include <wx/fontpicker.h>
-#include <wx/clrpicker.h>
-#include <wx/propgrid/propgrid.h>
-#include <wx/splitter.h>
-#include <wx/notebook.h>
+
+class Texture
+{
+public:
+	
+	explicit Texture()
+	{
+		glGenTextures(1, &name);
+	}
+
+	~Texture()
+	{
+		glDeleteTextures(1, &name);
+	}
+
+	GLuint Name() const
+	{
+		return name;
+	}
+
+private:
+
+	GLuint name;
+};
