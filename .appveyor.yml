@@ -13,11 +13,10 @@ image:
 
 environment:
   SHELL: "windows"
-  BOOST_ROOT: C:/Libraries/boost_1_73_0
   matrix:
     - GENERATOR: "Visual Studio 16 2019"
       BUILDFLAGS: "/verbosity:normal"
-      CMAKEARGS: ""
+      CMAKEARGS: "-DVCPKG_TARGET_TRIPLET=x64-windows-static-md"
 
 matrix:
   fast_finish: true
