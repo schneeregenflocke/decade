@@ -13,7 +13,7 @@ project(Decade VERSION 0.6.0)
 
 cmake_print_variables(CMAKE_VERSION CMAKE_PROJECT_VERSION CMAKE_SYSTEM_NAME CMAKE_CXX_COMPILER_ID)
 
-add_executable(${PROJECT_NAME})
+add_executable(${PROJECT_NAME} WIN32)
 
 #set_property(TARGET ${PROJECT_NAME} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
@@ -22,82 +22,15 @@ get_target_property(${PROJECT_NAME}_CXX_STANDARD ${PROJECT_NAME} CXX_STANDARD)
 cmake_print_variables(${PROJECT_NAME}_CXX_STANDARD)
 cmake_print_variables(CMAKE_EXPORT_COMPILE_COMMANDS)
 
-
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
 	target_compile_options(${PROJECT_NAME} PRIVATE /Zc:__cplusplus)
 endif()
-
 
 get_target_property(${PROJECT_NAME}_COMPILE_OPTIONS ${PROJECT_NAME} COMPILE_OPTIONS)
 cmake_print_variables(${PROJECT_NAME}_COMPILE_OPTIONS)
 
 get_target_property(${PROJECT_NAME}_COMPILE_DEFINITIONS ${PROJECT_NAME} COMPILE_DEFINITIONS)
 cmake_print_variables(${PROJECT_NAME}_COMPILE_DEFINITIONS)
-
-
-#set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost REQUIRED COMPONENTS date_time serialization wserialization)
-cmake_print_variables(Boost_FOUND Boost_INCLUDE_DIRS Boost_LIBRARY_DIRS Boost_LIBRARIES)
-if(${Boost_FOUND})
-	target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
-	target_link_libraries(${PROJECT_NAME} PRIVATE ${Boost_LIBRARIES})
-endif()
-
-#find_package(wxWidgets REQUIRED propgrid gl core base)
-#cmake_print_variables(wxWidgets_FOUND wxWidgets_INCLUDE_DIRS wxWidgets_LIBRARIES wxWidgets_LIBRARY_DIRS wxWidgets_DEFINITIONS wxWidgets_DEFINITIONS_DEBUG wxWidgets_CXX_FLAGS wxWidgets_USE_FILE)
-#if(wxWidgets_FOUND)
-#  include(${wxWidgets_USE_FILE})
-#  target_include_directories(${PROJECT_NAME} PRIVATE ${wxWidgets_INCLUDE_DIRS})
-#  target_link_libraries(${PROJECT_NAME} PRIVATE ${wxWidgets_LIBRARIES})
-#endif()
-
-set(wxUSE_STL ON CACHE BOOL "wxUSE_STL" FORCE)
-set(wxUSE_GUI ON CACHE BOOL "wxUSE_GUI" FORCE)
-set(wxUSE_OPENGL ON CACHE BOOL "wxUSE_OPENGL" FORCE)
-set(wxUSE_WINRT	OFF CACHE BOOL "wxUSE_WINRT" FORCE)
-set(wxUSE_EXCEPTIONS OFF CACHE BOOL "wxUSE_EXCEPTIONS" FORCE)
-set(wxUSE_GLCANVAS_EGL OFF CACHE BOOL "wxUSE_GLCANVAS_EGL" FORCE)
-set(wxBUILD_SHARED OFF CACHE BOOL "wxBUILD_SHARED" FORCE)
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets")
-target_link_libraries(Decade PRIVATE wxpropgrid wxgl wxcore wxbase)
-if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
-	target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/include/wx/msw/wx_dpi_aware.manifest)
-endif()
-
-
-find_package(freetype CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE freetype)
-
-#find_package(zlib CONFIG REQUIRED)
-#target_link_libraries(${PROJECT_NAME} PRIVATE zlib)
-
-#find_package(libpng CONFIG REQUIRED)
-#target_link_libraries(${PROJECT_NAME} PRIVATE libpng)
-
-
-set(GLAD_PROFILE "core" CACHE STRING "OpenGL profile" FORCE)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/glad)
-target_link_libraries(${PROJECT_NAME} PRIVATE glad)
-
-
-add_compile_definitions(GLM_FORCE_CXX17)
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/glm)
-
-
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/lodepng)
-target_sources(${PROJECT_NAME} PRIVATE external/lodepng/lodepng.h external/lodepng/lodepng.cpp)
-
-
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/csv2)
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/csv2/include)
-
-
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)
-
-
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/include)
-
 
 target_sources(${PROJECT_NAME} PRIVATE 
 	${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
@@ -121,6 +54,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/shape_panel.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/title_panel.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/wx_widgets_include.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/log_panel.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/font.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/graphics_engine.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/projection.hpp
@@ -133,6 +67,64 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/texture_object.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/mvp_matrices.hpp
 )
+
+#set(Boost_USE_STATIC_LIBS ON)
+find_package(Boost REQUIRED COMPONENTS date_time serialization wserialization)
+cmake_print_variables(Boost_FOUND Boost_INCLUDE_DIRS Boost_LIBRARY_DIRS Boost_LIBRARIES)
+if(${Boost_FOUND})
+	target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
+	target_link_libraries(${PROJECT_NAME} PRIVATE ${Boost_LIBRARIES})
+endif()
+
+#find_package(wxWidgets REQUIRED propgrid gl core base)
+#cmake_print_variables(wxWidgets_FOUND wxWidgets_INCLUDE_DIRS wxWidgets_LIBRARIES wxWidgets_LIBRARY_DIRS wxWidgets_DEFINITIONS wxWidgets_DEFINITIONS_DEBUG wxWidgets_CXX_FLAGS wxWidgets_USE_FILE)
+#if(wxWidgets_FOUND)
+#  include(${wxWidgets_USE_FILE})
+#  target_include_directories(${PROJECT_NAME} PRIVATE ${wxWidgets_INCLUDE_DIRS})
+#  target_link_libraries(${PROJECT_NAME} PRIVATE ${wxWidgets_LIBRARIES})
+#endif()
+
+set(wxUSE_STL ON CACHE BOOL "wxUSE_STL" FORCE)
+set(wxUSE_GUI ON CACHE BOOL "wxUSE_GUI" FORCE)
+set(wxUSE_OPENGL ON CACHE BOOL "wxUSE_OPENGL" FORCE)
+set(wxUSE_STD_IOSTREAM ON CACHE BOOL "wxUSE_STD_IOSTREAM" FORCE)
+set(wxUSE_WINRT	OFF CACHE BOOL "wxUSE_WINRT" FORCE)
+set(wxUSE_EXCEPTIONS OFF CACHE BOOL "wxUSE_EXCEPTIONS" FORCE)
+set(wxUSE_GLCANVAS_EGL OFF CACHE BOOL "wxUSE_GLCANVAS_EGL" FORCE)
+set(wxBUILD_SHARED OFF CACHE BOOL "wxBUILD_SHARED" FORCE)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets")
+target_link_libraries(${PROJECT_NAME} PRIVATE wxpropgrid wxgl wxcore wxbase)
+if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
+	target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/include/wx/msw/wx_dpi_aware.manifest)
+	target_link_options(${PROJECT_NAME} PRIVATE -mwindows)
+endif()
+
+find_package(freetype CONFIG REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE freetype)
+
+find_package(ZLIB REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
+
+find_package(libpng CONFIG REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE png)
+
+set(GLAD_PROFILE "core" CACHE STRING "OpenGL profile" FORCE)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/glad)
+target_link_libraries(${PROJECT_NAME} PRIVATE glad)
+
+add_compile_definitions(GLM_FORCE_CXX17)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/glm)
+
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/lodepng)
+target_sources(${PROJECT_NAME} PRIVATE external/lodepng/lodepng.h external/lodepng/lodepng.cpp)
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/csv2)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/csv2/include)
+
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)
+
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/include)
 
 
 list(APPEND RESOURCE_FILES

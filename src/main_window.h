@@ -20,13 +20,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 
-#include "calendar_view.h"
-#include "date_utils.h"
-#include "packages/title_config.h"
-#include "packages/shape_config.h"
-
 #include "gui/wx_widgets_include.h"
-
 #include "gui/opengl_panel.h"
 #include "gui/groups_panel.h"
 #include "gui/date_panel.h"
@@ -36,23 +30,27 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include "gui/shape_panel.h"
 #include "gui/calendar_panel.h"
 #include "gui/license_panel.h"
+#include "gui/log_panel.h"
+
+#include "calendar_view.h"
+#include "date_utils.h"
+#include "packages/title_config.h"
+#include "packages/shape_config.h"
 
 #include <sigslot/signal.hpp>
 
-//#include <boost/archive/text_oarchive.hpp>
-//#include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/xml_oarchive.hpp>
 #include <boost/archive/xml_iarchive.hpp>
 
 #include <csv2/reader.hpp>
 #include <csv2/writer.hpp>
 
-#include <iostream>
+#include <array>
 #include <string>
+#include <iostream>
+#include <fstream>
 #include <cmath>
 #include <memory>
-#include <fstream>
-#include <array>
 
 
 class MainWindow : public wxFrame
@@ -95,6 +93,20 @@ public:
         page_setup_panel = new PageSetupPanel(notebook);
         font_setup_panel = new FontSetupPanel(notebook);
         title_setup_panel = new TitleSetupPanel(notebook);
+        
+        log_panel = std::make_unique<LogPanel>(notebook);
+        std::cout.set_rdbuf(log_panel->GetTextCtrlPtr());
+
+        std::cout << std::string("__cplusplus ") + std::to_string(__cplusplus) << '\n';
+        std::cout << "OperatingSystemIdName " << wxPlatformInfo::Get().GetOperatingSystemIdName() << '\n';
+        std::cout << "ArchName " << wxPlatformInfo::Get().GetBitnessName() << '\n';
+        std::cout << "OSMajorVersion.OSMinorVersion.OSMicroVersion " <<
+            wxPlatformInfo::Get().GetOSMajorVersion() << '.' <<
+            wxPlatformInfo::Get().GetOSMinorVersion() << '.' <<
+            wxPlatformInfo::Get().GetOSMicroVersion() << '\n';
+        auto wxwidgets_version = std::wstring(wxVERSION_STRING);
+        std::cout << "wxVERSION_STRING " << std::string(wxwidgets_version.cbegin(), wxwidgets_version.cend()) << '\n';
+        //std::cout << "ContentScaleFactor " << GetContentScaleFactor() << '\n';
 
         notebook->AddPage(data_table_panel, "Dates");
         notebook->AddPage(date_groups_table_panel, "Groups");
@@ -103,21 +115,23 @@ public:
         notebook->AddPage(page_setup_panel, "Page");
         notebook->AddPage(font_setup_panel, "Font");
         notebook->AddPage(title_setup_panel, "Title");
+        notebook->AddPage(log_panel->GetPanelPtr(), "Log");
 
         ////////////////////////////////////////////////////////////////////////////////
 
         wxGLAttributes attributes;
         attributes.PlatformDefaults().Defaults().EndList();
         bool display_supported = wxGLCanvas::IsDisplaySupported(attributes);
+
         std::cout << "wxGLCanvas IsDisplaySupported " << std::boolalpha << display_supported << '\n';
 
         wxPanel* glcanvas_panel = new wxPanel(main_splitter, wxID_ANY);
         wxBoxSizer* glcanvas_panel_sizer = new wxBoxSizer(wxVERTICAL);
         glcanvas_panel->SetSizer(glcanvas_panel_sizer);
-        glcanvas = new GLCanvas(glcanvas_panel, attributes);
-        glcanvas_panel_sizer->Add(glcanvas, sizer_flags);
+        gl_canvas = new GLCanvas(glcanvas_panel, attributes);
+        glcanvas_panel_sizer->Add(gl_canvas, sizer_flags);
 
-        glcanvas->signal_opengl_ready.connect(&MainWindow::OpenGLReady, this);
+        gl_canvas->signal_opengl_loaded.connect(&MainWindow::OpenGLLoaded, this);
 
         ////////////////////////////////////////////////////////////////////////////////
 
@@ -134,7 +148,7 @@ public:
 
     GLCanvas* GetGLCanvas()
     {
-        return glcanvas;
+        return gl_canvas;
     }
 
 private:
@@ -144,10 +158,10 @@ private:
         const int ID_EXPORT_PNG = NewControlId();
         const int ID_IMPORT_CSV = NewControlId();
         const int ID_EXPORT_CSV = NewControlId();
-        //const int ID_NEW_XML = wxNewId();
-        //const int ID_CLOSE_XML = wxNewId();
         const int ID_OPEN_XML = NewControlId();
         const int ID_LICENSE_INFO = NewControlId();
+        //const int ID_NEW_XML = wxNewId();
+        //const int ID_CLOSE_XML = wxNewId();
 
         Bind(wxEVT_MENU, &MainWindow::SlotLoadXML, this, ID_OPEN_XML);
         Bind(wxEVT_MENU, &MainWindow::SlotSaveXML, this, ID_SAVE_XML);
@@ -181,9 +195,9 @@ private:
         menu_help->Append(ID_LICENSE_INFO, L"&Open Source Licenses");
     }
 
-    void OpenGLReady()
+    void OpenGLLoaded()
     {
-        calendar = std::make_unique<CalendarPage>(glcanvas);
+        calendar = std::make_unique<CalendarPage>(gl_canvas);
         calendar->Update();
 
         EstablishConnections();
@@ -220,8 +234,8 @@ private:
 
         // Connections page_setup -> ...
         page_setup_store.signal_page_setup_config.connect(&CalendarPage::ReceivePageSetup, calendar.get());
-        //page_setup_store.signal_page_setup_config.connect(&GraphicsEngine::ReceivePageSetup, glcanvas->GetGraphicsEngine());
-        page_setup_store.signal_page_setup_config.connect(&GLCanvas::ReceivePageSetup, glcanvas);
+        //page_setup_store.signal_page_setup_config.connect(&GraphicsEngine::ReceivePageSetup, gl_canvas->GetGraphicsEngine());
+        page_setup_store.signal_page_setup_config.connect(&GLCanvas::ReceivePageSetup, gl_canvas);
 
         ////////////////////////////////////////////////////////////////////////////////
 
@@ -302,21 +316,19 @@ private:
     void LoadXML(const std::string& filepath)
     {
         std::ifstream filestream(filepath);
-        //boost::archive::text_iarchive oarchive(filestream);
-        boost::archive::xml_iarchive oarchive(filestream);
+        boost::archive::xml_iarchive iarchive(filestream);
         
-        oarchive >> BOOST_SERIALIZATION_NVP(date_groups_store);
-        oarchive >> BOOST_SERIALIZATION_NVP(date_interval_bundle_store);
-        oarchive >> BOOST_SERIALIZATION_NVP(page_setup_store);
-        oarchive >> BOOST_SERIALIZATION_NVP(title_config_store);
-        oarchive >> BOOST_SERIALIZATION_NVP(shape_configuration_storage);
-        oarchive >> BOOST_SERIALIZATION_NVP(calendar_configuration_storage);
+        iarchive >> BOOST_SERIALIZATION_NVP(date_groups_store);
+        iarchive >> BOOST_SERIALIZATION_NVP(date_interval_bundle_store);
+        iarchive >> BOOST_SERIALIZATION_NVP(page_setup_store);
+        iarchive >> BOOST_SERIALIZATION_NVP(title_config_store);
+        iarchive >> BOOST_SERIALIZATION_NVP(shape_configuration_storage);
+        iarchive >> BOOST_SERIALIZATION_NVP(calendar_configuration_storage);
     }
 
     void SaveXML(const std::string& filepath)
     {
         std::ofstream filestream(filepath);
-        //boost::archive::text_oarchive oarchive(filestream);
         boost::archive::xml_oarchive oarchive(filestream);
 
         oarchive << BOOST_SERIALIZATION_NVP(date_groups_store);
@@ -414,7 +426,7 @@ private:
         if (file_dialog.ShowModal() == wxID_OK)
         {
             std::string file_path = file_dialog.GetPath().ToStdString();
-            glcanvas->SavePNG(file_path);
+            gl_canvas->SavePNG(file_path);
         }
     }
 
@@ -439,9 +451,8 @@ private:
     PageSetupPanel* page_setup_panel;
     FontSetupPanel* font_setup_panel;
     TitleSetupPanel* title_setup_panel;
-    GLCanvas* glcanvas;
-
-    std::unique_ptr<CalendarPage> calendar;
+    GLCanvas* gl_canvas;
+    std::unique_ptr<LogPanel> log_panel;
 
     // Storages
     DateGroupStore date_groups_store;
@@ -452,6 +463,10 @@ private:
     ShapeConfigurationStorage shape_configuration_storage;
     CalendarConfigStorage calendar_configuration_storage;
 
+    // Calendar Graphics
+    std::unique_ptr<CalendarPage> calendar;
+
+    // wx Controller IDs
     const int ID_SAVE_XML;
     const int ID_SAVE_AS_XML;
 };

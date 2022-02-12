@@ -189,7 +189,7 @@ public:
             Bind(wxEVT_LEFT_UP, &GLCanvas::MouseCallback, this);
             Bind(wxEVT_MOUSEWHEEL, &GLCanvas::MouseCallback, this);
 
-            signal_opengl_ready();
+            signal_opengl_loaded();
         }
     }
 
@@ -227,7 +227,7 @@ public:
         RenderToPNG render_to_png(file_path, page_size, 600, graphics_engine);
     }
 
-    sigslot::signal<> signal_opengl_ready;
+    sigslot::signal<> signal_opengl_loaded;
 
 private:
 
