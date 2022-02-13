@@ -11,7 +11,7 @@ include(CMakePrintHelpers)
 
 project(Decade VERSION 0.6.0)
 
-cmake_print_variables(CMAKE_VERSION CMAKE_PROJECT_VERSION CMAKE_SYSTEM_NAME CMAKE_CXX_COMPILER_ID)
+cmake_print_variables(CMAKE_VERSION CMAKE_PROJECT_VERSION CMAKE_SYSTEM_NAME CMAKE_CXX_COMPILER CMAKE_CXX_COMPILER_ID)
 
 add_executable(${PROJECT_NAME} WIN32)
 
@@ -19,7 +19,7 @@ add_executable(${PROJECT_NAME} WIN32)
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 get_target_property(${PROJECT_NAME}_CXX_STANDARD ${PROJECT_NAME} CXX_STANDARD)
-cmake_print_variables(${PROJECT_NAME}_CXX_STANDARD)
+cmake_print_variables(${PROJECT_NAME}_CXX_STANDARD CMAKE_CXX_STANDARD CMAKE_CXX_EXTENSIONS)
 cmake_print_variables(CMAKE_EXPORT_COMPILE_COMMANDS)
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
@@ -68,13 +68,14 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/mvp_matrices.hpp
 )
 
-#set(Boost_USE_STATIC_LIBS ON)
+set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost REQUIRED COMPONENTS date_time serialization wserialization)
-cmake_print_variables(Boost_FOUND Boost_INCLUDE_DIRS Boost_LIBRARY_DIRS Boost_LIBRARIES)
+cmake_print_variables(Boost_FOUND Boost_INCLUDE_DIRS Boost_LIBRARY_DIRS Boost_LIBRARIES Boost_USE_STATIC_LIBS)
 if(${Boost_FOUND})
 	target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
 	target_link_libraries(${PROJECT_NAME} PRIVATE ${Boost_LIBRARIES})
 endif()
+
 
 #find_package(wxWidgets REQUIRED propgrid gl core base)
 #cmake_print_variables(wxWidgets_FOUND wxWidgets_INCLUDE_DIRS wxWidgets_LIBRARIES wxWidgets_LIBRARY_DIRS wxWidgets_DEFINITIONS wxWidgets_DEFINITIONS_DEBUG wxWidgets_CXX_FLAGS wxWidgets_USE_FILE)
@@ -84,6 +85,8 @@ endif()
 #  target_link_libraries(${PROJECT_NAME} PRIVATE ${wxWidgets_LIBRARIES})
 #endif()
 
+#set(wxUSE_ZLIB ON CACHE BOOL "wxUSE_STL" FORCE)
+#set(wxUSE_LIBPNG ON CACHE BOOL "wxUSE_STL" FORCE)
 set(wxUSE_STL ON CACHE BOOL "wxUSE_STL" FORCE)
 set(wxUSE_GUI ON CACHE BOOL "wxUSE_GUI" FORCE)
 set(wxUSE_OPENGL ON CACHE BOOL "wxUSE_OPENGL" FORCE)
@@ -96,17 +99,16 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets")
 target_link_libraries(${PROJECT_NAME} PRIVATE wxpropgrid wxgl wxcore wxbase)
 if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
 	target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/include/wx/msw/wx_dpi_aware.manifest)
-	target_link_options(${PROJECT_NAME} PRIVATE -mwindows)
 endif()
+
+#find_package(ZLIB REQUIRED)
+#target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
+
+#find_package(libpng REQUIRED)
+#target_link_libraries(${PROJECT_NAME} PRIVATE png_static) #png_static
 
 find_package(freetype CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE freetype)
-
-find_package(ZLIB REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
-
-find_package(libpng CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE png)
 
 set(GLAD_PROFILE "core" CACHE STRING "OpenGL profile" FORCE)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/glad)
@@ -114,9 +116,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE glad)
 
 add_compile_definitions(GLM_FORCE_CXX17)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/glm)
-
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/lodepng)
-target_sources(${PROJECT_NAME} PRIVATE external/lodepng/lodepng.h external/lodepng/lodepng.cpp)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/csv2)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/csv2/include)
@@ -143,7 +142,6 @@ list(APPEND RESOURCE_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource/LICENSE.txt embed-resource	 
 	${CMAKE_CURRENT_SOURCE_DIR}/external/glad/LICENSE glad
 	${CMAKE_CURRENT_SOURCE_DIR}/external/glm/copying.txt glm
-	${CMAKE_CURRENT_SOURCE_DIR}/external/lodepng/LICENSE lodepng
 	${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/LICENSE sigslot
 	${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/docs/licence.txt wxwidgets
 

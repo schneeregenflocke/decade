@@ -86,7 +86,6 @@ private:
 		collected_licenses.emplace_back("embed-resource", LOAD_RESOURCE(embed_resource_LICENSE).toString());
 		collected_licenses.emplace_back("csv2", LOAD_RESOURCE(csv2_LICENSE).toString());
 		collected_licenses.emplace_back("csv2mio", LOAD_RESOURCE(csv2mio_LICENSE).toString());
-		collected_licenses.emplace_back("lodepng", LOAD_RESOURCE(lodepng_LICENSE).toString());
 		collected_licenses.emplace_back("sigslot", LOAD_RESOURCE(sigslot_LICENSE).toString());
 		collected_licenses.emplace_back("boost", LOAD_RESOURCE(boost_copyright).toString());
 		collected_licenses.emplace_back("freetype", LOAD_RESOURCE(freetype_copyright).toString());
