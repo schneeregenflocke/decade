@@ -7,9 +7,6 @@
 [submodule "external/glm"]
 	path = external/glm
 	url = https://github.com/g-truc/glm.git
-[submodule "external/lodepng"]
-	path = external/lodepng
-	url = https://github.com/lvandeve/lodepng.git
 [submodule "external/sigslot"]
 	path = external/sigslot
 	url = https://github.com/palacaze/sigslot.git
