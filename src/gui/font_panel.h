@@ -24,131 +24,88 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #include "wx_widgets_include.h"
 
-#include <string>
-#include <memory>
-#include <functional>
-#include <thread>
-#include <filesystem>
+#include <vector>
+#include <exception>
 
 #include <sigslot/signal.hpp>
 
 
-class FontSetupPanel : public wxPanel
+class FontPanel : public wxPanel
 {
 public:
 
-	FontSetupPanel(wxWindow* parent) :
-		wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxPanelNameStr),
-		font_directory_enumerated(false)
+	FontPanel(wxWindow* parent)
 	{
+		wx_panel = new wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxPanelNameStr);
+		wx_font_picker = new wxFontPickerCtrl(wx_panel, wxID_ANY, wxNullFont, wxDefaultPosition, wxDefaultSize, wxFNTP_FONTDESC_AS_LABEL);
 
-#ifdef _WIN32
-		default_font_file_path = "C:/Windows/Fonts/arial.ttf";
-#endif
-#ifdef __linux__
-		default_font_file_path = "/usr/share/fonts/cantarell/Cantarell-Regular.otf";
-#endif
-
-		font_picker = new wxFontPickerCtrl(this, wxID_ANY, wxNullFont, wxDefaultPosition, wxDefaultSize, wxFNTP_DEFAULT_STYLE);
-		font_picker->Enable(true);
-		//font_picker->SetMinSize(wxSize(300, -1));
-
-		wxBoxSizer* horizontal_sizer0 = new wxBoxSizer(wxHORIZONTAL);
-		horizontal_sizer0->Add(font_picker, 1, wxALL | wxEXPAND, 5);
-
+		wxBoxSizer* horizontal_sizer = new wxBoxSizer(wxHORIZONTAL);
+		horizontal_sizer->Add(wx_font_picker, 1, wxALL | wxEXPAND, 5);
 		wxBoxSizer* vertical_sizer = new wxBoxSizer(wxVERTICAL);
-		vertical_sizer->Add(horizontal_sizer0, 0, wxEXPAND);
+		vertical_sizer->Add(horizontal_sizer, 0, wxEXPAND);
+		wx_panel->SetSizer(vertical_sizer);
 
-		SetSizer(vertical_sizer);
-
-		Bind(wxEVT_FONTPICKER_CHANGED, &FontSetupPanel::SlotSelectFont, this);
+		wx_panel->Bind(wxEVT_FONTPICKER_CHANGED, &FontPanel::CallbackFontChanged, this);
+		wx_font = wx_font_picker->GetFont();
+		ProcessFontData();
 	}
 
-	std::string GetFontFilePath()
+	std::vector<unsigned char>& GetFontData()
 	{
-		return current_font_file_path;
-	}
-	void SetFontFilePath(const std::string& font_file_path)
-	{
-		if (std::filesystem::exists(font_file_path))
-		{
-			current_font_file_path = font_file_path;
-		}
-		else
-		{
-			current_font_file_path = default_font_file_path;
-		}
-		signal_font_file_path(this->current_font_file_path);
+		return font_data;
 	}
 
 	void SendDefaultValues()
 	{
-		current_font_file_path = default_font_file_path;
-		signal_font_file_path(default_font_file_path);
+		signal_font_file_path(font_data);
 	}
-	sigslot::signal<const std::string&> signal_font_file_path;
+
+	wxPanel* GetPanelPtr()
+	{
+		return wx_panel;
+	}
+	
+	sigslot::signal<const std::vector<unsigned char>&> signal_font_file_path;
 
 private:
 
-	void SlotSelectFont(wxFontPickerEvent& event)
+	void ProcessFontData()
 	{
-		if (!font_directory_enumerated)
-		{
-			font_picker->Enable(false);
+#ifdef _WIN32
+		WXHFONT wxhfont = nullptr;
+		wxhfont = wx_font.GetHFONT();
 
-			enumerate_thread = std::thread(&FontSetupPanel::EnumerateFontDirectory, this);
-			enumerate_thread.join();
-
-			font_picker->Enable(true);
-
-			font_directory_enumerated = true;
-		}
-
-		auto font_lookup = PrepareFontName(event.GetFont());
-
-		auto font_file_path = enum_fonts.GetFilepath(font_lookup);
-		if (font_file_path != std::string("NotFound") && std::filesystem::exists(font_file_path))
+		HDC hdc = nullptr;
+		hdc = ::CreateCompatibleDC(nullptr);
+		if (hdc != nullptr)
 		{
-			current_font_file_path = font_file_path;
-			signal_font_file_path(font_file_path);
+			::SelectObject(hdc, wxhfont);
+			const size_t size = ::GetFontData(hdc, 0, 0, nullptr, 0);
+			if (size > 0)
+			{
+				font_data.resize(size);
+				auto check = ::GetFontData(hdc, 0, 0, font_data.data(), size);
+				if (check == GDI_ERROR || check != size)
+				{
+					throw std::runtime_error("GetFontData failed");
+				}
+			}
+			::DeleteDC(hdc);
 		}
-		else
-		{
-			std::cerr << "font file not found" << '\n';
-		}
-	}
-	std::string PrepareFontName(const wxFont& wx_font)
-	{
-		std::string fontlookup = wx_font.GetFaceName();
-		if (wx_font.GetWeight() == wxFONTWEIGHT_BOLD)
-		{
-			fontlookup += std::string(" Bold");
-		}
-		if (wx_font.GetStyle() == wxFONTSTYLE_ITALIC)
-		{
-			fontlookup += std::string(" Italic");
-		}
-		return fontlookup;
-	}
-	void EnumerateFontDirectory()
-	{
-		enum_fonts.Enumerate();
+#endif
+#ifdef __linux__
+#endif
 	}
 
-	bool font_directory_enumerated;
+	void CallbackFontChanged(wxFontPickerEvent& event)
+	{
+		wx_font = event.GetFont();
+		ProcessFontData();
+		signal_font_file_path(font_data);
+	}
 
-	std::string default_font_file_path;
-	std::string current_font_file_path;
-
-	wxFontPickerCtrl* font_picker;
-
-	EnumerateFont enum_fonts;
-
-	std::thread enumerate_thread;
+	wxPanel* wx_panel;
+	wxFontPickerCtrl* wx_font_picker;
+	wxFont wx_font;
+	std::vector<unsigned char> font_data;
 };
-
-/*template<typename T, typename U>
-inline void FontSetupPanel::ConnectSignalFontPath(T memfunptr, U objectptr)
-{
-	signal_fontpath.connect(std::bind(memfunptr, objectptr, std::placeholders::_1));
-}*/

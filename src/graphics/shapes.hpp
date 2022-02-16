@@ -44,16 +44,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 class TriangleShape : public Shape<SimpleShader>
 {
 public:
-	TriangleShape()
+	explicit TriangleShape(const std::string& shape_name) :
+		Shape<SimpleShader>(shape_name)
 	{
 		SetBufferSize(3);
 	}
+	
 	void SetShape(const glm::vec3& p0, const glm::vec3& p1, const glm::vec3& p2)
 	{
 		GetVertexRef(0).point = p0;
 		GetVertexRef(1).point = p1;
 		GetVertexRef(2).point = p2;
-
 		UpdateBuffer();
 	}
 };
@@ -62,20 +63,24 @@ public:
 class CircleBase : public Shape<SimpleShader>
 {
 public:
-	CircleBase()
+	explicit CircleBase(const std::string& shape_name) :
+		Shape<SimpleShader>(shape_name)
 	{
 		SetResolution(64);
 	}
-	void SetResolution(size_t value)
+
+	void SetResolution(size_t resolution)
 	{
-		SetBufferSize(value * 3);
-		resolution = value;
+		SetBufferSize(resolution * 3);
+		this->resolution = resolution;
 	}
+
 protected:
 	static glm::vec3 CirclePoint(float angle, float radius)
 	{
 		return glm::vec3(glm::cos(angle) * radius, glm::sin(angle) * radius, 0.f);
 	}
+
 	size_t resolution;
 };
 
@@ -83,10 +88,14 @@ protected:
 class CircleShape : public CircleBase
 {
 public:
+
+	explicit CircleShape(const std::string& shape_name) :
+		CircleBase(shape_name)
+	{}
+
 	void SetShape(const glm::vec3& position, float radius, glm::vec4 color)
 	{
 		float step = glm::two_pi<float>() / static_cast<float>(resolution);
-
 		auto p0 = glm::vec3(0.f, 0.f, 0.f);
 		auto p1 = CirclePoint(0.f, radius);
 		auto p2 = CirclePoint(step, radius);
@@ -100,7 +109,6 @@ public:
 			auto rp2 = glm::rotateZ(p2, angle);
 
 			size_t subindex = index * 3;
-
 			GetVertexRef(subindex + 0).point = rp0 + position;
 			GetVertexRef(subindex + 1).point = rp1 + position;
 			GetVertexRef(subindex + 2).point = rp2 + position;
@@ -109,7 +117,6 @@ public:
 			GetVertexRef(subindex + 1).color = color;
 			GetVertexRef(subindex + 2).color = color;
 		}
-
 		UpdateBuffer();
 	}
 };
@@ -118,29 +125,31 @@ public:
 class CircleSectorShape : public CircleBase
 {
 public:
-	void SetShape(const glm::vec3& position, float radius, float beginsector, float endsector)
+
+	explicit CircleSectorShape(const std::string& shape_name) :
+		CircleBase(shape_name)
+	{}
+
+	void SetShape(const glm::vec3& position, float radius, float sector_begin, float sector_end)
 	{
-		float step = (beginsector - endsector) / static_cast<float>(resolution);
+		float step = (sector_begin - sector_end) / static_cast<float>(resolution);
 
 		auto p0 = glm::vec3(0.f, 0.f, 0.f);
-		auto p1 = CirclePoint(beginsector, radius);
-		auto p2 = CirclePoint(beginsector + step, radius);
+		auto p1 = CirclePoint(sector_begin, radius);
+		auto p2 = CirclePoint(sector_begin + step, radius);
 
 		for (size_t index = 0; index < resolution; ++index)
 		{
 			auto angle = step * static_cast<float>(index);
-
 			auto rp0 = glm::rotateZ(p0, angle);
 			auto rp1 = glm::rotateZ(p1, angle);
 			auto rp2 = glm::rotateZ(p2, angle);
 
 			auto subindex = index * 3U;
-
 			GetVertexRef(subindex + 0).point = rp0 + position;
 			GetVertexRef(subindex + 1).point = rp1 + position;
 			GetVertexRef(subindex + 2).point = rp2 + position;
 		}
-
 		UpdateBuffer();
 	}
 };
@@ -150,7 +159,8 @@ class QuadShape : public Shape<SimpleShader>
 {
 public:
 
-	QuadShape()
+	explicit QuadShape(const std::string& shape_name) :
+		Shape<SimpleShader>(shape_name)
 	{
 		SetBufferSize(6);
 	}
@@ -199,7 +209,8 @@ class OrthoLineShape : public Shape<SimpleShader>
 {
 public:
 
-	OrthoLineShape()
+	explicit OrthoLineShape(const std::string& shape_name) :
+		Shape<SimpleShader>(shape_name)
 	{
 		SetBufferSize(6);
 	}
@@ -234,7 +245,8 @@ class LineShape : public Shape<SimpleShader>
 {
 public:
 
-	LineShape()
+	explicit LineShape(const std::string& shape_name) :
+		Shape<SimpleShader>(shape_name)
 	{
 		SetBufferSize(6);
 	}
@@ -269,10 +281,13 @@ public:
 class CuboidShape : public Shape<SimpleShader>
 {
 public:
-	CuboidShape()
+
+	explicit CuboidShape(const std::string& shape_name) :
+		Shape<SimpleShader>(shape_name)
 	{
 		SetBufferSize(36);
 	}
+
 	void SetShape(const glm::vec3& center, float width, float height, float depth)
 	{
 		float halfwidth = width * 0.5f;
@@ -313,6 +328,10 @@ public:
 class RectanglesShape : public Shape<SimpleShader>
 {
 public:
+
+	explicit RectanglesShape(const std::string& shape_name) :
+		Shape<SimpleShader>(shape_name)
+	{}
 
 	void SetShapes(const std::vector<rectf>& rectangles, const std::vector<float>& linewidths, const std::vector<glm::vec4>& fillcolors, const std::vector<glm::vec4>& outlinecolors)
 	{

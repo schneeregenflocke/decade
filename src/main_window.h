@@ -63,18 +63,12 @@ public:
         ID_SAVE_XML(NewControlId()),
         ID_SAVE_AS_XML(NewControlId())
     {
-        ////////////////////////////////////////////////////////////////////////////////
-
         wxSplitterWindow* main_splitter = new wxSplitterWindow(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE | wxCLIP_CHILDREN);
         main_splitter->SetMinimumPaneSize(20);
         main_splitter->SetSashGravity(0.25);
 
-        ////////////////////////////////////////////////////////////////////////////////
-
         wxSizerFlags sizer_flags;
         sizer_flags.Proportion(1).Expand().Border(wxALL, 5);
-
-        ////////////////////////////////////////////////////////////////////////////////
 
         wxPanel* notebook_panel = new wxPanel(main_splitter, wxID_ANY);
 
@@ -91,7 +85,7 @@ public:
         calendar_setup_panel = new CalendarSetupPanel(notebook);
         elements_setup_panel = new ElementsSetupsPanel(notebook);
         page_setup_panel = new PageSetupPanel(notebook);
-        font_setup_panel = new FontSetupPanel(notebook);
+        font_panel = std::make_unique<FontPanel>(notebook);
         title_setup_panel = new TitleSetupPanel(notebook);
         
         log_panel = std::make_unique<LogPanel>(notebook);
@@ -113,7 +107,7 @@ public:
         notebook->AddPage(calendar_setup_panel, "Calendar");
         notebook->AddPage(elements_setup_panel, "Shapes");
         notebook->AddPage(page_setup_panel, "Page");
-        notebook->AddPage(font_setup_panel, "Font");
+        notebook->AddPage(font_panel->GetPanelPtr(), "Font");
         notebook->AddPage(title_setup_panel, "Title");
         notebook->AddPage(log_panel->GetPanelPtr(), "Log");
 
@@ -144,61 +138,20 @@ public:
         InitMenu();
 
         CreateStatusBar(1);
-    }
 
-    GLCanvas* GetGLCanvas()
-    {
-        return gl_canvas;
+        Show();
+        Raise();
+
+        std::array<int, 2> gl_version{ 3, 2 };
+        gl_canvas->LoadOpenGL(gl_version);
     }
 
 private:
 
-    void InitMenu()
-    {
-        const int ID_EXPORT_PNG = NewControlId();
-        const int ID_IMPORT_CSV = NewControlId();
-        const int ID_EXPORT_CSV = NewControlId();
-        const int ID_OPEN_XML = NewControlId();
-        const int ID_LICENSE_INFO = NewControlId();
-        //const int ID_NEW_XML = wxNewId();
-        //const int ID_CLOSE_XML = wxNewId();
-
-        Bind(wxEVT_MENU, &MainWindow::SlotLoadXML, this, ID_OPEN_XML);
-        Bind(wxEVT_MENU, &MainWindow::SlotSaveXML, this, ID_SAVE_XML);
-        Bind(wxEVT_MENU, &MainWindow::SlotSaveXML, this, ID_SAVE_AS_XML);
-        Bind(wxEVT_MENU, &MainWindow::SlotImportCSV, this, ID_IMPORT_CSV);
-        Bind(wxEVT_MENU, &MainWindow::SlotExportCSV, this, ID_EXPORT_CSV);
-        Bind(wxEVT_MENU, &MainWindow::SlotExportPNG, this, ID_EXPORT_PNG);
-        Bind(wxEVT_MENU, &MainWindow::SlotExit, this, wxID_EXIT);
-        Bind(wxEVT_MENU, &MainWindow::SlotLicenseInfo, this, ID_LICENSE_INFO);
-
-        wxMenuBar* menu_bar = new wxMenuBar;
-        SetMenuBar(menu_bar);
-
-        wxMenu* menu_file = new wxMenu;
-        menu_bar->Append(menu_file, "&File");
-
-        menu_file->Append(ID_OPEN_XML, L"&Open...");
-        menu_file->AppendSeparator();
-        menu_file->Append(ID_SAVE_XML, L"&Save");
-        menu_file->Append(ID_SAVE_AS_XML, L"&Save As...");
-        menu_file->AppendSeparator();
-        menu_file->Append(ID_IMPORT_CSV, L"&Import csv...");
-        menu_file->Append(ID_EXPORT_CSV, L"&Export csv...");
-        menu_file->AppendSeparator();
-        menu_file->Append(ID_EXPORT_PNG, L"&Export png...");
-        menu_file->AppendSeparator();
-        menu_file->Append(wxID_EXIT);
-
-        wxMenu* menu_help = new wxMenu;
-        menu_bar->Append(menu_help, "&Help");
-        menu_help->Append(ID_LICENSE_INFO, L"&Open Source Licenses");
-    }
-
     void OpenGLLoaded()
     {
-        calendar = std::make_unique<CalendarPage>(gl_canvas);
-        calendar->Update();
+        calendar = std::make_unique<CalendarPage>(gl_canvas, font_panel->GetFontData());
+        //calendar->Update();
 
         EstablishConnections();
     }
@@ -239,8 +192,8 @@ private:
 
         ////////////////////////////////////////////////////////////////////////////////
 
-        // Connections font_setup_panel -> ...
-        font_setup_panel->signal_font_file_path.connect(&CalendarPage::ReceiveFont, calendar.get());
+        // Connections font_panel -> ...
+        font_panel->signal_font_file_path.connect(&CalendarPage::ReceiveFont, calendar.get());
 
         ////////////////////////////////////////////////////////////////////////////////
 
@@ -275,10 +228,52 @@ private:
 
         date_groups_store.SendDefaultValues();
         page_setup_panel->SendDefaultValues();
-        font_setup_panel->SendDefaultValues();
+        font_panel->SendDefaultValues();
         title_setup_panel->SendDefaultValues();
         
         calendar_configuration_storage.SendCalendarConfigStorage();
+    }
+
+    void InitMenu()
+    {
+        const int ID_EXPORT_PNG = NewControlId();
+        const int ID_IMPORT_CSV = NewControlId();
+        const int ID_EXPORT_CSV = NewControlId();
+        const int ID_OPEN_XML = NewControlId();
+        const int ID_LICENSE_INFO = NewControlId();
+        //const int ID_NEW_XML = wxNewId();
+        //const int ID_CLOSE_XML = wxNewId();
+
+        Bind(wxEVT_MENU, &MainWindow::SlotLoadXML, this, ID_OPEN_XML);
+        Bind(wxEVT_MENU, &MainWindow::SlotSaveXML, this, ID_SAVE_XML);
+        Bind(wxEVT_MENU, &MainWindow::SlotSaveXML, this, ID_SAVE_AS_XML);
+        Bind(wxEVT_MENU, &MainWindow::SlotImportCSV, this, ID_IMPORT_CSV);
+        Bind(wxEVT_MENU, &MainWindow::SlotExportCSV, this, ID_EXPORT_CSV);
+        Bind(wxEVT_MENU, &MainWindow::SlotExportPNG, this, ID_EXPORT_PNG);
+        Bind(wxEVT_MENU, &MainWindow::SlotExit, this, wxID_EXIT);
+        Bind(wxEVT_MENU, &MainWindow::SlotLicenseInfo, this, ID_LICENSE_INFO);
+
+        wxMenuBar* menu_bar = new wxMenuBar;
+        SetMenuBar(menu_bar);
+
+        wxMenu* menu_file = new wxMenu;
+        menu_bar->Append(menu_file, "&File");
+
+        menu_file->Append(ID_OPEN_XML, L"&Open...");
+        menu_file->AppendSeparator();
+        menu_file->Append(ID_SAVE_XML, L"&Save");
+        menu_file->Append(ID_SAVE_AS_XML, L"&Save As...");
+        menu_file->AppendSeparator();
+        menu_file->Append(ID_IMPORT_CSV, L"&Import csv...");
+        menu_file->Append(ID_EXPORT_CSV, L"&Export csv...");
+        menu_file->AppendSeparator();
+        menu_file->Append(ID_EXPORT_PNG, L"&Export png (600 dpi)...");
+        menu_file->AppendSeparator();
+        menu_file->Append(wxID_EXIT);
+
+        wxMenu* menu_help = new wxMenu;
+        menu_bar->Append(menu_help, "&Help");
+        menu_help->Append(ID_LICENSE_INFO, L"&Open Source Licenses");
     }
 
     void SlotLoadXML(wxCommandEvent& event)
@@ -449,9 +444,9 @@ private:
     CalendarSetupPanel* calendar_setup_panel;
     ElementsSetupsPanel* elements_setup_panel;
     PageSetupPanel* page_setup_panel;
-    FontSetupPanel* font_setup_panel;
     TitleSetupPanel* title_setup_panel;
     GLCanvas* gl_canvas;
+    std::unique_ptr<FontPanel> font_panel;
     std::unique_ptr<LogPanel> log_panel;
 
     // Storages

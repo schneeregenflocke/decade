@@ -20,20 +20,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 
-#include <glad/glad.h>
-
 #include "../graphics/graphics_engine.hpp"
 #include "../graphics/mvp_matrices.hpp"
 #include "../graphics/render_to_png.hpp"
 #include "../packages/page_config.h"
 
 #include "wx_widgets_include.h"
+#include <wx/glcanvas.h>
+
+#include <glad/glad.h>
 
 #include <sigslot/signal.hpp>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtx/io.hpp>
 
 #include <memory>
@@ -204,7 +204,7 @@ public:
 
     void ReceivePageSetup(const PageSetupConfig& page_setup_config)
     {
-        page_size = rectf(page_setup_config.size[0], page_setup_config.size[1]);    
+        page_size = rectf::from_dimension(page_setup_config.size[0], page_setup_config.size[1]);    
     }
 
     void RefreshMVP()

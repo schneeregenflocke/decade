@@ -25,10 +25,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include "texture_object.hpp"
 #include "rect.hpp"
 
+
 #include <ft2build.h>
 #include FT_FREETYPE_H
-#include FT_SFNT_NAMES_H
-#include FT_TRUETYPE_IDS_H
+//#include FT_SFNT_NAMES_H
+//#include FT_TRUETYPE_IDS_H
 
 #include <glm/vec3.hpp>
 #include <glm/vec2.hpp>
@@ -36,16 +37,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include <glad/glad.h>
 
 #include <iostream>
-#include <map>
+#include <array>
 #include <vector>
 #include <string>
-#include <filesystem>
-#include <regex>
-#include <map>
-#include <cstring>
-#include <string>
-#include <fstream>
 #include <memory>
+#include <exception>
 
 
 struct Letter
@@ -57,177 +53,117 @@ struct Letter
 };
 
 
-class EnumerateFont
+class Font
 {
 public:
-
-	//EnumerateFont();
-	void Enumerate()
+	
+	Font(const std::vector<unsigned char>& font_data) :
+		font_data(font_data), ft_library(nullptr), ft_face(nullptr)
 	{
-		LoadFreetype();
-		EnumerateDirectory();
+		InitFreetype();
+		PrintVersion();
+		LoadFont(this->font_data);
+		LoadTextures();
 		ReleaseFreetype();
 	}
 
-	std::string GetFilepath(std::string fontname)
+	void InitFreetype()
 	{
-		std::string filepath = "NotFound";
-		if (fontname_filepath_mapper.count(fontname) > 0)
+		FT_Error ft_error = FT_Init_FreeType(&ft_library);
+		if (ft_error == FT_Err_Ok)
 		{
-			filepath = fontname_filepath_mapper.at(fontname);
-		}
-		return filepath;
-	}
-
-private:
-
-	void LoadFreetype()
-	{
-		FT_Error error;
-
-		error = FT_Init_FreeType(&ftlibrary);
-		if (error == FT_Err_Ok)
-		{
-			int major_version;
-			int minor_version;
-			int patch_version;
-			FT_Library_Version(ftlibrary, &major_version, &minor_version, &patch_version);
-			std::cout << "FreeType Version " << major_version << "." << minor_version << "." << patch_version << '\n';
+			PrintVersion();
 		}
 		else
 		{
-			std::cout << "Failed to init FreeType Library" << '\n';
+			throw std::runtime_error(std::string("Init Freetype failed ") + std::to_string(ft_error));
 		}
 	}
 
 	void ReleaseFreetype()
 	{
-		FT_Done_FreeType(ftlibrary);
-	}
-
-	void EnumerateDirectory()
-	{
-		std::regex rgx(R"(([\w\-]+).(otf|ttf))", std::regex::icase);
-
-		std::string directory_path = "C:/Windows/Fonts";
-
-		//std::ofstream ofile("font_sfnt_data.txt");
-
-		for (const auto& entry : std::filesystem::directory_iterator(directory_path))
+		FT_Error ft_error = FT_Done_Face(ft_face);
+		if (ft_error != FT_Err_Ok)
 		{
-			auto current = entry.path().u8string();
-
-			std::smatch smatch;
-
-			if (std::regex_search(current, smatch, rgx))
-			{
-				std::string fullpath = directory_path + std::string("/") + smatch[0].str();
-
-				FT_Face ftface;
-				FT_Error error = FT_New_Face(ftlibrary, fullpath.c_str(), 0, &ftface);
-
-				if (error == FT_Err_Ok)
-				{
-					std::string fontname = std::string(ftface->family_name);
-
-					if (std::string(ftface->style_name) != std::string("Regular"))
-					{
-						fontname += std::string(" ") + std::string(ftface->style_name);
-					}
-
-					fontname_filepath_mapper[fontname] = fullpath;
-				}
-			}
+			throw std::runtime_error(std::string("Release Freetype Face failed ") + std::to_string(ft_error));
 		}
+		ft_error = FT_Done_FreeType(ft_library);
+		if (ft_error != FT_Err_Ok)
+		{
+			throw std::runtime_error(std::string("Release Freetype failed ") + std::to_string(ft_error));
+		}
+		font_data.clear();
 	}
 
-	FT_Library ftlibrary;
-	std::map<std::string, std::string> fontname_filepath_mapper;
-};
-
-
-class FontLoader
-{
-public:
-
-	FontLoader(const std::string& font_path)
+	void PrintVersion()
 	{
-		FT_Library ftlibrary;
-		FT_Error error;
+		std::array<FT_Int, 3> version;
+		FT_Library_Version(ft_library, &version[0], &version[1], &version[2]);
+		std::cout << "FreeType Version " << version[0] << "." << version[1] << "." << version[2] << '\n';
+	}
 
-		error = FT_Init_FreeType(&ftlibrary);
-		if (error == FT_Err_Ok)
+	void LoadFont(const std::vector<unsigned char>& font_data)
+	{
+		FT_Error ft_error = FT_New_Memory_Face(ft_library, font_data.data(), font_data.size(), 0, &ft_face);
+		if (ft_error == FT_Err_Ok)
 		{
-			int major_version;
-			int minor_version;
-			int patch_version;
-			FT_Library_Version(ftlibrary, &major_version, &minor_version, &patch_version);
-			std::cout << "FreeType Version " << major_version << "." << minor_version << "." << patch_version << '\n';
+			std::cout << "Font loaded " << ft_face->family_name <<  '\n';
 		}
 		else
 		{
-			std::cout << "Failed to init FreeType Library" << '\n';
+			throw std::runtime_error(std::string("Loading Font failed ") + std::to_string(ft_error));
 		}
-
-		FT_Face ftface;
-		error = FT_New_Face(ftlibrary, font_path.c_str(), 0, &ftface);
-		if (error)
-		{
-			std::cout << "Failed to load font" << '\n';
-		}
-		else
-		{
-			std::cout << "Font " << font_path << " " << ftface->family_name << " loaded" << '\n';
-		}
-
-		const FT_UInt fontPixelHeight = 128;
-		FT_Set_Pixel_Sizes(ftface, 0, fontPixelHeight);
-
+	}
+		
+	void LoadTextures()
+	{
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		glActiveTexture(GL_TEXTURE0);
 
 		const size_t number_letters = 256;
 		letters.resize(number_letters);
 
-		for (size_t index = 0; index < number_letters; ++index)
+		const FT_UInt font_pixel_height = 2048;
+		FT_Error ft_error = FT_Set_Pixel_Sizes(ft_face, 0, font_pixel_height);
+		if (ft_error != FT_Err_Ok)
 		{
-			error = FT_Load_Char(ftface, index, FT_LOAD_RENDER);
-			if (error)
-			{
-				std::cout << "Failed to load Glyph " << index << '\n';
-				continue;
-			}
-
-			GLuint texture;
-			texture = letters[index].texture_object.Name();
-			glBindTexture(GL_TEXTURE_2D, texture);
-
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, ftface->glyph->bitmap.width, ftface->glyph->bitmap.rows, 0, GL_RED, GL_UNSIGNED_BYTE, ftface->glyph->bitmap.buffer);
-
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-			glBindTexture(GL_TEXTURE_2D, 0);
-
-			//////////////////////////////////
-
-			float float_font_height = static_cast<float>(fontPixelHeight);
-
-			float sizex = static_cast<float>(ftface->glyph->bitmap.width) / float_font_height;
-			float sizey = static_cast<float>(ftface->glyph->bitmap.rows) / float_font_height;
-			letters[index].size = glm::vec2(sizex, sizey);
-
-			float bearingx = static_cast<float>(ftface->glyph->bitmap_left) / float_font_height;
-			float bearingy = static_cast<float>(ftface->glyph->bitmap_top) / float_font_height;
-			letters[index].bearing = glm::vec2(bearingx, bearingy);
-
-			letters[index].advance = static_cast<float>(ftface->glyph->advance.x) / 64.f / float_font_height;
+			throw std::runtime_error(std::string("Freetype Set Pixel Size failed ") + std::to_string(ft_error));
 		}
 
-		FT_Done_Face(ftface);
-		FT_Done_FreeType(ftlibrary);
+		for (size_t index = 0; index < number_letters; ++index)
+		{
+			FT_Error ft_error = FT_Load_Char(ft_face, index, FT_LOAD_RENDER);
+			if (ft_error != FT_Err_Ok)
+			{
+				throw std::runtime_error(std::string("Freetype Load Char failed ") + std::to_string(ft_error));
+			}
+			
+			const auto bitmap_width = ft_face->glyph->bitmap.width;
+			const auto bitmap_height = ft_face->glyph->bitmap.rows;
+
+			auto glyph_pixmap = ft_face->glyph->bitmap.buffer;
+
+			GLuint texture = letters[index].texture_object.Name();
+			glBindTexture(GL_TEXTURE_2D, texture);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, bitmap_width, bitmap_height, 0, GL_RED, GL_UNSIGNED_BYTE, glyph_pixmap);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			//glGenerateMipmap(GL_TEXTURE_2D);
+			glBindTexture(GL_TEXTURE_2D, 0);
+
+			float float_font_height = static_cast<float>(font_pixel_height);
+
+			float sizex = static_cast<float>(bitmap_width) / float_font_height;
+			float sizey = static_cast<float>(bitmap_height) / float_font_height;
+			letters[index].size = glm::vec2(sizex, sizey);
+
+			float bearingx = static_cast<float>(ft_face->glyph->bitmap_left) / float_font_height;
+			float bearingy = static_cast<float>(ft_face->glyph->bitmap_top) / float_font_height;
+			letters[index].bearing = glm::vec2(bearingx, bearingy);
+			letters[index].advance = static_cast<float>(ft_face->glyph->advance.x) / 64.f / float_font_height;
+		}	
 	}
 
 	Letter& GetLetterRef(const unsigned char index)
@@ -250,18 +186,18 @@ public:
 	float TextHeight(float size)
 	{
 		std::vector<size_t> index_list;
+		std::array<std::array<size_t, 2>, 3> char_intervals;
 
-		for (size_t index = 48; index <= 57; ++index)
+		char_intervals[0] = { 48, 57 };
+		char_intervals[1] = { 65, 90 };
+		char_intervals[2] = { 97, 122 };
+
+		for (const auto& char_interval : char_intervals)
 		{
-			index_list.push_back(index);
-		}
-		for (size_t index = 65; index <= 90; ++index)
-		{
-			index_list.push_back(index);
-		}
-		for (size_t index = 97; index <= 122; ++index)
-		{
-			index_list.push_back(index);
+			for (size_t index = char_interval[0]; index <= char_interval[1]; ++index)
+			{
+				index_list.push_back(index);
+			}
 		}
 
 		float height = 0.f;
@@ -281,9 +217,7 @@ public:
 	float AdjustTextSize(const rectf& cell, std::string text, float height_ratio, float width_ratio)
 	{
 		float font_size = cell.height() * height_ratio;
-
 		auto text_width = TextWidth(text, font_size);
-
 		auto ratio = font_size / text_width;
 
 		if (text_width > cell.width() * width_ratio)
@@ -295,6 +229,10 @@ public:
 	}
 	
 private:
+
+	std::vector<unsigned char> font_data;
+	FT_Library ft_library;
+	FT_Face ft_face;
 	std::vector<Letter> letters;
 };
 
@@ -303,73 +241,66 @@ class FontShape : public Shape<FontShader>
 {
 public:
 
-	void SetFont(std::shared_ptr<FontLoader> font_loader)
+	explicit FontShape(const std::string& shape_name, const std::shared_ptr<Font>& font) :
+		Shape<FontShader>(shape_name),
+		font(font)
+	{}
+
+	void SetShape(const std::string& text, const glm::vec3& position, float size)
 	{
-		this->font_loader = font_loader;
+		SetBufferSize(text.size() * 6);
+
+		float currentx = position.x;
+		float currenty = position.y;
+
+		text_textures.resize(text.size());
+
+		for (size_t index = 0; index < text.size(); ++index)
+		{
+			size_t letter_index = text[index];
+
+			GLuint texture = font->GetLetterRef(letter_index).texture_object.Name();
+			text_textures[index] = texture;
+
+			GLfloat xpos = currentx + font->GetLetterRef(letter_index).bearing.x * size;
+			GLfloat ypos = currenty - (font->GetLetterRef(letter_index).size.y - font->GetLetterRef(letter_index).bearing.y) * size;
+
+			GLfloat width = font->GetLetterRef(letter_index).size.x * size;
+			GLfloat height = font->GetLetterRef(letter_index).size.y * size;
+
+			GetVertexRef(index * 6 + 0).position = glm::vec3(xpos, ypos + height, 0.f);
+			GetVertexRef(index * 6 + 1).position = glm::vec3(xpos, ypos, 0.f);
+			GetVertexRef(index * 6 + 2).position = glm::vec3(xpos + width, ypos, 0.f);
+			GetVertexRef(index * 6 + 3).position = glm::vec3(xpos, ypos + height, 0.f);
+			GetVertexRef(index * 6 + 4).position = glm::vec3(xpos + width, ypos, 0.f);
+			GetVertexRef(index * 6 + 5).position = glm::vec3(xpos + width, ypos + height, 0.f);
+
+			GetVertexRef(index * 6 + 0).texturePosition = glm::vec2(0.0f, 0.0f);
+			GetVertexRef(index * 6 + 1).texturePosition = glm::vec2(0.0f, 1.0f);
+			GetVertexRef(index * 6 + 2).texturePosition = glm::vec2(1.0f, 1.0f);
+			GetVertexRef(index * 6 + 3).texturePosition = glm::vec2(0.0f, 0.0f);
+			GetVertexRef(index * 6 + 4).texturePosition = glm::vec2(1.0f, 1.0f);
+			GetVertexRef(index * 6 + 5).texturePosition = glm::vec2(1.0f, 0.0f);
+
+			currentx += font->GetLetterRef(letter_index).advance * size;
+		}
+
+		UpdateBuffer();	
 	}
 
 	void SetShapeCentered(const std::string& text, const glm::vec3& position, float size)
 	{
-		if (font_loader != nullptr)
-		{
-			auto half_wdith = font_loader->TextWidth(text, size) / 2.f;
-			auto half_height = font_loader->TextHeight(size) / 2.f;
+		auto half_wdith = font->TextWidth(text, size) / 2.f;
+		auto half_height = font->TextHeight(size) / 2.f;
 
-			SetShape(text, position - glm::vec3(half_wdith, half_height, 0.f), size);
-		}
-	}
-
-	void SetShape(const std::string& text, const glm::vec3& position, float size)
-	{
-		if (font_loader != nullptr)
-		{
-			SetBufferSize(text.size() * 6);
-
-			float currentx = position.x;
-			float currenty = position.y;
-
-			textTextures.resize(text.size());
-
-			for (size_t index = 0; index < text.size(); ++index)
-			{
-				size_t letter_index = text[index];
-
-				GLuint texture = font_loader->GetLetterRef(letter_index).texture_object.Name();
-				textTextures[index] = texture;
-
-				GLfloat xpos = currentx + font_loader->GetLetterRef(letter_index).bearing.x * size;
-				GLfloat ypos = currenty - (font_loader->GetLetterRef(letter_index).size.y - font_loader->GetLetterRef(letter_index).bearing.y) * size;
-
-				GLfloat width = font_loader->GetLetterRef(letter_index).size.x * size;
-				GLfloat height = font_loader->GetLetterRef(letter_index).size.y * size;
-
-				GetVertexRef(index * 6 + 0).position = glm::vec3(xpos, ypos + height, 0.f);
-				GetVertexRef(index * 6 + 1).position = glm::vec3(xpos, ypos, 0.f);
-				GetVertexRef(index * 6 + 2).position = glm::vec3(xpos + width, ypos, 0.f);
-				GetVertexRef(index * 6 + 3).position = glm::vec3(xpos, ypos + height, 0.f);
-				GetVertexRef(index * 6 + 4).position = glm::vec3(xpos + width, ypos, 0.f);
-				GetVertexRef(index * 6 + 5).position = glm::vec3(xpos + width, ypos + height, 0.f);
-
-				GetVertexRef(index * 6 + 0).texturePosition = glm::vec2(0.0f, 0.0f);
-				GetVertexRef(index * 6 + 1).texturePosition = glm::vec2(0.0f, 1.0f);
-				GetVertexRef(index * 6 + 2).texturePosition = glm::vec2(1.0f, 1.0f);
-				GetVertexRef(index * 6 + 3).texturePosition = glm::vec2(0.0f, 0.0f);
-				GetVertexRef(index * 6 + 4).texturePosition = glm::vec2(1.0f, 1.0f);
-				GetVertexRef(index * 6 + 5).texturePosition = glm::vec2(1.0f, 0.0f);
-
-				currentx += font_loader->GetLetterRef(letter_index).advance * size;
-			}
-
-			UpdateBuffer();
-
-		}
+		SetShape(text, position - glm::vec3(half_wdith, half_height, 0.f), size);
 	}
 
 	void Draw() const override
 	{
-		shader->UseProgram();
+		shader_ptr->UseProgram();
 		
-		auto colorLocation = glGetUniformLocation(shader->GetProgram(), "texColor");
+		auto colorLocation = glGetUniformLocation(shader_ptr->GetProgram(), "texColor");
 		glm::vec4 color(0.0f, 0.0f, 0.0f, 1.0f);
 		glUniform4f(colorLocation, color.r, color.g, color.b, color.a);
 
@@ -378,15 +309,14 @@ public:
 
 		glActiveTexture(GL_TEXTURE0);
 
-		for (size_t index = 0; index < textTextures.size(); ++index)
+		for (size_t index = 0; index < text_textures.size(); ++index)
 		{
-			glBindTexture(GL_TEXTURE_2D, textTextures[index]);
+			glBindTexture(GL_TEXTURE_2D, text_textures[index]);
 			glDrawArrays(GL_TRIANGLES, static_cast<GLint>(index) * 6, 6);
 		}
 	}
 
 private:
-
-	std::vector<GLuint> textTextures;
-	std::shared_ptr<FontLoader> font_loader;
+	std::vector<GLuint> text_textures;
+	std::shared_ptr<Font> font;
 };

@@ -18,8 +18,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 
 #include "gui/wx_widgets_include.h"
-#include "gui/log_panel.h"
-
 #include "main_window.h"
 
 #include <iostream>
@@ -47,7 +45,7 @@ public:
         : main_window(nullptr)
     {}
 
-    virtual bool OnInit() override
+    virtual bool OnInit() final
     {
         wx_locale = std::make_unique<wxLocale>();
         auto init_locale_succeeded = wx_locale->Init();
@@ -59,12 +57,7 @@ public:
 
         const std::string application_name = "Decade";
         main_window = new MainWindow(application_name, wxPoint(100, 100), wxSize(1280, 800));
-        main_window->Show();
-        main_window->Raise();
-
-        std::array<int, 2> gl_version{ 3, 2 };
-        main_window->GetGLCanvas()->LoadOpenGL(gl_version);
-
+        
         return true;
     }
 
@@ -75,10 +68,9 @@ private:
 };
 
 
-//wxIMPLEMENT_APP_NO_MAIN(App);
 wxIMPLEMENT_APP(App);
 
-
+//wxIMPLEMENT_APP_NO_MAIN(App);
 /*int main(int argc, char* argv[])
 {
     wxEntryStart(argc, argv);

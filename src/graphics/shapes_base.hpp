@@ -25,16 +25,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include <vector>
 #include <iostream>
 
-
 //#define GLM_FORCE_MESSAGES
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <glm/geometric.hpp>
 
-
-//#define GLEW_STATIC
-//#include <GL/glew.h>
 #include <glad/glad.h>
 
 
@@ -75,25 +71,34 @@ class ShapeBase : public VertexArrayObject, public VertexBufferObject
 {
 public:
 
+	explicit ShapeBase(std::string shape_name) :
+		vertices_size(0),
+		shader_ptr(nullptr),
+		shape_name(shape_name)
+	{}
+
 	virtual void Draw() const
 	{
-		shader->UseProgram();
+		shader_ptr->UseProgram();
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(vertices_size));
 	}
 
-	void SetShader(Shader* shaderPtr)
+	void SetShader(Shader* shader_ptr)
 	{
-		shader = shaderPtr;
+		this->shader_ptr = shader_ptr;
+	}
+
+	std::string& GetShapeName()
+	{
+		return shape_name;
 	}
 
 protected:
 
 	size_t vertices_size;
-	Shader* shader;
-
-
-private:
+	Shader* shader_ptr;
+	std::string shape_name;
 };
 
 
@@ -105,25 +110,16 @@ public:
 	using ShaderType = T;
 	using U = typename T::VertexType;
 
-	Shape() : 
+	explicit Shape(const std::string shape_name) :
+		ShapeBase(shape_name),
 		buffersize(0)
 	{
-		InitializeBuffer();
+		InitBuffer();
 	}
-
-	/*Shape::Shape()
-	{
-		buffersize = 0;
-		InitializeBuffer();
-	}*/
-	
-	Shape(const Shape& shape) = delete;
-	Shape& operator=(const Shape&) = delete;
-
 
 protected:
 
-	void InitializeBuffer()
+	void InitBuffer()
 	{
 		glBindVertexArray(VAO);
 		U::EnableVertexAttribArrays();
@@ -132,7 +128,6 @@ protected:
 		U::SetAttribPointers();
 		glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_DYNAMIC_DRAW);
 		glBindVertexArray(0);
-
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
@@ -149,15 +144,10 @@ protected:
 
 	void UpdateBuffer()
 	{
-		//CalcNormals();
-
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 		glBufferSubData(GL_ARRAY_BUFFER, 0, buffersize, vertices.data());
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
-
-	//vec3& GetPointRef(size_t index);
-	//vec4& GetColorRef(size_t index);
 
 	U& GetVertexRef(size_t index)
 	{
@@ -172,96 +162,7 @@ protected:
 private:
 	GLsizeiptr buffersize;
 	std::vector<U> vertices;
-
-	//GLint GetBufferSize();
-	//void CalcNormals();
 };
-
-
-
-
-
-
-/*Shape::Shape(const Shape& shape)
-{
-	InitializeBuffer();
-	vertices = shape.vertices;
-	SetBufferSize(shape.vertices.size(), GL_DYNAMIC_DRAW);
-	UpdateBuffer();
-}*/
-
-
-/*void Shape::InitializeBuffer()
-{
-	glBindVertexArray(VAO);
-	VertexVC::EnableVertexAttribArrays();
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	VertexVC::SetAttribPointers();
-	glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_DYNAMIC_DRAW);
-	glBindVertexArray(0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-}*/
-
-
-/*void Shape::SetBufferSize(GLsizeiptr verticessize, GLenum bufferusage = GL_DYNAMIC_DRAW)
-{
-	buffersize = verticessize * sizeof(VertexVC);
-	vertices.resize(verticessize);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, buffersize, nullptr, GL_DYNAMIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-}*/
-
-
-/*void Shape::UpdateBuffer()
-{
-	//CalcNormals();
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, buffersize, vertices.data());
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-}*/
-
-
-/*vec3& Shape::GetPointRef(size_t index)
-{
-	return vertices[index].point;
-}
-
-
-vec4& Shape::GetColorRef(size_t index)
-{
-	return vertices[index].color;
-}*/
-
-/*VertexVC& Shape::GetVertexRef(size_t index)
-{
-	return vertices[index];
-}*/
-
-
-/*size_t Shape::GetVerticesSize() const
-{
-	return vertices.size();
-}*/
-
-
-/*void Shape::Draw() const
-{
-	glBindVertexArray(VAO);
-
-	glDrawArrays(GL_TRIANGLES, 0, vertices.size());
-}*/
-
-/*GLint Shape::GetBufferSize()
-{
-	GLint data;
-	glGetNamedBufferParameteriv(VAO, GL_BUFFER_SIZE, &data);
-	return data;
-}*/
 
 /*void Shape::CalcNormals()
 {

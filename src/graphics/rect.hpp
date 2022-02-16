@@ -30,7 +30,6 @@ template<typename Ty>
 class rect
 {
 public:
-
 	rect() :
 		edges({ 0, 0, 0, 0 })
 	{}
@@ -39,12 +38,14 @@ public:
 		edges({ l, r, b, t })
 	{}
 	
-	rect(Ty width, Ty height)
+	static rect from_dimension(Ty width, Ty height)
 	{
-		edges[0] = -width  / static_cast<Ty>(2);
-		edges[1] =  width  / static_cast<Ty>(2);
-		edges[2] = -height / static_cast<Ty>(2);
-		edges[3] =  height / static_cast<Ty>(2);
+		rect result;
+		result.setL(-width / static_cast<Ty>(2));
+		result.setR(width  / static_cast<Ty>(2));
+		result.setB(-height / static_cast<Ty>(2));
+		result.setT(height / static_cast<Ty>(2));
+		return result;
 	}
 
 	Ty l() const

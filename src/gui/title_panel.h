@@ -36,9 +36,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include <glm/glm.hpp>
 
 
-
-
-
 class TitleSetupPanel : public wxPanel
 {
 public:
@@ -150,8 +147,6 @@ private:
 
 	void UpdateWidgetForSelection()
 	{
-		std::cout << "TitlePanel: UpdateWidgets" << '\n';
-
 		frame_height_ctrl->SetValue(static_cast<double>(title_config.frame_height));
 		size_ratio_ctrl->SetValue(static_cast<double>(title_config.font_size_ratio));
 		

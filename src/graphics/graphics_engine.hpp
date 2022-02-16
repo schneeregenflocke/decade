@@ -26,14 +26,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include "font.hpp"
 #include "mvp_matrices.hpp"
 
-//#include <glm/ext/matrix_projection.hpp>
-
-//#include <iostream>
 #include <algorithm>
 #include <string>
 #include <memory>
-
-#include <wx/glcanvas.h>
+#include <exception>
 
 
 class GraphicsEngine
@@ -61,44 +57,41 @@ public:
 		}
 	}
 
+	std::vector<std::string> GatherShapeNames()
+	{
+		std::vector<std::string> shape_names;
+		for (const auto& shape : shapes)
+		{
+			shape_names.push_back(shape->GetShapeName());
+		}
+		return shape_names;
+	}
+
 	void SetMVP(const MVP& mvp)
 	{
 		this->mvp = mvp;
 	}
 
-	template<typename T> 
-	std::shared_ptr<T> AddShape()
+	template<typename T, typename... Args>
+	std::shared_ptr<T> AddShape(Args... args)
 	{
-		auto ptr = std::make_shared<T>();
-		auto upcast = std::static_pointer_cast<ShapeBase>(ptr);
+		using ShaderTy = typename T::ShaderType;
 
-		using U = typename T::ShaderType;
+		std::shared_ptr<T> shared_ptr = std::make_shared<T>(args...);
 		
-		if (std::is_same<U, SimpleShader>::value)
+		if (std::is_same<ShaderTy, SimpleShader>::value)
 		{
-			upcast->SetShader(&simple_shader);
+			shared_ptr->SetShader(&simple_shader);
 		}
 
-		if (std::is_same<U, FontShader>::value)
+		if (std::is_same<ShaderTy, FontShader>::value)
 		{
-			upcast->SetShader(&font_shader);
+			shared_ptr->SetShader(&font_shader);
 		}
 		
-		shapes.push_back(upcast);
-		return ptr;
-	}
-
-	template<typename T>
-	std::vector<std::shared_ptr<T>> AddShapes(size_t number)
-	{
-		std::vector< std::shared_ptr<T> > temp;
-
-		for (size_t index = 0; index < number; ++index)
-		{
-			temp.push_back(AddShape<T>());
-		}
-
-		return temp;
+		auto upcast_ptr = std::static_pointer_cast<ShapeBase>(shared_ptr);
+		shapes.push_back(upcast_ptr);
+		return shared_ptr;
 	}
 
 	template<typename T>
@@ -108,17 +101,22 @@ public:
 		if (found != shapes.cend())
 		{
 			shapes.erase(found);
-			//shape_ptr.reset();
+			shape_ptr.reset();
+		}
+		else
+		{
+			throw std::invalid_argument("Shape not found, remove failed");
 		}
 	}
 
 	template<typename T>
-	void RemoveShapes(const std::vector< std::shared_ptr<T> > shape_ptrs)
+	void RemoveShapes(std::vector<std::shared_ptr<T>>& shape_ptrs)
 	{
 		for (size_t index = 0; index < shape_ptrs.size(); ++index)
 		{
 			RemoveShape(shape_ptrs[index]);
 		}
+		shape_ptrs.clear();
 	}
 
 private:
