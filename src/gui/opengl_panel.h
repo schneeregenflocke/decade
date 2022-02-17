@@ -175,7 +175,7 @@ public:
 
             GLint sample_buffers = 0;
             glGetIntegerv(GL_SAMPLES, &sample_buffers);
-            std::cout << "sample_buffers " << sample_buffers << '\n';
+            std::cout << "msaa sample_buffers " << sample_buffers << '\n';
 
             graphics_engine = std::make_unique<GraphicsEngine>();
 

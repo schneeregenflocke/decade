@@ -137,11 +137,6 @@ public:
 
 		font_loader = std::make_shared<Font>(font_data);
 		title_font_shape = graphics_engine->AddShape<FontShape>("title text", font_loader);
-		const size_t number_months = 12;
-		for (size_t index = 0; index < number_months; ++index)
-		{
-			month_label_text.push_back(graphics_engine->AddShape<FontShape>(std::string("month label ") + std::to_string(index), font_loader));
-		}
 		
 		print_area_shape = graphics_engine->AddShape<RectanglesShape>("print area");
 		title_area_shape = graphics_engine->AddShape<RectanglesShape>("title area");
@@ -179,8 +174,7 @@ public:
 
 	void ReceiveFont(const std::vector<unsigned char>& font_data)
 	{
-		font_loader.reset();
-		font_loader = std::make_shared<Font>(font_data);
+		font_loader.reset(new Font(font_data));
 		Update();
 	}
 
@@ -267,6 +261,10 @@ public:
 	{
 		auto config = shape_configuration_storage.GetShapeConfiguration("Title Frame");
 		title_area_shape->SetShapes(title_frame, config.LineWidth(), config.FillColor(), config.OutlineColor());
+
+		graphics_engine->RemoveShape(title_font_shape);
+		title_font_shape = graphics_engine->AddShape<FontShape>("title text", font_loader);
+
 		title_font_shape->SetShapeCentered(title_config.title_text, title_frame.getCenter(), title_frame.height() * title_config.font_size_ratio);
 	}
 
@@ -281,6 +279,13 @@ public:
 			month_tm.tm_mon = index;
 			auto len = std::strftime(buf.data(), sizeof(buf), format.c_str(), &month_tm);
 			months_names[index] = buf.data();
+		}
+
+		graphics_engine->RemoveShapes(month_label_text);
+		const size_t number_months = 12;
+		for (size_t index = 0; index < number_months; ++index)
+		{
+			month_label_text.push_back(graphics_engine->AddShape<FontShape>(std::string("month label ") + std::to_string(index), font_loader));
 		}
 
 		std::vector<rectf> x_label_frames(12);

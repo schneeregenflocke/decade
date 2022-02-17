@@ -54,11 +54,6 @@ public:
 		return font_data;
 	}
 
-	void SendDefaultValues()
-	{
-		signal_font_file_path(font_data);
-	}
-
 	wxPanel* GetPanelPtr()
 	{
 		return wx_panel;
@@ -78,7 +73,9 @@ private:
 		hdc = ::CreateCompatibleDC(nullptr);
 		if (hdc != nullptr)
 		{
-			::SelectObject(hdc, wxhfont);
+			auto replaced = ::SelectObject(hdc, wxhfont);
+			HGDI_ERROR;
+			NULLREGION;
 			const size_t size = ::GetFontData(hdc, 0, 0, nullptr, 0);
 			if (size > 0)
 			{
@@ -89,7 +86,7 @@ private:
 					throw std::runtime_error("GetFontData failed");
 				}
 			}
-			::DeleteDC(hdc);
+			bool delete_succeeded = ::DeleteDC(hdc);
 		}
 #endif
 #ifdef __linux__
@@ -103,6 +100,7 @@ private:
 			wx_font = event.GetFont();
 			ProcessFontData();
 			signal_font_file_path(font_data);
+			font_data.clear();
 		}
 		catch (...)
 		{

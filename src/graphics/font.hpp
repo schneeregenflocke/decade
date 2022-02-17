@@ -25,11 +25,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include "texture_object.hpp"
 #include "rect.hpp"
 
-
 #include <ft2build.h>
 #include FT_FREETYPE_H
-//#include FT_SFNT_NAMES_H
-//#include FT_TRUETYPE_IDS_H
+#include FT_GLYPH_H
+#include FT_IMAGE_H
 
 #include <glm/vec3.hpp>
 #include <glm/vec2.hpp>
@@ -58,120 +57,20 @@ class Font
 public:
 	
 	Font(const std::vector<unsigned char>& font_data) :
-		font_data(font_data), ft_library(nullptr), ft_face(nullptr)
+		ft_library(nullptr), ft_face(nullptr), letters(256)
 	{
 		InitFreetype();
-		PrintVersion();
-		LoadFont(this->font_data);
+		LoadFont(font_data);
 		LoadTextures();
 		ReleaseFreetype();
 	}
 
-	void InitFreetype()
-	{
-		FT_Error ft_error = FT_Init_FreeType(&ft_library);
-		if (ft_error == FT_Err_Ok)
-		{
-			PrintVersion();
-		}
-		else
-		{
-			throw std::runtime_error(std::string("Init Freetype failed ") + std::to_string(ft_error));
-		}
-	}
-
-	void ReleaseFreetype()
-	{
-		FT_Error ft_error = FT_Done_Face(ft_face);
-		if (ft_error != FT_Err_Ok)
-		{
-			throw std::runtime_error(std::string("Release Freetype Face failed ") + std::to_string(ft_error));
-		}
-		ft_error = FT_Done_FreeType(ft_library);
-		if (ft_error != FT_Err_Ok)
-		{
-			throw std::runtime_error(std::string("Release Freetype failed ") + std::to_string(ft_error));
-		}
-		font_data.clear();
-	}
-
-	void PrintVersion()
-	{
-		std::array<FT_Int, 3> version;
-		FT_Library_Version(ft_library, &version[0], &version[1], &version[2]);
-		std::cout << "FreeType Version " << version[0] << "." << version[1] << "." << version[2] << '\n';
-	}
-
-	void LoadFont(const std::vector<unsigned char>& font_data)
-	{
-		FT_Error ft_error = FT_New_Memory_Face(ft_library, font_data.data(), font_data.size(), 0, &ft_face);
-		if (ft_error == FT_Err_Ok)
-		{
-			std::cout << "Font loaded " << ft_face->family_name <<  '\n';
-		}
-		else
-		{
-			throw std::runtime_error(std::string("Loading Font failed ") + std::to_string(ft_error));
-		}
-	}
-		
-	void LoadTextures()
-	{
-		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-		glActiveTexture(GL_TEXTURE0);
-
-		const size_t number_letters = 256;
-		letters.resize(number_letters);
-
-		const FT_UInt font_pixel_height = 2048;
-		FT_Error ft_error = FT_Set_Pixel_Sizes(ft_face, 0, font_pixel_height);
-		if (ft_error != FT_Err_Ok)
-		{
-			throw std::runtime_error(std::string("Freetype Set Pixel Size failed ") + std::to_string(ft_error));
-		}
-
-		for (size_t index = 0; index < number_letters; ++index)
-		{
-			FT_Error ft_error = FT_Load_Char(ft_face, index, FT_LOAD_RENDER);
-			if (ft_error != FT_Err_Ok)
-			{
-				throw std::runtime_error(std::string("Freetype Load Char failed ") + std::to_string(ft_error));
-			}
-			
-			const auto bitmap_width = ft_face->glyph->bitmap.width;
-			const auto bitmap_height = ft_face->glyph->bitmap.rows;
-
-			auto glyph_pixmap = ft_face->glyph->bitmap.buffer;
-
-			GLuint texture = letters[index].texture_object.Name();
-			glBindTexture(GL_TEXTURE_2D, texture);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, bitmap_width, bitmap_height, 0, GL_RED, GL_UNSIGNED_BYTE, glyph_pixmap);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			//glGenerateMipmap(GL_TEXTURE_2D);
-			glBindTexture(GL_TEXTURE_2D, 0);
-
-			float float_font_height = static_cast<float>(font_pixel_height);
-
-			float sizex = static_cast<float>(bitmap_width) / float_font_height;
-			float sizey = static_cast<float>(bitmap_height) / float_font_height;
-			letters[index].size = glm::vec2(sizex, sizey);
-
-			float bearingx = static_cast<float>(ft_face->glyph->bitmap_left) / float_font_height;
-			float bearingy = static_cast<float>(ft_face->glyph->bitmap_top) / float_font_height;
-			letters[index].bearing = glm::vec2(bearingx, bearingy);
-			letters[index].advance = static_cast<float>(ft_face->glyph->advance.x) / 64.f / float_font_height;
-		}	
-	}
-
-	Letter& GetLetterRef(const unsigned char index)
+	const Letter& GetLetterRef(const unsigned char index) const
 	{
 		return letters[index];
 	}
 
-	float TextWidth(const std::string& text, float size)
+	float TextWidth(const std::string& text, float size) const
 	{
 		float width = 0.f;
 		for (char index = 0; index < text.size(); ++index)
@@ -183,7 +82,7 @@ public:
 		return width;
 	}
 
-	float TextHeight(float size)
+	float TextHeight(float size) const
 	{
 		std::vector<size_t> index_list;
 		std::array<std::array<size_t, 2>, 3> char_intervals;
@@ -214,7 +113,7 @@ public:
 		return height;
 	}
 
-	float AdjustTextSize(const rectf& cell, std::string text, float height_ratio, float width_ratio)
+	float AdjustTextSize(const rectf& cell, std::string text, float height_ratio, float width_ratio) const
 	{
 		float font_size = cell.height() * height_ratio;
 		auto text_width = TextWidth(text, font_size);
@@ -227,10 +126,136 @@ public:
 
 		return font_size;
 	}
-	
+
 private:
 
-	std::vector<unsigned char> font_data;
+	void InitFreetype()
+	{
+		FT_Error ft_error = FT_Init_FreeType(&ft_library);
+		if (ft_error == FT_Err_Ok)
+		{
+			PrintVersion();
+		}
+		else
+		{
+			throw std::runtime_error(std::string("Freetype FT_Init_FreeType failed ") + std::to_string(ft_error));
+		}
+	}
+
+	void ReleaseFreetype()
+	{
+		FT_Error ft_error = FT_Done_Face(ft_face);
+		if (ft_error != FT_Err_Ok)
+		{
+			throw std::runtime_error(std::string("Freetype FT_Done_Face failed ") + std::to_string(ft_error));
+		}
+		else
+		{
+			ft_face = nullptr;
+		}
+		ft_error = FT_Done_FreeType(ft_library);
+		if (ft_error != FT_Err_Ok)
+		{
+			throw std::runtime_error(std::string("Freetype FT_Done_FreeType failed ") + std::to_string(ft_error));
+		}
+		else
+		{
+			ft_library = nullptr;
+		}
+	}
+
+	void PrintVersion()
+	{
+		std::array<FT_Int, 3> version;
+		FT_Library_Version(ft_library, &version[0], &version[1], &version[2]);
+		std::cout << "FreeType Version " << version[0] << "." << version[1] << "." << version[2] << '\n';
+	}
+
+	void LoadFont(const std::vector<unsigned char>& font_data)
+	{
+		FT_Error ft_error = FT_New_Memory_Face(ft_library, font_data.data(), font_data.size(), 0, &ft_face);
+		if (ft_error == FT_Err_Ok)
+		{
+			std::cout << "ft_face->family_name " << ft_face->family_name <<  '\n';
+		}
+		else
+		{
+			throw std::runtime_error(std::string("Freetype FT_New_Memory_Face failed ") + std::to_string(ft_error));
+		}
+	}
+		
+	void LoadTextures()
+	{
+		const FT_UInt font_pixel_height = 2048;
+		//const FT_UInt font_pixel_height = 128;
+		FT_Error ft_error = FT_Set_Pixel_Sizes(ft_face, 0, font_pixel_height);
+		if (ft_error != FT_Err_Ok)
+		{
+			throw std::runtime_error(std::string("Freetype FT_Set_Pixel_Sizes failed ") + std::to_string(ft_error));
+		}
+
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		glActiveTexture(GL_TEXTURE0);
+
+		//const size_t number_letters = 256;
+		//letters.resize(number_letters);
+		for (size_t index = 0; index < letters.size(); ++index)
+		{
+			//FT_Error ft_error = FT_Load_Char(ft_face, index, FT_LOAD_RENDER);
+			FT_Error ft_error = FT_Load_Char(ft_face, index, FT_LOAD_DEFAULT);
+			if (ft_error != FT_Err_Ok)
+			{
+				throw std::runtime_error(std::string("Freetype FT_Load_Char failed ") + std::to_string(ft_error));
+			}
+
+			FT_Glyph glyph;
+			ft_error = FT_Get_Glyph(ft_face->glyph, &glyph);
+			if (ft_error != FT_Err_Ok)
+			{
+				throw std::runtime_error(std::string("Freetype FT_Get_Glyph failed ") + std::to_string(ft_error));
+			}
+			
+			FT_Glyph glyph_bitmap = glyph;
+			ft_error = FT_Glyph_To_Bitmap(&glyph_bitmap, FT_RENDER_MODE_NORMAL, 0, true);
+			if (ft_error != FT_Err_Ok)
+			{
+				throw std::runtime_error(std::string("Freetype FT_Glyph_To_Bitmap failed ") + std::to_string(ft_error));
+			}
+			if (glyph_bitmap->format != FT_GLYPH_FORMAT_BITMAP)
+			{
+				throw std::runtime_error(std::string("Freetype glyph->format != FT_GLYPH_FORMAT_BITMAP"));
+			}
+
+			FT_BitmapGlyph glyph_bitmap_cast = (FT_BitmapGlyph)glyph_bitmap;
+			
+			const auto bitmap_width = glyph_bitmap_cast->bitmap.width;
+			const auto bitmap_height = glyph_bitmap_cast->bitmap.rows;
+
+			GLuint texture = letters[index].texture_object.Name();
+			glBindTexture(GL_TEXTURE_2D, texture);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, bitmap_width, bitmap_height, 0, GL_RED, GL_UNSIGNED_BYTE, glyph_bitmap_cast->bitmap.buffer);
+			//glGenerateMipmap(GL_TEXTURE_2D);
+			glBindTexture(GL_TEXTURE_2D, 0);
+
+			float float_font_height = static_cast<float>(font_pixel_height);
+
+			float sizex = static_cast<float>(bitmap_width) / float_font_height;
+			float sizey = static_cast<float>(bitmap_height) / float_font_height;
+			letters[index].size = glm::vec2(sizex, sizey);
+
+			float bearingx = static_cast<float>(ft_face->glyph->bitmap_left) / float_font_height;
+			float bearingy = static_cast<float>(ft_face->glyph->bitmap_top) / float_font_height;
+			letters[index].bearing = glm::vec2(bearingx, bearingy);
+			letters[index].advance = static_cast<float>(ft_face->glyph->advance.x) / 64.f / float_font_height;
+
+			FT_Done_Glyph(glyph_bitmap);
+		}
+	}
+
 	FT_Library ft_library;
 	FT_Face ft_face;
 	std::vector<Letter> letters;
@@ -241,7 +266,7 @@ class FontShape : public Shape<FontShader>
 {
 public:
 
-	explicit FontShape(const std::string& shape_name, const std::shared_ptr<Font>& font) :
+	explicit FontShape(const std::string& shape_name, std::shared_ptr<Font> font) :
 		Shape<FontShader>(shape_name),
 		font(font)
 	{}
@@ -313,6 +338,7 @@ public:
 		{
 			glBindTexture(GL_TEXTURE_2D, text_textures[index]);
 			glDrawArrays(GL_TRIANGLES, static_cast<GLint>(index) * 6, 6);
+			glBindTexture(GL_TEXTURE_2D, 0);
 		}
 	}
 

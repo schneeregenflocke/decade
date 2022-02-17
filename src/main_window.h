@@ -150,9 +150,7 @@ private:
 
     void OpenGLLoaded()
     {
-        calendar = std::make_unique<CalendarPage>(gl_canvas, font_panel->GetFontData());
-        //calendar->Update();
-
+        calendar_page = std::make_unique<CalendarPage>(gl_canvas, font_panel->GetFontData());
         EstablishConnections();
     }
 
@@ -165,7 +163,7 @@ private:
         // Connect date_interval_bundle_store -> transform_date_interval_bundle -> calendar
         date_interval_bundle_store.signal_date_interval_bundles.connect(&TransformDateIntervalBundle::ReceiveDateIntervalBundles, &transform_date_interval_bundle);
         transform_date_interval_bundle.SetTransform(0, 1);
-        transform_date_interval_bundle.signal_transform_date_interval_bundles.connect(&CalendarPage::ReceiveDateIntervalBundles, calendar.get());
+        transform_date_interval_bundle.signal_transform_date_interval_bundles.connect(&CalendarPage::ReceiveDateIntervalBundles, calendar_page.get());
 
         ////////////////////////////////////////////////////////////////////////////////
 
@@ -177,7 +175,7 @@ private:
         date_groups_store.signal_date_groups.connect(&DateIntervalBundleStore::ReceiveDateGroups, &date_interval_bundle_store);
         date_groups_store.signal_date_groups.connect(&DateTablePanel::ReceiveDateGroups, data_table_panel);
         date_groups_store.signal_date_groups.connect(&ElementsSetupsPanel::ReceiveDateGroups, elements_setup_panel);
-        date_groups_store.signal_date_groups.connect(&CalendarPage::ReceiveDateGroups, calendar.get());
+        date_groups_store.signal_date_groups.connect(&CalendarPage::ReceiveDateGroups, calendar_page.get());
 
         ////////////////////////////////////////////////////////////////////////////////
 
@@ -186,14 +184,14 @@ private:
         page_setup_panel->signal_page_setup_config.connect(&PageSetupStore::ReceivePageSetup, &page_setup_store);
 
         // Connections page_setup -> ...
-        page_setup_store.signal_page_setup_config.connect(&CalendarPage::ReceivePageSetup, calendar.get());
+        page_setup_store.signal_page_setup_config.connect(&CalendarPage::ReceivePageSetup, calendar_page.get());
         //page_setup_store.signal_page_setup_config.connect(&GraphicsEngine::ReceivePageSetup, gl_canvas->GetGraphicsEngine());
         page_setup_store.signal_page_setup_config.connect(&GLCanvas::ReceivePageSetup, gl_canvas);
 
         ////////////////////////////////////////////////////////////////////////////////
 
         // Connections font_panel -> ...
-        font_panel->signal_font_file_path.connect(&CalendarPage::ReceiveFont, calendar.get());
+        font_panel->signal_font_file_path.connect(&CalendarPage::ReceiveFont, calendar_page.get());
 
         ////////////////////////////////////////////////////////////////////////////////
 
@@ -202,7 +200,7 @@ private:
         title_setup_panel->signal_title_config.connect(&TitleConfigStore::ReceiveTitleConfig, &title_config_store);
 
         // Connections title_config_store -> ...
-        title_config_store.signal_title_config.connect(&CalendarPage::ReceiveTitleConfig, calendar.get());
+        title_config_store.signal_title_config.connect(&CalendarPage::ReceiveTitleConfig, calendar_page.get());
 
         ////////////////////////////////////////////////////////////////////////////////
 
@@ -211,7 +209,7 @@ private:
         elements_setup_panel->signal_shape_configuration_storage.connect(&ShapeConfigurationStorage::ReceiveShapeConfigurationStorage, &shape_configuration_storage);
 
         // Connections elements_setup_panel -> ...
-        shape_configuration_storage.signal_shape_configuration_storage.connect(&CalendarPage::ReceiveShapeConfigurationStorage, calendar.get());
+        shape_configuration_storage.signal_shape_configuration_storage.connect(&CalendarPage::ReceiveShapeConfigurationStorage, calendar_page.get());
 
         ////////////////////////////////////////////////////////////////////////////////
 
@@ -220,7 +218,7 @@ private:
         calendar_setup_panel->signal_calendar_config_storage.connect(&CalendarConfigStorage::ReceiveCalendarConfigStorage, &calendar_configuration_storage);
 
         // Connections calendar_configuration_storage -> ...
-        calendar_configuration_storage.signal_calendar_config_storage.connect(&CalendarPage::ReceiveCalendarConfig, calendar.get());
+        calendar_configuration_storage.signal_calendar_config_storage.connect(&CalendarPage::ReceiveCalendarConfig, calendar_page.get());
      
         ////////////////////////////////////////////////////////////////////////////////
 
@@ -228,7 +226,7 @@ private:
 
         date_groups_store.SendDefaultValues();
         page_setup_panel->SendDefaultValues();
-        font_panel->SendDefaultValues();
+        //font_panel->SendDefaultValues();
         title_setup_panel->SendDefaultValues();
         
         calendar_configuration_storage.SendCalendarConfigStorage();
@@ -459,7 +457,7 @@ private:
     CalendarConfigStorage calendar_configuration_storage;
 
     // Calendar Graphics
-    std::unique_ptr<CalendarPage> calendar;
+    std::unique_ptr<CalendarPage> calendar_page;
 
     // wx Controller IDs
     const int ID_SAVE_XML;
