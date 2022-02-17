@@ -21,7 +21,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 
 #include "../graphics/font.hpp"
-
 #include "wx_widgets_include.h"
 
 #include <vector>
@@ -30,7 +29,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include <sigslot/signal.hpp>
 
 
-class FontPanel : public wxPanel
+class FontPanel
 {
 public:
 
@@ -99,9 +98,16 @@ private:
 
 	void CallbackFontChanged(wxFontPickerEvent& event)
 	{
-		wx_font = event.GetFont();
-		ProcessFontData();
-		signal_font_file_path(font_data);
+		try 
+		{
+			wx_font = event.GetFont();
+			ProcessFontData();
+			signal_font_file_path(font_data);
+		}
+		catch (...)
+		{
+			std::cout << "Loading Font failed" << '\n';
+		}
 	}
 
 	wxPanel* wx_panel;
