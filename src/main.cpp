@@ -17,8 +17,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
 
-#include "gui/wx_widgets_include.h"
-#include "main_window.h"
+#include "gui/wx_widgets_include.hpp"
+#include "gui/main_window.hpp"
 
 #include <iostream>
 #include <string>
@@ -56,14 +56,14 @@ public:
         //std::cout << "current locale name " << wx_locale->GetLanguageName(language) << '\n';
 
         const std::string application_name = "Decade";
-        main_window = new MainWindow(application_name, wxPoint(100, 100), wxSize(1280, 800));
+        main_window = std::make_unique<MainWindow>(application_name, wxPoint(100, 100), wxSize(1280, 800));
         
         return true;
     }
 
 private:
 
-    MainWindow* main_window;
+    std::unique_ptr<MainWindow> main_window;
     std::unique_ptr<wxLocale> wx_locale;
 };
 

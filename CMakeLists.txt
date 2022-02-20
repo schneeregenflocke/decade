@@ -34,27 +34,28 @@ cmake_print_variables(${PROJECT_NAME}_COMPILE_DEFINITIONS)
 
 target_sources(${PROJECT_NAME} PRIVATE 
 	${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/main_window.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/date_utils.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/casts.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/calendar_view.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/calendar_config.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_store.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/group_store.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/page_config.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/shape_config.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/title_config.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/calendar_panel.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/date_panel.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/font_panel.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/groups_panel.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/license_panel.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/opengl_panel.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/page_panel.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/shape_panel.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/title_panel.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/wx_widgets_include.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/log_panel.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/date_utils.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/casts.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/calendar_page.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/frame_layout.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/calendar_config.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_store.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/group_store.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/page_config.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/shape_config.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/title_config.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/main_window.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/calendar_panel.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/date_panel.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/font_panel.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/groups_panel.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/license_panel.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/opengl_panel.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/page_panel.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/shape_panel.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/title_panel.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/wx_widgets_include.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/log_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/font.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/graphics_engine.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/projection.hpp

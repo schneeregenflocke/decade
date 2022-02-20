@@ -55,7 +55,7 @@ class ImageComposer
 {
 public:
 
-	ImageComposer(size_t width, size_t height, const rectf& ortho_dimension, std::shared_ptr<GraphicsEngine> graphics_engine) :
+	ImageComposer(size_t width, size_t height, const rectf& ortho_dimension, std::shared_ptr<GraphicsEngine> graphics_engine, int msaa_samples) :
 		width(width),
 		height(height),
 		ortho_dimension(ortho_dimension),
@@ -69,7 +69,8 @@ public:
 		width_ortho_standard(0),
 		height_ortho_standard(0),
 		width_ortho_remainder(0),
-		height_ortho_remainder(0)
+		height_ortho_remainder(0),
+		msaa_samples(msaa_samples)
 	{
 		pixel_size = 4 * sizeof(unsigned char);
 
@@ -224,7 +225,7 @@ private:
 			{
 				auto& current_image_part = ImagePartRef(x_index, y_index);
 
-				RenderToTexture render_texture(current_image_part.viewport[0], current_image_part.viewport[1], 8);
+				RenderToTexture render_texture(current_image_part.viewport[0], current_image_part.viewport[1], msaa_samples);
 
 				render_texture.BeginRender();
 				mvp.SetProjection(glm::ortho(current_image_part.dimension.l(), current_image_part.dimension.r(), current_image_part.dimension.b(), current_image_part.dimension.t()));
@@ -308,6 +309,7 @@ private:
 	float height_ortho_standard;
 	float width_ortho_remainder;
 	float height_ortho_remainder;
+	const int msaa_samples;
 };
 
 
@@ -315,13 +317,14 @@ class RenderToPNG
 {
 public:
 
-	RenderToPNG(const std::string& file_path, const rectf& image_dimension, const float dpi, std::shared_ptr<GraphicsEngine> graphics_engine) :
+	RenderToPNG(const std::string& file_path, const rectf& image_dimension, const float dpi, std::shared_ptr<GraphicsEngine> graphics_engine, int msaa_samples) :
 		file_path(file_path),
 		ortho_dimensions(image_dimension),
 		dpi(dpi),
 		image_width(0),
 		image_height(0),
-		graphics_engine(graphics_engine)
+		graphics_engine(graphics_engine),
+		msaa_samples(msaa_samples)
 	{
 		RenderPicture();
 	}
@@ -359,7 +362,7 @@ public:
 		}
 
 		
-		ImageComposer image(image_width, image_height, ortho_dimensions, graphics_engine);
+		ImageComposer image(image_width, image_height, ortho_dimensions, graphics_engine, msaa_samples);
 		auto image_data = image.CopyImage();
 		SavePicture(file_path.c_str(), image_data, image_width, image_height);
 	}
@@ -482,6 +485,7 @@ private:
 	const std::string file_path;
 	const rectf ortho_dimensions;
 	const float dpi;
+	const int msaa_samples;
 
 	std::shared_ptr<GraphicsEngine> graphics_engine;
 };

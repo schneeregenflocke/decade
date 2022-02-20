@@ -22,7 +22,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #include "Resource.h"
 
-#include "wx_widgets_include.h"
+#include "wx_widgets_include.hpp"
 
 #include <string>
 #include <vector>

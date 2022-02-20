@@ -20,9 +20,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 
-#include "../packages/calendar_config.h"
+#include "../packages/calendar_config.hpp"
 
-#include "wx_widgets_include.h"
+#include "wx_widgets_include.hpp"
 
 #include <sigslot/signal.hpp>
 
@@ -39,7 +39,7 @@ public:
 
 	PropertyGridPanel(wxWindow* parent) :
 		wxPropertyGrid(parent, -1, wxDefaultPosition, wxDefaultSize, wxPG_SPLITTER_AUTO_CENTER),
-		box_sizer(new wxBoxSizer(wxHORIZONTAL))	
+		box_sizer(new wxBoxSizer(wxHORIZONTAL))
 	{
 		auto sizer_flags = wxSizerFlags().Proportion(1).Expand();
 		parent->GetSizer()->Add(box_sizer, sizer_flags);

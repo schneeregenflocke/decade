@@ -20,7 +20,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 
-#include "gui/wx_widgets_include.h"
+#include "gui/wx_widgets_include.hpp"
 
 #include <glm/vec4.hpp>
 

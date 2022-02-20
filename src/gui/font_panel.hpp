@@ -21,12 +21,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 
 #include "../graphics/font.hpp"
-#include "wx_widgets_include.h"
+#include "wx_widgets_include.hpp"
+
+#include <sigslot/signal.hpp>
 
 #include <vector>
 #include <exception>
-
-#include <sigslot/signal.hpp>
 
 
 class FontPanel

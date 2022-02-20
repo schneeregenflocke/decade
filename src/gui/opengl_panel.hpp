@@ -20,15 +20,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 
+#include <glad/glad.h>
+
 #include "../graphics/graphics_engine.hpp"
 #include "../graphics/mvp_matrices.hpp"
 #include "../graphics/render_to_png.hpp"
-#include "../packages/page_config.h"
+#include "../packages/page_config.hpp"
 
-#include "wx_widgets_include.h"
+#include "wx_widgets_include.hpp"
 #include <wx/glcanvas.h>
-
-#include <glad/glad.h>
 
 #include <sigslot/signal.hpp>
 
@@ -132,39 +132,50 @@ private:
 };
 
 
-class GLCanvas : public wxGLCanvas
+class GLCanvas
 {
 public:
 
-    GLCanvas(wxWindow* parent, const wxGLAttributes& canvas_attributes) :
-        wxGLCanvas(parent, canvas_attributes),
-        openGL_loaded(0)
-    {}
+    GLCanvas(wxWindow* parent) :
+        gl_loaded(0)
+    {
+        wxGLAttributes attributes;
+        attributes.PlatformDefaults().Defaults().EndList();
+        bool display_supported = wxGLCanvas::IsDisplaySupported(attributes);
+        std::cout << "wxGLCanvas IsDisplaySupported " << std::boolalpha << display_supported << '\n';
+        wx_gl_canvas = new wxGLCanvas(parent, attributes);
+    }
 
-    GraphicsEngine* GetGraphicsEngine()
+    wxGLCanvas* GLCanvasPtr()
+    {
+        return wx_gl_canvas;
+    }
+
+    GraphicsEngine* GraphicsEnginePtr()
     {
         return graphics_engine.get();
     }
 
-    void LoadOpenGL(const std::array<int, 2>& version)
+    int LoadOpenGL(const std::array<int, 2>& version)
     {
-        bool canvas_shown_on_screen = this->IsShownOnScreen();
+        bool canvas_shown_on_screen = wx_gl_canvas->IsShownOnScreen();
 
         if (!canvas_shown_on_screen)
         {
-            std::cerr << "Try wxFrame::Raise after WxFrame::Show" << '\n';
+            std::cout << "!canvas_shown_on_screen\n";
         }
 
-        if (openGL_loaded == 0 && canvas_shown_on_screen)
+        if (gl_loaded == 0 && canvas_shown_on_screen)
         {
+            wxGLContextAttrs context_attributes; 
             context_attributes.PlatformDefaults().CoreProfile().OGLVersion(version[0], version[1]).EndList();
-            context = std::make_unique<wxGLContext>(this, nullptr, &context_attributes);
+            context = std::make_unique<wxGLContext>(wx_gl_canvas, nullptr, &context_attributes);
             std::cout << "context IsOK " << context->IsOK() << '\n';
 
-            SetCurrent(*context);
-            openGL_loaded = gladLoadGL();
+            wx_gl_canvas->SetCurrent(*context);
+            gl_loaded = gladLoadGL();
 
-            std::cout << "OpenGL loaded: " << openGL_loaded << " version: " << GetGLVersionString() << '\n';
+            std::cout << "OpenGL loaded: " << gl_loaded << " version: " << GetGLVersionString() << '\n';
 
             glEnable(GL_CULL_FACE);
             glEnable(GL_DEPTH_TEST);
@@ -172,25 +183,26 @@ public:
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glEnable(GL_MULTISAMPLE);
+            //glEnable(GL_FRAMEBUFFER_SRGB);
 
             GLint sample_buffers = 0;
             glGetIntegerv(GL_SAMPLES, &sample_buffers);
-            std::cout << "msaa sample_buffers " << sample_buffers << '\n';
+            std::cout << "msaa_sample_buffers " << sample_buffers << '\n';
 
             graphics_engine = std::make_unique<GraphicsEngine>();
 
-            Bind(wxEVT_SIZE, &GLCanvas::SizeCallback, this);
-            Bind(wxEVT_PAINT, &GLCanvas::PaintCallback, this);
+            wx_gl_canvas->Bind(wxEVT_SIZE, &GLCanvas::SizeCallback, this);
+            wx_gl_canvas->Bind(wxEVT_PAINT, &GLCanvas::PaintCallback, this);
 
             mouse_interaction = std::make_unique<MouseInteraction>();
 
-            Bind(wxEVT_MOTION, &GLCanvas::MouseCallback, this);
-            Bind(wxEVT_LEFT_DOWN, &GLCanvas::MouseCallback, this);
-            Bind(wxEVT_LEFT_UP, &GLCanvas::MouseCallback, this);
-            Bind(wxEVT_MOUSEWHEEL, &GLCanvas::MouseCallback, this);
-
-            signal_opengl_loaded();
+            wx_gl_canvas->Bind(wxEVT_MOTION, &GLCanvas::MouseCallback, this);
+            wx_gl_canvas->Bind(wxEVT_LEFT_DOWN, &GLCanvas::MouseCallback, this);
+            wx_gl_canvas->Bind(wxEVT_LEFT_UP, &GLCanvas::MouseCallback, this);
+            wx_gl_canvas->Bind(wxEVT_MOUSEWHEEL, &GLCanvas::MouseCallback, this);
         }
+
+        return gl_loaded;
     }
 
     static std::string GetGLVersionString()
@@ -211,7 +223,7 @@ public:
     {
         const float view_size_scale = 1.1f;
 
-        wxSize size = GetClientSize();
+        wxSize size = wx_gl_canvas->GetClientSize();
         glViewport(0, 0, size.GetWidth(), size.GetHeight());
 
         rectf view_size = page_size.scale(view_size_scale);
@@ -219,30 +231,30 @@ public:
         
         graphics_engine->SetMVP(mvp);
 
-        Refresh(false); //??
+        wx_gl_canvas->Refresh(false);
     }
 
     void SavePNG(std::string file_path)
     {
-        RenderToPNG render_to_png(file_path, page_size, 600, graphics_engine);
+        const int dpi = 600;
+        const int msaa_samples = 16;
+        RenderToPNG render_to_png(file_path, page_size, dpi, graphics_engine, msaa_samples);
     }
-
-    sigslot::signal<> signal_opengl_loaded;
 
 private:
 
     void PaintCallback(wxPaintEvent& event)
     {
-        wxPaintDC dc(this);
+        wxPaintDC dc(wx_gl_canvas);
         graphics_engine->SetMVP(mvp);
         graphics_engine->Render();
-        SwapBuffers();
+        wx_gl_canvas->SwapBuffers();
     }
 
     void SizeCallback(wxSizeEvent& event)
     {
         RefreshMVP();
-        Refresh(false); //??
+        wx_gl_canvas->Refresh(false);
     }
 
     void MouseCallback(wxMouseEvent& event)
@@ -251,9 +263,10 @@ private:
         RefreshMVP();
     }
 
-    int openGL_loaded;
+    int gl_loaded;
 
-    wxGLContextAttrs context_attributes;
+    wxGLCanvas* wx_gl_canvas;
+    
     std::unique_ptr<wxGLContext> context;
     
     std::shared_ptr<GraphicsEngine> graphics_engine;
@@ -262,12 +275,3 @@ private:
     rectf page_size;
     MVP mvp;
 };
-
-/*constexpr wxGLContextAttrs GLCanvas::defaultAttrs()
-{
-    /home/titan99/code/decade/src/gui/gl_canvas.cpp: In Konstruktor »GLCanvas::GLCanvas(wxWindow*, const wxGLAttributes&)«:
-    /home/titan99/code/decade/src/gui/gl_canvas.cpp:24:42: Fehler: Adresse eines rvalues wird ermittelt [-fpermissive]
-    context(this, nullptr, &defaultAttrs()),
-    context_attributes.PlatformDefaults().CoreProfile().OGLVersion(3, 2).EndList();
-    return context_attributes;
-}*/

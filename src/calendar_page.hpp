@@ -20,16 +20,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 
-#include "gui/opengl_panel.h"
+#include "gui/opengl_panel.hpp"
 #include "graphics/shapes.hpp"
 #include "graphics/font.hpp"
+#include "frame_layout.hpp"
 
-#include "packages/group_store.h"
-#include "packages/date_store.h"
-#include "packages/shape_config.h"
-#include "packages/calendar_config.h"
-#include "packages/page_config.h"
-#include "packages/title_config.h"
+#include "packages/group_store.hpp"
+#include "packages/date_store.hpp"
+#include "packages/shape_config.hpp"
+#include "packages/calendar_config.hpp"
+#include "packages/page_config.hpp"
+#include "packages/title_config.hpp"
 
 #include <string>
 #include <memory>
@@ -43,87 +44,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include <numeric>
 
 
-class RowFrames
-{
-public:
-
-	void SetupRowFrames(const rectf& main_frame, const size_t number_row_frames)
-	{
-		row_frames.resize(number_row_frames);
-
-		auto row_height = main_frame.height() / static_cast<float>(number_row_frames);
-
-		for (size_t index = 0; index < row_frames.size(); ++index)
-		{
-			auto float_index = static_cast<float>(index);
-
-			row_frames[index].setL(main_frame.l());
-			row_frames[index].setR(main_frame.r());
-
-			auto current_bottom = main_frame.b() + float_index * row_height;
-			row_frames[index].setB(current_bottom);
-			row_frames[index].setT(current_bottom + row_height);
-		}
-	}
-
-	void SetupSubFrames(const std::vector<float>& proportions)
-	{
-		number_sub_frames = (proportions.size() - 1) / 2;
-
-		sub_frames.resize(row_frames.size() * number_sub_frames);
-
-		for (size_t index = 0; index < row_frames.size(); ++index)
-		{
-			std::vector<float> sections = Section(proportions, row_frames[index].height());
-
-			std::vector<float> cumulative_sections(sections.size());
-
-			for (size_t subindex = 0; subindex < cumulative_sections.size(); ++subindex)
-			{
-				cumulative_sections[subindex] = std::accumulate(sections.cbegin(), sections.cbegin() + subindex, 0.f);
-			}
-
-			for (size_t subindex = 0; subindex < number_sub_frames; ++subindex)
-			{
-				sub_frames[index * number_sub_frames + subindex].setL(row_frames[index].l());
-				sub_frames[index * number_sub_frames + subindex].setR(row_frames[index].r());
-
-				sub_frames[index * number_sub_frames + subindex].setB(row_frames[index].b() + cumulative_sections[subindex * 2 + 1]);
-				sub_frames[index * number_sub_frames + subindex].setT(row_frames[index].b() + cumulative_sections[subindex * 2 + 2]);
-			}
-		}
-	}
-
-	rectf GetSubFrame(const size_t row, const size_t sub) const
-	{
-		return sub_frames[number_sub_frames * row + sub];
-	}
-
-private:
-
-	std::vector<float> Section(const std::vector<float>& proportions, float value) const
-	{
-		auto sum = std::accumulate(proportions.cbegin(), proportions.cend(), 0.f);
-
-		std::vector<float> sections;
-		sections.reserve(proportions.size());
-
-		for (const auto& proportion : proportions)
-		{
-			sections.push_back((proportion / sum) * value);
-		}
-
-		return sections;
-	}
-
-	std::vector<rectf> row_frames;
-	std::vector<rectf> sub_frames;
-
-	size_t number_sub_frames;
-};
-
-
-
 class CalendarPage
 {
 public:
@@ -131,7 +51,7 @@ public:
 	CalendarPage(GLCanvas* gl_canvas, const std::vector<unsigned char>& font_data) :
 		gl_canvas(gl_canvas)
 	{
-		graphics_engine = gl_canvas->GetGraphicsEngine();
+		graphics_engine = gl_canvas->GraphicsEnginePtr();
 
 		page_shape = graphics_engine->AddShape<QuadShape>("paper");
 
@@ -229,8 +149,8 @@ public:
 		const rectf cells_frame_margin(cell_width, 0.f, row_height * 2.0f, 0.f);
 		cells_frame = calendar_frame.reduce(cells_frame_margin);
 
-		row_frames.SetupRowFrames(cells_frame, calendar_config.GetSpanLengthYears());
-		row_frames.SetupSubFrames(calendar_config.spacing_proportions);
+		proportion_frame_layout.SetupRowFrames(cells_frame, calendar_config.GetSpanLengthYears());
+		proportion_frame_layout.SetupSubFrames(calendar_config.spacing_proportions);
 
 		day_width = cells_frame.width() / 366.f;
 
@@ -337,8 +257,8 @@ public:
 			int current_year = calendar_config.GetYear(index);
 			int number_days = boost::gregorian::date_period(boost::gregorian::date(current_year, 1, 1), boost::gregorian::date(current_year + 1, 1, 1)).length().days();
 			float year_lenght = static_cast<float>(number_days) * day_width;
-			row_frames.GetSubFrame(index, 1);
-			rectf year_cell = row_frames.GetSubFrame(index, 1);
+			proportion_frame_layout.GetSubFrame(index, 1);
+			rectf year_cell = proportion_frame_layout.GetSubFrame(index, 1);
 			year_cell.setR(year_cell.l() + year_lenght);
 			years_cells[index] = year_cell;
 		}
@@ -361,7 +281,7 @@ public:
 
 			for (auto subindex = 0U; subindex < 12; ++subindex)
 			{
-				auto current_cell = row_frames.GetSubFrame(index, 1);
+				auto current_cell = proportion_frame_layout.GetSubFrame(index, 1);
 				rectf month_cell;
 				month_cell.setL(current_cell.l() + static_cast<float>(boost::gregorian::date_period(first_day_of_year, first_day_of_year + boost::gregorian::months(subindex)).length().days()) * day_width);
 				month_cell.setR(current_cell.l() + static_cast<float>(boost::gregorian::date_period(first_day_of_year, first_day_of_year + boost::gregorian::months(subindex + 1)).length().days()) * day_width);
@@ -402,7 +322,7 @@ public:
 			for (int subindex = 0; subindex < number_days; ++subindex)
 			{
 				float float_subindex = static_cast<float>(subindex);
-				auto current_cell = row_frames.GetSubFrame(index, 1);
+				auto current_cell = proportion_frame_layout.GetSubFrame(index, 1);
 
 				rectf day_cell;
 				day_cell.setL(current_cell.l() + float_subindex * day_width);
@@ -455,7 +375,7 @@ public:
 				bars_cells_shape_outlinecolors.push_back(current_shape_config.OutlineColor());
 
 				int row = data_store.GetBar(index).GetYear() - calendar_config.GetSpanLimitsYears()[0];
-				auto current_sub_cell = row_frames.GetSubFrame(row, 1);
+				auto current_sub_cell = proportion_frame_layout.GetSubFrame(row, 1);
 
 				rectf bar_cell;
 				bar_cell.setL(current_sub_cell.l() + data_store.GetBar(index).GetFirstDay() * day_width);
@@ -467,7 +387,7 @@ public:
 				std::string numsText = data_store.GetBar(index).GetText();
 				bar_labels_text.push_back(graphics_engine->AddShape<FontShape>(std::string("bar label text ") + std::to_string(index), font_loader));
 
-				auto current_text_cell = row_frames.GetSubFrame(row, 2);
+				auto current_text_cell = proportion_frame_layout.GetSubFrame(row, 2);
 				current_text_cell.setL(bar_cell.l());
 				current_text_cell.setR(bar_cell.r());
 
@@ -490,7 +410,7 @@ public:
 			if (calendar_config.IsInSpan(data_store.GetFirstYear() + index))
 			{
 				int row = data_store.GetFirstYear() + index - calendar_config.GetSpanLimitsYears()[0];
-				auto current_cell = row_frames.GetSubFrame(row, 0);
+				auto current_cell = proportion_frame_layout.GetSubFrame(row, 0);
 
 				rectf year_total_cell = current_cell;
 				year_total_cell.setR(current_cell.l() + static_cast<float>(data_store.GetAnnualTotal(index)) * day_width);
@@ -564,7 +484,7 @@ public:
 
 			if (calendar_config.GetSpanLengthYears() > 0)
 			{
-				auto current_height = row_frames.GetSubFrame(0, 1).height();
+				auto current_height = proportion_frame_layout.GetSubFrame(0, 1).height();
 				auto current_cell = legend_entries_frames[index * 2 + 1];
 				auto current_vertical_center = current_cell.getCenter().y;
 				current_cell.setB(current_vertical_center - current_height / 2.f);
@@ -584,7 +504,7 @@ public:
 
 			if (calendar_config.GetSpanLengthYears() > 0)
 			{
-				auto current_height = row_frames.GetSubFrame(0, 0).height();
+				auto current_height = proportion_frame_layout.GetSubFrame(0, 0).height();
 				auto current_cell = legend_entries_frames[legend_entries_frames.size() - 1];
 				auto current_vertical_center = current_cell.getCenter().y;
 				current_cell.setB(current_vertical_center - current_height / 2.f);
@@ -613,7 +533,7 @@ private:
 	ShapeConfigurationStorage shape_configuration_storage;
 	TitleConfig title_config;
 	
-	RowFrames row_frames;
+	ProportionFrameLayout proportion_frame_layout;
 	
 	rectf page_size;
 	rectf page_margin;

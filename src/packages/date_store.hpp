@@ -20,8 +20,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 
-#include "date_utils.h"
-#include "group_store.h"
+#include "date_utils.hpp"
+#include "group_store.hpp"
 
 #include <sigslot/signal.hpp>
 

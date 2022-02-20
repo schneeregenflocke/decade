@@ -266,7 +266,7 @@ class FontShape : public Shape<FontShader>
 {
 public:
 
-	explicit FontShape(const std::string& shape_name, std::shared_ptr<Font> font) :
+	explicit FontShape(const std::string& shape_name, const std::shared_ptr<Font>& font) :
 		Shape<FontShader>(shape_name),
 		font(font)
 	{}
@@ -275,20 +275,20 @@ public:
 	{
 		SetBufferSize(text.size() * 6);
 
-		float currentx = position.x;
-		float currenty = position.y;
-
 		text_textures.resize(text.size());
+
+		float current_x = position.x;
+		float current_y = position.y;
 
 		for (size_t index = 0; index < text.size(); ++index)
 		{
-			size_t letter_index = text[index];
+			const size_t letter_index = text[index];
 
 			GLuint texture = font->GetLetterRef(letter_index).texture_object.Name();
 			text_textures[index] = texture;
 
-			GLfloat xpos = currentx + font->GetLetterRef(letter_index).bearing.x * size;
-			GLfloat ypos = currenty - (font->GetLetterRef(letter_index).size.y - font->GetLetterRef(letter_index).bearing.y) * size;
+			GLfloat xpos = current_x + font->GetLetterRef(letter_index).bearing.x * size;
+			GLfloat ypos = current_y - (font->GetLetterRef(letter_index).size.y - font->GetLetterRef(letter_index).bearing.y) * size;
 
 			GLfloat width = font->GetLetterRef(letter_index).size.x * size;
 			GLfloat height = font->GetLetterRef(letter_index).size.y * size;
@@ -307,7 +307,7 @@ public:
 			GetVertexRef(index * 6 + 4).texturePosition = glm::vec2(1.0f, 1.0f);
 			GetVertexRef(index * 6 + 5).texturePosition = glm::vec2(1.0f, 0.0f);
 
-			currentx += font->GetLetterRef(letter_index).advance * size;
+			current_x += font->GetLetterRef(letter_index).advance * size;
 		}
 
 		UpdateBuffer();	
@@ -338,8 +338,10 @@ public:
 		{
 			glBindTexture(GL_TEXTURE_2D, text_textures[index]);
 			glDrawArrays(GL_TRIANGLES, static_cast<GLint>(index) * 6, 6);
-			glBindTexture(GL_TEXTURE_2D, 0);
+			
 		}
+
+		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
 private:

@@ -20,22 +20,22 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 
-#include "gui/wx_widgets_include.h"
-#include "gui/opengl_panel.h"
-#include "gui/groups_panel.h"
-#include "gui/date_panel.h"
-#include "gui/page_panel.h"
-#include "gui/font_panel.h"
-#include "gui/title_panel.h"
-#include "gui/shape_panel.h"
-#include "gui/calendar_panel.h"
-#include "gui/license_panel.h"
-#include "gui/log_panel.h"
+#include "gui/wx_widgets_include.hpp"
+#include "gui/opengl_panel.hpp"
+#include "gui/groups_panel.hpp"
+#include "gui/date_panel.hpp"
+#include "gui/page_panel.hpp"
+#include "gui/font_panel.hpp"
+#include "gui/title_panel.hpp"
+#include "gui/shape_panel.hpp"
+#include "gui/calendar_panel.hpp"
+#include "gui/license_panel.hpp"
+#include "gui/log_panel.hpp"
 
-#include "calendar_view.h"
-#include "date_utils.h"
-#include "packages/title_config.h"
-#include "packages/shape_config.h"
+#include "calendar_page.hpp"
+#include "date_utils.hpp"
+#include "packages/title_config.hpp"
+#include "packages/shape_config.hpp"
 
 #include <sigslot/signal.hpp>
 
@@ -53,17 +53,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 
 
-class MainWindow : public wxFrame
+class MainWindow
 {
 public:
 
     MainWindow(const wxString& title, const wxPoint& pos, const wxSize& size) :
-        wxFrame(nullptr, wxID_ANY, title, pos, size),
-        current_xml_file_path(""),
-        ID_SAVE_XML(NewControlId()),
-        ID_SAVE_AS_XML(NewControlId())
+        wx_frame(nullptr),
+        xml_file_path(""),
+        ID_SAVE_XML(wxWindow::NewControlId()),
+        ID_SAVE_AS_XML(wxWindow::NewControlId())
     {
-        wxSplitterWindow* main_splitter = new wxSplitterWindow(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE | wxCLIP_CHILDREN);
+        wx_frame = new wxFrame(nullptr, wxID_ANY, title, pos, size);
+
+        wxSplitterWindow* main_splitter = new wxSplitterWindow(wx_frame, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE | wxCLIP_CHILDREN);
         main_splitter->SetMinimumPaneSize(20);
         main_splitter->SetSashGravity(0.25);
 
@@ -80,17 +82,27 @@ public:
 
         ////////////////////////////////////////////////////////////////////////////////
 
-        data_table_panel = new DateTablePanel(notebook);
+        data_table_panel = std::make_unique<DateTablePanel>(notebook);
         date_groups_table_panel = new DateGroupsTablePanel(notebook);
         calendar_setup_panel = new CalendarSetupPanel(notebook);
         elements_setup_panel = new ElementsSetupsPanel(notebook);
         page_setup_panel = new PageSetupPanel(notebook);
         font_panel = std::make_unique<FontPanel>(notebook);
         title_setup_panel = new TitleSetupPanel(notebook);
-        
         log_panel = std::make_unique<LogPanel>(notebook);
-        std::cout.set_rdbuf(log_panel->GetTextCtrlPtr());
+        
+        notebook->AddPage(data_table_panel->PanelPtr(), "Dates");
+        notebook->AddPage(date_groups_table_panel, "Groups");
+        notebook->AddPage(calendar_setup_panel, "Calendar");
+        notebook->AddPage(elements_setup_panel, "Shapes");
+        notebook->AddPage(page_setup_panel, "Page");
+        notebook->AddPage(font_panel->GetPanelPtr(), "Font");
+        notebook->AddPage(title_setup_panel, "Title");
+        notebook->AddPage(log_panel->GetPanelPtr(), "Log");
 
+        ////////////////////////////////////////////////////////////////////////////////
+
+        std::cout.set_rdbuf(log_panel->GetTextCtrlPtr());
         std::cout << std::string("__cplusplus ") + std::to_string(__cplusplus) << '\n';
         std::cout << "OperatingSystemIdName " << wxPlatformInfo::Get().GetOperatingSystemIdName() << '\n';
         std::cout << "ArchName " << wxPlatformInfo::Get().GetBitnessName() << '\n';
@@ -102,62 +114,40 @@ public:
         std::cout << "wxVERSION_STRING " << std::string(wxwidgets_version.cbegin(), wxwidgets_version.cend()) << '\n';
         //std::cout << "ContentScaleFactor " << GetContentScaleFactor() << '\n';
 
-        notebook->AddPage(data_table_panel, "Dates");
-        notebook->AddPage(date_groups_table_panel, "Groups");
-        notebook->AddPage(calendar_setup_panel, "Calendar");
-        notebook->AddPage(elements_setup_panel, "Shapes");
-        notebook->AddPage(page_setup_panel, "Page");
-        notebook->AddPage(font_panel->GetPanelPtr(), "Font");
-        notebook->AddPage(title_setup_panel, "Title");
-        notebook->AddPage(log_panel->GetPanelPtr(), "Log");
+        ////////////////////////////////////////////////////////////////////////////////
+
+        wxPanel* gl_canvas_panel = new wxPanel(main_splitter, wxID_ANY);
+        gl_canvas = std::make_unique<GLCanvas>(GLCanvas(gl_canvas_panel));
+        wxBoxSizer* gl_canvas_panel_sizer = new wxBoxSizer(wxVERTICAL);
+        gl_canvas_panel->SetSizer(gl_canvas_panel_sizer);
+        gl_canvas_panel_sizer->Add(gl_canvas->GLCanvasPtr(), sizer_flags);
 
         ////////////////////////////////////////////////////////////////////////////////
 
-        wxGLAttributes attributes;
-        attributes.PlatformDefaults().Defaults().EndList();
-        bool display_supported = wxGLCanvas::IsDisplaySupported(attributes);
-
-        std::cout << "wxGLCanvas IsDisplaySupported " << std::boolalpha << display_supported << '\n';
-
-        wxPanel* glcanvas_panel = new wxPanel(main_splitter, wxID_ANY);
-        wxBoxSizer* glcanvas_panel_sizer = new wxBoxSizer(wxVERTICAL);
-        glcanvas_panel->SetSizer(glcanvas_panel_sizer);
-        gl_canvas = new GLCanvas(glcanvas_panel, attributes);
-        glcanvas_panel_sizer->Add(gl_canvas, sizer_flags);
-
-        gl_canvas->signal_opengl_loaded.connect(&MainWindow::OpenGLLoaded, this);
-
-        ////////////////////////////////////////////////////////////////////////////////
-
-        main_splitter->SplitVertically(notebook_panel, glcanvas_panel);
-
-        //Layout();
+        main_splitter->SplitVertically(notebook_panel, gl_canvas_panel);
 
         ////////////////////////////////////////////////////////////////////////////////
 
         InitMenu();
+        wx_frame->CreateStatusBar(1);
+        wx_frame->Show();
+        wx_frame->Raise();
 
-        CreateStatusBar(1);
-
-        Show();
-        Raise();
-
-        std::array<int, 2> gl_version{ 3, 2 };
-        gl_canvas->LoadOpenGL(gl_version);
+        std::array<int, 2> gl_version{ 4, 5 };
+        auto gl_loaded = gl_canvas->LoadOpenGL(gl_version);
+        if (gl_loaded)
+        {
+            calendar_page = std::make_unique<CalendarPage>(gl_canvas.get(), font_panel->GetFontData());
+            EtablishConnections();
+        }
     }
 
 private:
 
-    void OpenGLLoaded()
-    {
-        calendar_page = std::make_unique<CalendarPage>(gl_canvas, font_panel->GetFontData());
-        EstablishConnections();
-    }
-
-    void EstablishConnections()
+    void EtablishConnections()
     {
         // Connections date_interval_bundle_store <-> data_table_panel
-        date_interval_bundle_store.signal_date_interval_bundles.connect(&DateTablePanel::ReceiveDateIntervalBundles, data_table_panel);
+        date_interval_bundle_store.signal_date_interval_bundles.connect(&DateTablePanel::ReceiveDateIntervalBundles, data_table_panel.get());
         data_table_panel->signal_table_date_interval_bundles.connect(&DateIntervalBundleStore::ReceiveDateIntervalBundles, &date_interval_bundle_store);
 
         // Connect date_interval_bundle_store -> transform_date_interval_bundle -> calendar
@@ -165,19 +155,15 @@ private:
         transform_date_interval_bundle.SetTransform(0, 1);
         transform_date_interval_bundle.signal_transform_date_interval_bundles.connect(&CalendarPage::ReceiveDateIntervalBundles, calendar_page.get());
 
-        ////////////////////////////////////////////////////////////////////////////////
-
         // Connections date_groups_store <-> date_groups_panel
         date_groups_store.signal_date_groups.connect(&DateGroupsTablePanel::ReceiveDateGroups, date_groups_table_panel);
         date_groups_table_panel->signal_table_date_groups.connect(&DateGroupStore::ReceiveDateGroups, &date_groups_store);
 
         // Connections date_groups_store -> ...
         date_groups_store.signal_date_groups.connect(&DateIntervalBundleStore::ReceiveDateGroups, &date_interval_bundle_store);
-        date_groups_store.signal_date_groups.connect(&DateTablePanel::ReceiveDateGroups, data_table_panel);
+        date_groups_store.signal_date_groups.connect(&DateTablePanel::ReceiveDateGroups, data_table_panel.get());
         date_groups_store.signal_date_groups.connect(&ElementsSetupsPanel::ReceiveDateGroups, elements_setup_panel);
         date_groups_store.signal_date_groups.connect(&CalendarPage::ReceiveDateGroups, calendar_page.get());
-
-        ////////////////////////////////////////////////////////////////////////////////
 
         // Connections page_setup_store <-> page_setup_panel
         page_setup_store.signal_page_setup_config.connect(&PageSetupPanel::ReceivePageSetup, page_setup_panel);
@@ -185,15 +171,10 @@ private:
 
         // Connections page_setup -> ...
         page_setup_store.signal_page_setup_config.connect(&CalendarPage::ReceivePageSetup, calendar_page.get());
-        //page_setup_store.signal_page_setup_config.connect(&GraphicsEngine::ReceivePageSetup, gl_canvas->GetGraphicsEngine());
-        page_setup_store.signal_page_setup_config.connect(&GLCanvas::ReceivePageSetup, gl_canvas);
-
-        ////////////////////////////////////////////////////////////////////////////////
+        page_setup_store.signal_page_setup_config.connect(&GLCanvas::ReceivePageSetup, gl_canvas.get());
 
         // Connections font_panel -> ...
         font_panel->signal_font_file_path.connect(&CalendarPage::ReceiveFont, calendar_page.get());
-
-        ////////////////////////////////////////////////////////////////////////////////
 
         // Connections title_config_store <-> title_setup_panel
         title_config_store.signal_title_config.connect(&TitleSetupPanel::ReceiveTitleConfig, title_setup_panel);
@@ -202,8 +183,6 @@ private:
         // Connections title_config_store -> ...
         title_config_store.signal_title_config.connect(&CalendarPage::ReceiveTitleConfig, calendar_page.get());
 
-        ////////////////////////////////////////////////////////////////////////////////
-
         // Connections title_config_store <-> elements_setup_panel
         shape_configuration_storage.signal_shape_configuration_storage.connect(&ElementsSetupsPanel::ReceiveShapeConfigurationStorage, elements_setup_panel);
         elements_setup_panel->signal_shape_configuration_storage.connect(&ShapeConfigurationStorage::ReceiveShapeConfigurationStorage, &shape_configuration_storage);
@@ -211,55 +190,48 @@ private:
         // Connections elements_setup_panel -> ...
         shape_configuration_storage.signal_shape_configuration_storage.connect(&CalendarPage::ReceiveShapeConfigurationStorage, calendar_page.get());
 
-        ////////////////////////////////////////////////////////////////////////////////
-
         // Connections calendar_configuration_storage <-> calendar_panel
         calendar_configuration_storage.signal_calendar_config_storage.connect(&CalendarSetupPanel::ReceiveCalendarConfigStorage, calendar_setup_panel);
         calendar_setup_panel->signal_calendar_config_storage.connect(&CalendarConfigStorage::ReceiveCalendarConfigStorage, &calendar_configuration_storage);
 
         // Connections calendar_configuration_storage -> ...
         calendar_configuration_storage.signal_calendar_config_storage.connect(&CalendarPage::ReceiveCalendarConfig, calendar_page.get());
-     
-        ////////////////////////////////////////////////////////////////////////////////
 
         shape_configuration_storage.SendShapeConfigurationStorage();
-
         date_groups_store.SendDefaultValues();
         page_setup_panel->SendDefaultValues();
-        //font_panel->SendDefaultValues();
         title_setup_panel->SendDefaultValues();
-        
         calendar_configuration_storage.SendCalendarConfigStorage();
     }
 
     void InitMenu()
     {
-        const int ID_EXPORT_PNG = NewControlId();
-        const int ID_IMPORT_CSV = NewControlId();
-        const int ID_EXPORT_CSV = NewControlId();
-        const int ID_OPEN_XML = NewControlId();
-        const int ID_LICENSE_INFO = NewControlId();
-        //const int ID_NEW_XML = wxNewId();
-        //const int ID_CLOSE_XML = wxNewId();
+        const int ID_EXPORT_PNG = wxWindow::NewControlId();
+        const int ID_IMPORT_CSV = wxWindow::NewControlId();
+        const int ID_EXPORT_CSV = wxWindow::NewControlId();
+        const int ID_OPEN_XML = wxWindow::NewControlId();
+        const int ID_LICENSE_INFO = wxWindow::NewControlId();
+        //const int ID_NEW_XML = wxWindow::NewControlId();
+        //const int ID_CLOSE_XML = wxWindow::NewControlId();
 
-        Bind(wxEVT_MENU, &MainWindow::SlotLoadXML, this, ID_OPEN_XML);
-        Bind(wxEVT_MENU, &MainWindow::SlotSaveXML, this, ID_SAVE_XML);
-        Bind(wxEVT_MENU, &MainWindow::SlotSaveXML, this, ID_SAVE_AS_XML);
-        Bind(wxEVT_MENU, &MainWindow::SlotImportCSV, this, ID_IMPORT_CSV);
-        Bind(wxEVT_MENU, &MainWindow::SlotExportCSV, this, ID_EXPORT_CSV);
-        Bind(wxEVT_MENU, &MainWindow::SlotExportPNG, this, ID_EXPORT_PNG);
-        Bind(wxEVT_MENU, &MainWindow::SlotExit, this, wxID_EXIT);
-        Bind(wxEVT_MENU, &MainWindow::SlotLicenseInfo, this, ID_LICENSE_INFO);
+        wx_frame->Bind(wxEVT_MENU, &MainWindow::CallbackLoadXML, this, ID_OPEN_XML);
+        wx_frame->Bind(wxEVT_MENU, &MainWindow::CallbackSaveXML, this, ID_SAVE_XML);
+        wx_frame->Bind(wxEVT_MENU, &MainWindow::CallbackSaveXML, this, ID_SAVE_AS_XML);
+        wx_frame->Bind(wxEVT_MENU, &MainWindow::CallbackImportCSV, this, ID_IMPORT_CSV);
+        wx_frame->Bind(wxEVT_MENU, &MainWindow::CallbackExportCSV, this, ID_EXPORT_CSV);
+        wx_frame->Bind(wxEVT_MENU, &MainWindow::CallbackExportPNG, this, ID_EXPORT_PNG);
+        wx_frame->Bind(wxEVT_MENU, &MainWindow::CallbackExit, this, wxID_EXIT);
+        wx_frame->Bind(wxEVT_MENU, &MainWindow::CallbackLicenseInfo, this, ID_LICENSE_INFO);
 
         wxMenuBar* menu_bar = new wxMenuBar;
-        SetMenuBar(menu_bar);
+        wx_frame->SetMenuBar(menu_bar);
 
         wxMenu* menu_file = new wxMenu;
         menu_bar->Append(menu_file, "&File");
 
         menu_file->Append(ID_OPEN_XML, L"&Open...");
         menu_file->AppendSeparator();
-        menu_file->Append(ID_SAVE_XML, L"&Save");
+        menu_file->Append(ID_SAVE_XML, L"&Save \tCTRL+S");
         menu_file->Append(ID_SAVE_AS_XML, L"&Save As...");
         menu_file->AppendSeparator();
         menu_file->Append(ID_IMPORT_CSV, L"&Import csv...");
@@ -274,34 +246,32 @@ private:
         menu_help->Append(ID_LICENSE_INFO, L"&Open Source Licenses");
     }
 
-    void SlotLoadXML(wxCommandEvent& event)
+    void CallbackLoadXML(wxCommandEvent& event)
     {
-        wxFileDialog openFileDialog(this, "Open File", wxEmptyString, wxEmptyString, "XML Files (*.xml)|*.xml", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
-
+        wxFileDialog openFileDialog(wx_frame, "Open File", wxEmptyString, wxEmptyString, "XML Files (*.xml)|*.xml", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
         if (openFileDialog.ShowModal() == wxID_OK)
         {
             std::string file_path = openFileDialog.GetPath().ToStdString();
             LoadXML(file_path);
-            current_xml_file_path = file_path;
+            xml_file_path = file_path;
         }
     }
 
-    void SlotSaveXML(wxCommandEvent& event)
+    void CallbackSaveXML(wxCommandEvent& event)
     {
-        if (event.GetId() == ID_SAVE_XML && current_xml_file_path.empty() == false)
+        if (event.GetId() == ID_SAVE_XML && xml_file_path.empty() == false)
         {
-            SaveXML(current_xml_file_path);
+            SaveXML(xml_file_path);
         }
 
-        else if (event.GetId() == ID_SAVE_AS_XML || current_xml_file_path.empty() == true)
+        else if (event.GetId() == ID_SAVE_AS_XML || xml_file_path.empty() == true)
         {
-            wxFileDialog saveFileDialog(this, "Save File", wxEmptyString, wxEmptyString, "XML Files (*.xml)|*.xml", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
-
+            wxFileDialog saveFileDialog(wx_frame, "Save File", wxEmptyString, wxEmptyString, "XML Files (*.xml)|*.xml", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
             if (saveFileDialog.ShowModal() == wxID_OK)
             {
                 std::string file_path = saveFileDialog.GetPath().ToStdString();
                 SaveXML(file_path);
-                current_xml_file_path = file_path;
+                xml_file_path = file_path;
             }
         }
     }
@@ -332,20 +302,15 @@ private:
         oarchive << BOOST_SERIALIZATION_NVP(calendar_configuration_storage);
     }
 
-    void SlotImportCSV(wxCommandEvent& event)
+    void CallbackImportCSV(wxCommandEvent& event)
     {
-        wxFileDialog open_file_dialog(this, "Import file", wxEmptyString, wxEmptyString, "CSV and TXT files (*.csv;*.txt)|*.csv;*.txt", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
-
+        wxFileDialog open_file_dialog(wx_frame, "Import file", wxEmptyString, wxEmptyString, "CSV and TXT files (*.csv;*.txt)|*.csv;*.txt", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
         if (open_file_dialog.ShowModal() == wxID_OK)
         {
             std::string file_path = open_file_dialog.GetPath().ToStdString();
-
             csv2::Reader<csv2::delimiter<','>, csv2::quote_character<'"'>, csv2::first_row_is_header<false>, csv2::trim_policy::trim_whitespace> csv_reader;
-
             csv_reader.mmap(file_path);
-
             date_format_descriptor date_format = InitDateFormat();
-
             std::vector<DateIntervalBundle> date_interval_bundles;
 
             if (csv_reader.mmap(file_path)) 
@@ -353,7 +318,6 @@ private:
                 for (const auto row : csv_reader)
                 {
                     size_t current_col = 0;
-
                     std::string begin_date_string;
                     std::string end_date_string;
                     
@@ -362,13 +326,11 @@ private:
                         if (current_col == 0)
                         {
                             cell.read_value(begin_date_string);
-                        }
-                        
+                        } 
                         if (current_col == 1)
                         {
                             cell.read_value(end_date_string);
                         }
-
                         ++current_col;
                     }
 
@@ -380,24 +342,19 @@ private:
                     date_interval_bundles.push_back(date_interval_bundle);
                 }
             }
-
             date_interval_bundle_store.ReceiveDateIntervalBundles(date_interval_bundles);
         }
     }
 
-    void SlotExportCSV(wxCommandEvent& event)
+    void CallbackExportCSV(wxCommandEvent& event)
     {
-        wxFileDialog save_file_dialog(this, "Export file", wxEmptyString, wxEmptyString, "CSV and TXT files (*.csv;*.txt)|*.csv;*.txt", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
-
+        wxFileDialog save_file_dialog(wx_frame, "Export file", wxEmptyString, wxEmptyString, "CSV and TXT files (*.csv;*.txt)|*.csv;*.txt", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
         if (save_file_dialog.ShowModal() == wxID_OK)
         {
             const std::string file_path = save_file_dialog.GetPath().ToStdString();
-
             std::ofstream file_stream(file_path, std::ios_base::trunc);
             bool file_open = file_stream.is_open();
-
             csv2::Writer<csv2::delimiter<','>> csv_writer(file_stream);
-
             const auto date_interval_bundles = date_interval_bundle_store.GetDateIntervalBundles();
 
             for (size_t index = 0; index < date_interval_bundles.size(); ++index)
@@ -412,10 +369,9 @@ private:
         }
     }
 
-    void SlotExportPNG(wxCommandEvent& event)
+    void CallbackExportPNG(wxCommandEvent& event)
     {
-        wxFileDialog file_dialog(this, "Export PNG file", wxEmptyString, wxEmptyString, "PNG files (*.png)|*.png", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
-
+        wxFileDialog file_dialog(wx_frame, "Export PNG file", wxEmptyString, wxEmptyString, "PNG files (*.png)|*.png", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
         if (file_dialog.ShowModal() == wxID_OK)
         {
             std::string file_path = file_dialog.GetPath().ToStdString();
@@ -423,29 +379,31 @@ private:
         }
     }
 
-    void SlotExit(wxCommandEvent& event)
+    void CallbackExit(wxCommandEvent& event)
     {
-        Close(true);
+        wx_frame->Close(true);
     }
 
-    void SlotLicenseInfo(wxCommandEvent& event)
+    void CallbackLicenseInfo(wxCommandEvent& event)
     {
         LicenseInformationDialog dialog;
         dialog.ShowModal();
     }
 
-    std::string current_xml_file_path;
+    std::string xml_file_path;
 
     // wxWidgets Panels
+    wxFrame* wx_frame;
     DateGroupsTablePanel* date_groups_table_panel;
-    DateTablePanel* data_table_panel;
+    
     CalendarSetupPanel* calendar_setup_panel;
     ElementsSetupsPanel* elements_setup_panel;
     PageSetupPanel* page_setup_panel;
     TitleSetupPanel* title_setup_panel;
-    GLCanvas* gl_canvas;
+    std::unique_ptr<GLCanvas> gl_canvas;
     std::unique_ptr<FontPanel> font_panel;
     std::unique_ptr<LogPanel> log_panel;
+    std::unique_ptr<DateTablePanel> data_table_panel;
 
     // Storages
     DateGroupStore date_groups_store;
@@ -456,7 +414,7 @@ private:
     ShapeConfigurationStorage shape_configuration_storage;
     CalendarConfigStorage calendar_configuration_storage;
 
-    // Calendar Graphics
+    // Calendar Page
     std::unique_ptr<CalendarPage> calendar_page;
 
     // wx Controller IDs

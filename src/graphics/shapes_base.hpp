@@ -38,7 +38,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 class VertexArrayObject
 {
 public:
-	VertexArrayObject()
+	explicit VertexArrayObject()
 	{
 		glGenVertexArrays(1, &VAO);
 	}
@@ -54,7 +54,7 @@ protected:
 class VertexBufferObject
 {
 public:
-	VertexBufferObject()
+	explicit VertexBufferObject()
 	{
 		glGenBuffers(1, &VBO);
 	}
@@ -112,7 +112,7 @@ public:
 
 	explicit Shape(const std::string shape_name) :
 		ShapeBase(shape_name),
-		buffersize(0)
+		buffer_size(0)
 	{
 		InitBuffer();
 	}
@@ -131,21 +131,22 @@ protected:
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
-	void SetBufferSize(GLsizeiptr verticessize)
+	void SetBufferSize(GLsizeiptr vertices_size)
 	{
-		buffersize = verticessize * sizeof(U);
-		vertices.resize(verticessize);
-		vertices_size = verticessize;
+		this->vertices_size = vertices_size;
+		buffer_size = vertices_size * sizeof(U);
 
+		vertices.resize(vertices_size);
+		
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, buffersize, nullptr, GL_DYNAMIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, buffer_size, nullptr, GL_DYNAMIC_DRAW);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
 	void UpdateBuffer()
 	{
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, buffersize, vertices.data());
+		glBufferSubData(GL_ARRAY_BUFFER, 0, buffer_size, vertices.data());
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
@@ -160,7 +161,7 @@ protected:
 	}
 	
 private:
-	GLsizeiptr buffersize;
+	GLsizeiptr buffer_size;
 	std::vector<U> vertices;
 };
 

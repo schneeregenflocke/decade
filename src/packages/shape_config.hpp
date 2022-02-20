@@ -20,7 +20,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 
-#include "casts.h"
+#include "casts.hpp"
 
 #include <sigslot/signal.hpp>
 

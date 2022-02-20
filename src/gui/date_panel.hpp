@@ -20,11 +20,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 
-#include "../date_utils.h"
-#include "../packages/date_store.h"
-#include "../packages/group_store.h"
+#include "../date_utils.hpp"
+#include "../packages/date_store.hpp"
+#include "../packages/group_store.hpp"
 
-#include "wx_widgets_include.h"
+#include "wx_widgets_include.hpp"
 
 #include <sigslot/signal.hpp>
 
@@ -32,26 +32,22 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include <memory>
 #include <exception>
-#include <stdexcept>
 
 
-
-
-class DateTablePanel : public wxPanel
+class DateTablePanel
 {
 public:
 
-	DateTablePanel(wxWindow* parent) :
-		wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxPanelNameStr)
+	DateTablePanel(wxWindow* parent)
 	{
+		wx_panel = new wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxPanelNameStr);
+		table_widget = new wxDataViewListCtrl(wx_panel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxDV_MULTIPLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES, wxDefaultValidator);
 
-		table_widget = new wxDataViewListCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxDV_MULTIPLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES, wxDefaultValidator);
-
-		addRowButton = new wxButton(this, wxID_ADD, "Add Row");
-		deleteRowButton = new wxButton(this, wxID_DELETE, "Delete Row");
+		addRowButton = new wxButton(wx_panel, wxID_ADD, "Add Row");
+		deleteRowButton = new wxButton(wx_panel, wxID_DELETE, "Delete Row");
 		deleteRowButton->Disable();
 
-		select_group_control = new wxComboBox(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, nullptr, 0L, wxDefaultValidator, wxChoiceNameStr);
+		select_group_control = new wxComboBox(wx_panel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, nullptr, 0L, wxDefaultValidator, wxChoiceNameStr);
 
 		////////////////////////////////////////////////////////////////////////////////
 
@@ -61,11 +57,9 @@ public:
 		buttons_sizer->Add(deleteRowButton, buttons_flags);
 		buttons_sizer->Add(select_group_control, buttons_flags);
 
-
 		wxBoxSizer* table_sizer = new wxBoxSizer(wxHORIZONTAL);
 		wxSizerFlags data_table_flags = wxSizerFlags().Proportion(1).Expand().Border(wxALL, 5);
 		table_sizer->Add(table_widget, data_table_flags);
-
 
 		wxBoxSizer* main_sizer = new wxBoxSizer(wxVERTICAL);
 		wxSizerFlags buttons_sizer_flags = wxSizerFlags().Proportion(0).Expand().Border(wxALL, 0);
@@ -73,26 +67,30 @@ public:
 		main_sizer->Add(buttons_sizer, buttons_sizer_flags);
 		main_sizer->Add(table_sizer, table_sizer_flags);
 
-		SetSizer(main_sizer);
+		wx_panel->SetSizer(main_sizer);
 		//Layout();
 
 		////////////////////////////////////////////////////////////////////////////////
 
-		Bind(wxEVT_DATAVIEW_ITEM_ACTIVATED, &DateTablePanel::OnItemActivated, this);
-		Bind(wxEVT_DATAVIEW_ITEM_EDITING_DONE, &DateTablePanel::OnItemEditing, this);
-		Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &DateTablePanel::OnSelectionChanged, this);
+		wx_panel->Bind(wxEVT_DATAVIEW_ITEM_ACTIVATED, &DateTablePanel::OnItemActivated, this);
+		wx_panel->Bind(wxEVT_DATAVIEW_ITEM_EDITING_DONE, &DateTablePanel::OnItemEditing, this);
+		wx_panel->Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &DateTablePanel::OnSelectionChanged, this);
 
 		// Bind(wxEVT_DATAVIEW_ITEM_START_EDITING, &DateTablePanel::OnItemEditing, this);
 		// Bind(wxEVT_DATAVIEW_ITEM_EDITING_STARTED, &DateTablePanel::OnItemEditing, this);
-		Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED, &DateTablePanel::OnValueChanged, this);
-		Bind(wxEVT_BUTTON, &DateTablePanel::OnButtonClicked, this);
-		Bind(wxEVT_COMBOBOX, &DateTablePanel::OnComboBoxSelection, this);
+		wx_panel->Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED, &DateTablePanel::OnValueChanged, this);
+		wx_panel->Bind(wxEVT_BUTTON, &DateTablePanel::OnButtonClicked, this);
+		wx_panel->Bind(wxEVT_COMBOBOX, &DateTablePanel::OnComboBoxSelection, this);
 
 		////////////////////////////////////////////////////////////////////////////////
 
 		InitColumns();
-
 		date_format = InitDateFormat();
+	}
+
+	wxPanel* PanelPtr()
+	{
+		return wx_panel;
 	}
 
 	void ReceiveDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles)
@@ -455,13 +453,13 @@ private:
 		SendDateIntervalBundles();
 	}
 
-	date_format_descriptor date_format;
-
+	wxPanel* wx_panel;
 	wxDataViewListCtrl* table_widget;
 	wxButton* addRowButton;
 	wxButton* deleteRowButton;
 	wxComboBox* select_group_control;
 
+	date_format_descriptor date_format;
 	DateGroupStore date_group_store;
 
 	enum columns : unsigned int

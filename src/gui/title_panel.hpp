@@ -20,9 +20,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 
-#include "wx_widgets_include.h"
+#include "wx_widgets_include.hpp"
 
-#include "../packages/title_config.h"
+#include "../packages/title_config.hpp"
+
+#include <sigslot/signal.hpp>
+
+#include <glm/glm.hpp>
 
 #include <array>
 #include <algorithm>
@@ -31,9 +35,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include <limits>
 
-#include <sigslot/signal.hpp>
-
-#include <glm/glm.hpp>
 
 
 class TitleSetupPanel : public wxPanel

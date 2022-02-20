@@ -20,22 +20,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 
-#include "../packages/shape_config.h"
-#include "../packages/group_store.h"
-#include "../casts.h"
+#include "../packages/shape_config.hpp"
+#include "../packages/group_store.hpp"
+#include "../casts.hpp"
 
-#include "wx_widgets_include.h"
+#include "wx_widgets_include.hpp"
+
+#include <sigslot/signal.hpp>
 
 #include <array>
 #include <vector>
 #include <algorithm>
 #include <string>
-
 #include <memory>
 #include <functional>
-
-#include <sigslot/signal.hpp>
-
 
 
 class ElementsSetupsPanel : public wxPanel
