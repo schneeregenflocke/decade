@@ -37,7 +37,7 @@ public:
 		wx_panel->SetSizer(sizer);
 	}
 
-	wxPanel* GetPanelPtr() const
+	wxPanel* PanelPtr() const
 	{
 		return wx_panel;
 	}

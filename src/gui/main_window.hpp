@@ -34,6 +34,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #include "calendar_page.hpp"
 #include "date_utils.hpp"
+
 #include "packages/title_config.hpp"
 #include "packages/shape_config.hpp"
 
@@ -83,22 +84,22 @@ public:
         ////////////////////////////////////////////////////////////////////////////////
 
         data_table_panel = std::make_unique<DateTablePanel>(notebook);
-        date_groups_table_panel = new DateGroupsTablePanel(notebook);
-        calendar_setup_panel = new CalendarSetupPanel(notebook);
-        elements_setup_panel = new ElementsSetupsPanel(notebook);
-        page_setup_panel = new PageSetupPanel(notebook);
+        date_groups_table_panel = std::make_unique<DateGroupsTablePanel>(notebook);
+        calendar_setup_panel = std::make_unique<CalendarSetupPanel>(notebook);
+        elements_setup_panel = std::make_unique<ElementsSetupsPanel>(notebook);
+        page_setup_panel = std::make_unique<PageSetupPanel>(notebook);
         font_panel = std::make_unique<FontPanel>(notebook);
-        title_setup_panel = new TitleSetupPanel(notebook);
+        title_setup_panel = std::make_unique<TitleSetupPanel>(notebook);
         log_panel = std::make_unique<LogPanel>(notebook);
         
         notebook->AddPage(data_table_panel->PanelPtr(), "Dates");
-        notebook->AddPage(date_groups_table_panel, "Groups");
-        notebook->AddPage(calendar_setup_panel, "Calendar");
-        notebook->AddPage(elements_setup_panel, "Shapes");
-        notebook->AddPage(page_setup_panel, "Page");
-        notebook->AddPage(font_panel->GetPanelPtr(), "Font");
-        notebook->AddPage(title_setup_panel, "Title");
-        notebook->AddPage(log_panel->GetPanelPtr(), "Log");
+        notebook->AddPage(date_groups_table_panel->PanelPtr(), "Groups");
+        notebook->AddPage(calendar_setup_panel->PanelPtr(), "Calendar");
+        notebook->AddPage(elements_setup_panel->PanelPtr(), "Shapes");
+        notebook->AddPage(page_setup_panel->PanelPtr(), "Page");
+        notebook->AddPage(font_panel->PanelPtr(), "Font");
+        notebook->AddPage(title_setup_panel->PanelPtr(), "Title");
+        notebook->AddPage(log_panel->PanelPtr(), "Log");
 
         ////////////////////////////////////////////////////////////////////////////////
 
@@ -156,17 +157,17 @@ private:
         transform_date_interval_bundle.signal_transform_date_interval_bundles.connect(&CalendarPage::ReceiveDateIntervalBundles, calendar_page.get());
 
         // Connections date_groups_store <-> date_groups_panel
-        date_groups_store.signal_date_groups.connect(&DateGroupsTablePanel::ReceiveDateGroups, date_groups_table_panel);
+        date_groups_store.signal_date_groups.connect(&DateGroupsTablePanel::ReceiveDateGroups, date_groups_table_panel.get());
         date_groups_table_panel->signal_table_date_groups.connect(&DateGroupStore::ReceiveDateGroups, &date_groups_store);
 
         // Connections date_groups_store -> ...
         date_groups_store.signal_date_groups.connect(&DateIntervalBundleStore::ReceiveDateGroups, &date_interval_bundle_store);
         date_groups_store.signal_date_groups.connect(&DateTablePanel::ReceiveDateGroups, data_table_panel.get());
-        date_groups_store.signal_date_groups.connect(&ElementsSetupsPanel::ReceiveDateGroups, elements_setup_panel);
+        date_groups_store.signal_date_groups.connect(&ElementsSetupsPanel::ReceiveDateGroups, elements_setup_panel.get());
         date_groups_store.signal_date_groups.connect(&CalendarPage::ReceiveDateGroups, calendar_page.get());
 
         // Connections page_setup_store <-> page_setup_panel
-        page_setup_store.signal_page_setup_config.connect(&PageSetupPanel::ReceivePageSetup, page_setup_panel);
+        page_setup_store.signal_page_setup_config.connect(&PageSetupPanel::ReceivePageSetup, page_setup_panel.get());
         page_setup_panel->signal_page_setup_config.connect(&PageSetupStore::ReceivePageSetup, &page_setup_store);
 
         // Connections page_setup -> ...
@@ -177,21 +178,21 @@ private:
         font_panel->signal_font_file_path.connect(&CalendarPage::ReceiveFont, calendar_page.get());
 
         // Connections title_config_store <-> title_setup_panel
-        title_config_store.signal_title_config.connect(&TitleSetupPanel::ReceiveTitleConfig, title_setup_panel);
+        title_config_store.signal_title_config.connect(&TitleSetupPanel::ReceiveTitleConfig, title_setup_panel.get());
         title_setup_panel->signal_title_config.connect(&TitleConfigStore::ReceiveTitleConfig, &title_config_store);
 
         // Connections title_config_store -> ...
         title_config_store.signal_title_config.connect(&CalendarPage::ReceiveTitleConfig, calendar_page.get());
 
         // Connections title_config_store <-> elements_setup_panel
-        shape_configuration_storage.signal_shape_configuration_storage.connect(&ElementsSetupsPanel::ReceiveShapeConfigurationStorage, elements_setup_panel);
+        shape_configuration_storage.signal_shape_configuration_storage.connect(&ElementsSetupsPanel::ReceiveShapeConfigurationStorage, elements_setup_panel.get());
         elements_setup_panel->signal_shape_configuration_storage.connect(&ShapeConfigurationStorage::ReceiveShapeConfigurationStorage, &shape_configuration_storage);
 
         // Connections elements_setup_panel -> ...
         shape_configuration_storage.signal_shape_configuration_storage.connect(&CalendarPage::ReceiveShapeConfigurationStorage, calendar_page.get());
 
         // Connections calendar_configuration_storage <-> calendar_panel
-        calendar_configuration_storage.signal_calendar_config_storage.connect(&CalendarSetupPanel::ReceiveCalendarConfigStorage, calendar_setup_panel);
+        calendar_configuration_storage.signal_calendar_config_storage.connect(&CalendarSetupPanel::ReceiveCalendarConfigStorage, calendar_setup_panel.get());
         calendar_setup_panel->signal_calendar_config_storage.connect(&CalendarConfigStorage::ReceiveCalendarConfigStorage, &calendar_configuration_storage);
 
         // Connections calendar_configuration_storage -> ...
@@ -390,16 +391,17 @@ private:
         dialog.ShowModal();
     }
 
+
+    wxFrame* wx_frame;
+
     std::string xml_file_path;
 
     // wxWidgets Panels
-    wxFrame* wx_frame;
-    DateGroupsTablePanel* date_groups_table_panel;
-    
-    CalendarSetupPanel* calendar_setup_panel;
-    ElementsSetupsPanel* elements_setup_panel;
-    PageSetupPanel* page_setup_panel;
-    TitleSetupPanel* title_setup_panel;
+    std::unique_ptr<DateGroupsTablePanel> date_groups_table_panel;
+    std::unique_ptr<ElementsSetupsPanel> elements_setup_panel;
+    std::unique_ptr<PageSetupPanel> page_setup_panel;
+    std::unique_ptr<TitleSetupPanel> title_setup_panel;
+    std::unique_ptr<CalendarSetupPanel> calendar_setup_panel;
     std::unique_ptr<GLCanvas> gl_canvas;
     std::unique_ptr<FontPanel> font_panel;
     std::unique_ptr<LogPanel> log_panel;
@@ -417,7 +419,7 @@ private:
     // Calendar Page
     std::unique_ptr<CalendarPage> calendar_page;
 
-    // wx Controller IDs
+    // wxWidgets Controller IDs
     const int ID_SAVE_XML;
     const int ID_SAVE_AS_XML;
 };

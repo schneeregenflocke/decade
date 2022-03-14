@@ -37,19 +37,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 
 
-class TitleSetupPanel : public wxPanel
+class TitleSetupPanel
 {
 public:
 
 	TitleSetupPanel(wxWindow* parent) :
-		wxPanel(parent, wxID_ANY)
+		wx_panel(nullptr)
 	{
+		wx_panel = new wxPanel(parent, wxID_ANY);
+
 		wxSizerFlags sizer_flags_0 = wxSizerFlags().Proportion(0).Expand();
 		wxSizerFlags sizer_flags_1 = wxSizerFlags().Proportion(0).Expand().Border(wxALL, 5);
 		wxSizerFlags sizer_flags_2 = wxSizerFlags().Proportion(1).Expand().Border(wxALL, 5);
 
 		wxBoxSizer* vertical_sizer = new wxBoxSizer(wxVERTICAL);
-		SetSizer(vertical_sizer);
+		wx_panel->SetSizer(vertical_sizer);
 
 		std::array<wxBoxSizer*, 5> horizontal_sizers;
 
@@ -61,46 +63,46 @@ public:
 
 		std::array<wxStaticText*, 5> labels;
 
-		labels[0] = new wxStaticText(this, wxID_ANY, L"Frame Height");
+		labels[0] = new wxStaticText(wx_panel, wxID_ANY, L"Frame Height");
 		labels[0]->SetMinSize(wxSize(120, -1));
 		horizontal_sizers[0]->Add(labels[0], sizer_flags_1);
 
-		labels[1] = new wxStaticText(this, wxID_ANY, L"Font Size Ratio");
+		labels[1] = new wxStaticText(wx_panel, wxID_ANY, L"Font Size Ratio");
 		labels[1]->SetMinSize(wxSize(120, -1));
 		horizontal_sizers[1]->Add(labels[1], sizer_flags_1);
 
-		labels[2] = new wxStaticText(this, wxID_ANY, L"Text");
+		labels[2] = new wxStaticText(wx_panel, wxID_ANY, L"Text");
 		labels[2]->SetMinSize(wxSize(120, -1));
 		horizontal_sizers[2]->Add(labels[2], sizer_flags_1);
 
-		labels[3] = new wxStaticText(this, wxID_ANY, L"Text Color");
+		labels[3] = new wxStaticText(wx_panel, wxID_ANY, L"Text Color");
 		labels[3]->SetMinSize(wxSize(120, -1));
 		horizontal_sizers[3]->Add(labels[3], sizer_flags_1);
 		labels[3]->Enable(false);
 
-		labels[4] = new wxStaticText(this, wxID_ANY, L"Color Transparency");
+		labels[4] = new wxStaticText(wx_panel, wxID_ANY, L"Color Transparency");
 		labels[4]->SetMinSize(wxSize(120, -1));
 		horizontal_sizers[4]->Add(labels[4], sizer_flags_1);
 		labels[4]->Enable(false);
 
-		frame_height_ctrl = new wxSpinCtrlDouble(this);
+		frame_height_ctrl = new wxSpinCtrlDouble(wx_panel);
 		frame_height_ctrl->SetDigits(2);
 		horizontal_sizers[0]->Add(frame_height_ctrl, sizer_flags_2);
 
-		size_ratio_ctrl = new wxSpinCtrlDouble(this);
+		size_ratio_ctrl = new wxSpinCtrlDouble(wx_panel);
 		size_ratio_ctrl->SetDigits(2);
 		size_ratio_ctrl->SetIncrement(0.05);
 		horizontal_sizers[1]->Add(size_ratio_ctrl, sizer_flags_2);
 
-		title_text_edit = new wxTextCtrl(this, wxID_ANY);
+		title_text_edit = new wxTextCtrl(wx_panel, wxID_ANY);
 		horizontal_sizers[2]->Add(title_text_edit, sizer_flags_2);
 
-		text_color_picker = new wxColourPickerCtrl(this, wxID_ANY, *wxStockGDI::GetColour(wxStockGDI::COLOUR_BLACK),
+		text_color_picker = new wxColourPickerCtrl(wx_panel, wxID_ANY, *wxStockGDI::GetColour(wxStockGDI::COLOUR_BLACK),
 			wxDefaultPosition, wxDefaultSize, wxCLRP_SHOW_ALPHA);
 		text_color_picker->Enable(false);
 		horizontal_sizers[3]->Add(text_color_picker, sizer_flags_2);
 
-		alpha_slider = new wxSlider(this, wxID_ANY, 255, 0, 255, wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL | wxSL_LABELS);
+		alpha_slider = new wxSlider(wx_panel, wxID_ANY, 255, 0, 255, wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL | wxSL_LABELS);
 		alpha_slider->Enable(false);
 		horizontal_sizers[4]->Add(alpha_slider, sizer_flags_2);
 
@@ -108,12 +110,17 @@ public:
 
 		////////////////////////////////////////
 
-		Bind(wxEVT_SPINCTRLDOUBLE, &TitleSetupPanel::SlotSpinControl, this);
-		Bind(wxEVT_TEXT, &TitleSetupPanel::SlotTextControl, this);
-		Bind(wxEVT_COLOURPICKER_CHANGED, &TitleSetupPanel::SlotColorPickerControl, this);
-		Bind(wxEVT_SLIDER, &TitleSetupPanel::SlotSliderControl, this);
+		wx_panel->Bind(wxEVT_SPINCTRLDOUBLE, &TitleSetupPanel::CallbackSpinControl, this);
+		wx_panel->Bind(wxEVT_TEXT, &TitleSetupPanel::CallbackTextControl, this);
+		wx_panel->Bind(wxEVT_COLOURPICKER_CHANGED, &TitleSetupPanel::CallbackColorPickerControl, this);
+		wx_panel->Bind(wxEVT_SLIDER, &TitleSetupPanel::CallbackSliderControl, this);
 
 		////////////////////////////////////////
+	}
+
+	wxPanel* PanelPtr()
+	{
+		return wx_panel;
 	}
 
 	void SendDefaultValues()
@@ -136,16 +143,6 @@ public:
 
 private:
 
-	TitleConfig title_config;
-
-	wxSpinCtrlDouble* frame_height_ctrl;
-	wxSpinCtrlDouble* size_ratio_ctrl;
-	
-	wxTextCtrl* title_text_edit;
-
-	wxColourPickerCtrl* text_color_picker;
-	wxSlider* alpha_slider;
-
 	void UpdateWidgetForSelection()
 	{
 		frame_height_ctrl->SetValue(static_cast<double>(title_config.frame_height));
@@ -153,7 +150,6 @@ private:
 		
 		title_text_edit->ChangeValue(title_config.title_text);
 		
-
 		/*wxColour color;
 		color.Set(
 			glm::floatBitsToUint(title_config.text_color[0]), 
@@ -166,7 +162,7 @@ private:
 		alpha_slider->SetValue(glm::floatBitsToUint(title_config.text_color[3]));*/
 	}
 
-	void SlotSpinControl(wxSpinDoubleEvent& event)
+	void CallbackSpinControl(wxSpinDoubleEvent& event)
 	{
 		auto float_value = static_cast<float>(event.GetValue());
 
@@ -185,7 +181,7 @@ private:
 		}
 	}
 
-	void SlotTextControl(wxCommandEvent& event)
+	void CallbackTextControl(wxCommandEvent& event)
 	{
 		if (title_text_edit == event.GetEventObject())
 		{
@@ -195,7 +191,7 @@ private:
 		}
 	}
 
-	void SlotColorPickerControl(wxColourPickerEvent& event)
+	void CallbackColorPickerControl(wxColourPickerEvent& event)
 	{
 		//if (event.GetId() == ID_COLOR_PICKER)
 		//{
@@ -211,7 +207,7 @@ private:
 		//SendTitleConfig();
 	}
 
-	void SlotSliderControl(wxCommandEvent& event)
+	void CallbackSliderControl(wxCommandEvent& event)
 	{
 		//if (event.GetId() == ID_SLIDER)
 		//{
@@ -220,4 +216,16 @@ private:
 
 		//SendTitleConfig();
 	}
+
+	wxPanel* wx_panel;
+
+	TitleConfig title_config;
+
+	wxSpinCtrlDouble* frame_height_ctrl;
+	wxSpinCtrlDouble* size_ratio_ctrl;
+
+	wxTextCtrl* title_text_edit;
+
+	wxColourPickerCtrl* text_color_picker;
+	wxSlider* alpha_slider;
 };

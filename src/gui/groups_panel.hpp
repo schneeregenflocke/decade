@@ -32,30 +32,30 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 
 
-class DateGroupsTablePanel : public wxPanel
+class DateGroupsTablePanel
 {
 public:
 
 	DateGroupsTablePanel(wxWindow* parent) :
-		wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxPanelNameStr),
+		wx_panel(nullptr),
 		toggle_value_changed_by_function_call_and_not_by_user(false)
 	{
+		wx_panel = new wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxPanelNameStr);
+		data_table = new wxDataViewListCtrl(wx_panel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxDV_SINGLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES, wxDefaultValidator);
 
-		data_table = new wxDataViewListCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxDV_SINGLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES, wxDefaultValidator);
-
-		Bind(wxEVT_DATAVIEW_ITEM_ACTIVATED, &DateGroupsTablePanel::OnItemActivated, this);
-		Bind(wxEVT_DATAVIEW_ITEM_EDITING_DONE, &DateGroupsTablePanel::OnItemEditing, this);
-		Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &DateGroupsTablePanel::OnSelectionChanged, this);
+		wx_panel->Bind(wxEVT_DATAVIEW_ITEM_ACTIVATED, &DateGroupsTablePanel::CallbackItemActivated, this);
+		wx_panel->Bind(wxEVT_DATAVIEW_ITEM_EDITING_DONE, &DateGroupsTablePanel::CallbackItemEditing, this);
+		wx_panel->Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &DateGroupsTablePanel::CallbackSelectionChanged, this);
 
 		// Bind(wxEVT_DATAVIEW_ITEM_START_EDITING, &DateGroupsTablePanel::OnItemEditing, this);
 		// Bind(wxEVT_DATAVIEW_ITEM_EDITING_STARTED, &DateGroupsTablePanel::OnItemEditing, this);
-		Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED, &DateGroupsTablePanel::OnValueChanged, this);
+		wx_panel->Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED, &DateGroupsTablePanel::CallbackValueChanged, this);
 
-		addRowButton = new wxButton(this, wxID_ADD, "Add Row");
-		deleteRowButton = new wxButton(this, wxID_DELETE, "Delete Row");
+		addRowButton = new wxButton(wx_panel, wxID_ADD, "Add Row");
+		deleteRowButton = new wxButton(wx_panel, wxID_DELETE, "Delete Row");
 		deleteRowButton->Disable();
 
-		Bind(wxEVT_BUTTON, &DateGroupsTablePanel::OnButtonClicked, this);
+		wx_panel->Bind(wxEVT_BUTTON, &DateGroupsTablePanel::CallbackButtonClicked, this);
 
 		////////////////////////////////////////////////////////////////////////////////
 
@@ -64,11 +64,9 @@ public:
 		buttons_sizer->Add(addRowButton, buttons_flags);
 		buttons_sizer->Add(deleteRowButton, buttons_flags);
 
-
 		wxBoxSizer* table_sizer = new wxBoxSizer(wxHORIZONTAL);
 		wxSizerFlags data_table_flags = wxSizerFlags().Proportion(1).Expand().Border(wxALL, 5);
 		table_sizer->Add(data_table, data_table_flags);
-
 
 		wxBoxSizer* main_sizer = new wxBoxSizer(wxVERTICAL);
 		wxSizerFlags buttons_sizer_flags = wxSizerFlags().Proportion(0).Expand().Border(wxALL, 0);
@@ -76,7 +74,7 @@ public:
 		main_sizer->Add(buttons_sizer, buttons_sizer_flags);
 		main_sizer->Add(table_sizer, table_sizer_flags);
 
-		SetSizer(main_sizer);
+		wx_panel->SetSizer(main_sizer);
 		//Layout();
 
 		////////////////////////////////////////////////////////////////////////////////
@@ -86,7 +84,12 @@ public:
 		data_table->AppendToggleColumn(L"Exclude", wxDATAVIEW_CELL_ACTIVATABLE);
 	}
 
-	std::wstring GetPanelName()
+	wxPanel* PanelPtr()
+	{
+		return wx_panel;
+	}
+
+	std::wstring GetPanelName() const
 	{
 		return std::wstring(L"Date Group Table");
 	}
@@ -165,7 +168,7 @@ private:
 		}
 	}
 
-	void OnButtonClicked(wxCommandEvent& event)
+	void CallbackButtonClicked(wxCommandEvent& event)
 	{
 		auto selected_row = data_table->GetSelectedRow();
 
@@ -219,7 +222,7 @@ private:
 		}
 	}
 
-	void OnItemActivated(wxDataViewEvent& event)
+	void CallbackItemActivated(wxDataViewEvent& event)
 	{
 		if (event.GetItem().IsOk() && event.GetDataViewColumn())
 		{
@@ -228,7 +231,7 @@ private:
 
 
 	}
-	void OnItemEditing(wxDataViewEvent& event)
+	void CallbackItemEditing(wxDataViewEvent& event)
 	{
 		if (event.GetEventType() == wxEVT_DATAVIEW_ITEM_EDITING_DONE)
 		{
@@ -248,11 +251,13 @@ private:
 			}
 		}
 	}
-	void OnSelectionChanged(wxDataViewEvent& event)
+
+	void CallbackSelectionChanged(wxDataViewEvent& event)
 	{
 		UpdateButtons();
 	}
-	void OnValueChanged(wxDataViewEvent& event)
+
+	void CallbackValueChanged(wxDataViewEvent& event)
 	{
 		if (event.GetColumn() == 2 && data_table->GetSelectedRow() != wxNOT_FOUND)
 		{
@@ -266,7 +271,7 @@ private:
 		}
 	}
 	
-
+	wxPanel* wx_panel;
 	wxDataViewListCtrl* data_table;
 	wxButton* addRowButton;
 	wxButton* deleteRowButton;

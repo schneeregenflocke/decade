@@ -27,15 +27,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include <sigslot/signal.hpp>
 
 
-class PageSetupPanel : public wxPanel
+class PageSetupPanel
 {
 public:
 
 	PageSetupPanel(wxWindow* parent) :
-		wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxPanelNameStr),
-		ID_PAGE_WIDTH(NewControlId()),
-		ID_PAGE_HEIGHT(NewControlId())
+		wx_panel(nullptr),
+		ID_PAGE_WIDTH(wxWindow::NewControlId()),
+		ID_PAGE_HEIGHT(wxWindow::NewControlId())
 	{
+		wx_panel = new wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxPanelNameStr);
+
 		wxPrintData print_data;
 		print_data.SetOrientation(wxPrintOrientation::wxLANDSCAPE);
 
@@ -47,22 +49,22 @@ public:
 
 		//////////////////////////////////////////////////
 
-		wxStaticBoxSizer* static_box_sizer = new wxStaticBoxSizer(wxVERTICAL, this, L"Paper Format"); // (this, wxID_ANY, L"Paper Format", wxDefaultPosition, wxDefaultSize, 0L, wxStaticBoxNameStr);
+		wxStaticBoxSizer* static_box_sizer = new wxStaticBoxSizer(wxVERTICAL, wx_panel, L"Paper Format"); // (this, wxID_ANY, L"Paper Format", wxDefaultPosition, wxDefaultSize, 0L, wxStaticBoxNameStr);
 
 		wxBoxSizer* horizontal_sizer0 = new wxBoxSizer(wxHORIZONTAL);
 
-		wxButton* page_setup_dialog_button = new wxButton(this, wxID_ANY, L"Page Setup...");
+		wxButton* page_setup_dialog_button = new wxButton(wx_panel, wxID_ANY, L"Page Setup...");
 
-		wxStaticText* page_width_label = new wxStaticText(this, wxID_ANY, L"Width");
+		wxStaticText* page_width_label = new wxStaticText(wx_panel, wxID_ANY, L"Width");
 		page_width_label->SetMinSize(wxSize(75, -1));
 
-		wxStaticText* page_height_label = new wxStaticText(this, wxID_ANY, L"Height");
+		wxStaticText* page_height_label = new wxStaticText(wx_panel, wxID_ANY, L"Height");
 		page_height_label->SetMinSize(wxSize(75, -1));
 
-		page_width_spinctrl = new wxSpinCtrlDouble(this, ID_PAGE_WIDTH);
+		page_width_spinctrl = new wxSpinCtrlDouble(wx_panel, ID_PAGE_WIDTH);
 		page_width_spinctrl->SetRange(.0, 2000.);
 
-		page_height_spinctrl = new wxSpinCtrlDouble(this, ID_PAGE_HEIGHT);
+		page_height_spinctrl = new wxSpinCtrlDouble(wx_panel, ID_PAGE_HEIGHT);
 		page_height_spinctrl->SetRange(.0, 2000.);
 
 		horizontal_sizer0->Add(page_setup_dialog_button, 1, wxEXPAND | wxALL, 5); //| wxALIGN_CENTER_VERTICAL
@@ -84,13 +86,18 @@ public:
 		//vertical_sizer->Add(static_box_sizer, 0, wxEXPAND | wxALL, 5);
 		vertical_sizer->Add(static_box_sizer, 0, wxEXPAND);
 
-		SetSizer(vertical_sizer);
+		wx_panel->SetSizer(vertical_sizer);
 
 		//////////////////////////////////////////////////
 
-		Bind(wxEVT_BUTTON, &PageSetupPanel::OnButtonClicked, this);
-		Bind(wxEVT_SPINCTRLDOUBLE, &PageSetupPanel::OnSpinControl, this, ID_PAGE_WIDTH);
-		Bind(wxEVT_SPINCTRLDOUBLE, &PageSetupPanel::OnSpinControl, this, ID_PAGE_HEIGHT);
+		wx_panel->Bind(wxEVT_BUTTON, &PageSetupPanel::CallbackButtonClicked, this);
+		wx_panel->Bind(wxEVT_SPINCTRLDOUBLE, &PageSetupPanel::CallbackSpinControl, this, ID_PAGE_WIDTH);
+		wx_panel->Bind(wxEVT_SPINCTRLDOUBLE, &PageSetupPanel::CallbackSpinControl, this, ID_PAGE_HEIGHT);
+	}
+
+	wxPanel* PanelPtr()
+	{
+		return wx_panel;
 	}
 
 	void SendPageSetup()
@@ -121,6 +128,7 @@ public:
 
 		signal_page_setup_config(page_setup_config);
 	}
+
 	void ReceivePageSetup(const PageSetupConfig& page_setup_config)
 	{
 		wxPrintData print_data = dialog_data.GetPrintData();
@@ -170,7 +178,7 @@ private:
 		}
 	}
 
-	void OnButtonClicked(wxCommandEvent& event)
+	void CallbackButtonClicked(wxCommandEvent& event)
 	{
 		wxPageSetupDialog page_setup_dialog(nullptr, &dialog_data);
 
@@ -181,12 +189,12 @@ private:
 			SendPageSetup();
 		}
 	}
-	void OnCheckboxClicked(wxCommandEvent& event)
+	void CallbackCheckboxClicked(wxCommandEvent& event)
 	{
 		page_width_spinctrl->Enable(event.IsChecked());
 		page_height_spinctrl->Enable(event.IsChecked());
 	}
-	void OnSpinControl(wxSpinDoubleEvent& event)
+	void CallbackSpinControl(wxSpinDoubleEvent& event)
 	{
 		wxSize paper_size;
 		paper_size.x = static_cast<float>(page_width_spinctrl->GetValue());
@@ -206,6 +214,8 @@ private:
 		dialog_data.CalculateIdFromPaperSize();
 		SendPageSetup();
 	}
+
+	wxPanel* wx_panel;
 
 	const int ID_PAGE_WIDTH;
 	const int ID_PAGE_HEIGHT;

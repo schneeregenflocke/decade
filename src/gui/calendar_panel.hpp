@@ -127,22 +127,29 @@ public:
 };
 
 
-class CalendarSetupPanel : public wxPanel
+class CalendarSetupPanel
 {
 public:
 
 	CalendarSetupPanel(wxWindow* parent) :
-		wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxPanelNameStr),
+		wx_panel(nullptr),
 		property_grid(nullptr)
 	{
+		wx_panel = new wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxPanelNameStr);
+		
 		wxBoxSizer* vertical_sizer = new wxBoxSizer(wxVERTICAL);
-		SetSizer(vertical_sizer);
+		wx_panel->SetSizer(vertical_sizer);
 
-		property_grid = new PropertyGridPanel(this);
+		property_grid = new PropertyGridPanel(wx_panel);
 
-		Bind(wxEVT_PG_CHANGED, &CalendarSetupPanel::OnPropertyGridChanging, this);
+		wx_panel->Bind(wxEVT_PG_CHANGED, &CalendarSetupPanel::CallbackPropertyGridChanging, this);
 
 		UpdatePropertyGrid();
+	}
+
+	wxPanel* PanelPtr()
+	{
+		return wx_panel;
 	}
 
 	void ReceiveCalendarConfigStorage(const CalendarConfigStorage& calendar_config_storage)
@@ -151,7 +158,7 @@ public:
 		UpdatePropertyGrid();
 	}
 
-	void OnPropertyGridChanging(wxPropertyGridEvent& event)
+	void CallbackPropertyGridChanging(wxPropertyGridEvent& event)
 	{
 		property_grid->RefreshPropertyGrid();
 
@@ -195,6 +202,7 @@ public:
 
 private:
 
+	wxPanel* wx_panel;
 	PropertyGridPanel* property_grid;
 	CalendarConfigStorage calendar_config_storage;
 };

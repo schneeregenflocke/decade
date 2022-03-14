@@ -36,27 +36,32 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include <functional>
 
 
-class ElementsSetupsPanel : public wxPanel
+class ElementsSetupsPanel
 {
 public:
-	
 	ElementsSetupsPanel(wxWindow* parent) :
-		wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxPanelNameStr)
+		wx_panel(nullptr)
 	{
+		wx_panel = new wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxPanelNameStr);
+
 		InitWidgets();
 		InitSizers();
 
-		Bind(wxEVT_LISTBOX, &ElementsSetupsPanel::SlotListBook, this);
-		Bind(wxEVT_CHECKBOX, &ElementsSetupsPanel::SlotCheckBox, this);
-		Bind(wxEVT_SPINCTRLDOUBLE, &ElementsSetupsPanel::SlotSpinControlDouble, this);
-		Bind(wxEVT_COLOURPICKER_CHANGED, &ElementsSetupsPanel::SlotColorPicker, this);
-		Bind(wxEVT_SLIDER, &ElementsSetupsPanel::SlotSlider, this);
+		wx_panel->Bind(wxEVT_LISTBOX, &ElementsSetupsPanel::CallbackListBook, this);
+		wx_panel->Bind(wxEVT_CHECKBOX, &ElementsSetupsPanel::CallbackCheckBox, this);
+		wx_panel->Bind(wxEVT_SPINCTRLDOUBLE, &ElementsSetupsPanel::CallbackSpinControlDouble, this);
+		wx_panel->Bind(wxEVT_COLOURPICKER_CHANGED, &ElementsSetupsPanel::CallbackColorPicker, this);
+		wx_panel->Bind(wxEVT_SLIDER, &ElementsSetupsPanel::CallbackSlider, this);
+	}
+
+	wxPanel* PanelPtr()
+	{
+		return wx_panel;
 	}
 
 	void ReceiveShapeConfigurationStorage(const ShapeConfigurationStorage& shape_configuration_storage)
 	{
 		this->shape_configuration_storage = shape_configuration_storage;
-
 		UpdateConfigurationList();
 	}
 
@@ -92,28 +97,28 @@ private:
 
 	void InitWidgets()
 	{
-		shape_configuration_list_box = new wxListBox(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, nullptr, wxLB_SINGLE | wxLB_NEEDED_SB, wxDefaultValidator, wxListBoxNameStr);
+		shape_configuration_list_box = new wxListBox(wx_panel, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, nullptr, wxLB_SINGLE | wxLB_NEEDED_SB, wxDefaultValidator, wxListBoxNameStr);
 
-		outline_visible_ctrl = new wxCheckBox(this, wxID_ANY, L"Outline Visible");
-		fill_visible_ctrl = new wxCheckBox(this, wxID_ANY, L"Fill Visible");
+		outline_visible_ctrl = new wxCheckBox(wx_panel, wxID_ANY, L"Outline Visible");
+		fill_visible_ctrl = new wxCheckBox(wx_panel, wxID_ANY, L"Fill Visible");
 
-		line_color_picker = new wxColourPickerCtrl(this, wxID_ANY, *wxStockGDI::GetColour(wxStockGDI::COLOUR_BLACK), wxDefaultPosition, wxDefaultSize, wxCLRP_SHOW_ALPHA);
-		fill_color_picker = new wxColourPickerCtrl(this, wxID_ANY, *wxStockGDI::GetColour(wxStockGDI::COLOUR_BLACK), wxDefaultPosition, wxDefaultSize, wxCLRP_SHOW_ALPHA);
+		line_color_picker = new wxColourPickerCtrl(wx_panel, wxID_ANY, *wxStockGDI::GetColour(wxStockGDI::COLOUR_BLACK), wxDefaultPosition, wxDefaultSize, wxCLRP_SHOW_ALPHA);
+		fill_color_picker = new wxColourPickerCtrl(wx_panel, wxID_ANY, *wxStockGDI::GetColour(wxStockGDI::COLOUR_BLACK), wxDefaultPosition, wxDefaultSize, wxCLRP_SHOW_ALPHA);
 
-		linewidth_ctrl = new wxSpinCtrlDouble(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, /*16384L*/ wxSP_ARROW_KEYS | wxALIGN_RIGHT);
+		linewidth_ctrl = new wxSpinCtrlDouble(wx_panel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, /*16384L*/ wxSP_ARROW_KEYS | wxALIGN_RIGHT);
 		linewidth_ctrl->SetRange(0.0, 10.0);
 		linewidth_ctrl->SetDigits(2);
 		linewidth_ctrl->SetIncrement(0.05);
 
 		wxSize default_label_size(150, -1);
-		linewidth_label = new wxStaticText(this, wxID_ANY, "Line Width", wxDefaultPosition, default_label_size);
-		linecolor_label = new wxStaticText(this, wxID_ANY, "Line Color", wxDefaultPosition, default_label_size);
-		fillcolor_label = new wxStaticText(this, wxID_ANY, "Fill Color", wxDefaultPosition, default_label_size);
-		line_transparency_label = new wxStaticText(this, wxID_ANY, "Transparency", wxDefaultPosition, default_label_size);
-		fill_transparency_label = new wxStaticText(this, wxID_ANY, "Transparency", wxDefaultPosition, default_label_size);
+		linewidth_label = new wxStaticText(wx_panel, wxID_ANY, "Line Width", wxDefaultPosition, default_label_size);
+		linecolor_label = new wxStaticText(wx_panel, wxID_ANY, "Line Color", wxDefaultPosition, default_label_size);
+		fillcolor_label = new wxStaticText(wx_panel, wxID_ANY, "Fill Color", wxDefaultPosition, default_label_size);
+		line_transparency_label = new wxStaticText(wx_panel, wxID_ANY, "Transparency", wxDefaultPosition, default_label_size);
+		fill_transparency_label = new wxStaticText(wx_panel, wxID_ANY, "Transparency", wxDefaultPosition, default_label_size);
 
-		line_color_alpha_slider = new wxSlider(this, wxID_ANY, 0, 0, 100, wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL);
-		fill_color_alpha_slider = new wxSlider(this, wxID_ANY, 0, 0, 100, wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL);
+		line_color_alpha_slider = new wxSlider(wx_panel, wxID_ANY, 0, 0, 100, wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL);
+		fill_color_alpha_slider = new wxSlider(wx_panel, wxID_ANY, 0, 0, 100, wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL);
 	}
 
 	void InitSizers()
@@ -124,11 +129,11 @@ private:
 		sizer_flags[2].Proportion(1).Expand().Border(wxALL, 5);
 
 		wxBoxSizer* vertical_sizer = new wxBoxSizer(wxVERTICAL);
-		SetSizer(vertical_sizer);
+		wx_panel->SetSizer(vertical_sizer);
 
-		wxStaticBoxSizer* static_box_sizer_elements = new wxStaticBoxSizer(wxVERTICAL, this, "Elements");
-		wxStaticBoxSizer* static_box_sizer_outline = new wxStaticBoxSizer(wxVERTICAL, this, "Outline");
-		wxStaticBoxSizer* static_box_sizer_fill = new wxStaticBoxSizer(wxVERTICAL, this, "Fill");
+		wxStaticBoxSizer* static_box_sizer_elements = new wxStaticBoxSizer(wxVERTICAL, wx_panel, "Elements");
+		wxStaticBoxSizer* static_box_sizer_outline = new wxStaticBoxSizer(wxVERTICAL, wx_panel, "Outline");
+		wxStaticBoxSizer* static_box_sizer_fill = new wxStaticBoxSizer(wxVERTICAL, wx_panel, "Fill");
 
 		vertical_sizer->Add(static_box_sizer_elements, sizer_flags[2]);
 		vertical_sizer->Add(static_box_sizer_outline, sizer_flags[0]);
@@ -208,13 +213,13 @@ private:
 		fill_color_alpha_slider->SetValue(100 - static_cast<int>(current_configuration.FillColorDisabled().a * 100.f));
 	}
 
-	void SlotListBook(wxCommandEvent& event)
+	void CallbackListBook(wxCommandEvent& event)
 	{
 		size_t selection_index = static_cast<size_t>(event.GetSelection());
 		UpdateWidgetForSelection(selection_index);
 	}
 
-	void SlotCheckBox(wxCommandEvent& event)
+	void CallbackCheckBox(wxCommandEvent& event)
 	{
 		auto check_status = event.IsChecked();
 		size_t selection = static_cast<size_t>(shape_configuration_list_box->GetSelection());
@@ -234,7 +239,7 @@ private:
 		signal_shape_configuration_storage(shape_configuration_storage);
 	}
 
-	void SlotSpinControlDouble(wxSpinDoubleEvent& event)
+	void CallbackSpinControlDouble(wxSpinDoubleEvent& event)
 	{
 		auto line_width = event.GetValue();
 		size_t element_selection = static_cast<size_t>(shape_configuration_list_box->GetSelection());
@@ -243,7 +248,7 @@ private:
 		signal_shape_configuration_storage(shape_configuration_storage);
 	}
 
-	void SlotColorPicker(wxColourPickerEvent& event)
+	void CallbackColorPicker(wxColourPickerEvent& event)
 	{
 		auto color = to_glm_vec4(event.GetColour());
 		size_t selection = static_cast<size_t>(shape_configuration_list_box->GetSelection());
@@ -265,7 +270,7 @@ private:
 		signal_shape_configuration_storage(shape_configuration_storage);
 	}
 
-	void SlotSlider(wxCommandEvent& event)
+	void CallbackSlider(wxCommandEvent& event)
 	{
 		auto slider_value = static_cast<float>(event.GetInt());
 		float alpha_value = 1.f - (slider_value / 100.f);
@@ -290,6 +295,8 @@ private:
 	}
 
 	ShapeConfigurationStorage shape_configuration_storage;
+	
+	wxPanel* wx_panel;
 
 	wxListBox* shape_configuration_list_box;
 	wxCheckBox* outline_visible_ctrl;

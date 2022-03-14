@@ -54,7 +54,7 @@ public:
 		return font_data;
 	}
 
-	wxPanel* GetPanelPtr()
+	wxPanel* PanelPtr()
 	{
 		return wx_panel;
 	}
