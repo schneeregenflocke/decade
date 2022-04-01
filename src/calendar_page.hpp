@@ -44,6 +44,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include <numeric>
 
 
+
+/*class PageShape
+{
+public:
+	explicit PageShape()
+	{
+		page_shape = std::make_shared<QuadShape>("paper");
+	}
+
+private:
+
+	std::shared_ptr<QuadShape> page_shape;
+};*/
+
+
 class CalendarPage
 {
 public:
@@ -53,23 +68,37 @@ public:
 	{
 		graphics_engine = gl_canvas->GraphicsEnginePtr();
 
-		page_shape = graphics_engine->AddShape<QuadShape>("paper");
+		page_shape = std::make_shared<QuadShape>("paper");
 
 		font_loader = std::make_shared<Font>(font_data);
-		title_font_shape = graphics_engine->AddShape<FontShape>("title text", font_loader);
+		title_font_shape = std::make_shared<FontShape>("title text", font_loader);
 		
-		print_area_shape = graphics_engine->AddShape<RectanglesShape>("print area");
-		title_area_shape = graphics_engine->AddShape<RectanglesShape>("title area");
-		days_cells_shape = graphics_engine->AddShape<RectanglesShape>("day cells");
-		months_cells_shape = graphics_engine->AddShape<RectanglesShape>("month cells");
-		years_cells_shape = graphics_engine->AddShape<RectanglesShape>("year cells");
-		bars_cells_shape = graphics_engine->AddShape<RectanglesShape>("bar cells");
-		years_totals_shape = graphics_engine->AddShape<RectanglesShape>("year total cells");
+		print_area_shape = std::make_shared<RectanglesShape>("print area");
+		title_area_shape = std::make_shared<RectanglesShape>("title area");
+		days_cells_shape = std::make_shared<RectanglesShape>("day cells");
+		months_cells_shape = std::make_shared<RectanglesShape>("month cells");
+		years_cells_shape = std::make_shared<RectanglesShape>("year cells");
+		bars_cells_shape = std::make_shared<RectanglesShape>("bar cells");
+		years_totals_shape = std::make_shared<RectanglesShape>("year total cells");
 		
-		row_labels_shape = graphics_engine->AddShape<RectanglesShape>("year label cells");
-		column_labels_shape = graphics_engine->AddShape<RectanglesShape>("month label cells");
-		legend_shape = graphics_engine->AddShape<RectanglesShape>("legend frame");
-		legend_entries_shape = graphics_engine->AddShape<RectanglesShape>("legend label frame");
+		row_labels_shape = std::make_shared<RectanglesShape>("year label cells");
+		column_labels_shape = std::make_shared<RectanglesShape>("month label cells");
+		legend_shape = std::make_shared<RectanglesShape>("legend frame");
+		legend_entries_shape = std::make_shared<RectanglesShape>("legend label frame");
+
+		graphics_engine->AddShape(page_shape);
+		graphics_engine->AddShape(title_font_shape);
+		graphics_engine->AddShape(print_area_shape);
+		graphics_engine->AddShape(title_area_shape);
+		graphics_engine->AddShape(days_cells_shape);
+		graphics_engine->AddShape(months_cells_shape);
+		graphics_engine->AddShape(years_cells_shape);
+		graphics_engine->AddShape(bars_cells_shape);
+		graphics_engine->AddShape(years_totals_shape);
+		graphics_engine->AddShape(row_labels_shape);
+		graphics_engine->AddShape(column_labels_shape);
+		graphics_engine->AddShape(legend_shape);
+		graphics_engine->AddShape(legend_entries_shape);
 	}
 
 	void ReceiveDateGroups(const std::vector<DateGroup>& date_groups)
@@ -182,8 +211,11 @@ public:
 		auto config = shape_configuration_storage.GetShapeConfiguration("Title Frame");
 		title_area_shape->SetShapes(title_frame, config.LineWidth(), config.FillColor(), config.OutlineColor());
 
+		
 		graphics_engine->RemoveShape(title_font_shape);
-		title_font_shape = graphics_engine->AddShape<FontShape>("title text", font_loader);
+		
+		title_font_shape = std::make_shared<FontShape>("title text", font_loader);
+		graphics_engine->AddShape(title_font_shape);
 
 		title_font_shape->SetShapeCentered(title_config.title_text, title_frame.getCenter(), title_frame.height() * title_config.font_size_ratio);
 	}
@@ -202,10 +234,12 @@ public:
 		}
 
 		graphics_engine->RemoveShapes(month_label_text);
+		month_label_text.clear();
 		const size_t number_months = 12;
 		for (size_t index = 0; index < number_months; ++index)
 		{
-			month_label_text.push_back(graphics_engine->AddShape<FontShape>(std::string("month label ") + std::to_string(index), font_loader));
+			month_label_text.push_back(std::make_shared<FontShape>(std::string("month label ") + std::to_string(index), font_loader));
+			graphics_engine->AddShape(month_label_text[index]);
 		}
 
 		std::vector<rectf> x_label_frames(12);
@@ -225,9 +259,11 @@ public:
 
 
 		graphics_engine->RemoveShapes(annual_labels_text);
+		annual_labels_text.clear();
 		for (size_t index = 0; index < calendar_config.GetSpanLengthYears(); ++index)
 		{
-			annual_labels_text.push_back(graphics_engine->AddShape<FontShape>(std::string("annual label ") + std::to_string(index), font_loader));
+			annual_labels_text.push_back(std::make_shared<FontShape>(std::string("annual label ") + std::to_string(index), font_loader));
+			graphics_engine->AddShape(annual_labels_text[index]);
 		}
 		
 		std::vector<rectf> y_labels_rows(calendar_config.GetSpanLengthYears());
@@ -385,7 +421,8 @@ public:
 
 				bars_cells.push_back(bar_cell);
 				std::string numsText = data_store.GetBar(index).GetText();
-				bar_labels_text.push_back(graphics_engine->AddShape<FontShape>(std::string("bar label text ") + std::to_string(index), font_loader));
+				bar_labels_text.push_back(std::make_shared<FontShape>(std::string("bar label text ") + std::to_string(index), font_loader));
+				graphics_engine->AddShape(bar_labels_text[index]);
 
 				auto current_text_cell = proportion_frame_layout.GetSubFrame(row, 2);
 				current_text_cell.setL(bar_cell.l());
@@ -432,7 +469,8 @@ public:
 				year_total_text_cell.setB(year_total_cell.b());
 				year_total_text_cell.setT(year_total_cell.t());
 
-				years_totals_text.push_back(graphics_engine->AddShape<FontShape>(std::string("year total label ") + std::to_string(index), font_loader));
+				years_totals_text.push_back(std::make_shared<FontShape>(std::string("year total label ") + std::to_string(index), font_loader));
+				graphics_engine->AddShape(years_totals_text[index]);
 				years_totals_text.back()->SetShapeCentered(year_total_text, year_total_text_cell.getCenter(), year_total_text_cell.height());
 			}
 		}
@@ -479,7 +517,8 @@ public:
 
 		for (size_t index = 0; index < date_group_store.GetDateGroups().size(); ++index)
 		{
-			legend_text.push_back(graphics_engine->AddShape<FontShape>(std::string("legend label ") + std::to_string(index), font_loader));
+			legend_text.push_back(std::make_shared<FontShape>(std::string("legend label ") + std::to_string(index), font_loader));
+			graphics_engine->AddShape(legend_text.back());
 			legend_text.back()->SetShapeCentered(date_group_store.GetDateGroups()[index].name, legend_entries_frames[index * 2].getCenter(), legend_font_size);
 
 			if (calendar_config.GetSpanLengthYears() > 0)
@@ -499,7 +538,8 @@ public:
 				bars_cells_shape_outlinecolors.push_back(current_shape_config.OutlineColor());
 			}
 			
-			legend_text.push_back(graphics_engine->AddShape<FontShape>(std::string("annual sums ") + std::to_string(index), font_loader));
+			legend_text.push_back(std::make_shared<FontShape>(std::string("annual sums ") + std::to_string(index), font_loader));
+			graphics_engine->AddShape(legend_text.back());
 			legend_text.back()->SetShapeCentered("Annual Sums", legend_entries_frames[legend_entries_frames.size() - 2].getCenter(), legend_font_size);
 
 			if (calendar_config.GetSpanLengthYears() > 0)
@@ -552,8 +592,10 @@ private:
 
 	////////////////////////////////////////////////////////////////////////////////
 
-	std::shared_ptr<QuadShape> page_shape;
+	
 	std::shared_ptr<Font> font_loader;
+
+	std::shared_ptr<QuadShape> page_shape;
 
 	std::shared_ptr<FontShape> title_font_shape;
 	std::vector<std::shared_ptr<FontShape>> years_totals_text;

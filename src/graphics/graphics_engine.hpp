@@ -72,51 +72,53 @@ public:
 		this->mvp = mvp;
 	}
 
-	template<typename T, typename... Args>
-	std::shared_ptr<T> AddShape(Args... args)
+	template<typename T>
+	void AddShape(T shape_ptr)
 	{
-		using ShaderTy = typename T::ShaderType;
+		using ShaderTy = T::element_type::ShaderType;
 
-		std::shared_ptr<T> shared_ptr = std::make_shared<T>(args...);
-		
 		if (std::is_same<ShaderTy, SimpleShader>::value)
 		{
-			shared_ptr->SetShader(&simple_shader);
+			shape_ptr->SetShader(&simple_shader);
 		}
 
 		if (std::is_same<ShaderTy, FontShader>::value)
 		{
-			shared_ptr->SetShader(&font_shader);
+			shape_ptr->SetShader(&font_shader);
 		}
 		
-		auto upcast_ptr = std::static_pointer_cast<ShapeBase>(shared_ptr);
+		auto upcast_ptr = std::static_pointer_cast<ShapeBase>(shape_ptr);
 		shapes.push_back(upcast_ptr);
-		return shared_ptr;
 	}
 
 	template<typename T>
-	void RemoveShape(std::shared_ptr<T> shape_ptr)
+	void RemoveShape(T shape_ptr)
 	{
-		auto found = std::find(shapes.cbegin(), shapes.cend(), shape_ptr);
-		if (found != shapes.cend())
+		auto shared_ptr_use_count = shape_ptr.use_count();
+		if (shared_ptr_use_count > 0)
 		{
-			shapes.erase(found);
-			shape_ptr.reset();
-		}
-		else
-		{
-			throw std::invalid_argument("Shape not found, remove failed");
-		}
+			auto found = std::find(shapes.cbegin(), shapes.cend(), shape_ptr);
+			if (found != shapes.cend())
+			{
+				shapes.erase(found);
+				shape_ptr.reset();
+			}
+			else
+			{
+				auto shape_names = GatherShapeNames();
+				auto shape_name = shape_ptr->GetShapeName();
+				throw std::invalid_argument(std::string("Shape not found, remove failed ") + shape_ptr->GetShapeName());
+			}
+		}		
 	}
 
 	template<typename T>
-	void RemoveShapes(std::vector<std::shared_ptr<T>>& shape_ptrs)
+	void RemoveShapes(const std::vector<T>& shape_ptrs)
 	{
 		for (size_t index = 0; index < shape_ptrs.size(); ++index)
 		{
 			RemoveShape(shape_ptrs[index]);
 		}
-		shape_ptrs.clear();
 	}
 
 private:
