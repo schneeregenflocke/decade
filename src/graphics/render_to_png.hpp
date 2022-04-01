@@ -467,14 +467,14 @@ private:
 
 	float dots_per_inch_to_dots_per_millimeter(const float dpi) const
 	{
-		const float ratio = 1.0f / 25.4f;
+		constexpr float ratio = 1.0f / 25.4f;
 		const float dots_per_millimeter = ratio * dpi;
 		return dots_per_millimeter;
 	}
 
 	float dots_per_millimeter_to_dots_per_inch(const float dpm) const
 	{
-		const float ratio = 25.4f;
+		constexpr float ratio = 25.4f;
 		const float dots_per_inch = ratio * dpm;
 		return dots_per_inch;
 	}
