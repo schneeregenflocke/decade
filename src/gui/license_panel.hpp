@@ -91,7 +91,7 @@ private:
 		collected_licenses.emplace_back("freetype", LOAD_RESOURCE(freetype_copyright).toString());
 		collected_licenses.emplace_back("zlib", LOAD_RESOURCE(zlib_copyright).toString());
 		collected_licenses.emplace_back("libpng", LOAD_RESOURCE(libpng_copyright).toString());
-		collected_licenses.emplace_back("wxwidgets", LOAD_RESOURCE(wxwidgets_licence).toString());
+		collected_licenses.emplace_back("wxwidgets", LOAD_RESOURCE(wxwidgets_copyright).toString());
 
 		for (const auto& license : collected_licenses)
 		{

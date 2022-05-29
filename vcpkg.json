@@ -6,6 +6,7 @@
     "boost-serialization",
     "zlib",
     "libpng",
-    "freetype"
+    "freetype",
+    "wxwidgets"
   ]
 }

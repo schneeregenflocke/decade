@@ -78,29 +78,35 @@ if(${Boost_FOUND})
 endif()
 
 
-#find_package(wxWidgets REQUIRED propgrid gl core base)
-#cmake_print_variables(wxWidgets_FOUND wxWidgets_INCLUDE_DIRS wxWidgets_LIBRARIES wxWidgets_LIBRARY_DIRS wxWidgets_DEFINITIONS wxWidgets_DEFINITIONS_DEBUG wxWidgets_CXX_FLAGS wxWidgets_USE_FILE)
-#if(wxWidgets_FOUND)
-#  include(${wxWidgets_USE_FILE})
-#  target_include_directories(${PROJECT_NAME} PRIVATE ${wxWidgets_INCLUDE_DIRS})
-#  target_link_libraries(${PROJECT_NAME} PRIVATE ${wxWidgets_LIBRARIES})
-#endif()
+find_package(wxWidgets REQUIRED propgrid gl core base)
+cmake_print_variables(wxWidgets_FOUND wxWidgets_INCLUDE_DIRS wxWidgets_LIBRARIES wxWidgets_LIBRARY_DIRS wxWidgets_DEFINITIONS wxWidgets_DEFINITIONS_DEBUG wxWidgets_CXX_FLAGS wxWidgets_USE_FILE)
+if(wxWidgets_FOUND)
+  include(${wxWidgets_USE_FILE})
+  target_include_directories(${PROJECT_NAME} PRIVATE ${wxWidgets_INCLUDE_DIRS})
+  target_link_libraries(${PROJECT_NAME} PRIVATE ${wxWidgets_LIBRARIES})
+endif()
+
+if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
+	#target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/include/wx/msw/wx_dpi_aware.manifest)
+	target_sources(${PROJECT_NAME} PRIVATE ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/wx/msw/wx_dpi_aware.manifest)
+endif()
+
 
 #set(wxUSE_ZLIB ON CACHE BOOL "wxUSE_STL" FORCE)
 #set(wxUSE_LIBPNG ON CACHE BOOL "wxUSE_STL" FORCE)
-set(wxUSE_STL ON CACHE BOOL "wxUSE_STL" FORCE)
-set(wxUSE_GUI ON CACHE BOOL "wxUSE_GUI" FORCE)
-set(wxUSE_OPENGL ON CACHE BOOL "wxUSE_OPENGL" FORCE)
-set(wxUSE_STD_IOSTREAM ON CACHE BOOL "wxUSE_STD_IOSTREAM" FORCE)
-set(wxUSE_WINRT	OFF CACHE BOOL "wxUSE_WINRT" FORCE)
-set(wxUSE_EXCEPTIONS OFF CACHE BOOL "wxUSE_EXCEPTIONS" FORCE)
-set(wxUSE_GLCANVAS_EGL OFF CACHE BOOL "wxUSE_GLCANVAS_EGL" FORCE)
-set(wxBUILD_SHARED OFF CACHE BOOL "wxBUILD_SHARED" FORCE)
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets")
-target_link_libraries(${PROJECT_NAME} PRIVATE wxpropgrid wxgl wxcore wxbase)
-if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
-	target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/include/wx/msw/wx_dpi_aware.manifest)
-endif()
+#set(wxUSE_STL ON CACHE BOOL "wxUSE_STL" FORCE)
+#set(wxUSE_GUI ON CACHE BOOL "wxUSE_GUI" FORCE)
+#set(wxUSE_OPENGL ON CACHE BOOL "wxUSE_OPENGL" FORCE)
+#set(wxUSE_STD_IOSTREAM ON CACHE BOOL "wxUSE_STD_IOSTREAM" FORCE)
+#set(wxUSE_WINRT	OFF CACHE BOOL "wxUSE_WINRT" FORCE)
+#set(wxUSE_EXCEPTIONS OFF CACHE BOOL "wxUSE_EXCEPTIONS" FORCE)
+#set(wxUSE_GLCANVAS_EGL OFF CACHE BOOL "wxUSE_GLCANVAS_EGL" FORCE)
+#set(wxBUILD_SHARED OFF CACHE BOOL "wxBUILD_SHARED" FORCE)
+#add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets")
+#target_link_libraries(${PROJECT_NAME} PRIVATE wxpropgrid wxgl wxcore wxbase)
+#if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
+#	target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/include/wx/msw/wx_dpi_aware.manifest)
+#endif()
 
 #find_package(ZLIB REQUIRED)
 #target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
@@ -126,6 +132,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/include)
 
+cmake_print_variables(VCPKG_INSTALLED_DIR VCPKG_TARGET_TRIPLET)
 
 list(APPEND RESOURCE_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/shaders/font_fragment_shader.glsl shader
@@ -144,12 +151,13 @@ list(APPEND RESOURCE_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/external/glad/LICENSE glad
 	${CMAKE_CURRENT_SOURCE_DIR}/external/glm/copying.txt glm
 	${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/LICENSE sigslot
-	${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/docs/licence.txt wxwidgets
+	#${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/docs/licence.txt wxwidgets
 
 	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/boost-date-time/copyright boost
 	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/freetype/copyright freetype
 	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/zlib/copyright zlib
 	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/libpng/copyright libpng
+	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/wxwidgets/copyright wxwidgets
 )
 
 embed_resources(${PROJECT_NAME}_RESOURCES ${RESOURCE_FILES})
