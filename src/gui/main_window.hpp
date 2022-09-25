@@ -103,7 +103,7 @@ public:
 
         ////////////////////////////////////////////////////////////////////////////////
 
-        std::cout.set_rdbuf(log_panel->GetTextCtrlPtr());
+        std::cout.rdbuf(log_panel->GetTextCtrlPtr());
         std::cout << std::string("__cplusplus ") + std::to_string(__cplusplus) << '\n';
         std::cout << "OperatingSystemIdName " << wxPlatformInfo::Get().GetOperatingSystemIdName() << '\n';
         std::cout << "ArchName " << wxPlatformInfo::Get().GetBitnessName() << '\n';

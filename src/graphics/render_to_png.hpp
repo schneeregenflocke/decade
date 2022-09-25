@@ -398,8 +398,8 @@ private:
 		// see https://sourceforge.net/p/libpng/code/ci/master/tree/example.c#l739
 
 		FILE* fp = nullptr;
-		auto file_error = fopen_s(&fp, file_name, "wb");
-		if (fp == NULL || file_error)
+		fp = fopen(file_name, "wb");
+		if (fp == NULL)
 		{
 
 		}

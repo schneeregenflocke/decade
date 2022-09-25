@@ -75,7 +75,7 @@ public:
 	template<typename T>
 	void AddShape(T shape_ptr)
 	{
-		using ShaderTy = T::element_type::ShaderType;
+		using ShaderTy = typename T::element_type::ShaderType;
 
 		if (std::is_same<ShaderTy, SimpleShader>::value)
 		{

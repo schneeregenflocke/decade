@@ -8,22 +8,36 @@ include(CMakePrintHelpers)
 #-DVCPKG_TARGET_TRIPLET=x64-windows-static-md
 #cmake_policy(SET CMP0091 NEW)
 #set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-
-project(Decade VERSION 0.6.0)
-
-cmake_print_variables(CMAKE_VERSION CMAKE_PROJECT_VERSION CMAKE_SYSTEM_NAME CMAKE_CXX_COMPILER CMAKE_CXX_COMPILER_ID)
-
-add_executable(${PROJECT_NAME} WIN32)
-
 #set_property(TARGET ${PROJECT_NAME} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+project(decade VERSION 0.6.0)
+
+cmake_print_variables(CMAKE_VERSION CMAKE_SYSTEM_NAME CMAKE_CXX_COMPILER_ID CMAKE_CXX_COMPILER CMAKE_PROJECT_VERSION)
+
+if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
+	add_executable(${PROJECT_NAME} WIN32)
+else()
+	add_executable(${PROJECT_NAME})
+endif()
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 get_target_property(${PROJECT_NAME}_CXX_STANDARD ${PROJECT_NAME} CXX_STANDARD)
 cmake_print_variables(${PROJECT_NAME}_CXX_STANDARD CMAKE_CXX_STANDARD CMAKE_CXX_EXTENSIONS)
+
 cmake_print_variables(CMAKE_EXPORT_COMPILE_COMMANDS)
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
 	target_compile_options(${PROJECT_NAME} PRIVATE /Zc:__cplusplus)
+endif()
+
+if(${CMAKE_CXX_COMPILER_ID} STREQUAL GNU)
+	target_compile_options(${PROJECT_NAME} PRIVATE -Wno-narrowing)
+	target_include_directories(${PROJECT_NAME} PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/src
+		${CMAKE_CURRENT_SOURCE_DIR}/src/packages
+		${CMAKE_CURRENT_SOURCE_DIR}/src/gui
+		${CMAKE_CURRENT_SOURCE_DIR}/src/graphics
+	)
 endif()
 
 get_target_property(${PROJECT_NAME}_COMPILE_OPTIONS ${PROJECT_NAME} COMPILE_OPTIONS)
@@ -32,7 +46,7 @@ cmake_print_variables(${PROJECT_NAME}_COMPILE_OPTIONS)
 get_target_property(${PROJECT_NAME}_COMPILE_DEFINITIONS ${PROJECT_NAME} COMPILE_DEFINITIONS)
 cmake_print_variables(${PROJECT_NAME}_COMPILE_DEFINITIONS)
 
-target_sources(${PROJECT_NAME} PRIVATE 
+target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/date_utils.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/casts.hpp
@@ -86,12 +100,6 @@ if(wxWidgets_FOUND)
   target_link_libraries(${PROJECT_NAME} PRIVATE ${wxWidgets_LIBRARIES})
 endif()
 
-if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
-	#target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/include/wx/msw/wx_dpi_aware.manifest)
-	target_sources(${PROJECT_NAME} PRIVATE ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/wx/msw/wx_dpi_aware.manifest)
-endif()
-
-
 #set(wxUSE_ZLIB ON CACHE BOOL "wxUSE_STL" FORCE)
 #set(wxUSE_LIBPNG ON CACHE BOOL "wxUSE_STL" FORCE)
 #set(wxUSE_STL ON CACHE BOOL "wxUSE_STL" FORCE)
@@ -114,8 +122,16 @@ endif()
 #find_package(libpng REQUIRED)
 #target_link_libraries(${PROJECT_NAME} PRIVATE png_static) #png_static
 
-find_package(freetype CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE freetype)
+if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
+	#target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/include/wx/msw/wx_dpi_aware.manifest)
+	target_sources(${PROJECT_NAME} PRIVATE ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/wx/msw/wx_dpi_aware.manifest)
+	find_package(freetype CONFIG REQUIRED)
+	target_link_libraries(${PROJECT_NAME} PRIVATE freetype)
+elseif(${CMAKE_SYSTEM_NAME} STREQUAL Linux)
+	find_package(Freetype REQUIRED)
+	target_link_libraries(${PROJECT_NAME} PRIVATE Freetype::Freetype)
+	cmake_print_variables(FREETYPE_FOUND FREETYPE_INCLUDE_DIRS FREETYPE_INCLUDE_DIR_ft2build FREETYPE_INCLUDE_DIR_freetype2 FREETYPE_LIBRARIES FREETYPE_VERSION_STRING)
+endif()
 
 set(GLAD_PROFILE "core" CACHE STRING "OpenGL profile" FORCE)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/glad)
@@ -154,11 +170,20 @@ list(APPEND RESOURCE_FILES
 	#${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/docs/licence.txt wxwidgets
 
 	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/boost-date-time/copyright boost
-	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/freetype/copyright freetype
 	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/zlib/copyright zlib
 	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/libpng/copyright libpng
 	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/wxwidgets/copyright wxwidgets
 )
+
+if(${CMAKE_SYSTEM_NAME} STREQUAL Windows)
+	list(APPEND RESOURCE_FILES
+		${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/freetype/copyright freetype
+	)
+elseif(${CMAKE_SYSTEM_NAME} STREQUAL Linux)
+	list(APPEND RESOURCE_FILES
+		/usr/share/doc/libfreetype-dev/copyright freetype
+	)
+endif()
 
 embed_resources(${PROJECT_NAME}_RESOURCES ${RESOURCE_FILES})
 cmake_print_variables(${PROJECT_NAME}_RESOURCES)
