@@ -1,7 +1,3 @@
-Decade
-Copyright (c) 2019-2022 Marco Peyer
-
-
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 
