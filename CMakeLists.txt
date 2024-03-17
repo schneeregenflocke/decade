@@ -180,18 +180,26 @@ list(APPEND RESOURCE_FILES
 
 list(APPEND RESOURCE_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt decade
-	${CMAKE_CURRENT_SOURCE_DIR}/external/csv2/LICENSE csv2
-	${CMAKE_CURRENT_SOURCE_DIR}/external/csv2/LICENSE.mio csv2mio
+
 	${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource/LICENSE.txt embed-resource	 
-	${CMAKE_CURRENT_SOURCE_DIR}/external/glad/LICENSE glad
-	${CMAKE_CURRENT_SOURCE_DIR}/external/glm/copying.txt glm
 	${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/LICENSE sigslot
-	${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/docs/licence.txt wxwidgets
+
+	#${CMAKE_CURRENT_SOURCE_DIR}/external/csv2/LICENSE csv2
+	#${CMAKE_CURRENT_SOURCE_DIR}/external/csv2/LICENSE.mio csv2mio
+	#${CMAKE_CURRENT_SOURCE_DIR}/external/glad/LICENSE glad
+	#${CMAKE_CURRENT_SOURCE_DIR}/external/glm/copying.txt glm
+	#${CMAKE_CURRENT_SOURCE_DIR}/external/wxWidgets/docs/licence.txt wxwidgets
 
 	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/boost-date-time/copyright boost
 	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/freetype/copyright freetype
 	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/zlib/copyright zlib
 	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/libpng/copyright libpng
+
+	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/p-ranav-csv2/copyright csv2
+	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/p-ranav-csv2/LICENSE.mio csv2mio
+	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/glad/copyright glad
+	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/glm/copyright glm
+	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/wxwidgets/copyright wxwidgets
 )
 
 embed_resources(${PROJECT_NAME}_RESOURCES ${RESOURCE_FILES})
