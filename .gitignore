@@ -22,4 +22,6 @@ build/
 
 compile_commands.json
 
+CMakePresets.json
+
 
