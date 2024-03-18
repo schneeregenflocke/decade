@@ -24,6 +24,7 @@ jobs:
       with:
         pkgs: boost-date-time boost-serialization zlib libpng freetype glad glm p-ranav-csv2 wxwidgets
         triplet: x64-windows-release
+        token: ${{ github.token }}
     
     - uses: actions/checkout@v2
     - name: Checkout submodules
