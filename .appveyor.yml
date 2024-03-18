@@ -16,12 +16,16 @@ environment:
   matrix:
     - GENERATOR: "Visual Studio 16 2019"
       BUILDFLAGS: "/verbosity:normal"
-      CMAKEARGS: "-DVCPKG_TARGET_TRIPLET=x64-windows-static-md"
+      CMAKEARGS: "-DVCPKG_TARGET_TRIPLET=x64-windows"
 
 matrix:
   fast_finish: true
 
 install:
+- git clone https://github.com/microsoft/vcpkg.git
+- cd vcpkg
+- ./bootstrap.bat
+- vcpkg install
 - cd %APPVEYOR_BUILD_FOLDER%
 - git submodule update --init --depth 1 --recursive
 
