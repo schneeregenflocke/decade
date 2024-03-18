@@ -23,17 +23,17 @@ jobs:
       id: vcpkg
       with:
         pkgs: boost-date-time boost-serialization zlib libpng freetype glad glm p-ranav-csv2 wxwidgets
-        triplet: x64-windows-release
+        triplet: x64-windows
         token: ${{ github.token }}
     
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Checkout submodules
       run: git submodule update --init --recursive
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{ github.workspace }}/build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/decade/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows
+      run: cmake -B ${{ github.workspace }}/build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows
 
     - name: Build
       # Build your program with the given configuration
