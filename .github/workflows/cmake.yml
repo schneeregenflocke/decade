@@ -18,6 +18,11 @@ jobs:
     runs-on: windows-latest
 
     steps:
+
+    - uses: actions/checkout@v3
+    - name: Checkout submodules
+      run: git submodule update --init --recursive
+
     - name: vcpkg build
       uses: johnwason/vcpkg-action@v6
       id: vcpkg
@@ -27,7 +32,7 @@ jobs:
         token: ${{ github.token }}
         github-binarycache: true
 
-    - name: Check 1
+    - name: Check
       run: | 
         echo ${{ steps.vcpkg.outputs.vcpkg-cmake-config }}
         echo ${{ github.workspace }}
@@ -39,22 +44,6 @@ jobs:
         cd buildsystems
         dir
     
-    - uses: actions/checkout@v3
-    - name: Checkout submodules
-      run: git submodule update --init --recursive
-
-    - name: Check 2
-      run: | 
-        echo ${{ steps.vcpkg.outputs.vcpkg-cmake-config }}
-        echo ${{ github.workspace }}
-        dir
-        cd vcpkg
-        dir
-        cd scripts
-        dir
-        cd buildsystems
-        dir
-
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
