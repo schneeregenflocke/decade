@@ -22,6 +22,7 @@ jobs:
     - uses: actions/checkout@v3
     - name: Checkout submodules
       run: git submodule update --init --recursive
+      
 
     - name: vcpkg build
       uses: johnwason/vcpkg-action@v6
