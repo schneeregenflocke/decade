@@ -25,13 +25,27 @@ jobs:
         pkgs: boost-date-time boost-serialization zlib libpng freetype glad glm p-ranav-csv2 wxwidgets
         triplet: x64-windows
         token: ${{ github.token }}
+        github-binarycache: true
+
+    - name: Check 1
+      run: | 
+        echo ${{ steps.vcpkg.outputs.vcpkg-cmake-config }}
+        echo ${{ github.workspace }}
+        dir
+        cd vcpkg
+        dir
+        cd scripts
+        dir
+        cd buildsystems
+        dir
     
     - uses: actions/checkout@v3
     - name: Checkout submodules
       run: git submodule update --init --recursive
 
-    - name: Echo github.workspace
+    - name: Check 2
       run: | 
+        echo ${{ steps.vcpkg.outputs.vcpkg-cmake-config }}
         echo ${{ github.workspace }}
         dir
         cd vcpkg
