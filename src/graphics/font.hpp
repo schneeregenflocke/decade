@@ -56,11 +56,20 @@ class Font
 {
 public:
 	
-	Font(const std::vector<unsigned char>& font_data) :
+	/*Font(const std::vector<unsigned char>& font_data) :
 		ft_library(nullptr), ft_face(nullptr), letters(256)
 	{
 		InitFreetype();
 		LoadFont(font_data);
+		LoadTextures();
+		ReleaseFreetype();
+	}*/
+
+	Font(const std::string& filepath) :
+		ft_library(nullptr), ft_face(nullptr), letters(256)
+	{
+		InitFreetype();
+		LoadFont(filepath);
 		LoadTextures();
 		ReleaseFreetype();
 	}
@@ -171,7 +180,20 @@ private:
 		std::cout << "FreeType Version " << version[0] << "." << version[1] << "." << version[2] << '\n';
 	}
 
-	void LoadFont(const std::vector<unsigned char>& font_data)
+	void LoadFont(const std::string& file_path)
+	{
+		FT_Error ft_error = FT_New_Face(ft_library, file_path.c_str(), 0, &ft_face);
+		if (ft_error == FT_Err_Ok)
+		{
+			std::cout << "ft_face->family_name " << ft_face->family_name <<  '\n';
+		}
+		else
+		{
+			throw std::runtime_error(std::string("Freetype FT_New_Memory_Face failed ") + std::to_string(ft_error));
+		}
+	}
+
+	/*void LoadFont(const std::vector<unsigned char>& font_data)
 	{
 		FT_Error ft_error = FT_New_Memory_Face(ft_library, font_data.data(), font_data.size(), 0, &ft_face);
 		if (ft_error == FT_Err_Ok)
@@ -182,15 +204,21 @@ private:
 		{
 			throw std::runtime_error(std::string("Freetype FT_New_Memory_Face failed ") + std::to_string(ft_error));
 		}
-	}
+	}*/
 		
 	void LoadTextures()
 	{
 		const FT_UInt font_pixel_height = 2048;
 		//const FT_UInt font_pixel_height = 128;
 		FT_Error ft_error = FT_Set_Pixel_Sizes(ft_face, 0, font_pixel_height);
+
+		//FT_CONFIG_OPTION_ERROR_STRINGS, FT_DEBUG_LEVEL_ERROR
+		auto ft_error_string = FT_Error_String(ft_error);
+		int ft_error_string_len = strlen(ft_error_string);
+		std::string error_string = std::string(ft_error_string, ft_error_string + ft_error_string_len);
 		if (ft_error != FT_Err_Ok)
 		{
+			std::cout << "FreeType Error: " << error_string << '\n';
 			throw std::runtime_error(std::string("Freetype FT_Set_Pixel_Sizes failed ") + std::to_string(ft_error));
 		}
 

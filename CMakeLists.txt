@@ -88,6 +88,8 @@ find_package(PNG REQUIRED)
 #target_link_libraries(${PROJECT_NAME} PRIVATE PNG::PNG_STATIC)
 target_link_libraries(${PROJECT_NAME} PRIVATE PNG::PNG)
 
+find_package(Fontconfig REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE Fontconfig::Fontconfig)
 
 find_package(freetype CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE freetype)

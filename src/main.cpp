@@ -57,7 +57,7 @@ public:
 
         const std::string application_name = "Decade";
         main_window = std::make_unique<MainWindow>(application_name, wxPoint(100, 100), wxSize(1280, 800));
-        
+
         return true;
     }
 

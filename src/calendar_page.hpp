@@ -63,14 +63,14 @@ class CalendarPage
 {
 public:
 
-	CalendarPage(GLCanvas* gl_canvas, const std::vector<unsigned char>& font_data) :
+	CalendarPage(GLCanvas* gl_canvas, const std::string& font_filepath) :
 		gl_canvas(gl_canvas)
 	{
 		graphics_engine = gl_canvas->GraphicsEnginePtr();
 
 		page_shape = std::make_shared<QuadShape>("paper");
 
-		font_loader = std::make_shared<Font>(font_data);
+		font_loader = std::make_shared<Font>(font_filepath);
 		title_font_shape = std::make_shared<FontShape>("title text", font_loader);
 		
 		print_area_shape = std::make_shared<RectanglesShape>("print area");
@@ -121,9 +121,9 @@ public:
 		Update();
 	}
 
-	void ReceiveFont(const std::vector<unsigned char>& font_data)
+	void ReceiveFont(const std::string& font_filepath)
 	{
-		font_loader.reset(new Font(font_data));
+		font_loader.reset(new Font(font_filepath));
 		Update();
 	}
 

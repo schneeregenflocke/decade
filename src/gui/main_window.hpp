@@ -65,6 +65,7 @@ public:
         ID_SAVE_AS_XML(wxWindow::NewControlId())
     {
         wx_frame = new wxFrame(nullptr, wxID_ANY, title, pos, size);
+        wx_frame->Maximize();
 
         wxSplitterWindow* main_splitter = new wxSplitterWindow(wx_frame, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE | wxCLIP_CHILDREN);
         main_splitter->SetMinimumPaneSize(20);
@@ -83,6 +84,11 @@ public:
 
         ////////////////////////////////////////////////////////////////////////////////
 
+        log_panel = std::make_unique<LogPanel>(notebook);
+        notebook->AddPage(log_panel->PanelPtr(), "Log");
+        std::cout.set_rdbuf(log_panel->GetTextCtrlPtr());
+        auto cout_rdbuf = std::cout.rdbuf();
+
         data_table_panel = std::make_unique<DateTablePanel>(notebook);
         date_groups_table_panel = std::make_unique<DateGroupsTablePanel>(notebook);
         calendar_setup_panel = std::make_unique<CalendarSetupPanel>(notebook);
@@ -90,7 +96,7 @@ public:
         page_setup_panel = std::make_unique<PageSetupPanel>(notebook);
         font_panel = std::make_unique<FontPanel>(notebook);
         title_setup_panel = std::make_unique<TitleSetupPanel>(notebook);
-        log_panel = std::make_unique<LogPanel>(notebook);
+        
         
         notebook->AddPage(data_table_panel->PanelPtr(), "Dates");
         notebook->AddPage(date_groups_table_panel->PanelPtr(), "Groups");
@@ -99,11 +105,11 @@ public:
         notebook->AddPage(page_setup_panel->PanelPtr(), "Page");
         notebook->AddPage(font_panel->PanelPtr(), "Font");
         notebook->AddPage(title_setup_panel->PanelPtr(), "Title");
-        notebook->AddPage(log_panel->PanelPtr(), "Log");
+        
 
         ////////////////////////////////////////////////////////////////////////////////
 
-        std::cout.set_rdbuf(log_panel->GetTextCtrlPtr());
+        
         std::cout << std::string("__cplusplus ") + std::to_string(__cplusplus) << '\n';
         std::cout << "OperatingSystemIdName " << wxPlatformInfo::Get().GetOperatingSystemIdName() << '\n';
         std::cout << "ArchName " << wxPlatformInfo::Get().GetBitnessName() << '\n';
@@ -138,7 +144,7 @@ public:
         auto gl_loaded = gl_canvas->LoadOpenGL(gl_version);
         if (gl_loaded)
         {
-            calendar_page = std::make_unique<CalendarPage>(gl_canvas.get(), font_panel->GetFontData());
+            calendar_page = std::make_unique<CalendarPage>(gl_canvas.get(), font_panel->GetFontFilePath());
             EtablishConnections();
         }
     }
@@ -175,7 +181,7 @@ private:
         page_setup_store.signal_page_setup_config.connect(&GLCanvas::ReceivePageSetup, gl_canvas.get());
 
         // Connections font_panel -> ...
-        font_panel->signal_font_file_path.connect(&CalendarPage::ReceiveFont, calendar_page.get());
+        font_panel->signal_font_filepath.connect(&CalendarPage::ReceiveFont, calendar_page.get());
 
         // Connections title_config_store <-> title_setup_panel
         title_config_store.signal_title_config.connect(&TitleSetupPanel::ReceiveTitleConfig, title_setup_panel.get());
