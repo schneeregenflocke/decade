@@ -67,14 +67,18 @@ public:
         wx_frame = new wxFrame(nullptr, wxID_ANY, title, pos, size);
         wx_frame->Maximize();
 
-        wxSplitterWindow* main_splitter = new wxSplitterWindow(wx_frame, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE | wxCLIP_CHILDREN);
-        main_splitter->SetMinimumPaneSize(20);
-        main_splitter->SetSashGravity(0.25);
+        wxSplitterWindow* main_splitter = new wxSplitterWindow(wx_frame, wxID_ANY, wxDefaultPosition, wxDefaultSize, 
+            wxSP_3D | wxSP_LIVE_UPDATE /*|*/ /*wxCLIP_CHILDREN |*/ /* |*/ /*wxSP_THIN_SASH *//*|*/  /*wxSP_3DSASH |*/ /*wxSP_NO_XP_THEME*/ );
+        main_splitter->SetMinimumPaneSize(5);
+        main_splitter->SetSashGravity(0.5);
+        //main_splitter->SetSashInvisible(true);
 
         wxSizerFlags sizer_flags;
         sizer_flags.Proportion(1).Expand().Border(wxALL, 5);
 
         wxPanel* notebook_panel = new wxPanel(main_splitter, wxID_ANY);
+        auto forgrndColor = notebook_panel->GetForegroundColour();
+        auto bckgrndColor = notebook_panel->GetBackgroundColour();
 
         wxBoxSizer* notebook_panel_sizer = new wxBoxSizer(wxVERTICAL);
         notebook_panel->SetSizer(notebook_panel_sizer);

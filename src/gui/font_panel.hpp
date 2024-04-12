@@ -166,12 +166,13 @@ private:
 		
 		std::cout << "face_name: " << face_name << "\tpoint_size: " << point_size << "\tfont_style: " << font_style << "\t font_weight: " << font_weight << '\n';
 
-
+		
 		FcConfig* ft_config = FcInitLoadConfigAndFonts();
 		
 
 		FcPattern* pattern = FcPatternCreate();
 		FcPatternAddString(pattern, FC_FAMILY, (const FcChar8*)face_name.utf8_str().data());
+		
 		FcPatternAddInteger(pattern, FC_SIZE, point_size);
 
 		int fc_weight = convertWxFontWeightToFcWeight(font_weight);
@@ -185,9 +186,9 @@ private:
 		FcResult result;
 		FcPattern* match = FcFontMatch(ft_config, pattern, &result);
 		FcChar8* name_unparse = FcNameUnparse(match);
-		int name_unparse_len = strlen(reinterpret_cast<const char*>(name_unparse));
+		/*int name_unparse_len = strlen(reinterpret_cast<const char*>(name_unparse));
 		std::string name_unparse_string(name_unparse, name_unparse + name_unparse_len);
-		std::cout << "font unparse: " << name_unparse_string << '\n';
+		std::cout << "font unparse: " << name_unparse_string << '\n';*/
 		
 		FcStrFree(name_unparse);
 
