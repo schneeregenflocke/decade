@@ -36,13 +36,12 @@ jobs:
           core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
 
     - name: vcpkg
-      # shell: pwsh
       working-directory: ${{ env.VCPKG_ROOT }}
       run: |
-        dir
         git pull
-        ${{ env.VCPKG_ROOT }}\\bootstrap-vcpkg.bat
-        ${{ env.VCPKG_ROOT }}\\vcpkg.exe install boost-date-time boost-serialization zlib libpng freetype[brotli,bzip2,error-strings,png,zlib] glad glm p-ranav-csv2 wxwidgets fontconfig
+        vcpkg.exe upgrade --no-dry-run
+        bootstrap-vcpkg.bat
+        vcpkg.exe install boost-date-time boost-serialization zlib libpng freetype[brotli,bzip2,error-strings,png,zlib] glad glm p-ranav-csv2 wxwidgets fontconfig
 
     - uses: actions/checkout@v3
     - name: Checkout submodules
