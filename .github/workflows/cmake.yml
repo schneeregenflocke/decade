@@ -28,7 +28,7 @@ jobs:
         echo "VCPKG Binary Sources: ${{ env.VCPKG_BINARY_SOURCES }}"
 
     - name: Export GitHub Actions cache environment variables
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
@@ -43,7 +43,7 @@ jobs:
         bootstrap-vcpkg.bat
         vcpkg.exe install boost-date-time boost-serialization zlib libpng freetype[brotli,bzip2,error-strings,png,zlib] glad glm p-ranav-csv2 wxwidgets fontconfig
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Checkout submodules
       run: git submodule update --init --recursive
 
