@@ -11,34 +11,39 @@ env:
   BUILD_TYPE: Release
   VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
 
+
 jobs:
   build:
     # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
     # You can convert this to a matrix build if you need cross-platform coverage.
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     runs-on: windows-latest
-
     steps:
 
-    - name: Check
-      run: | 
-        echo ${{ github.workspace }}
-        echo ${{ env.VCPKG_INSTALLATION_ROOT }}
-        echo ${{ env.VCPKG_ROOT }}
-        echo ${{ env.VCPKG_BINARY_SOURCES }}
-        echo ${{ steps.vcpkg.outputs.vcpkg-cmake-config }}
+    - name: Find vcpkg
+      run: |
+        where /R C:\ vcpkg.exe
+      shell: cmd
 
+    - name: Print environment details
+      run: |
+        echo "Workspace: ${{ github.workspace }}"
+        echo "VCPKG Installation Root: $VCPKG_INSTALLATION_ROOT"
+        echo "VCPKG Root: $VCPKG_ROOT"
+        echo "VCPKG Binary Sources: $VCPKG_BINARY_SOURCES"
+        # echo ${{ steps.vcpkg.outputs.vcpkg-cmake-config }}
 
     - name: Export GitHub Actions cache environment variables
       uses: actions/github-script@v6
       with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
           core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
           core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
 
 
     - name: Bootstrap vcpkg
-      shell: pwsh
+      # shell: pwsh
       run: |
         ${{ env.VCPKG_INSTALLATION_ROOT }}/vcpkg/bootstrap-vcpkg.bat
         ${{ env.VCPKG_INSTALLATION_ROOT }}/vcpkg/vcpkg.exe install boost-date-time boost-serialization zlib libpng freetype[brotli,bzip2,error-strings,png,zlib] glad glm p-ranav-csv2 wxwidgets fontconfig
