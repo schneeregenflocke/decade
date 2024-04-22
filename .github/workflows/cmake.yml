@@ -24,8 +24,8 @@ jobs:
     - name: Print environment details
       run: |
         echo "Workspace: ${{ github.workspace }}"
-        echo "VCPKG Root: $VCPKG_ROOT"
-        echo "VCPKG Binary Sources: $VCPKG_BINARY_SOURCES"
+        echo "VCPKG Root: ${{ env.VCPKG_ROOT }}"
+        echo "VCPKG Binary Sources: ${{ env.VCPKG_BINARY_SOURCES }}"
 
     - name: Export GitHub Actions cache environment variables
       uses: actions/github-script@v6
@@ -37,10 +37,12 @@ jobs:
 
     - name: Bootstrap vcpkg
       # shell: pwsh
+      working-directory: ${{ env.VCPKG_ROOT }}
       run: |
-        ${{ env.VCPKG_ROOT }}/git pull
-        ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
-        ${{ env.VCPKG_ROOT }}/vcpkg.exe install boost-date-time boost-serialization zlib libpng freetype[brotli,bzip2,error-strings,png,zlib] glad glm p-ranav-csv2 wxwidgets fontconfig
+        dir
+        git pull
+        ${{ env.VCPKG_ROOT }}\\bootstrap-vcpkg.bat
+        ${{ env.VCPKG_ROOT }}\\vcpkg.exe install boost-date-time boost-serialization zlib libpng freetype[brotli,bzip2,error-strings,png,zlib] glad glm p-ranav-csv2 wxwidgets fontconfig
 
     - uses: actions/checkout@v3
     - name: Checkout submodules
@@ -49,7 +51,7 @@ jobs:
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{ github.workspace }}/build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_INSTALLATION_ROOT }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DVCPKG_MANIFEST_MODE=OFF
+      run: cmake -B ${{ github.workspace }}/build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DVCPKG_MANIFEST_MODE=OFF
 
     - name: Build
       # Build your program with the given configuration
