@@ -41,7 +41,17 @@ public:
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		simple_shader.UseProgram();
+		for(size_t index = 0; index < shaders.GetNumberShaders(); ++index)
+		{
+			auto& shader = *shaders.GetShader(index);
+			
+			shader.UseProgram();
+			shader.SetUniform("projection", mvp.GetProjection());
+			shader.SetUniform("view", mvp.GetView());
+			shader.SetUniform("model", glm::mat4(1.f));
+		}
+
+		/*simple_shader.UseProgram();
 		simple_shader.SetProjectionMatrix(mvp.GetProjection());
 		simple_shader.SetViewMatrix(mvp.GetView());
 		simple_shader.SetModelMatrix(glm::mat4(1.f));
@@ -49,7 +59,7 @@ public:
 		font_shader.UseProgram();
 		font_shader.SetProjectionMatrix(mvp.GetProjection());
 		font_shader.SetViewMatrix(mvp.GetView());
-		font_shader.SetModelMatrix(glm::mat4(1.f));
+		font_shader.SetModelMatrix(glm::mat4(1.f));*/
 
 		for (size_t index = 0; index < shapes.size(); ++index)
 		{
@@ -79,12 +89,12 @@ public:
 
 		if (std::is_same<ShaderTy, SimpleShader>::value)
 		{
-			shape_ptr->SetShader(&simple_shader);
+			shape_ptr->SetShader(shaders.GetShader(0));
 		}
 
 		if (std::is_same<ShaderTy, FontShader>::value)
 		{
-			shape_ptr->SetShader(&font_shader);
+			shape_ptr->SetShader(shaders.GetShader(1));
 		}
 		
 		auto upcast_ptr = std::static_pointer_cast<ShapeBase>(shape_ptr);
@@ -124,8 +134,9 @@ public:
 private:
 
 	MVP mvp;
-	SimpleShader simple_shader;
-	FontShader font_shader;
+	//SimpleShader simple_shader;
+	//FontShader font_shader;
 
 	std::vector<std::shared_ptr<ShapeBase>> shapes;
+	Shaders shaders;
 };

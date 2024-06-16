@@ -357,8 +357,9 @@ public:
 		glm::vec4 color(0.0f, 0.0f, 0.0f, 1.0f);
 		glUniform4f(colorLocation, color.r, color.g, color.b, color.a);
 
-		glBindVertexArray(VAO);
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		vertex_array_object.BindVertexArray();
+		//glBindVertexArray(VAO);
+		//glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
 		glActiveTexture(GL_TEXTURE0);
 

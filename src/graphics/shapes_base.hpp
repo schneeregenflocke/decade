@@ -40,14 +40,32 @@ class VertexArrayObject
 public:
 	explicit VertexArrayObject()
 	{
-		glGenVertexArrays(1, &VAO);
+		glGenVertexArrays(1, &vertex_array_object);
 	}
+	
 	virtual ~VertexArrayObject()
 	{
-		glDeleteVertexArrays(1, &VAO);
+		glDeleteVertexArrays(1, &vertex_array_object);
 	}
-protected:
-	GLuint VAO;
+
+	void BindVertexArray() const
+	{
+		glBindVertexArray(vertex_array_object);
+	}
+
+	void UnbindVertexArray() const
+	{
+		glBindVertexArray(0);
+	}
+
+	GLuint GetVertexArrayObject() const
+	{
+		return vertex_array_object;
+	}
+
+private:
+
+	GLuint vertex_array_object;
 };
 
 
@@ -56,18 +74,36 @@ class VertexBufferObject
 public:
 	explicit VertexBufferObject()
 	{
-		glGenBuffers(1, &VBO);
+		glGenBuffers(1, &vertex_buffer_object);
 	}
+
 	virtual ~VertexBufferObject()
 	{
-		glDeleteBuffers(1, &VBO);
+		glDeleteBuffers(1, &vertex_buffer_object);
 	}
-protected:
-	GLuint VBO;
+
+	void BindVertexBuffer() const
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_object);
+	}
+
+	void UnbindVertexBuffer() const
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
+
+	GLuint GetVertexBufferObject() const
+	{
+		return vertex_buffer_object;
+	}
+
+private:
+
+	GLuint vertex_buffer_object;
 };
 
 
-class ShapeBase : public VertexArrayObject, public VertexBufferObject
+class ShapeBase
 {
 public:
 
@@ -80,7 +116,7 @@ public:
 	virtual void Draw() const
 	{
 		shader_ptr->UseProgram();
-		glBindVertexArray(VAO);
+		vertex_array_object.BindVertexArray();
 		glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(vertices_size));
 	}
 
@@ -95,6 +131,9 @@ public:
 	}
 
 protected:
+
+	VertexArrayObject vertex_array_object;
+	VertexBufferObject vertex_buffer_object;
 
 	size_t vertices_size;
 	Shader* shader_ptr;
@@ -121,14 +160,18 @@ protected:
 
 	void InitBuffer()
 	{
-		glBindVertexArray(VAO);
+		vertex_array_object.BindVertexArray();
+		//glBindVertexArray(VAO);
 		U::EnableVertexAttribArrays();
 
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		vertex_buffer_object.BindVertexBuffer();
+		//glBindBuffer(GL_ARRAY_BUFFER, VBO);
 		U::SetAttribPointers();
+
 		glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_DYNAMIC_DRAW);
-		glBindVertexArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		vertex_array_object.UnbindVertexArray();
+		vertex_buffer_object.UnbindVertexBuffer();
 	}
 
 	void SetBufferSize(GLsizeiptr vertices_size)
@@ -138,16 +181,16 @@ protected:
 
 		vertices.resize(vertices_size);
 		
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		vertex_buffer_object.BindVertexBuffer();
 		glBufferData(GL_ARRAY_BUFFER, buffer_size, nullptr, GL_DYNAMIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		vertex_buffer_object.UnbindVertexBuffer();
 	}
 
 	void UpdateBuffer()
 	{
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		vertex_buffer_object.BindVertexBuffer();
 		glBufferSubData(GL_ARRAY_BUFFER, 0, buffer_size, vertices.data());
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		vertex_buffer_object.UnbindVertexBuffer();
 	}
 
 	U& GetVertexRef(size_t index)

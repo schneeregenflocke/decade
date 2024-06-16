@@ -37,6 +37,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <vector>
 
 #include "Resource.h"
 
@@ -104,13 +105,76 @@ class Shader
 {
 public:
 
-	void UseProgram()
+	Shader() : 
+		program(0),
+		name("")
+	{
+	}
+
+	Shader(const std::string& vertex_shader_source, const std::string& fragment_shader_source, const std::string& name) :
+		program(0),
+		name(name)
+	{
+		CompileProgram(vertex_shader_source, fragment_shader_source);
+
+		GatherAttributesInfo();
+		GatherUniformsInfo();
+	}
+
+	GLuint GetProgram() const
+	{
+		return program;
+	}
+
+	std::string GetName() const
+	{
+		return name;
+	}
+
+	void UseProgram() const
 	{
 		glUseProgram(program);
 	}
-	GLuint GetProgram()
+
+	int GetNumberAttributes() const
 	{
-		return program;
+		GLint num_attribs;
+		glGetProgramiv(program, GL_ACTIVE_ATTRIBUTES, &num_attribs);
+		return num_attribs;
+	}
+
+	int GetNumberUniforms() const
+	{
+		GLint num_uniforms;
+		glGetProgramiv(program, GL_ACTIVE_UNIFORMS, &num_uniforms);
+		return num_uniforms;
+	}
+
+	void PrintShaderInfo() const
+	{
+		std::cout << "Shader: " << name << '\n';
+		std::cout << "Number of attributes: " << GetNumberAttributes() << '\n';
+		std::cout << "Number of uniforms: " << GetNumberUniforms() << '\n';
+
+		for(const auto& shader_info : shader_infos)
+		{
+			shader_info.Print();
+		}
+	}
+
+	int GetUniformLocation(const std::string& name) const
+	{
+		return glGetUniformLocation(program, name.c_str());
+	}
+
+	void SetUniform(GLint location, const glm::mat4& matrix) const
+	{
+		glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
+	}
+
+	void SetUniform(std::string name, const glm::mat4& matrix) const
+	{
+		SetUniform(GetUniformLocation(name), matrix);
 	}
 
 protected:
@@ -122,66 +186,169 @@ protected:
 		program = LinkShaders(vertexshader, fragmentshader);
 	}
 
-	static GLuint LinkShaders(const GLuint vertexshader, const GLuint fragmentshader)
+	void CompileProgram(const std::string& vertex_shader_source, const std::string& fragment_shader_source)
+	{
+		GLuint vertex_shader = CompileShader(vertex_shader_source, GL_VERTEX_SHADER);
+		GLuint fragment_shader = CompileShader(fragment_shader_source, GL_FRAGMENT_SHADER);
+		program = LinkShaders(vertex_shader, fragment_shader);
+	}
+
+	static GLuint LinkShaders(const GLuint vertex_shader, const GLuint fragment_shader)
 	{
 		GLuint program = glCreateProgram();
 
-		glAttachShader(program, vertexshader);
-		glAttachShader(program, fragmentshader);
+		glAttachShader(program, vertex_shader);
+		glAttachShader(program, fragment_shader);
 
 		glLinkProgram(program);
 
-		GLint linkstatus;
-		glGetProgramiv(program, GL_LINK_STATUS, &linkstatus);
-		std::cout << "GL_LINK_STATUS " << program << " " << std::boolalpha << static_cast<bool>(linkstatus) << std::noboolalpha << '\n';
+		glValidateProgram(program);
 
-		GLint infolenght;
-		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infolenght);
+		GLint status;
+		glGetProgramiv(program, GL_LINK_STATUS, &status);
+		std::cout << "GL_LINK_STATUS: " << program << " " << std::boolalpha << static_cast<bool>(status) << std::noboolalpha << '\n';
 
-		if (infolenght > 0)
+		GLint info_lenght;
+		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &info_lenght);
+		if (info_lenght > 0)
 		{
-			char* infolog = new char[infolenght];
-			glGetProgramInfoLog(program, infolenght, NULL, infolog);
-			std::cout << infolog;
-			delete[] infolog;
+			char* info_log = new char[info_lenght];
+			glGetProgramInfoLog(program, info_lenght, NULL, info_log);
+			std::cout << info_log;
+			delete[] info_log;
 		}
 
-		glDetachShader(program, vertexshader);
-		glDetachShader(program, fragmentshader);
-		glDeleteShader(vertexshader);
-		glDeleteShader(fragmentshader);
+		glDetachShader(program, vertex_shader);
+		glDetachShader(program, fragment_shader);
+		glDeleteShader(vertex_shader);
+		glDeleteShader(fragment_shader);
 
 		return program;
 	}
 
+	static GLuint CompileShader(const std::string& source, const GLuint shadertype)
+	{
+		GLuint shader = glCreateShader(shadertype);
+		const char* source_cstr = source.c_str();
+        glShaderSource(shader, 1, &source_cstr, nullptr);
+		glCompileShader(shader);
+
+		GLint status;
+		glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+		std::cout << "GL_COMPILE_STATUS: " << shader << " " << std::boolalpha << static_cast<bool>(status) << std::noboolalpha << '\n';
+
+		GLint info_lenght;
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &info_lenght);
+		if (info_lenght > 0)
+		{
+			char* info_log = new char[info_lenght];
+			glGetShaderInfoLog(shader, info_lenght, NULL, info_log);
+			std::cout << info_log;
+			delete[] info_log;
+		}
+		
+		return shader;
+	}
+
 	static GLuint CompileShader(const Resource& resource, const GLuint shadertype)
 	{
-		GLuint simple_shader = glCreateShader(shadertype);
-		const char* sourcepointer = resource.data();
-		glShaderSource(simple_shader, 1, &sourcepointer, NULL);
-		glCompileShader(simple_shader);
-
-		GLint compilestatus;
-		glGetShaderiv(simple_shader, GL_COMPILE_STATUS, &compilestatus);
-		std::cout << "GL_COMPILE_STATUS " << simple_shader << " " << std::boolalpha << static_cast<bool>(compilestatus) << std::noboolalpha << '\n';
-
-		GLint infolenght;
-		glGetShaderiv(simple_shader, GL_INFO_LOG_LENGTH, &infolenght);
-
-		if (infolenght > 0)
-		{
-			char* infolog = new char[infolenght];
-			glGetShaderInfoLog(simple_shader, infolenght, NULL, infolog);
-			std::cout << infolog;
-			delete[] infolog;
-		}
-
-		return simple_shader;
+		return CompileShader(resource.toString(), shadertype);
 	}
 
 private:
 
+	struct ShaderInfo
+	{
+		enum InfoType
+		{
+			ACTIVE_ATTRIBUTES,
+			ACTIVE_UNIFORMS
+		};
+
+		InfoType info_type;
+		std::string name;
+		GLint location;
+		GLint size;
+		GLenum type;
+
+		void Print() const
+		{
+			std::string info_type_str;
+			if (info_type == ACTIVE_ATTRIBUTES)
+			{
+				info_type_str = "Active Attributes";
+			}
+			else if (info_type == ACTIVE_UNIFORMS)
+			{
+				info_type_str = "Active Uniforms";
+			}
+
+			std::cout << "Info_Type: " << info_type_str << ", Name: " << name << ", Location: " << location << ", Size: " << size << ", Type: " << std::hex << type << std::dec <<'\n';
+		}
+	};
+
+	void GatherAttributesInfo()
+	{
+		GLint num_attribs = GetNumberAttributes();
+		GLint max_attrib_name_length = 0;
+		glGetProgramiv(program, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &max_attrib_name_length);
+
+		for (int index = 0; index < num_attribs; ++index)
+		{
+			char* attrib_name_cstr = new char[max_attrib_name_length];
+			GLsizei written = 0;
+			GLint size = 0;
+			GLenum type = 0;
+			glGetActiveAttrib(program, index, max_attrib_name_length, &written, &size, &type, attrib_name_cstr);
+			GLint location = glGetAttribLocation(program, attrib_name_cstr);
+
+			std::cout << "Written: " << written << ", max_attrib_name_length: " << max_attrib_name_length << '\n';
+
+			ShaderInfo shader_info;
+			shader_info.info_type = ShaderInfo::ACTIVE_ATTRIBUTES;
+			shader_info.name = std::string(attrib_name_cstr, written);
+			shader_info.location = location;
+			shader_info.size = size;
+			shader_info.type = type;
+
+			delete[] attrib_name_cstr;
+
+			shader_infos.push_back(shader_info);
+		}
+	}
+
+	void GatherUniformsInfo()
+	{
+		GLint num_uniforms = GetNumberUniforms();
+		GLint max_uniforms_name_length = 0;
+		glGetProgramiv(program, GL_ACTIVE_UNIFORM_MAX_LENGTH, &max_uniforms_name_length);
+
+		for (int index = 0; index < num_uniforms; ++index)
+		{
+			char* uniform_name_cstr = new char[max_uniforms_name_length];
+			GLsizei written = 0;
+			GLint size = 0;
+			GLenum type = 0;
+			glGetActiveUniform(program, index, max_uniforms_name_length, &written, &size, &type, uniform_name_cstr);
+
+			GLint location = glGetUniformLocation(program, uniform_name_cstr);
+
+			ShaderInfo shader_info;
+			shader_info.info_type = ShaderInfo::ACTIVE_UNIFORMS;
+			shader_info.name = std::string(uniform_name_cstr, written);
+			shader_info.location = location;
+			shader_info.size = size;
+			shader_info.type = type;
+
+			delete[] uniform_name_cstr;
+
+			shader_infos.push_back(shader_info);
+		}
+	}
+
 	GLuint program;
+	std::string name;
+	std::vector<ShaderInfo> shader_infos;
 };
 
 
@@ -248,6 +415,8 @@ public:
 
 		CompileProgram(simple_vertex_shader_resource, simple_fragment_shader_resource);
 		GetProjectionLocations(GetProgram());
+
+		
 	}
 };
 
@@ -258,7 +427,10 @@ public:
 	
 	PhongShader()
 	{
-		//CompileProgram("VertexShaderPhong.glsl", "FragmentShaderPhong.glsl");
+		auto phong_vertex_shader_resource = LOAD_RESOURCE(shader_phong_vertex_shader);
+		auto phong_fragment_shader_resource = LOAD_RESOURCE(shader_phong_fragment_shader);
+
+		CompileProgram(phong_vertex_shader_resource, phong_fragment_shader_resource);
 		GetProjectionLocations(GetProgram());
 		GetLightLocations(GetProgram());
 	}
@@ -283,3 +455,52 @@ public:
 
 	GLint textColorLocation;
 };
+
+class Shaders
+{
+public:
+	Shaders()
+	{
+		auto simple_vertex_shader_resource = LOAD_RESOURCE(shader_simple_vertex_shader);
+		auto simple_fragment_shader_resource = LOAD_RESOURCE(shader_simple_fragment_shader);
+		auto font_vertex_shader_resource = LOAD_RESOURCE(shader_font_vertex_shader);
+		auto font_fragment_shader_resource = LOAD_RESOURCE(shader_font_fragment_shader);
+		//auto phong_vertex_shader_resource = LOAD_RESOURCE(shader_phong_vertex_shader);
+		//auto phong_fragment_shader_resource = LOAD_RESOURCE(shader_phong_fragment_shader);
+
+		shaders.push_back(Shader(simple_vertex_shader_resource.toString(), simple_fragment_shader_resource.toString(), std::string("Simple Shader")));
+		shaders.push_back(Shader(font_vertex_shader_resource.toString(), font_fragment_shader_resource.toString(), std::string("Font Shader")));
+		//shaders.push_back(Shader(phong_vertex_shader_resource.toString(), phong_fragment_shader_resource.toString(), std::string("Phong Shader")));
+
+		PrintInfo();
+	}
+
+	void PrintInfo() const
+	{
+		for (size_t index = 0; index < shaders.size(); ++index)
+		{
+			shaders[index].PrintShaderInfo();
+		}
+	}
+
+	Shader* GetShader(size_t index)
+	{
+		if (index < shaders.size())
+		{
+			return &shaders[index];
+		}
+		else
+		{
+			throw std::invalid_argument("Shader index out of bounds");
+		}
+	}
+
+	size_t GetNumberShaders() const
+	{
+		return shaders.size();
+	}
+
+private:
+	std::vector<Shader> shaders;
+};
+
