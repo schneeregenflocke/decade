@@ -162,19 +162,26 @@ public:
 		}
 	}
 
-	int GetUniformLocation(const std::string& name) const
+	/*int GetUniformLocation(const std::string& name) const
 	{
 		return glGetUniformLocation(program, name.c_str());
-	}
+	}*/
 
-	void SetUniform(GLint location, const glm::mat4& matrix) const
+	/*void SetUniform(GLint location, const glm::mat4& matrix) const
 	{
 		glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
-	}
+	}*/
 
 	void SetUniform(std::string name, const glm::mat4& matrix) const
 	{
-		SetUniform(GetUniformLocation(name), matrix);
+		auto location = glGetUniformLocation(program, name.c_str());
+		glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
+	}
+
+	void SetUniform(std::string name, const glm::vec4& vector) const
+	{
+		auto location = glGetUniformLocation(program, name.c_str());
+		glUniform4fv(location, 1, glm::value_ptr(vector));
 	}
 
 protected:

@@ -1,16 +1,10 @@
 #version 330 core
 
-
-//uniform vec4 rawcolor;
-
-
-in vec4 vertexcolor;
-
+in vec4 vertex_color;
 
 out vec4 color;
 
-
 void main()
 {
-	color = vertexcolor;
+	color = vertex_color;
 }

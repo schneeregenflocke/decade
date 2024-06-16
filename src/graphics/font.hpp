@@ -353,13 +353,10 @@ public:
 	{
 		shader_ptr->UseProgram();
 		
-		auto colorLocation = glGetUniformLocation(shader_ptr->GetProgram(), "texColor");
 		glm::vec4 color(0.0f, 0.0f, 0.0f, 1.0f);
-		glUniform4f(colorLocation, color.r, color.g, color.b, color.a);
+		shader_ptr->SetUniform("texture_color", color);
 
 		vertex_array_object.BindVertexArray();
-		//glBindVertexArray(VAO);
-		//glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
 		glActiveTexture(GL_TEXTURE0);
 
