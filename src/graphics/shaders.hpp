@@ -38,6 +38,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <cstddef> // for offsetof
 
 #include "Resource.h"
 
