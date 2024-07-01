@@ -161,13 +161,11 @@ protected:
 	void InitBuffer()
 	{
 		vertex_array_object.BindVertexArray();
-		//glBindVertexArray(VAO);
 		U::EnableVertexAttribArrays();
 
 		vertex_buffer_object.BindVertexBuffer();
-		//glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		U::SetAttribPointers();
-
+		U::SetAttribPointers(vertex_buffer_object.GetVertexBufferObject());
+		
 		glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_DYNAMIC_DRAW);
 
 		vertex_array_object.UnbindVertexArray();

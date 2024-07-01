@@ -49,15 +49,23 @@ struct VertexVC
 	glm::vec3 point;
 	glm::vec4 color;
 
-	static void SetAttribPointers()
+	static void SetAttribPointers(GLuint buffer)
 	{
 		GLsizei stride = sizeof(VertexVC);
 
 		auto offsetof0 = offsetof(VertexVC, point);
 		auto offsetof1 = offsetof(VertexVC, color);
 
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void*>(offsetof0));
-		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void*>(offsetof1));
+		glVertexAttribFormat(0, 3, GL_FLOAT, GL_FALSE, offsetof0);
+		glVertexAttribBinding(0, 0);
+		glVertexAttribFormat(1, 4, GL_FLOAT, GL_FALSE, offsetof1);
+		glVertexAttribBinding(1, 0);
+
+		glBindVertexBuffer(0, buffer, offsetof0, stride);
+		glBindVertexBuffer(1, buffer, offsetof1, stride);
+
+		//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void*>(offsetof0));
+		//glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void*>(offsetof1));
 	}
 	static void EnableVertexAttribArrays()
 	{
@@ -77,7 +85,7 @@ struct VertexVT
 	glm::vec3 position;
 	glm::vec2 texturePosition;
 
-	static void SetAttribPointers()
+	static void SetAttribPointers(GLuint buffer)
 	{
 		GLsizei stride = sizeof(VertexVT);
 
@@ -163,15 +171,7 @@ public:
 		}
 	}
 
-	/*int GetUniformLocation(const std::string& name) const
-	{
-		return glGetUniformLocation(program, name.c_str());
-	}*/
 
-	/*void SetUniform(GLint location, const glm::mat4& matrix) const
-	{
-		glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
-	}*/
 
 	void SetUniform(std::string name, const glm::mat4& matrix) const
 	{
