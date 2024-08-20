@@ -1,10 +1,10 @@
-#version 330 core
+#version 460 core
 
-in vec4 vertex_color;
+uniform vec4 color;
 
-out vec4 color;
+out vec4 fragment_color;
 
 void main()
 {
-	color = vertex_color;
+	fragment_color = color;
 }

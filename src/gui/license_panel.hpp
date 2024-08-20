@@ -92,6 +92,9 @@ private:
 		collected_licenses.emplace_back("zlib", LOAD_RESOURCE(zlib_copyright).toString());
 		collected_licenses.emplace_back("libpng", LOAD_RESOURCE(libpng_copyright).toString());
 		collected_licenses.emplace_back("wxwidgets", LOAD_RESOURCE(wxwidgets_copyright).toString());
+		collected_licenses.emplace_back("fontconfig", LOAD_RESOURCE(fontconfig_copyright).toString());
+		collected_licenses.emplace_back("opengl", LOAD_RESOURCE(opengl_copyright).toString());
+		collected_licenses.emplace_back("tabulate", LOAD_RESOURCE(tabulate_copyright).toString());
 
 		for (const auto& license : collected_licenses)
 		{

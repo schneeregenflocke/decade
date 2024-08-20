@@ -17,8 +17,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
 
-#include "gui/wx_widgets_include.hpp"
-#include "gui/main_window.hpp"
+#include "wx_widgets_include.hpp"
+#include "main_window.hpp"
 
 #include <iostream>
 #include <string>

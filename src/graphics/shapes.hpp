@@ -10,7 +10,7 @@ the Free Software Foundation, either version 3 of the License, or
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
+GNU General Public Licens	e for more details.	
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
@@ -41,171 +41,140 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 
 
-class TriangleShape : public Shape<SimpleShader>
+class QuadrilateralShape : public Shape
 {
 public:
-	explicit TriangleShape(const std::string& shape_name) :
-		Shape<SimpleShader>(shape_name)
+
+	QuadrilateralShape(Shader* shader_ptr) : Shape(shader_ptr) {}
+
+	void set_shape(const rectf& rectangle)
 	{
-		SetBufferSize(3);
+		constexpr size_t number_vertices = 6;
+		std::vector<glm::vec3> vertices(number_vertices);
+
+		vertices[0] = glm::vec3(rectangle.l(), rectangle.b(), 0.f);
+		vertices[1] = glm::vec3(rectangle.r(), rectangle.b(), 0.f);
+		vertices[2] = glm::vec3(rectangle.l(), rectangle.t(), 0.f);
+		vertices[3] = glm::vec3(rectangle.r(), rectangle.t(), 0.f);
+		vertices[4] = glm::vec3(rectangle.l(), rectangle.t(), 0.f);
+		vertices[5] = glm::vec3(rectangle.r(), rectangle.b(), 0.f);
+
+		set_buffer(0, vertices.size(), vertices.data());
 	}
-	
-	void SetShape(const glm::vec3& p0, const glm::vec3& p1, const glm::vec3& p2)
+
+	void set_color(const glm::vec4& color)
 	{
-		GetVertexRef(0).point = p0;
-		GetVertexRef(1).point = p1;
-		GetVertexRef(2).point = p2;
-		UpdateBuffer();
+		this->color = color;
 	}
+
+	virtual void draw() const override
+	{
+		shader_ptr->UseProgram();
+		shader_ptr->SetUniform("color", color);
+
+		vao.bind();
+		glDrawArrays(GL_TRIANGLES, 0, number_vertices);
+		vao.unbind();
+	}
+
+private:
+
+	glm::vec4 color;
 };
 
 
-class CircleBase : public Shape<SimpleShader>
-{
-public:
-	explicit CircleBase(const std::string& shape_name) :
-		Shape<SimpleShader>(shape_name)
-	{
-		SetResolution(64);
-	}
-
-	void SetResolution(size_t resolution)
-	{
-		SetBufferSize(resolution * 3);
-		this->resolution = resolution;
-	}
-
-protected:
-	static glm::vec3 CirclePoint(float angle, float radius)
-	{
-		return glm::vec3(glm::cos(angle) * radius, glm::sin(angle) * radius, 0.f);
-	}
-
-	size_t resolution;
-};
 
 
-class CircleShape : public CircleBase
+class RectanglesShape : public Shape
 {
 public:
 
-	explicit CircleShape(const std::string& shape_name) :
-		CircleBase(shape_name)
-	{}
+	RectanglesShape(Shader* shader_ptr) : Shape(shader_ptr) {}
 
-	void SetShape(const glm::vec3& position, float radius, glm::vec4 color)
+	void set_shape(const std::vector<rectf>& rectangles, float line_width)
 	{
-		float step = glm::two_pi<float>() / static_cast<float>(resolution);
-		auto p0 = glm::vec3(0.f, 0.f, 0.f);
-		auto p1 = CirclePoint(0.f, radius);
-		auto p2 = CirclePoint(step, radius);
+		constexpr size_t vertices_per_rectangle = 6 * 5;
+		size_t size = rectangles.size() * vertices_per_rectangle;
+		vertices.resize(size);
 
-		for (size_t index = 0; index < resolution; ++index)
+		for (size_t index = 0; index < rectangles.size(); ++index)
 		{
-			auto angle = step * static_cast<float>(index);
-
-			auto rp0 = glm::rotateZ(p0, angle);
-			auto rp1 = glm::rotateZ(p1, angle);
-			auto rp2 = glm::rotateZ(p2, angle);
-
-			size_t subindex = index * 3;
-			GetVertexRef(subindex + 0).point = rp0 + position;
-			GetVertexRef(subindex + 1).point = rp1 + position;
-			GetVertexRef(subindex + 2).point = rp2 + position;
-
-			GetVertexRef(subindex + 0).color = color;
-			GetVertexRef(subindex + 1).color = color;
-			GetVertexRef(subindex + 2).color = color;
+			set_rectangle_shape(index, rectangles[index], line_width);
 		}
-		UpdateBuffer();
+
+		set_buffer(0, vertices.size(), vertices.data());
 	}
-};
 
-
-class CircleSectorShape : public CircleBase
-{
-public:
-
-	explicit CircleSectorShape(const std::string& shape_name) :
-		CircleBase(shape_name)
-	{}
-
-	void SetShape(const glm::vec3& position, float radius, float sector_begin, float sector_end)
+	void set_shape(const rectf& rectangle, float line_width)
 	{
-		float step = (sector_begin - sector_end) / static_cast<float>(resolution);
+		constexpr size_t vertices_per_rectangle = 6 * 5;
+		vertices.resize(vertices_per_rectangle);
 
-		auto p0 = glm::vec3(0.f, 0.f, 0.f);
-		auto p1 = CirclePoint(sector_begin, radius);
-		auto p2 = CirclePoint(sector_begin + step, radius);
+		set_rectangle_shape(0, rectangle, line_width);
 
-		for (size_t index = 0; index < resolution; ++index)
-		{
-			auto angle = step * static_cast<float>(index);
-			auto rp0 = glm::rotateZ(p0, angle);
-			auto rp1 = glm::rotateZ(p1, angle);
-			auto rp2 = glm::rotateZ(p2, angle);
+		set_buffer(0, vertices.size(), vertices.data());
+	}
 
-			auto subindex = index * 3U;
-			GetVertexRef(subindex + 0).point = rp0 + position;
-			GetVertexRef(subindex + 1).point = rp1 + position;
-			GetVertexRef(subindex + 2).point = rp2 + position;
+	void set_color(const std::vector<glm::vec4>& colors)
+	{
+		this->colors = colors;
+	}
+
+	virtual void draw() const override
+	{
+		
+		shader_ptr->UseProgram();
+		
+		if (colors.size() == 2)
+		{                                
+			shader_ptr->SetUniform("outline_color", colors[0]);
+			shader_ptr->SetUniform("fill_color", colors[1]);
 		}
-		UpdateBuffer();
+		
+		vao.bind();
+		glDrawArrays(GL_TRIANGLES, 0, number_vertices);
+		vao.unbind();
 	}
+
+private:
+
+	void set_rectangle_shape(size_t index, const rectf& rectangle, float line_width)
+	{
+		float hlt = line_width * 0.5f;
+
+		rectf inrectangle = rectangle.reduce(rectf(hlt, hlt, hlt, hlt));
+		rectf outrectangle = rectangle.expand(rectf(hlt, hlt, hlt, hlt));
+
+		size_t offset = index * 6 * 5;
+
+		// fill
+		set_rectangle(offset + 0 * 6, inrectangle.getLB(), inrectangle.getRB(), inrectangle.getLT(), inrectangle.getRT());
+		// top outline
+		set_rectangle(offset + 1 * 6, inrectangle.getLT(), inrectangle.getRT(), outrectangle.getLT(), outrectangle.getRT());
+		// bottom outline
+		set_rectangle(offset + 2 * 6, outrectangle.getLB(), outrectangle.getRB(), inrectangle.getLB(), inrectangle.getRB());
+		// left outline
+		set_rectangle(offset + 3 * 6, outrectangle.getLB(), inrectangle.getLB(), outrectangle.getLT(), inrectangle.getLT());
+		// right outline
+		set_rectangle(offset + 4 * 6, inrectangle.getRB(), outrectangle.getRB(), inrectangle.getRT(), outrectangle.getRT());
+	}
+
+	void set_rectangle(size_t offset, const glm::vec3& p0, const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& p3)
+	{
+		vertices[offset + 0] = p0;
+		vertices[offset + 1] = p1;
+		vertices[offset + 2] = p2;
+		vertices[offset + 3] = p3;
+		vertices[offset + 4] = p2;
+		vertices[offset + 5] = p1;
+	}
+
+	std::vector<glm::vec3> vertices;
+	std::vector<glm::vec4> colors;
 };
 
 
-class QuadShape : public Shape<SimpleShader>
-{
-public:
-
-	explicit QuadShape(const std::string& shape_name) :
-		Shape<SimpleShader>(shape_name)
-	{
-		SetBufferSize(6);
-	}
-
-	void SetShape(const glm::vec3& p0, const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& p3, const glm::vec4& color)
-	{
-		GetVertexRef(0).point = p0;
-		GetVertexRef(1).point = p1;
-		GetVertexRef(2).point = p2;
-		GetVertexRef(3).point = p3;
-		GetVertexRef(4).point = p2;
-		GetVertexRef(5).point = p1;
-
-		GetVertexRef(0).color = color;
-		GetVertexRef(1).color = color;
-		GetVertexRef(2).color = color;
-		GetVertexRef(3).color = color;
-		GetVertexRef(4).color = color;
-		GetVertexRef(5).color = color;
-
-		UpdateBuffer();
-	}
-
-	void SetShape(const rectf& rectangle, const glm::vec4& color)
-	{
-		GetVertexRef(0).point = glm::vec3(rectangle.l(), rectangle.b(), 0.f);
-		GetVertexRef(1).point = glm::vec3(rectangle.r(), rectangle.b(), 0.f);
-		GetVertexRef(2).point = glm::vec3(rectangle.l(), rectangle.t(), 0.f);
-		GetVertexRef(3).point = glm::vec3(rectangle.r(), rectangle.t(), 0.f);
-		GetVertexRef(4).point = glm::vec3(rectangle.l(), rectangle.t(), 0.f);
-		GetVertexRef(5).point = glm::vec3(rectangle.r(), rectangle.b(), 0.f);
-
-		GetVertexRef(0).color = color;
-		GetVertexRef(1).color = color;
-		GetVertexRef(2).color = color;
-		GetVertexRef(3).color = color;
-		GetVertexRef(4).color = color;
-		GetVertexRef(5).color = color;
-
-		UpdateBuffer();
-	}
-};
-
-
-class OrthoLineShape : public Shape<SimpleShader>
+/*class OrthoLineShape : public Shape<SimpleShader>
 {
 public:
 
@@ -238,10 +207,10 @@ public:
 
 		UpdateBuffer();
 	}
-};
+};*/
 
 
-class LineShape : public Shape<SimpleShader>
+/*class LineShape : public Shape<SimpleShader>
 {
 public:
 
@@ -275,10 +244,10 @@ public:
 
 		UpdateBuffer();
 	}
-};
+};*/
 
 
-class CuboidShape : public Shape<SimpleShader>
+/*class CuboidShape : public Shape<SimpleShader>
 {
 public:
 
@@ -322,96 +291,116 @@ public:
 
 		UpdateBuffer();
 	}
-};
+};*/
 
 
-class RectanglesShape : public Shape<SimpleShader>
+/*class Triangle
+{
+public:
+	explicit Triangle(Shape *shape, const glm::vec3 &p0, const glm::vec3 &p1, const glm::vec3 &p2)
+	{
+		std::vector<glm::vec3> points = {p0, p1, p2};
+		shape->set_buffer(0, points);
+	}
+private:
+};*/
+
+
+
+/*class CircleBase
+{
+public:
+	explicit CircleBase()
+	{
+		SetResolution(64);
+	}
+
+	void SetResolution(size_t resolution)
+	{
+		//SetBufferSize(resolution * 3);
+		this->resolution = resolution;
+	}
+
+protected:
+
+	static glm::vec3 CirclePoint(float angle, float radius)
+	{
+		return glm::vec3(glm::cos(angle) * radius, glm::sin(angle) * radius, 0.f);
+	}
+
+	size_t resolution;
+};*/
+
+
+/*class CircleShape : public CircleBase
 {
 public:
 
-	explicit RectanglesShape(const std::string& shape_name) :
-		Shape<SimpleShader>(shape_name)
+	explicit CircleShape(Shape* shape, const glm::vec3& position, float radius, glm::vec4 color)
+	{
+
+
+	}
+
+	void SetShape(const glm::vec3& position, float radius, glm::vec4 color)
+	{
+		float step = glm::two_pi<float>() / static_cast<float>(resolution);
+		auto p0 = glm::vec3(0.f, 0.f, 0.f);
+		auto p1 = CirclePoint(0.f, radius);
+		auto p2 = CirclePoint(step, radius);
+
+		std::vector<glm::vec3> points(resolution);
+
+		for (size_t index = 0; index < resolution; ++index)
+		{
+			auto angle = step * static_cast<float>(index);
+
+			auto rp0 = glm::rotateZ(p0, angle);
+			auto rp1 = glm::rotateZ(p1, angle);
+			auto rp2 = glm::rotateZ(p2, angle);
+
+			size_t subindex = index * 3;
+			GetVertexRef(subindex + 0).point = rp0 + position;
+			GetVertexRef(subindex + 1).point = rp1 + position;
+			GetVertexRef(subindex + 2).point = rp2 + position;
+
+			GetVertexRef(subindex + 0).color = color;
+			GetVertexRef(subindex + 1).color = color;
+			GetVertexRef(subindex + 2).color = color;
+		}
+		// UpdateBuffer();
+	}
+};*/
+
+
+/*class CircleSectorShape : public CircleBase
+{
+public:
+
+	explicit CircleSectorShape(const std::string& shape_name) :
+		CircleBase(shape_name)
 	{}
 
-	void SetShapes(const std::vector<rectf>& rectangles, const std::vector<float>& linewidths, const std::vector<glm::vec4>& fillcolors, const std::vector<glm::vec4>& outlinecolors)
+	void SetShape(const glm::vec3& position, float radius, float sector_begin, float sector_end)
 	{
-		size_t size = 6 * 5 * rectangles.size();
-		SetBufferSize(size);
+		float step = (sector_begin - sector_end) / static_cast<float>(resolution);
 
-		for (size_t index = 0; index < rectangles.size(); ++index)
+		auto p0 = glm::vec3(0.f, 0.f, 0.f);
+		auto p1 = CirclePoint(sector_begin, radius);
+		auto p2 = CirclePoint(sector_begin + step, radius);
+
+		for (size_t index = 0; index < resolution; ++index)
 		{
-			SetSlice(index, rectangles[index], linewidths[index], fillcolors[index], outlinecolors[index]);
+			auto angle = step * static_cast<float>(index);
+			auto rp0 = glm::rotateZ(p0, angle);
+			auto rp1 = glm::rotateZ(p1, angle);
+			auto rp2 = glm::rotateZ(p2, angle);
+
+			auto subindex = index * 3U;
+			GetVertexRef(subindex + 0).point = rp0 + position;
+			GetVertexRef(subindex + 1).point = rp1 + position;
+			GetVertexRef(subindex + 2).point = rp2 + position;
 		}
-
 		UpdateBuffer();
 	}
-
-	void SetShapes(const std::vector<rectf>& rectangles, float outlinethickness, const std::vector<glm::vec4>& fillcolors, const glm::vec4& outlinecolor)
-	{
-		size_t size = 6 * 5 * rectangles.size();
-		SetBufferSize(size);
-
-		for (size_t index = 0; index < rectangles.size(); ++index)
-		{
-			SetSlice(index, rectangles[index], outlinethickness, fillcolors[index], outlinecolor);
-		}
-
-		UpdateBuffer();
-	}
-
-	void SetShapes(const std::vector<rectf>& rectangles, float outlinethickness, const glm::vec4& fillcolor, const glm::vec4& outlinecolor)
-	{
-		size_t size = 6 * 5 * rectangles.size();
-		SetBufferSize(size);
-
-		for (size_t index = 0; index < rectangles.size(); ++index)
-		{
-			SetSlice(index, rectangles[index], outlinethickness, fillcolor, outlinecolor);
-		}
-
-		UpdateBuffer();
-	}
-
-	void SetShapes(const rectf rectangle, float outlinethickness, const glm::vec4& fillcolor, const glm::vec4& outlinecolor)
-	{
-		auto size = 6 * 5;
-		SetBufferSize(size);
-
-		SetSlice(0, rectangle, outlinethickness, fillcolor, outlinecolor);
-
-		UpdateBuffer();
-	}
-
-private:
-
-	void SetSlice(size_t index, const rectf& rectangle, float outlinethickness, const glm::vec4& fillcolor, const glm::vec4& outlinecolor)
-	{
-		float hlt = outlinethickness / 2.f;
-
-		rectf inrectangle = rectangle.reduce(rectf(hlt, hlt, hlt, hlt));
-		rectf outrectangle = rectangle.expand(rectf(hlt, hlt, hlt, hlt));
-
-		SetSubSlice(index * 6 * 5 + 0 * 6, inrectangle.getLB(), inrectangle.getRB(), inrectangle.getLT(), inrectangle.getRT(), fillcolor);
-		SetSubSlice(index * 6 * 5 + 1 * 6, inrectangle.getLT(), inrectangle.getRT(), outrectangle.getLT(), outrectangle.getRT(), outlinecolor);
-		SetSubSlice(index * 6 * 5 + 2 * 6, outrectangle.getLB(), outrectangle.getRB(), inrectangle.getLB(), inrectangle.getRB(), outlinecolor);
-		SetSubSlice(index * 6 * 5 + 3 * 6, outrectangle.getLB(), inrectangle.getLB(), outrectangle.getLT(), inrectangle.getLT(), outlinecolor);
-		SetSubSlice(index * 6 * 5 + 4 * 6, inrectangle.getRB(), outrectangle.getRB(), inrectangle.getRT(), outrectangle.getRT(), outlinecolor);
-	}
-
-	void SetSubSlice(size_t first, const glm::vec3& p0, const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& p3, const glm::vec4& color)
-	{
-		GetVertexRef(first + 0).point = p0;
-		GetVertexRef(first + 1).point = p1;
-		GetVertexRef(first + 2).point = p2;
-		GetVertexRef(first + 3).point = p3;
-		GetVertexRef(first + 4).point = p2;
-		GetVertexRef(first + 5).point = p1;
-
-		GetVertexRef(first + 0).color = color;
-		GetVertexRef(first + 1).color = color;
-		GetVertexRef(first + 2).color = color;
-		GetVertexRef(first + 3).color = color;
-		GetVertexRef(first + 4).color = color;
-		GetVertexRef(first + 5).color = color;
-	}
-};
+};*/

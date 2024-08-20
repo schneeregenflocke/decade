@@ -290,18 +290,21 @@ private:
 };
 
 
-class FontShape : public Shape<FontShader>
+class FontShape : public Shape
 {
 public:
 
-	explicit FontShape(const std::string& shape_name, const std::shared_ptr<Font>& font) :
-		Shape<FontShader>(shape_name),
-		font(font)
-	{}
+	FontShape(Shader* shader_ptr) : Shape(shader_ptr) {}
 
-	void SetShape(const std::string& text, const glm::vec3& position, float size)
+	void set_font(std::shared_ptr<Font> font)
 	{
-		SetBufferSize(text.size() * 6);
+		this->font = font;
+	}
+
+	void set_shape(const std::string& text, const glm::vec3& position, float size)
+	{
+		positions.resize(text.size() * 6);
+		texture_positions.resize(text.size() * 6);
 
 		text_textures.resize(text.size());
 
@@ -321,42 +324,43 @@ public:
 			GLfloat width = font->GetLetterRef(letter_index).size.x * size;
 			GLfloat height = font->GetLetterRef(letter_index).size.y * size;
 
-			GetVertexRef(index * 6 + 0).position = glm::vec3(xpos, ypos + height, 0.f);
-			GetVertexRef(index * 6 + 1).position = glm::vec3(xpos, ypos, 0.f);
-			GetVertexRef(index * 6 + 2).position = glm::vec3(xpos + width, ypos, 0.f);
-			GetVertexRef(index * 6 + 3).position = glm::vec3(xpos, ypos + height, 0.f);
-			GetVertexRef(index * 6 + 4).position = glm::vec3(xpos + width, ypos, 0.f);
-			GetVertexRef(index * 6 + 5).position = glm::vec3(xpos + width, ypos + height, 0.f);
+			positions[index * 6 + 0] = glm::vec3(xpos, ypos + height, 0.f);
+			positions[index * 6 + 1] = glm::vec3(xpos, ypos, 0.f);
+			positions[index * 6 + 2] = glm::vec3(xpos + width, ypos, 0.f);
+			positions[index * 6 + 3] = glm::vec3(xpos, ypos + height, 0.f);
+			positions[index * 6 + 4] = glm::vec3(xpos + width, ypos, 0.f);
+			positions[index * 6 + 5] = glm::vec3(xpos + width, ypos + height, 0.f);
 
-			GetVertexRef(index * 6 + 0).texturePosition = glm::vec2(0.0f, 0.0f);
-			GetVertexRef(index * 6 + 1).texturePosition = glm::vec2(0.0f, 1.0f);
-			GetVertexRef(index * 6 + 2).texturePosition = glm::vec2(1.0f, 1.0f);
-			GetVertexRef(index * 6 + 3).texturePosition = glm::vec2(0.0f, 0.0f);
-			GetVertexRef(index * 6 + 4).texturePosition = glm::vec2(1.0f, 1.0f);
-			GetVertexRef(index * 6 + 5).texturePosition = glm::vec2(1.0f, 0.0f);
+			texture_positions[index * 6 + 0] = glm::vec2(0.0f, 0.0f);
+			texture_positions[index * 6 + 1] = glm::vec2(0.0f, 1.0f);
+			texture_positions[index * 6 + 2] = glm::vec2(1.0f, 1.0f);
+			texture_positions[index * 6 + 3] = glm::vec2(0.0f, 0.0f);
+			texture_positions[index * 6 + 4] = glm::vec2(1.0f, 1.0f);
+			texture_positions[index * 6 + 5] = glm::vec2(1.0f, 0.0f);
 
 			current_x += font->GetLetterRef(letter_index).advance * size;
 		}
 
-		UpdateBuffer();	
+		set_buffer(0, positions.size(), positions.data());
+		set_buffer(1, texture_positions.size(), texture_positions.data());
 	}
 
-	void SetShapeCentered(const std::string& text, const glm::vec3& position, float size)
+	void set_shape_centered(const std::string& text, const glm::vec3& position, float size)
 	{
 		auto half_wdith = font->TextWidth(text, size) / 2.f;
 		auto half_height = font->TextHeight(size) / 2.f;
 
-		SetShape(text, position - glm::vec3(half_wdith, half_height, 0.f), size);
+		set_shape(text, position - glm::vec3(half_wdith, half_height, 0.f), size);
 	}
 
-	void Draw() const override
+	void draw() const override
 	{
 		shader_ptr->UseProgram();
 		
 		glm::vec4 color(0.0f, 0.0f, 0.0f, 1.0f);
 		shader_ptr->SetUniform("texture_color", color);
 
-		vertex_array_object.BindVertexArray();
+		vao.bind();
 
 		glActiveTexture(GL_TEXTURE0);
 
@@ -368,9 +372,14 @@ public:
 		}
 
 		glBindTexture(GL_TEXTURE_2D, 0);
+
+		vao.unbind();
 	}
 
 private:
+
+	std::vector<glm::vec3> positions;
+	std::vector<glm::vec2> texture_positions;
 	std::vector<GLuint> text_textures;
 	std::shared_ptr<Font> font;
 };

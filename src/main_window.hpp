@@ -20,7 +20,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 
-#include "gui/wx_widgets_include.hpp"
+#include "wx_widgets_include.hpp"
 #include "gui/opengl_panel.hpp"
 #include "gui/groups_panel.hpp"
 #include "gui/date_panel.hpp"
@@ -144,7 +144,7 @@ public:
         wx_frame->Show();
         wx_frame->Raise();
 
-        std::array<int, 2> gl_version{ 4, 5 };
+        std::array<int, 2> gl_version{ 4, 6 };
         auto gl_loaded = gl_canvas->LoadOpenGL(gl_version);
         if (gl_loaded)
         {

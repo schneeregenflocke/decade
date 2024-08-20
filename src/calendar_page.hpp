@@ -1,6 +1,6 @@
 /*
-Decade
-Copyright (c) 2019-2022 Marco Peyer
+Dekade
+Copyright (c) 2019-2024 Marco Peyer
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include "graphics/shapes.hpp"
 #include "graphics/font.hpp"
 #include "frame_layout.hpp"
+#include "graphics/scene_graph.hpp"
 
 #include "packages/group_store.hpp"
 #include "packages/date_store.hpp"
@@ -45,19 +46,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 
 
-/*class PageShape
-{
-public:
-	explicit PageShape()
-	{
-		page_shape = std::make_shared<QuadShape>("paper");
-	}
-
-private:
-
-	std::shared_ptr<QuadShape> page_shape;
-};*/
-
 
 class CalendarPage
 {
@@ -66,39 +54,88 @@ public:
 	CalendarPage(GLCanvas* gl_canvas, const std::string& font_filepath) :
 		gl_canvas(gl_canvas)
 	{
+		scene_graph = std::make_shared<SceneNode>("root");
+
 		graphics_engine = gl_canvas->GraphicsEnginePtr();
-
-		page_shape = std::make_shared<QuadShape>("paper");
-
-		font_loader = std::make_shared<Font>(font_filepath);
-		title_font_shape = std::make_shared<FontShape>("title text", font_loader);
+		graphics_engine->set_scene_graph(scene_graph);
 		
-		print_area_shape = std::make_shared<RectanglesShape>("print area");
-		title_area_shape = std::make_shared<RectanglesShape>("title area");
-		days_cells_shape = std::make_shared<RectanglesShape>("day cells");
-		months_cells_shape = std::make_shared<RectanglesShape>("month cells");
-		years_cells_shape = std::make_shared<RectanglesShape>("year cells");
-		bars_cells_shape = std::make_shared<RectanglesShape>("bar cells");
-		years_totals_shape = std::make_shared<RectanglesShape>("year total cells");
-		
-		row_labels_shape = std::make_shared<RectanglesShape>("year label cells");
-		column_labels_shape = std::make_shared<RectanglesShape>("month label cells");
-		legend_shape = std::make_shared<RectanglesShape>("legend frame");
-		legend_entries_shape = std::make_shared<RectanglesShape>("legend label frame");
+		font = std::make_shared<Font>(font_filepath);
 
-		graphics_engine->AddShape(page_shape);
-		graphics_engine->AddShape(title_font_shape);
-		graphics_engine->AddShape(print_area_shape);
-		graphics_engine->AddShape(title_area_shape);
-		graphics_engine->AddShape(days_cells_shape);
-		graphics_engine->AddShape(months_cells_shape);
-		graphics_engine->AddShape(years_cells_shape);
-		graphics_engine->AddShape(bars_cells_shape);
-		graphics_engine->AddShape(years_totals_shape);
-		graphics_engine->AddShape(row_labels_shape);
-		graphics_engine->AddShape(column_labels_shape);
-		graphics_engine->AddShape(legend_shape);
-		graphics_engine->AddShape(legend_entries_shape);
+
+		auto simple_shader = graphics_engine->search_shader("Simple Shader").value_or(nullptr);
+		auto rectangles_shader = graphics_engine->search_shader("Rectangles Shader").value_or(nullptr);
+		auto font_shader = graphics_engine->search_shader("Font Shader").value_or(nullptr);
+
+
+		auto page_shape = std::make_shared<QuadrilateralShape>(simple_shader);
+		auto page_node = std::make_shared<SceneNode>("page", page_shape);
+		scene_graph->add_child(page_node);
+
+		auto print_area_shape = std::make_shared<RectanglesShape>(rectangles_shader);
+		auto print_area_node = std::make_shared<SceneNode>("print area", print_area_shape);
+		page_node->add_child(print_area_node);
+		
+		auto title_area_shape = std::make_shared<RectanglesShape>(rectangles_shader);
+		auto title_area_node = std::make_shared<SceneNode>("title area", title_area_shape);
+		print_area_node->add_child(title_area_node);
+
+		auto row_labels_shape = std::make_shared<RectanglesShape>(rectangles_shader);
+		auto row_labels_node = std::make_shared<SceneNode>("row label area", row_labels_shape);
+		print_area_node->add_child(row_labels_node);
+
+		auto column_labels_shape = std::make_shared<RectanglesShape>(rectangles_shader);
+		auto column_labels_node = std::make_shared<SceneNode>("column label area", column_labels_shape);
+		print_area_node->add_child(column_labels_node);
+
+		auto years_cells_shape = std::make_shared<RectanglesShape>(rectangles_shader);
+		auto years_cells_node = std::make_shared<SceneNode>("year cells", years_cells_shape);
+		print_area_node->add_child(years_cells_node);
+
+		auto months_cells_shape = std::make_shared<RectanglesShape>(rectangles_shader);
+		auto months_cells_node = std::make_shared<SceneNode>("month cells", months_cells_shape);
+		print_area_node->add_child(months_cells_node);
+
+		auto days_cells0_shape = std::make_shared<RectanglesShape>(rectangles_shader);
+		auto days_cells0_node = std::make_shared<SceneNode>("day cells 0", days_cells0_shape);
+		print_area_node->add_child(days_cells0_node);
+
+		auto days_cells1_shape = std::make_shared<RectanglesShape>(rectangles_shader);
+		auto days_cells1_node = std::make_shared<SceneNode>("day cells 1", days_cells1_shape);
+		print_area_node->add_child(days_cells1_node);
+
+		auto bars_cells_node = std::make_shared<SceneNode>("bar cells");
+		print_area_node->add_child(bars_cells_node);
+
+		auto years_totals_shape = std::make_shared<RectanglesShape>(rectangles_shader);
+		auto years_totals_node = std::make_shared<SceneNode>("year total cells", years_totals_shape);
+		print_area_node->add_child(years_totals_node);
+
+		auto years_totals_text_node = std::make_shared<SceneNode>("year total text");
+		print_area_node->add_child(years_totals_text_node);
+		
+		auto legend_shape = std::make_shared<RectanglesShape>(rectangles_shader);
+		auto legend_shape_node = std::make_shared<SceneNode>("legend area", legend_shape);
+		print_area_node->add_child(legend_shape_node);
+		
+		auto legend_entries_node = std::make_shared<SceneNode>("legend entries");
+		print_area_node->add_child(legend_entries_node);
+
+		auto legend_text_node = std::make_shared<SceneNode>("legend text");
+		print_area_node->add_child(legend_text_node);
+
+		auto title_font_shape = std::make_shared<FontShape>(font_shader);
+		title_font_shape->set_font(font);
+		auto title_font_node = std::make_shared<SceneNode>("title text", title_font_shape);
+		print_area_node->add_child(title_font_node);
+
+		auto month_text_node = std::make_shared<SceneNode>("month text");
+		print_area_node->add_child(month_text_node);
+
+		auto year_text_node = std::make_shared<SceneNode>("year text");
+		print_area_node->add_child(year_text_node);
+
+		auto bar_labels_node = std::make_shared<SceneNode>("bar labels");
+		print_area_node->add_child(bar_labels_node);
 	}
 
 	void ReceiveDateGroups(const std::vector<DateGroup>& date_groups)
@@ -123,7 +160,7 @@ public:
 
 	void ReceiveFont(const std::string& font_filepath)
 	{
-		font_loader.reset(new Font(font_filepath));
+		font = std::make_shared<Font>(font_filepath);
 		Update();
 	}
 
@@ -147,9 +184,11 @@ public:
 
 	void Update()
 	{
-		glm::vec4 page_shape_color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		page_shape->SetShape(page_size, page_shape_color);
-
+		auto node = scene_graph->search_node("page");
+		auto shape = std::dynamic_pointer_cast<QuadrilateralShape>(node.value()->get_shape());
+		shape->set_shape(page_size);
+		shape->set_color(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+		
 		print_area = page_size.reduce(page_margin);
 
 		title_frame = print_area;
@@ -203,84 +242,104 @@ public:
 	void SetupPrintAreaShape()
 	{
 		auto config = shape_configuration_storage.GetShapeConfiguration("Page Margin");
-		print_area_shape->SetShapes(page_margin_frame, config.LineWidth(), config.FillColor(), config.OutlineColor());
+
+		auto node = scene_graph->search_node("print area");
+		auto shape = std::dynamic_pointer_cast<RectanglesShape>(node.value()->get_shape());
+
+		shape->set_shape( print_area , config.LineWidth());
+		shape->set_color({ config.OutlineColor(), config.FillColor() });
 	}
 
 	void SetupTitleShape()
 	{
 		auto config = shape_configuration_storage.GetShapeConfiguration("Title Frame");
-		title_area_shape->SetShapes(title_frame, config.LineWidth(), config.FillColor(), config.OutlineColor());
 
-		
-		graphics_engine->RemoveShape(title_font_shape);
-		
-		title_font_shape = std::make_shared<FontShape>("title text", font_loader);
-		graphics_engine->AddShape(title_font_shape);
+		auto node = scene_graph->search_node("title area");
+		auto shape = std::dynamic_pointer_cast<RectanglesShape>(node.value()->get_shape());
 
-		title_font_shape->SetShapeCentered(title_config.title_text, title_frame.getCenter(), title_frame.height() * title_config.font_size_ratio);
+		shape->set_shape( title_frame , config.LineWidth());
+		shape->set_color({ config.OutlineColor(), config.FillColor() });
+
+		auto title_node = scene_graph->search_node("title text");
+		auto title_shape = std::dynamic_pointer_cast<FontShape>(title_node.value()->get_shape());
+		title_shape->set_font(font);
+		title_shape->set_shape_centered(title_config.title_text, title_frame.getCenter(), title_frame.height() * title_config.font_size_ratio);
 	}
 
 	void SetupCalendarLabelsShape()
 	{
-		std::array<char, 100> buf;
-		std::string format = "%b";
-		std::array<std::string, 12> months_names;
-		for (size_t index = 0; index < months_names.size(); ++index)
-		{
-			std::tm month_tm = { 0 };
-			month_tm.tm_mon = index;
-			auto len = std::strftime(buf.data(), sizeof(buf), format.c_str(), &month_tm);
-			months_names[index] = buf.data();
+		constexpr size_t number_months = 12;
+		std::array<char, 100> buf{};
+		constexpr std::string_view format = "%b";
+		std::array<std::string, number_months> months_names;
+
+		for (size_t index = 0; index < months_names.size(); ++index) {
+			std::tm month_tm = {};
+			month_tm.tm_mon = static_cast<int>(index);
+
+			if (std::strftime(buf.data(), std::size(buf), format.data(), &month_tm)) {
+				months_names[index] = buf.data();
+			}
 		}
 
-		graphics_engine->RemoveShapes(month_label_text);
-		month_label_text.clear();
-		const size_t number_months = 12;
+		auto font_shader = graphics_engine->search_shader("Font Shader").value_or(nullptr);
+
+		std::vector<rectf> x_label_frames(number_months);
+		labels_font_size = font->AdjustTextSize(rectf::from_dimension(cell_width, row_height), "00000", 0.5f, 0.75f);
+
+		auto month_node = scene_graph->search_node("month text").value_or(nullptr);
+		
+		month_node->remove_children();
 		for (size_t index = 0; index < number_months; ++index)
 		{
-			month_label_text.push_back(std::make_shared<FontShape>(std::string("month label ") + std::to_string(index), font_loader));
-			graphics_engine->AddShape(month_label_text[index]);
-		}
-
-		std::vector<rectf> x_label_frames(12);
-		labels_font_size = font_loader->AdjustTextSize(rectf::from_dimension(cell_width, row_height), "00000", 0.5f, 0.75f);
-		for (size_t index = 0; index < months_names.size(); ++index)
-		{
+			auto month_text_shape = std::make_shared<FontShape>(font_shader);
+			month_text_shape->set_font(font);
+			auto month_text_node = std::make_shared<SceneNode>(months_names[index], month_text_shape);
+			month_node->add_child(month_text_node);
+			
 			float float_index = static_cast<float>(index);
 			x_label_frames[index].setL(x_labels_frame.l() + cell_width * float_index);
 			x_label_frames[index].setR(x_labels_frame.l() + cell_width * float_index + cell_width);
 			x_label_frames[index].setB(x_labels_frame.b());
 			x_label_frames[index].setT(x_labels_frame.t());
-			month_label_text[index]->SetShapeCentered(months_names[index], x_label_frames[index].getCenter(), labels_font_size);
+
+			month_text_shape->set_shape_centered(months_names[index], x_label_frames[index].getCenter(), labels_font_size);
 		}
 
 		auto config = shape_configuration_storage.GetShapeConfiguration("Calendar Labels");
-		column_labels_shape->SetShapes(x_label_frames, config.LineWidth(), config.FillColor(), config.OutlineColor());
 
-
-		graphics_engine->RemoveShapes(annual_labels_text);
-		annual_labels_text.clear();
-		for (size_t index = 0; index < calendar_config.GetSpanLengthYears(); ++index)
-		{
-			annual_labels_text.push_back(std::make_shared<FontShape>(std::string("annual label ") + std::to_string(index), font_loader));
-			graphics_engine->AddShape(annual_labels_text[index]);
-		}
+		auto column_node = scene_graph->search_node("column label area");
+		auto column_shape = std::dynamic_pointer_cast<RectanglesShape>(column_node.value()->get_shape());
+		column_shape->set_shape(x_label_frames, config.LineWidth());
+		column_shape->set_color({ config.OutlineColor(), config.FillColor() });
 		
-		std::vector<rectf> y_labels_rows(calendar_config.GetSpanLengthYears());
+
+		auto year_node = scene_graph->search_node("year text").value_or(nullptr);
+		
+		std::vector<rectf> y_labels_frames(calendar_config.GetSpanLengthYears());
+		year_node->remove_children();
 		for (int index = 0; index < calendar_config.GetSpanLengthYears(); ++index)
 		{
-			float float_index = static_cast<float>(index);
-			y_labels_rows[index] = rectf(
-				y_labels_frame.l(),
-				y_labels_frame.r(),
-				y_labels_frame.b() + row_height * float_index,
-				y_labels_frame.b() + row_height * float_index + row_height
-			);
-
 			std::string current_year_text = std::to_string(calendar_config.GetYear(index));
-			annual_labels_text[index]->SetShapeCentered(current_year_text, y_labels_rows[index].getCenter(), labels_font_size);
+
+			auto year_text_shape = std::make_shared<FontShape>(font_shader);
+			year_text_shape->set_font(font);
+			auto year_text_node = std::make_shared<SceneNode>(current_year_text, year_text_shape);
+			year_node->add_child(year_text_node);
+
+			float float_index = static_cast<float>(index);
+			y_labels_frames[index].setL(y_labels_frame.l());
+			y_labels_frames[index].setR(y_labels_frame.r());
+			y_labels_frames[index].setB(y_labels_frame.b() + row_height * float_index);
+			y_labels_frames[index].setT(y_labels_frame.b() + row_height * float_index + row_height);
+
+			year_text_shape->set_shape_centered(current_year_text, y_labels_frames[index].getCenter(), labels_font_size);
 		}
-		row_labels_shape->SetShapes(y_labels_rows, config.LineWidth(), config.FillColor(), config.OutlineColor());
+
+		auto row_node = scene_graph->search_node("row label area");
+		auto row_shape = std::dynamic_pointer_cast<RectanglesShape>(column_node.value()->get_shape());
+		row_shape->set_shape(y_labels_frames, config.LineWidth());
+		row_shape->set_color({ config.OutlineColor(), config.FillColor() });
 	}
 
 	void SetupYearsShapes()
@@ -300,12 +359,16 @@ public:
 		}
 
 		auto config = shape_configuration_storage.GetShapeConfiguration("Years Shapes");
-		years_cells_shape->SetShapes(years_cells, config.LineWidth(), config.FillColor(), config.OutlineColor());
+
+		auto node = scene_graph->search_node("year cells");
+		auto shape = std::dynamic_pointer_cast<RectanglesShape>(node.value()->get_shape());
+		shape->set_shape(years_cells, config.LineWidth());
+		shape->set_color({ config.OutlineColor(), config.FillColor() });
 	}
 
 	void SetupMonthsShapes()
 	{
-		const size_t number_months = 12;
+		constexpr size_t number_months = 12;
 		size_t store_size = number_months * calendar_config.GetSpanLengthYears();
 		std::vector<rectf> months_cells;
 		months_cells.resize(store_size);
@@ -330,7 +393,11 @@ public:
 		}
 
 		auto config = shape_configuration_storage.GetShapeConfiguration("Months Shapes");
-		months_cells_shape->SetShapes(months_cells, config.LineWidth(), config.FillColor(), config.OutlineColor());
+
+		auto node = scene_graph->search_node("month cells");
+		auto shape = std::dynamic_pointer_cast<RectanglesShape>(node.value()->get_shape());
+		shape->set_shape(months_cells, config.LineWidth());
+		shape->set_color({ config.OutlineColor(), config.FillColor() });
 	}
 
 	void SetupDaysShapes()
@@ -342,13 +409,9 @@ public:
 
 		int days_index = 0;
 		int number_days_cells = calendar_config.GetSpanLengthDays();
-		std::vector<rectf> days_cells(number_days_cells);
-		std::vector<float> days_cells_shape_linewidths(number_days_cells);
-		std::vector<glm::vec4> days_cells_shape_fillcolors(number_days_cells);
-		std::vector<glm::vec4> days_cells_shape_outlinecolors(number_days_cells);
 
-		auto config = shape_configuration_storage.GetShapeConfiguration("Day Shapes");
-		auto sunday_config = shape_configuration_storage.GetShapeConfiguration("Sunday Shapes");
+		std::vector<rectf> days_cells0(number_days_cells);
+		std::vector<rectf> days_cells1(number_days_cells);
 
 		for (int index = 0; index < calendar_config.GetSpanLengthYears(); ++index)
 		{
@@ -360,44 +423,67 @@ public:
 				float float_subindex = static_cast<float>(subindex);
 				auto current_cell = proportion_frame_layout.GetSubFrame(index, 1);
 
-				rectf day_cell;
-				day_cell.setL(current_cell.l() + float_subindex * day_width);
-				day_cell.setR(day_cell.l() + day_width);
-				day_cell.setB(current_cell.b());
-				day_cell.setT(current_cell.t());
-				days_cells[days_index] = day_cell;
-
 				boost::gregorian::date current_date = calendar_config.GetSpanLimitsDate()[0] + boost::gregorian::date_duration(days_index);
+				
 				if (current_date.day_of_week() == boost::date_time::Sunday)
 				{
-					days_cells_shape_linewidths[days_index] = sunday_config.LineWidth();
-					days_cells_shape_fillcolors[days_index] = sunday_config.FillColor();
-					days_cells_shape_outlinecolors[days_index] = sunday_config.OutlineColor();
+					rectf day_cell;
+					day_cell.setL(current_cell.l() + float_subindex * day_width);
+					day_cell.setR(day_cell.l() + day_width);
+					day_cell.setB(current_cell.b());
+					day_cell.setT(current_cell.t());
+					days_cells1[days_index] = day_cell;
 				}
 				else
 				{
-					days_cells_shape_linewidths[days_index] = config.LineWidth();
-					days_cells_shape_fillcolors[days_index] = config.FillColor();
-					days_cells_shape_outlinecolors[days_index] = config.OutlineColor();
+					rectf day_cell;
+					day_cell.setL(current_cell.l() + float_subindex * day_width);
+					day_cell.setR(day_cell.l() + day_width);
+					day_cell.setB(current_cell.b());
+					day_cell.setT(current_cell.t());
+					days_cells0[days_index] = day_cell;
 				}
 				++days_index;
 			}
 		}
-		days_cells_shape->SetShapes(days_cells, days_cells_shape_linewidths, days_cells_shape_fillcolors, days_cells_shape_outlinecolors);
+
+		auto config = shape_configuration_storage.GetShapeConfiguration("Day Shapes");
+		auto sunday_config = shape_configuration_storage.GetShapeConfiguration("Sunday Shapes");
+
+		auto node0 = scene_graph->search_node("day cells 0");
+		auto shape0 = std::dynamic_pointer_cast<RectanglesShape>(node0.value()->get_shape());
+		shape0->set_shape(days_cells0, config.LineWidth());
+		shape0->set_color({ config.OutlineColor(), config.FillColor() });
+
+		auto node1 = scene_graph->search_node("day cells 1");
+		auto shape1 = std::dynamic_pointer_cast<RectanglesShape>(node1.value()->get_shape());
+		shape1->set_shape(days_cells1, sunday_config.LineWidth());
+		shape1->set_color({ sunday_config.OutlineColor(), sunday_config.FillColor() });
+
 	}
 
 	void SetupBarsShape()
 	{
+		auto node = scene_graph->search_node("bar cells").value_or(nullptr);
+		node->remove_children();
+
+		auto number_groups = date_group_store.GetDateGroups().size();
+		for (size_t index = 0; index < number_groups; ++index)
+		{
+			auto child_node = std::make_shared<SceneNode>(std::string("group node ") + std::to_string(index));
+			node->add_child(child_node);
+		}
+
+		std::vector<std::vector<rectf>> bars_cells(number_groups);
+
+
+		auto node_labels = scene_graph->search_node("bar labels").value_or(nullptr);
+		node_labels->remove_children();
+
+		auto font_shader = graphics_engine->search_shader("Font Shader").value_or(nullptr);
+		auto rectangles_shader = graphics_engine->search_shader("Rectangles Shader").value_or(nullptr);
+
 		auto number_bars = data_store.GetNumberBars();
-
-		std::vector<rectf> bars_cells;
-		std::vector<float> bars_cells_shape_linewidths;
-		std::vector<glm::vec4> bars_cells_shape_fillcolors;
-		std::vector<glm::vec4> bars_cells_shape_outlinecolors;
-
-		graphics_engine->RemoveShapes(bar_labels_text);
-		bar_labels_text.clear();
-
 		for (size_t index = 0; index < data_store.GetNumberBars(); ++index)
 		{
 			if (calendar_config.IsInSpan(data_store.GetBar(index).GetYear()))
@@ -405,10 +491,6 @@ public:
 				auto current_group = data_store.GetBar(index).group;
 				auto search_string = std::string("Bar Group ") + std::to_string(current_group);
 				auto current_shape_config = shape_configuration_storage.GetShapeConfiguration(search_string);
-
-				bars_cells_shape_linewidths.push_back(current_shape_config.LineWidth());
-				bars_cells_shape_fillcolors.push_back(current_shape_config.FillColor());
-				bars_cells_shape_outlinecolors.push_back(current_shape_config.OutlineColor());
 
 				int row = data_store.GetBar(index).GetYear() - calendar_config.GetSpanLimitsYears()[0];
 				auto current_sub_cell = proportion_frame_layout.GetSubFrame(row, 1);
@@ -419,25 +501,48 @@ public:
 				bar_cell.setB(current_sub_cell.b());
 				bar_cell.setT(current_sub_cell.t());
 
-				bars_cells.push_back(bar_cell);
-				std::string numsText = data_store.GetBar(index).GetText();
-				bar_labels_text.push_back(std::make_shared<FontShape>(std::string("bar label text ") + std::to_string(index), font_loader));
-				graphics_engine->AddShape(bar_labels_text[index]);
+				bars_cells[current_group].push_back(bar_cell);
+
+				std::string label_text = data_store.GetBar(index).GetText();
+
+				auto child_node = std::make_shared<SceneNode>(std::string("label node ") + std::to_string(index));
+				node_labels->add_child(child_node);
+
+				auto text_shape = std::make_shared<FontShape>(font_shader);
+				text_shape->set_font(font);
+				child_node->set_shape(text_shape);
 
 				auto current_text_cell = proportion_frame_layout.GetSubFrame(row, 2);
 				current_text_cell.setL(bar_cell.l());
 				current_text_cell.setR(bar_cell.r());
 
-				bar_labels_text.back()->SetShapeCentered(numsText, current_text_cell.getCenter(), current_text_cell.height());
+				text_shape->set_shape_centered(label_text, current_text_cell.getCenter(), current_text_cell.height());
 			}
 		}
-		bars_cells_shape->SetShapes(bars_cells, bars_cells_shape_linewidths, bars_cells_shape_fillcolors, bars_cells_shape_outlinecolors);
+
+		auto node_children = node->get_children();
+		for (size_t index = 0; index < node_children.size(); ++index)
+		{
+			auto shape = std::make_shared<RectanglesShape>(rectangles_shader);
+			node_children[index]->set_shape(shape);
+
+			auto search_string = std::string("Bar Group ") + std::to_string(index);
+			auto current_shape_config = shape_configuration_storage.GetShapeConfiguration(search_string);
+
+			shape->set_shape(bars_cells[index], current_shape_config.LineWidth());
+			shape->set_color({ current_shape_config.OutlineColor(), current_shape_config.FillColor() });
+		}
 	}
 
 	void SetupYearsTotals()
 	{
-		graphics_engine->RemoveShapes(years_totals_text);
-		years_totals_text.clear();
+		auto font_shader = graphics_engine->search_shader("Font Shader").value_or(nullptr);
+		auto rectangles_shader = graphics_engine->search_shader("Rectangles Shader").value_or(nullptr);
+
+		auto node_cells = scene_graph->search_node("year total cells").value_or(nullptr);
+
+		auto node_text = scene_graph->search_node("year total text").value_or(nullptr);
+		node_text->remove_children();
 
 		std::vector<rectf> years_totals_cells;
 		years_totals_cells.resize(data_store.GetSpan());
@@ -454,6 +559,7 @@ public:
 				years_totals_cells[index] = year_total_cell;
 
 				auto current_year = data_store.GetFirstYear() + index;
+
 				int number_days = boost::gregorian::date_period(boost::gregorian::date(current_year, 1, 1), boost::gregorian::date(current_year + 1, 1, 1)).length().days();
 
 				float percent = static_cast<float>(data_store.GetAnnualTotal(index)) / static_cast<float>(number_days);
@@ -461,7 +567,7 @@ public:
 				std::array<char, 100> year_total_text_buffer;
 				auto text_lenght = snprintf(year_total_text_buffer.data(), year_total_text_buffer.size(), "%.*f %%", 1, percent * 100.0f);
 				auto year_total_text = std::string(year_total_text_buffer.data());
-				auto year_total_text_width = font_loader->TextWidth(year_total_text, year_total_cell.height());
+				auto year_total_text_width = font->TextWidth(year_total_text, year_total_cell.height());
 
 				rectf year_total_text_cell;
 				year_total_text_cell.setL(year_total_cell.r() + current_cell.height());
@@ -469,19 +575,39 @@ public:
 				year_total_text_cell.setB(year_total_cell.b());
 				year_total_text_cell.setT(year_total_cell.t());
 
-				years_totals_text.push_back(std::make_shared<FontShape>(std::string("year total label ") + std::to_string(index), font_loader));
-				graphics_engine->AddShape(years_totals_text[index]);
-				years_totals_text.back()->SetShapeCentered(year_total_text, year_total_text_cell.getCenter(), year_total_text_cell.height());
+				auto text_shape = std::make_shared<FontShape>(font_shader);
+				text_shape->set_font(font);
+				text_shape->set_shape_centered(year_total_text, year_total_text_cell.getCenter(), year_total_text_cell.height());
+
+				auto node_child = std::make_shared<SceneNode>(std::string("year total label ") + std::to_string(index));
+				node_child->set_shape(text_shape);
+				node_text->add_child(node_child);
+				
 			}
 		}
 
 		auto config = shape_configuration_storage.GetShapeConfiguration("Years Totals");
-		years_totals_shape->SetShapes(years_totals_cells, config.LineWidth(), config.FillColor(), config.OutlineColor());
+
+		auto shape = std::dynamic_pointer_cast<RectanglesShape>(node_cells->get_shape());
+
+		shape->set_shape(years_totals_cells, config.LineWidth());
+		shape->set_color({ config.OutlineColor(), config.FillColor() });
 	}
 
 	void SetupLegend()
 	{
-		size_t number_entrie_frames = (date_group_store.GetDateGroups().size() + 1/*annual_total*/) * 2;
+		auto font_shader = graphics_engine->search_shader("Font Shader").value_or(nullptr);
+		auto rectangles_shader = graphics_engine->search_shader("Rectangles Shader").value_or(nullptr);
+
+		//auto node_area = scene_graph->search_node("legend area").value_or(nullptr);
+
+		auto node_entries = scene_graph->search_node("legend entries").value_or(nullptr);
+		node_entries->remove_children();
+
+		auto node_text = scene_graph->search_node("legend text").value_or(nullptr);
+		node_text->remove_children();
+
+		size_t number_entrie_frames = (date_group_store.GetDateGroups().size() + 1) * 2;
 		std::vector<rectf> legend_entries_frames(number_entrie_frames);
 		auto entries_width = legend_frame.width() / static_cast<float>(number_entrie_frames);
 
@@ -510,17 +636,18 @@ public:
 			}
 		}
 
-		auto legend_font_size = font_loader->AdjustTextSize(legend_entries_frames[0], string_max_lenght, 0.5f, 0.75f);
-
-		graphics_engine->RemoveShapes(legend_text);
-		legend_text.clear();
+		auto legend_font_size = font->AdjustTextSize(legend_entries_frames[0], string_max_lenght, 0.5f, 0.75f);
 
 		for (size_t index = 0; index < date_group_store.GetDateGroups().size(); ++index)
 		{
-			legend_text.push_back(std::make_shared<FontShape>(std::string("legend label ") + std::to_string(index), font_loader));
-			graphics_engine->AddShape(legend_text.back());
-			legend_text.back()->SetShapeCentered(date_group_store.GetDateGroups()[index].name, legend_entries_frames[index * 2].getCenter(), legend_font_size);
+			auto node_text_child = std::make_shared<SceneNode>(std::string("legend label ") + std::to_string(index));
+			node_text->add_child(node_text_child);
 
+			auto shape_text = std::make_shared<FontShape>(font_shader);
+			node_text_child->set_shape(shape_text);
+			shape_text->set_font(font);
+			shape_text->set_shape_centered(date_group_store.GetDateGroups()[index].name, legend_entries_frames[index * 2].getCenter(), legend_font_size);
+			
 			if (calendar_config.GetSpanLengthYears() > 0)
 			{
 				auto current_height = proportion_frame_layout.GetSubFrame(0, 1).height();
@@ -533,14 +660,25 @@ public:
 				auto search_string = std::string("Bar Group ") + std::to_string(index);
 				auto current_shape_config = shape_configuration_storage.GetShapeConfiguration(search_string);
 
-				bars_cells_shape_linewidths.push_back(current_shape_config.LineWidth());
-				bars_cells_shape_fillcolors.push_back(current_shape_config.FillColor());
-				bars_cells_shape_outlinecolors.push_back(current_shape_config.OutlineColor());
+				auto node_entrie = std::make_shared<SceneNode>(std::string("legend bar ") + std::to_string(index));
+				node_entries->add_child(node_entrie);
+
+				auto entrie_shape = std::make_shared<RectanglesShape>(rectangles_shader);
+				node_entrie->set_shape(entrie_shape);
+
+				entrie_shape->set_shape(current_cell, current_shape_config.LineWidth());
+				entrie_shape->set_color({ current_shape_config.OutlineColor(), current_shape_config.FillColor() });
 			}
-			
-			legend_text.push_back(std::make_shared<FontShape>(std::string("annual sums ") + std::to_string(index), font_loader));
-			graphics_engine->AddShape(legend_text.back());
-			legend_text.back()->SetShapeCentered("Annual Sums", legend_entries_frames[legend_entries_frames.size() - 2].getCenter(), legend_font_size);
+		}
+
+		{
+			auto node_text_child = std::make_shared<SceneNode>(std::string("legend label year total"));
+			node_text->add_child(node_text_child);
+
+			auto shape_text = std::make_shared<FontShape>(font_shader);
+			node_text_child->set_shape(shape_text);
+			shape_text->set_font(font);
+			shape_text->set_shape_centered("Annual sum", legend_entries_frames[legend_entries_frames.size() - 2].getCenter(), legend_font_size);
 
 			if (calendar_config.GetSpanLengthYears() > 0)
 			{
@@ -553,16 +691,22 @@ public:
 
 				auto current_shape_config = shape_configuration_storage.GetShapeConfiguration("Years Totals");
 
-				bars_cells_shape_linewidths.push_back(current_shape_config.LineWidth());
-				bars_cells_shape_fillcolors.push_back(current_shape_config.FillColor());
-				bars_cells_shape_outlinecolors.push_back(current_shape_config.OutlineColor());
-			}
+				auto node_entrie = std::make_shared<SceneNode>(std::string("legend bar annual sum"));
+				node_entries->add_child(node_entrie);
 
+				auto entrie_shape = std::make_shared<RectanglesShape>(rectangles_shader);
+				node_entrie->set_shape(entrie_shape);
+
+				entrie_shape->set_shape(current_cell, current_shape_config.LineWidth());
+				entrie_shape->set_color({ current_shape_config.OutlineColor(), current_shape_config.FillColor() });
+			}
 		}
-		legend_entries_shape->SetShapes(bars_cells, bars_cells_shape_linewidths, bars_cells_shape_fillcolors, bars_cells_shape_outlinecolors);
 	}
 
 private:
+
+	std::shared_ptr<SceneNode> scene_graph;
+	std::shared_ptr<Font> font;
 
 	GLCanvas* gl_canvas;
 	GraphicsEngine* graphics_engine;
@@ -572,7 +716,6 @@ private:
 	CalendarConfigStorage calendar_config;
 	ShapeConfigurationStorage shape_configuration_storage;
 	TitleConfig title_config;
-	
 	ProportionFrameLayout proportion_frame_layout;
 	
 	rectf page_size;
@@ -589,32 +732,4 @@ private:
 	float row_height;
 	float day_width;
 	float labels_font_size;
-
-	////////////////////////////////////////////////////////////////////////////////
-
-	
-	std::shared_ptr<Font> font_loader;
-
-	std::shared_ptr<QuadShape> page_shape;
-
-	std::shared_ptr<FontShape> title_font_shape;
-	std::vector<std::shared_ptr<FontShape>> years_totals_text;
-	std::vector<std::shared_ptr<FontShape>> month_label_text;
-	std::vector<std::shared_ptr<FontShape>> annual_labels_text;
-	std::vector<std::shared_ptr<FontShape>> bar_labels_text;
-	std::vector<std::shared_ptr<FontShape>> legend_text;
-
-	std::shared_ptr<RectanglesShape> print_area_shape;
-	std::shared_ptr<RectanglesShape> title_area_shape;
-	std::shared_ptr<RectanglesShape> years_cells_shape;
-	std::shared_ptr<RectanglesShape> months_cells_shape;
-	std::shared_ptr<RectanglesShape> days_cells_shape;
-	std::shared_ptr<RectanglesShape> bars_cells_shape;
-	std::shared_ptr<RectanglesShape> years_totals_shape;
-	std::shared_ptr<RectanglesShape> row_labels_shape;
-	std::shared_ptr<RectanglesShape> column_labels_shape;
-	std::shared_ptr<RectanglesShape> legend_shape;
-	std::shared_ptr<RectanglesShape> legend_entries_shape;
-	std::shared_ptr<RectanglesShape> sub_frames_shape;
 };
-

@@ -22,17 +22,18 @@ endif()
 
 target_sources(${PROJECT_NAME} PRIVATE 
 	${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/main_window.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/date_utils.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/casts.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/calendar_page.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/frame_layout.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/wx_widgets_include.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/calendar_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_store.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/group_store.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/page_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/shape_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/title_config.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/main_window.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/calendar_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/date_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/font_panel.hpp
@@ -42,7 +43,6 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/page_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/shape_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/title_panel.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/wx_widgets_include.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/log_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/font.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/graphics_engine.hpp
@@ -51,16 +51,17 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/render_to_texture.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/render_to_png.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/shaders.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/shaders_info.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/shapes.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/shapes_base.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/texture_object.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/mvp_matrices.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/scene_graph.hpp
 )
 
 
 cmake_print_variables(VCPKG_INSTALLED_DIR VCPKG_TARGET_TRIPLET)
 
-#set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost REQUIRED COMPONENTS date_time serialization wserialization)
 cmake_print_variables(Boost_FOUND Boost_INCLUDE_DIRS Boost_LIBRARY_DIRS Boost_LIBRARIES Boost_USE_STATIC_LIBS)
 if(${Boost_FOUND})
@@ -112,6 +113,9 @@ cmake_print_variables(P_RANAV_CSV2_INCLUDE_DIRS)
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/include)
 
+find_package(tabulate CONFIG REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE tabulate::tabulate)
+
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)
@@ -124,6 +128,8 @@ list(APPEND RESOURCE_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/shaders/phong_vertex_shader.glsl shader
 	${CMAKE_CURRENT_SOURCE_DIR}/shaders/simple_fragment_shader.glsl shader
 	${CMAKE_CURRENT_SOURCE_DIR}/shaders/simple_vertex_shader.glsl shader
+	${CMAKE_CURRENT_SOURCE_DIR}/shaders/rectangles_fragment_shader.glsl shader
+	${CMAKE_CURRENT_SOURCE_DIR}/shaders/rectangles_vertex_shader.glsl shader
 )
 
 list(APPEND RESOURCE_FILES
@@ -141,6 +147,9 @@ list(APPEND RESOURCE_FILES
 	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/glad/copyright glad
 	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/glm/copyright glm
 	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/wxwidgets/copyright wxwidgets
+	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/fontconfig/copyright fontconfig
+	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/opengl/copyright opengl
+	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/tabulate/copyright tabulate
 )
 
 embed_resources(${PROJECT_NAME}_RESOURCES ${RESOURCE_FILES})

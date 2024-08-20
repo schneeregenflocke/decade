@@ -29,11 +29,13 @@ public:
 	LogPanel(wxWindow* parent)
 		: wx_panel(new wxPanel(parent, wxID_ANY))
 	{
-		wxFont log_font = wxFont(9, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxString("Consolas"));
+		wxFont log_font = wxFont(8, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxString("Consolas"));
 
 		text_control = new wxTextCtrl(wx_panel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxTE_RICH2 | wxHSCROLL);
 		text_control->SetBackgroundColour(*wxBLACK);
 		text_control->SetDefaultStyle(wxTextAttr(*wxWHITE, *wxBLACK, log_font));
+
+		
 
 		wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
         sizer->Add(text_control, 1, wxEXPAND, 5);
