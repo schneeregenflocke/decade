@@ -60,7 +60,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 )
 
 
-cmake_print_variables(VCPKG_INSTALLED_DIR VCPKG_TARGET_TRIPLET)
+cmake_print_variables(VCPKG_ROOT VCPKG_INSTALLED_DIR VCPKG_TARGET_TRIPLET)
 
 find_package(Boost REQUIRED COMPONENTS date_time serialization wserialization)
 cmake_print_variables(Boost_FOUND Boost_INCLUDE_DIRS Boost_LIBRARY_DIRS Boost_LIBRARIES Boost_USE_STATIC_LIBS)
