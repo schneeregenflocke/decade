@@ -16,33 +16,18 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
-
 #pragma once
-
 
 #include <glad/glad.h>
 
-
-class Texture
-{
+class Texture {
 public:
-	
-	explicit Texture()
-	{
-		glGenTextures(1, &name);
-	}
+  explicit Texture() { glGenTextures(1, &name); }
 
-	~Texture()
-	{
-		glDeleteTextures(1, &name);
-	}
+  ~Texture() { glDeleteTextures(1, &name); }
 
-	GLuint Name() const
-	{
-		return name;
-	}
+  GLuint Name() const { return name; }
 
 private:
-
-	GLuint name;
+  GLuint name;
 };

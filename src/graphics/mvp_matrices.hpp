@@ -16,46 +16,24 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
-
 #pragma once
-
 
 #include <glm/glm.hpp>
 
-
-class MVP
-{
+class MVP {
 public:
+  MVP() : projection(1.f), view(1.f), model(1.f) {}
 
-	MVP() :
-		projection(1.f),
-		view(1.f),
-		model(1.f)
-	{}
+  void SetProjection(const glm::mat4 &projection) { this->projection = projection; }
 
-	void SetProjection(const glm::mat4& projection)
-	{
-		this->projection = projection;
-	}
+  void SetView(const glm::mat4 &view) { this->view = view; }
 
-	void SetView(const glm::mat4& view)
-	{
-		this->view = view;
-	}
+  glm::mat4 GetProjection() const { return projection; }
 
-	glm::mat4 GetProjection() const
-	{
-		return projection;
-	}
-
-	glm::mat4 GetView() const
-	{
-		return view;
-	}
+  glm::mat4 GetView() const { return view; }
 
 private:
-
-	glm::mat4 projection;
-	glm::mat4 view;
-	glm::mat4 model;
+  glm::mat4 projection;
+  glm::mat4 view;
+  glm::mat4 model;
 };

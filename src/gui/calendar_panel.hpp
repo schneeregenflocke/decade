@@ -16,193 +16,178 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
-
 #pragma once
 
-
 #include "../packages/calendar_config.hpp"
-
-#include "wx_widgets_include.hpp"
+#include "../wx_widgets_include.hpp"
 
 #include <sigslot/signal.hpp>
 
 #include <array>
+// #include <functional>
+// #include <iostream>
+// #include <memory>
 #include <vector>
-#include <memory>
-#include <functional>
-#include <iostream>
 
-
-class PropertyGridPanel : public wxPropertyGrid
-{
+class PropertyGridPanel : public wxPropertyGrid {
 public:
+  PropertyGridPanel(wxWindow *parent)
+      : wxPropertyGrid(parent, -1, wxDefaultPosition, wxDefaultSize, wxPG_SPLITTER_AUTO_CENTER),
+        box_sizer(new wxBoxSizer(wxHORIZONTAL))
+  {
+    auto sizer_flags = wxSizerFlags().Proportion(1).Expand();
+    parent->GetSizer()->Add(box_sizer, sizer_flags);
+    box_sizer->Add(this, sizer_flags);
 
-	PropertyGridPanel(wxWindow* parent) :
-		wxPropertyGrid(parent, -1, wxDefaultPosition, wxDefaultSize, wxPG_SPLITTER_AUTO_CENTER),
-		box_sizer(new wxBoxSizer(wxHORIZONTAL))
-	{
-		auto sizer_flags = wxSizerFlags().Proportion(1).Expand();
-		parent->GetSizer()->Add(box_sizer, sizer_flags);
-		box_sizer->Add(this, sizer_flags);
+    SetVerticalSpacing(2);
 
-		SetVerticalSpacing(2);
+    Append(new wxPropertyCategory("Calendar Span", wxPG_LABEL));
 
-		Append(new wxPropertyCategory("Calendar Span", wxPG_LABEL));
-		
-		gui_auto_span = new wxBoolProperty("Auto", wxPG_LABEL, false);
-		gui_lower_limit = new wxIntProperty("Lower Limit", wxPG_LABEL, 0);
-		gui_upper_limit = new wxIntProperty("Upper Limit", wxPG_LABEL, 0);
+    gui_auto_span = new wxBoolProperty("Auto", wxPG_LABEL, false);
+    gui_lower_limit = new wxIntProperty("Lower Limit", wxPG_LABEL, 0);
+    gui_upper_limit = new wxIntProperty("Upper Limit", wxPG_LABEL, 0);
 
-		Append(gui_auto_span);
-		Append(gui_lower_limit);
-		Append(gui_upper_limit);
-		//DisableProperty(gui_lower_limit);
-		//DisableProperty(gui_upper_limit);
+    Append(gui_auto_span);
+    Append(gui_lower_limit);
+    Append(gui_upper_limit);
+    // DisableProperty(gui_lower_limit);
+    // DisableProperty(gui_upper_limit);
 
-		Append(new wxPropertyCategory("Row Spacing Proportions", wxPG_LABEL));
+    Append(new wxPropertyCategory("Row Spacing Proportions", wxPG_LABEL));
 
-		gui_number_spacings = new wxIntProperty("Number Spacings", wxPG_LABEL, 0);
-		Append(gui_number_spacings);
-		DisableProperty(gui_number_spacings);
-		
-		RefreshPropertyGrid();
-	}
+    gui_number_spacings = new wxIntProperty("Number Spacings", wxPG_LABEL, 0);
+    Append(gui_number_spacings);
+    DisableProperty(gui_number_spacings);
 
-	void RefreshPropertyGrid()
-	{
-		bool auto_span = GetPropertyValue(gui_auto_span).GetBool();
+    RefreshPropertyGrid();
+  }
 
-		if (auto_span == true)
-		{
-			DisableProperty(gui_lower_limit);
-			DisableProperty(gui_upper_limit);
-		}
-		if (auto_span == false)
-		{
-			EnableProperty(gui_lower_limit);
-			EnableProperty(gui_upper_limit);
-		}
+  void RefreshPropertyGrid()
+  {
+    bool auto_span = GetPropertyValue(gui_auto_span).GetBool();
 
-		long number_spacings = GetPropertyValue(gui_number_spacings).GetInteger();
+    if (auto_span == true) {
+      DisableProperty(gui_lower_limit);
+      DisableProperty(gui_upper_limit);
+    }
+    if (auto_span == false) {
+      EnableProperty(gui_lower_limit);
+      EnableProperty(gui_upper_limit);
+    }
 
-		if (number_spacings > gui_spacings_array.size())
-		{
-			for (size_t index = gui_spacings_array.size(); index < number_spacings; ++index)
-			{
-				int index_parity = index % 2;
-				std::string label_number_postfix = std::to_string((index - index_parity) / 2 + 1);
-				std::string label;
+    long number_spacings = GetPropertyValue(gui_number_spacings).GetInteger();
 
-				if (index_parity == 0)
-				{
-					label = std::string("Gap ") + label_number_postfix;
-				}
-				if (index_parity == 1)
-				{
-					label = std::string("Subrow ") + label_number_postfix;
-				}
+    if (number_spacings > gui_spacings_array.size()) {
+      for (size_t index = gui_spacings_array.size(); index < number_spacings; ++index) {
+        int index_parity = index % 2;
+        std::string label_number_postfix = std::to_string((index - index_parity) / 2 + 1);
+        std::string label;
 
-				gui_spacings_array.push_back(new wxFloatProperty(label, wxPG_LABEL, 10.0));
-				Append(gui_spacings_array[index]);
-			}
-		}
+        if (index_parity == 0) {
+          label = std::string("Gap ") + label_number_postfix;
+        }
+        if (index_parity == 1) {
+          label = std::string("Subrow ") + label_number_postfix;
+        }
 
-		if (number_spacings < gui_spacings_array.size())
-		{
-			for (size_t index = number_spacings; index < gui_spacings_array.size();)
-			{
-				DeleteProperty(gui_spacings_array[index]);
-				gui_spacings_array.pop_back();
-			}
-		}
-	}
+        gui_spacings_array.push_back(new wxFloatProperty(label, wxPG_LABEL, 10.0));
+        Append(gui_spacings_array[index]);
+      }
+    }
 
-	wxBoxSizer* box_sizer;
-	
-	wxBoolProperty* gui_auto_span;
-	wxIntProperty* gui_lower_limit;
-	wxIntProperty* gui_upper_limit;
-	wxIntProperty* gui_number_spacings;
-	std::vector<wxFloatProperty*> gui_spacings_array;
+    if (number_spacings < gui_spacings_array.size()) {
+      for (size_t index = number_spacings; index < gui_spacings_array.size();) {
+        DeleteProperty(gui_spacings_array[index]);
+        gui_spacings_array.pop_back();
+      }
+    }
+  }
+
+  wxBoxSizer *box_sizer;
+
+  wxBoolProperty *gui_auto_span;
+  wxIntProperty *gui_lower_limit;
+  wxIntProperty *gui_upper_limit;
+  wxIntProperty *gui_number_spacings;
+  std::vector<wxFloatProperty *> gui_spacings_array;
 };
 
-
-class CalendarSetupPanel
-{
+class CalendarSetupPanel {
 public:
+  CalendarSetupPanel(wxWindow *parent) : wx_panel(nullptr), property_grid(nullptr)
+  {
+    wx_panel = new wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL,
+                           wxPanelNameStr);
 
-	CalendarSetupPanel(wxWindow* parent) :
-		wx_panel(nullptr),
-		property_grid(nullptr)
-	{
-		wx_panel = new wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxPanelNameStr);
-		
-		wxBoxSizer* vertical_sizer = new wxBoxSizer(wxVERTICAL);
-		wx_panel->SetSizer(vertical_sizer);
+    wxBoxSizer *vertical_sizer = new wxBoxSizer(wxVERTICAL);
+    wx_panel->SetSizer(vertical_sizer);
 
-		property_grid = new PropertyGridPanel(wx_panel);
+    property_grid = new PropertyGridPanel(wx_panel);
 
-		wx_panel->Bind(wxEVT_PG_CHANGED, &CalendarSetupPanel::CallbackPropertyGridChanging, this);
+    wx_panel->Bind(wxEVT_PG_CHANGED, &CalendarSetupPanel::CallbackPropertyGridChanging, this);
 
-		UpdatePropertyGrid();
-	}
+    UpdatePropertyGrid();
+  }
 
-	wxPanel* PanelPtr()
-	{
-		return wx_panel;
-	}
+  wxPanel *PanelPtr() { return wx_panel; }
 
-	void ReceiveCalendarConfigStorage(const CalendarConfigStorage& calendar_config_storage)
-	{
-		this->calendar_config_storage = calendar_config_storage;
-		UpdatePropertyGrid();
-	}
+  void ReceiveCalendarConfigStorage(const CalendarConfigStorage &calendar_config_storage)
+  {
+    this->calendar_config_storage = calendar_config_storage;
+    UpdatePropertyGrid();
+  }
 
-	void CallbackPropertyGridChanging(wxPropertyGridEvent& event)
-	{
-		property_grid->RefreshPropertyGrid();
+  void CallbackPropertyGridChanging(wxPropertyGridEvent &event)
+  {
+    property_grid->RefreshPropertyGrid();
 
-		long number_subrows = property_grid->GetPropertyValue(property_grid->gui_number_spacings).GetInteger();
-		calendar_config_storage.spacing_proportions.resize(number_subrows);
+    long number_subrows =
+        property_grid->GetPropertyValue(property_grid->gui_number_spacings).GetInteger();
+    calendar_config_storage.spacing_proportions.resize(number_subrows);
 
-		for (size_t index = 0; index < number_subrows; ++index)
-		{
-			calendar_config_storage.spacing_proportions[index] = static_cast<float>(property_grid->GetPropertyValue(property_grid->gui_spacings_array[index]).GetDouble());
-		}
+    for (size_t index = 0; index < number_subrows; ++index) {
+      calendar_config_storage.spacing_proportions[index] = static_cast<float>(
+          property_grid->GetPropertyValue(property_grid->gui_spacings_array[index]).GetDouble());
+    }
 
-		calendar_config_storage.auto_calendar_span = property_grid->GetPropertyValue(property_grid->gui_auto_span).GetBool();
+    calendar_config_storage.auto_calendar_span =
+        property_grid->GetPropertyValue(property_grid->gui_auto_span).GetBool();
 
-		long lower_limit = property_grid->GetPropertyValue(property_grid->gui_lower_limit).GetInteger();
-		long upper_limit = property_grid->GetPropertyValue(property_grid->gui_upper_limit).GetInteger();
-		
-		calendar_config_storage.SetSpan(lower_limit, upper_limit);
+    long lower_limit = property_grid->GetPropertyValue(property_grid->gui_lower_limit).GetInteger();
+    long upper_limit = property_grid->GetPropertyValue(property_grid->gui_upper_limit).GetInteger();
 
-		signal_calendar_config_storage(calendar_config_storage);
-	}
+    calendar_config_storage.SetSpan(lower_limit, upper_limit);
 
-	void UpdatePropertyGrid()
-	{
-		property_grid->SetPropertyValue(property_grid->gui_number_spacings, static_cast<int>(calendar_config_storage.spacing_proportions.size()));
+    signal_calendar_config_storage(calendar_config_storage);
+  }
 
-		property_grid->RefreshPropertyGrid();
+  void UpdatePropertyGrid()
+  {
+    property_grid->SetPropertyValue(
+        property_grid->gui_number_spacings,
+        static_cast<int>(calendar_config_storage.spacing_proportions.size()));
 
-		for (size_t index = 0; index < calendar_config_storage.spacing_proportions.size(); ++index)
-		{
-			property_grid->SetPropertyValue(property_grid->gui_spacings_array[index], calendar_config_storage.spacing_proportions[index]);
-		}
-		
-		property_grid->SetPropertyValue(property_grid->gui_auto_span, calendar_config_storage.auto_calendar_span);
-		property_grid->SetPropertyValue(property_grid->gui_lower_limit, calendar_config_storage.GetSpanLimitsYears()[0]);
-		property_grid->SetPropertyValue(property_grid->gui_upper_limit, calendar_config_storage.GetSpanLimitsYears()[1]);
+    property_grid->RefreshPropertyGrid();
 
-		property_grid->RefreshPropertyGrid();
-	}
-	
-	sigslot::signal<const CalendarConfigStorage&> signal_calendar_config_storage;
+    for (size_t index = 0; index < calendar_config_storage.spacing_proportions.size(); ++index) {
+      property_grid->SetPropertyValue(property_grid->gui_spacings_array[index],
+                                      calendar_config_storage.spacing_proportions[index]);
+    }
+
+    property_grid->SetPropertyValue(property_grid->gui_auto_span,
+                                    calendar_config_storage.auto_calendar_span);
+    property_grid->SetPropertyValue(property_grid->gui_lower_limit,
+                                    calendar_config_storage.GetSpanLimitsYears()[0]);
+    property_grid->SetPropertyValue(property_grid->gui_upper_limit,
+                                    calendar_config_storage.GetSpanLimitsYears()[1]);
+
+    property_grid->RefreshPropertyGrid();
+  }
+
+  sigslot::signal<const CalendarConfigStorage &> signal_calendar_config_storage;
 
 private:
-
-	wxPanel* wx_panel;
-	PropertyGridPanel* property_grid;
-	CalendarConfigStorage calendar_config_storage;
+  wxPanel *wx_panel;
+  PropertyGridPanel *property_grid;
+  CalendarConfigStorage calendar_config_storage;
 };

@@ -16,69 +16,53 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
-
 #pragma once
 
-
-#include "shaders.hpp"
-#include "projection.hpp"
-#include "shapes.hpp"
 #include "font.hpp"
 #include "mvp_matrices.hpp"
+#include "projection.hpp"
 #include "scene_graph.hpp"
+#include "shaders.hpp"
+#include "shapes.hpp"
 
-#include <algorithm>
-#include <string>
+// #include <algorithm>
+// #include <exception>
 #include <memory>
-#include <exception>
 #include <optional>
+#include <string>
 
-
-class GraphicsEngine
-{
+class GraphicsEngine {
 public:
+  void Render()
+  {
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	void Render()
-	{
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    for (size_t index = 0; index < shaders.GetNumberShaders(); ++index) {
+      auto &shader = *shaders.GetShader(index);
 
-		for(size_t index = 0; index < shaders.GetNumberShaders(); ++index)
-		{
-			auto& shader = *shaders.GetShader(index);
-			
-			shader.UseProgram();
-			shader.SetUniform("projection", mvp.GetProjection());
-			shader.SetUniform("view", mvp.GetView());
-			shader.SetUniform("model", glm::mat4(1.f));
-		}
+      shader.UseProgram();
+      shader.SetUniform("projection", mvp.GetProjection());
+      shader.SetUniform("view", mvp.GetView());
+      shader.SetUniform("model", glm::mat4(1.f));
+    }
 
-		scene_graph->draw();
-	}
+    scene_graph->draw();
+  }
 
-	void SetMVP(const MVP& mvp)
-	{
-		this->mvp = mvp;
-	}
+  void SetMVP(const MVP &mvp) { this->mvp = mvp; }
 
-	void set_scene_graph(std::shared_ptr<SceneNode> scene_graph)
-	{
-		this->scene_graph = scene_graph;
-	}
+  void set_scene_graph(std::shared_ptr<SceneNode> scene_graph) { this->scene_graph = scene_graph; }
 
-	Shaders& GetShaders()
-	{
-		return shaders;
-	}
+  Shaders &GetShaders() { return shaders; }
 
-	std::optional<Shader*> search_shader(const std::string& search_name)
-	{
-		return shaders.search_shader(search_name);
-	}
+  std::optional<Shader *> search_shader(const std::string &search_name)
+  {
+    return shaders.search_shader(search_name);
+  }
 
 private:
-
-	MVP mvp;
-	Shaders shaders;
-	std::shared_ptr<SceneNode> scene_graph;
+  MVP mvp;
+  Shaders shaders;
+  std::shared_ptr<SceneNode> scene_graph;
 };

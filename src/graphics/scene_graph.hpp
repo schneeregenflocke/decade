@@ -16,115 +16,81 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
-
 #pragma once
 
 #include "shapes.hpp"
 
-#include <vector>
 #include <memory>
-#include <string>
 #include <optional>
+#include <string>
+#include <vector>
 
-
-class SceneNode : public std::enable_shared_from_this<SceneNode>
-{
+class SceneNode : public std::enable_shared_from_this<SceneNode> {
 public:
+  SceneNode() : model_matrix(1.f), is_dirty(false) {}
 
-	SceneNode()
-		: model_matrix(1.f), is_dirty(false)
-	{}
+  SceneNode(const std::string &node_name) : SceneNode() { this->node_name = node_name; }
 
-	SceneNode(const std::string& node_name)
-		: SceneNode()
-	{
-		this->node_name = node_name;
-	}
-							
-	SceneNode(const std::string& node_name, std::shared_ptr<Shape> shape) : SceneNode(node_name)
-	{
-		this->shape = shape;
-	}
+  SceneNode(const std::string &node_name, std::shared_ptr<Shape> shape) : SceneNode(node_name)
+  {
+    this->shape = shape;
+  }
 
-	void add_child(std::shared_ptr<SceneNode> child)
-	{
-		children.push_back(child);
-	}
+  void add_child(std::shared_ptr<SceneNode> child) { children.push_back(child); }
 
-	auto add_child()
-	{
-		std::shared_ptr<SceneNode> child;
-		children.push_back(child);
-		return child;
-	}
+  auto add_child()
+  {
+    std::shared_ptr<SceneNode> child;
+    children.push_back(child);
+    return child;
+  }
 
-	auto get_children()
-	{
-		return children;
-	}
+  auto get_children() { return children; }
 
-	void remove_children()
-	{
-		children.clear();
-	}
+  void remove_children() { children.clear(); }
 
-	void set_shape(std::shared_ptr<Shape> shape)
-	{
-		this->shape = shape;
-	}
+  void set_shape(std::shared_ptr<Shape> shape) { this->shape = shape; }
 
-	std::shared_ptr<Shape> get_shape()
-	{
-		return shape;
-	}
+  std::shared_ptr<Shape> get_shape() { return shape; }
 
-	void update()
-	{
-		for (auto&& child : children)
-		{
-			child->update();
-		}
-	}
+  void update()
+  {
+    for (auto &&child : children) {
+      child->update();
+    }
+  }
 
-	std::optional<std::shared_ptr<SceneNode>> search_node(const std::string& search_name)
-	{
-		if (this->node_name == search_name)
-		{
-			return std::optional<std::shared_ptr<SceneNode>>(this->shared_from_this());
-		}
+  std::optional<std::shared_ptr<SceneNode>> search_node(const std::string &search_name)
+  {
+    if (this->node_name == search_name) {
+      return std::optional<std::shared_ptr<SceneNode>>(this->shared_from_this());
+    }
 
-		for (auto&& child : children)
-		{
-			auto result = child->search_node(search_name);
-			if (result.has_value())
-			{
-				return result;
-			}
-		}
+    for (auto &&child : children) {
+      auto result = child->search_node(search_name);
+      if (result.has_value()) {
+        return result;
+      }
+    }
 
-		return std::nullopt;
-	}
+    return std::nullopt;
+  }
 
-	void draw()
-	{
-		if (shape != nullptr)
-		{
-			shape->draw();
-		}
-		
-		for (auto&& child : children)
-		{
-			child->draw();
-		}
-	}
+  void draw()
+  {
+    if (shape != nullptr) {
+      shape->draw();
+    }
 
-	
+    for (auto &&child : children) {
+      child->draw();
+    }
+  }
 
 private:
-
-	std::string node_name;
-	std::vector<std::shared_ptr<SceneNode>> children;
-	glm::mat4 model_matrix;
-	std::shared_ptr<Shape> shape;
-	bool is_dirty;
+  std::string node_name;
+  std::vector<std::shared_ptr<SceneNode>> children;
+  glm::mat4 model_matrix;
+  std::shared_ptr<Shape> shape;
+  bool is_dirty;
 };

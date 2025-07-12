@@ -16,113 +16,103 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
-
 #pragma once
 
-
+#include "../wx_widgets_include.hpp"
 #include "Resource.h"
 
-#include "wx_widgets_include.hpp"
-
-#include <string>
-#include <vector>
-#include <utility>
 #include <algorithm>
+#include <string>
+#include <utility>
+#include <vector>
 
-
-class LicenseInformationDialog : public wxDialog
-{
+class LicenseInformationDialog : public wxDialog {
 public:
+  LicenseInformationDialog()
+      : wxDialog(nullptr, wxID_ANY, L"Open Source Licenses Information", wxDefaultPosition,
+                 wxSize(800, 600) /*wxDefaultSize*/, wxCAPTION | wxRESIZE_BORDER | wxMAXIMIZE_BOX)
+  {
 
-	LicenseInformationDialog() :
-		wxDialog(nullptr, wxID_ANY, L"Open Source Licenses Information", wxDefaultPosition, wxSize(800, 600)/*wxDefaultSize*/,
-			wxCAPTION | wxRESIZE_BORDER | wxMAXIMIZE_BOX)
-	{
+    license_select_list_box = new wxListBox(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0,
+                                            nullptr, wxLB_SINGLE | wxLB_NEEDED_SB);
 
-		license_select_list_box = new wxListBox(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, nullptr, wxLB_SINGLE | wxLB_NEEDED_SB);
+    text_view_ctrl = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize,
+                                    wxTE_MULTILINE | wxTE_READONLY);
 
-		text_view_ctrl = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY);
+    wxSizerFlags flags0 = wxSizerFlags().Proportion(1).Expand();
+    wxSizerFlags flags1 = wxSizerFlags().Proportion(1).Expand().Border(wxALL, 10);
+    wxSizerFlags flags2 = wxSizerFlags().Proportion(0).Expand().Border(wxALL, 10);
+    wxSizerFlags flags3 = wxSizerFlags().Proportion(0).Border(wxALL, 10).Right();
 
-		wxSizerFlags flags0 = wxSizerFlags().Proportion(1).Expand();
-		wxSizerFlags flags1 = wxSizerFlags().Proportion(1).Expand().Border(wxALL, 10);
-		wxSizerFlags flags2 = wxSizerFlags().Proportion(0).Expand().Border(wxALL, 10);
-		wxSizerFlags flags3 = wxSizerFlags().Proportion(0).Border(wxALL, 10).Right();
+    wxBoxSizer *vertical_sizer = new wxBoxSizer(wxVERTICAL);
+    SetSizer(vertical_sizer);
 
-		wxBoxSizer* vertical_sizer = new wxBoxSizer(wxVERTICAL);
-		SetSizer(vertical_sizer);
+    wxBoxSizer *horizontal_sizer = new wxBoxSizer(wxHORIZONTAL);
+    vertical_sizer->Add(horizontal_sizer, flags0);
 
-		wxBoxSizer* horizontal_sizer = new wxBoxSizer(wxHORIZONTAL);
-		vertical_sizer->Add(horizontal_sizer, flags0);
+    horizontal_sizer->Add(license_select_list_box, flags2);
+    horizontal_sizer->Add(text_view_ctrl, flags1);
 
-		horizontal_sizer->Add(license_select_list_box, flags2);
-		horizontal_sizer->Add(text_view_ctrl, flags1);
+    wxButton *close_button = new wxButton(this, wxID_CLOSE);
 
-		wxButton* close_button = new wxButton(this, wxID_CLOSE);
+    wxStdDialogButtonSizer *button_sizer = new wxStdDialogButtonSizer();
+    button_sizer->AddButton(close_button);
+    button_sizer->Realize();
 
-		wxStdDialogButtonSizer* button_sizer = new wxStdDialogButtonSizer();
-		button_sizer->AddButton(close_button);
-		button_sizer->Realize();
+    vertical_sizer->Add(button_sizer, flags3);
 
-		vertical_sizer->Add(button_sizer, flags3);
+    Bind(wxEVT_LISTBOX, &LicenseInformationDialog::SlotSelectLicense, this);
+    Bind(wxEVT_BUTTON, &LicenseInformationDialog::CloseDialog, this);
 
-		Bind(wxEVT_LISTBOX, &LicenseInformationDialog::SlotSelectLicense, this);
-		Bind(wxEVT_BUTTON, &LicenseInformationDialog::CloseDialog, this);
+    CollectLicenses();
 
-		CollectLicenses();
-
-		license_select_list_box->Select(0);
-		SelectLicense(collected_licenses.begin()->first);
-	}
+    license_select_list_box->Select(0);
+    SelectLicense(collected_licenses.begin()->first);
+  }
 
 private:
+  void CollectLicenses()
+  {
+    collected_licenses.clear();
 
-	void CollectLicenses()
-	{
-		collected_licenses.clear();
+    collected_licenses.emplace_back("Decade", LOAD_RESOURCE(decade_LICENSE).toString());
+    collected_licenses.emplace_back("glm", LOAD_RESOURCE(glm_copyright).toString());
+    collected_licenses.emplace_back("glad", LOAD_RESOURCE(glad_copyright).toString());
+    collected_licenses.emplace_back("embed-resource",
+                                    LOAD_RESOURCE(embed_resource_LICENSE).toString());
+    collected_licenses.emplace_back("csv2", LOAD_RESOURCE(csv2_copyright).toString());
+    collected_licenses.emplace_back("csv2mio", LOAD_RESOURCE(csv2mio_LICENSE).toString());
+    collected_licenses.emplace_back("sigslot", LOAD_RESOURCE(sigslot_LICENSE).toString());
+    collected_licenses.emplace_back("boost", LOAD_RESOURCE(boost_copyright).toString());
+    collected_licenses.emplace_back("freetype", LOAD_RESOURCE(freetype_copyright).toString());
+    collected_licenses.emplace_back("zlib", LOAD_RESOURCE(zlib_copyright).toString());
+    collected_licenses.emplace_back("libpng", LOAD_RESOURCE(libpng_copyright).toString());
+    collected_licenses.emplace_back("wxwidgets", LOAD_RESOURCE(wxwidgets_copyright).toString());
+    collected_licenses.emplace_back("fontconfig", LOAD_RESOURCE(fontconfig_copyright).toString());
+    collected_licenses.emplace_back("opengl", LOAD_RESOURCE(opengl_copyright).toString());
+    collected_licenses.emplace_back("tabulate", LOAD_RESOURCE(tabulate_copyright).toString());
 
-		collected_licenses.emplace_back("Decade", LOAD_RESOURCE(decade_LICENSE).toString());
-		collected_licenses.emplace_back("glm", LOAD_RESOURCE(glm_copyright).toString());
-		collected_licenses.emplace_back("glad", LOAD_RESOURCE(glad_copyright).toString());
-		collected_licenses.emplace_back("embed-resource", LOAD_RESOURCE(embed_resource_LICENSE).toString());
-		collected_licenses.emplace_back("csv2", LOAD_RESOURCE(csv2_copyright).toString());
-		collected_licenses.emplace_back("csv2mio", LOAD_RESOURCE(csv2mio_LICENSE).toString());
-		collected_licenses.emplace_back("sigslot", LOAD_RESOURCE(sigslot_LICENSE).toString());
-		collected_licenses.emplace_back("boost", LOAD_RESOURCE(boost_copyright).toString());
-		collected_licenses.emplace_back("freetype", LOAD_RESOURCE(freetype_copyright).toString());
-		collected_licenses.emplace_back("zlib", LOAD_RESOURCE(zlib_copyright).toString());
-		collected_licenses.emplace_back("libpng", LOAD_RESOURCE(libpng_copyright).toString());
-		collected_licenses.emplace_back("wxwidgets", LOAD_RESOURCE(wxwidgets_copyright).toString());
-		collected_licenses.emplace_back("fontconfig", LOAD_RESOURCE(fontconfig_copyright).toString());
-		collected_licenses.emplace_back("opengl", LOAD_RESOURCE(opengl_copyright).toString());
-		collected_licenses.emplace_back("tabulate", LOAD_RESOURCE(tabulate_copyright).toString());
+    for (const auto &license : collected_licenses) {
+      license_select_list_box->AppendString(license.first);
+    }
+  }
 
-		for (const auto& license : collected_licenses)
-		{
-			license_select_list_box->AppendString(license.first);
-		}
-	}
+  void SlotSelectLicense(wxCommandEvent &event) { SelectLicense(event.GetString().ToStdString()); }
+  void CloseDialog(wxCommandEvent &event) { EndModal(0); }
+  void SelectLicense(const std::string &map_key)
+  {
+    auto iter = std::find_if(collected_licenses.cbegin(), collected_licenses.cend(),
+                             [&](const string_pair &compare) { return compare.first == map_key; });
 
-	void SlotSelectLicense(wxCommandEvent& event)
-	{
-		SelectLicense(event.GetString().ToStdString());
-	}
-	void CloseDialog(wxCommandEvent& event)
-	{
-		EndModal(0);
-	}
-	void SelectLicense(const std::string& map_key)
-	{
-		auto iter = std::find_if(collected_licenses.cbegin(), collected_licenses.cend(), [&](const string_pair& compare) { return compare.first == map_key; });
+    text_view_ctrl->Clear();
+    *text_view_ctrl << iter->second;
+    text_view_ctrl->ShowPosition(0);
+  }
 
-		text_view_ctrl->Clear();
-		*text_view_ctrl << iter->second;
-		text_view_ctrl->ShowPosition(0);
-	}
+  wxListBox *license_select_list_box;
+  wxTextCtrl *text_view_ctrl;
 
-	wxListBox* license_select_list_box;
-	wxTextCtrl* text_view_ctrl;
+  typedef std::pair<std::string, std::string> string_pair;
 
-	typedef std::pair<std::string, std::string> string_pair;
-
-	std::vector< std::pair<std::string, std::string> > collected_licenses;
+  std::vector<std::pair<std::string, std::string>> collected_licenses;
 };

@@ -30,37 +30,30 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include <boost/serialization/vector.hpp>
 
 #include <algorithm>
-#include <exception>
+// #include <exception>
 #include <stdexcept>
-#include <utility>
+// #include <utility>
 #include <vector>
 
 class CalendarSpan {
 public:
-  CalendarSpan()
-      : span(boost::gregorian::date(2000, 1, 1),
-             boost::gregorian::date(2010, 1, 1))
+  CalendarSpan() : span(boost::gregorian::date(2000, 1, 1), boost::gregorian::date(2010, 1, 1))
   {
     valid_id = CheckAndAdjustDateInterval(&span);
   }
 
   void SetSpan(const int first_year, const int last_year)
   {
-    const boost::gregorian::date min_date =
-        boost::gregorian::date(boost::gregorian::min_date_time);
-    const boost::gregorian::date max_date =
-        boost::gregorian::date(boost::gregorian::max_date_time);
+    const boost::gregorian::date min_date = boost::gregorian::date(boost::gregorian::min_date_time);
+    const boost::gregorian::date max_date = boost::gregorian::date(boost::gregorian::max_date_time);
 
-    auto clamped_lower_year =
-        std::clamp(first_year, static_cast<int>(min_date.year()),
-                   static_cast<int>(max_date.year()));
-    auto clamped_upper_year =
-        std::clamp(last_year + 1, static_cast<int>(min_date.year()),
-                   static_cast<int>(max_date.year()));
+    auto clamped_lower_year = std::clamp(first_year, static_cast<int>(min_date.year()),
+                                         static_cast<int>(max_date.year()));
+    auto clamped_upper_year = std::clamp(last_year + 1, static_cast<int>(min_date.year()),
+                                         static_cast<int>(max_date.year()));
 
-    span = boost::gregorian::date_period(
-        boost::gregorian::date(clamped_lower_year, 1, 1),
-        boost::gregorian::date(clamped_upper_year, 1, 1));
+    span = boost::gregorian::date_period(boost::gregorian::date(clamped_lower_year, 1, 1),
+                                         boost::gregorian::date(clamped_upper_year, 1, 1));
 
     valid_id = CheckAndAdjustDateInterval(&span);
   }
@@ -117,8 +110,7 @@ private:
   int valid_id;
 
   friend class boost::serialization::access;
-  template <class Archive>
-  void serialize(Archive &ar, const unsigned int version)
+  template <class Archive> void serialize(Archive &ar, const unsigned int version)
   {
     ar &BOOST_SERIALIZATION_NVP(span);
     ar &BOOST_SERIALIZATION_NVP(valid_id);
@@ -128,13 +120,11 @@ private:
 class CalendarConfigStorage : public CalendarSpan {
 public:
   CalendarConfigStorage()
-      : auto_calendar_span(true),
-        spacing_proportions({25, 100, 50, 100, 50, 100, 25})
+      : auto_calendar_span(true), spacing_proportions({25, 100, 50, 100, 50, 100, 25})
   {
   }
 
-  void ReceiveCalendarConfigStorage(
-      const CalendarConfigStorage &calendar_config_storage)
+  void ReceiveCalendarConfigStorage(const CalendarConfigStorage &calendar_config_storage)
   {
     *this = calendar_config_storage;
     SendCalendarConfigStorage();
@@ -159,8 +149,7 @@ public:
 
 private:
   friend class boost::serialization::access;
-  template <class Archive>
-  void save(Archive &ar, const unsigned int version) const
+  template <class Archive> void save(Archive &ar, const unsigned int version) const
   {
     ar &BOOST_SERIALIZATION_NVP(auto_calendar_span);
     ar &BOOST_SERIALIZATION_NVP(spacing_proportions);

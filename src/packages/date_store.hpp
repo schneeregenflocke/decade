@@ -16,465 +16,384 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
-
 #pragma once
 
-
-#include "date_utils.hpp"
+#include "../date_utils.hpp"
 #include "group_store.hpp"
 
 #include <sigslot/signal.hpp>
 
+#include <boost/date_time/gregorian/greg_serialize.hpp>
 #include <boost/serialization/access.hpp>
-#include <boost/serialization/split_member.hpp>
 #include <boost/serialization/nvp.hpp>
+#include <boost/serialization/split_member.hpp>
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/vector.hpp>
-#include <boost/date_time/gregorian/greg_serialize.hpp>
 
-#include <fstream>
-#include <sstream>
 #include <array>
+// #include <fstream>
 #include <map>
+// #include <sstream>
 
-
-class DateIntervalBundle
-{
+class DateIntervalBundle {
 public:
+  DateIntervalBundle()
+      : date_interval(boost::gregorian::date_period(
+            boost::gregorian::date(boost::date_time::not_a_date_time),
+            boost::gregorian::date(boost::date_time::not_a_date_time))),
+        date_inter_interval(boost::gregorian::date_period(
+            boost::gregorian::date(boost::date_time::not_a_date_time),
+            boost::gregorian::date(boost::date_time::not_a_date_time))),
+        number(0), group(0), group_number(0), comment(""), exclude(false) {};
 
-	DateIntervalBundle() :
-		date_interval(boost::gregorian::date_period(boost::gregorian::date(boost::date_time::not_a_date_time), boost::gregorian::date(boost::date_time::not_a_date_time))),
-		date_inter_interval(boost::gregorian::date_period(boost::gregorian::date(boost::date_time::not_a_date_time), boost::gregorian::date(boost::date_time::not_a_date_time))),
-		number(0),
-		group(0),
-		group_number(0),
-		comment(""),
-		exclude(false)
-	{};
-
-	boost::gregorian::date_period date_interval;
-	boost::gregorian::date_period date_inter_interval;
-	int number;
-	int group;
-	int group_number;
-	bool exclude;
-	std::string comment;
+  boost::gregorian::date_period date_interval;
+  boost::gregorian::date_period date_inter_interval;
+  int number;
+  int group;
+  int group_number;
+  bool exclude;
+  std::string comment;
 
 private:
-	friend class boost::serialization::access;
-	template<class Archive>
-	void serialize(Archive& ar, const unsigned int version)
-	{
-		ar& BOOST_SERIALIZATION_NVP(date_interval);
-		ar& BOOST_SERIALIZATION_NVP(date_inter_interval);
-		ar& BOOST_SERIALIZATION_NVP(number);
-		ar& BOOST_SERIALIZATION_NVP(group);
-		ar& BOOST_SERIALIZATION_NVP(group_number);
-		ar& BOOST_SERIALIZATION_NVP(exclude);
-		ar& BOOST_SERIALIZATION_NVP(comment);
-	}
+  friend class boost::serialization::access;
+  template <class Archive> void serialize(Archive &ar, const unsigned int version)
+  {
+    ar &BOOST_SERIALIZATION_NVP(date_interval);
+    ar &BOOST_SERIALIZATION_NVP(date_inter_interval);
+    ar &BOOST_SERIALIZATION_NVP(number);
+    ar &BOOST_SERIALIZATION_NVP(group);
+    ar &BOOST_SERIALIZATION_NVP(group_number);
+    ar &BOOST_SERIALIZATION_NVP(exclude);
+    ar &BOOST_SERIALIZATION_NVP(comment);
+  }
 };
 
-
-class Bar
-{
+class Bar {
 public:
-	Bar(const boost::gregorian::date_period& date_interval) :
-		date_interval(date_interval),
-		text(""),
-		group(0)
-	{}
+  Bar(const boost::gregorian::date_period &date_interval)
+      : date_interval(date_interval), text(""), group(0)
+  {
+  }
 
-	void SetText(const std::string text)
-	{
-		this->text = text;
-	}
+  void SetText(const std::string text) { this->text = text; }
 
-	std::string GetText() const
-	{
-		return text;
-	}
+  std::string GetText() const { return text; }
 
-	int GetYear() const
-	{
-		return date_interval.begin().year();
-	}
+  int GetYear() const { return date_interval.begin().year(); }
 
-	int GetLenght() const
-	{
-		return date_interval.length().days();
-	}
+  int GetLenght() const { return date_interval.length().days(); }
 
-	float GetFirstDay() const
-	{
-		return static_cast<float>(date_interval.begin().day_of_year() - 1);
-	}
+  float GetFirstDay() const { return static_cast<float>(date_interval.begin().day_of_year() - 1); }
 
-	float GetLastDay() const
-	{
-		return static_cast<float>(date_interval.last().day_of_year());
-	}
+  float GetLastDay() const { return static_cast<float>(date_interval.last().day_of_year()); }
 
-	int group;
+  int group;
 
 private:
-	boost::gregorian::date_period date_interval;
-	std::string text;
+  boost::gregorian::date_period date_interval;
+  std::string text;
 };
 
-
-class DateIntervalBundleStore
-{
+class DateIntervalBundleStore {
 public:
-	virtual void ReceiveDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles)
-	{
-		ProcessDateIntervalBundles(date_interval_bundles);
-		signal_date_interval_bundles(this->date_interval_bundles);
-	}
+  virtual void
+  ReceiveDateIntervalBundles(const std::vector<DateIntervalBundle> &date_interval_bundles)
+  {
+    ProcessDateIntervalBundles(date_interval_bundles);
+    signal_date_interval_bundles(this->date_interval_bundles);
+  }
 
-	std::vector<DateIntervalBundle> GetDateIntervalBundles() const
-	{
-		return date_interval_bundles;
-	}
+  std::vector<DateIntervalBundle> GetDateIntervalBundles() const { return date_interval_bundles; }
 
-	bool is_empty() const
-	{
-		return date_interval_bundles.empty();
-	}
+  bool is_empty() const { return date_interval_bundles.empty(); }
 
-	int GetSpan() const
-	{
-		int span = 0;
-		if (date_interval_bundles.size() > 0)
-		{
-			span = GetLastYear() - GetFirstYear() + 1;
-		}
-		return span;
-	}
+  int GetSpan() const
+  {
+    int span = 0;
+    if (date_interval_bundles.size() > 0) {
+      span = GetLastYear() - GetFirstYear() + 1;
+    }
+    return span;
+  }
 
-	int GetFirstYear() const
-	{
-		return date_interval_bundles.front().date_interval.begin().year();
-	}
+  int GetFirstYear() const { return date_interval_bundles.front().date_interval.begin().year(); }
 
-	int GetLastYear() const
-	{
-		return date_interval_bundles.back().date_interval.last().year();
-	}
+  int GetLastYear() const { return date_interval_bundles.back().date_interval.last().year(); }
 
-	void ReceiveDateGroups(const std::vector<DateGroup>& date_groups)
-	{
-		date_group_store.ReceiveDateGroups(date_groups);
-	}
+  void ReceiveDateGroups(const std::vector<DateGroup> &date_groups)
+  {
+    date_group_store.ReceiveDateGroups(date_groups);
+  }
 
-	sigslot::signal<const std::vector<DateIntervalBundle>&> signal_date_interval_bundles;
+  sigslot::signal<const std::vector<DateIntervalBundle> &> signal_date_interval_bundles;
 
 protected:
+  void ProcessDateIntervalBundles(const std::vector<DateIntervalBundle> &date_interval_bundles)
+  {
+    this->date_interval_bundles.clear();
+    this->date_interval_bundles.reserve(date_interval_bundles.size());
 
-	void ProcessDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles)
-	{
-		this->date_interval_bundles.clear();
-		this->date_interval_bundles.reserve(date_interval_bundles.size());
+    // copy, not const reference
+    for (auto date_interval_bundle : date_interval_bundles) {
+      auto case_id = CheckAndAdjustDateInterval(&date_interval_bundle.date_interval);
 
-		// copy, not const reference
-		for (auto date_interval_bundle : date_interval_bundles)
-		{
-			auto case_id = CheckAndAdjustDateInterval(&date_interval_bundle.date_interval);
+      if (case_id > 0) {
+        this->date_interval_bundles.push_back(date_interval_bundle);
+      }
+    }
 
-			if (case_id > 0)
-			{
-				this->date_interval_bundles.push_back(date_interval_bundle);
-			}
-		}
+    this->date_interval_bundles.shrink_to_fit();
 
-		this->date_interval_bundles.shrink_to_fit();
+    Sort();
+    CheckAndAdjustGroupIntegrity();
+    AdjustGroupExcludeFlag();
+    ProcessNumbers();
+    ProcessDateInterIntervals();
+    ProcessDateGroupsNumber();
+  }
 
-		Sort();
-		CheckAndAdjustGroupIntegrity();
-		AdjustGroupExcludeFlag();
-		ProcessNumbers();
-		ProcessDateInterIntervals();
-		ProcessDateGroupsNumber();
-	}
+  std::vector<DateIntervalBundle> date_interval_bundles;
 
-	std::vector<DateIntervalBundle> date_interval_bundles;
-	
-	DateGroupStore date_group_store;
+  DateGroupStore date_group_store;
 
 private:
+  friend class boost::serialization::access;
+  template <class Archive> void save(Archive &ar, const unsigned int version) const
+  {
+    ar &BOOST_SERIALIZATION_NVP(date_interval_bundles);
+  }
+  template <class Archive> void load(Archive &ar, const unsigned int version)
+  {
+    ar &BOOST_SERIALIZATION_NVP(date_interval_bundles);
+    signal_date_interval_bundles(date_interval_bundles);
+  }
+  BOOST_SERIALIZATION_SPLIT_MEMBER()
 
-	friend class boost::serialization::access;
-	template<class Archive>
-	void save(Archive& ar, const unsigned int version) const
-	{
-		ar& BOOST_SERIALIZATION_NVP(date_interval_bundles);
-	}
-	template<class Archive>
-	void load(Archive& ar, const unsigned int version)
-	{
-		ar& BOOST_SERIALIZATION_NVP(date_interval_bundles);
-		signal_date_interval_bundles(date_interval_bundles);
-	}
-	BOOST_SERIALIZATION_SPLIT_MEMBER()
+  void Sort()
+  {
+    auto sort_func = [](const DateIntervalBundle &bundle0, const DateIntervalBundle &bundle1) {
+      return bundle0.date_interval.begin() < bundle1.date_interval.begin();
+    };
 
-	void Sort()
-	{
-		auto sort_func = [](const DateIntervalBundle& bundle0, const DateIntervalBundle& bundle1) 
-		{ 
-			return bundle0.date_interval.begin() < bundle1.date_interval.begin(); 
-		};
+    std::sort(date_interval_bundles.begin(), date_interval_bundles.end(), sort_func);
+  }
 
-		std::sort(date_interval_bundles.begin(), date_interval_bundles.end(), sort_func);
-	}
+  void ProcessNumbers()
+  {
+    int current_number = 0;
+    for (auto &date_interval_bundle : date_interval_bundles) {
+      if (date_interval_bundle.exclude == false) {
+        date_interval_bundle.number = current_number;
+        ++current_number;
+      }
+    }
+  }
 
-	void ProcessNumbers()
-	{
-		int current_number = 0;
-		for (auto& date_interval_bundle : date_interval_bundles)
-		{
-			if (date_interval_bundle.exclude == false)
-			{
-				date_interval_bundle.number = current_number;
-				++current_number;
-			}
-		}
-	}
+  void ProcessDateInterIntervals()
+  {
+    auto iterator_first = date_interval_bundles.begin();
+    // int counter = 0;
 
-	void ProcessDateInterIntervals()
-	{
-		auto iterator_first = date_interval_bundles.begin();
-		//int counter = 0;
+    while (iterator_first != date_interval_bundles.end()) {
+      // std::cout << iterator_first - date_interval_bundles.begin() << '\n';
 
-		while (iterator_first != date_interval_bundles.end())
-		{
-			//std::cout << iterator_first - date_interval_bundles.begin() << '\n';
+      bool loop = true;
+      while (iterator_first != date_interval_bundles.end() && loop) {
+        if (iterator_first->exclude == true) {
+          ++iterator_first;
+        } else {
+          loop = false;
+        }
+      }
 
-			bool loop = true;
-			while (iterator_first != date_interval_bundles.end() && loop)
-			{
-				if (iterator_first->exclude == true)
-				{
-					++iterator_first;
-				}
-				else
-				{
-					loop = false;
-				}
-			}
+      if (iterator_first != date_interval_bundles.end()) {
+        auto iterator_second = iterator_first + 1;
 
-			if (iterator_first != date_interval_bundles.end())
-			{
-				auto iterator_second = iterator_first + 1;
+        loop = true;
+        while (iterator_second != date_interval_bundles.end() && loop) {
+          if (iterator_second->exclude == true) {
+            ++iterator_second;
+          } else {
+            loop = false;
+          }
+        }
 
-				loop = true;
-				while (iterator_second != date_interval_bundles.end() && loop)
-				{
-					if (iterator_second->exclude == true)
-					{
-						++iterator_second;
-					}
-					else
-					{
-						loop = false;
-					}
-				}
+        if (iterator_second != date_interval_bundles.end()) {
+          iterator_first->date_inter_interval = boost::gregorian::date_period(
+              iterator_first->date_interval.end(), iterator_second->date_interval.begin());
 
-				if (iterator_second != date_interval_bundles.end())
-				{
-					iterator_first->date_inter_interval = boost::gregorian::date_period(iterator_first->date_interval.end(), iterator_second->date_interval.begin());
+          // std::cout << "wrote inter " << counter << '\n';
+          //++counter;
+        }
 
-					//std::cout << "wrote inter " << counter << '\n';
-					//++counter;
-				}
+        ++iterator_first;
+      }
+      // std::cout << "iterator != end? "  << (iterator_first != date_interval_bundles.end()) <<
+      // '\n';
+    }
 
-				++iterator_first;
-			}
-			//std::cout << "iterator != end? "  << (iterator_first != date_interval_bundles.end()) << '\n';
-		}
+    /*for (size_t index = 1; index < date_interval_bundles.size(); ++index)
+    {
+    date_interval_bundles[index - 1].date_inter_interval = date_period(
+    date_interval_bundles[index - 1].date_interval.end(),
+    date_interval_bundles[index].date_interval.begin());
+    }*/
+  }
 
-		/*for (size_t index = 1; index < date_interval_bundles.size(); ++index)
-		{
-		date_interval_bundles[index - 1].date_inter_interval = date_period(
-		date_interval_bundles[index - 1].date_interval.end(),
-		date_interval_bundles[index].date_interval.begin());
-		}*/
-	}
+  void ProcessDateGroupsNumber()
+  {
+    std::map<int, int> groups_counter;
 
-	void ProcessDateGroupsNumber()
-	{
-		std::map<int, int> groups_counter;
+    for (auto &date_interval_bundle : date_interval_bundles) {
+      auto current_group = date_interval_bundle.group;
 
-		for (auto& date_interval_bundle : date_interval_bundles)
-		{
-			auto current_group = date_interval_bundle.group;
+      if (groups_counter.count(current_group)) {
+        groups_counter[current_group] += 1;
+      } else {
+        groups_counter[current_group] = 0;
+      }
 
-			if (groups_counter.count(current_group))
-			{
-				groups_counter[current_group] += 1;
-			}
-			else
-			{
-				groups_counter[current_group] = 0;
-			}
+      date_interval_bundle.group_number = groups_counter[current_group];
+    }
+  }
 
-			date_interval_bundle.group_number = groups_counter[current_group];
-		}
-	}
+  void CheckAndAdjustGroupIntegrity()
+  {
+    for (auto &date_interval_bundle : date_interval_bundles) {
+      if (date_interval_bundle.group > date_group_store.GetGroupMax()) {
+        date_interval_bundle.group = 0;
+      }
+    }
+  }
 
-	void CheckAndAdjustGroupIntegrity()
-	{
-		for (auto& date_interval_bundle : date_interval_bundles)
-		{
-			if (date_interval_bundle.group > date_group_store.GetGroupMax())
-			{
-				date_interval_bundle.group = 0;
-			}
-		}
-	}
-
-	void AdjustGroupExcludeFlag()
-	{
-		for (auto& bundle : date_interval_bundles)
-		{
-			bundle.exclude = date_group_store.GetExclude(bundle.group);
-		}
-	}
+  void AdjustGroupExcludeFlag()
+  {
+    for (auto &bundle : date_interval_bundles) {
+      bundle.exclude = date_group_store.GetExclude(bundle.group);
+    }
+  }
 };
 
-
-class DateIntervalBundleBarStore : public DateIntervalBundleStore
-{
+class DateIntervalBundleBarStore : public DateIntervalBundleStore {
 public:
+  virtual void
+  ReceiveDateIntervalBundles(const std::vector<DateIntervalBundle> &date_interval_bundles) override
+  {
+    ProcessDateIntervalBundles(date_interval_bundles);
 
-	virtual void ReceiveDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles) override
-	{
-		ProcessDateIntervalBundles(date_interval_bundles);
+    ProcessBars();
+    ProcessAnnualTotals();
+  }
 
-		ProcessBars();
-		ProcessAnnualTotals();
-	}
+  size_t GetNumberBars() const { return bars.size(); }
 
-	size_t GetNumberBars() const
-	{
-		return bars.size();
-	}
+  Bar GetBar(size_t index) const { return bars[index]; }
 
-	Bar GetBar(size_t index) const
-	{
-		return bars[index];
-	}
-
-	int GetAnnualTotal(size_t index) const
-	{
-		return annualTotals[index];
-	}
+  int GetAnnualTotal(size_t index) const { return annualTotals[index]; }
 
 private:
+  void ProcessBars()
+  {
+    bars.clear();
 
-	void ProcessBars()
-	{
-		bars.clear();
+    for (size_t index = 0; index < date_interval_bundles.size(); ++index) {
+      int span = date_interval_bundles[index].date_interval.last().year() -
+                 date_interval_bundles[index].date_interval.begin().year();
 
-		for (size_t index = 0; index < date_interval_bundles.size(); ++index)
-		{
-			int span = date_interval_bundles[index].date_interval.last().year() - date_interval_bundles[index].date_interval.begin().year();
+      std::vector<boost::gregorian::date_period> splitDatePeriods;
+      splitDatePeriods.push_back(date_interval_bundles[index].date_interval);
 
-			std::vector<boost::gregorian::date_period> splitDatePeriods;
-			splitDatePeriods.push_back(date_interval_bundles[index].date_interval);
+      for (auto subIndex = 0; subIndex < span; ++subIndex) {
+        boost::gregorian::date split_date =
+            boost::gregorian::date(splitDatePeriods[subIndex].begin().year() + 1, 1, 1);
+        splitDatePeriods.push_back(
+            boost::gregorian::date_period(split_date, splitDatePeriods[subIndex].end()));
+        splitDatePeriods[subIndex] =
+            boost::gregorian::date_period(splitDatePeriods[subIndex].begin(), split_date);
+      }
 
-			for (auto subIndex = 0; subIndex < span; ++subIndex)
-			{
-				boost::gregorian::date split_date = boost::gregorian::date(splitDatePeriods[subIndex].begin().year() + 1, 1, 1);
-				splitDatePeriods.push_back(boost::gregorian::date_period(split_date, splitDatePeriods[subIndex].end()));
-				splitDatePeriods[subIndex] = boost::gregorian::date_period(splitDatePeriods[subIndex].begin(), split_date);
-			}
+      for (auto subindex = 0U; subindex < splitDatePeriods.size(); ++subindex) {
+        Bar bar(splitDatePeriods[subindex]);
+        if (date_interval_bundles[index].exclude == false) {
+          bar.SetText(std::to_string(date_interval_bundles[index].number + 1));
+        }
+        if (date_interval_bundles[index].exclude == true) {
+          std::string text_part_0 = std::to_string(date_interval_bundles[index].group);
+          std::string text_part_1 = std::to_string(date_interval_bundles[index].group_number);
 
-			for (auto subindex = 0U; subindex < splitDatePeriods.size(); ++subindex)
-			{
-				Bar bar(splitDatePeriods[subindex]);
-				if (date_interval_bundles[index].exclude == false)
-				{
-					bar.SetText(std::to_string(date_interval_bundles[index].number + 1));
-				}
-				if (date_interval_bundles[index].exclude == true)
-				{
-					std::string text_part_0 = std::to_string(date_interval_bundles[index].group);
-					std::string text_part_1 = std::to_string(date_interval_bundles[index].group_number);
+          bar.SetText(std::string("E") + text_part_0 + std::string("N") + text_part_1);
+        }
 
-					bar.SetText(std::string("E") + text_part_0 + std::string("N") + text_part_1);
-				}
+        bar.group = date_interval_bundles[index].group;
+        bars.push_back(bar);
+      }
+    }
+  }
 
-				bar.group = date_interval_bundles[index].group;
-				bars.push_back(bar);
-			}
-		}
-	}
+  void ProcessAnnualTotals()
+  {
+    annualTotals.clear();
+    annualTotals.resize(GetSpan());
 
-	void ProcessAnnualTotals()
-	{
-		annualTotals.clear();
-		annualTotals.resize(GetSpan());
+    for (size_t index = 0; index < bars.size(); ++index) {
+      size_t annualTotalsIndex =
+          static_cast<size_t>(bars[index].GetYear()) - static_cast<size_t>(GetFirstYear());
 
-		for (size_t index = 0; index < bars.size(); ++index)
-		{
-			size_t annualTotalsIndex = static_cast<size_t>(bars[index].GetYear()) - static_cast<size_t>(GetFirstYear());
+      annualTotals[annualTotalsIndex] += bars[index].GetLenght();
+    }
+  }
 
-			annualTotals[annualTotalsIndex] += bars[index].GetLenght();
-		}
-	}
-
-	std::vector<Bar> bars;
-	std::vector<int> annualTotals;
+  std::vector<Bar> bars;
+  std::vector<int> annualTotals;
 };
 
-
-class TransformDateIntervalBundle
-{
+class TransformDateIntervalBundle {
 public:
+  TransformDateIntervalBundle() : date_shift{0, 0} {};
 
-	TransformDateIntervalBundle() : date_shift{ 0, 0 } {};
+  void ReceiveDateIntervalBundles(const std::vector<DateIntervalBundle> &date_interval_bundles)
+  {
+    std::vector<DateIntervalBundle> transformed_bundles = date_interval_bundles;
+    auto bundles_iterator = transformed_bundles.begin();
 
-	void ReceiveDateIntervalBundles(const std::vector<DateIntervalBundle>& date_interval_bundles)
-	{
-		std::vector<DateIntervalBundle> transformed_bundles = date_interval_bundles;
-		auto bundles_iterator = transformed_bundles.begin();
+    for (const auto &date_interval_bundle : date_interval_bundles) {
+      bundles_iterator->date_interval =
+          boost::gregorian::date_period(date_interval_bundle.date_interval.begin() +
+                                            boost::gregorian::date_duration(date_shift[0]),
+                                        date_interval_bundle.date_interval.end() +
+                                            boost::gregorian::date_duration(date_shift[1]));
+      ++bundles_iterator;
+    }
 
-		for (const auto& date_interval_bundle : date_interval_bundles)
-		{
-			bundles_iterator->date_interval = boost::gregorian::date_period(
-				date_interval_bundle.date_interval.begin() + boost::gregorian::date_duration(date_shift[0]),
-				date_interval_bundle.date_interval.end() + boost::gregorian::date_duration(date_shift[1]));
-			++bundles_iterator;
-		}
+    signal_transform_date_interval_bundles(transformed_bundles);
+  }
 
-		signal_transform_date_interval_bundles(transformed_bundles);
-	}
+  void InputTransformedDateIntervals(const std::vector<DateIntervalBundle> &date_interval_bundles)
+  {
+    std::vector<DateIntervalBundle> untransformed_bundles = date_interval_bundles;
+    auto bundles_iterator = untransformed_bundles.begin();
 
-	void InputTransformedDateIntervals(const std::vector<DateIntervalBundle>& date_interval_bundles)
-	{
-		std::vector<DateIntervalBundle> untransformed_bundles = date_interval_bundles;
-		auto bundles_iterator = untransformed_bundles.begin();
+    for (const auto &date_interval_bundle : date_interval_bundles) {
+      bundles_iterator->date_interval =
+          boost::gregorian::date_period(date_interval_bundle.date_interval.begin() -
+                                            boost::gregorian::date_duration(date_shift[0]),
+                                        date_interval_bundle.date_interval.end() -
+                                            boost::gregorian::date_duration(date_shift[1]));
+      ++bundles_iterator;
+    }
 
-		for (const auto& date_interval_bundle : date_interval_bundles)
-		{
-			bundles_iterator->date_interval = boost::gregorian::date_period(
-				date_interval_bundle.date_interval.begin() - boost::gregorian::date_duration(date_shift[0]),
-				date_interval_bundle.date_interval.end() - boost::gregorian::date_duration(date_shift[1]));
-			++bundles_iterator;
-		}
+    signal_date_interval_bundles(untransformed_bundles);
+  }
 
-		signal_date_interval_bundles(untransformed_bundles);
-	}
+  void SetTransform(int shift_begin_date, int shift_end_date)
+  {
+    date_shift[0] = shift_begin_date;
+    date_shift[1] = shift_end_date;
+  }
 
-	void SetTransform(int shift_begin_date, int shift_end_date)
-	{
-		date_shift[0] = shift_begin_date;
-		date_shift[1] = shift_end_date;
-	}
-
-	sigslot::signal<const std::vector<DateIntervalBundle>&> signal_date_interval_bundles;
-	sigslot::signal<const std::vector<DateIntervalBundle>&> signal_transform_date_interval_bundles;
+  sigslot::signal<const std::vector<DateIntervalBundle> &> signal_date_interval_bundles;
+  sigslot::signal<const std::vector<DateIntervalBundle> &> signal_transform_date_interval_bundles;
 
 private:
-	std::array<int, 2> date_shift;
+  std::array<int, 2> date_shift;
 };
