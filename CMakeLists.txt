@@ -1,10 +1,20 @@
 ﻿cmake_minimum_required(VERSION 3.15)
 
+set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE PATH "Path to your vcpkg installation" FORCE)
+# set(VCPKG_ROOT "$ENV{VCPKG_ROOT}" CACHE PATH "Path to your vcpkg installation" FORCE)
+# set(VCPKG_TARGET_TRIPLET "x64-windows" CACHE STRING "Target triplet for vcpkg" FORCE)
+# set(VCPKG_MANIFEST_MODE OFF CACHE BOOL "Enable vcpkg manifest mode" FORCE)
+
+
 include(CMakePrintHelpers)
 
-project(Decade VERSION 0.0.0)
+project(decade VERSION 0.0.0)
 
 cmake_print_variables(CMAKE_VERSION CMAKE_PROJECT_VERSION CMAKE_SYSTEM_NAME CMAKE_CXX_COMPILER CMAKE_CXX_COMPILER_ID)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Generate compile_commands.json for clang tooling" FORCE)
+
+cmake_print_variables(CMAKE_TOOLCHAIN_FILE VCPKG_ROOT VCPKG_INSTALLED_DIR VCPKG_TARGET_TRIPLET)
 
 add_executable(${PROJECT_NAME} WIN32)
 #add_executable(${PROJECT_NAME})
@@ -60,9 +70,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 )
 
 
-cmake_print_variables(VCPKG_ROOT VCPKG_INSTALLED_DIR VCPKG_TARGET_TRIPLET)
-
-find_package(Boost REQUIRED COMPONENTS date_time serialization wserialization)
+find_package(Boost CONFIG REQUIRED COMPONENTS date_time serialization wserialization)
 cmake_print_variables(Boost_FOUND Boost_INCLUDE_DIRS Boost_LIBRARY_DIRS Boost_LIBRARIES Boost_USE_STATIC_LIBS)
 if(${Boost_FOUND})
 	target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
@@ -115,6 +123,9 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/e
 
 find_package(tabulate CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE tabulate::tabulate)
+
+find_package(Microsoft.GSL CONFIG REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE Microsoft.GSL::GSL)
 
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)
