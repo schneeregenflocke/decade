@@ -41,7 +41,7 @@ jobs:
         git pull
         vcpkg.exe upgrade --no-dry-run
         bootstrap-vcpkg.bat
-        vcpkg.exe install boost-date-time boost-serialization zlib libpng freetype[brotli,bzip2,error-strings,png,zlib] glad glm p-ranav-csv2 wxwidgets fontconfig tabulate
+        vcpkg.exe install boost-date-time boost-serialization zlib libpng freetype[brotli,bzip2,error-strings,png,zlib] glad glm p-ranav-csv2 wxwidgets fontconfig ms-gsl tabulate
 
     - uses: actions/checkout@v4
     - name: Checkout submodules
