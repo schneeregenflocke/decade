@@ -23,21 +23,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include "graphics/scene_graph.hpp"
 #include "graphics/shapes.hpp"
 #include "gui/opengl_panel.hpp"
-
 #include "packages/calendar_config.hpp"
 #include "packages/date_store.hpp"
 #include "packages/group_store.hpp"
 #include "packages/page_config.hpp"
 #include "packages/shape_config.hpp"
 #include "packages/title_config.hpp"
-
-// #include <algorithm>
 #include <array>
 #include <ctime>
-// #include <iostream>
 #include <iterator>
 #include <memory>
-// #include <numeric>
 #include <string>
 #include <vector>
 

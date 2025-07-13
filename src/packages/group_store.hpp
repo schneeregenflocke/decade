@@ -18,18 +18,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <sigslot/signal.hpp>
-
+#include <algorithm>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/split_member.hpp>
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/vector.hpp>
-
-
-#include <algorithm>
+#include <sigslot/signal.hpp>
 #include <string>
 #include <vector>
+
 
 class DateGroup {
 public:

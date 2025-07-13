@@ -18,10 +18,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "Resource.h"
 #include "shaders_info.hpp"
-
 #include <glad/glad.h>
-
 #include <glm/geometric.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -29,21 +28,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
-
-// #include <fstream>
 #include <iostream>
 #include <optional>
-// #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
-
-#include "Resource.h"
 
 class Shader {
 public:
   Shader(const std::string &vertex_shader_source, const std::string &fragment_shader_source,
-         const std::string &name)
-      : program(0), name(name)
+         std::string name)
+      : program(0), name(std::move(name))
   {
     CompileProgram(vertex_shader_source, fragment_shader_source);
 
@@ -56,13 +51,13 @@ public:
 
   void UseProgram() const { glUseProgram(program); }
 
-  void SetUniform(std::string name, const glm::mat4 &matrix) const
+  void SetUniform(const std::string &name, const glm::mat4 &matrix) const
   {
     auto location = glGetUniformLocation(program, name.c_str());
     glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
   }
 
-  void SetUniform(std::string name, const glm::vec4 &vector) const
+  void SetUniform(const std::string &name, const glm::vec4 &vector) const
   {
     auto location = glGetUniformLocation(program, name.c_str());
     glUniform4fv(location, 1, glm::value_ptr(vector));
@@ -107,16 +102,16 @@ private:
 
     glValidateProgram(program);
 
-    GLint status;
+    GLint status = 0;
     glGetProgramiv(program, GL_LINK_STATUS, &status);
     std::cout << "GL_LINK_STATUS: " << program << " " << std::boolalpha << static_cast<bool>(status)
               << std::noboolalpha << '\n';
 
-    GLint info_lenght;
+    GLint info_lenght = 0;
     glGetProgramiv(program, GL_INFO_LOG_LENGTH, &info_lenght);
     if (info_lenght > 0) {
       char *info_log = new char[info_lenght];
-      glGetProgramInfoLog(program, info_lenght, NULL, info_log);
+      glGetProgramInfoLog(program, info_lenght, nullptr, info_log);
       std::cout << info_log;
       delete[] info_log;
     }
@@ -134,16 +129,16 @@ private:
     glShaderSource(shader, 1, &source_cstr, nullptr);
     glCompileShader(shader);
 
-    GLint status;
+    GLint status = 0;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
     std::cout << "GL_COMPILE_STATUS: " << shader << " " << std::boolalpha
               << static_cast<bool>(status) << std::noboolalpha << '\n';
 
-    GLint info_lenght;
+    GLint info_lenght = 0;
     glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &info_lenght);
     if (info_lenght > 0) {
       char *info_log = new char[info_lenght];
-      glGetShaderInfoLog(shader, info_lenght, NULL, info_log);
+      glGetShaderInfoLog(shader, info_lenght, nullptr, info_log);
       std::cout << info_log;
       delete[] info_log;
     }
@@ -185,8 +180,8 @@ public:
 
   void PrintInfo() const
   {
-    for (size_t index = 0; index < shaders.size(); ++index) {
-      shaders[index].PrintShaderInfo();
+    for (const auto &shader : shaders) {
+      shader.PrintShaderInfo();
     }
   }
 
@@ -194,16 +189,15 @@ public:
   {
     if (index < shaders.size()) {
       return &shaders[index];
-    } else {
-      throw std::invalid_argument("Shader index out of bounds");
     }
+    throw std::invalid_argument("Shader index out of bounds");
   }
 
   std::optional<Shader *> search_shader(const std::string &search_name)
   {
     for (auto &shader : shaders) {
       if (shader.get_name() == search_name) {
-        return std::optional<Shader *>(&shader);
+        return std::optional<Shader *>{&shader};
       }
     }
     return std::nullopt;

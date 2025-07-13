@@ -18,6 +18,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <wx/wx.h>
+
+#include <wx/notebook.h>
+#include <wx/splitter.h>
+
+#include "calendar_page.hpp"
+#include "date_utils.hpp"
 #include "gui/calendar_panel.hpp"
 #include "gui/date_panel.hpp"
 #include "gui/font_panel.hpp"
@@ -28,27 +35,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include "gui/page_panel.hpp"
 #include "gui/shape_panel.hpp"
 #include "gui/title_panel.hpp"
-
-#include <gsl/gsl>
-
-#include "calendar_page.hpp"
-#include "date_utils.hpp"
-
 #include "packages/shape_config.hpp"
 #include "packages/title_config.hpp"
-
-#include <sigslot/signal.hpp>
-
+#include <array>
 #include <boost/archive/xml_iarchive.hpp>
 #include <boost/archive/xml_oarchive.hpp>
-
 #include <csv2/reader.hpp>
 #include <csv2/writer.hpp>
-
-#include <array>
 #include <fstream>
+#include <gsl/gsl>
 #include <iostream>
 #include <memory>
+#include <sigslot/signal.hpp>
 #include <string>
 
 class MainWindow {
@@ -402,7 +400,7 @@ private:
     dialog.ShowModal();
   }
 
-  gsl::owner<wxFrame *> wx_frame;
+  wxFrame *wx_frame;
 
   std::string xml_file_path;
 

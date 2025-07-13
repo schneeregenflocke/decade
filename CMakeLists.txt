@@ -37,7 +37,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/casts.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/calendar_page.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/frame_layout.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/wx_widgets_include.hpp
+#	${CMAKE_CURRENT_SOURCE_DIR}/src/wx_widgets_include.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/calendar_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_store.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/group_store.hpp

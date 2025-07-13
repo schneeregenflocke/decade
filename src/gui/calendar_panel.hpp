@@ -18,15 +18,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <wx/wx.h>
+
+#include <wx/propgrid/propgrid.h>
+
 #include "../packages/calendar_config.hpp"
-#include "../wx_widgets_include.hpp"
-
 #include <sigslot/signal.hpp>
-
-#include <array>
-// #include <functional>
-// #include <iostream>
-// #include <memory>
 #include <vector>
 
 class PropertyGridPanel : public wxPropertyGrid {

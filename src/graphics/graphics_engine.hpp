@@ -18,15 +18,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "font.hpp"
 #include "mvp_matrices.hpp"
-#include "projection.hpp"
 #include "scene_graph.hpp"
 #include "shaders.hpp"
-#include "shapes.hpp"
-
-// #include <algorithm>
-// #include <exception>
 #include <memory>
 #include <optional>
 #include <string>
@@ -35,7 +29,7 @@ class GraphicsEngine {
 public:
   void Render()
   {
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     for (size_t index = 0; index < shaders.GetNumberShaders(); ++index) {
@@ -44,7 +38,7 @@ public:
       shader.UseProgram();
       shader.SetUniform("projection", mvp.GetProjection());
       shader.SetUniform("view", mvp.GetView());
-      shader.SetUniform("model", glm::mat4(1.f));
+      shader.SetUniform("model", glm::mat4(1.F));
     }
 
     scene_graph->draw();
@@ -52,7 +46,10 @@ public:
 
   void SetMVP(const MVP &mvp) { this->mvp = mvp; }
 
-  void set_scene_graph(std::shared_ptr<SceneNode> scene_graph) { this->scene_graph = scene_graph; }
+  void set_scene_graph(const std::shared_ptr<SceneNode> &scene_graph)
+  {
+    this->scene_graph = scene_graph;
+  }
 
   Shaders &GetShaders() { return shaders; }
 

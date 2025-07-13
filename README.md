@@ -1,7 +1,7 @@
-# dekade
+# decade
 
 ## Build Status
-[![CMake](https://github.com/schneeregenflocke/dekade/actions/workflows/cmake.yml/badge.svg)](https://github.com/schneeregenflocke/dekade/actions/workflows/cmake.yml)
+[![CMake](https://github.com/schneeregenflocke/decade/actions/workflows/cmake.yml/badge.svg)](https://github.com/schneeregenflocke/decade/actions/workflows/cmake.yml)
 
 ## Description
 Calendar (alpha-version/exercise project)

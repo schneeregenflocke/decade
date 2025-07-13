@@ -18,17 +18,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <wx/wx.h>
+
+#include <wx/clrpicker.h>
+
 #include "../casts.hpp"
 #include "../packages/group_store.hpp"
 #include "../packages/shape_config.hpp"
-#include "../wx_widgets_include.hpp"
-
-#include <sigslot/signal.hpp>
-
 #include <algorithm>
-// #include <array>
-// #include <functional>
-// #include <memory>
+#include <sigslot/signal.hpp>
 #include <string>
 #include <vector>
 

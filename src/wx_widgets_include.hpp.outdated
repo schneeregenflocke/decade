@@ -28,8 +28,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include <wx/cmndata.h>
 #include <wx/dataview.h>
 #include <wx/fontpicker.h>
+#include <wx/glcanvas.h>
 #include <wx/notebook.h>
 #include <wx/printdlg.h>
 #include <wx/propgrid/propgrid.h>
 #include <wx/spinctrl.h>
 #include <wx/splitter.h>
+

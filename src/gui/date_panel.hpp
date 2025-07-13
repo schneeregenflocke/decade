@@ -18,15 +18,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <wx/wx.h>
+
+#include <wx/dataview.h>
+
 #include "../date_utils.hpp"
 #include "../packages/date_store.hpp"
 #include "../packages/group_store.hpp"
-#include "../wx_widgets_include.hpp"
-
 #include <sigslot/signal.hpp>
-
-// #include <exception>
-// #include <memory>
 #include <string>
 #include <vector>
 

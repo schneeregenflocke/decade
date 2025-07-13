@@ -18,9 +18,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "../packages/page_config.hpp"
-#include "../wx_widgets_include.hpp"
+#include <wx/wx.h>
 
+#include <wx/printdlg.h>
+#include <wx/spinctrl.h>
+
+#include "../packages/page_config.hpp"
 #include <sigslot/signal.hpp>
 
 class PageSetupPanel {

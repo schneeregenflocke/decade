@@ -18,20 +18,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "../graphics/font.hpp"
-#include "../wx_widgets_include.hpp"
-
-#include <sigslot/signal.hpp>
+#include <wx/fontpicker.h>
+#include <wx/wx.h>
 
 #ifndef FC_DEBUG
 #define FC_DEBUG
 #endif // !FC_DEBUG
-#include <fontconfig/fontconfig.h>
 
-#include <exception>
+#include <fontconfig/fontconfig.h>
 #include <map>
+#include <sigslot/signal.hpp>
 #include <string>
-#include <vector>
 
 class FontPanel {
 public:

@@ -18,7 +18,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "../wx_widgets_include.hpp"
+#include <wx/wx.h>
 
 class LogPanel {
 public:

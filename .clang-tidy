@@ -3,9 +3,11 @@ Checks: >
   -*,
   bugprone-*,
   modernize-*,
+  -modernize-use-trailing-return-type,
   cppcoreguidelines-*,
   clang-analyzer-*,
   clang-diagnostic-*,
+  clang-*,
   readability-*,
   performance-*,
   misc-*,
@@ -14,7 +16,7 @@ Checks: >
   concurrency-*,
   abseil-*,
   google-*,
-  -google-objc-*,
+  -google-objc-*
 WarningsAsErrors: ""
 HeaderFileExtensions:
   - ""

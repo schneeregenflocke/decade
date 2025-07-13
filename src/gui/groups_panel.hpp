@@ -18,12 +18,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <wx/wx.h>
+
 #include "../packages/group_store.hpp"
-#include "../wx_widgets_include.hpp"
-
-#include <sigslot/signal.hpp>
-
 #include <limits>
+#include <sigslot/signal.hpp>
 #include <string>
 #include <vector>
 
