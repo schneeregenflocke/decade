@@ -49,16 +49,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include <sigslot/signal.hpp>
 #include <string>
 
-class MainWindow {
+class MainWindow : public wxFrame {
+
 public:
-  MainWindow(const wxString &title, const wxPoint &pos, const wxSize &size)
-      : wx_frame(nullptr), ID_SAVE_XML(wxWindow::NewControlId()),
+  MainWindow(wxWindow *parent, const wxString &title, const wxPoint &pos, const wxSize &size)
+      : wxFrame(parent, wxID_ANY, title, pos, size), ID_SAVE_XML(wxWindow::NewControlId()),
         ID_SAVE_AS_XML(wxWindow::NewControlId())
   {
-    wx_frame = new wxFrame(nullptr, wxID_ANY, title, pos, size);
-    wx_frame->Maximize();
+    this->Maximize();
 
-    auto *main_splitter = new wxSplitterWindow(wx_frame, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+    auto *main_splitter = new wxSplitterWindow(this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                                                wxSP_3D | wxSP_LIVE_UPDATE);
 
     constexpr int minimum_pane_size = 5;
@@ -69,11 +69,11 @@ public:
     wxSizerFlags sizer_flags;
     sizer_flags.Proportion(1).Expand().Border(wxALL, 5);
 
-    wxPanel *notebook_panel = new wxPanel(main_splitter, wxID_ANY);
+    auto *notebook_panel = new wxPanel(main_splitter, wxID_ANY);
     auto forgrndColor = notebook_panel->GetForegroundColour();
     auto bckgrndColor = notebook_panel->GetBackgroundColour();
 
-    wxBoxSizer *notebook_panel_sizer = new wxBoxSizer(wxVERTICAL);
+    auto *notebook_panel_sizer = new wxBoxSizer(wxVERTICAL);
     notebook_panel->SetSizer(notebook_panel_sizer);
 
     wxNotebook *notebook =
@@ -122,9 +122,9 @@ public:
     main_splitter->SplitVertically(notebook_panel, gl_canvas_panel);
 
     InitMenu();
-    wx_frame->CreateStatusBar(1);
-    wx_frame->Show();
-    wx_frame->Raise();
+    CreateStatusBar(1);
+    Show();
+    Raise();
 
     std::array<int, 2> gl_version{4, 6};
     bool gl_loaded = gl_canvas->LoadOpenGL(gl_version) != 0;
@@ -229,17 +229,17 @@ private:
     // const int ID_NEW_XML = wxWindow::NewControlId();
     // const int ID_CLOSE_XML = wxWindow::NewControlId();
 
-    wx_frame->Bind(wxEVT_MENU, &MainWindow::CallbackLoadXML, this, ID_OPEN_XML);
-    wx_frame->Bind(wxEVT_MENU, &MainWindow::CallbackSaveXML, this, ID_SAVE_XML);
-    wx_frame->Bind(wxEVT_MENU, &MainWindow::CallbackSaveXML, this, ID_SAVE_AS_XML);
-    wx_frame->Bind(wxEVT_MENU, &MainWindow::CallbackImportCSV, this, ID_IMPORT_CSV);
-    wx_frame->Bind(wxEVT_MENU, &MainWindow::CallbackExportCSV, this, ID_EXPORT_CSV);
-    wx_frame->Bind(wxEVT_MENU, &MainWindow::CallbackExportPNG, this, ID_EXPORT_PNG);
-    wx_frame->Bind(wxEVT_MENU, &MainWindow::CallbackExit, this, wxID_EXIT);
-    wx_frame->Bind(wxEVT_MENU, &MainWindow::CallbackLicenseInfo, this, ID_LICENSE_INFO);
+    this->Bind(wxEVT_MENU, &MainWindow::CallbackLoadXML, this, ID_OPEN_XML);
+    this->Bind(wxEVT_MENU, &MainWindow::CallbackSaveXML, this, ID_SAVE_XML);
+    this->Bind(wxEVT_MENU, &MainWindow::CallbackSaveXML, this, ID_SAVE_AS_XML);
+    this->Bind(wxEVT_MENU, &MainWindow::CallbackImportCSV, this, ID_IMPORT_CSV);
+    this->Bind(wxEVT_MENU, &MainWindow::CallbackExportCSV, this, ID_EXPORT_CSV);
+    this->Bind(wxEVT_MENU, &MainWindow::CallbackExportPNG, this, ID_EXPORT_PNG);
+    this->Bind(wxEVT_MENU, &MainWindow::CallbackExit, this, wxID_EXIT);
+    this->Bind(wxEVT_MENU, &MainWindow::CallbackLicenseInfo, this, ID_LICENSE_INFO);
 
     wxMenuBar *menu_bar = new wxMenuBar;
-    wx_frame->SetMenuBar(menu_bar);
+    this->SetMenuBar(menu_bar);
 
     wxMenu *menu_file = new wxMenu;
     menu_bar->Append(menu_file, "&File");
@@ -263,7 +263,7 @@ private:
 
   void CallbackLoadXML(wxCommandEvent &event)
   {
-    wxFileDialog openFileDialog(wx_frame, "Open File", wxEmptyString, wxEmptyString,
+    wxFileDialog openFileDialog(this, "Open File", wxEmptyString, wxEmptyString,
                                 "XML Files (*.xml)|*.xml", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
     if (openFileDialog.ShowModal() == wxID_OK) {
       std::string file_path = openFileDialog.GetPath().ToStdString();
@@ -279,7 +279,7 @@ private:
     }
 
     else if (event.GetId() == ID_SAVE_AS_XML || xml_file_path.empty() == true) {
-      wxFileDialog saveFileDialog(wx_frame, "Save File", wxEmptyString, wxEmptyString,
+      wxFileDialog saveFileDialog(this, "Save File", wxEmptyString, wxEmptyString,
                                   "XML Files (*.xml)|*.xml", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
       if (saveFileDialog.ShowModal() == wxID_OK) {
         std::string file_path = saveFileDialog.GetPath().ToStdString();
@@ -317,7 +317,7 @@ private:
 
   void CallbackImportCSV(wxCommandEvent &event)
   {
-    wxFileDialog open_file_dialog(wx_frame, "Import file", wxEmptyString, wxEmptyString,
+    wxFileDialog open_file_dialog(this, "Import file", wxEmptyString, wxEmptyString,
                                   "CSV and TXT files (*.csv;*.txt)|*.csv;*.txt",
                                   wxFD_OPEN | wxFD_FILE_MUST_EXIST);
     if (open_file_dialog.ShowModal() == wxID_OK) {
@@ -359,7 +359,7 @@ private:
 
   void CallbackExportCSV(wxCommandEvent &event)
   {
-    wxFileDialog save_file_dialog(wx_frame, "Export file", wxEmptyString, wxEmptyString,
+    wxFileDialog save_file_dialog(this, "Export file", wxEmptyString, wxEmptyString,
                                   "CSV and TXT files (*.csv;*.txt)|*.csv;*.txt",
                                   wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
     if (save_file_dialog.ShowModal() == wxID_OK) {
@@ -384,7 +384,7 @@ private:
 
   void CallbackExportPNG(wxCommandEvent &event)
   {
-    wxFileDialog file_dialog(wx_frame, "Export PNG file", wxEmptyString, wxEmptyString,
+    wxFileDialog file_dialog(this, "Export PNG file", wxEmptyString, wxEmptyString,
                              "PNG files (*.png)|*.png", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
     if (file_dialog.ShowModal() == wxID_OK) {
       std::string file_path = file_dialog.GetPath().ToStdString();
@@ -392,15 +392,13 @@ private:
     }
   }
 
-  void CallbackExit(wxCommandEvent &event) { wx_frame->Close(true); }
+  void CallbackExit(wxCommandEvent &event) { Close(true); }
 
   void CallbackLicenseInfo(wxCommandEvent &event)
   {
     LicenseInformationDialog dialog;
     dialog.ShowModal();
   }
-
-  wxFrame *wx_frame;
 
   std::string xml_file_path;
 

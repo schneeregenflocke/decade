@@ -1,6 +1,6 @@
 ﻿/*
 Decade
-Copyright (c) 2019-2022 Marco Peyer
+Copyright (c) 2019-2025 Marco Peyer
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,63 +17,39 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "main_window.hpp"
-
 #include <locale>
 #include <string>
 
-#ifdef _WIN32
-extern "C" {
-__declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
-__declspec(dllexport) DWORD AmdPowerXpressRequestHighPerformance = 0x00000001;
-}
-#endif
-
 class App : public wxApp {
 public:
-  App() : main_window(nullptr) {}
-
-  virtual bool OnInit()
+  bool OnInit() override
   {
     wx_locale = std::make_unique<wxLocale>();
     auto init_locale_succeeded = wx_locale->Init();
     std::locale::global(std::locale(""));
 
     // std::cout << "init_locale_succeeded " << init_locale_succeeded << '\n';
-    //  auto language = wxLocale::GetSystemLanguage();
+    // auto language = wxLocale::GetSystemLanguage();
     // std::cout << "current locale name " <<
     // wx_locale->GetLanguageName(language) << '\n';
 
     const std::string application_name = "Decade";
 
-    constexpr int kMainWindowPosX = 100;
-    constexpr int kMainWindowPosY = 100;
-    constexpr int kMainWindowWidth = 1280;
-    constexpr int kMainWindowHeight = 800;
+    constexpr int mainWindowPosX = 100;
+    constexpr int mainWindowPosY = 100;
+    constexpr int mainWindowWidth = 1280;
+    constexpr int mainWindowHeight = 800;
 
-    main_window = std::make_unique<MainWindow>(
-        application_name, wxPoint(kMainWindowPosX, kMainWindowPosY),
-        wxSize(kMainWindowWidth, kMainWindowHeight));
+    gsl::owner<MainWindow *> main_window = nullptr;
+    main_window = new MainWindow(nullptr, application_name, wxPoint(mainWindowPosX, mainWindowPosY),
+                                 wxSize(mainWindowWidth, mainWindowHeight));
+    SetTopWindow(main_window);
 
     return true;
   }
 
 private:
-  std::unique_ptr<MainWindow> main_window;
   std::unique_ptr<wxLocale> wx_locale;
 };
 
 wxIMPLEMENT_APP(App);
-
-// wxIMPLEMENT_APP_NO_MAIN(App);
-/*int main(int argc, char* argv[])
-{
-    wxEntryStart(argc, argv);
-
-    wxTheApp->CallOnInit();
-    wxTheApp->OnRun();
-    wxTheApp->OnExit();
-
-    wxEntryCleanup();
-
-    return EXIT_SUCCESS;
-}*/

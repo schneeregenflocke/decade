@@ -26,6 +26,7 @@ jobs:
         echo "Workspace: ${{ github.workspace }}"
         echo "VCPKG Root: ${{ env.VCPKG_ROOT }}"
         echo "VCPKG Binary Sources: ${{ env.VCPKG_BINARY_SOURCES }}"
+        echo "VCPKG Default Binary Cache: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"
 
     - name: Export GitHub Actions cache environment variables
       uses: actions/github-script@v7

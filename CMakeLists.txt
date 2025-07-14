@@ -5,7 +5,6 @@ set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CAC
 # set(VCPKG_TARGET_TRIPLET "x64-windows" CACHE STRING "Target triplet for vcpkg" FORCE)
 # set(VCPKG_MANIFEST_MODE OFF CACHE BOOL "Enable vcpkg manifest mode" FORCE)
 
-
 include(CMakePrintHelpers)
 
 project(decade VERSION 0.0.0)
@@ -19,16 +18,22 @@ cmake_print_variables(CMAKE_TOOLCHAIN_FILE VCPKG_ROOT VCPKG_INSTALLED_DIR VCPKG_
 add_executable(${PROJECT_NAME} WIN32)
 #add_executable(${PROJECT_NAME})
 
-
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 get_target_property(${PROJECT_NAME}_CXX_STANDARD ${PROJECT_NAME} CXX_STANDARD)
 cmake_print_variables(${PROJECT_NAME}_CXX_STANDARD CMAKE_CXX_STANDARD CMAKE_CXX_EXTENSIONS)
 cmake_print_variables(CMAKE_EXPORT_COMPILE_COMMANDS)
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
-	target_compile_options(${PROJECT_NAME} PRIVATE /Zc:__cplusplus)
-endif()
+	target_compile_options(${PROJECT_NAME} PRIVATE
+        "$<$<CONFIG:Debug>:/Zc:__cplusplus;/fsanitize=address;/Zi;/EHsc>"
+		"$<$<CONFIG:Release>:/Zc:__cplusplus>"
+    )
 
+	target_link_options(${PROJECT_NAME} PRIVATE
+        "$<$<CONFIG:Debug>:/fsanitize=address;/INCREMENTAL:NO;/DEBUG>"
+        "$<$<CONFIG:Release>:/OPT:REF;/OPT:ICF>"
+	)
+endif()
 
 target_sources(${PROJECT_NAME} PRIVATE 
 	${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
@@ -37,7 +42,6 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/casts.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/calendar_page.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/frame_layout.hpp
-#	${CMAKE_CURRENT_SOURCE_DIR}/src/wx_widgets_include.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/calendar_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_store.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/group_store.hpp
@@ -69,7 +73,6 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/scene_graph.hpp
 )
 
-
 find_package(Boost CONFIG REQUIRED COMPONENTS date_time serialization wserialization)
 cmake_print_variables(Boost_FOUND Boost_INCLUDE_DIRS Boost_LIBRARY_DIRS Boost_LIBRARIES Boost_USE_STATIC_LIBS)
 if(${Boost_FOUND})
@@ -77,21 +80,16 @@ if(${Boost_FOUND})
 	target_link_libraries(${PROJECT_NAME} PRIVATE ${Boost_LIBRARIES})
 endif()
 
-
 find_package(OpenGL REQUIRED)
-
 
 find_package(wxWidgets CONFIG REQUIRED COMPONENTS propgrid gl core base)
 target_link_libraries(${PROJECT_NAME} PRIVATE ${wxWidgets_LIBRARIES})
 cmake_print_variables(wxWidgets_FOUND wxWidgets_INCLUDE_DIRS wxWidgets_LIBRARIES wxWidgets_LIBRARY_DIRS wxWidgets_DEFINITIONS wxWidgets_DEFINITIONS_DEBUG wxWidgets_CXX_FLAGS wxWidgets_USE_FILE)
 
-
 target_sources(${PROJECT_NAME} PRIVATE ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/wx/msw/wx_dpi_aware_pmv2.manifest)
-
 
 find_package(ZLIB REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
-
 
 find_package(PNG REQUIRED)
 #target_link_libraries(${PROJECT_NAME} PRIVATE PNG::PNG_STATIC)
@@ -103,21 +101,17 @@ target_link_libraries(${PROJECT_NAME} PRIVATE Fontconfig::Fontconfig)
 find_package(freetype CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE freetype)
 
-
 set(GLAD_PROFILE "core" CACHE STRING "OpenGL profile" FORCE)
 find_package(glad CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE glad::glad)
-
 
 find_package(glm CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm)
 #target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm-header-only)
 
-
 find_path(P_RANAV_CSV2_INCLUDE_DIRS "csv2/mio.hpp")
 target_include_directories(${PROJECT_NAME} PRIVATE ${P_RANAV_CSV2_INCLUDE_DIRS})
 cmake_print_variables(P_RANAV_CSV2_INCLUDE_DIRS)
-
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/include)
 
@@ -127,10 +121,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE tabulate::tabulate)
 find_package(Microsoft.GSL CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE Microsoft.GSL::GSL)
 
-
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)
-
 
 list(APPEND RESOURCE_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/shaders/font_fragment_shader.glsl shader

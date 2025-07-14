@@ -22,12 +22,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 class Texture {
 public:
-  explicit Texture() { glGenTextures(1, &name); }
+  Texture() { glGenTextures(1, &name); }
 
   ~Texture() { glDeleteTextures(1, &name); }
 
-  GLuint Name() const { return name; }
+  [[nodiscard]] GLuint Name() const { return name; }
 
 private:
-  GLuint name;
+  GLuint name{};
 };
