@@ -83,13 +83,14 @@ private:
     collected_licenses.emplace_back("csv2", LOAD_RESOURCE(csv2_copyright).toString());
     collected_licenses.emplace_back("csv2mio", LOAD_RESOURCE(csv2mio_LICENSE).toString());
     collected_licenses.emplace_back("sigslot", LOAD_RESOURCE(sigslot_LICENSE).toString());
-    collected_licenses.emplace_back("boost", LOAD_RESOURCE(boost_copyright).toString());
-    collected_licenses.emplace_back("freetype", LOAD_RESOURCE(freetype_copyright).toString());
-    collected_licenses.emplace_back("zlib", LOAD_RESOURCE(zlib_copyright).toString());
-    collected_licenses.emplace_back("libpng", LOAD_RESOURCE(libpng_copyright).toString());
-    collected_licenses.emplace_back("wxwidgets", LOAD_RESOURCE(wxwidgets_copyright).toString());
-    collected_licenses.emplace_back("fontconfig", LOAD_RESOURCE(fontconfig_copyright).toString());
-    collected_licenses.emplace_back("opengl", LOAD_RESOURCE(opengl_copyright).toString());
+    // collected_licenses.emplace_back("boost", LOAD_RESOURCE(boost_copyright).toString());
+    // collected_licenses.emplace_back("freetype", LOAD_RESOURCE(freetype_copyright).toString());
+    // collected_licenses.emplace_back("zlib", LOAD_RESOURCE(zlib_copyright).toString());
+    // collected_licenses.emplace_back("libpng", LOAD_RESOURCE(libpng_copyright).toString());
+    // collected_licenses.emplace_back("wxwidgets", LOAD_RESOURCE(wxwidgets_copyright).toString());
+    // collected_licenses.emplace_back("fontconfig",
+    // LOAD_RESOURCE(fontconfig_copyright).toString()); collected_licenses.emplace_back("opengl",
+    // LOAD_RESOURCE(opengl_copyright).toString());
     collected_licenses.emplace_back("tabulate", LOAD_RESOURCE(tabulate_copyright).toString());
 
     for (const auto &license : collected_licenses) {

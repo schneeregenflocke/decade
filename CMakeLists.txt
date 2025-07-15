@@ -7,6 +7,8 @@ set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CAC
 
 include(CMakePrintHelpers)
 
+cmake_print_variables(ENV{VCPKG_ROOT})
+
 project(decade VERSION 0.0.0)
 
 cmake_print_variables(CMAKE_VERSION CMAKE_PROJECT_VERSION CMAKE_SYSTEM_NAME CMAKE_CXX_COMPILER CMAKE_CXX_COMPILER_ID)
@@ -18,66 +20,72 @@ cmake_print_variables(CMAKE_TOOLCHAIN_FILE VCPKG_ROOT VCPKG_INSTALLED_DIR VCPKG_
 add_executable(${PROJECT_NAME} WIN32)
 #add_executable(${PROJECT_NAME})
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 get_target_property(${PROJECT_NAME}_CXX_STANDARD ${PROJECT_NAME} CXX_STANDARD)
 cmake_print_variables(${PROJECT_NAME}_CXX_STANDARD CMAKE_CXX_STANDARD CMAKE_CXX_EXTENSIONS)
 cmake_print_variables(CMAKE_EXPORT_COMPILE_COMMANDS)
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
-	target_compile_options(${PROJECT_NAME} PRIVATE
+    target_compile_options(${PROJECT_NAME} PRIVATE
         "$<$<CONFIG:Debug>:/Zc:__cplusplus;/fsanitize=address;/Zi;/EHsc>"
-		"$<$<CONFIG:Release>:/Zc:__cplusplus>"
+        "$<$<CONFIG:Release>:/Zc:__cplusplus>"
     )
 
-	target_link_options(${PROJECT_NAME} PRIVATE
+    target_link_options(${PROJECT_NAME} PRIVATE
         "$<$<CONFIG:Debug>:/fsanitize=address;/INCREMENTAL:NO;/DEBUG>"
         "$<$<CONFIG:Release>:/OPT:REF;/OPT:ICF>"
-	)
+    )
 endif()
 
-target_sources(${PROJECT_NAME} PRIVATE 
-	${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/main_window.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/date_utils.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/casts.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/calendar_page.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/frame_layout.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/calendar_config.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_store.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/group_store.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/page_config.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/shape_config.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/title_config.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/calendar_panel.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/date_panel.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/font_panel.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/groups_panel.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/license_panel.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/opengl_panel.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/page_panel.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/shape_panel.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/title_panel.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/log_panel.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/font.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/graphics_engine.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/projection.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/rect.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/render_to_texture.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/render_to_png.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/shaders.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/shaders_info.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/shapes.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/shapes_base.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/texture_object.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/mvp_matrices.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/scene_graph.hpp
+target_sources(${PROJECT_NAME} PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/main_window.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/date_utils.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/casts.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/calendar_page.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/frame_layout.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/log_stream.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/log_stream.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/packages/calendar_config.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_store.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/packages/group_store.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/packages/page_config.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/packages/shape_config.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/packages/title_config.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/calendar_panel.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/date_panel.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/font_panel.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/groups_panel.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/license_panel.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/opengl_panel.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/page_panel.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/shape_panel.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/title_panel.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/log_panel.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/font.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/graphics_engine.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/projection.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/rect.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/render_to_texture.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/render_to_png.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/shaders.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/shaders_info.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/shapes.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/shapes_base.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/texture_object.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/mvp_matrices.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/scene_graph.hpp
 )
 
 find_package(Boost CONFIG REQUIRED COMPONENTS date_time serialization wserialization)
 cmake_print_variables(Boost_FOUND Boost_INCLUDE_DIRS Boost_LIBRARY_DIRS Boost_LIBRARIES Boost_USE_STATIC_LIBS)
 if(${Boost_FOUND})
-	target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
-	target_link_libraries(${PROJECT_NAME} PRIVATE ${Boost_LIBRARIES})
+    target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${Boost_LIBRARIES})
 endif()
 
 find_package(OpenGL REQUIRED)
@@ -86,7 +94,7 @@ find_package(wxWidgets CONFIG REQUIRED COMPONENTS propgrid gl core base)
 target_link_libraries(${PROJECT_NAME} PRIVATE ${wxWidgets_LIBRARIES})
 cmake_print_variables(wxWidgets_FOUND wxWidgets_INCLUDE_DIRS wxWidgets_LIBRARIES wxWidgets_LIBRARY_DIRS wxWidgets_DEFINITIONS wxWidgets_DEFINITIONS_DEBUG wxWidgets_CXX_FLAGS wxWidgets_USE_FILE)
 
-target_sources(${PROJECT_NAME} PRIVATE ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/wx/msw/wx_dpi_aware_pmv2.manifest)
+
 
 find_package(ZLIB REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
@@ -98,8 +106,15 @@ target_link_libraries(${PROJECT_NAME} PRIVATE PNG::PNG)
 find_package(Fontconfig REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE Fontconfig::Fontconfig)
 
-find_package(freetype CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE freetype)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    find_package(Freetype REQUIRED)
+    target_link_libraries(${PROJECT_NAME} PRIVATE Freetype::Freetype)
+else()
+    find_package(freetype CONFIG REQUIRED)
+    target_link_libraries(${PROJECT_NAME} PRIVATE freetype)
+
+    target_sources(${PROJECT_NAME} PRIVATE ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/wx/msw/wx_dpi_aware_pmv2.manifest)
+endif()
 
 set(GLAD_PROFILE "core" CACHE STRING "OpenGL profile" FORCE)
 find_package(glad CONFIG REQUIRED)
@@ -125,35 +140,58 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)
 
 list(APPEND RESOURCE_FILES
-	${CMAKE_CURRENT_SOURCE_DIR}/shaders/font_fragment_shader.glsl shader
-	${CMAKE_CURRENT_SOURCE_DIR}/shaders/font_vertex_shader.glsl shader
-	${CMAKE_CURRENT_SOURCE_DIR}/shaders/phong_fragment_shader.glsl shader
-	${CMAKE_CURRENT_SOURCE_DIR}/shaders/phong_vertex_shader.glsl shader
-	${CMAKE_CURRENT_SOURCE_DIR}/shaders/simple_fragment_shader.glsl shader
-	${CMAKE_CURRENT_SOURCE_DIR}/shaders/simple_vertex_shader.glsl shader
-	${CMAKE_CURRENT_SOURCE_DIR}/shaders/rectangles_fragment_shader.glsl shader
-	${CMAKE_CURRENT_SOURCE_DIR}/shaders/rectangles_vertex_shader.glsl shader
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/font_fragment_shader.glsl shader
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/font_vertex_shader.glsl shader
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/phong_fragment_shader.glsl shader
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/phong_vertex_shader.glsl shader
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/simple_fragment_shader.glsl shader
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/simple_vertex_shader.glsl shader
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/rectangles_fragment_shader.glsl shader
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/rectangles_vertex_shader.glsl shader
 )
 
-list(APPEND RESOURCE_FILES
-	${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt decade
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    list(APPEND RESOURCE_FILES
+        ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt decade
 
-	${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource/LICENSE.txt embed-resource	 
-	${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/LICENSE sigslot
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource/LICENSE.txt embed-resource
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/LICENSE sigslot
 
-	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/boost-date-time/copyright boost
-	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/freetype/copyright freetype
-	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/zlib/copyright zlib
-	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/libpng/copyright libpng
-	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/p-ranav-csv2/copyright csv2
-	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/p-ranav-csv2/LICENSE.mio csv2mio
-	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/glad/copyright glad
-	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/glm/copyright glm
-	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/wxwidgets/copyright wxwidgets
-	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/fontconfig/copyright fontconfig
-	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/opengl/copyright opengl
-	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/tabulate/copyright tabulate
-)
+        /usr/share/licenses/spdx/BSL-1.0.txt boost
+        /usr/share/licenses/freetype2/FTL.TXT freetype
+        /usr/share/licenses/zlib/LICENSE zlib
+        /usr/share/licenses/libpng/LICENSE libpng
+        ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/p-ranav-csv2/copyright csv2
+        ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/p-ranav-csv2/LICENSE.mio csv2mio
+        ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/glad/copyright glad
+        ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/glm/copyright glm
+        /usr/share/licenses/wxwidgets-common/LICENSE wxwidgets
+        /usr/share/licenses/fontconfig/COPYING fontconfig
+        /usr/share/licenses/mesa/license.rst opengl
+        ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/tabulate/copyright tabulate
+    )
+else()
+
+    list(APPEND RESOURCE_FILES
+        ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt decade
+
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource/LICENSE.txt embed-resource
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/LICENSE sigslot
+
+        ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/boost-date-time/copyright boost
+        ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/freetype/copyright freetype
+        ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/zlib/copyright zlib
+        ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/libpng/copyright libpng
+        ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/p-ranav-csv2/copyright csv2
+        ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/p-ranav-csv2/LICENSE.mio csv2mio
+        ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/glad/copyright glad
+        ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/glm/copyright glm
+        ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/wxwidgets/copyright wxwidgets
+        ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/fontconfig/copyright fontconfig
+        ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/opengl/copyright opengl
+        ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/tabulate/copyright tabulate
+    )
+endif()
 
 embed_resources(${PROJECT_NAME}_RESOURCES ${RESOURCE_FILES})
 cmake_print_variables(${PROJECT_NAME}_RESOURCES)

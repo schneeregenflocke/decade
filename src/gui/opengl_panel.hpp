@@ -21,7 +21,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include <wx/glcanvas.h>
 #include <wx/wx.h>
 
-// #include <glad/glad.h>
+#include <glad/glad.h>
 
 #include "../graphics/graphics_engine.hpp"
 #include "../graphics/mvp_matrices.hpp"

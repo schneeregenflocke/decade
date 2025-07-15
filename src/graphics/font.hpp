@@ -190,11 +190,12 @@ private:
     FT_Error ft_error = FT_Set_Pixel_Sizes(ft_face, 0, font_pixel_height);
 
     // FT_CONFIG_OPTION_ERROR_STRINGS, FT_DEBUG_LEVEL_ERROR
-    auto ft_error_string = FT_Error_String(ft_error);
-    int ft_error_string_len = strlen(ft_error_string);
-    std::string error_string = std::string(ft_error_string, ft_error_string + ft_error_string_len);
+    // auto ft_error_string = FT_Error_String(ft_error);
+    // int ft_error_string_len = strlen(ft_error_string);
+    // std::string error_string = std::string(ft_error_string, ft_error_string +
+    // ft_error_string_len);
     if (ft_error != FT_Err_Ok) {
-      std::cout << "FreeType Error: " << error_string << '\n';
+      std::cout << "FreeType Error: " /*<< error_string */ << '\n';
       throw std::runtime_error(std::string("Freetype FT_Set_Pixel_Sizes failed ") +
                                std::to_string(ft_error));
     }

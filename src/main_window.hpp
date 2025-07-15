@@ -35,6 +35,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include "gui/page_panel.hpp"
 #include "gui/shape_panel.hpp"
 #include "gui/title_panel.hpp"
+#include "log_stream.hpp"
 #include "packages/shape_config.hpp"
 #include "packages/title_config.hpp"
 #include <array>
@@ -82,8 +83,10 @@ public:
 
     log_panel = std::make_unique<LogPanel>(notebook);
     notebook->AddPage(log_panel->PanelPtr(), "Log");
-    std::cout.set_rdbuf(log_panel->GetTextCtrlPtr());
-    auto *cout_rdbuf = std::cout.rdbuf();
+
+    logs.set(log_panel->GetTextCtrlPtr());
+    // std::cout.set_rdbuf(log_panel->GetTextCtrlPtr());
+    // auto *cout_rdbuf = std::cout.rdbuf();
 
     data_table_panel = std::make_unique<DateTablePanel>(notebook);
     date_groups_table_panel = std::make_unique<DateGroupsTablePanel>(notebook);
