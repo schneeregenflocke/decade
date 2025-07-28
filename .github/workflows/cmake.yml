@@ -2,16 +2,18 @@ name: CMake
 
 on:
   push:
-    branches: [ main, feature ]
+    branches: [main, feature]
   pull_request:
-    branches: [ main, feature ]
+    branches: [main, feature]
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
-  VCPKG_ROOT: "C:\\vcpkg"
-  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
-
+  USERNAME: schneeregenflocke
+  VCPKG_ROOT: ${{ github.workspace }}/vcpkg/
+  VCPKG_EXE: ${{ github.workspace }}/vcpkg/vcpkg
+  FEED_URL: https://nuget.pkg.github.com/<OWNER>/index.json
+  VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/schneeregenflocke/index.json,readwrite"
 
 jobs:
   build:
@@ -20,46 +22,54 @@ jobs:
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     runs-on: windows-latest
     steps:
+      - name: Print environment details
+        run: |
+          echo "Workspace: ${{ github.workspace }}"
+          echo "VCPKG_BINARY_SOURCES: ${{ env.VCPKG_BINARY_SOURCES }}"
+          echo "VCPKG_ROOT: ${{ env.VCPKG_ROOT }}"
+          dir ${{ env.VCPKG_ROOT }}
 
-    - name: Print environment details
-      run: |
-        echo "Workspace: ${{ github.workspace }}"
-        echo "VCPKG Root: ${{ env.VCPKG_ROOT }}"
-        echo "VCPKG Binary Sources: ${{ env.VCPKG_BINARY_SOURCES }}"
-        echo "VCPKG Default Binary Cache: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"
+      - uses: actions/checkout@v4
+        name: Checkout submodules
+        with:
+          submodules: recursive
 
-    - name: Export GitHub Actions cache environment variables
-      uses: actions/github-script@v7
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
-          core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+      - name: Bootstrap vcpkg
+        shell: pwsh
+        working-directory: ${{ env.VCPKG_ROOT }}
+        run: |
+          git pull
+          vcpkg.exe upgrade --no-dry-run
+          bootstrap-vcpkg.bat
+          vcpkg.exe install boost-date-time boost-serialization `
+            zlib libpng freetype[brotli,bzip2,error-strings,png,zlib] `
+            glad glm p-ranav-csv2 wxwidgets fontconfig ms-gsl tabulate
 
-    - name: vcpkg
-      working-directory: ${{ env.VCPKG_ROOT }}
-      run: |
-        git pull
-        vcpkg.exe upgrade --no-dry-run
-        bootstrap-vcpkg.bat
-        vcpkg.exe install boost-date-time boost-serialization zlib libpng freetype[brotli,bzip2,error-strings,png,zlib] glad glm p-ranav-csv2 wxwidgets fontconfig ms-gsl tabulate
+      - name: Add NuGet sources
+        shell: pwsh
+        run: |
+          .$(${{ env.VCPKG_EXE }} fetch nuget) `
+            sources add `
+            -Source "${{ env.FEED_URL }}" `
+            -StorePasswordInClearText `
+            -Name GitHubPackages `
+            -UserName "${{ env.USERNAME }}" `
+            -Password "${{ secrets.GH_PACKAGES_TOKEN }}"
+          .$(${{ env.VCPKG_EXE }} fetch nuget) `
+            setapikey "${{ secrets.GH_PACKAGES_TOKEN }}" `
+            -Source "${{ env.FEED_URL }}"
 
-    - uses: actions/checkout@v4
-    - name: Checkout submodules
-      run: git submodule update --init --recursive
+      - name: Configure CMake
+        # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+        # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
+        run: cmake -B ${{ github.workspace }}/build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DVCPKG_MANIFEST_MODE=OFF
 
-    - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{ github.workspace }}/build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DVCPKG_MANIFEST_MODE=OFF
+      - name: Build
+        # Build your program with the given configuration
+        run: cmake --build ${{ github.workspace }}/build --config ${{ env.BUILD_TYPE }}
 
-    - name: Build
-      # Build your program with the given configuration
-      run: cmake --build ${{ github.workspace }}/build --config ${{ env.BUILD_TYPE }}
-
-    - name: Test
-      working-directory: ${{ github.workspace }}/build
-      # Execute tests defined by the CMake configuration.  
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: ctest -C ${{ env.BUILD_TYPE }}
-      
+      - name: Test
+        working-directory: ${{ github.workspace }}/build
+        # Execute tests defined by the CMake configuration.
+        # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+        run: ctest -C ${{ env.BUILD_TYPE }}
