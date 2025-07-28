@@ -10,8 +10,8 @@ env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
   USERNAME: schneeregenflocke
-  VCPKG_ROOT: ${{ github.workspace }}/vcpkg/
-  VCPKG_EXE: ${{ github.workspace }}/vcpkg/vcpkg
+  VCPKG_ROOT: "C:\\vcpkg"
+  VCPKG_EXE: "C:\\vcpkg\vcpkg.exe"
   FEED_URL: https://nuget.pkg.github.com/<OWNER>/index.json
   VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/schneeregenflocke/index.json,readwrite"
 
