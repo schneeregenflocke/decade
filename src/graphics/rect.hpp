@@ -24,6 +24,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include <array>
 
 template <typename Ty> class rect {
+
 public:
   rect() : edges({0, 0, 0, 0}) {}
 

@@ -17,8 +17,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "main_window.hpp"
+#include <gsl/gsl>
 #include <locale>
+#include <memory>
 #include <string>
+#include <wx/wx.h>
 
 class App : public wxApp {
 public:
@@ -27,7 +30,6 @@ public:
     wx_locale = std::make_unique<wxLocale>();
     auto init_locale_succeeded = wx_locale->Init();
     std::locale::global(std::locale(""));
-
     // std::cout << "init_locale_succeeded " << init_locale_succeeded << '\n';
     // auto language = wxLocale::GetSystemLanguage();
     // std::cout << "current locale name " <<

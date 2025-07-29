@@ -1,5 +1,6 @@
 ---
 Checks:
+  - -*
   - clang-diagnostic-*
   - clang-analyzer-*
   - bugprone-*
@@ -17,6 +18,7 @@ Checks:
   - readability-*
 WarningsAsErrors: ""
 HeaderFileExtensions:
+  - ""
   - h
   - hh
   - hpp
