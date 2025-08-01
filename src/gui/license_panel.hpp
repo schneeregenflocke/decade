@@ -20,7 +20,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #include <wx/wx.h>
 
-#include "Resource.h"
+// #include "Resource.h"
 #include <algorithm>
 #include <string>
 #include <utility>
@@ -64,10 +64,10 @@ public:
     Bind(wxEVT_LISTBOX, &LicenseInformationDialog::SlotSelectLicense, this);
     Bind(wxEVT_BUTTON, &LicenseInformationDialog::CloseDialog, this);
 
-    CollectLicenses();
+    // CollectLicenses();
 
-    license_select_list_box->Select(0);
-    SelectLicense(collected_licenses.begin()->first);
+    // license_select_list_box->Select(0);
+    // SelectLicense(collected_licenses.begin()->first);
   }
 
 private:
@@ -75,26 +75,31 @@ private:
   {
     collected_licenses.clear();
 
-    collected_licenses.emplace_back("Decade", LOAD_RESOURCE(decade_LICENSE).toString());
-    collected_licenses.emplace_back("glm", LOAD_RESOURCE(glm_copyright).toString());
-    collected_licenses.emplace_back("glad", LOAD_RESOURCE(glad_copyright).toString());
-    collected_licenses.emplace_back("embed-resource",
-                                    LOAD_RESOURCE(embed_resource_LICENSE).toString());
-    collected_licenses.emplace_back("csv2", LOAD_RESOURCE(csv2_copyright).toString());
-    collected_licenses.emplace_back("csv2mio", LOAD_RESOURCE(csv2mio_LICENSE).toString());
-    collected_licenses.emplace_back("sigslot", LOAD_RESOURCE(sigslot_LICENSE).toString());
-    collected_licenses.emplace_back("boost", LOAD_RESOURCE(boost_copyright).toString());
-    collected_licenses.emplace_back("freetype", LOAD_RESOURCE(freetype_copyright).toString());
-    collected_licenses.emplace_back("zlib", LOAD_RESOURCE(zlib_copyright).toString());
-    collected_licenses.emplace_back("libpng", LOAD_RESOURCE(libpng_copyright).toString());
-    collected_licenses.emplace_back("wxwidgets", LOAD_RESOURCE(wxwidgets_copyright).toString());
-    collected_licenses.emplace_back("fontconfig", LOAD_RESOURCE(fontconfig_copyright).toString());
-    collected_licenses.emplace_back("opengl", LOAD_RESOURCE(opengl_copyright).toString());
-    collected_licenses.emplace_back("tabulate", LOAD_RESOURCE(tabulate_copyright).toString());
+    /*  collected_licenses.emplace_back("Decade", LOAD_RESOURCE(decade_LICENSE).toString());
+     collected_licenses.emplace_back("glm", LOAD_RESOURCE(glm_copyright).toString());
+     collected_licenses.emplace_back("glad", LOAD_RESOURCE(glad_copyright).toString());
+     collected_licenses.emplace_back("embed-resource",
+                                     LOAD_RESOURCE(embed_resource_LICENSE).toString());
+     collected_licenses.emplace_back("csv2", LOAD_RESOURCE(csv2_copyright).toString());
+     collected_licenses.emplace_back("csv2mio", LOAD_RESOURCE(csv2mio_LICENSE).toString());
+     collected_licenses.emplace_back("sigslot", LOAD_RESOURCE(sigslot_LICENSE).toString());
 
-    for (const auto &license : collected_licenses) {
-      license_select_list_box->AppendString(license.first);
-    }
+     collected_licenses.emplace_back("freetype", LOAD_RESOURCE(freetype_copyright).toString());
+     collected_licenses.emplace_back("zlib", LOAD_RESOURCE(zlib_copyright).toString());
+     collected_licenses.emplace_back("libpng", LOAD_RESOURCE(libpng_copyright).toString());
+     collected_licenses.emplace_back("wxwidgets", LOAD_RESOURCE(wxwidgets_copyright).toString());
+     collected_licenses.emplace_back("fontconfig", LOAD_RESOURCE(fontconfig_copyright).toString());
+
+     collected_licenses.emplace_back("tabulate", LOAD_RESOURCE(tabulate_copyright).toString());
+
+ #ifndef __linux
+     collected_licenses.emplace_back("boost", LOAD_RESOURCE(boost_copyright).toString());
+     collected_licenses.emplace_back("opengl", LOAD_RESOURCE(opengl_copyright).toString());
+ #endif
+
+     for (const auto &license : collected_licenses) {
+       license_select_list_box->AppendString(license.first);
+     } */
   }
 
   void SlotSelectLicense(wxCommandEvent &event) { SelectLicense(event.GetString().ToStdString()); }

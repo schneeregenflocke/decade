@@ -339,8 +339,10 @@ private:
     // see https://sourceforge.net/p/libpng/code/ci/master/tree/example.c#l739
 
     FILE *fp = nullptr;
-    auto file_error = fopen_s(&fp, file_name, "wb");
-    if (fp == NULL || file_error) {
+    // auto file_error = fopen_s(&fp, file_name, "wb");
+    fp = fopen(file_name, "wb");
+    // if (fp == NULL || file_error) {
+    if (fp == NULL) {
     }
 
     png_structp png_ptr = nullptr;

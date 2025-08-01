@@ -18,10 +18,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <wx/wx.h>
-
+// #include <wx/setup.h>
 #include <wx/notebook.h>
 #include <wx/splitter.h>
+#include <wx/wx.h>
 
 #include "calendar_page.hpp"
 #include "date_utils.hpp"
@@ -56,6 +56,8 @@ public:
       : wxFrame(parent, wxID_ANY, title, pos, size), ID_SAVE_XML(wxWindow::NewControlId()),
         ID_SAVE_AS_XML(wxWindow::NewControlId())
   {
+    std::cout << "C++ Standard: " << __cplusplus << '\n';
+
     this->Maximize();
 
     auto *main_splitter = new wxSplitterWindow(this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
@@ -82,8 +84,8 @@ public:
 
     log_panel = std::make_unique<LogPanel>(notebook);
     notebook->AddPage(log_panel->PanelPtr(), "Log");
-    std::cout.set_rdbuf(log_panel->GetTextCtrlPtr());
-    auto *cout_rdbuf = std::cout.rdbuf();
+    // std::cout.set_rdbuf(log_panel->GetTextCtrlPtr());
+    // auto *cout_rdbuf = std::cout.rdbuf();
 
     data_table_panel = std::make_unique<DateTablePanel>(notebook);
     date_groups_table_panel = std::make_unique<DateGroupsTablePanel>(notebook);

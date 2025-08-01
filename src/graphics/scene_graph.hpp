@@ -60,20 +60,20 @@ public:
     }
   }
 
-  std::optional<std::shared_ptr<SceneNode>> search_node(const std::string &search_name)
+  std::shared_ptr<SceneNode> search_node(const std::string &search_name)
   {
     if (this->node_name == search_name) {
-      return std::optional<std::shared_ptr<SceneNode>>(this->shared_from_this());
+      return std::shared_ptr<SceneNode>(this->shared_from_this());
     }
 
     for (auto &&child : children) {
       auto result = child->search_node(search_name);
-      if (result.has_value()) {
+      if (result != nullptr) {
         return result;
       }
     }
 
-    return std::nullopt;
+    return nullptr;
   }
 
   void draw()

@@ -18,8 +18,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "Resource.h"
+// #include "Resource.h"
 #include "shaders_info.hpp"
+#include <filesystem>
+#include <fstream>
 #include <glad/glad.h>
 #include <glm/geometric.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -38,16 +40,16 @@ class Shader {
 public:
   Shader(const std::string &vertex_shader_source, const std::string &fragment_shader_source,
          std::string name)
-      : program(0), name(std::move(name))
+      : name(std::move(name))
   {
     CompileProgram(vertex_shader_source, fragment_shader_source);
 
     shader_info.SetProgram(program);
   }
 
-  GLuint GetProgram() const { return program; }
+  [[nodiscard]] GLuint GetProgram() const { return program; }
 
-  std::string get_name() const { return name; }
+  [[nodiscard]] std::string get_name() const { return name; }
 
   void UseProgram() const { glUseProgram(program); }
 
@@ -74,9 +76,9 @@ public:
     shader_info.PrintUniformsInfo();
   }
 
-  const ShaderInfos &GetShaderInfo() const { return shader_info; }
+  [[nodiscard]] const ShaderInfos &GetShaderInfo() const { return shader_info; }
 
-  const std::vector<ShaderInfo> &GetShaderAttributesInfos() const
+  [[nodiscard]] const std::vector<ShaderInfo> &GetShaderAttributesInfos() const
   {
     return shader_info.GetAttributesInfos();
   }
@@ -146,7 +148,7 @@ private:
     return shader;
   }
 
-  GLuint program;
+  GLuint program{};
   std::string name;
   ShaderInfos shader_info;
 };
@@ -155,27 +157,27 @@ class Shaders {
 public:
   Shaders()
   {
-    auto simple_vertex_shader_resource = LOAD_RESOURCE(shader_simple_vertex_shader);
-    auto simple_fragment_shader_resource = LOAD_RESOURCE(shader_simple_fragment_shader);
-    auto rectangles_vertex_shader_resource = LOAD_RESOURCE(shader_rectangles_vertex_shader);
-    auto rectangles_fragment_shader_resource = LOAD_RESOURCE(shader_rectangles_fragment_shader);
-    auto font_vertex_shader_resource = LOAD_RESOURCE(shader_font_vertex_shader);
-    auto font_fragment_shader_resource = LOAD_RESOURCE(shader_font_fragment_shader);
-    // auto phong_vertex_shader_resource = LOAD_RESOURCE(shader_phong_vertex_shader);
-    // auto phong_fragment_shader_resource = LOAD_RESOURCE(shader_phong_fragment_shader);
+    std::string basic_vs("../shaders/basic_vertex_shader.glsl");
+    std::string basic_fs("../shaders/basic_fragment_shader.glsl");
+    std::string font_vs("../shaders/font_vertex_shader.glsl");
+    std::string font_fs("../shaders/font_fragment_shader.glsl");
+    std::string rect_vs("../shaders/rectangles_vertex_shader.glsl");
+    std::string rect_fs("../shaders/rectangles_fragment_shader.glsl");
 
-    shaders.push_back(Shader(simple_vertex_shader_resource.toString(),
-                             simple_fragment_shader_resource.toString(),
-                             std::string("Simple Shader")));
-    shaders.push_back(Shader(rectangles_vertex_shader_resource.toString(),
-                             rectangles_fragment_shader_resource.toString(),
-                             std::string("Rectangles Shader")));
-    shaders.push_back(Shader(font_vertex_shader_resource.toString(),
-                             font_fragment_shader_resource.toString(), std::string("Font Shader")));
-    // shaders.push_back(Shader(phong_vertex_shader_resource.toString(),
-    // phong_fragment_shader_resource.toString(), std::string("Phong Shader")));
+    shaders.emplace_back(read_file(basic_vs), read_file(basic_fs), "Basic Shader");
+    shaders.emplace_back(read_file(font_vs), read_file(font_fs), "Font Shader");
+    shaders.emplace_back(read_file(rect_vs), read_file(rect_fs), "Rectangles Shader");
 
     PrintInfo();
+  }
+
+  static std::string read_file(const std::filesystem::path &path)
+  {
+    if (!std::filesystem::exists(path)) {
+      throw std::runtime_error("Shader file does not exist: " + path.string());
+    }
+    std::ifstream file(path, std::ios::binary);
+    return std::string{std::istreambuf_iterator<char>(file), {}};
   }
 
   void PrintInfo() const
@@ -193,17 +195,19 @@ public:
     throw std::invalid_argument("Shader index out of bounds");
   }
 
-  std::optional<Shader *> search_shader(const std::string &search_name)
+  Shader *search_shader(const std::string &search_name)
   {
+
     for (auto &shader : shaders) {
       if (shader.get_name() == search_name) {
-        return std::optional<Shader *>{&shader};
+        return &shader;
       }
     }
-    return std::nullopt;
+    throw std::invalid_argument("Shader not found: " + search_name);
+    return nullptr;
   }
 
-  size_t GetNumberShaders() const { return shaders.size(); }
+  [[nodiscard]] size_t GetNumberShaders() const { return shaders.size(); }
 
 private:
   std::vector<Shader> shaders;

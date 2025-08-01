@@ -18,13 +18,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <array>
 #include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/date_time/gregorian/gregorian_types.hpp>
-
-#include <array>
 #include <cctype>
 #include <string>
-
 
 struct date_format_descriptor {
   std::array<size_t, 3> date_order;

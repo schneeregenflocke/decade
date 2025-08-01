@@ -16,12 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
+// #include <wx/setup.h>
+#include <wx/wx.h>
+
 #include "main_window.hpp"
 #include <gsl/gsl>
 #include <locale>
 #include <memory>
 #include <string>
-#include <wx/wx.h>
 
 class App : public wxApp {
 public:

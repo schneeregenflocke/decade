@@ -47,9 +47,9 @@ public:
 
     font = std::make_shared<Font>(font_filepath);
 
-    auto simple_shader = graphics_engine->search_shader("Simple Shader").value_or(nullptr);
-    auto rectangles_shader = graphics_engine->search_shader("Rectangles Shader").value_or(nullptr);
-    auto font_shader = graphics_engine->search_shader("Font Shader").value_or(nullptr);
+    auto simple_shader = graphics_engine->search_shader("Basic Shader");
+    auto rectangles_shader = graphics_engine->search_shader("Rectangles Shader");
+    auto font_shader = graphics_engine->search_shader("Font Shader");
 
     auto page_shape = std::make_shared<QuadrilateralShape>(simple_shader);
     auto page_node = std::make_shared<SceneNode>("page", page_shape);
@@ -171,7 +171,7 @@ public:
   void Update()
   {
     auto node = scene_graph->search_node("page");
-    auto shape = std::dynamic_pointer_cast<QuadrilateralShape>(node.value()->get_shape());
+    auto shape = std::dynamic_pointer_cast<QuadrilateralShape>(node->get_shape());
     shape->set_shape(page_size);
     shape->set_color(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
@@ -231,7 +231,7 @@ public:
     auto config = shape_configuration_storage.GetShapeConfiguration("Page Margin");
 
     auto node = scene_graph->search_node("print area");
-    auto shape = std::dynamic_pointer_cast<RectanglesShape>(node.value()->get_shape());
+    auto shape = std::dynamic_pointer_cast<RectanglesShape>(node->get_shape());
 
     shape->set_shape(print_area, config.LineWidth());
     shape->set_color({config.OutlineColor(), config.FillColor()});
@@ -242,13 +242,13 @@ public:
     auto config = shape_configuration_storage.GetShapeConfiguration("Title Frame");
 
     auto node = scene_graph->search_node("title area");
-    auto shape = std::dynamic_pointer_cast<RectanglesShape>(node.value()->get_shape());
+    auto shape = std::dynamic_pointer_cast<RectanglesShape>(node->get_shape());
 
     shape->set_shape(title_frame, config.LineWidth());
     shape->set_color({config.OutlineColor(), config.FillColor()});
 
     auto title_node = scene_graph->search_node("title text");
-    auto title_shape = std::dynamic_pointer_cast<FontShape>(title_node.value()->get_shape());
+    auto title_shape = std::dynamic_pointer_cast<FontShape>(title_node->get_shape());
     title_shape->set_font(font);
     title_shape->set_shape_centered(title_config.title_text, title_frame.getCenter(),
                                     title_frame.height() * title_config.font_size_ratio);
@@ -270,13 +270,13 @@ public:
       }
     }
 
-    auto font_shader = graphics_engine->search_shader("Font Shader").value_or(nullptr);
+    auto font_shader = graphics_engine->search_shader("Font Shader");
 
     std::vector<rectf> x_label_frames(number_months);
     labels_font_size =
         font->AdjustTextSize(rectf::from_dimension(cell_width, row_height), "00000", 0.5f, 0.75f);
 
-    auto month_node = scene_graph->search_node("month text").value_or(nullptr);
+    auto month_node = scene_graph->search_node("month text");
 
     month_node->remove_children();
     for (size_t index = 0; index < number_months; ++index) {
@@ -298,12 +298,11 @@ public:
     auto config = shape_configuration_storage.GetShapeConfiguration("Calendar Labels");
 
     auto column_node = scene_graph->search_node("column label area");
-    auto column_shape =
-        std::dynamic_pointer_cast<RectanglesShape>(column_node.value()->get_shape());
+    auto column_shape = std::dynamic_pointer_cast<RectanglesShape>(column_node->get_shape());
     column_shape->set_shape(x_label_frames, config.LineWidth());
     column_shape->set_color({config.OutlineColor(), config.FillColor()});
 
-    auto year_node = scene_graph->search_node("year text").value_or(nullptr);
+    auto year_node = scene_graph->search_node("year text");
 
     std::vector<rectf> y_labels_frames(calendar_config.GetSpanLengthYears());
     year_node->remove_children();
@@ -326,7 +325,7 @@ public:
     }
 
     auto row_node = scene_graph->search_node("row label area");
-    auto row_shape = std::dynamic_pointer_cast<RectanglesShape>(column_node.value()->get_shape());
+    auto row_shape = std::dynamic_pointer_cast<RectanglesShape>(column_node->get_shape());
     row_shape->set_shape(y_labels_frames, config.LineWidth());
     row_shape->set_color({config.OutlineColor(), config.FillColor()});
   }
@@ -353,7 +352,7 @@ public:
     auto config = shape_configuration_storage.GetShapeConfiguration("Years Shapes");
 
     auto node = scene_graph->search_node("year cells");
-    auto shape = std::dynamic_pointer_cast<RectanglesShape>(node.value()->get_shape());
+    auto shape = std::dynamic_pointer_cast<RectanglesShape>(node->get_shape());
     shape->set_shape(years_cells, config.LineWidth());
     shape->set_color({config.OutlineColor(), config.FillColor()});
   }
@@ -399,7 +398,7 @@ public:
     auto config = shape_configuration_storage.GetShapeConfiguration("Months Shapes");
 
     auto node = scene_graph->search_node("month cells");
-    auto shape = std::dynamic_pointer_cast<RectanglesShape>(node.value()->get_shape());
+    auto shape = std::dynamic_pointer_cast<RectanglesShape>(node->get_shape());
     shape->set_shape(months_cells, config.LineWidth());
     shape->set_color({config.OutlineColor(), config.FillColor()});
   }
@@ -454,19 +453,19 @@ public:
     auto sunday_config = shape_configuration_storage.GetShapeConfiguration("Sunday Shapes");
 
     auto node0 = scene_graph->search_node("day cells 0");
-    auto shape0 = std::dynamic_pointer_cast<RectanglesShape>(node0.value()->get_shape());
+    auto shape0 = std::dynamic_pointer_cast<RectanglesShape>(node0->get_shape());
     shape0->set_shape(days_cells0, config.LineWidth());
     shape0->set_color({config.OutlineColor(), config.FillColor()});
 
     auto node1 = scene_graph->search_node("day cells 1");
-    auto shape1 = std::dynamic_pointer_cast<RectanglesShape>(node1.value()->get_shape());
+    auto shape1 = std::dynamic_pointer_cast<RectanglesShape>(node1->get_shape());
     shape1->set_shape(days_cells1, sunday_config.LineWidth());
     shape1->set_color({sunday_config.OutlineColor(), sunday_config.FillColor()});
   }
 
   void SetupBarsShape()
   {
-    auto node = scene_graph->search_node("bar cells").value_or(nullptr);
+    auto node = scene_graph->search_node("bar cells");
     node->remove_children();
 
     auto number_groups = date_group_store.GetDateGroups().size();
@@ -478,11 +477,11 @@ public:
 
     std::vector<std::vector<rectf>> bars_cells(number_groups);
 
-    auto node_labels = scene_graph->search_node("bar labels").value_or(nullptr);
+    auto node_labels = scene_graph->search_node("bar labels");
     node_labels->remove_children();
 
-    auto font_shader = graphics_engine->search_shader("Font Shader").value_or(nullptr);
-    auto rectangles_shader = graphics_engine->search_shader("Rectangles Shader").value_or(nullptr);
+    auto font_shader = graphics_engine->search_shader("Font Shader");
+    auto rectangles_shader = graphics_engine->search_shader("Rectangles Shader");
 
     auto number_bars = data_store.GetNumberBars();
     for (size_t index = 0; index < data_store.GetNumberBars(); ++index) {
@@ -537,12 +536,12 @@ public:
 
   void SetupYearsTotals()
   {
-    auto font_shader = graphics_engine->search_shader("Font Shader").value_or(nullptr);
-    auto rectangles_shader = graphics_engine->search_shader("Rectangles Shader").value_or(nullptr);
+    auto font_shader = graphics_engine->search_shader("Font Shader");
+    auto rectangles_shader = graphics_engine->search_shader("Rectangles Shader");
 
-    auto node_cells = scene_graph->search_node("year total cells").value_or(nullptr);
+    auto node_cells = scene_graph->search_node("year total cells");
 
-    auto node_text = scene_graph->search_node("year total text").value_or(nullptr);
+    auto node_text = scene_graph->search_node("year total text");
     node_text->remove_children();
 
     std::vector<rectf> years_totals_cells;
@@ -603,15 +602,15 @@ public:
 
   void SetupLegend()
   {
-    auto font_shader = graphics_engine->search_shader("Font Shader").value_or(nullptr);
-    auto rectangles_shader = graphics_engine->search_shader("Rectangles Shader").value_or(nullptr);
+    auto font_shader = graphics_engine->search_shader("Font Shader");
+    auto rectangles_shader = graphics_engine->search_shader("Rectangles Shader");
 
     // auto node_area = scene_graph->search_node("legend area").value_or(nullptr);
 
-    auto node_entries = scene_graph->search_node("legend entries").value_or(nullptr);
+    auto node_entries = scene_graph->search_node("legend entries");
     node_entries->remove_children();
 
-    auto node_text = scene_graph->search_node("legend text").value_or(nullptr);
+    auto node_text = scene_graph->search_node("legend text");
     node_text->remove_children();
 
     size_t number_entrie_frames = (date_group_store.GetDateGroups().size() + 1) * 2;

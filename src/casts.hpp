@@ -20,9 +20,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 // #include "wx_widgets_include.hpp"
 
+#include <array>
 #include <glm/vec4.hpp>
 
-#include <array>
 #include <wx/colour.h>
 
 inline glm::vec4 to_glm_vec4(const wxColour &color)

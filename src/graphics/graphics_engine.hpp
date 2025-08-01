@@ -53,7 +53,7 @@ public:
 
   Shaders &GetShaders() { return shaders; }
 
-  std::optional<Shader *> search_shader(const std::string &search_name)
+  Shader *search_shader(const std::string &search_name)
   {
     return shaders.search_shader(search_name);
   }
