@@ -16,40 +16,51 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#ifndef HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_CALENDAR_CONFIG_HPP
+#define HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_CALENDAR_CONFIG_HPP
 
-#include "../date_utils.hpp"
-#include <sigslot/signal.hpp>
+#include <algorithm>
+#include <array>
+#include <cstdint>
+#include <stdexcept>
+#include <utility>
+#include <vector>
 
 #include <boost/date_time/gregorian/greg_serialize.hpp>
+#include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/split_member.hpp>
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/vector.hpp>
+#include <sigslot/signal.hpp>
 
-#include <algorithm>
-// #include <exception>
-#include <stdexcept>
-// #include <utility>
-#include <vector>
-
+#include "../date_utils.hpp"
 class CalendarSpan {
 public:
-  CalendarSpan() : span(boost::gregorian::date(2000, 1, 1), boost::gregorian::date(2010, 1, 1))
+  struct YearSpan {
+    int first_year;
+    int last_year;
+  };
+
+  CalendarSpan()
+      : span(boost::gregorian::date(kDefaultStartYear, 1, 1),
+             boost::gregorian::date(kDefaultEndYear, 1, 1)),
+        valid_id(CheckAndAdjustDateInterval(&span))
   {
-    valid_id = CheckAndAdjustDateInterval(&span);
   }
 
-  void SetSpan(const int first_year, const int last_year)
+  void SetSpan(YearSpan span_years)
   {
     const boost::gregorian::date min_date = boost::gregorian::date(boost::gregorian::min_date_time);
     const boost::gregorian::date max_date = boost::gregorian::date(boost::gregorian::max_date_time);
 
-    auto clamped_lower_year = std::clamp(first_year, static_cast<int>(min_date.year()),
+    auto clamped_lower_year = std::clamp(span_years.first_year,
+                                         static_cast<int>(min_date.year()),
                                          static_cast<int>(max_date.year()));
-    auto clamped_upper_year = std::clamp(last_year + 1, static_cast<int>(min_date.year()),
+    auto clamped_upper_year = std::clamp(span_years.last_year + 1,
+                                         static_cast<int>(min_date.year()),
                                          static_cast<int>(max_date.year()));
 
     span = boost::gregorian::date_period(boost::gregorian::date(clamped_lower_year, 1, 1),
@@ -58,71 +69,92 @@ public:
     valid_id = CheckAndAdjustDateInterval(&span);
   }
 
-  bool IsValidSpan() const
+  [[nodiscard]] bool IsValidSpan() const
   {
-    bool is_valid = (CheckDateInterval(span.begin(), span.end()) == 1);
-    return is_valid;
+    return CheckDateInterval(span.begin(), span.end()) == 1;
   }
 
-  int GetSpanLengthYears() const
+  [[nodiscard]] int GetSpanLengthYears() const
   {
-    if (IsValidSpan() == false) {
+    if (!IsValidSpan()) {
       throw std::runtime_error("Not valid calendar span!");
     }
     return span.end().year() - span.begin().year();
   }
 
-  std::array<int, 2> GetSpanLimitsYears() const
+  [[nodiscard]] std::array<int, 2> GetSpanLimitsYears() const
   {
     return std::array<int, 2>{span.begin().year(), span.last().year()};
   }
 
-  std::array<boost::gregorian::date, 2> GetSpanLimitsDate() const
+  [[nodiscard]] std::array<boost::gregorian::date, 2> GetSpanLimitsDate() const
   {
     return std::array<boost::gregorian::date, 2>{span.begin(), span.last()};
   }
 
-  int GetSpanLengthDays() const { return span.length().days(); }
-
-  int GetYear(const int index) const
+  [[nodiscard]] std::int64_t GetSpanLengthDays() const
   {
-    int year = span.begin().year() + index;
+    return static_cast<std::int64_t>(span.length().days());
+  }
 
-    if (IsInSpan(year) == false) {
+  [[nodiscard]] int GetYear(const int index) const
+  {
+    const int year = span.begin().year() + index;
+
+    if (!IsInSpan(year)) {
       throw std::logic_error("Year not in span!");
     }
 
     return year;
   }
 
-  bool IsInSpan(const int year) const
+  [[nodiscard]] bool IsInSpan(const int year) const
   {
-    bool is_in_span = false;
-
-    if (year >= span.begin().year() && year <= span.last().year()) {
-      is_in_span = true;
-    }
-    return is_in_span;
+    return year >= span.begin().year() && year <= span.last().year();
   }
 
 private:
+  static constexpr int kDefaultStartYear = 2000;
+  static constexpr int kDefaultEndYear = 2010;
+
   boost::gregorian::date_period span;
-  int valid_id;
+  int valid_id{0};
 
   friend class boost::serialization::access;
-  template <class Archive> void serialize(Archive &ar, const unsigned int version)
+  template <class Archive> void serialize(Archive &archive, const unsigned int version)
   {
-    ar &BOOST_SERIALIZATION_NVP(span);
-    ar &BOOST_SERIALIZATION_NVP(valid_id);
+    (void)version;
+    archive &BOOST_SERIALIZATION_NVP(span);
+    archive &BOOST_SERIALIZATION_NVP(valid_id);
   }
 };
 
 class CalendarConfigStorage : public CalendarSpan {
 public:
-  CalendarConfigStorage()
-      : auto_calendar_span(true), spacing_proportions({25, 100, 50, 100, 50, 100, 25})
+  CalendarConfigStorage() = default;
+  CalendarConfigStorage(const CalendarConfigStorage &other)
+      : CalendarSpan(other),
+        auto_calendar_span(other.auto_calendar_span),
+        spacing_proportions(other.spacing_proportions)
   {
   }
+  CalendarConfigStorage(CalendarConfigStorage &&other) noexcept
+      : CalendarSpan(other),
+        auto_calendar_span(other.auto_calendar_span),
+        spacing_proportions(std::move(other.spacing_proportions))
+  {
+  }
+  CalendarConfigStorage &operator=(CalendarConfigStorage &&other) noexcept
+  {
+    if (this == &other) {
+      return *this;
+    }
+    auto_calendar_span = other.auto_calendar_span;
+    spacing_proportions = std::move(other.spacing_proportions);
+    CalendarSpan::operator=(other);
+    return *this;
+  }
+  ~CalendarConfigStorage() = default;
 
   void ReceiveCalendarConfigStorage(const CalendarConfigStorage &calendar_config_storage)
   {
@@ -134,6 +166,9 @@ public:
 
   CalendarConfigStorage &operator=(const CalendarConfigStorage &other)
   {
+    if (this == &other) {
+      return *this;
+    }
     auto_calendar_span = other.auto_calendar_span;
     spacing_proportions = other.spacing_proportions;
 
@@ -142,27 +177,56 @@ public:
     return *this;
   }
 
-  bool auto_calendar_span;
-  std::vector<float> spacing_proportions;
+  [[nodiscard]] bool IsAutoCalendarSpan() const { return auto_calendar_span; }
+  void SetAutoCalendarSpan(bool auto_span) { auto_calendar_span = auto_span; }
+
+  [[nodiscard]] const std::vector<float> &GetSpacingProportions() const
+  {
+    return spacing_proportions;
+  }
+  std::vector<float> &MutableSpacingProportions() { return spacing_proportions; }
+  void SetSpacingProportions(const std::vector<float> &proportions)
+  {
+    spacing_proportions = proportions;
+  }
+
+  sigslot::signal<const CalendarConfigStorage &> &SignalCalendarConfigStorage()
+  {
+    return signal_calendar_config_storage;
+  }
+
+private:
+  static constexpr float kSpacingSmall = 25.0F;
+  static constexpr float kSpacingMedium = 50.0F;
+  static constexpr float kSpacingLarge = 100.0F;
+  static constexpr std::array<float, 7> kDefaultSpacingProportions = {
+      kSpacingSmall, kSpacingLarge, kSpacingMedium, kSpacingLarge,
+      kSpacingMedium, kSpacingLarge, kSpacingSmall};
+
+  bool auto_calendar_span{true};
+  std::vector<float> spacing_proportions{std::vector<float>(kDefaultSpacingProportions.begin(),
+                                                            kDefaultSpacingProportions.end())};
 
   sigslot::signal<const CalendarConfigStorage &> signal_calendar_config_storage;
 
-private:
   friend class boost::serialization::access;
-  template <class Archive> void save(Archive &ar, const unsigned int version) const
+  template <class Archive> void save(Archive &archive, const unsigned int version) const
   {
-    ar &BOOST_SERIALIZATION_NVP(auto_calendar_span);
-    ar &BOOST_SERIALIZATION_NVP(spacing_proportions);
+    (void)version;
+    archive &BOOST_SERIALIZATION_NVP(auto_calendar_span);
+    archive &BOOST_SERIALIZATION_NVP(spacing_proportions);
     // boost::serialization::base_object<CalendarSpan>(*this);
-    ar &BOOST_SERIALIZATION_BASE_OBJECT_NVP(CalendarSpan);
+    archive &BOOST_SERIALIZATION_BASE_OBJECT_NVP(CalendarSpan);
   }
-  template <class Archive> void load(Archive &ar, const unsigned int version)
+  template <class Archive> void load(Archive &archive, const unsigned int version)
   {
-    ar &BOOST_SERIALIZATION_NVP(auto_calendar_span);
-    ar &BOOST_SERIALIZATION_NVP(spacing_proportions);
+    (void)version;
+    archive &BOOST_SERIALIZATION_NVP(auto_calendar_span);
+    archive &BOOST_SERIALIZATION_NVP(spacing_proportions);
     // boost::serialization::base_object<CalendarSpan>(*this);
-    ar &BOOST_SERIALIZATION_BASE_OBJECT_NVP(CalendarSpan);
+    archive &BOOST_SERIALIZATION_BASE_OBJECT_NVP(CalendarSpan);
     SendCalendarConfigStorage();
   }
   BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
+#endif // HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_CALENDAR_CONFIG_HPP

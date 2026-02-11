@@ -16,19 +16,29 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "main_window.hpp"
-#include <gsl/gsl>
 #include <locale>
 #include <memory>
 #include <string>
-#include <wx/wx.h>
+
+#include <wx/app.h>
+#include <wx/gdicmn.h>
+#include <wx/intl.h>
+
+#ifdef __WXGTK__
+#include <wx/gtk/app.h>
+#elif defined(__WXMSW__)
+#include <wx/msw/app.h>
+#elif defined(__WXOSX__)
+#include <wx/osx/app.h>
+#endif
+
+#include "main_window.hpp"
 
 class App : public wxApp {
 public:
   bool OnInit() override
   {
-    wx_locale = std::make_unique<wxLocale>();
-    auto init_locale_succeeded = wx_locale->Init();
+    wx_locale.Init();
     std::locale::global(std::locale(""));
     // std::cout << "init_locale_succeeded " << init_locale_succeeded << '\n';
     // auto language = wxLocale::GetSystemLanguage();
@@ -42,16 +52,18 @@ public:
     constexpr int mainWindowWidth = 1280;
     constexpr int mainWindowHeight = 800;
 
-    gsl::owner<MainWindow *> main_window = nullptr;
-    main_window = new MainWindow(nullptr, application_name, wxPoint(mainWindowPosX, mainWindowPosY),
-                                 wxSize(mainWindowWidth, mainWindowHeight));
+    auto *main_window =
+        std::make_unique<MainWindow>(nullptr, application_name,
+                                     wxPoint(mainWindowPosX, mainWindowPosY),
+                                     wxSize(mainWindowWidth, mainWindowHeight))
+            .release();
     SetTopWindow(main_window);
 
     return true;
   }
 
 private:
-  std::unique_ptr<wxLocale> wx_locale;
+  wxLocale wx_locale;
 };
 
 wxIMPLEMENT_APP(App);

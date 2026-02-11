@@ -16,14 +16,17 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#ifndef HOME_TITAN99_CODE_DECADE_SRC_GUI_PAGE_PANEL_HPP
+#define HOME_TITAN99_CODE_DECADE_SRC_GUI_PAGE_PANEL_HPP
 
 #include <wx/wx.h>
 
 #include <wx/printdlg.h>
 #include <wx/spinctrl.h>
+#include <wx/weakref.h>
 
 #include "../packages/page_config.hpp"
+#include <memory>
 #include <sigslot/signal.hpp>
 
 class PageSetupPanel {
@@ -32,8 +35,9 @@ public:
       : wx_panel(nullptr), ID_PAGE_WIDTH(wxWindow::NewControlId()),
         ID_PAGE_HEIGHT(wxWindow::NewControlId())
   {
-    wx_panel = new wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL,
-                           wxPanelNameStr);
+    wx_panel = std::make_unique<wxPanel>(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                                         wxTAB_TRAVERSAL, wxPanelNameStr)
+                   .release();
 
     wxPrintData print_data;
     print_data.SetOrientation(wxPrintOrientation::wxLANDSCAPE);
@@ -44,35 +48,37 @@ public:
     dialog_data.SetMarginTopLeft(wxPoint(15, 15));
     dialog_data.SetMarginBottomRight(wxPoint(15, 15));
 
-    wxStaticBoxSizer *static_box_sizer = new wxStaticBoxSizer(
-        wxVERTICAL, wx_panel,
-        L"Paper Format"); // (this, wxID_ANY, L"Paper Format", wxDefaultPosition, wxDefaultSize, 0L,
-                          // wxStaticBoxNameStr);
+    wxStaticBoxSizer *static_box_sizer =
+        std::make_unique<wxStaticBoxSizer>(wxVERTICAL, wx_panel.get(), L"Paper Format").release();
 
-    wxBoxSizer *horizontal_sizer0 = new wxBoxSizer(wxHORIZONTAL);
+    wxBoxSizer *horizontal_sizer0 = std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
 
-    wxButton *page_setup_dialog_button = new wxButton(wx_panel, wxID_ANY, L"Page Setup...");
+    wxButton *page_setup_dialog_button =
+        std::make_unique<wxButton>(wx_panel.get(), wxID_ANY, L"Page Setup...").release();
 
-    wxStaticText *page_width_label = new wxStaticText(wx_panel, wxID_ANY, L"Width");
+    wxStaticText *page_width_label =
+        std::make_unique<wxStaticText>(wx_panel.get(), wxID_ANY, L"Width").release();
     page_width_label->SetMinSize(wxSize(75, -1));
 
-    wxStaticText *page_height_label = new wxStaticText(wx_panel, wxID_ANY, L"Height");
+    wxStaticText *page_height_label =
+        std::make_unique<wxStaticText>(wx_panel.get(), wxID_ANY, L"Height").release();
     page_height_label->SetMinSize(wxSize(75, -1));
 
-    page_width_spinctrl = new wxSpinCtrlDouble(wx_panel, ID_PAGE_WIDTH);
+    page_width_spinctrl = std::make_unique<wxSpinCtrlDouble>(wx_panel.get(), ID_PAGE_WIDTH).release();
     page_width_spinctrl->SetRange(.0, 2000.);
 
-    page_height_spinctrl = new wxSpinCtrlDouble(wx_panel, ID_PAGE_HEIGHT);
+    page_height_spinctrl =
+        std::make_unique<wxSpinCtrlDouble>(wx_panel.get(), ID_PAGE_HEIGHT).release();
     page_height_spinctrl->SetRange(.0, 2000.);
 
     horizontal_sizer0->Add(page_setup_dialog_button, 1, wxEXPAND | wxALL,
                            5); //| wxALIGN_CENTER_VERTICAL
 
-    wxBoxSizer *horizontal_sizer1 = new wxBoxSizer(wxHORIZONTAL);
+    wxBoxSizer *horizontal_sizer1 = std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
     horizontal_sizer1->Add(page_width_label, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
     horizontal_sizer1->Add(page_width_spinctrl, 1, wxEXPAND | wxALL, 5);
 
-    wxBoxSizer *horizontal_sizer2 = new wxBoxSizer(wxHORIZONTAL);
+    wxBoxSizer *horizontal_sizer2 = std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
     horizontal_sizer2->Add(page_height_label, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
     horizontal_sizer2->Add(page_height_spinctrl, 1, wxEXPAND | wxALL, 5);
 
@@ -80,7 +86,7 @@ public:
     static_box_sizer->Add(horizontal_sizer1, 0, wxEXPAND);
     static_box_sizer->Add(horizontal_sizer2, 0, wxEXPAND);
 
-    wxBoxSizer *vertical_sizer = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer *vertical_sizer = std::make_unique<wxBoxSizer>(wxVERTICAL).release();
     // vertical_sizer->Add(static_box_sizer, 0, wxEXPAND | wxALL, 5);
     vertical_sizer->Add(static_box_sizer, 0, wxEXPAND);
 
@@ -94,7 +100,7 @@ public:
                    ID_PAGE_HEIGHT);
   }
 
-  wxPanel *PanelPtr() { return wx_panel; }
+  wxPanel *PanelPtr() { return wx_panel.get(); }
 
   void SendPageSetup()
   {
@@ -126,7 +132,7 @@ public:
   void ReceivePageSetup(const PageSetupConfig &page_setup_config)
   {
     wxPrintData print_data = dialog_data.GetPrintData();
-    print_data.SetOrientation(page_setup_config.orientation);
+    print_data.SetOrientation(static_cast<wxPrintOrientation>(page_setup_config.orientation));
     dialog_data.SetPrintData(print_data);
 
     if (print_data.GetOrientation() == wxPORTRAIT) {
@@ -200,13 +206,14 @@ private:
     SendPageSetup();
   }
 
-  wxPanel *wx_panel;
+  wxWeakRef<wxPanel> wx_panel;
 
   const int ID_PAGE_WIDTH;
   const int ID_PAGE_HEIGHT;
 
   wxPageSetupDialogData dialog_data;
 
-  wxSpinCtrlDouble *page_width_spinctrl;
-  wxSpinCtrlDouble *page_height_spinctrl;
+  wxWeakRef<wxSpinCtrlDouble> page_width_spinctrl;
+  wxWeakRef<wxSpinCtrlDouble> page_height_spinctrl;
 };
+#endif // HOME_TITAN99_CODE_DECADE_SRC_GUI_PAGE_PANEL_HPP

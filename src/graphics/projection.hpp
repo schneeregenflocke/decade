@@ -16,15 +16,18 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#ifndef HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_PROJECTION_HPP
+#define HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_PROJECTION_HPP
 
 #include "rect.hpp"
 
-#include <glad/glad.h>
+#include <epoxy/gl.h>
 
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
+#include <array>
 
 // #include <iostream>
 
@@ -32,19 +35,19 @@ class Projection {
 public:
   static float AspectRatio()
   {
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
+    std::array<GLint, 4> viewport{};
+    glGetIntegerv(GL_VIEWPORT, viewport.data());
 
-    float width = static_cast<float>(viewport[2]);
-    float height = static_cast<float>(viewport[3]);
+    const auto width = static_cast<float>(viewport[2]);
+    const auto height = static_cast<float>(viewport[3]);
 
     return width / height;
   }
 
   static glm::mat4 OrthoMatrix(const rectf &view_size)
   {
-    float page_height_ratio = view_size.width() / view_size.height();
-    float viewport_height_ratio = AspectRatio();
+    const auto page_height_ratio = view_size.width() / view_size.height();
+    const auto viewport_height_ratio = AspectRatio();
 
     glm::mat4 ortho_matrix;
     if (page_height_ratio >= viewport_height_ratio) {
@@ -63,15 +66,18 @@ public:
 
   static glm::mat4 OrthoMatrixWidth(float width)
   {
-    float x_half_size = width / 2.f;
-    float y_half_size = width / AspectRatio() / 2.f;
+    constexpr float kHalf = 0.5F;
+    const float x_half_size = width * kHalf;
+    const float y_half_size = width / AspectRatio() * kHalf;
     return glm::ortho(-x_half_size, x_half_size, -y_half_size, y_half_size);
   }
 
   static glm::mat4 OrthoMatrixHeight(float height)
   {
-    float x_half_size = height * AspectRatio() / 2.f;
-    float y_half_size = height / 2.f;
+    constexpr float kHalf = 0.5F;
+    const float x_half_size = height * AspectRatio() * kHalf;
+    const float y_half_size = height * kHalf;
     return glm::ortho(-x_half_size, x_half_size, -y_half_size, y_half_size);
   }
 };
+#endif // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_PROJECTION_HPP

@@ -16,17 +16,16 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#ifndef HOME_TITAN99_CODE_DECADE_SRC_GUI_FONT_PANEL_HPP
+#define HOME_TITAN99_CODE_DECADE_SRC_GUI_FONT_PANEL_HPP
 
 #include <wx/fontpicker.h>
+#include <wx/weakref.h>
 #include <wx/wx.h>
-
-#ifndef FC_DEBUG
-#define FC_DEBUG
-#endif // !FC_DEBUG
 
 #include <fontconfig/fontconfig.h>
 #include <map>
+#include <memory>
 #include <sigslot/signal.hpp>
 #include <string>
 
@@ -37,14 +36,17 @@ public:
     wxFont normal_font = *wxNORMAL_FONT;
     // auto normal_font_name = normal_font.GetFaceName();
 
-    wx_panel = new wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL,
-                           wxPanelNameStr);
-    wx_font_picker = new wxFontPickerCtrl(wx_panel, wxID_ANY, normal_font, wxDefaultPosition,
-                                          wxDefaultSize, wxFNTP_FONTDESC_AS_LABEL);
+    wx_panel = std::make_unique<wxPanel>(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                                         wxTAB_TRAVERSAL, wxPanelNameStr)
+                   .release();
+    wx_font_picker = std::make_unique<wxFontPickerCtrl>(wx_panel.get(), wxID_ANY, normal_font,
+                                                        wxDefaultPosition, wxDefaultSize,
+                                                        wxFNTP_FONTDESC_AS_LABEL)
+                         .release();
 
-    wxBoxSizer *horizontal_sizer = new wxBoxSizer(wxHORIZONTAL);
+    wxBoxSizer *horizontal_sizer = std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
     horizontal_sizer->Add(wx_font_picker, 1, wxALL | wxEXPAND, 5);
-    wxBoxSizer *vertical_sizer = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer *vertical_sizer = std::make_unique<wxBoxSizer>(wxVERTICAL).release();
     vertical_sizer->Add(horizontal_sizer, 0, wxEXPAND);
     wx_panel->SetSizer(vertical_sizer);
 
@@ -59,7 +61,7 @@ public:
 
   const std::string &GetFontFilePath() const { return font_filepath; }
 
-  wxPanel *PanelPtr() { return wx_panel; }
+  wxPanel *PanelPtr() { return wx_panel.get(); }
 
   // sigslot::signal<const std::vector<unsigned char>&> signal_font_file_path;
   sigslot::signal<const std::string &> signal_font_filepath;
@@ -191,11 +193,12 @@ private:
     }
   }
 
-  wxPanel *wx_panel;
-  wxFontPickerCtrl *wx_font_picker;
+  wxWeakRef<wxPanel> wx_panel;
+  wxWeakRef<wxFontPickerCtrl> wx_font_picker;
   wxFont wx_font;
   // std::vector<unsigned char> font_data;
   std::string font_filepath;
   std::map<int, int> fontWeightMap;
   std::map<int, int> fontStyleMap;
 };
+#endif // HOME_TITAN99_CODE_DECADE_SRC_GUI_FONT_PANEL_HPP

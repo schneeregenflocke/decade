@@ -16,11 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#ifndef HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_RENDER_TO_TEXTURE_HPP
+#define HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_RENDER_TO_TEXTURE_HPP
 
 #include "texture_object.hpp"
 
-#include <glad/glad.h>
+#include <epoxy/gl.h>
 
 #include <vector>
 
@@ -182,3 +183,4 @@ private:
 
   bool valid;
 };
+#endif // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_RENDER_TO_TEXTURE_HPP

@@ -16,7 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#ifndef HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_PAGE_CONFIG_HPP
+#define HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_PAGE_CONFIG_HPP
 
 #include <array>
 
@@ -69,3 +70,4 @@ private:
   }
   BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
+#endif // HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_PAGE_CONFIG_HPP

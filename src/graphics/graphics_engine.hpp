@@ -16,7 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#ifndef HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_GRAPHICS_ENGINE_HPP
+#define HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_GRAPHICS_ENGINE_HPP
 
 #include "mvp_matrices.hpp"
 #include "scene_graph.hpp"
@@ -63,3 +64,4 @@ private:
   Shaders shaders;
   std::shared_ptr<SceneNode> scene_graph;
 };
+#endif // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_GRAPHICS_ENGINE_HPP

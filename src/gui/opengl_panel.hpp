@@ -16,12 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#ifndef HOME_TITAN99_CODE_DECADE_SRC_GUI_OPENGL_PANEL_HPP
+#define HOME_TITAN99_CODE_DECADE_SRC_GUI_OPENGL_PANEL_HPP
 
 #include <wx/glcanvas.h>
+#include <wx/weakref.h>
 #include <wx/wx.h>
 
-// #include <glad/glad.h>
+#include <epoxy/gl.h>
 
 #include "../graphics/graphics_engine.hpp"
 #include "../graphics/mvp_matrices.hpp"
@@ -200,10 +202,10 @@ public:
     attributes.PlatformDefaults().Defaults().EndList();
     bool display_supported = wxGLCanvas::IsDisplaySupported(attributes);
     std::cout << "wxGLCanvas IsDisplaySupported " << std::boolalpha << display_supported << '\n';
-    wx_gl_canvas = new wxGLCanvas(parent, attributes);
+    wx_gl_canvas = std::make_unique<wxGLCanvas>(parent, attributes).release();
   }
 
-  wxGLCanvas *GLCanvasPtr() { return wx_gl_canvas; }
+  wxGLCanvas *GLCanvasPtr() { return wx_gl_canvas.get(); }
 
   GraphicsEngine *GraphicsEnginePtr() { return graphics_engine.get(); }
 
@@ -225,9 +227,9 @@ public:
       std::cout << "context IsOK " << context->IsOK() << '\n';
 
       wx_gl_canvas->SetCurrent(*context);
-      gl_loaded = gladLoadGL();
+      gl_loaded = context->IsOK() ? 1 : 0;
 
-      std::cout << "OpenGL loaded: " << gl_loaded << " version: " << GetGLVersionString() << '\n';
+      std::cout << "OpenGL ready: " << gl_loaded << " version: " << GetGLVersionString() << '\n';
 
       // glEnable(GL_DEBUG_OUTPUT);
       // glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -283,7 +285,7 @@ public:
 
   void ReceivePageSetup(const PageSetupConfig &page_setup_config)
   {
-    page_size = rectf::from_dimension(page_setup_config.size[0], page_setup_config.size[1]);
+    page_size = rectf::from_dimension(rectf::Dimension{page_setup_config.size[0], page_setup_config.size[1]});
   }
 
   void RefreshMVP()
@@ -332,7 +334,7 @@ private:
 
   int gl_loaded;
 
-  wxGLCanvas *wx_gl_canvas;
+  wxWeakRef<wxGLCanvas> wx_gl_canvas;
 
   std::unique_ptr<wxGLContext> context;
 
@@ -342,3 +344,4 @@ private:
   rectf page_size;
   MVP mvp;
 };
+#endif // HOME_TITAN99_CODE_DECADE_SRC_GUI_OPENGL_PANEL_HPP

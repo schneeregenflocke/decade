@@ -16,36 +16,48 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#ifndef HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_GROUP_STORE_HPP
+#define HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_GROUP_STORE_HPP
 
 #include <algorithm>
+#include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/split_member.hpp>
-#include <boost/serialization/string.hpp>
-#include <boost/serialization/vector.hpp>
 #include <sigslot/signal.hpp>
-#include <string>
-#include <vector>
 
 
 class DateGroup {
 public:
-  DateGroup() : name("no name"), number(0), exclude(false) {}
+  DateGroup() = default;
 
-  DateGroup(std::string name) : name(name), number(0), exclude(false) {}
+  explicit DateGroup(std::string name) : name_(std::move(name)) {}
 
-  int number;
-  std::string name;
-  bool exclude;
+  [[nodiscard]] int GetNumber() const { return number_; }
+  void SetNumber(int number) { number_ = number; }
+
+  [[nodiscard]] const std::string &GetName() const { return name_; }
+  void SetName(std::string name) { name_ = std::move(name); }
+
+  [[nodiscard]] bool IsExcluded() const { return exclude_; }
+  void SetExcluded(bool exclude) { exclude_ = exclude; }
 
 private:
+  int number_{0};
+  std::string name_{"no name"};
+  bool exclude_{false};
+
   friend class boost::serialization::access;
-  template <class Archive> void serialize(Archive &ar, const unsigned int version)
+  template <class Archive> void serialize(Archive &archive, const unsigned int version)
   {
-    ar &BOOST_SERIALIZATION_NVP(number);
-    ar &BOOST_SERIALIZATION_NVP(name);
-    ar &BOOST_SERIALIZATION_NVP(exclude);
+    (void)version;
+    archive &BOOST_SERIALIZATION_NVP(number_);
+    archive &BOOST_SERIALIZATION_NVP(name_);
+    archive &BOOST_SERIALIZATION_NVP(exclude_);
   }
 };
 
@@ -58,64 +70,76 @@ public:
     signal_date_groups(date_groups);
   }
 
-  std::vector<DateGroup> GetDateGroups() const { return date_groups; }
+  [[nodiscard]] const std::vector<DateGroup> &GetDateGroups() const { return date_groups; }
 
   // call after connecting
   void SendDefaultValues()
   {
     std::vector<DateGroup> temporary_date_groups;
-    temporary_date_groups.push_back(DateGroup("Default"));
+    temporary_date_groups.emplace_back("Default");
     ReceiveDateGroups(temporary_date_groups);
   }
 
-  int GetNumber(const std::string &name) const
+  [[nodiscard]] int GetNumber(const std::string &name) const
   {
-    auto find_lambda = [&](const DateGroup &compare) { return compare.name == name; };
+    auto find_lambda = [&](const DateGroup &compare) { return compare.GetName() == name; };
     auto found = std::find_if(date_groups.cbegin(), date_groups.cend(), find_lambda);
     if (found != date_groups.end()) {
-      return found->number;
-    } else {
-      throw std::runtime_error("number not found");
+      return found->GetNumber();
     }
+    throw std::runtime_error("number not found");
   }
 
-  std::string GetName(int number) const
+  [[nodiscard]] std::string GetName(int number) const
   {
-    auto find_lambda = [&](const DateGroup &compare) { return compare.number == number; };
+    auto find_lambda = [&](const DateGroup &compare) { return compare.GetNumber() == number; };
     auto found = std::find_if(date_groups.cbegin(), date_groups.cend(), find_lambda);
     if (found != date_groups.end()) {
-      return found->name;
-    } else {
-      throw std::runtime_error("string not found");
+      return found->GetName();
     }
+    throw std::runtime_error("string not found");
   }
 
-  std::vector<std::string> GetDateGroupsNames() const
+  [[nodiscard]] std::vector<std::string> GetDateGroupsNames() const
   {
     std::vector<std::string> name_strings(date_groups.size());
     auto iterator = name_strings.begin();
     for (const auto &date_group : date_groups) {
-      *iterator = date_group.name;
+      *iterator = date_group.GetName();
       ++iterator;
     }
     return name_strings;
   }
 
-  int GetGroupMax() const { return date_groups.size() - 1; }
+  [[nodiscard]] int GetGroupMax() const
+  {
+    if (date_groups.empty()) {
+      return -1;
+    }
+    return static_cast<int>(date_groups.size()) - 1;
+  }
 
-  bool GetExclude(int number) const { return date_groups[number].exclude; }
+  [[nodiscard]] bool GetExclude(int number) const
+  {
+    return date_groups.at(static_cast<size_t>(number)).IsExcluded();
+  }
 
-  sigslot::signal<const std::vector<DateGroup> &> signal_date_groups;
+  sigslot::signal<const std::vector<DateGroup> &> &SignalDateGroups()
+  {
+    return signal_date_groups;
+  }
 
 private:
   friend class boost::serialization::access;
-  template <class Archive> void save(Archive &ar, const unsigned int version) const
+  template <class Archive> void save(Archive &archive, const unsigned int version) const
   {
-    ar &BOOST_SERIALIZATION_NVP(date_groups);
+    (void)version;
+    archive &BOOST_SERIALIZATION_NVP(date_groups);
   }
-  template <class Archive> void load(Archive &ar, const unsigned int version)
+  template <class Archive> void load(Archive &archive, const unsigned int version)
   {
-    ar &BOOST_SERIALIZATION_NVP(date_groups);
+    (void)version;
+    archive &BOOST_SERIALIZATION_NVP(date_groups);
     signal_date_groups(date_groups);
   }
   BOOST_SERIALIZATION_SPLIT_MEMBER()
@@ -124,9 +148,11 @@ private:
   {
     int number = 0;
     for (auto &date_group : date_groups) {
-      date_group.number = number;
+      date_group.SetNumber(number);
       ++number;
     }
   }
   std::vector<DateGroup> date_groups;
+  sigslot::signal<const std::vector<DateGroup> &> signal_date_groups;
 };
+#endif // HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_GROUP_STORE_HPP
