@@ -123,7 +123,7 @@ public:
     UpdatePropertyGrid();
   }
 
-  void CallbackPropertyGridChanging(wxPropertyGridEvent &event)
+  void CallbackPropertyGridChanging(wxPropertyGridEvent & /*event*/)
   {
     property_grid->RefreshPropertyGrid();
 

@@ -10,10 +10,21 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Generate compile_commands.json 
 
 add_executable(${PROJECT_NAME})
 
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
 get_target_property(${PROJECT_NAME}_CXX_STANDARD ${PROJECT_NAME} CXX_STANDARD)
 cmake_print_variables(${PROJECT_NAME}_CXX_STANDARD CMAKE_CXX_STANDARD CMAKE_CXX_EXTENSIONS)
 cmake_print_variables(CMAKE_EXPORT_COMPILE_COMMANDS)
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	target_compile_options(${PROJECT_NAME} PRIVATE
+		-Wall
+		-Wextra
+		-Wpedantic
+		-Werror
+	)
+elseif(MSVC)
+	target_compile_options(${PROJECT_NAME} PRIVATE /W4 /WX)
+endif()
 
 target_sources(${PROJECT_NAME} PRIVATE 
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/main.cpp

@@ -11,7 +11,11 @@
       "Bash(DECADE_EXIT_AFTER_MS=2000 stdbuf -o0 -e0 ./decade)",
       "Bash(echo \"=== exit $? ===\")",
       "Bash(kill -TERM 69167)",
-      "Bash(DECADE_EXIT_AFTER_MS=3000 stdbuf -oL -eL ./decade)"
+      "Bash(DECADE_EXIT_AFTER_MS=3000 stdbuf -oL -eL ./decade)",
+      "Bash(awk -F'[:]' '{print $1\":\"$2\":\"$3}')",
+      "Bash(DECADE_EXIT_AFTER_MS=2000 stdbuf -oL -eL ./decade)",
+      "Bash(echo \"exit $?\")",
+      "Bash(kill -TERM 72595)"
     ],
     "additionalDirectories": [
       "/tmp"

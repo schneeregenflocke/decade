@@ -17,7 +17,7 @@ struct PageSetupConfig {
 
 private:
   friend class boost::serialization::access;
-  template <class Archive> void serialize(Archive &ar, const unsigned int version)
+  template <class Archive> void serialize(Archive &ar, const unsigned int /*version*/)
   {
     ar &BOOST_SERIALIZATION_NVP(size);
     ar &BOOST_SERIALIZATION_NVP(margins);
@@ -41,11 +41,11 @@ public:
 
 private:
   friend class boost::serialization::access;
-  template <class Archive> void save(Archive &ar, const unsigned int version) const
+  template <class Archive> void save(Archive &ar, const unsigned int /*version*/) const
   {
     ar &BOOST_SERIALIZATION_NVP(page_setup_config);
   }
-  template <class Archive> void load(Archive &ar, const unsigned int version)
+  template <class Archive> void load(Archive &ar, const unsigned int /*version*/)
   {
     ar &BOOST_SERIALIZATION_NVP(page_setup_config);
     signal_page_setup_config(page_setup_config);

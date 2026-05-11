@@ -154,7 +154,7 @@ private:
     }
   }
 
-  void CallbackButtonClicked(wxCommandEvent &event)
+  void CallbackButtonClicked(wxCommandEvent & /*event*/)
   {
     wxPageSetupDialog page_setup_dialog(nullptr, &dialog_data);
 
@@ -169,7 +169,7 @@ private:
     page_width_spinctrl->Enable(event.IsChecked());
     page_height_spinctrl->Enable(event.IsChecked());
   }
-  void CallbackSpinControl(wxSpinDoubleEvent &event)
+  void CallbackSpinControl(wxSpinDoubleEvent & /*event*/)
   {
     wxSize paper_size;
     paper_size.x = static_cast<float>(page_width_spinctrl->GetValue());

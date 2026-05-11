@@ -419,15 +419,14 @@ private:
     return dots_per_millimeter;
   }
 
-  size_t image_width;
-  size_t image_height;
-
   const std::string file_path;
   const rectf ortho_dimensions;
   const float dpi;
+  size_t image_width;
+  size_t image_height;
+  std::shared_ptr<GraphicsEngine> graphics_engine;
   int msaa_samples;
 
-  std::shared_ptr<GraphicsEngine> graphics_engine;
   static constexpr size_t kBytesPerPixel = 4;
 };
 #endif // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_RENDER_TO_PNG_HPP

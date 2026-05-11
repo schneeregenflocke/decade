@@ -80,8 +80,8 @@ const char *GetSeverityString(GLenum severity)
 }
 
 // Debug Callback-Funktion
-void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
-                            const GLchar *message, const void *userParam)
+void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity,
+                            GLsizei /*length*/, const GLchar *message, const void * /*userParam*/)
 {
   std::cout << "OpenGL Debug Message:";
   std::cout << "  Source: " << GetSourceString(source);
@@ -95,7 +95,7 @@ void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severi
 class MouseInteraction {
 public:
   MouseInteraction()
-      : persistent_mouse_pos(0.f), persistent_scale_factor(1.f), translate_pre_scaled(0.f),
+      : persistent_scale_factor(1.f), persistent_mouse_pos(0.f), translate_pre_scaled(0.f),
         translate_post_scaled(0.f)
   {
   }
@@ -308,7 +308,7 @@ public:
   }
 
 private:
-  void InitPaintCallback(wxPaintEvent &event)
+  void InitPaintCallback(wxPaintEvent & /*event*/)
   {
     wxPaintDC dc(wx_gl_canvas);
     if (LoadOpenGL(gl_version_) != 0) {
@@ -321,7 +321,7 @@ private:
     }
   }
 
-  void PaintCallback(wxPaintEvent &event)
+  void PaintCallback(wxPaintEvent & /*event*/)
   {
     wxPaintDC dc(wx_gl_canvas);
     graphics_engine->SetMVP(mvp);
@@ -329,7 +329,7 @@ private:
     wx_gl_canvas->SwapBuffers();
   }
 
-  void SizeCallback(wxSizeEvent &event)
+  void SizeCallback(wxSizeEvent & /*event*/)
   {
     RefreshMVP();
     wx_gl_canvas->Refresh(false);

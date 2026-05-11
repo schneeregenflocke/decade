@@ -88,8 +88,8 @@ class RenderToTexture {
 public:
   RenderToTexture(GLsizei width, GLsizei height, GLsizei samples)
       : width(width), height(height), samples(samples), frame_buffer(width, height, samples, false),
-        frame_buffer_msaa(width, height, samples, true), valid(false), pixel_size(0),
-        restore_width(0), restore_height(0)
+        frame_buffer_msaa(width, height, samples, true), restore_width(0), restore_height(0),
+        pixel_size(0), valid(false)
   {
 
     pixel_size = 4 * sizeof(GLubyte);

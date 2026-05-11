@@ -250,7 +250,7 @@ private:
   {
     std::vector<size_t> valid_rows_list;
 
-    for (size_t index = 0; index < table_widget->GetItemCount(); ++index) {
+    for (size_t index = 0; index < static_cast<size_t>(table_widget->GetItemCount()); ++index) {
       auto begin_date = GetDateByCell({static_cast<int>(index), Columns::first_date});
       auto end_date = GetDateByCell({static_cast<int>(index), Columns::second_date});
 
@@ -285,7 +285,7 @@ private:
 
   void InsertRow(size_t row)
   {
-    if (row <= table_widget->GetItemCount()) {
+    if (row <= static_cast<size_t>(table_widget->GetItemCount())) {
       wxVector<wxVariant> empty_row;
       empty_row.resize(table_widget->GetColumnCount());
       empty_row[static_cast<size_t>(ColumnIndex(Columns::group))] =
@@ -296,7 +296,7 @@ private:
 
   void RemoveRow(size_t row)
   {
-    if (row >= table_widget->GetItemCount()) {
+    if (row >= static_cast<size_t>(table_widget->GetItemCount())) {
       std::cout << "try to remove not existent row" << '\n';
       throw std::runtime_error("try to remove not existent row");
     }

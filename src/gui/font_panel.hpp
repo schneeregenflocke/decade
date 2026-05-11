@@ -150,7 +150,7 @@ private:
 
     // https://fontconfig.pages.freedesktop.org/fontconfig/fontconfig-devel/fcpatternget.html
     FcChar8 *fc_filepath = nullptr;
-    FcResult fc_result = FcPatternGetString(match, FC_FILE, 0, &fc_filepath);
+    [[maybe_unused]] FcResult fc_result = FcPatternGetString(match, FC_FILE, 0, &fc_filepath);
 
     int len = strlen(reinterpret_cast<const char *>(fc_filepath));
     font_filepath = std::string(fc_filepath, fc_filepath + len);

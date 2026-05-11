@@ -170,7 +170,7 @@ private:
     }
   }
 
-  void CallbackColorPickerControl(wxColourPickerEvent &event)
+  void CallbackColorPickerControl(wxColourPickerEvent & /*event*/)
   {
     // if (event.GetId() == ID_COLOR_PICKER)
     //{
@@ -186,7 +186,7 @@ private:
     // SendTitleConfig();
   }
 
-  void CallbackSliderControl(wxCommandEvent &event)
+  void CallbackSliderControl(wxCommandEvent & /*event*/)
   {
     // if (event.GetId() == ID_SLIDER)
     //{

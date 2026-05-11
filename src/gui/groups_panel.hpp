@@ -96,7 +96,7 @@ public:
       }
     }
 
-    for (size_t index = 0; index < data_table->GetItemCount(); ++index) {
+    for (size_t index = 0; index < static_cast<size_t>(data_table->GetItemCount()); ++index) {
       data_table->SetValue(std::to_wstring(date_groups[index].GetNumber()), index, 0);
       data_table->SetValue(date_groups[index].GetName(), index, 1);
 
@@ -122,7 +122,7 @@ private:
   }
   void InsertRow(size_t row)
   {
-    if (row <= data_table->GetItemCount()) {
+    if (row <= static_cast<size_t>(data_table->GetItemCount())) {
       wxVector<wxVariant> empty_row;
       empty_row.resize(data_table->GetColumnCount());
       empty_row[2] = wxVariant(static_cast<bool>(false));
@@ -131,7 +131,7 @@ private:
   }
   void RemoveRow(size_t row)
   {
-    if (row <= data_table->GetItemCount()) {
+    if (row <= static_cast<size_t>(data_table->GetItemCount())) {
       data_table->DeleteItem(row);
     }
   }
@@ -204,7 +204,7 @@ private:
     }
   }
 
-  void CallbackSelectionChanged(wxDataViewEvent &event) { UpdateButtons(); }
+  void CallbackSelectionChanged(wxDataViewEvent & /*event*/) { UpdateButtons(); }
 
   void CallbackValueChanged(wxDataViewEvent &event)
   {
