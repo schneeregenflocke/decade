@@ -129,7 +129,8 @@ private:
     FcConfig *ft_config = FcInitLoadConfigAndFonts();
 
     FcPattern *pattern = FcPatternCreate();
-    FcPatternAddString(pattern, FC_FAMILY, (const FcChar8 *)face_name.utf8_str().data());
+    FcPatternAddString(pattern, FC_FAMILY,
+                       reinterpret_cast<const FcChar8 *>(face_name.utf8_str().data()));
 
     FcPatternAddInteger(pattern, FC_SIZE, point_size);
 
@@ -152,7 +153,7 @@ private:
     FcChar8 *fc_filepath = nullptr;
     [[maybe_unused]] FcResult fc_result = FcPatternGetString(match, FC_FILE, 0, &fc_filepath);
 
-    int len = strlen(reinterpret_cast<const char *>(fc_filepath));
+    const size_t len = strlen(reinterpret_cast<const char *>(fc_filepath));
     font_filepath = std::string(fc_filepath, fc_filepath + len);
     std::cout << "font_filepath: " << font_filepath << '\n';
 

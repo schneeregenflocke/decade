@@ -21,7 +21,7 @@
 
 class QuadrilateralShape : public Shape {
 public:
-  explicit QuadrilateralShape(Shader *shader_ptr) : Shape(shader_ptr) {}
+  explicit QuadrilateralShape(Shader *shader_ptr_in) : Shape(shader_ptr_in) {}
 
   void set_shape(const rectf &rectangle)
   {
@@ -39,7 +39,7 @@ public:
     set_buffer(BufferIndex{0}, static_cast<GLsizei>(vertices.size()), vertices.data());
   }
 
-  void set_color(const glm::vec4 &color) { this->color = color; }
+  void set_color(const glm::vec4 &new_color) { color = new_color; }
 
   void draw() const override
   {
@@ -57,7 +57,7 @@ private:
 
 class RectanglesShape : public Shape {
 public:
-  explicit RectanglesShape(Shader *shader_ptr) : Shape(shader_ptr) {}
+  explicit RectanglesShape(Shader *shader_ptr_in) : Shape(shader_ptr_in) {}
 
   void set_shape(const std::vector<rectf> &rectangles, float line_width)
   {
@@ -86,7 +86,7 @@ public:
     set_buffer(BufferIndex{0}, static_cast<GLsizei>(vertices.size()), vertices.data());
   }
 
-  void set_color(const std::vector<glm::vec4> &colors) { this->colors = colors; }
+  void set_color(const std::vector<glm::vec4> &new_colors) { colors = new_colors; }
 
   void draw() const override
   {

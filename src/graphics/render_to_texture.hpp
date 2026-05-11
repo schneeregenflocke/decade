@@ -86,10 +86,11 @@ private:
 
 class RenderToTexture {
 public:
-  RenderToTexture(GLsizei width, GLsizei height, GLsizei samples)
-      : width(width), height(height), samples(samples), frame_buffer(width, height, samples, false),
-        frame_buffer_msaa(width, height, samples, true), restore_width(0), restore_height(0),
-        pixel_size(0), valid(false)
+  RenderToTexture(GLsizei width_in, GLsizei height_in, GLsizei samples_in)
+      : width(width_in), height(height_in), samples(samples_in),
+        frame_buffer(width_in, height_in, samples_in, false),
+        frame_buffer_msaa(width_in, height_in, samples_in, true), restore_width(0),
+        restore_height(0), pixel_size(0), valid(false)
   {
 
     pixel_size = 4 * sizeof(GLubyte);

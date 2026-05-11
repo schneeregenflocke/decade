@@ -115,9 +115,9 @@ class ShaderInfos {
 public:
   ShaderInfos() = default;
 
-  void SetProgram(GLuint program)
+  void SetProgram(GLuint new_program)
   {
-    this->program = program;
+    program = new_program;
 
     GatherAttributesInfo();
     GatherUniformsInfo();

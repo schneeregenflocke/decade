@@ -23,8 +23,8 @@ public:
     std::string fragment;
   };
 
-  explicit Shader(const ShaderSources &sources, std::string name)
-      : name(std::move(name))
+  explicit Shader(const ShaderSources &sources, std::string name_in)
+      : name(std::move(name_in))
   {
     CompileProgram(sources);
 
@@ -37,15 +37,15 @@ public:
 
   void UseProgram() const { glUseProgram(program); }
 
-  void SetUniform(const std::string &name, const glm::mat4 &matrix) const
+  void SetUniform(const std::string &uniform_name, const glm::mat4 &matrix) const
   {
-    auto location = glGetUniformLocation(program, name.c_str());
+    auto location = glGetUniformLocation(program, uniform_name.c_str());
     glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
   }
 
-  void SetUniform(const std::string &name, const glm::vec4 &vector) const
+  void SetUniform(const std::string &uniform_name, const glm::vec4 &vector) const
   {
-    auto location = glGetUniformLocation(program, name.c_str());
+    auto location = glGetUniformLocation(program, uniform_name.c_str());
     glUniform4fv(location, 1, glm::value_ptr(vector));
     // glProgramUniform
   }

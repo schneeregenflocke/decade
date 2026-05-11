@@ -104,10 +104,10 @@ public:
 
     // fill table from received date_interval_bundles
     for (size_t index = 0; index < valid_rows_list.size(); ++index) {
+      const auto row = static_cast<unsigned int>(valid_rows_list[index]);
       const auto first_date =
           boost_date_to_string(date_interval_bundles[index].GetDateInterval().begin());
-      table_widget->SetValue(first_date, valid_rows_list[index],
-                             ColumnIndex(Columns::first_date));
+      table_widget->SetValue(first_date, row, ColumnIndex(Columns::first_date));
 
       std::string second_date;
       // single date
@@ -119,8 +119,7 @@ public:
       else {
         second_date = boost_date_to_string(date_interval_bundles[index].GetDateInterval().end());
       }
-      table_widget->SetValue(second_date, valid_rows_list[index],
-                             ColumnIndex(Columns::second_date));
+      table_widget->SetValue(second_date, row, ColumnIndex(Columns::second_date));
 
       std::string number;
       if (!date_interval_bundles[index].IsExcluded()) {
@@ -129,35 +128,33 @@ public:
       } else {
         number = "";
       }
-      table_widget->SetValue(number, valid_rows_list[index], ColumnIndex(Columns::number));
+      table_widget->SetValue(number, row, ColumnIndex(Columns::number));
 
       // check if group exists
       if (date_interval_bundles[index].GetGroup() > date_group_store.GetGroupMax()) {
-        table_widget->SetValue(std::to_string(0), valid_rows_list[index],
-                               ColumnIndex(Columns::group));
+        table_widget->SetValue(std::to_string(0), row, ColumnIndex(Columns::group));
         throw std::runtime_error("group cannot exist");
       } else {
         auto group_name = date_group_store.GetName(date_interval_bundles[index].GetGroup());
-        table_widget->SetValue(group_name, valid_rows_list[index], ColumnIndex(Columns::group));
+        table_widget->SetValue(group_name, row, ColumnIndex(Columns::group));
       }
 
       table_widget->SetValue(std::to_string(date_interval_bundles[index].GetGroupNumber() + 1),
-                             valid_rows_list[index], ColumnIndex(Columns::group_number));
+                             row, ColumnIndex(Columns::group_number));
 
       table_widget->SetValue(
           std::to_string(
               date_interval_bundles[index].GetDateInterval().length().days() + 1 /*!!!*/),
-          valid_rows_list[index], ColumnIndex(Columns::duration));
+          row, ColumnIndex(Columns::duration));
 
       if ((index + 1) < date_interval_bundles.size() &&
           !date_interval_bundles[index].IsExcluded()) {
         table_widget->SetValue(
             std::to_string(date_interval_bundles[index].GetDateInterInterval().length().days() -
                            1 /*!!!*/),
-            valid_rows_list[index], ColumnIndex(Columns::duration_to_next));
+            row, ColumnIndex(Columns::duration_to_next));
       } else {
-        table_widget->SetValue(L"", valid_rows_list[index],
-                               ColumnIndex(Columns::duration_to_next));
+        table_widget->SetValue(L"", row, ColumnIndex(Columns::duration_to_next));
       }
     }
   }
@@ -217,7 +214,8 @@ private:
         date_interval_bundle.SetDateInterval(date_interval);
 
         wxVariant group_string;
-        table_widget->GetValue(group_string, valid_index, ColumnIndex(Columns::group));
+        table_widget->GetValue(group_string, static_cast<unsigned int>(valid_index),
+                               ColumnIndex(Columns::group));
 
         int group_number = 0;
         try {
@@ -259,11 +257,12 @@ private:
         continue;
       }
 
-      table_widget->SetValue("", index, ColumnIndex(Columns::number));
-      table_widget->SetValue("", index, ColumnIndex(Columns::group));
-      table_widget->SetValue("", index, ColumnIndex(Columns::group_number));
-      table_widget->SetValue("", index, ColumnIndex(Columns::duration));
-      table_widget->SetValue("", index, ColumnIndex(Columns::duration_to_next));
+      const auto row = static_cast<unsigned int>(index);
+      table_widget->SetValue("", row, ColumnIndex(Columns::number));
+      table_widget->SetValue("", row, ColumnIndex(Columns::group));
+      table_widget->SetValue("", row, ColumnIndex(Columns::group_number));
+      table_widget->SetValue("", row, ColumnIndex(Columns::duration));
+      table_widget->SetValue("", row, ColumnIndex(Columns::duration_to_next));
     }
 
     return valid_rows_list;
@@ -290,7 +289,7 @@ private:
       empty_row.resize(table_widget->GetColumnCount());
       empty_row[static_cast<size_t>(ColumnIndex(Columns::group))] =
           date_group_store.GetName(0);
-      table_widget->InsertItem(row, empty_row);
+      table_widget->InsertItem(static_cast<unsigned int>(row), empty_row);
     }
   }
 
@@ -300,7 +299,7 @@ private:
       std::cout << "try to remove not existent row" << '\n';
       throw std::runtime_error("try to remove not existent row");
     }
-    table_widget->DeleteItem(row);
+    table_widget->DeleteItem(static_cast<unsigned int>(row));
   }
 
   enum class Columns : std::uint8_t {

@@ -103,10 +103,10 @@ public:
       page_setup_config.size[1] = dialog_width;
     }
 
-    page_setup_config.margins[0] = dialog_data.GetMarginTopLeft().x;
-    page_setup_config.margins[1] = dialog_data.GetMarginBottomRight().y;
-    page_setup_config.margins[2] = dialog_data.GetMarginBottomRight().x;
-    page_setup_config.margins[3] = dialog_data.GetMarginTopLeft().y;
+    page_setup_config.margins[0] = static_cast<float>(dialog_data.GetMarginTopLeft().x);
+    page_setup_config.margins[1] = static_cast<float>(dialog_data.GetMarginBottomRight().y);
+    page_setup_config.margins[2] = static_cast<float>(dialog_data.GetMarginBottomRight().x);
+    page_setup_config.margins[3] = static_cast<float>(dialog_data.GetMarginTopLeft().y);
 
     signal_page_setup_config(page_setup_config);
   }
@@ -118,18 +118,20 @@ public:
     dialog_data.SetPrintData(print_data);
 
     if (print_data.GetOrientation() == wxPORTRAIT) {
-      dialog_data.SetPaperSize(wxSize(page_setup_config.size[0], page_setup_config.size[1]));
+      dialog_data.SetPaperSize(wxSize(static_cast<int>(page_setup_config.size[0]),
+                                      static_cast<int>(page_setup_config.size[1])));
     }
     if (print_data.GetOrientation() == wxLANDSCAPE) {
-      dialog_data.SetPaperSize(wxSize(page_setup_config.size[1], page_setup_config.size[0]));
+      dialog_data.SetPaperSize(wxSize(static_cast<int>(page_setup_config.size[1]),
+                                      static_cast<int>(page_setup_config.size[0])));
     }
 
     dialog_data.CalculateIdFromPaperSize();
 
-    dialog_data.SetMarginTopLeft(
-        wxPoint(page_setup_config.margins[0], page_setup_config.margins[3]));
-    dialog_data.SetMarginBottomRight(
-        wxPoint(page_setup_config.margins[2], page_setup_config.margins[1]));
+    dialog_data.SetMarginTopLeft(wxPoint(static_cast<int>(page_setup_config.margins[0]),
+                                         static_cast<int>(page_setup_config.margins[3])));
+    dialog_data.SetMarginBottomRight(wxPoint(static_cast<int>(page_setup_config.margins[2]),
+                                             static_cast<int>(page_setup_config.margins[1])));
 
     UpdateSpinControl();
   }
@@ -172,8 +174,8 @@ private:
   void CallbackSpinControl(wxSpinDoubleEvent & /*event*/)
   {
     wxSize paper_size;
-    paper_size.x = static_cast<float>(page_width_spinctrl->GetValue());
-    paper_size.y = static_cast<float>(page_height_spinctrl->GetValue());
+    paper_size.x = static_cast<int>(page_width_spinctrl->GetValue());
+    paper_size.y = static_cast<int>(page_height_spinctrl->GetValue());
 
     const wxPrintData print_data = dialog_data.GetPrintData();
 

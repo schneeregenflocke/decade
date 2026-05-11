@@ -143,7 +143,9 @@ inline boost::gregorian::date string_to_boost_date(const std::string &date_strin
     date_variable = boost::gregorian::date(boost::date_time::not_a_date_time);
   } else {
     try {
-      date_variable = boost::gregorian::date(date_parts[0], date_parts[1], date_parts[2]);
+      date_variable = boost::gregorian::date(static_cast<unsigned short>(date_parts[0]),
+                                             static_cast<unsigned short>(date_parts[1]),
+                                             static_cast<unsigned short>(date_parts[2]));
     } catch (const std::exception &) {
       date_variable = boost::gregorian::date(boost::date_time::not_a_date_time);
     }

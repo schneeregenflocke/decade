@@ -1,8 +1,5 @@
-#ifndef MAIN_WINDOW_HPP // NOLINT(llvm-header-guard)
-#define MAIN_WINDOW_HPP // NOLINT(llvm-header-guard)
-
-#include <memory>
-#include <string>
+#ifndef MAIN_WINDOW_HPP
+#define MAIN_WINDOW_HPP
 
 #include <wx/event.h>
 #include <wx/frame.h>
@@ -11,37 +8,40 @@
 #include <wx/timer.h>
 #include <wx/window.h>
 
+#include <memory>
+#include <string>
+
 class wxNotebook;
 
 class MainWindow : public wxFrame {
-public:
-  MainWindow(wxWindow *parent, const wxString &title, const wxPoint &pos, const wxSize &size,
-             bool maximize_on_start = true);
+ public:
+  MainWindow(wxWindow* parent, const wxString& title, const wxPoint& pos,
+             const wxSize& size, bool maximize_on_start = true);
   ~MainWindow() override;
-  MainWindow(const MainWindow &) = delete;
-  MainWindow &operator=(const MainWindow &) = delete;
-  MainWindow(MainWindow &&) = delete;
-  MainWindow &operator=(MainWindow &&) = delete;
+  MainWindow(const MainWindow&) = delete;
+  MainWindow& operator=(const MainWindow&) = delete;
+  MainWindow(MainWindow&&) = delete;
+  MainWindow& operator=(MainWindow&&) = delete;
 
-private:
+ private:
   void CreateLayout(bool maximize_on_start);
-  void CreatePanels(wxNotebook *notebook);
+  void CreatePanels(wxNotebook* notebook);
   void InitializeOpenGL();
   void EstablishConnections();
   void ConfigureAutoExitTimer();
   void InitMenu();
 
-  void CallbackLoadXML(wxCommandEvent &event);
-  void CallbackSaveXML(wxCommandEvent &event);
-  void CallbackImportCSV(wxCommandEvent &event);
-  void CallbackExportCSV(wxCommandEvent &event);
-  void CallbackExportPNG(wxCommandEvent &event);
-  void CallbackExit(wxCommandEvent &event);
-  void OnExitTimer(wxTimerEvent &event);
-  void CallbackLicenseInfo(wxCommandEvent &event);
+  void CallbackLoadXML(wxCommandEvent& event);
+  void CallbackSaveXML(wxCommandEvent& event);
+  void CallbackImportCSV(wxCommandEvent& event);
+  void CallbackExportCSV(wxCommandEvent& event);
+  void CallbackExportPNG(wxCommandEvent& event);
+  void CallbackExit(wxCommandEvent& event);
+  void OnExitTimer(wxTimerEvent& event);
+  void CallbackLicenseInfo(wxCommandEvent& event);
 
-  void LoadXML(const std::string &filepath);
-  void SaveXML(const std::string &filepath);
+  void LoadXML(const std::string& filepath);
+  void SaveXML(const std::string& filepath);
 
   struct Impl;
   std::unique_ptr<Impl> impl_;
@@ -53,4 +53,4 @@ private:
   const int id_save_as_xml;
 };
 
-#endif // MAIN_WINDOW_HPP
+#endif  // MAIN_WINDOW_HPP

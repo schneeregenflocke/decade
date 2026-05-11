@@ -39,11 +39,11 @@ struct ImageSize {
 
 class ImageComposer {
 public:
-  ImageComposer(ImageSize image_size, const rectf &ortho_dimension,
-                const std::shared_ptr<GraphicsEngine> &graphics_engine, int msaa_samples)
-      : width(image_size.width), height(image_size.height), ortho_dimension(ortho_dimension),
-        graphics_engine(graphics_engine), pixel_size(kBytesPerPixel),
-        standard_size(kStandardTextureSize), msaa_samples(msaa_samples)
+  ImageComposer(ImageSize image_size, const rectf &ortho_dimension_in,
+                const std::shared_ptr<GraphicsEngine> &graphics_engine_in, int msaa_samples_in)
+      : width(image_size.width), height(image_size.height), ortho_dimension(ortho_dimension_in),
+        graphics_engine(graphics_engine_in), pixel_size(kBytesPerPixel),
+        standard_size(kStandardTextureSize), msaa_samples(msaa_samples_in)
   {
     CalculatePixelRemainder();
     CalculateOrthoStandard();
@@ -274,11 +274,11 @@ private:
 
 class RenderToPNG {
 public:
-  RenderToPNG(std::string file_path, const rectf &image_dimension, const float dpi,
-              std::shared_ptr<GraphicsEngine> graphics_engine, int msaa_samples)
-      : file_path(std::move(file_path)), ortho_dimensions(image_dimension), dpi(dpi),
-        image_width(0), image_height(0), graphics_engine(std::move(graphics_engine)),
-        msaa_samples(msaa_samples)
+  RenderToPNG(std::string file_path_in, const rectf &image_dimension, const float dpi_in,
+              std::shared_ptr<GraphicsEngine> graphics_engine_in, int msaa_samples_in)
+      : file_path(std::move(file_path_in)), ortho_dimensions(image_dimension), dpi(dpi_in),
+        image_width(0), image_height(0), graphics_engine(std::move(graphics_engine_in)),
+        msaa_samples(msaa_samples_in)
   {
     RenderPicture();
   }
@@ -412,10 +412,10 @@ private:
     }
   }
 
-  float dots_per_inch_to_dots_per_millimeter(const float dpi) const
+  float dots_per_inch_to_dots_per_millimeter(const float dpi_value) const
   {
     constexpr float ratio = 1.0F / 25.4F;
-    const float dots_per_millimeter = ratio * dpi;
+    const float dots_per_millimeter = ratio * dpi_value;
     return dots_per_millimeter;
   }
 

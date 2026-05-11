@@ -97,11 +97,12 @@ public:
     }
 
     for (size_t index = 0; index < static_cast<size_t>(data_table->GetItemCount()); ++index) {
-      data_table->SetValue(std::to_wstring(date_groups[index].GetNumber()), index, 0);
-      data_table->SetValue(date_groups[index].GetName(), index, 1);
+      const auto row = static_cast<unsigned int>(index);
+      data_table->SetValue(std::to_wstring(date_groups[index].GetNumber()), row, 0);
+      data_table->SetValue(date_groups[index].GetName(), row, 1);
 
       toggle_value_changed_by_function_call_and_not_by_user = true;
-      data_table->SetToggleValue(date_groups[index].IsExcluded(), index, 2);
+      data_table->SetToggleValue(date_groups[index].IsExcluded(), row, 2);
       toggle_value_changed_by_function_call_and_not_by_user = false;
     }
   }
@@ -126,13 +127,13 @@ private:
       wxVector<wxVariant> empty_row;
       empty_row.resize(data_table->GetColumnCount());
       empty_row[2] = wxVariant(static_cast<bool>(false));
-      data_table->InsertItem(row, empty_row);
+      data_table->InsertItem(static_cast<unsigned int>(row), empty_row);
     }
   }
   void RemoveRow(size_t row)
   {
     if (row <= static_cast<size_t>(data_table->GetItemCount())) {
-      data_table->DeleteItem(row);
+      data_table->DeleteItem(static_cast<unsigned int>(row));
     }
   }
 

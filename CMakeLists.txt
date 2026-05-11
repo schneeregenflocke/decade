@@ -20,6 +20,17 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang"
 		-Wall
 		-Wextra
 		-Wpedantic
+		-Wshadow
+		-Wnon-virtual-dtor
+		-Woverloaded-virtual
+		-Wold-style-cast
+		-Wcast-align
+		-Wnull-dereference
+		-Wdouble-promotion
+		-Wformat=2
+		-Wmisleading-indentation
+		-Wimplicit-fallthrough
+		-Wconversion
 		-Werror
 	)
 elseif(MSVC)

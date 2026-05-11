@@ -144,11 +144,11 @@ public:
   DateIntervalBundleStore(DateIntervalBundleStore &&) = delete;
   DateIntervalBundleStore &operator=(DateIntervalBundleStore &&) = delete;
 
-  virtual void
-  ReceiveDateIntervalBundles(const std::vector<DateIntervalBundle> &date_interval_bundles)
+  virtual void ReceiveDateIntervalBundles(
+      const std::vector<DateIntervalBundle> &incoming_date_interval_bundles)
   {
-    ProcessDateIntervalBundles(date_interval_bundles);
-    signal_date_interval_bundles(this->date_interval_bundles);
+    ProcessDateIntervalBundles(incoming_date_interval_bundles);
+    signal_date_interval_bundles(date_interval_bundles);
   }
 
   [[nodiscard]] const std::vector<DateIntervalBundle> &GetDateIntervalBundles() const
@@ -203,21 +203,22 @@ protected:
   [[nodiscard]] const DateGroupStore &GetDateGroupStore() const { return date_group_store; }
   DateGroupStore &MutableDateGroupStore() { return date_group_store; }
 
-  void ProcessDateIntervalBundles(const std::vector<DateIntervalBundle> &date_interval_bundles)
+  void ProcessDateIntervalBundles(
+      const std::vector<DateIntervalBundle> &incoming_date_interval_bundles)
   {
-    this->date_interval_bundles.clear();
-    this->date_interval_bundles.reserve(date_interval_bundles.size());
+    date_interval_bundles.clear();
+    date_interval_bundles.reserve(incoming_date_interval_bundles.size());
 
     // copy, not const reference
-    for (auto date_interval_bundle : date_interval_bundles) {
+    for (auto date_interval_bundle : incoming_date_interval_bundles) {
       auto case_id = CheckAndAdjustDateInterval(&date_interval_bundle.MutableDateInterval());
 
       if (case_id > 0) {
-        this->date_interval_bundles.push_back(date_interval_bundle);
+        date_interval_bundles.push_back(date_interval_bundle);
       }
     }
 
-    this->date_interval_bundles.shrink_to_fit();
+    date_interval_bundles.shrink_to_fit();
 
     Sort();
     CheckAndAdjustGroupIntegrity();
@@ -354,9 +355,9 @@ private:
 class DateIntervalBundleBarStore : public DateIntervalBundleStore {
 public:
   void ReceiveDateIntervalBundles(
-      const std::vector<DateIntervalBundle> &date_interval_bundles) override
+      const std::vector<DateIntervalBundle> &incoming_date_interval_bundles) override
   {
-    ProcessDateIntervalBundles(date_interval_bundles);
+    ProcessDateIntervalBundles(incoming_date_interval_bundles);
 
     ProcessBars();
     ProcessAnnualTotals();

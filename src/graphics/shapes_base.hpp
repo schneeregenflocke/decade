@@ -94,7 +94,7 @@ public:
     size_t value;
   };
 
-  explicit Shape(Shader *shader_ptr) { set_shader(shader_ptr); }
+  explicit Shape(Shader *shader_ptr_in) { set_shader(shader_ptr_in); }
   virtual ~Shape() = default;
 
   Shape(const Shape &) = delete;
@@ -137,10 +137,10 @@ protected:
   [[nodiscard]] const VertexArrayObject &vao_ref() const { return vao; }
 
 private:
-  void set_shader(Shader *shader_ptr)
+  void set_shader(Shader *new_shader_ptr)
   {
-    this->shader_ptr = shader_ptr;
-    attributes_infos = shader_ptr->GetShaderAttributesInfos();
+    shader_ptr = new_shader_ptr;
+    attributes_infos = new_shader_ptr->GetShaderAttributesInfos();
 
     vao.bind();
 

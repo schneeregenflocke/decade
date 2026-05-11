@@ -12,9 +12,9 @@ class SceneNode : public std::enable_shared_from_this<SceneNode> {
 public:
   SceneNode() : model_matrix(1.0F), is_dirty(false) {}
 
-  explicit SceneNode(const std::string &node_name) : SceneNode() { this->node_name = node_name; }
+  explicit SceneNode(const std::string &name) : SceneNode() { node_name = name; }
 
-  SceneNode(const std::string &node_name, std::shared_ptr<Shape> shape_ptr) : SceneNode(node_name)
+  SceneNode(const std::string &name, std::shared_ptr<Shape> shape_ptr) : SceneNode(name)
   {
     shape = std::move(shape_ptr);
   }

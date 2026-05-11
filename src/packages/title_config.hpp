@@ -56,9 +56,9 @@ class TitleConfigStore {
 public:
   void SendTitleConfig() { signal_title_config(title_config); }
 
-  void ReceiveTitleConfig(const TitleConfig &title_config)
+  void ReceiveTitleConfig(const TitleConfig &incoming_title_config)
   {
-    this->title_config = title_config;
+    title_config = incoming_title_config;
     SendTitleConfig();
   }
 

@@ -15,7 +15,10 @@
       "Bash(awk -F'[:]' '{print $1\":\"$2\":\"$3}')",
       "Bash(DECADE_EXIT_AFTER_MS=2000 stdbuf -oL -eL ./decade)",
       "Bash(echo \"exit $?\")",
-      "Bash(kill -TERM 72595)"
+      "Bash(kill -TERM 72595)",
+      "Bash(awk '-F[' '{print $NF}')",
+      "Bash(awk -F':' '{print $1\":\"$2\" \"substr\\($0, index\\($0,\"[\"\\)\\)}')",
+      "Bash(DECADE_EXIT_AFTER_MS=3000 stdbuf -oL -eL timeout 10 ./decade)"
     ],
     "additionalDirectories": [
       "/tmp"

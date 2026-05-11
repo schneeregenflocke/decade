@@ -27,9 +27,9 @@ private:
 
 class PageSetupStore {
 public:
-  void ReceivePageSetup(const PageSetupConfig &page_setup_config)
+  void ReceivePageSetup(const PageSetupConfig &incoming_page_setup_config)
   {
-    this->page_setup_config = page_setup_config;
+    page_setup_config = incoming_page_setup_config;
     SendPageSetup();
   }
 

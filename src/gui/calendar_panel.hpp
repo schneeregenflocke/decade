@@ -117,9 +117,9 @@ public:
 
   wxPanel *PanelPtr() { return wx_panel.get(); }
 
-  void ReceiveCalendarConfigStorage(const CalendarConfigStorage &calendar_config_storage)
+  void ReceiveCalendarConfigStorage(const CalendarConfigStorage &incoming_calendar_config_storage)
   {
-    this->calendar_config_storage = calendar_config_storage;
+    calendar_config_storage = incoming_calendar_config_storage;
     UpdatePropertyGrid();
   }
 

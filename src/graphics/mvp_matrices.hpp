@@ -7,9 +7,9 @@ class MVP {
 public:
   MVP() : projection(1.0F), view(1.0F), model(1.0F) {}
 
-  void SetProjection(const glm::mat4 &projection) { this->projection = projection; }
+  void SetProjection(const glm::mat4 &new_projection) { projection = new_projection; }
 
-  void SetView(const glm::mat4 &view) { this->view = view; }
+  void SetView(const glm::mat4 &new_view) { view = new_view; }
 
   [[nodiscard]] glm::mat4 GetProjection() const { return projection; }
 

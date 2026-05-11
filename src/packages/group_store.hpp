@@ -45,9 +45,9 @@ private:
 
 class DateGroupStore {
 public:
-  void ReceiveDateGroups(const std::vector<DateGroup> &date_groups)
+  void ReceiveDateGroups(const std::vector<DateGroup> &incoming_date_groups)
   {
-    this->date_groups = date_groups;
+    date_groups = incoming_date_groups;
     UpdateNumbers();
     signal_date_groups(date_groups);
   }

@@ -187,10 +187,10 @@ private:
     // const size_t number_letters = 256;
     // letters.resize(number_letters);
     for (size_t index = 0; index < letters.size(); ++index) {
-      const FT_Error ft_error = FT_Load_Char(ft_face, index, FT_LOAD_RENDER);
-      if (ft_error != FT_Err_Ok) {
+      const FT_Error load_char_error = FT_Load_Char(ft_face, index, FT_LOAD_RENDER);
+      if (load_char_error != FT_Err_Ok) {
         throw std::runtime_error(std::string("Freetype FT_Load_Char failed ") +
-                                 std::to_string(ft_error));
+                                 std::to_string(load_char_error));
       }
       if (ft_face->glyph->format != FT_GLYPH_FORMAT_BITMAP) {
         throw std::runtime_error(std::string("Freetype glyph->format != FT_GLYPH_FORMAT_BITMAP"));
@@ -238,7 +238,7 @@ private:
 
 class FontShape : public Shape {
 public:
-  explicit FontShape(Shader *shader_ptr) : Shape(shader_ptr) {}
+  explicit FontShape(Shader *shader_ptr_in) : Shape(shader_ptr_in) {}
 
   void set_font(std::shared_ptr<Font> font_ptr) { font = std::move(font_ptr); }
 

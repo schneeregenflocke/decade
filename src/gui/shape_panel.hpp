@@ -36,10 +36,10 @@ public:
 
   wxPanel *PanelPtr() { return wx_panel.get(); }
 
-  void
-  ReceiveShapeConfigurationStorage(const ShapeConfigurationStorage &shape_configuration_storage)
+  void ReceiveShapeConfigurationStorage(
+      const ShapeConfigurationStorage &incoming_shape_configuration_storage)
   {
-    this->shape_configuration_storage.CopyFrom(shape_configuration_storage);
+    shape_configuration_storage.CopyFrom(incoming_shape_configuration_storage);
     UpdateConfigurationList();
   }
 

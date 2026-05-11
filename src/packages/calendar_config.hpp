@@ -45,8 +45,9 @@ public:
                                          static_cast<int>(min_date.year()),
                                          static_cast<int>(max_date.year()));
 
-    span = boost::gregorian::date_period(boost::gregorian::date(clamped_lower_year, 1, 1),
-                                         boost::gregorian::date(clamped_upper_year, 1, 1));
+    span = boost::gregorian::date_period(
+        boost::gregorian::date(static_cast<unsigned short>(clamped_lower_year), 1, 1),
+        boost::gregorian::date(static_cast<unsigned short>(clamped_upper_year), 1, 1));
 
     valid_id = CheckAndAdjustDateInterval(&span);
   }

@@ -27,11 +27,11 @@ public:
     scene_graph->draw();
   }
 
-  void SetMVP(const MVP &mvp) { this->mvp = mvp; }
+  void SetMVP(const MVP &new_mvp) { mvp = new_mvp; }
 
-  void set_scene_graph(const std::shared_ptr<SceneNode> &scene_graph)
+  void set_scene_graph(const std::shared_ptr<SceneNode> &new_scene_graph)
   {
-    this->scene_graph = scene_graph;
+    scene_graph = new_scene_graph;
   }
 
   Shaders &GetShaders() { return shaders; }
