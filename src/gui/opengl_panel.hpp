@@ -13,12 +13,14 @@
 #include "../graphics/render_to_png.hpp"
 #include "../packages/page_config.hpp"
 #include <array>
+#include <functional>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/io.hpp>
 #include <memory>
 #include <sigslot/signal.hpp>
 #include <string>
+#include <utility>
 
 // Funktion zur Umwandlung der OpenGL-Enums in menschenlesbare Strings
 const char *GetSourceString(GLenum source)
@@ -191,6 +193,19 @@ public:
 
   GraphicsEngine *GraphicsEnginePtr() { return graphics_engine.get(); }
 
+  // Verzögerter GL-Init: bindet wxEVT_PAINT auf einen einmaligen
+  // Init-Handler. Beim ersten Paint ist das Canvas garantiert gemappt,
+  // dann lädt LoadOpenGL und on_ready wird aufgerufen.
+  void InitOpenGL(const std::array<int, 2> &version, std::function<void()> on_ready)
+  {
+    gl_version_ = version;
+    on_gl_ready_ = std::move(on_ready);
+    wx_gl_canvas->Bind(wxEVT_PAINT, &GLCanvas::InitPaintCallback, this);
+    if (wx_gl_canvas->IsShownOnScreen()) {
+      wx_gl_canvas->Refresh(false);
+    }
+  }
+
   int LoadOpenGL(const std::array<int, 2> &version)
   {
     bool canvas_shown_on_screen = wx_gl_canvas->IsShownOnScreen();
@@ -293,6 +308,19 @@ public:
   }
 
 private:
+  void InitPaintCallback(wxPaintEvent &event)
+  {
+    wxPaintDC dc(wx_gl_canvas);
+    if (LoadOpenGL(gl_version_) != 0) {
+      wx_gl_canvas->Unbind(wxEVT_PAINT, &GLCanvas::InitPaintCallback, this);
+      if (on_gl_ready_) {
+        auto cb = std::move(on_gl_ready_);
+        cb();
+      }
+      wx_gl_canvas->Refresh(false);
+    }
+  }
+
   void PaintCallback(wxPaintEvent &event)
   {
     wxPaintDC dc(wx_gl_canvas);
@@ -325,5 +353,8 @@ private:
 
   rectf page_size;
   MVP mvp;
+
+  std::array<int, 2> gl_version_{};
+  std::function<void()> on_gl_ready_;
 };
 #endif // HOME_TITAN99_CODE_DECADE_SRC_GUI_OPENGL_PANEL_HPP

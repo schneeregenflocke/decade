@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ninja)",
+      "Bash(./decade > /tmp/decade_stdout.log 2> /tmp/decade_stderr.log)",
+      "Bash(ps -p 65674 -o pid,etime,stat,rss,cmd)",
+      "Bash(ls /proc/65674/fd/ 2>/dev/null | wc -l; echo \"---\"; readlink /proc/65674/fd/* 2>/dev/null | grep -iE \"wayland|x11|display|dri|gl\" | sort -u)",
+      "Read(//proc/65674/fd/**)",
+      "Bash(:)",
+      "Bash(./decade)",
+      "Bash(DECADE_EXIT_AFTER_MS=2000 stdbuf -o0 -e0 ./decade)",
+      "Bash(echo \"=== exit $? ===\")",
+      "Bash(kill -TERM 69167)",
+      "Bash(DECADE_EXIT_AFTER_MS=3000 stdbuf -oL -eL ./decade)"
+    ],
+    "additionalDirectories": [
+      "/tmp"
+    ]
+  }
+}

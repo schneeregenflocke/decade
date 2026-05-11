@@ -1,15 +1,14 @@
 #ifndef HOME_TITAN99_CODE_DECADE_SRC_GUI_GROUPS_PANEL_HPP
 #define HOME_TITAN99_CODE_DECADE_SRC_GUI_GROUPS_PANEL_HPP
 
-#include <wx/wx.h>
-#include <wx/weakref.h>
-
 #include "../packages/group_store.hpp"
 #include <limits>
 #include <memory>
 #include <sigslot/signal.hpp>
 #include <string>
 #include <vector>
+#include <wx/weakref.h>
+#include <wx/wx.h>
 
 class DateGroupsTablePanel {
 public:
@@ -82,7 +81,7 @@ public:
     if (date_groups.size() <= std::numeric_limits<int>::max()) {
       change_row_count = static_cast<int>(date_groups.size()) - data_table->GetItemCount();
     } else {
-      std::cerr << L"too large unsigend int" << '\n';
+      std::cerr << "too large unsigned int" << '\n';
     }
 
     if (change_row_count > 0) {

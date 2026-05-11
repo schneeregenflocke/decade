@@ -13,11 +13,11 @@
 #include <wx/gdicmn.h>
 #include <wx/menu.h>
 #include <wx/notebook.h>
-#include <wx/panel.h> // NOLINT(misc-include-cleaner)
+#include <wx/panel.h>
 #include <wx/sizer.h>
 #include <wx/splitter.h>
 #include <wx/string.h>
-#include <wx/txtstrm.h> // NOLINT(misc-include-cleaner)
+#include <wx/txtstrm.h>
 #include <wx/utils.h>
 #include <wx/weakref.h>
 #include <wx/window.h>
@@ -47,7 +47,7 @@ constexpr int kOpenGLMinor = 6;
 } // namespace
 
 struct MainWindow::Impl {
-  wxWeakRef<wxSplitterWindow> main_splitter; // NOLINT(misc-include-cleaner)
+  wxWeakRef<wxSplitterWindow> main_splitter;
   wxWeakRef<wxNotebook> notebook;
   std::unique_ptr<DateGroupsTablePanel> date_groups_table_panel;
   std::unique_ptr<ElementsSetupsPanel> elements_setup_panel;
@@ -58,7 +58,6 @@ struct MainWindow::Impl {
   std::unique_ptr<FontPanel> font_panel;
   std::unique_ptr<LogPanel> log_panel;
   std::unique_ptr<DateTablePanel> data_table_panel;
-  std::unique_ptr<wxStreamToTextRedirector> log_redirector; // NOLINT(misc-include-cleaner)
 
   DateGroupStore date_groups_store;
   DateIntervalBundleStore date_interval_bundle_store;
@@ -72,10 +71,8 @@ struct MainWindow::Impl {
 
 MainWindow::MainWindow(wxWindow *parent, const wxString &title, const wxPoint &pos,
                        const wxSize &size, bool maximize_on_start)
-    : wxFrame(parent, wxID_ANY, title, pos, size),
-      impl_(std::make_unique<Impl>()),
-      exit_timer(this),
-      id_save_xml(wxWindow::NewControlId()),
+    : wxFrame(parent, wxID_ANY, title, pos, size), impl_(std::make_unique<Impl>()),
+      exit_timer(this), id_save_xml(wxWindow::NewControlId()),
       id_save_as_xml(wxWindow::NewControlId())
 {
   CreateLayout(maximize_on_start);
@@ -106,7 +103,7 @@ void MainWindow::CreateLayout(bool maximize_on_start)
   wxSizerFlags sizer_flags;
   sizer_flags.Proportion(1).Expand().Border(wxALL, kSizerBorder);
 
-  auto notebook_panel = std::make_unique<wxPanel>(main_splitter_ptr, wxID_ANY); // NOLINT(misc-include-cleaner)
+  auto notebook_panel = std::make_unique<wxPanel>(main_splitter_ptr, wxID_ANY);
   auto *notebook_panel_ptr = notebook_panel.release();
   auto notebook_panel_sizer = std::make_unique<wxBoxSizer>(wxVERTICAL);
   auto *notebook_panel_sizer_ptr = notebook_panel_sizer.release();
@@ -136,8 +133,6 @@ void MainWindow::CreatePanels(wxNotebook *notebook)
 {
   impl_->log_panel = std::make_unique<LogPanel>(notebook);
   notebook->AddPage(impl_->log_panel->PanelPtr(), "Log");
-  impl_->log_redirector =
-      std::make_unique<wxStreamToTextRedirector>(impl_->log_panel->GetTextCtrlPtr(), &std::cout);
 
   impl_->data_table_panel = std::make_unique<DateTablePanel>(notebook);
   impl_->date_groups_table_panel = std::make_unique<DateGroupsTablePanel>(notebook);
@@ -163,14 +158,11 @@ void MainWindow::InitializeOpenGL()
   Raise();
 
   const std::array<int, 2> gl_version{kOpenGLMajor, kOpenGLMinor};
-  const bool gl_loaded = impl_->gl_canvas->LoadOpenGL(gl_version) != 0;
-  if (!gl_loaded) {
-    return;
-  }
-
-  impl_->calendar_page =
-      std::make_unique<CalendarPage>(impl_->gl_canvas.get(), impl_->font_panel->GetFontFilePath());
-  EstablishConnections();
+  impl_->gl_canvas->InitOpenGL(gl_version, [this]() {
+    impl_->calendar_page = std::make_unique<CalendarPage>(impl_->gl_canvas.get(),
+                                                          impl_->font_panel->GetFontFilePath());
+    EstablishConnections();
+  });
 }
 
 void MainWindow::EstablishConnections()
@@ -311,7 +303,8 @@ void MainWindow::InitMenu()
 void MainWindow::CallbackLoadXML(wxCommandEvent &event)
 {
   (void)event;
-  wxFileDialog open_file_dialog(this, "Open File", wxEmptyString, wxEmptyString, // NOLINT(misc-include-cleaner)
+  wxFileDialog open_file_dialog(this, "Open File", wxEmptyString,
+                                wxEmptyString, // NOLINT(misc-include-cleaner)
                                 "XML Files (*.xml)|*.xml", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
   if (open_file_dialog.ShowModal() != wxID_OK) {
     return;
@@ -386,8 +379,8 @@ void MainWindow::CallbackExportCSV(wxCommandEvent &event)
   }
 
   const std::string file_path = save_file_dialog.GetPath().ToStdString();
-  app::io::WriteDateIntervalBundlesToCsv(file_path,
-                                         impl_->date_interval_bundle_store.GetDateIntervalBundles());
+  app::io::WriteDateIntervalBundlesToCsv(
+      file_path, impl_->date_interval_bundle_store.GetDateIntervalBundles());
 }
 
 void MainWindow::CallbackExportPNG(wxCommandEvent &event)
