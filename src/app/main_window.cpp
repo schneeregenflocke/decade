@@ -163,7 +163,18 @@ void MainWindow::InitializeOpenGL() {
     impl_->calendar_page = std::make_unique<CalendarPage>(
         impl_->gl_canvas.get(), impl_->font_panel->GetFontFilePath());
     EstablishConnections();
+    DumpPngIfRequested();
   });
+}
+
+void MainWindow::DumpPngIfRequested() {
+  wxString png_path;
+  if (!wxGetEnv("DECADE_DUMP_PNG", &png_path)) {
+    return;
+  }
+  const auto path = png_path.ToStdString();
+  std::cout << "DECADE_DUMP_PNG: writing " << path << '\n';
+  impl_->gl_canvas->SavePNG(path);
 }
 
 void MainWindow::EstablishConnections() {

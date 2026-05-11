@@ -29,6 +29,7 @@ class MainWindow : public wxFrame {
   void InitializeOpenGL();
   void EstablishConnections();
   void ConfigureAutoExitTimer();
+  void DumpPngIfRequested();
   void InitMenu();
 
   void CallbackLoadXML(wxCommandEvent& event);

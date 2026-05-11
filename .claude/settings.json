@@ -18,7 +18,8 @@
       "Bash(kill -TERM 72595)",
       "Bash(awk '-F[' '{print $NF}')",
       "Bash(awk -F':' '{print $1\":\"$2\" \"substr\\($0, index\\($0,\"[\"\\)\\)}')",
-      "Bash(DECADE_EXIT_AFTER_MS=3000 stdbuf -oL -eL timeout 10 ./decade)"
+      "Bash(DECADE_EXIT_AFTER_MS=3000 stdbuf -oL -eL timeout 10 ./decade)",
+      "Bash(DECADE_DUMP_PNG=/tmp/decade_render.png DECADE_EXIT_AFTER_MS=2000 stdbuf -oL -eL timeout 12 ./decade)"
     ],
     "additionalDirectories": [
       "/tmp"
