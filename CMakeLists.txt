@@ -1,9 +1,5 @@
 ﻿cmake_minimum_required(VERSION 3.15)
 
-set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE PATH "Path to your vcpkg installation" FORCE)
-# set(VCPKG_ROOT "$ENV{VCPKG_ROOT}" CACHE PATH "Path to your vcpkg installation" FORCE)
-# set(VCPKG_TARGET_TRIPLET "x64-windows" CACHE STRING "Target triplet for vcpkg" FORCE)
-# set(VCPKG_MANIFEST_MODE OFF CACHE BOOL "Enable vcpkg manifest mode" FORCE)
 
 include(CMakePrintHelpers)
 
@@ -12,28 +8,14 @@ project(decade VERSION 0.0.0)
 cmake_print_variables(CMAKE_VERSION CMAKE_PROJECT_VERSION CMAKE_SYSTEM_NAME CMAKE_CXX_COMPILER CMAKE_CXX_COMPILER_ID)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Generate compile_commands.json for clang tooling" FORCE)
-
-cmake_print_variables(CMAKE_TOOLCHAIN_FILE VCPKG_ROOT VCPKG_INSTALLED_DIR VCPKG_TARGET_TRIPLET)
-
-add_executable(${PROJECT_NAME} WIN32)
-#add_executable(${PROJECT_NAME})
-
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
-get_target_property(${PROJECT_NAME}_CXX_STANDARD ${PROJECT_NAME} CXX_STANDARD)
-cmake_print_variables(${PROJECT_NAME}_CXX_STANDARD CMAKE_CXX_STANDARD CMAKE_CXX_EXTENSIONS)
 cmake_print_variables(CMAKE_EXPORT_COMPILE_COMMANDS)
 
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
-	target_compile_options(${PROJECT_NAME} PRIVATE
-        "$<$<CONFIG:Debug>:/Zc:__cplusplus;/fsanitize=address;/Zi;/EHsc>"
-		"$<$<CONFIG:Release>:/Zc:__cplusplus>"
-    )
+add_executable(${PROJECT_NAME})
 
-	target_link_options(${PROJECT_NAME} PRIVATE
-        "$<$<CONFIG:Debug>:/fsanitize=address;/INCREMENTAL:NO;/DEBUG>"
-        "$<$<CONFIG:Release>:/OPT:REF;/OPT:ICF>"
-	)
-endif()
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
+get_target_property(${PROJECT_NAME}_CXX_STANDARD ${PROJECT_NAME} CXX_STANDARD)
+cmake_print_variables(${PROJECT_NAME}_CXX_STANDARD CMAKE_CXX_STANDARD CMAKE_CXX_EXTENSIONS)
+
 
 target_sources(${PROJECT_NAME} PRIVATE 
 	${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
@@ -86,7 +68,6 @@ find_package(wxWidgets CONFIG REQUIRED COMPONENTS propgrid gl core base)
 target_link_libraries(${PROJECT_NAME} PRIVATE ${wxWidgets_LIBRARIES})
 cmake_print_variables(wxWidgets_FOUND wxWidgets_INCLUDE_DIRS wxWidgets_LIBRARIES wxWidgets_LIBRARY_DIRS wxWidgets_DEFINITIONS wxWidgets_DEFINITIONS_DEBUG wxWidgets_CXX_FLAGS wxWidgets_USE_FILE)
 
-target_sources(${PROJECT_NAME} PRIVATE ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/wx/msw/wx_dpi_aware_pmv2.manifest)
 
 find_package(ZLIB REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
@@ -114,12 +95,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${P_RANAV_CSV2_INCLUDE_DIRS})
 cmake_print_variables(P_RANAV_CSV2_INCLUDE_DIRS)
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/include)
-
-find_package(tabulate CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE tabulate::tabulate)
-
-find_package(Microsoft.GSL CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE Microsoft.GSL::GSL)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)
