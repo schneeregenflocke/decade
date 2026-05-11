@@ -2,15 +2,6 @@
 #define HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_DATE_STORE_HPP
 
 #include <algorithm>
-#include <cstddef>
-#include <cstdint>
-#include <map>
-#include <string>
-#include <utility>
-#include <vector>
-
-#include <sigslot/signal.hpp>
-
 #include <boost/date_time/date.hpp>
 #include <boost/date_time/gregorian/formatters.hpp>
 #include <boost/date_time/gregorian/greg_date.hpp>
@@ -21,35 +12,42 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/split_member.hpp>
+#include <cstddef>
+#include <cstdint>
+#include <map>
+#include <sigslot/signal.hpp>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "../date_utils.hpp"
 #include "group_store.hpp"
 
 class DateIntervalBundle {
-public:
+ public:
   DateIntervalBundle()
       : date_interval_(boost::gregorian::date_period(
             boost::gregorian::date(boost::date_time::not_a_date_time),
             boost::gregorian::date(boost::date_time::not_a_date_time))),
         date_inter_interval_(boost::gregorian::date_period(
             boost::gregorian::date(boost::date_time::not_a_date_time),
-            boost::gregorian::date(boost::date_time::not_a_date_time)))
-  {
-  }
+            boost::gregorian::date(boost::date_time::not_a_date_time))) {}
 
-  [[nodiscard]] const boost::gregorian::date_period &GetDateInterval() const
-  {
+  [[nodiscard]] const boost::gregorian::date_period& GetDateInterval() const {
     return date_interval_;
   }
-  boost::gregorian::date_period &MutableDateInterval() { return date_interval_; }
-  void SetDateInterval(const boost::gregorian::date_period &value) { date_interval_ = value; }
+  boost::gregorian::date_period& MutableDateInterval() {
+    return date_interval_;
+  }
+  void SetDateInterval(const boost::gregorian::date_period& value) {
+    date_interval_ = value;
+  }
 
-  [[nodiscard]] const boost::gregorian::date_period &GetDateInterInterval() const
-  {
+  [[nodiscard]] const boost::gregorian::date_period& GetDateInterInterval()
+      const {
     return date_inter_interval_;
   }
-  void SetDateInterInterval(const boost::gregorian::date_period &value)
-  {
+  void SetDateInterInterval(const boost::gregorian::date_period& value) {
     date_inter_interval_ = value;
   }
 
@@ -65,10 +63,10 @@ public:
   [[nodiscard]] bool IsExcluded() const { return exclude_; }
   void SetExcluded(bool exclude) { exclude_ = exclude; }
 
-  [[nodiscard]] const std::string &GetComment() const { return comment_; }
+  [[nodiscard]] const std::string& GetComment() const { return comment_; }
   void SetComment(std::string comment) { comment_ = std::move(comment); }
 
-private:
+ private:
   boost::gregorian::date_period date_interval_;
   boost::gregorian::date_period date_inter_interval_;
   int number_{0};
@@ -78,88 +76,80 @@ private:
   bool exclude_{false};
 
   friend class boost::serialization::access;
-  template <class Archive> void serialize(Archive &archive, const unsigned int version)
-  {
+  template <class Archive>
+  void serialize(Archive& archive, const unsigned int version) {
     (void)version;
-    archive &BOOST_SERIALIZATION_NVP(date_interval_);
-    archive &BOOST_SERIALIZATION_NVP(date_inter_interval_);
-    archive &BOOST_SERIALIZATION_NVP(number_);
-    archive &BOOST_SERIALIZATION_NVP(group_);
-    archive &BOOST_SERIALIZATION_NVP(group_number_);
-    archive &BOOST_SERIALIZATION_NVP(exclude_);
-    archive &BOOST_SERIALIZATION_NVP(comment_);
+    archive& BOOST_SERIALIZATION_NVP(date_interval_);
+    archive& BOOST_SERIALIZATION_NVP(date_inter_interval_);
+    archive& BOOST_SERIALIZATION_NVP(number_);
+    archive& BOOST_SERIALIZATION_NVP(group_);
+    archive& BOOST_SERIALIZATION_NVP(group_number_);
+    archive& BOOST_SERIALIZATION_NVP(exclude_);
+    archive& BOOST_SERIALIZATION_NVP(comment_);
   }
 };
 
 namespace detail {
-inline std::string ToIsoString(const boost::gregorian::date &date)
-{
+inline std::string ToIsoString(const boost::gregorian::date& date) {
   return boost::gregorian::to_iso_string(date);
 }
-} // namespace detail
+}  // namespace detail
 
 class Bar {
-public:
-  explicit Bar(const boost::gregorian::date_period &date_interval)
-      : date_interval_(date_interval)
-  {
-  }
+ public:
+  explicit Bar(const boost::gregorian::date_period& date_interval)
+      : date_interval_(date_interval) {}
 
-  void SetText(const std::string &text) { text_ = text; }
+  void SetText(const std::string& text) { text_ = text; }
 
-  [[nodiscard]] const std::string &GetText() const { return text_; }
+  [[nodiscard]] const std::string& GetText() const { return text_; }
 
   [[nodiscard]] int GetYear() const { return date_interval_.begin().year(); }
 
-  [[nodiscard]] std::int64_t GetLenght() const
-  {
+  [[nodiscard]] std::int64_t GetLenght() const {
     return static_cast<std::int64_t>(date_interval_.length().days());
   }
 
-  [[nodiscard]] float GetFirstDay() const
-  {
+  [[nodiscard]] float GetFirstDay() const {
     return static_cast<float>(date_interval_.begin().day_of_year() - 1);
   }
 
-  [[nodiscard]] float GetLastDay() const
-  {
+  [[nodiscard]] float GetLastDay() const {
     return static_cast<float>(date_interval_.last().day_of_year());
   }
 
   [[nodiscard]] int GetGroup() const { return group_; }
   void SetGroup(int group) { group_ = group; }
 
-private:
+ private:
   boost::gregorian::date_period date_interval_;
   std::string text_;
   int group_{0};
 };
 
 class DateIntervalBundleStore {
-public:
+ public:
   DateIntervalBundleStore() = default;
   virtual ~DateIntervalBundleStore() = default;
-  DateIntervalBundleStore(const DateIntervalBundleStore &) = delete;
-  DateIntervalBundleStore &operator=(const DateIntervalBundleStore &) = delete;
-  DateIntervalBundleStore(DateIntervalBundleStore &&) = delete;
-  DateIntervalBundleStore &operator=(DateIntervalBundleStore &&) = delete;
+  DateIntervalBundleStore(const DateIntervalBundleStore&) = delete;
+  DateIntervalBundleStore& operator=(const DateIntervalBundleStore&) = delete;
+  DateIntervalBundleStore(DateIntervalBundleStore&&) = delete;
+  DateIntervalBundleStore& operator=(DateIntervalBundleStore&&) = delete;
 
   virtual void ReceiveDateIntervalBundles(
-      const std::vector<DateIntervalBundle> &incoming_date_interval_bundles)
-  {
+      const std::vector<DateIntervalBundle>& incoming_date_interval_bundles) {
     ProcessDateIntervalBundles(incoming_date_interval_bundles);
     signal_date_interval_bundles(date_interval_bundles);
   }
 
-  [[nodiscard]] const std::vector<DateIntervalBundle> &GetDateIntervalBundles() const
-  {
+  [[nodiscard]] const std::vector<DateIntervalBundle>& GetDateIntervalBundles()
+      const {
     return date_interval_bundles;
   }
 
   [[nodiscard]] bool is_empty() const { return date_interval_bundles.empty(); }
 
-  [[nodiscard]] int GetSpan() const
-  {
+  [[nodiscard]] int GetSpan() const {
     int span = 0;
     if (!date_interval_bundles.empty()) {
       span = GetLastYear() - GetFirstYear() + 1;
@@ -167,51 +157,52 @@ public:
     return span;
   }
 
-  [[nodiscard]] int GetFirstYear() const
-  {
+  [[nodiscard]] int GetFirstYear() const {
     if (date_interval_bundles.empty()) {
       return 0;
     }
     return date_interval_bundles.front().GetDateInterval().begin().year();
   }
 
-  [[nodiscard]] int GetLastYear() const
-  {
+  [[nodiscard]] int GetLastYear() const {
     if (date_interval_bundles.empty()) {
       return 0;
     }
     return date_interval_bundles.back().GetDateInterval().last().year();
   }
 
-  void ReceiveDateGroups(const std::vector<DateGroup> &date_groups)
-  {
+  void ReceiveDateGroups(const std::vector<DateGroup>& date_groups) {
     date_group_store.ReceiveDateGroups(date_groups);
   }
 
-  sigslot::signal<const std::vector<DateIntervalBundle> &> &SignalDateIntervalBundles()
-  {
+  sigslot::signal<const std::vector<DateIntervalBundle>&>&
+  SignalDateIntervalBundles() {
     return signal_date_interval_bundles;
   }
 
-protected:
-  [[nodiscard]] const std::vector<DateIntervalBundle> &GetDateIntervalBundlesInternal() const
-  {
+ protected:
+  [[nodiscard]] const std::vector<DateIntervalBundle>&
+  GetDateIntervalBundlesInternal() const {
     return date_interval_bundles;
   }
-  std::vector<DateIntervalBundle> &MutableDateIntervalBundles() { return date_interval_bundles; }
+  std::vector<DateIntervalBundle>& MutableDateIntervalBundles() {
+    return date_interval_bundles;
+  }
 
-  [[nodiscard]] const DateGroupStore &GetDateGroupStore() const { return date_group_store; }
-  DateGroupStore &MutableDateGroupStore() { return date_group_store; }
+  [[nodiscard]] const DateGroupStore& GetDateGroupStore() const {
+    return date_group_store;
+  }
+  DateGroupStore& MutableDateGroupStore() { return date_group_store; }
 
   void ProcessDateIntervalBundles(
-      const std::vector<DateIntervalBundle> &incoming_date_interval_bundles)
-  {
+      const std::vector<DateIntervalBundle>& incoming_date_interval_bundles) {
     date_interval_bundles.clear();
     date_interval_bundles.reserve(incoming_date_interval_bundles.size());
 
     // copy, not const reference
     for (auto date_interval_bundle : incoming_date_interval_bundles) {
-      auto case_id = CheckAndAdjustDateInterval(&date_interval_bundle.MutableDateInterval());
+      auto case_id = CheckAndAdjustDateInterval(
+          &date_interval_bundle.MutableDateInterval());
 
       if (case_id > 0) {
         date_interval_bundles.push_back(date_interval_bundle);
@@ -228,38 +219,40 @@ protected:
     ProcessDateGroupsNumber();
   }
 
-private:
+ private:
   std::vector<DateIntervalBundle> date_interval_bundles;
   DateGroupStore date_group_store;
 
-  sigslot::signal<const std::vector<DateIntervalBundle> &> signal_date_interval_bundles;
+  sigslot::signal<const std::vector<DateIntervalBundle>&>
+      signal_date_interval_bundles;
   friend class boost::serialization::access;
-  template <class Archive> void save(Archive &archive, const unsigned int version) const
-  {
+  template <class Archive>
+  void save(Archive& archive, const unsigned int version) const {
     (void)version;
-    archive &BOOST_SERIALIZATION_NVP(date_interval_bundles);
+    archive& BOOST_SERIALIZATION_NVP(date_interval_bundles);
   }
-  template <class Archive> void load(Archive &archive, const unsigned int version)
-  {
+  template <class Archive>
+  void load(Archive& archive, const unsigned int version) {
     (void)version;
-    archive &BOOST_SERIALIZATION_NVP(date_interval_bundles);
+    archive& BOOST_SERIALIZATION_NVP(date_interval_bundles);
     signal_date_interval_bundles(date_interval_bundles);
   }
   BOOST_SERIALIZATION_SPLIT_MEMBER()
 
-  void Sort()
-  {
-    auto sort_func = [](const DateIntervalBundle &bundle0, const DateIntervalBundle &bundle1) {
-      return bundle0.GetDateInterval().begin() < bundle1.GetDateInterval().begin();
+  void Sort() {
+    auto sort_func = [](const DateIntervalBundle& bundle0,
+                        const DateIntervalBundle& bundle1) {
+      return bundle0.GetDateInterval().begin() <
+             bundle1.GetDateInterval().begin();
     };
 
-    std::sort(date_interval_bundles.begin(), date_interval_bundles.end(), sort_func);
+    std::sort(date_interval_bundles.begin(), date_interval_bundles.end(),
+              sort_func);
   }
 
-  void ProcessNumbers()
-  {
+  void ProcessNumbers() {
     int current_number = 0;
-    for (auto &date_interval_bundle : date_interval_bundles) {
+    for (auto& date_interval_bundle : date_interval_bundles) {
       if (!date_interval_bundle.IsExcluded()) {
         date_interval_bundle.SetNumber(current_number);
         ++current_number;
@@ -267,8 +260,7 @@ private:
     }
   }
 
-  void ProcessDateInterIntervals()
-  {
+  void ProcessDateInterIntervals() {
     auto iterator_first = date_interval_bundles.begin();
     // int counter = 0;
 
@@ -298,7 +290,8 @@ private:
 
         if (iterator_second != date_interval_bundles.end()) {
           iterator_first->SetDateInterInterval(boost::gregorian::date_period(
-              iterator_first->GetDateInterval().end(), iterator_second->GetDateInterval().begin()));
+              iterator_first->GetDateInterval().end(),
+              iterator_second->GetDateInterval().begin()));
 
           // std::cout << "wrote inter " << counter << '\n';
           //++counter;
@@ -306,7 +299,8 @@ private:
 
         ++iterator_first;
       }
-      // std::cout << "iterator != end? "  << (iterator_first != date_interval_bundles.end()) <<
+      // std::cout << "iterator != end? "  << (iterator_first !=
+      // date_interval_bundles.end()) <<
       // '\n';
     }
 
@@ -318,11 +312,10 @@ private:
     }*/
   }
 
-  void ProcessDateGroupsNumber()
-  {
+  void ProcessDateGroupsNumber() {
     std::map<int, int> groups_counter;
 
-    for (auto &date_interval_bundle : date_interval_bundles) {
+    for (auto& date_interval_bundle : date_interval_bundles) {
       auto current_group = date_interval_bundle.GetGroup();
 
       if (groups_counter.count(current_group) != 0U) {
@@ -335,28 +328,25 @@ private:
     }
   }
 
-  void CheckAndAdjustGroupIntegrity()
-  {
-    for (auto &date_interval_bundle : date_interval_bundles) {
+  void CheckAndAdjustGroupIntegrity() {
+    for (auto& date_interval_bundle : date_interval_bundles) {
       if (date_interval_bundle.GetGroup() > date_group_store.GetGroupMax()) {
         date_interval_bundle.SetGroup(0);
       }
     }
   }
 
-  void AdjustGroupExcludeFlag()
-  {
-    for (auto &bundle : date_interval_bundles) {
+  void AdjustGroupExcludeFlag() {
+    for (auto& bundle : date_interval_bundles) {
       bundle.SetExcluded(date_group_store.GetExclude(bundle.GetGroup()));
     }
   }
 };
 
 class DateIntervalBundleBarStore : public DateIntervalBundleStore {
-public:
-  void ReceiveDateIntervalBundles(
-      const std::vector<DateIntervalBundle> &incoming_date_interval_bundles) override
-  {
+ public:
+  void ReceiveDateIntervalBundles(const std::vector<DateIntervalBundle>&
+                                      incoming_date_interval_bundles) override {
     ProcessDateIntervalBundles(incoming_date_interval_bundles);
 
     ProcessBars();
@@ -367,38 +357,38 @@ public:
 
   [[nodiscard]] Bar GetBar(size_t index) const { return bars[index]; }
 
-  [[nodiscard]] std::int64_t GetAnnualTotal(size_t index) const
-  {
+  [[nodiscard]] std::int64_t GetAnnualTotal(size_t index) const {
     return annualTotals[index];
   }
 
-private:
-  void ProcessBars()
-  {
+ private:
+  void ProcessBars() {
     bars.clear();
 
-    for (const auto &bundle : GetDateIntervalBundlesInternal()) {
-      const auto &interval = bundle.GetDateInterval();
+    for (const auto& bundle : GetDateIntervalBundlesInternal()) {
+      const auto& interval = bundle.GetDateInterval();
       const int span = interval.last().year() - interval.begin().year();
 
       std::vector<boost::gregorian::date_period> splitDatePeriods;
       splitDatePeriods.push_back(interval);
 
       for (int subIndex = 0; subIndex < span; ++subIndex) {
-        const boost::gregorian::date split_date =
-            boost::gregorian::date(splitDatePeriods[subIndex].begin().year() + 1, 1, 1);
-        splitDatePeriods.emplace_back(split_date, splitDatePeriods[subIndex].end());
-        splitDatePeriods[subIndex] =
-            boost::gregorian::date_period(splitDatePeriods[subIndex].begin(), split_date);
+        const boost::gregorian::date split_date = boost::gregorian::date(
+            splitDatePeriods[subIndex].begin().year() + 1, 1, 1);
+        splitDatePeriods.emplace_back(split_date,
+                                      splitDatePeriods[subIndex].end());
+        splitDatePeriods[subIndex] = boost::gregorian::date_period(
+            splitDatePeriods[subIndex].begin(), split_date);
       }
 
-      for (const auto &split_period : splitDatePeriods) {
+      for (const auto& split_period : splitDatePeriods) {
         Bar bar(split_period);
         if (!bundle.IsExcluded()) {
           bar.SetText(std::to_string(bundle.GetNumber() + 1));
         } else {
           const std::string text_part_0 = std::to_string(bundle.GetGroup());
-          const std::string text_part_1 = std::to_string(bundle.GetGroupNumber());
+          const std::string text_part_1 =
+              std::to_string(bundle.GetGroupNumber());
 
           std::string label = "E";
           label += text_part_0;
@@ -413,14 +403,13 @@ private:
     }
   }
 
-  void ProcessAnnualTotals()
-  {
+  void ProcessAnnualTotals() {
     annualTotals.clear();
     annualTotals.resize(GetSpan());
 
-    for (const auto &bar : bars) {
-      const size_t annualTotalsIndex =
-          static_cast<size_t>(bar.GetYear()) - static_cast<size_t>(GetFirstYear());
+    for (const auto& bar : bars) {
+      const size_t annualTotalsIndex = static_cast<size_t>(bar.GetYear()) -
+                                       static_cast<size_t>(GetFirstYear());
 
       annualTotals[annualTotalsIndex] += bar.GetLenght();
     }
@@ -431,7 +420,7 @@ private:
 };
 
 class TransformDateIntervalBundle {
-public:
+ public:
   struct DateShift {
     int begin_days;
     int end_days;
@@ -439,59 +428,59 @@ public:
 
   TransformDateIntervalBundle() : date_shift{0, 0} {};
 
-  void ReceiveDateIntervalBundles(const std::vector<DateIntervalBundle> &date_interval_bundles)
-  {
+  void ReceiveDateIntervalBundles(
+      const std::vector<DateIntervalBundle>& date_interval_bundles) {
     std::vector<DateIntervalBundle> transformed_bundles = date_interval_bundles;
     auto bundles_iterator = transformed_bundles.begin();
 
-    for (const auto &date_interval_bundle : date_interval_bundles) {
-      const auto &interval = date_interval_bundle.GetDateInterval();
-      bundles_iterator->SetDateInterval(
-          boost::gregorian::date_period(interval.begin() +
-                                            boost::gregorian::date_duration(date_shift.begin_days),
-                                        interval.end() +
-                                            boost::gregorian::date_duration(date_shift.end_days)));
+    for (const auto& date_interval_bundle : date_interval_bundles) {
+      const auto& interval = date_interval_bundle.GetDateInterval();
+      bundles_iterator->SetDateInterval(boost::gregorian::date_period(
+          interval.begin() +
+              boost::gregorian::date_duration(date_shift.begin_days),
+          interval.end() +
+              boost::gregorian::date_duration(date_shift.end_days)));
       ++bundles_iterator;
     }
 
     signal_transform_date_interval_bundles(transformed_bundles);
   }
 
-  void InputTransformedDateIntervals(const std::vector<DateIntervalBundle> &date_interval_bundles)
-  {
-    std::vector<DateIntervalBundle> untransformed_bundles = date_interval_bundles;
+  void InputTransformedDateIntervals(
+      const std::vector<DateIntervalBundle>& date_interval_bundles) {
+    std::vector<DateIntervalBundle> untransformed_bundles =
+        date_interval_bundles;
     auto bundles_iterator = untransformed_bundles.begin();
 
-    for (const auto &date_interval_bundle : date_interval_bundles) {
-      const auto &interval = date_interval_bundle.GetDateInterval();
-      bundles_iterator->SetDateInterval(
-          boost::gregorian::date_period(interval.begin() -
-                                            boost::gregorian::date_duration(date_shift.begin_days),
-                                        interval.end() -
-                                            boost::gregorian::date_duration(date_shift.end_days)));
+    for (const auto& date_interval_bundle : date_interval_bundles) {
+      const auto& interval = date_interval_bundle.GetDateInterval();
+      bundles_iterator->SetDateInterval(boost::gregorian::date_period(
+          interval.begin() -
+              boost::gregorian::date_duration(date_shift.begin_days),
+          interval.end() -
+              boost::gregorian::date_duration(date_shift.end_days)));
       ++bundles_iterator;
     }
 
     signal_date_interval_bundles(untransformed_bundles);
   }
 
-  void SetTransform(DateShift shift)
-  {
-    date_shift = shift;
-  }
+  void SetTransform(DateShift shift) { date_shift = shift; }
 
-  sigslot::signal<const std::vector<DateIntervalBundle> &> &SignalDateIntervalBundles()
-  {
+  sigslot::signal<const std::vector<DateIntervalBundle>&>&
+  SignalDateIntervalBundles() {
     return signal_date_interval_bundles;
   }
-  sigslot::signal<const std::vector<DateIntervalBundle> &> &SignalTransformDateIntervalBundles()
-  {
+  sigslot::signal<const std::vector<DateIntervalBundle>&>&
+  SignalTransformDateIntervalBundles() {
     return signal_transform_date_interval_bundles;
   }
 
-private:
-  sigslot::signal<const std::vector<DateIntervalBundle> &> signal_date_interval_bundles;
-  sigslot::signal<const std::vector<DateIntervalBundle> &> signal_transform_date_interval_bundles;
+ private:
+  sigslot::signal<const std::vector<DateIntervalBundle>&>
+      signal_date_interval_bundles;
+  sigslot::signal<const std::vector<DateIntervalBundle>&>
+      signal_transform_date_interval_bundles;
   DateShift date_shift;
 };
-#endif // HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_DATE_STORE_HPP
+#endif  // HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_DATE_STORE_HPP

@@ -20,11 +20,10 @@
 #include <vector>
 
 class QuadrilateralShape : public Shape {
-public:
-  explicit QuadrilateralShape(Shader *shader_ptr_in) : Shape(shader_ptr_in) {}
+ public:
+  explicit QuadrilateralShape(Shader* shader_ptr_in) : Shape(shader_ptr_in) {}
 
-  void set_shape(const rectf &rectangle)
-  {
+  void set_shape(const rectf& rectangle) {
     constexpr size_t kVerticesPerQuad = 6;
     std::vector<glm::vec3> vertices(kVerticesPerQuad);
 
@@ -34,15 +33,16 @@ public:
     vertices[2] = glm::vec3(rectangle.l(), rectangle.t(), kZero);
     vertices[3] = glm::vec3(rectangle.r(), rectangle.t(), kZero);
     vertices[4] = glm::vec3(rectangle.l(), rectangle.t(), kZero);
-    vertices[kVerticesPerQuad - 1] = glm::vec3(rectangle.r(), rectangle.b(), kZero);
+    vertices[kVerticesPerQuad - 1] =
+        glm::vec3(rectangle.r(), rectangle.b(), kZero);
 
-    set_buffer(BufferIndex{0}, static_cast<GLsizei>(vertices.size()), vertices.data());
+    set_buffer(BufferIndex{0}, static_cast<GLsizei>(vertices.size()),
+               vertices.data());
   }
 
-  void set_color(const glm::vec4 &new_color) { color = new_color; }
+  void set_color(const glm::vec4& new_color) { color = new_color; }
 
-  void draw() const override
-  {
+  void draw() const override {
     shader()->UseProgram();
     shader()->SetUniform("color", color);
 
@@ -51,19 +51,19 @@ public:
     VertexArrayObject::Unbind();
   }
 
-private:
+ private:
   glm::vec4 color{0.0F, 0.0F, 0.0F, 1.0F};
 };
 
 class RectanglesShape : public Shape {
-public:
-  explicit RectanglesShape(Shader *shader_ptr_in) : Shape(shader_ptr_in) {}
+ public:
+  explicit RectanglesShape(Shader* shader_ptr_in) : Shape(shader_ptr_in) {}
 
-  void set_shape(const std::vector<rectf> &rectangles, float line_width)
-  {
+  void set_shape(const std::vector<rectf>& rectangles, float line_width) {
     constexpr size_t kVerticesPerQuad = 6;
     constexpr size_t kQuadsPerRectangle = 5;
-    constexpr size_t kVerticesPerRectangle = kVerticesPerQuad * kQuadsPerRectangle;
+    constexpr size_t kVerticesPerRectangle =
+        kVerticesPerQuad * kQuadsPerRectangle;
     const size_t size = rectangles.size() * kVerticesPerRectangle;
     vertices.resize(size);
 
@@ -71,26 +71,28 @@ public:
       set_rectangle_shape(index, rectangles[index], line_width);
     }
 
-    set_buffer(BufferIndex{0}, static_cast<GLsizei>(vertices.size()), vertices.data());
+    set_buffer(BufferIndex{0}, static_cast<GLsizei>(vertices.size()),
+               vertices.data());
   }
 
-  void set_shape(const rectf &rectangle, float line_width)
-  {
+  void set_shape(const rectf& rectangle, float line_width) {
     constexpr size_t kVerticesPerQuad = 6;
     constexpr size_t kQuadsPerRectangle = 5;
-    constexpr size_t kVerticesPerRectangle = kVerticesPerQuad * kQuadsPerRectangle;
+    constexpr size_t kVerticesPerRectangle =
+        kVerticesPerQuad * kQuadsPerRectangle;
     vertices.resize(kVerticesPerRectangle);
 
     set_rectangle_shape(0, rectangle, line_width);
 
-    set_buffer(BufferIndex{0}, static_cast<GLsizei>(vertices.size()), vertices.data());
+    set_buffer(BufferIndex{0}, static_cast<GLsizei>(vertices.size()),
+               vertices.data());
   }
 
-  void set_color(const std::vector<glm::vec4> &new_colors) { colors = new_colors; }
+  void set_color(const std::vector<glm::vec4>& new_colors) {
+    colors = new_colors;
+  }
 
-  void draw() const override
-  {
-
+  void draw() const override {
     shader()->UseProgram();
 
     if (colors.size() == 2) {
@@ -103,48 +105,49 @@ public:
     VertexArrayObject::Unbind();
   }
 
-private:
-  void set_rectangle_shape(size_t index, const rectf &rectangle, float line_width)
-  {
+ private:
+  void set_rectangle_shape(size_t index, const rectf& rectangle,
+                           float line_width) {
     constexpr size_t kVerticesPerQuad = 6;
     constexpr size_t kQuadsPerRectangle = 5;
-    constexpr size_t kVerticesPerRectangle = kVerticesPerQuad * kQuadsPerRectangle;
+    constexpr size_t kVerticesPerRectangle =
+        kVerticesPerQuad * kQuadsPerRectangle;
 
     const float half_line_thickness = line_width * 0.5F;
 
     const rectf inrectangle =
-        rectangle.reduce(rectf(half_line_thickness, half_line_thickness, half_line_thickness,
-                                half_line_thickness));
+        rectangle.reduce(rectf(half_line_thickness, half_line_thickness,
+                               half_line_thickness, half_line_thickness));
     const rectf outrectangle =
-        rectangle.expand(rectf(half_line_thickness, half_line_thickness, half_line_thickness,
-                                half_line_thickness));
+        rectangle.expand(rectf(half_line_thickness, half_line_thickness,
+                               half_line_thickness, half_line_thickness));
 
     const size_t offset = index * kVerticesPerRectangle;
 
     // fill
-    set_rectangle(offset, inrectangle.getLB(), inrectangle.getRB(), inrectangle.getLT(),
-                  inrectangle.getRT());
+    set_rectangle(offset, inrectangle.getLB(), inrectangle.getRB(),
+                  inrectangle.getLT(), inrectangle.getRT());
     // top outline
-    set_rectangle(offset + kVerticesPerQuad, inrectangle.getLT(), inrectangle.getRT(),
-                  outrectangle.getLT(),
+    set_rectangle(offset + kVerticesPerQuad, inrectangle.getLT(),
+                  inrectangle.getRT(), outrectangle.getLT(),
                   outrectangle.getRT());
     // bottom outline
-    set_rectangle(offset + (kVerticesPerQuad * 2), outrectangle.getLB(), outrectangle.getRB(),
-                  inrectangle.getLB(),
+    set_rectangle(offset + (kVerticesPerQuad * 2), outrectangle.getLB(),
+                  outrectangle.getRB(), inrectangle.getLB(),
                   inrectangle.getRB());
     // left outline
-    set_rectangle(offset + (kVerticesPerQuad * 3), outrectangle.getLB(), inrectangle.getLB(),
-                  outrectangle.getLT(),
+    set_rectangle(offset + (kVerticesPerQuad * 3), outrectangle.getLB(),
+                  inrectangle.getLB(), outrectangle.getLT(),
                   inrectangle.getLT());
     // right outline
-    set_rectangle(offset + (kVerticesPerQuad * 4), inrectangle.getRB(), outrectangle.getRB(),
-                  inrectangle.getRT(),
+    set_rectangle(offset + (kVerticesPerQuad * 4), inrectangle.getRB(),
+                  outrectangle.getRB(), inrectangle.getRT(),
                   outrectangle.getRT());
   }
 
-  void set_rectangle(size_t offset, const glm::vec3 &point0, const glm::vec3 &point1,
-                     const glm::vec3 &point2, const glm::vec3 &point3)
-  {
+  void set_rectangle(size_t offset, const glm::vec3& point0,
+                     const glm::vec3& point1, const glm::vec3& point2,
+                     const glm::vec3& point3) {
     constexpr size_t kVerticesPerQuad = 6;
     vertices[offset + 0] = point0;
     vertices[offset + 1] = point1;
@@ -210,8 +213,9 @@ public:
                 auto halfwidth = width / 2.f;
                 auto scalednormdirection = normdirection * halfwidth;
 
-                glm::vec3 hvec0(scalednormdirection.y, -scalednormdirection.x, 0.f); // CW
-                glm::vec3 hvec1(-scalednormdirection.y, scalednormdirection.x, 0.f); // CCW
+                glm::vec3 hvec0(scalednormdirection.y, -scalednormdirection.x,
+0.f); // CW glm::vec3 hvec1(-scalednormdirection.y, scalednormdirection.x, 0.f);
+// CCW
 
                 auto qp0 = p0 + hvec0;
                 auto qp1 = p1 + hvec0;
@@ -239,7 +243,8 @@ public:
                 SetBufferSize(36);
         }
 
-        void SetShape(const glm::vec3& center, float width, float height, float depth)
+        void SetShape(const glm::vec3& center, float width, float height, float
+depth)
         {
                 float halfwidth = width * 0.5f;
                 float halfheight = height * 0.5f;
@@ -247,15 +252,16 @@ public:
 
                 std::array<glm::vec3, 8> points;
 
-                points[0] = center + glm::vec3(-halfwidth, -halfheight, halfdepth);
-                points[1] = center + glm::vec3(halfwidth, -halfheight, halfdepth);
-                points[2] = center + glm::vec3(-halfwidth, halfheight, halfdepth);
-                points[3] = center + glm::vec3(halfwidth, halfheight, halfdepth);
+                points[0] = center + glm::vec3(-halfwidth, -halfheight,
+halfdepth); points[1] = center + glm::vec3(halfwidth, -halfheight, halfdepth);
+                points[2] = center + glm::vec3(-halfwidth, halfheight,
+halfdepth); points[3] = center + glm::vec3(halfwidth, halfheight, halfdepth);
 
-                points[4] = center + glm::vec3(halfwidth, -halfheight, -halfdepth);
-                points[5] = center + glm::vec3(-halfwidth, -halfheight, -halfdepth);
-                points[6] = center + glm::vec3(halfwidth, halfheight, -halfdepth);
-                points[7] = center + glm::vec3(-halfwidth, halfheight, -halfdepth);
+                points[4] = center + glm::vec3(halfwidth, -halfheight,
+-halfdepth); points[5] = center + glm::vec3(-halfwidth, -halfheight,
+-halfdepth); points[6] = center + glm::vec3(halfwidth, halfheight, -halfdepth);
+                points[7] = center + glm::vec3(-halfwidth, halfheight,
+-halfdepth);
 
                 std::array<size_t, 36> indices = {
                         0, 1, 2, 3, 2, 1, // front quad
@@ -278,8 +284,8 @@ public:
 /*class Triangle
 {
 public:
-        explicit Triangle(Shape *shape, const glm::vec3 &p0, const glm::vec3 &p1, const glm::vec3
-&p2)
+        explicit Triangle(Shape *shape, const glm::vec3 &p0, const glm::vec3
+&p1, const glm::vec3 &p2)
         {
                 std::vector<glm::vec3> points = {p0, p1, p2};
                 shape->set_buffer(0, points);
@@ -305,7 +311,8 @@ protected:
 
         static glm::vec3 CirclePoint(float angle, float radius)
         {
-                return glm::vec3(glm::cos(angle) * radius, glm::sin(angle) * radius, 0.f);
+                return glm::vec3(glm::cos(angle) * radius, glm::sin(angle) *
+radius, 0.f);
         }
 
         size_t resolution;
@@ -315,7 +322,8 @@ protected:
 {
 public:
 
-        explicit CircleShape(Shape* shape, const glm::vec3& position, float radius, glm::vec4 color)
+        explicit CircleShape(Shape* shape, const glm::vec3& position, float
+radius, glm::vec4 color)
         {
 
 
@@ -323,10 +331,9 @@ public:
 
         void SetShape(const glm::vec3& position, float radius, glm::vec4 color)
         {
-                float step = glm::two_pi<float>() / static_cast<float>(resolution);
-                auto p0 = glm::vec3(0.f, 0.f, 0.f);
-                auto p1 = CirclePoint(0.f, radius);
-                auto p2 = CirclePoint(step, radius);
+                float step = glm::two_pi<float>() /
+static_cast<float>(resolution); auto p0 = glm::vec3(0.f, 0.f, 0.f); auto p1 =
+CirclePoint(0.f, radius); auto p2 = CirclePoint(step, radius);
 
                 std::vector<glm::vec3> points(resolution);
 
@@ -359,9 +366,11 @@ public:
                 CircleBase(shape_name)
         {}
 
-        void SetShape(const glm::vec3& position, float radius, float sector_begin, float sector_end)
+        void SetShape(const glm::vec3& position, float radius, float
+sector_begin, float sector_end)
         {
-                float step = (sector_begin - sector_end) / static_cast<float>(resolution);
+                float step = (sector_begin - sector_end) /
+static_cast<float>(resolution);
 
                 auto p0 = glm::vec3(0.f, 0.f, 0.f);
                 auto p1 = CirclePoint(sector_begin, radius);
@@ -382,4 +391,4 @@ public:
                 UpdateBuffer();
         }
 };*/
-#endif // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SHAPES_HPP
+#endif  // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SHAPES_HPP

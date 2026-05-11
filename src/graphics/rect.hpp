@@ -2,23 +2,22 @@
 #define HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_RECT_HPP
 
 #include <array>
-
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
-template <typename Ty> class rect {
-
-public:
+template <typename Ty>
+class rect {
+ public:
   rect() : edges({0, 0, 0, 0}) {}
 
-  rect(Ty left, Ty right, Ty bottom, Ty top) : edges({left, right, bottom, top}) {}
+  rect(Ty left, Ty right, Ty bottom, Ty top)
+      : edges({left, right, bottom, top}) {}
 
   struct Dimension {
     Ty width;
     Ty height;
   };
 
-  static rect from_dimension(Dimension dimension)
-  {
+  static rect from_dimension(Dimension dimension) {
     rect result;
     result.setL(-dimension.width / static_cast<Ty>(2));
     result.setR(dimension.width / static_cast<Ty>(2));
@@ -39,59 +38,54 @@ public:
 
   [[nodiscard]] Ty height() const { return edges[3] - edges[2]; }
 
-  [[nodiscard]] rect shift(Ty x_offset, Ty y_offset) const
-  {
+  [[nodiscard]] rect shift(Ty x_offset, Ty y_offset) const {
     return rect(l() + x_offset, r() + x_offset, b() + y_offset, t() + y_offset);
   }
 
-  [[nodiscard]] rect expand(const rect &value) const
-  {
-    return rect(l() - value.l(), r() + value.r(), b() - value.b(), t() + value.t());
+  [[nodiscard]] rect expand(const rect& value) const {
+    return rect(l() - value.l(), r() + value.r(), b() - value.b(),
+                t() + value.t());
   }
 
-  [[nodiscard]] rect reduce(const rect &value) const
-  {
-    return rect(l() + value.l(), r() - value.r(), b() + value.b(), t() - value.t());
+  [[nodiscard]] rect reduce(const rect& value) const {
+    return rect(l() + value.l(), r() - value.r(), b() + value.b(),
+                t() - value.t());
   }
 
-  [[nodiscard]] rect scale(Ty factor) const
-  {
-    const Ty expand_width_value = ((width() * factor) - width()) / static_cast<Ty>(2);
-    const Ty expand_height_value = ((height() * factor) - height()) / static_cast<Ty>(2);
+  [[nodiscard]] rect scale(Ty factor) const {
+    const Ty expand_width_value =
+        ((width() * factor) - width()) / static_cast<Ty>(2);
+    const Ty expand_height_value =
+        ((height() * factor) - height()) / static_cast<Ty>(2);
 
-    rect result = expand(
-        rect(expand_width_value, expand_width_value, expand_height_value, expand_height_value));
+    rect result = expand(rect(expand_width_value, expand_width_value,
+                              expand_height_value, expand_height_value));
     return result;
   }
 
-  [[nodiscard]] rect dimension(Ty width, Ty height) const
-  {
+  [[nodiscard]] rect dimension(Ty width, Ty height) const {
     return rect(l(), l() + width, b(), b() + height);
   }
 
-  [[nodiscard]] glm::vec3 getCenter() const
-  {
+  [[nodiscard]] glm::vec3 getCenter() const {
     return glm::vec3(edges[0] + width() / static_cast<Ty>(2),
-                     edges[2] + height() / static_cast<Ty>(2), static_cast<Ty>(0));
+                     edges[2] + height() / static_cast<Ty>(2),
+                     static_cast<Ty>(0));
   }
 
-  [[nodiscard]] glm::vec3 getLB() const
-  {
+  [[nodiscard]] glm::vec3 getLB() const {
     return glm::vec3(edges[0], edges[2], static_cast<Ty>(0));
   }
 
-  [[nodiscard]] glm::vec3 getRB() const
-  {
+  [[nodiscard]] glm::vec3 getRB() const {
     return glm::vec3(edges[1], edges[2], static_cast<Ty>(0));
   }
 
-  [[nodiscard]] glm::vec3 getLT() const
-  {
+  [[nodiscard]] glm::vec3 getLT() const {
     return glm::vec3(edges[0], edges[3], static_cast<Ty>(0));
   }
 
-  [[nodiscard]] glm::vec3 getRT() const
-  {
+  [[nodiscard]] glm::vec3 getRT() const {
     return glm::vec3(edges[1], edges[3], static_cast<Ty>(0));
   }
 
@@ -103,7 +97,7 @@ public:
 
   void setT(Ty value) { edges[3] = value; }
 
-private:
+ private:
   void addL(Ty value) { edges[0] += value; }
 
   void addR(Ty value) { edges[1] += value; }
@@ -116,4 +110,4 @@ private:
 };
 
 using rectf = rect<float>;
-#endif // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_RECT_HPP
+#endif  // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_RECT_HPP

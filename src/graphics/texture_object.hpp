@@ -6,22 +6,20 @@
 #include <utility>
 
 class Texture {
-public:
+ public:
   Texture() { glGenTextures(1, &name); }
 
-  ~Texture()
-  {
+  ~Texture() {
     if (name != 0) {
       glDeleteTextures(1, &name);
     }
   }
 
-  Texture(const Texture &) = delete;
-  Texture &operator=(const Texture &) = delete;
+  Texture(const Texture&) = delete;
+  Texture& operator=(const Texture&) = delete;
 
-  Texture(Texture &&other) noexcept : name(std::exchange(other.name, 0)) {}
-  Texture &operator=(Texture &&other) noexcept
-  {
+  Texture(Texture&& other) noexcept : name(std::exchange(other.name, 0)) {}
+  Texture& operator=(Texture&& other) noexcept {
     if (this != &other) {
       if (name != 0) {
         glDeleteTextures(1, &name);
@@ -33,7 +31,7 @@ public:
 
   [[nodiscard]] GLuint Name() const { return name; }
 
-private:
+ private:
   GLuint name{0};
 };
-#endif // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_TEXTURE_OBJECT_HPP
+#endif  // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_TEXTURE_OBJECT_HPP

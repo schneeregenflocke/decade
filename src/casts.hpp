@@ -3,13 +3,12 @@
 
 // #include "wx_widgets_include.hpp"
 
-#include <glm/vec4.hpp>
-
-#include <array>
 #include <wx/colour.h>
 
-inline glm::vec4 to_glm_vec4(const wxColour &color)
-{
+#include <array>
+#include <glm/vec4.hpp>
+
+inline glm::vec4 to_glm_vec4(const wxColour& color) {
   constexpr float kColorScale = 1.0F / 255.0F;
 
   const auto red = static_cast<float>(color.Red()) * kColorScale;
@@ -20,13 +19,11 @@ inline glm::vec4 to_glm_vec4(const wxColour &color)
   return {red, green, blue, alpha};
 }
 
-inline glm::vec4 to_glm_vec4(const std::array<float, 4> &values)
-{
+inline glm::vec4 to_glm_vec4(const std::array<float, 4>& values) {
   return {values[0], values[1], values[2], values[3]};
 }
 
-inline wxColour to_wx_color(const glm::vec4 &color)
-{
+inline wxColour to_wx_color(const glm::vec4& color) {
   constexpr float kColorMax = 255.0F;
   const auto red = static_cast<unsigned char>(color[0] * kColorMax);
   const auto green = static_cast<unsigned char>(color[1] * kColorMax);
@@ -35,4 +32,4 @@ inline wxColour to_wx_color(const glm::vec4 &color)
 
   return {red, green, blue, alpha};
 }
-#endif // HOME_TITAN99_CODE_DECADE_SRC_CASTS_HPP
+#endif  // HOME_TITAN99_CODE_DECADE_SRC_CASTS_HPP

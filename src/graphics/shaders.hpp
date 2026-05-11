@@ -1,8 +1,9 @@
 #ifndef HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SHADERS_HPP
 #define HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SHADERS_HPP
 
-#include <array>
 #include <epoxy/gl.h>
+
+#include <array>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/vec4.hpp>
@@ -17,15 +18,14 @@
 #include "shaders_info.hpp"
 
 class Shader {
-public:
+ public:
   struct ShaderSources {
     std::string vertex;
     std::string fragment;
   };
 
-  explicit Shader(const ShaderSources &sources, std::string name_in)
-      : name(std::move(name_in))
-  {
+  explicit Shader(const ShaderSources& sources, std::string name_in)
+      : name(std::move(name_in)) {
     CompileProgram(sources);
 
     shader_info.SetProgram(program);
@@ -37,44 +37,43 @@ public:
 
   void UseProgram() const { glUseProgram(program); }
 
-  void SetUniform(const std::string &uniform_name, const glm::mat4 &matrix) const
-  {
+  void SetUniform(const std::string& uniform_name,
+                  const glm::mat4& matrix) const {
     auto location = glGetUniformLocation(program, uniform_name.c_str());
     glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
   }
 
-  void SetUniform(const std::string &uniform_name, const glm::vec4 &vector) const
-  {
+  void SetUniform(const std::string& uniform_name,
+                  const glm::vec4& vector) const {
     auto location = glGetUniformLocation(program, uniform_name.c_str());
     glUniform4fv(location, 1, glm::value_ptr(vector));
     // glProgramUniform
   }
 
-  void PrintShaderInfo() const
-  {
+  void PrintShaderInfo() const {
     std::cout << "Shader: " << name
               << ", Number of attributes: " << shader_info.GetNumberAttributes()
-              << ", Number of uniforms: " << shader_info.GetNumberUniforms() << '\n';
+              << ", Number of uniforms: " << shader_info.GetNumberUniforms()
+              << '\n';
 
     shader_info.PrintAttributesInfo();
     shader_info.PrintUniformsInfo();
   }
 
-  [[nodiscard]] const ShaderInfos &GetShaderInfo() const { return shader_info; }
+  [[nodiscard]] const ShaderInfos& GetShaderInfo() const { return shader_info; }
 
-  [[nodiscard]] const std::vector<ShaderInfo> &GetShaderAttributesInfos() const
-  {
+  [[nodiscard]] const std::vector<ShaderInfo>& GetShaderAttributesInfos()
+      const {
     return shader_info.GetAttributesInfos();
   }
 
-private:
+ private:
   struct ShaderHandles {
     GLuint vertex;
     GLuint fragment;
   };
 
-  void CompileProgram(const ShaderSources &sources)
-  {
+  void CompileProgram(const ShaderSources& sources) {
     const ShaderHandles handles{
         CompileShader(sources.vertex, GL_VERTEX_SHADER),
         CompileShader(sources.fragment, GL_FRAGMENT_SHADER)};
@@ -82,8 +81,7 @@ private:
     LinkShaders(handles);
   }
 
-  void LinkShaders(const ShaderHandles &handles)
-  {
+  void LinkShaders(const ShaderHandles& handles) {
     program = glCreateProgram();
 
     glAttachShader(program, handles.vertex);
@@ -95,8 +93,8 @@ private:
 
     GLint status = 0;
     glGetProgramiv(program, GL_LINK_STATUS, &status);
-    std::cout << "GL_LINK_STATUS: " << program << " " << std::boolalpha << static_cast<bool>(status)
-              << std::noboolalpha << '\n';
+    std::cout << "GL_LINK_STATUS: " << program << " " << std::boolalpha
+              << static_cast<bool>(status) << std::noboolalpha << '\n';
 
     GLint info_length = 0;
     glGetProgramiv(program, GL_INFO_LOG_LENGTH, &info_length);
@@ -112,10 +110,9 @@ private:
     glDeleteShader(handles.fragment);
   }
 
-  static GLuint CompileShader(const std::string &source, GLenum shader_type)
-  {
+  static GLuint CompileShader(const std::string& source, GLenum shader_type) {
     const GLuint shader = glCreateShader(shader_type);
-    const std::array<const char *, 1> source_strings = {source.c_str()};
+    const std::array<const char*, 1> source_strings = {source.c_str()};
     glShaderSource(shader, static_cast<GLsizei>(source_strings.size()),
                    source_strings.data(), nullptr);
     glCompileShader(shader);
@@ -142,17 +139,23 @@ private:
 };
 
 class Shaders {
-public:
-  Shaders()
-  {
-    auto simple_vertex_shader_resource = LOAD_RESOURCE(shader_simple_vertex_shader);
-    auto simple_fragment_shader_resource = LOAD_RESOURCE(shader_simple_fragment_shader);
-    auto rectangles_vertex_shader_resource = LOAD_RESOURCE(shader_rectangles_vertex_shader);
-    auto rectangles_fragment_shader_resource = LOAD_RESOURCE(shader_rectangles_fragment_shader);
+ public:
+  Shaders() {
+    auto simple_vertex_shader_resource =
+        LOAD_RESOURCE(shader_simple_vertex_shader);
+    auto simple_fragment_shader_resource =
+        LOAD_RESOURCE(shader_simple_fragment_shader);
+    auto rectangles_vertex_shader_resource =
+        LOAD_RESOURCE(shader_rectangles_vertex_shader);
+    auto rectangles_fragment_shader_resource =
+        LOAD_RESOURCE(shader_rectangles_fragment_shader);
     auto font_vertex_shader_resource = LOAD_RESOURCE(shader_font_vertex_shader);
-    auto font_fragment_shader_resource = LOAD_RESOURCE(shader_font_fragment_shader);
-    // auto phong_vertex_shader_resource = LOAD_RESOURCE(shader_phong_vertex_shader);
-    // auto phong_fragment_shader_resource = LOAD_RESOURCE(shader_phong_fragment_shader);
+    auto font_fragment_shader_resource =
+        LOAD_RESOURCE(shader_font_fragment_shader);
+    // auto phong_vertex_shader_resource =
+    // LOAD_RESOURCE(shader_phong_vertex_shader); auto
+    // phong_fragment_shader_resource =
+    // LOAD_RESOURCE(shader_phong_fragment_shader);
 
     shaders.emplace_back(
         Shader::ShaderSources{simple_vertex_shader_resource.toString(),
@@ -172,26 +175,23 @@ public:
     PrintInfo();
   }
 
-  void PrintInfo() const
-  {
-    for (const auto &shader : shaders) {
+  void PrintInfo() const {
+    for (const auto& shader : shaders) {
       shader.PrintShaderInfo();
     }
   }
 
-  Shader *GetShader(size_t index)
-  {
+  Shader* GetShader(size_t index) {
     if (index < shaders.size()) {
       return &shaders[index];
     }
     throw std::invalid_argument("Shader index out of bounds");
   }
 
-  std::optional<Shader *> search_shader(const std::string &search_name)
-  {
-    for (auto &shader : shaders) {
+  std::optional<Shader*> search_shader(const std::string& search_name) {
+    for (auto& shader : shaders) {
       if (shader.get_name() == search_name) {
-        return std::optional<Shader *>{&shader};
+        return std::optional<Shader*>{&shader};
       }
     }
     return std::nullopt;
@@ -199,7 +199,7 @@ public:
 
   [[nodiscard]] size_t GetNumberShaders() const { return shaders.size(); }
 
-private:
+ private:
   std::vector<Shader> shaders;
 };
-#endif // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SHADERS_HPP
+#endif  // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SHADERS_HPP

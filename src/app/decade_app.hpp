@@ -5,11 +5,11 @@
 #include <wx/intl.h>
 
 class DecadeApp : public wxApp {
-public:
+ public:
   bool OnInit() override;
 
-private:
+ private:
   wxLocale locale_;
 };
 
-#endif // DECADE_APP_HPP
+#endif  // DECADE_APP_HPP

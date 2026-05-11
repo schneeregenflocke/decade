@@ -1,24 +1,25 @@
 #ifndef HOME_TITAN99_CODE_DECADE_SRC_GUI_PAGE_PANEL_HPP
 #define HOME_TITAN99_CODE_DECADE_SRC_GUI_PAGE_PANEL_HPP
 
-#include <wx/wx.h>
-
 #include <wx/printdlg.h>
 #include <wx/spinctrl.h>
 #include <wx/weakref.h>
+#include <wx/wx.h>
 
-#include "../packages/page_config.hpp"
 #include <memory>
 #include <sigslot/signal.hpp>
 
+#include "../packages/page_config.hpp"
+
 class PageSetupPanel {
-public:
-  PageSetupPanel(wxWindow *parent)
-      : wx_panel(nullptr), ID_PAGE_WIDTH(wxWindow::NewControlId()),
-        ID_PAGE_HEIGHT(wxWindow::NewControlId())
-  {
-    wx_panel = std::make_unique<wxPanel>(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                                         wxTAB_TRAVERSAL, wxPanelNameStr)
+ public:
+  PageSetupPanel(wxWindow* parent)
+      : wx_panel(nullptr),
+        ID_PAGE_WIDTH(wxWindow::NewControlId()),
+        ID_PAGE_HEIGHT(wxWindow::NewControlId()) {
+    wx_panel = std::make_unique<wxPanel>(parent, wxID_ANY, wxDefaultPosition,
+                                         wxDefaultSize, wxTAB_TRAVERSAL,
+                                         wxPanelNameStr)
                    .release();
 
     wxPrintData print_data;
@@ -30,45 +31,59 @@ public:
     dialog_data.SetMarginTopLeft(wxPoint(15, 15));
     dialog_data.SetMarginBottomRight(wxPoint(15, 15));
 
-    wxStaticBoxSizer *static_box_sizer =
-        std::make_unique<wxStaticBoxSizer>(wxVERTICAL, wx_panel.get(), L"Paper Format").release();
+    wxStaticBoxSizer* static_box_sizer =
+        std::make_unique<wxStaticBoxSizer>(wxVERTICAL, wx_panel.get(),
+                                           L"Paper Format")
+            .release();
 
-    wxBoxSizer *horizontal_sizer0 = std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
+    wxBoxSizer* horizontal_sizer0 =
+        std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
 
-    wxButton *page_setup_dialog_button =
-        std::make_unique<wxButton>(wx_panel.get(), wxID_ANY, L"Page Setup...").release();
+    wxButton* page_setup_dialog_button =
+        std::make_unique<wxButton>(wx_panel.get(), wxID_ANY, L"Page Setup...")
+            .release();
 
-    wxStaticText *page_width_label =
-        std::make_unique<wxStaticText>(wx_panel.get(), wxID_ANY, L"Width").release();
+    wxStaticText* page_width_label =
+        std::make_unique<wxStaticText>(wx_panel.get(), wxID_ANY, L"Width")
+            .release();
     page_width_label->SetMinSize(wxSize(75, -1));
 
-    wxStaticText *page_height_label =
-        std::make_unique<wxStaticText>(wx_panel.get(), wxID_ANY, L"Height").release();
+    wxStaticText* page_height_label =
+        std::make_unique<wxStaticText>(wx_panel.get(), wxID_ANY, L"Height")
+            .release();
     page_height_label->SetMinSize(wxSize(75, -1));
 
-    page_width_spinctrl = std::make_unique<wxSpinCtrlDouble>(wx_panel.get(), ID_PAGE_WIDTH).release();
+    page_width_spinctrl =
+        std::make_unique<wxSpinCtrlDouble>(wx_panel.get(), ID_PAGE_WIDTH)
+            .release();
     page_width_spinctrl->SetRange(.0, 2000.);
 
     page_height_spinctrl =
-        std::make_unique<wxSpinCtrlDouble>(wx_panel.get(), ID_PAGE_HEIGHT).release();
+        std::make_unique<wxSpinCtrlDouble>(wx_panel.get(), ID_PAGE_HEIGHT)
+            .release();
     page_height_spinctrl->SetRange(.0, 2000.);
 
     horizontal_sizer0->Add(page_setup_dialog_button, 1, wxEXPAND | wxALL,
-                           5); //| wxALIGN_CENTER_VERTICAL
+                           5);  //| wxALIGN_CENTER_VERTICAL
 
-    wxBoxSizer *horizontal_sizer1 = std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
-    horizontal_sizer1->Add(page_width_label, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    wxBoxSizer* horizontal_sizer1 =
+        std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
+    horizontal_sizer1->Add(page_width_label, 0, wxALL | wxALIGN_CENTER_VERTICAL,
+                           5);
     horizontal_sizer1->Add(page_width_spinctrl, 1, wxEXPAND | wxALL, 5);
 
-    wxBoxSizer *horizontal_sizer2 = std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
-    horizontal_sizer2->Add(page_height_label, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    wxBoxSizer* horizontal_sizer2 =
+        std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
+    horizontal_sizer2->Add(page_height_label, 0,
+                           wxALL | wxALIGN_CENTER_VERTICAL, 5);
     horizontal_sizer2->Add(page_height_spinctrl, 1, wxEXPAND | wxALL, 5);
 
     static_box_sizer->Add(horizontal_sizer0, 0, wxEXPAND);
     static_box_sizer->Add(horizontal_sizer1, 0, wxEXPAND);
     static_box_sizer->Add(horizontal_sizer2, 0, wxEXPAND);
 
-    wxBoxSizer *vertical_sizer = std::make_unique<wxBoxSizer>(wxVERTICAL).release();
+    wxBoxSizer* vertical_sizer =
+        std::make_unique<wxBoxSizer>(wxVERTICAL).release();
     // vertical_sizer->Add(static_box_sizer, 0, wxEXPAND | wxALL, 5);
     vertical_sizer->Add(static_box_sizer, 0, wxEXPAND);
 
@@ -77,19 +92,21 @@ public:
     //////////////////////////////////////////////////
 
     wx_panel->Bind(wxEVT_BUTTON, &PageSetupPanel::CallbackButtonClicked, this);
-    wx_panel->Bind(wxEVT_SPINCTRLDOUBLE, &PageSetupPanel::CallbackSpinControl, this, ID_PAGE_WIDTH);
-    wx_panel->Bind(wxEVT_SPINCTRLDOUBLE, &PageSetupPanel::CallbackSpinControl, this,
-                   ID_PAGE_HEIGHT);
+    wx_panel->Bind(wxEVT_SPINCTRLDOUBLE, &PageSetupPanel::CallbackSpinControl,
+                   this, ID_PAGE_WIDTH);
+    wx_panel->Bind(wxEVT_SPINCTRLDOUBLE, &PageSetupPanel::CallbackSpinControl,
+                   this, ID_PAGE_HEIGHT);
   }
 
-  wxPanel *PanelPtr() { return wx_panel.get(); }
+  wxPanel* PanelPtr() { return wx_panel.get(); }
 
-  void SendPageSetup()
-  {
+  void SendPageSetup() {
     PageSetupConfig page_setup_config;
 
-    auto dialog_width = static_cast<float>(dialog_data.GetPaperSize().GetWidth());
-    auto dialog_height = static_cast<float>(dialog_data.GetPaperSize().GetHeight());
+    auto dialog_width =
+        static_cast<float>(dialog_data.GetPaperSize().GetWidth());
+    auto dialog_height =
+        static_cast<float>(dialog_data.GetPaperSize().GetHeight());
 
     auto print_data = dialog_data.GetPrintData();
     if (print_data.GetOrientation() == wxPORTRAIT) {
@@ -103,46 +120,53 @@ public:
       page_setup_config.size[1] = dialog_width;
     }
 
-    page_setup_config.margins[0] = static_cast<float>(dialog_data.GetMarginTopLeft().x);
-    page_setup_config.margins[1] = static_cast<float>(dialog_data.GetMarginBottomRight().y);
-    page_setup_config.margins[2] = static_cast<float>(dialog_data.GetMarginBottomRight().x);
-    page_setup_config.margins[3] = static_cast<float>(dialog_data.GetMarginTopLeft().y);
+    page_setup_config.margins[0] =
+        static_cast<float>(dialog_data.GetMarginTopLeft().x);
+    page_setup_config.margins[1] =
+        static_cast<float>(dialog_data.GetMarginBottomRight().y);
+    page_setup_config.margins[2] =
+        static_cast<float>(dialog_data.GetMarginBottomRight().x);
+    page_setup_config.margins[3] =
+        static_cast<float>(dialog_data.GetMarginTopLeft().y);
 
     signal_page_setup_config(page_setup_config);
   }
 
-  void ReceivePageSetup(const PageSetupConfig &page_setup_config)
-  {
+  void ReceivePageSetup(const PageSetupConfig& page_setup_config) {
     wxPrintData print_data = dialog_data.GetPrintData();
-    print_data.SetOrientation(static_cast<wxPrintOrientation>(page_setup_config.orientation));
+    print_data.SetOrientation(
+        static_cast<wxPrintOrientation>(page_setup_config.orientation));
     dialog_data.SetPrintData(print_data);
 
     if (print_data.GetOrientation() == wxPORTRAIT) {
-      dialog_data.SetPaperSize(wxSize(static_cast<int>(page_setup_config.size[0]),
-                                      static_cast<int>(page_setup_config.size[1])));
+      dialog_data.SetPaperSize(
+          wxSize(static_cast<int>(page_setup_config.size[0]),
+                 static_cast<int>(page_setup_config.size[1])));
     }
     if (print_data.GetOrientation() == wxLANDSCAPE) {
-      dialog_data.SetPaperSize(wxSize(static_cast<int>(page_setup_config.size[1]),
-                                      static_cast<int>(page_setup_config.size[0])));
+      dialog_data.SetPaperSize(
+          wxSize(static_cast<int>(page_setup_config.size[1]),
+                 static_cast<int>(page_setup_config.size[0])));
     }
 
     dialog_data.CalculateIdFromPaperSize();
 
-    dialog_data.SetMarginTopLeft(wxPoint(static_cast<int>(page_setup_config.margins[0]),
-                                         static_cast<int>(page_setup_config.margins[3])));
-    dialog_data.SetMarginBottomRight(wxPoint(static_cast<int>(page_setup_config.margins[2]),
-                                             static_cast<int>(page_setup_config.margins[1])));
+    dialog_data.SetMarginTopLeft(
+        wxPoint(static_cast<int>(page_setup_config.margins[0]),
+                static_cast<int>(page_setup_config.margins[3])));
+    dialog_data.SetMarginBottomRight(
+        wxPoint(static_cast<int>(page_setup_config.margins[2]),
+                static_cast<int>(page_setup_config.margins[1])));
 
     UpdateSpinControl();
   }
 
   void SendDefaultValues() { SendPageSetup(); }
 
-  sigslot::signal<const PageSetupConfig &> signal_page_setup_config;
+  sigslot::signal<const PageSetupConfig&> signal_page_setup_config;
 
-private:
-  void UpdateSpinControl()
-  {
+ private:
+  void UpdateSpinControl() {
     const wxPrintData print_data = dialog_data.GetPrintData();
     const wxSize paper_size = dialog_data.GetPaperSize();
 
@@ -156,8 +180,7 @@ private:
     }
   }
 
-  void CallbackButtonClicked(wxCommandEvent & /*event*/)
-  {
+  void CallbackButtonClicked(wxCommandEvent& /*event*/) {
     wxPageSetupDialog page_setup_dialog(nullptr, &dialog_data);
 
     if (page_setup_dialog.ShowModal() == wxID_OK) {
@@ -166,13 +189,11 @@ private:
       SendPageSetup();
     }
   }
-  void CallbackCheckboxClicked(wxCommandEvent &event)
-  {
+  void CallbackCheckboxClicked(wxCommandEvent& event) {
     page_width_spinctrl->Enable(event.IsChecked());
     page_height_spinctrl->Enable(event.IsChecked());
   }
-  void CallbackSpinControl(wxSpinDoubleEvent & /*event*/)
-  {
+  void CallbackSpinControl(wxSpinDoubleEvent& /*event*/) {
     wxSize paper_size;
     paper_size.x = static_cast<int>(page_width_spinctrl->GetValue());
     paper_size.y = static_cast<int>(page_height_spinctrl->GetValue());
@@ -200,4 +221,4 @@ private:
   wxWeakRef<wxSpinCtrlDouble> page_width_spinctrl;
   wxWeakRef<wxSpinCtrlDouble> page_height_spinctrl;
 };
-#endif // HOME_TITAN99_CODE_DECADE_SRC_GUI_PAGE_PANEL_HPP
+#endif  // HOME_TITAN99_CODE_DECADE_SRC_GUI_PAGE_PANEL_HPP

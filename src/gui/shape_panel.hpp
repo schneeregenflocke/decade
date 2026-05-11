@@ -1,10 +1,9 @@
 #ifndef HOME_TITAN99_CODE_DECADE_SRC_GUI_SHAPE_PANEL_HPP
 #define HOME_TITAN99_CODE_DECADE_SRC_GUI_SHAPE_PANEL_HPP
 
-#include <wx/wx.h>
-
 #include <wx/clrpicker.h>
 #include <wx/weakref.h>
+#include <wx/wx.h>
 
 #include <algorithm>
 #include <memory>
@@ -17,45 +16,49 @@
 #include "../packages/shape_config.hpp"
 
 class ElementsSetupsPanel {
-public:
-  explicit ElementsSetupsPanel(wxWindow *parent)
-  {
-    wx_panel = std::make_unique<wxPanel>(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                                         wxTAB_TRAVERSAL, wxEmptyString)
-                   .release();
+ public:
+  explicit ElementsSetupsPanel(wxWindow* parent) {
+    wx_panel =
+        std::make_unique<wxPanel>(parent, wxID_ANY, wxDefaultPosition,
+                                  wxDefaultSize, wxTAB_TRAVERSAL, wxEmptyString)
+            .release();
 
     InitWidgets();
     InitSizers();
 
     wx_panel->Bind(wxEVT_LISTBOX, &ElementsSetupsPanel::CallbackListBook, this);
-    wx_panel->Bind(wxEVT_CHECKBOX, &ElementsSetupsPanel::CallbackCheckBox, this);
-    wx_panel->Bind(wxEVT_SPINCTRLDOUBLE, &ElementsSetupsPanel::CallbackSpinControlDouble, this);
-    wx_panel->Bind(wxEVT_COLOURPICKER_CHANGED, &ElementsSetupsPanel::CallbackColorPicker, this);
+    wx_panel->Bind(wxEVT_CHECKBOX, &ElementsSetupsPanel::CallbackCheckBox,
+                   this);
+    wx_panel->Bind(wxEVT_SPINCTRLDOUBLE,
+                   &ElementsSetupsPanel::CallbackSpinControlDouble, this);
+    wx_panel->Bind(wxEVT_COLOURPICKER_CHANGED,
+                   &ElementsSetupsPanel::CallbackColorPicker, this);
     wx_panel->Bind(wxEVT_SLIDER, &ElementsSetupsPanel::CallbackSlider, this);
   }
 
-  wxPanel *PanelPtr() { return wx_panel.get(); }
+  wxPanel* PanelPtr() { return wx_panel.get(); }
 
   void ReceiveShapeConfigurationStorage(
-      const ShapeConfigurationStorage &incoming_shape_configuration_storage)
-  {
+      const ShapeConfigurationStorage& incoming_shape_configuration_storage) {
     shape_configuration_storage.CopyFrom(incoming_shape_configuration_storage);
     UpdateConfigurationList();
   }
 
-  void ReceiveDateGroups(const std::vector<DateGroup> &date_groups)
-  {
+  void ReceiveDateGroups(const std::vector<DateGroup>& date_groups) {
     const size_t number_dynamic_configurations =
         shape_configuration_storage.size() -
         shape_configuration_storage.GetNumberPersistentConfigurations();
 
     const int adjust_number_dynamic_configurations =
-        static_cast<int>(date_groups.size()) - static_cast<int>(number_dynamic_configurations);
+        static_cast<int>(date_groups.size()) -
+        static_cast<int>(number_dynamic_configurations);
 
-    const int current_size = static_cast<int>(shape_configuration_storage.size());
-    const int minimum_size =
-        static_cast<int>(shape_configuration_storage.GetNumberPersistentConfigurations());
-    const int desired_size = current_size + adjust_number_dynamic_configurations;
+    const int current_size =
+        static_cast<int>(shape_configuration_storage.size());
+    const int minimum_size = static_cast<int>(
+        shape_configuration_storage.GetNumberPersistentConfigurations());
+    const int desired_size =
+        current_size + adjust_number_dynamic_configurations;
     const int adjusted_size = std::max(desired_size, minimum_size);
     shape_configuration_storage.resize(static_cast<size_t>(adjusted_size));
 
@@ -74,14 +77,16 @@ public:
 
       for (; index < date_groups.size(); ++index) {
         ShapeConfiguration temporary(
-            std::string("Bar Group ") + std::to_string(index), true, true, kDynamicLineWidth,
-            ShapeConfiguration::OutlineColorValue{
-                glm::vec4(kOutlineRed, kOutlineGreen, kOutlineBlue, kOutlineAlpha)},
+            std::string("Bar Group ") + std::to_string(index), true, true,
+            kDynamicLineWidth,
+            ShapeConfiguration::OutlineColorValue{glm::vec4(
+                kOutlineRed, kOutlineGreen, kOutlineBlue, kOutlineAlpha)},
             ShapeConfiguration::FillColorValue{
                 glm::vec4(kFillRed, kFillGreen, kFillBlue, kFillAlpha)});
         temporary.RandomColor();
-        shape_configuration_storage
-            [shape_configuration_storage.GetNumberPersistentConfigurations() + index] = temporary;
+        shape_configuration_storage[shape_configuration_storage
+                                        .GetNumberPersistentConfigurations() +
+                                    index] = temporary;
       }
     }
 
@@ -90,16 +95,16 @@ public:
     signal_shape_configuration_storage(shape_configuration_storage);
   }
 
-  sigslot::signal<const ShapeConfigurationStorage &> &SignalShapeConfigurationStorage()
-  {
+  sigslot::signal<const ShapeConfigurationStorage&>&
+  SignalShapeConfigurationStorage() {
     return signal_shape_configuration_storage;
   }
 
-private:
-  sigslot::signal<const ShapeConfigurationStorage &> signal_shape_configuration_storage;
+ private:
+  sigslot::signal<const ShapeConfigurationStorage&>
+      signal_shape_configuration_storage;
 
-  void InitWidgets()
-  {
+  void InitWidgets() {
     constexpr int kAlphaMax = 100;
     constexpr int kAlphaMin = 0;
     constexpr int kDefaultLabelWidth = 150;
@@ -108,104 +113,116 @@ private:
     constexpr double kLineWidthIncrement = 0.05;
 
     shape_configuration_list_box =
-        std::make_unique<wxListBox>(wx_panel.get(), wxID_ANY, wxDefaultPosition, wxDefaultSize, 0,
-                                    nullptr, wxLB_SINGLE | wxLB_NEEDED_SB, wxDefaultValidator,
-                                    wxEmptyString)
+        std::make_unique<wxListBox>(wx_panel.get(), wxID_ANY, wxDefaultPosition,
+                                    wxDefaultSize, 0, nullptr,
+                                    wxLB_SINGLE | wxLB_NEEDED_SB,
+                                    wxDefaultValidator, wxEmptyString)
             .release();
 
-    outline_visible_ctrl =
-        std::make_unique<wxCheckBox>(wx_panel.get(), wxID_ANY, L"Outline Visible").release();
+    outline_visible_ctrl = std::make_unique<wxCheckBox>(
+                               wx_panel.get(), wxID_ANY, L"Outline Visible")
+                               .release();
     fill_visible_ctrl =
-        std::make_unique<wxCheckBox>(wx_panel.get(), wxID_ANY, L"Fill Visible").release();
-
-    line_color_picker =
-        std::make_unique<wxColourPickerCtrl>(
-            wx_panel.get(), wxID_ANY, *wxStockGDI::GetColour(wxStockGDI::COLOUR_BLACK),
-            wxDefaultPosition, wxDefaultSize, wxCLRP_SHOW_ALPHA)
-            .release();
-    fill_color_picker =
-        std::make_unique<wxColourPickerCtrl>(
-            wx_panel.get(), wxID_ANY, *wxStockGDI::GetColour(wxStockGDI::COLOUR_BLACK),
-            wxDefaultPosition, wxDefaultSize, wxCLRP_SHOW_ALPHA)
+        std::make_unique<wxCheckBox>(wx_panel.get(), wxID_ANY, L"Fill Visible")
             .release();
 
-    linewidth_ctrl =
-        std::make_unique<wxSpinCtrlDouble>(wx_panel.get(), wxID_ANY, wxEmptyString,
-                                           wxDefaultPosition,
-                                           wxDefaultSize,
-                                           /*16384L*/ wxSP_ARROW_KEYS | wxALIGN_RIGHT)
-            .release();
+    line_color_picker = std::make_unique<wxColourPickerCtrl>(
+                            wx_panel.get(), wxID_ANY,
+                            *wxStockGDI::GetColour(wxStockGDI::COLOUR_BLACK),
+                            wxDefaultPosition, wxDefaultSize, wxCLRP_SHOW_ALPHA)
+                            .release();
+    fill_color_picker = std::make_unique<wxColourPickerCtrl>(
+                            wx_panel.get(), wxID_ANY,
+                            *wxStockGDI::GetColour(wxStockGDI::COLOUR_BLACK),
+                            wxDefaultPosition, wxDefaultSize, wxCLRP_SHOW_ALPHA)
+                            .release();
+
+    linewidth_ctrl = std::make_unique<wxSpinCtrlDouble>(
+                         wx_panel.get(), wxID_ANY, wxEmptyString,
+                         wxDefaultPosition, wxDefaultSize,
+                         /*16384L*/ wxSP_ARROW_KEYS | wxALIGN_RIGHT)
+                         .release();
     linewidth_ctrl->SetRange(kLineWidthMin, kLineWidthMax);
     linewidth_ctrl->SetDigits(2);
     linewidth_ctrl->SetIncrement(kLineWidthIncrement);
 
     const wxSize default_label_size(kDefaultLabelWidth, -1);
-    linewidth_label = std::make_unique<wxStaticText>(wx_panel.get(), wxID_ANY, "Line Width",
-                                                     wxDefaultPosition, default_label_size)
-                          .release();
-    linecolor_label = std::make_unique<wxStaticText>(wx_panel.get(), wxID_ANY, "Line Color",
-                                                     wxDefaultPosition, default_label_size)
-                          .release();
-    fillcolor_label = std::make_unique<wxStaticText>(wx_panel.get(), wxID_ANY, "Fill Color",
-                                                     wxDefaultPosition, default_label_size)
-                          .release();
-    line_transparency_label = std::make_unique<wxStaticText>(
-                                  wx_panel.get(), wxID_ANY, "Transparency", wxDefaultPosition,
-                                  default_label_size)
-                                  .release();
-    fill_transparency_label = std::make_unique<wxStaticText>(
-                                  wx_panel.get(), wxID_ANY, "Transparency", wxDefaultPosition,
-                                  default_label_size)
-                                  .release();
+    linewidth_label =
+        std::make_unique<wxStaticText>(wx_panel.get(), wxID_ANY, "Line Width",
+                                       wxDefaultPosition, default_label_size)
+            .release();
+    linecolor_label =
+        std::make_unique<wxStaticText>(wx_panel.get(), wxID_ANY, "Line Color",
+                                       wxDefaultPosition, default_label_size)
+            .release();
+    fillcolor_label =
+        std::make_unique<wxStaticText>(wx_panel.get(), wxID_ANY, "Fill Color",
+                                       wxDefaultPosition, default_label_size)
+            .release();
+    line_transparency_label =
+        std::make_unique<wxStaticText>(wx_panel.get(), wxID_ANY, "Transparency",
+                                       wxDefaultPosition, default_label_size)
+            .release();
+    fill_transparency_label =
+        std::make_unique<wxStaticText>(wx_panel.get(), wxID_ANY, "Transparency",
+                                       wxDefaultPosition, default_label_size)
+            .release();
 
-    line_color_alpha_slider = std::make_unique<wxSlider>(
-                                  wx_panel.get(), wxID_ANY, kAlphaMin, kAlphaMin, kAlphaMax,
-                                  wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL)
-                                  .release();
-    fill_color_alpha_slider = std::make_unique<wxSlider>(
-                                  wx_panel.get(), wxID_ANY, kAlphaMin, kAlphaMin, kAlphaMax,
-                                  wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL)
-                                  .release();
+    line_color_alpha_slider =
+        std::make_unique<wxSlider>(wx_panel.get(), wxID_ANY, kAlphaMin,
+                                   kAlphaMin, kAlphaMax, wxDefaultPosition,
+                                   wxDefaultSize, wxSL_HORIZONTAL)
+            .release();
+    fill_color_alpha_slider =
+        std::make_unique<wxSlider>(wx_panel.get(), wxID_ANY, kAlphaMin,
+                                   kAlphaMin, kAlphaMax, wxDefaultPosition,
+                                   wxDefaultSize, wxSL_HORIZONTAL)
+            .release();
 
     line_color_alpha_slider->SetMax(kAlphaMax);
     fill_color_alpha_slider->SetMax(kAlphaMax);
   }
 
-  void InitSizers()
-  {
+  void InitSizers() {
     constexpr int kDefaultSizerBorder = 5;
     std::array<wxSizerFlags, 3> sizer_flags;
     sizer_flags[0].Proportion(0).Expand();
-    sizer_flags[1].Proportion(0).CenterVertical().Border(wxALL, kDefaultSizerBorder);
+    sizer_flags[1].Proportion(0).CenterVertical().Border(wxALL,
+                                                         kDefaultSizerBorder);
     sizer_flags[2].Proportion(1).Expand().Border(wxALL, kDefaultSizerBorder);
 
-    auto *vertical_sizer = std::make_unique<wxBoxSizer>(wxVERTICAL).release();
+    auto* vertical_sizer = std::make_unique<wxBoxSizer>(wxVERTICAL).release();
     wx_panel->SetSizer(vertical_sizer);
 
-    auto *static_box_sizer_elements =
-        std::make_unique<wxStaticBoxSizer>(wxVERTICAL, wx_panel.get(), "Elements").release();
-    auto *static_box_sizer_outline =
-        std::make_unique<wxStaticBoxSizer>(wxVERTICAL, wx_panel.get(), "Outline").release();
-    auto *static_box_sizer_fill =
-        std::make_unique<wxStaticBoxSizer>(wxVERTICAL, wx_panel.get(), "Fill").release();
+    auto* static_box_sizer_elements =
+        std::make_unique<wxStaticBoxSizer>(wxVERTICAL, wx_panel.get(),
+                                           "Elements")
+            .release();
+    auto* static_box_sizer_outline = std::make_unique<wxStaticBoxSizer>(
+                                         wxVERTICAL, wx_panel.get(), "Outline")
+                                         .release();
+    auto* static_box_sizer_fill =
+        std::make_unique<wxStaticBoxSizer>(wxVERTICAL, wx_panel.get(), "Fill")
+            .release();
 
     vertical_sizer->Add(static_box_sizer_elements, sizer_flags[2]);
     vertical_sizer->Add(static_box_sizer_outline, sizer_flags[0]);
     vertical_sizer->Add(static_box_sizer_fill, sizer_flags[0]);
 
-    std::array<wxBoxSizer *, 4> horizontal_sizers_outline{};
-    for (auto &horizontal_sizer : horizontal_sizers_outline) {
+    std::array<wxBoxSizer*, 4> horizontal_sizers_outline{};
+    for (auto& horizontal_sizer : horizontal_sizers_outline) {
       horizontal_sizer = std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
       static_box_sizer_outline->Add(horizontal_sizer, sizer_flags[0]);
     }
 
-    std::array<wxBoxSizer *, 3> horizontal_sizers_fill{};
-    for (auto &horizontal_sizer : horizontal_sizers_fill) {
+    std::array<wxBoxSizer*, 3> horizontal_sizers_fill{};
+    for (auto& horizontal_sizer : horizontal_sizers_fill) {
       horizontal_sizer = std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
       static_box_sizer_fill->Add(horizontal_sizer, sizer_flags[0]);
     }
 
-    static_box_sizer_elements->Add(shape_configuration_list_box, sizer_flags[2]);
+    static_box_sizer_elements->Add(shape_configuration_list_box,
+                                   sizer_flags[2]);
 
     horizontal_sizers_outline[0]->Add(outline_visible_ctrl, sizer_flags[2]);
     horizontal_sizers_outline[1]->Add(linewidth_label, sizer_flags[1]);
@@ -224,12 +241,13 @@ private:
     vertical_sizer->Layout();
   }
 
-  void UpdateConfigurationList()
-  {
+  void UpdateConfigurationList() {
     shape_configuration_list_box->Clear();
 
-    for (size_t index = 0; index < shape_configuration_storage.size(); ++index) {
-      shape_configuration_list_box->AppendString(shape_configuration_storage[index].Name());
+    for (size_t index = 0; index < shape_configuration_storage.size();
+         ++index) {
+      shape_configuration_list_box->AppendString(
+          shape_configuration_storage[index].Name());
     }
 
     const int number_of_items =
@@ -247,13 +265,12 @@ private:
     UpdateWidgetForSelection(static_cast<size_t>(selection));
   }
 
-  void UpdateWidgetForSelection(size_t selection)
-  {
+  void UpdateWidgetForSelection(size_t selection) {
     if (selection >= shape_configuration_storage.size()) {
       return;
     }
 
-    auto &current_configuration = shape_configuration_storage[selection];
+    auto& current_configuration = shape_configuration_storage[selection];
 
     auto outline_visible = current_configuration.OutlineVisible();
     outline_visible_ctrl->SetValue(outline_visible);
@@ -281,8 +298,7 @@ private:
         static_cast<int>(kAlphaScale - (fill_color[3] * kAlphaScale)));
   }
 
-  void CallbackListBook(wxCommandEvent &event)
-  {
+  void CallbackListBook(wxCommandEvent& event) {
     const int selection_index = event.GetSelection();
     if (selection_index == wxNOT_FOUND) {
       return;
@@ -290,8 +306,7 @@ private:
     UpdateWidgetForSelection(static_cast<size_t>(selection_index));
   }
 
-  void CallbackCheckBox(wxCommandEvent &event)
-  {
+  void CallbackCheckBox(wxCommandEvent& event) {
     auto check_status = event.IsChecked();
     const int selection_index = shape_configuration_list_box->GetSelection();
     if (selection_index == wxNOT_FOUND) {
@@ -312,8 +327,7 @@ private:
     signal_shape_configuration_storage(shape_configuration_storage);
   }
 
-  void CallbackSpinControlDouble(wxSpinDoubleEvent &event)
-  {
+  void CallbackSpinControlDouble(wxSpinDoubleEvent& event) {
     const auto line_width = static_cast<float>(event.GetValue());
     const int selection_index = shape_configuration_list_box->GetSelection();
     if (selection_index == wxNOT_FOUND) {
@@ -325,8 +339,7 @@ private:
     signal_shape_configuration_storage(shape_configuration_storage);
   }
 
-  void CallbackColorPicker(wxColourPickerEvent &event)
-  {
+  void CallbackColorPicker(wxColourPickerEvent& event) {
     auto color = to_glm_vec4(event.GetColour());
     const int selection_index = shape_configuration_list_box->GetSelection();
     if (selection_index == wxNOT_FOUND) {
@@ -335,13 +348,15 @@ private:
     const auto selection = static_cast<size_t>(selection_index);
 
     if (event.GetEventObject() == line_color_picker.get()) {
-      auto current_line_color_alpha = shape_configuration_storage[selection].OutlineColor()[3];
+      auto current_line_color_alpha =
+          shape_configuration_storage[selection].OutlineColor()[3];
       color[3] = current_line_color_alpha;
       shape_configuration_storage[selection].OutlineColor(color);
     }
 
     if (event.GetEventObject() == fill_color_picker.get()) {
-      auto current_line_color_alpha = shape_configuration_storage[selection].FillColor()[3];
+      auto current_line_color_alpha =
+          shape_configuration_storage[selection].FillColor()[3];
       color[3] = current_line_color_alpha;
       shape_configuration_storage[selection].FillColor(color);
     }
@@ -349,8 +364,7 @@ private:
     signal_shape_configuration_storage(shape_configuration_storage);
   }
 
-  void CallbackSlider(wxCommandEvent &event)
-  {
+  void CallbackSlider(wxCommandEvent& event) {
     constexpr float kAlphaScale = 100.0F;
     const auto slider_value = static_cast<float>(event.GetInt());
     const float alpha_value = 1.0F - (slider_value / kAlphaScale);
@@ -362,13 +376,15 @@ private:
     const auto selection = static_cast<size_t>(selection_index);
 
     if (event.GetEventObject() == line_color_alpha_slider.get()) {
-      auto current_line_color = shape_configuration_storage[selection].OutlineColor();
+      auto current_line_color =
+          shape_configuration_storage[selection].OutlineColor();
       current_line_color[3] = alpha_value;
       shape_configuration_storage[selection].OutlineColor(current_line_color);
     }
 
     if (event.GetEventObject() == fill_color_alpha_slider.get()) {
-      auto current_line_color = shape_configuration_storage[selection].FillColor();
+      auto current_line_color =
+          shape_configuration_storage[selection].FillColor();
       current_line_color[3] = alpha_value;
       shape_configuration_storage[selection].FillColor(current_line_color);
     }
@@ -395,4 +411,4 @@ private:
   wxWeakRef<wxStaticText> line_transparency_label{nullptr};
   wxWeakRef<wxStaticText> fill_transparency_label{nullptr};
 };
-#endif // HOME_TITAN99_CODE_DECADE_SRC_GUI_SHAPE_PANEL_HPP
+#endif  // HOME_TITAN99_CODE_DECADE_SRC_GUI_SHAPE_PANEL_HPP
