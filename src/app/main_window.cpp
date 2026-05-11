@@ -250,7 +250,7 @@ void MainWindow::ConfigureAutoExitTimer()
     const std::int64_t exit_after_ms = std::stoll(exit_after_ms_str);
     if (exit_after_ms > 0) {
       std::cout << "Auto-exit in ms: " << exit_after_ms << '\n';
-      exit_timer.Bind(wxEVT_TIMER, &MainWindow::OnExitTimer, this); // NOLINT(misc-include-cleaner)
+      exit_timer.Bind(wxEVT_TIMER, &MainWindow::OnExitTimer, this);
       exit_timer.StartOnce(static_cast<int>(exit_after_ms));
     }
   } catch (const std::exception &ex) {
@@ -303,8 +303,7 @@ void MainWindow::InitMenu()
 void MainWindow::CallbackLoadXML(wxCommandEvent &event)
 {
   (void)event;
-  wxFileDialog open_file_dialog(this, "Open File", wxEmptyString,
-                                wxEmptyString, // NOLINT(misc-include-cleaner)
+  wxFileDialog open_file_dialog(this, "Open File", wxEmptyString, wxEmptyString,
                                 "XML Files (*.xml)|*.xml", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
   if (open_file_dialog.ShowModal() != wxID_OK) {
     return;
@@ -402,7 +401,7 @@ void MainWindow::CallbackExit(wxCommandEvent &event)
   Close(true);
 }
 
-void MainWindow::OnExitTimer(wxTimerEvent &event) // NOLINT(misc-include-cleaner)
+void MainWindow::OnExitTimer(wxTimerEvent &event)
 {
   (void)event;
   Close(true);
