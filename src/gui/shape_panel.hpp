@@ -2,6 +2,7 @@
 #define HOME_TITAN99_CODE_DECADE_SRC_GUI_SHAPE_PANEL_HPP
 
 #include <wx/clrpicker.h>
+#include <wx/spinctrl.h>
 #include <wx/weakref.h>
 #include <wx/wx.h>
 
