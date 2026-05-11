@@ -51,6 +51,7 @@ constexpr int kOpenGLMinor = 6;
 struct MainWindow::Impl {
   wxWeakRef<wxSplitterWindow> main_splitter;  // NOLINT(misc-include-cleaner)
   wxWeakRef<wxNotebook> notebook;
+
   std::unique_ptr<DateGroupsTablePanel> date_groups_table_panel;
   std::unique_ptr<ElementsSetupsPanel> elements_setup_panel;
   std::unique_ptr<PageSetupPanel> page_setup_panel;
