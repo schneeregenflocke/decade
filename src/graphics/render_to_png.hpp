@@ -332,11 +332,19 @@ class RenderToPNG {
                 PngSize{image_width, image_height});
   }
 
- private:
+ public:
   struct PngSize {
     size_t width{0};
     size_t height{0};
   };
+
+  static void SaveRgbaPng(const char* file_name,
+                          std::vector<unsigned char>& image, size_t width,
+                          size_t height) {
+    SavePicture(file_name, image, PngSize{width, height});
+  }
+
+ private:
 
   static size_t MaxPngHeight() { return PNG_UINT_32_MAX / (sizeof(png_bytep)); }
 

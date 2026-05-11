@@ -10,8 +10,6 @@
 
 #include "rect.hpp"
 
-// #include <iostream>
-
 class Projection {
  public:
   static float AspectRatio() {

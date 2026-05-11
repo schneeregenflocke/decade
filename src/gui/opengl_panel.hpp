@@ -7,14 +7,33 @@
 #include <wx/wx.h>
 
 #include <array>
+#include <cmath>
+#include <cstdlib>
 #include <functional>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/io.hpp>
+#include <iostream>
 #include <memory>
 #include <sigslot/signal.hpp>
 #include <string>
 #include <utility>
+
+namespace decade_debug {
+inline bool LogEnabled() {
+  static const bool enabled = std::getenv("DECADE_DEBUG_LOG") != nullptr;
+  return enabled;
+}
+inline void LogMat4(const char *tag, const glm::mat4 &m) {
+  if (!LogEnabled()) return;
+  std::cout << tag << ": diag(" << m[0][0] << "," << m[1][1] << "," << m[2][2]
+            << ") trans(" << m[3][0] << "," << m[3][1] << "," << m[3][2] << ")\n";
+}
+inline void LogVec3(const char *tag, const glm::vec3 &v) {
+  if (!LogEnabled()) return;
+  std::cout << tag << ": (" << v.x << "," << v.y << "," << v.z << ")\n";
+}
+} // namespace decade_debug
 
 #include "../graphics/graphics_engine.hpp"
 #include "../graphics/mvp_matrices.hpp"
@@ -101,6 +120,13 @@ class MouseInteraction {
                    int wheel_rotation) {
     glm::vec3 current_mouse_pos = MouseWorldSpacePos(mouse_position, mvp);
 
+    if (decade_debug::LogEnabled()) {
+      std::cout << "Mouse: px=(" << mouse_position.x << "," << mouse_position.y
+                << ") drag=" << dragging << " wheel=" << wheel_rotation << '\n';
+      decade_debug::LogVec3("Mouse current (view-space)", current_mouse_pos);
+      decade_debug::LogVec3("Mouse persistent (prev)", persistent_mouse_pos);
+    }
+
     if (dragging) {
       translate_pre_scaled += current_mouse_pos - persistent_mouse_pos;
     }
@@ -128,6 +154,13 @@ class MouseInteraction {
 
     auto view_matrix = CalculateViewMatrix(persistent_scale_factor);
     mvp.SetView(view_matrix);
+
+    if (decade_debug::LogEnabled()) {
+      decade_debug::LogVec3("translate_pre_scaled", translate_pre_scaled);
+      decade_debug::LogVec3("translate_post_scaled", translate_post_scaled);
+      std::cout << "scale=" << persistent_scale_factor << '\n';
+      decade_debug::LogMat4("view_matrix", view_matrix);
+    }
 
     persistent_mouse_pos = current_mouse_pos;
   }
@@ -290,18 +323,56 @@ class GLCanvas {
   void ReceivePageSetup(const PageSetupConfig& page_setup_config) {
     page_size = rectf::from_dimension(
         rectf::Dimension{page_setup_config.size[0], page_setup_config.size[1]});
+    if (decade_debug::LogEnabled()) {
+      std::cout << "ReceivePageSetup: page=" << page_size.width() << "x"
+                << page_size.height() << " rect=(" << page_size.l() << ","
+                << page_size.r() << "," << page_size.b() << "," << page_size.t()
+                << ")\n";
+    }
+    if (graphics_engine) {
+      RefreshMVP();
+    }
   }
 
   void RefreshMVP() {
     const float view_size_scale = 1.1f;
 
-    wxSize size = wx_gl_canvas->GetClientSize();
-    glViewport(0, 0, size.GetWidth(), size.GetHeight());
+    const wxSize logical_size = wx_gl_canvas->GetClientSize();
+    const double scale = wx_gl_canvas->GetContentScaleFactor();
+    const auto fb_width =
+        static_cast<GLsizei>(std::lround(logical_size.GetWidth() * scale));
+    const auto fb_height =
+        static_cast<GLsizei>(std::lround(logical_size.GetHeight() * scale));
+    glViewport(0, 0, fb_width, fb_height);
+
+    if (decade_debug::LogEnabled()) {
+      std::cout << "RefreshMVP scale=" << scale << " logical=" << logical_size.GetWidth()
+                << "x" << logical_size.GetHeight() << " fb=" << fb_width << "x"
+                << fb_height << '\n';
+    }
+
+    const wxSize size(static_cast<int>(fb_width), static_cast<int>(fb_height));
+
+    if (page_size.width() <= 0.0f || page_size.height() <= 0.0f) {
+      if (decade_debug::LogEnabled()) {
+        std::cout << "RefreshMVP: skipped, page_size not yet initialised\n";
+      }
+      return;
+    }
 
     rectf view_size = page_size.scale(view_size_scale);
     mvp.SetProjection(Projection::OrthoMatrix(view_size));
 
     graphics_engine->SetMVP(mvp);
+
+    if (decade_debug::LogEnabled()) {
+      std::cout << "RefreshMVP: viewport=" << size.GetWidth() << "x"
+                << size.GetHeight() << " page=" << page_size.width() << "x"
+                << page_size.height() << " view=" << view_size.width() << "x"
+                << view_size.height() << '\n';
+      decade_debug::LogMat4("RefreshMVP proj", mvp.GetProjection());
+      decade_debug::LogMat4("RefreshMVP view", mvp.GetView());
+    }
 
     wx_gl_canvas->Refresh(false);
   }
@@ -311,6 +382,43 @@ class GLCanvas {
     const int msaa_samples = 16;
     RenderToPNG render_to_png(file_path, page_size, dpi, graphics_engine,
                               msaa_samples);
+  }
+
+  // Dumps the current window framebuffer (what is actually on screen) to PNG.
+  // Uses glReadPixels on the back buffer; flips y because OpenGL origin is
+  // bottom-left while PNG is top-left.
+  void SaveWindowPNG(const std::string &file_path) {
+    wx_gl_canvas->SetCurrent(*context);
+    graphics_engine->SetMVP(mvp);
+    graphics_engine->Render();
+    glFinish();
+
+    const wxSize logical_size = wx_gl_canvas->GetClientSize();
+    const double scale = wx_gl_canvas->GetContentScaleFactor();
+    const auto w =
+        static_cast<size_t>(std::lround(logical_size.GetWidth() * scale));
+    const auto h =
+        static_cast<size_t>(std::lround(logical_size.GetHeight() * scale));
+    if (w == 0 || h == 0) {
+      return;
+    }
+    constexpr size_t kBytesPerPixel = 4;
+    std::vector<unsigned char> buffer(w * h * kBytesPerPixel);
+
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadBuffer(GL_BACK);
+    glReadPixels(0, 0, static_cast<GLsizei>(w), static_cast<GLsizei>(h),
+                 GL_RGBA, GL_UNSIGNED_BYTE, buffer.data());
+
+    // flip vertically
+    std::vector<unsigned char> flipped(buffer.size());
+    const size_t row_bytes = w * kBytesPerPixel;
+    for (size_t y = 0; y < h; ++y) {
+      std::copy_n(buffer.data() + (h - 1 - y) * row_bytes, row_bytes,
+                  flipped.data() + y * row_bytes);
+    }
+
+    RenderToPNG::SaveRgbaPng(file_path.c_str(), flipped, w, h);
   }
 
  private:
@@ -339,7 +447,11 @@ class GLCanvas {
   }
 
   void MouseCallback(wxMouseEvent& event) {
-    mouse_interaction->Interaction(mvp, event.GetPosition(), event.Dragging(),
+    const double scale = wx_gl_canvas->GetContentScaleFactor();
+    const wxPoint pos_physical(
+        static_cast<int>(std::lround(event.GetPosition().x * scale)),
+        static_cast<int>(std::lround(event.GetPosition().y * scale)));
+    mouse_interaction->Interaction(mvp, pos_physical, event.Dragging(),
                                    event.GetWheelRotation());
     RefreshMVP();
   }

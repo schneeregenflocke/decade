@@ -169,12 +169,20 @@ void MainWindow::InitializeOpenGL() {
 
 void MainWindow::DumpPngIfRequested() {
   wxString png_path;
-  if (!wxGetEnv("DECADE_DUMP_PNG", &png_path)) {
-    return;
+  if (wxGetEnv("DECADE_DUMP_PNG", &png_path)) {
+    const auto path = png_path.ToStdString();
+    std::cout << "DECADE_DUMP_PNG: writing " << path << '\n';
+    impl_->gl_canvas->SavePNG(path);
   }
-  const auto path = png_path.ToStdString();
-  std::cout << "DECADE_DUMP_PNG: writing " << path << '\n';
-  impl_->gl_canvas->SavePNG(path);
+  wxString window_png_path;
+  if (wxGetEnv("DECADE_DUMP_WINDOW_PNG", &window_png_path)) {
+    const auto path = window_png_path.ToStdString();
+    // Defer until after the first real paint so the back buffer is populated.
+    CallAfter([this, path]() {
+      std::cout << "DECADE_DUMP_WINDOW_PNG: writing " << path << '\n';
+      impl_->gl_canvas->SaveWindowPNG(path);
+    });
+  }
 }
 
 void MainWindow::EstablishConnections() {
