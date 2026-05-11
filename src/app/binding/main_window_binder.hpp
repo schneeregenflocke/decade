@@ -78,8 +78,7 @@ inline void BindDateIntervalBundles(EventBus& bus,
   // Transform adapter -> Bus (transformed topic)
   components.transform_date_interval_bundle.SetTransform(
       {.begin_days = 0, .end_days = 1});
-  components.transform_date_interval_bundle
-      .SignalTransformDateIntervalBundles()
+  components.transform_date_interval_bundle.SignalTransformDateIntervalBundles()
       .connect([&bus](const std::vector<DateIntervalBundle>& value) {
         bus.transformed_date_interval_bundles(value);
       });

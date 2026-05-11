@@ -345,7 +345,6 @@ class RenderToPNG {
   }
 
  private:
-
   static size_t MaxPngHeight() { return PNG_UINT_32_MAX / (sizeof(png_bytep)); }
 
   static size_t MaxPngWidthForHeight(size_t height) {

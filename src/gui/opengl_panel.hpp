@@ -24,16 +24,17 @@ inline bool LogEnabled() {
   static const bool enabled = std::getenv("DECADE_DEBUG_LOG") != nullptr;
   return enabled;
 }
-inline void LogMat4(const char *tag, const glm::mat4 &m) {
+inline void LogMat4(const char* tag, const glm::mat4& m) {
   if (!LogEnabled()) return;
   std::cout << tag << ": diag(" << m[0][0] << "," << m[1][1] << "," << m[2][2]
-            << ") trans(" << m[3][0] << "," << m[3][1] << "," << m[3][2] << ")\n";
+            << ") trans(" << m[3][0] << "," << m[3][1] << "," << m[3][2]
+            << ")\n";
 }
-inline void LogVec3(const char *tag, const glm::vec3 &v) {
+inline void LogVec3(const char* tag, const glm::vec3& v) {
   if (!LogEnabled()) return;
   std::cout << tag << ": (" << v.x << "," << v.y << "," << v.z << ")\n";
 }
-} // namespace decade_debug
+}  // namespace decade_debug
 
 #include "../graphics/graphics_engine.hpp"
 #include "../graphics/mvp_matrices.hpp"
@@ -346,8 +347,9 @@ class GLCanvas {
     glViewport(0, 0, fb_width, fb_height);
 
     if (decade_debug::LogEnabled()) {
-      std::cout << "RefreshMVP scale=" << scale << " logical=" << logical_size.GetWidth()
-                << "x" << logical_size.GetHeight() << " fb=" << fb_width << "x"
+      std::cout << "RefreshMVP scale=" << scale
+                << " logical=" << logical_size.GetWidth() << "x"
+                << logical_size.GetHeight() << " fb=" << fb_width << "x"
                 << fb_height << '\n';
     }
 
@@ -387,7 +389,7 @@ class GLCanvas {
   // Dumps the current window framebuffer (what is actually on screen) to PNG.
   // Uses glReadPixels on the back buffer; flips y because OpenGL origin is
   // bottom-left while PNG is top-left.
-  void SaveWindowPNG(const std::string &file_path) {
+  void SaveWindowPNG(const std::string& file_path) {
     wx_gl_canvas->SetCurrent(*context);
     graphics_engine->SetMVP(mvp);
     graphics_engine->Render();

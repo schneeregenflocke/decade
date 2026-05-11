@@ -45,7 +45,6 @@ class PageSetupStore {
  private:
   bool emitting_{false};
 
-
   friend class boost::serialization::access;
   template <class Archive>
   void save(Archive& ar, const unsigned int /*version*/) const {
