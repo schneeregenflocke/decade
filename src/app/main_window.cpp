@@ -6,11 +6,11 @@
 #include <wx/gdicmn.h>
 #include <wx/menu.h>
 #include <wx/notebook.h>
-#include <wx/panel.h>
+#include <wx/panel.h>  // NOLINT(misc-include-cleaner)
 #include <wx/sizer.h>
 #include <wx/splitter.h>
 #include <wx/string.h>
-#include <wx/txtstrm.h>
+#include <wx/timer.h>
 #include <wx/utils.h>
 #include <wx/weakref.h>
 #include <wx/window.h>
@@ -47,7 +47,7 @@ constexpr int kOpenGLMinor = 6;
 }  // namespace
 
 struct MainWindow::Impl {
-  wxWeakRef<wxSplitterWindow> main_splitter;
+  wxWeakRef<wxSplitterWindow> main_splitter;  // NOLINT(misc-include-cleaner)
   wxWeakRef<wxNotebook> notebook;
   std::unique_ptr<DateGroupsTablePanel> date_groups_table_panel;
   std::unique_ptr<ElementsSetupsPanel> elements_setup_panel;
@@ -105,6 +105,7 @@ void MainWindow::CreateLayout(bool maximize_on_start) {
   wxSizerFlags sizer_flags;
   sizer_flags.Proportion(1).Expand().Border(wxALL, kSizerBorder);
 
+  // NOLINTNEXTLINE(misc-include-cleaner)
   auto notebook_panel = std::make_unique<wxPanel>(main_splitter_ptr, wxID_ANY);
   auto* notebook_panel_ptr = notebook_panel.release();
   auto notebook_panel_sizer = std::make_unique<wxBoxSizer>(wxVERTICAL);
@@ -196,7 +197,8 @@ void MainWindow::EstablishConnections() {
   impl_->date_interval_bundle_store.SignalDateIntervalBundles().connect(
       &TransformDateIntervalBundle::ReceiveDateIntervalBundles,
       &impl_->transform_date_interval_bundle);
-  impl_->transform_date_interval_bundle.SetTransform({0, 1});
+  impl_->transform_date_interval_bundle.SetTransform(
+      {.begin_days = 0, .end_days = 1});
   impl_->transform_date_interval_bundle.SignalTransformDateIntervalBundles()
       .connect(&CalendarPage::ReceiveDateIntervalBundles,
                impl_->calendar_page.get());
@@ -329,6 +331,7 @@ void MainWindow::InitMenu() {
 
 void MainWindow::CallbackLoadXML(wxCommandEvent& event) {
   (void)event;
+  // NOLINTNEXTLINE(misc-include-cleaner)
   wxFileDialog open_file_dialog(this, "Open File", wxEmptyString, wxEmptyString,
                                 "XML Files (*.xml)|*.xml",
                                 wxFD_OPEN | wxFD_FILE_MUST_EXIST);

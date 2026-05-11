@@ -21,7 +21,14 @@
       "Bash(DECADE_EXIT_AFTER_MS=3000 stdbuf -oL -eL timeout 10 ./decade)",
       "Bash(DECADE_DUMP_PNG=/tmp/decade_render.png DECADE_EXIT_AFTER_MS=2000 stdbuf -oL -eL timeout 12 ./decade)",
       "Bash(DECADE_DEBUG_LOG=1 DECADE_DUMP_PNG=/tmp/decade_render.png DECADE_EXIT_AFTER_MS=2000 stdbuf -oL -eL timeout 12 ./decade)",
-      "Bash(DECADE_DEBUG_LOG=1 DECADE_DUMP_WINDOW_PNG=/tmp/decade_window.png DECADE_EXIT_AFTER_MS=3000 stdbuf -oL -eL timeout 15 ./decade)"
+      "Bash(DECADE_DEBUG_LOG=1 DECADE_DUMP_WINDOW_PNG=/tmp/decade_window.png DECADE_EXIT_AFTER_MS=3000 stdbuf -oL -eL timeout 15 ./decade)",
+      "Bash(run-clang-tidy -p build/)",
+      "Bash(run-clang-tidy -p build/ 2>&1 | grep -E \"warning:|error:\" | grep -v \"^/home/titan99/code/decade.bak/build/\" | grep -v \"^/home/titan99/code/decade.bak/external/\" > /tmp/clang-tidy-src.txt; wc -l /tmp/clang-tidy-src.txt)",
+      "Bash(find /usr/include/wx-* -name \"panel.h\" -path \"*/wx/*\" -not -path \"*/gtk*\" -not -path \"*/generic*\" -not -path \"*/msw*\" -not -path \"*/osx*\" -not -path \"*/x11*\" -not -path \"*/motif*\" -not -path \"*/qt*\" -not -path \"*/univ*\" 2>/dev/null | head -5)",
+      "Read(//usr/include/**)",
+      "Bash(ninja -C /home/titan99/code/decade.bak/build)",
+      "Bash(run-clang-tidy -p /home/titan99/code/decade.bak/build/)",
+      "Bash(awk -F: '{print $1}')"
     ],
     "additionalDirectories": [
       "/tmp"
