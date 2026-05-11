@@ -28,7 +28,9 @@
       "Read(//usr/include/**)",
       "Bash(ninja -C /home/titan99/code/decade.bak/build)",
       "Bash(run-clang-tidy -p /home/titan99/code/decade.bak/build/)",
-      "Bash(awk -F: '{print $1}')"
+      "Bash(awk -F: '{print $1}')",
+      "Bash(cmake -S /home/titan99/code/decade.bak -B /home/titan99/code/decade.bak/build -G Ninja)",
+      "Bash(DECADE_DUMP_PNG=/tmp/decade_render.png DECADE_EXIT_AFTER_MS=2000 stdbuf -oL -eL timeout 12 ./build/decade)"
     ],
     "additionalDirectories": [
       "/tmp"

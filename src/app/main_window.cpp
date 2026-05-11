@@ -22,6 +22,8 @@
 #include <memory>
 #include <string>
 
+#include "../application/event_bus.hpp"
+#include "../application/main_window_binder.hpp"
 #include "../calendar_page.hpp"
 #include "../gui/calendar_panel.hpp"
 #include "../gui/date_panel.hpp"
@@ -67,6 +69,8 @@ struct MainWindow::Impl {
   ShapeConfigurationStorage shape_configuration_storage;
   CalendarConfigStorage calendar_configuration_storage;
   std::unique_ptr<CalendarPage> calendar_page;
+
+  EventBus event_bus;
 };
 
 MainWindow::MainWindow(wxWindow* parent, const wxString& title,
@@ -187,86 +191,27 @@ void MainWindow::DumpPngIfRequested() {
 }
 
 void MainWindow::EstablishConnections() {
-  impl_->date_interval_bundle_store.SignalDateIntervalBundles().connect(
-      &DateTablePanel::ReceiveDateIntervalBundles,
-      impl_->data_table_panel.get());
-  impl_->data_table_panel->SignalTableDateIntervalBundles().connect(
-      &DateIntervalBundleStore::ReceiveDateIntervalBundles,
-      &impl_->date_interval_bundle_store);
+  MainWindowComponents components{
+      .date_groups_store = impl_->date_groups_store,
+      .date_interval_bundle_store = impl_->date_interval_bundle_store,
+      .transform_date_interval_bundle = impl_->transform_date_interval_bundle,
+      .page_setup_store = impl_->page_setup_store,
+      .title_config_store = impl_->title_config_store,
+      .shape_configuration_storage = impl_->shape_configuration_storage,
+      .calendar_configuration_storage = impl_->calendar_configuration_storage,
+      .data_table_panel = *impl_->data_table_panel,
+      .date_groups_table_panel = *impl_->date_groups_table_panel,
+      .elements_setup_panel = *impl_->elements_setup_panel,
+      .page_setup_panel = *impl_->page_setup_panel,
+      .title_setup_panel = *impl_->title_setup_panel,
+      .calendar_setup_panel = *impl_->calendar_setup_panel,
+      .font_panel = *impl_->font_panel,
+      .calendar_page = *impl_->calendar_page,
+      .gl_canvas = *impl_->gl_canvas,
+  };
 
-  impl_->date_interval_bundle_store.SignalDateIntervalBundles().connect(
-      &TransformDateIntervalBundle::ReceiveDateIntervalBundles,
-      &impl_->transform_date_interval_bundle);
-  impl_->transform_date_interval_bundle.SetTransform(
-      {.begin_days = 0, .end_days = 1});
-  impl_->transform_date_interval_bundle.SignalTransformDateIntervalBundles()
-      .connect(&CalendarPage::ReceiveDateIntervalBundles,
-               impl_->calendar_page.get());
-
-  impl_->date_groups_store.SignalDateGroups().connect(
-      &DateGroupsTablePanel::ReceiveDateGroups,
-      impl_->date_groups_table_panel.get());
-  impl_->date_groups_table_panel->SignalTableDateGroups().connect(
-      &DateGroupStore::ReceiveDateGroups, &impl_->date_groups_store);
-
-  impl_->date_groups_store.SignalDateGroups().connect(
-      &DateIntervalBundleStore::ReceiveDateGroups,
-      &impl_->date_interval_bundle_store);
-  impl_->date_groups_store.SignalDateGroups().connect(
-      &DateTablePanel::ReceiveDateGroups, impl_->data_table_panel.get());
-  impl_->date_groups_store.SignalDateGroups().connect(
-      &ElementsSetupsPanel::ReceiveDateGroups,
-      impl_->elements_setup_panel.get());
-  impl_->date_groups_store.SignalDateGroups().connect(
-      &CalendarPage::ReceiveDateGroups, impl_->calendar_page.get());
-
-  impl_->page_setup_store.signal_page_setup_config.connect(
-      &PageSetupPanel::ReceivePageSetup, impl_->page_setup_panel.get());
-  impl_->page_setup_panel->signal_page_setup_config.connect(
-      &PageSetupStore::ReceivePageSetup, &impl_->page_setup_store);
-
-  impl_->page_setup_store.signal_page_setup_config.connect(
-      &CalendarPage::ReceivePageSetup, impl_->calendar_page.get());
-  impl_->page_setup_store.signal_page_setup_config.connect(
-      &GLCanvas::ReceivePageSetup, impl_->gl_canvas.get());
-
-  impl_->font_panel->signal_font_filepath.connect(&CalendarPage::ReceiveFont,
-                                                  impl_->calendar_page.get());
-
-  impl_->title_config_store.SignalTitleConfig().connect(
-      &TitleSetupPanel::ReceiveTitleConfig, impl_->title_setup_panel.get());
-  impl_->title_setup_panel->SignalTitleConfig().connect(
-      &TitleConfigStore::ReceiveTitleConfig, &impl_->title_config_store);
-
-  impl_->title_config_store.SignalTitleConfig().connect(
-      &CalendarPage::ReceiveTitleConfig, impl_->calendar_page.get());
-
-  impl_->shape_configuration_storage.SignalShapeConfigurationStorage().connect(
-      &ElementsSetupsPanel::ReceiveShapeConfigurationStorage,
-      impl_->elements_setup_panel.get());
-  impl_->elements_setup_panel->SignalShapeConfigurationStorage().connect(
-      &ShapeConfigurationStorage::ReceiveShapeConfigurationStorage,
-      &impl_->shape_configuration_storage);
-
-  impl_->shape_configuration_storage.SignalShapeConfigurationStorage().connect(
-      &CalendarPage::ReceiveShapeConfigurationStorage,
-      impl_->calendar_page.get());
-
-  impl_->calendar_configuration_storage.SignalCalendarConfigStorage().connect(
-      &CalendarSetupPanel::ReceiveCalendarConfigStorage,
-      impl_->calendar_setup_panel.get());
-  impl_->calendar_setup_panel->SignalCalendarConfigStorage().connect(
-      &CalendarConfigStorage::ReceiveCalendarConfigStorage,
-      &impl_->calendar_configuration_storage);
-
-  impl_->calendar_configuration_storage.SignalCalendarConfigStorage().connect(
-      &CalendarPage::ReceiveCalendarConfig, impl_->calendar_page.get());
-
-  impl_->shape_configuration_storage.SendShapeConfigurationStorage();
-  impl_->date_groups_store.SendDefaultValues();
-  impl_->page_setup_panel->SendDefaultValues();
-  impl_->title_setup_panel->SendDefaultValues();
-  impl_->calendar_configuration_storage.SendCalendarConfigStorage();
+  MainWindowBinder::Bind(impl_->event_bus, components);
+  MainWindowBinder::SendInitialValues(components);
 }
 
 void MainWindow::ConfigureAutoExitTimer() {

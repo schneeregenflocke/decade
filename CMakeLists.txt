@@ -46,6 +46,8 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/app_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/main_window.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/services/project_io.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/application/event_bus.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/application/main_window_binder.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/date_utils.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/casts.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/calendar_page.hpp
