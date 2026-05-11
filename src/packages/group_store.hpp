@@ -11,6 +11,8 @@
 #include <utility>
 #include <vector>
 
+#include "detail/reentry_guard.hpp"
+
 class DateGroup {
  public:
   DateGroup() = default;
@@ -44,6 +46,10 @@ class DateGroup {
 class DateGroupStore {
  public:
   void ReceiveDateGroups(const std::vector<DateGroup>& incoming_date_groups) {
+    if (emitting_) {
+      return;
+    }
+    const packages::detail::ScopedReentryFlag guard(emitting_);
     date_groups = incoming_date_groups;
     UpdateNumbers();
     signal_date_groups(date_groups);
@@ -133,5 +139,6 @@ class DateGroupStore {
   }
   std::vector<DateGroup> date_groups;
   sigslot::signal<const std::vector<DateGroup>&> signal_date_groups;
+  bool emitting_{false};
 };
 #endif  // HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_GROUP_STORE_HPP

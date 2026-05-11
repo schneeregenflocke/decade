@@ -8,6 +8,8 @@
 #include <boost/serialization/split_member.hpp>
 #include <sigslot/signal.hpp>
 
+#include "detail/reentry_guard.hpp"
+
 struct PageSetupConfig {
   std::array<float, 2> size;
   std::array<float, 4> margins;
@@ -26,8 +28,12 @@ struct PageSetupConfig {
 class PageSetupStore {
  public:
   void ReceivePageSetup(const PageSetupConfig& incoming_page_setup_config) {
+    if (emitting_) {
+      return;
+    }
+    const packages::detail::ScopedReentryFlag guard(emitting_);
     page_setup_config = incoming_page_setup_config;
-    SendPageSetup();
+    signal_page_setup_config(page_setup_config);
   }
 
   void SendPageSetup() { signal_page_setup_config(page_setup_config); }
@@ -37,6 +43,9 @@ class PageSetupStore {
   PageSetupConfig page_setup_config;
 
  private:
+  bool emitting_{false};
+
+
   friend class boost::serialization::access;
   template <class Archive>
   void save(Archive& ar, const unsigned int /*version*/) const {

@@ -17,6 +17,8 @@
 #include <string>
 #include <vector>
 
+#include "detail/reentry_guard.hpp"
+
 class ShapeConfiguration {
  public:
   struct OutlineColorValue {
@@ -147,8 +149,12 @@ class ShapeConfigurationStorage {
 
   void ReceiveShapeConfigurationStorage(
       const ShapeConfigurationStorage& shape_configuration_storage) {
+    if (emitting_) {
+      return;
+    }
+    const packages::detail::ScopedReentryFlag guard(emitting_);
     CopyFrom(shape_configuration_storage);
-    SendShapeConfigurationStorage();
+    signal_shape_configuration_storage(*this);
   }
 
   void SendShapeConfigurationStorage() {
@@ -265,6 +271,7 @@ class ShapeConfigurationStorage {
   size_t number_persistent_configurations{0};
   sigslot::signal<const ShapeConfigurationStorage&>
       signal_shape_configuration_storage;
+  bool emitting_{false};
 
   friend class boost::serialization::access;
   template <class Archive>

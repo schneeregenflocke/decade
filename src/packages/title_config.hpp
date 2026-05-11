@@ -11,6 +11,8 @@
 #include <string>
 #include <utility>
 
+#include "detail/reentry_guard.hpp"
+
 class TitleConfig {
  public:
   TitleConfig() = default;
@@ -57,8 +59,12 @@ class TitleConfigStore {
   void SendTitleConfig() { signal_title_config(title_config); }
 
   void ReceiveTitleConfig(const TitleConfig& incoming_title_config) {
+    if (emitting_) {
+      return;
+    }
+    const packages::detail::ScopedReentryFlag guard(emitting_);
     title_config = incoming_title_config;
-    SendTitleConfig();
+    signal_title_config(title_config);
   }
 
   sigslot::signal<const TitleConfig&>& SignalTitleConfig() {
@@ -68,6 +74,7 @@ class TitleConfigStore {
  private:
   TitleConfig title_config;
   sigslot::signal<const TitleConfig&> signal_title_config;
+  bool emitting_{false};
 
   friend class boost::serialization::access;
   template <class Archive>

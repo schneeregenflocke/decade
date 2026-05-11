@@ -46,8 +46,8 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/app_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/main_window.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/services/project_io.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/application/event_bus.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/application/main_window_binder.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/event_bus.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/main_window_binder.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/date_utils.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/casts.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/calendar_page.hpp
@@ -58,6 +58,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/page_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/shape_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/title_config.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/detail/reentry_guard.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/calendar_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/date_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/font_panel.hpp
@@ -174,3 +175,9 @@ list(APPEND RESOURCE_FILES
 embed_resources(${PROJECT_NAME}_RESOURCES ${RESOURCE_FILES})
 cmake_print_variables(${PROJECT_NAME}_RESOURCES)
 target_sources(${PROJECT_NAME} PRIVATE ${${PROJECT_NAME}_RESOURCES})
+
+option(DECADE_BUILD_TESTS "Build unit tests for src/packages/" ON)
+if(DECADE_BUILD_TESTS)
+	enable_testing()
+	add_subdirectory(tests)
+endif()

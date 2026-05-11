@@ -22,9 +22,9 @@
 #include <memory>
 #include <string>
 
-#include "../application/event_bus.hpp"
-#include "../application/main_window_binder.hpp"
 #include "../calendar_page.hpp"
+#include "binding/event_bus.hpp"
+#include "binding/main_window_binder.hpp"
 #include "../gui/calendar_panel.hpp"
 #include "../gui/date_panel.hpp"
 #include "../gui/font_panel.hpp"
@@ -49,6 +49,12 @@ constexpr int kOpenGLMinor = 6;
 }  // namespace
 
 struct MainWindow::Impl {
+  // Declared first so it is destroyed *last* — every producer (stores,
+  // panels, the GL canvas) emits via `event_bus`, and some emissions can run
+  // during teardown. Keeping the bus alive longer than its capturing lambdas
+  // avoids dangling references in slot callbacks.
+  EventBus event_bus;
+
   wxWeakRef<wxSplitterWindow> main_splitter;  // NOLINT(misc-include-cleaner)
   wxWeakRef<wxNotebook> notebook;
 
@@ -70,8 +76,6 @@ struct MainWindow::Impl {
   ShapeConfigurationStorage shape_configuration_storage;
   CalendarConfigStorage calendar_configuration_storage;
   std::unique_ptr<CalendarPage> calendar_page;
-
-  EventBus event_bus;
 };
 
 MainWindow::MainWindow(wxWindow* parent, const wxString& title,
@@ -211,8 +215,8 @@ void MainWindow::EstablishConnections() {
       .gl_canvas = *impl_->gl_canvas,
   };
 
-  MainWindowBinder::Bind(impl_->event_bus, components);
-  MainWindowBinder::SendInitialValues(components);
+  main_window_binder::Bind(impl_->event_bus, components);
+  main_window_binder::SendInitialValues(components);
 }
 
 void MainWindow::ConfigureAutoExitTimer() {

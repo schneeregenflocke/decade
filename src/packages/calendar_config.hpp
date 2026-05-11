@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "../date_utils.hpp"
+#include "detail/reentry_guard.hpp"
 class CalendarSpan {
  public:
   struct YearSpan {
@@ -130,8 +131,12 @@ class CalendarConfigStorage : public CalendarSpan {
 
   void ReceiveCalendarConfigStorage(
       const CalendarConfigStorage& calendar_config_storage) {
+    if (emitting_) {
+      return;
+    }
+    const packages::detail::ScopedReentryFlag guard(emitting_);
     *this = calendar_config_storage;
-    SendCalendarConfigStorage();
+    signal_calendar_config_storage(*this);
   }
 
   void SendCalendarConfigStorage() { signal_calendar_config_storage(*this); }
@@ -178,6 +183,7 @@ class CalendarConfigStorage : public CalendarSpan {
       kDefaultSpacingProportions.begin(), kDefaultSpacingProportions.end())};
 
   sigslot::signal<const CalendarConfigStorage&> signal_calendar_config_storage;
+  bool emitting_{false};
 
   friend class boost::serialization::access;
   template <class Archive>

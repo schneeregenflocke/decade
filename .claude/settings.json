@@ -31,7 +31,26 @@
       "Bash(awk -F: '{print $1}')",
       "Bash(cmake -S /home/titan99/code/decade.bak -B /home/titan99/code/decade.bak/build -G Ninja)",
       "Bash(DECADE_DUMP_PNG=/tmp/decade_render.png DECADE_EXIT_AFTER_MS=2000 stdbuf -oL -eL timeout 12 ./build/decade)",
-      "Bash(gh pr *)"
+      "Bash(gh pr list)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh pr status)",
+      "Bash(gh pr checks:*)",
+      "Bash(mkdir -p /home/titan99/code/decade.bak/src/app/binding)",
+      "Bash(git -C /home/titan99/code/decade.bak mv src/application/event_bus.hpp src/app/binding/event_bus.hpp)",
+      "Bash(git -C /home/titan99/code/decade.bak mv src/application/main_window_binder.hpp src/app/binding/main_window_binder.hpp)",
+      "Bash(rmdir /home/titan99/code/decade.bak/src/application)",
+      "Bash(pkg-config --modversion gtest)",
+      "Bash(pkg-config --modversion gtest_main)",
+      "Read(//usr/local/include/**)",
+      "Bash(cmake --find-package -DNAME=GTest -DCOMPILER_ID=GNU -DLANGUAGE=CXX -DMODE=EXIST)",
+      "Bash(ninja -C /home/titan99/code/decade.bak/build decade_tests)",
+      "Bash(ctest --output-on-failure)",
+      "Bash(ctest --output-on-failure -R DateIntervalBundleStoreTest)",
+      "Bash(ninja -C /home/titan99/code/decade.bak/build decade)",
+      "Bash(DECADE_DUMP_PNG=/tmp/decade_render.png DECADE_EXIT_AFTER_MS=2000 stdbuf -oL -eL timeout 12 /home/titan99/code/decade.bak/build/decade)",
+      "Bash(echo \"===EXIT $?===\")"
     ],
     "additionalDirectories": [
       "/tmp"

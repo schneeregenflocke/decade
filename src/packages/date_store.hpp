@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "../date_utils.hpp"
+#include "detail/reentry_guard.hpp"
 #include "group_store.hpp"
 
 class DateIntervalBundle {
@@ -138,6 +139,10 @@ class DateIntervalBundleStore {
 
   virtual void ReceiveDateIntervalBundles(
       const std::vector<DateIntervalBundle>& incoming_date_interval_bundles) {
+    if (emitting_) {
+      return;
+    }
+    const packages::detail::ScopedReentryFlag guard(emitting_);
     ProcessDateIntervalBundles(incoming_date_interval_bundles);
     signal_date_interval_bundles(date_interval_bundles);
   }
@@ -181,6 +186,8 @@ class DateIntervalBundleStore {
   }
 
  protected:
+  bool emitting_{false};
+
   [[nodiscard]] const std::vector<DateIntervalBundle>&
   GetDateIntervalBundlesInternal() const {
     return date_interval_bundles;
@@ -347,6 +354,10 @@ class DateIntervalBundleBarStore : public DateIntervalBundleStore {
  public:
   void ReceiveDateIntervalBundles(const std::vector<DateIntervalBundle>&
                                       incoming_date_interval_bundles) override {
+    if (emitting_) {
+      return;
+    }
+    const packages::detail::ScopedReentryFlag guard(emitting_);
     ProcessDateIntervalBundles(incoming_date_interval_bundles);
 
     ProcessBars();
@@ -430,6 +441,10 @@ class TransformDateIntervalBundle {
 
   void ReceiveDateIntervalBundles(
       const std::vector<DateIntervalBundle>& date_interval_bundles) {
+    if (emitting_) {
+      return;
+    }
+    const packages::detail::ScopedReentryFlag guard(emitting_);
     std::vector<DateIntervalBundle> transformed_bundles = date_interval_bundles;
     auto bundles_iterator = transformed_bundles.begin();
 
@@ -482,5 +497,6 @@ class TransformDateIntervalBundle {
   sigslot::signal<const std::vector<DateIntervalBundle>&>
       signal_transform_date_interval_bundles;
   DateShift date_shift;
+  bool emitting_{false};
 };
 #endif  // HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_DATE_STORE_HPP
