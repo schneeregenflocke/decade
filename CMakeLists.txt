@@ -31,10 +31,28 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang"
 		-Wmisleading-indentation
 		-Wimplicit-fallthrough
 		-Wconversion
+		-Wsign-conversion
+		-Wzero-as-null-pointer-constant
+		-Wundef
+		-Wfloat-conversion
 		-Werror
 	)
-elseif(MSVC)
-	target_compile_options(${PROJECT_NAME} PRIVATE /W4 /WX)
+endif()
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+	target_compile_options(${PROJECT_NAME} PRIVATE
+		-Wlogical-op
+		-Wduplicated-cond
+		-Wduplicated-branches
+		-Wuseless-cast
+	)
+endif()
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	target_compile_options(${PROJECT_NAME} PRIVATE
+		-Wunreachable-code
+		-Wextra-semi
+	)
 endif()
 
 target_sources(${PROJECT_NAME} PRIVATE 
