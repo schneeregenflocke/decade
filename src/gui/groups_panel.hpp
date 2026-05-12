@@ -16,7 +16,7 @@
 
 class DateGroupsTablePanel : public wxPanel {
  public:
-  DateGroupsTablePanel(wxWindow* parent)
+  explicit DateGroupsTablePanel(wxWindow* parent)
       : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                 wxTAB_TRAVERSAL, wxPanelNameStr) {
     data_table = std::make_unique<wxDataViewListCtrl>(
@@ -193,7 +193,7 @@ class DateGroupsTablePanel : public wxPanel {
   }
 
   void CallbackItemActivated(wxDataViewEvent& event) {
-    if (event.GetItem().IsOk() && event.GetDataViewColumn()) {
+    if (event.GetItem().IsOk() && (event.GetDataViewColumn() != nullptr)) {
       data_table->EditItem(event.GetItem(), event.GetDataViewColumn());
     }
   }
@@ -201,7 +201,7 @@ class DateGroupsTablePanel : public wxPanel {
     if (event.GetEventType() == wxEVT_DATAVIEW_ITEM_EDITING_DONE) {
       event.Veto();
 
-      if (event.IsEditCancelled() == false) {
+      if (!event.IsEditCancelled()) {
         if (event.GetColumn() == 1) {
           auto edited_string = event.GetValue().GetString().ToStdString();
           const auto selected_row =
@@ -221,7 +221,7 @@ class DateGroupsTablePanel : public wxPanel {
 
   void CallbackValueChanged(wxDataViewEvent& event) {
     if (event.GetColumn() == 2 && data_table->GetSelectedRow() != wxNOT_FOUND) {
-      if (toggle_value_changed_by_function_call_and_not_by_user == false) {
+      if (!toggle_value_changed_by_function_call_and_not_by_user) {
         const auto selected_row =
             static_cast<unsigned int>(data_table->GetSelectedRow());
         auto value = data_table->GetToggleValue(selected_row, 2);

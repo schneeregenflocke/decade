@@ -14,7 +14,7 @@
 
 class PropertyGridPanel : public wxPropertyGrid {
  public:
-  PropertyGridPanel(wxWindow* parent)
+  explicit PropertyGridPanel(wxWindow* parent)
       : wxPropertyGrid(parent, -1, wxDefaultPosition, wxDefaultSize,
                        wxPG_SPLITTER_AUTO_CENTER),
         box_sizer(std::make_unique<wxBoxSizer>(wxHORIZONTAL).release()) {
@@ -73,7 +73,7 @@ class PropertyGridPanel : public wxPropertyGrid {
            ++index) {
         const std::size_t index_parity = index % 2;
         std::string const label_number_postfix =
-            std::to_string((index - index_parity) / 2 + 1);
+            std::to_string(((index - index_parity) / 2) + 1);
         std::string label;
 
         if (index_parity == 0) {
@@ -110,7 +110,7 @@ class PropertyGridPanel : public wxPropertyGrid {
 
 class CalendarSetupPanel : public wxPanel {
  public:
-  CalendarSetupPanel(wxWindow* parent)
+  explicit CalendarSetupPanel(wxWindow* parent)
       : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                 wxTAB_TRAVERSAL, wxPanelNameStr),
         property_grid(nullptr) {

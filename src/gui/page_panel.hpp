@@ -13,7 +13,7 @@
 
 class PageSetupPanel : public wxPanel {
  public:
-  PageSetupPanel(wxWindow* parent)
+  explicit PageSetupPanel(wxWindow* parent)
       : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                 wxTAB_TRAVERSAL, wxPanelNameStr),
         ID_PAGE_WIDTH(wxWindow::NewControlId()),

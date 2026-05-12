@@ -323,7 +323,7 @@ class DateIntervalBundleStore {
     for (auto& date_interval_bundle : date_interval_bundles) {
       auto current_group = date_interval_bundle.GetGroup();
 
-      if (groups_counter.count(current_group) != 0U) {
+      if (groups_counter.contains(current_group)) {
         groups_counter[current_group] += 1;
       } else {
         groups_counter[current_group] = 0;

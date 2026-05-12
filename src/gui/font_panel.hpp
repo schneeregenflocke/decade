@@ -13,7 +13,7 @@
 
 class FontPanel : public wxPanel {
  public:
-  FontPanel(wxWindow* parent)
+  explicit FontPanel(wxWindow* parent)
       : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                 wxTAB_TRAVERSAL, wxPanelNameStr) {
     wxFont const normal_font = *wxNORMAL_FONT;

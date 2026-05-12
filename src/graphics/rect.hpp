@@ -68,8 +68,8 @@ class rect {
   }
 
   [[nodiscard]] glm::vec3 getCenter() const {
-    return glm::vec3(edges[0] + width() / static_cast<Ty>(2),
-                     edges[2] + height() / static_cast<Ty>(2),
+    return glm::vec3(edges[0] + (width() / static_cast<Ty>(2)),
+                     edges[2] + (height() / static_cast<Ty>(2)),
                      static_cast<Ty>(0));
   }
 

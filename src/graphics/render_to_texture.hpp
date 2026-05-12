@@ -25,7 +25,7 @@ class FrameBuffer {
                        bool msaa) {
     glGenFramebuffers(1, &name);
 
-    if (msaa == false) {
+    if (!msaa) {
       glBindTexture(GL_TEXTURE_2D, texture.Name());
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA,
                    GL_UNSIGNED_BYTE, nullptr);
@@ -46,7 +46,7 @@ class FrameBuffer {
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    if (msaa == true) {
+    if (msaa) {
       glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texture.Name());
       glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGBA8,
                               width, height, GL_TRUE);
@@ -113,7 +113,7 @@ class RenderToTexture {
     }
   }
 
-  bool Valid() { return valid; }
+  bool Valid() const { return valid; }
 
   void BeginRender() {
     GLint viewport[4];

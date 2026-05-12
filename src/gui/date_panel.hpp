@@ -22,7 +22,7 @@
 
 class DateTablePanel : public wxPanel {
  public:
-  DateTablePanel(wxWindow* parent)
+  explicit DateTablePanel(wxWindow* parent)
       : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                 wxTAB_TRAVERSAL, wxPanelNameStr) {
     table_widget = std::make_unique<wxDataViewListCtrl>(
@@ -355,7 +355,7 @@ class DateTablePanel : public wxPanel {
 
   void OnItemActivated(wxDataViewEvent& event) {
     // Change GUI interaction behavior
-    if (event.GetItem().IsOk() && event.GetDataViewColumn()) {
+    if (event.GetItem().IsOk() && (event.GetDataViewColumn() != nullptr)) {
       table_widget->EditItem(event.GetItem(), event.GetDataViewColumn());
     }
   }

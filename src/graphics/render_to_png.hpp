@@ -334,7 +334,6 @@ class RenderToPNG {
                 PngSize{.width = image_width, .height = image_height});
   }
 
- public:
   struct PngSize {
     size_t width{0};
     size_t height{0};
@@ -364,7 +363,7 @@ class RenderToPNG {
     // see https://sourceforge.net/p/libpng/code/ci/master/tree/example.c#l739
 
     FILE* fp = nullptr;
-#if defined(_MSC_VER)
+#ifdef _MSC_VER
     auto file_error = fopen_s(&fp, file_name, "wb");
     if (fp == nullptr || file_error) {
       return;
@@ -395,7 +394,7 @@ class RenderToPNG {
     }
 
     auto setjmp_value = setjmp(png_jmpbuf(png_ptr));
-    if (setjmp_value) {
+    if (setjmp_value != 0) {
       // std::cout << "setjmp(png_jmpbuf(png_ptr)) failed!" << '\n';
       fclose(fp);
       png_destroy_write_struct(&png_ptr, &info_ptr);
@@ -417,7 +416,7 @@ class RenderToPNG {
     for (size_t index = 0; index < size.height; ++index) {
       png_bytep current_row_ptr =
           image.data() +
-          index * size.width * static_cast<size_t>(kBytesPerPixel);
+          (index * size.width * static_cast<size_t>(kBytesPerPixel));
       row_pointers[index] = current_row_ptr;
     }
 
@@ -433,7 +432,7 @@ class RenderToPNG {
 
     png_destroy_write_struct(&png_ptr, &info_ptr);
 
-    if (fp) {
+    if (fp != nullptr) {
       fclose(fp);
     }
   }

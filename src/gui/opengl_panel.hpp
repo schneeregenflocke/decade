@@ -25,13 +25,17 @@ inline bool LogEnabled() {
   return enabled;
 }
 inline void LogMat4(const char* tag, const glm::mat4& m) {
-  if (!LogEnabled()) return;
+  if (!LogEnabled()) {
+    return;
+  }
   std::cout << tag << ": diag(" << m[0][0] << "," << m[1][1] << "," << m[2][2]
             << ") trans(" << m[3][0] << "," << m[3][1] << "," << m[3][2]
             << ")\n";
 }
 inline void LogVec3(const char* tag, const glm::vec3& v) {
-  if (!LogEnabled()) return;
+  if (!LogEnabled()) {
+    return;
+  }
   std::cout << tag << ": (" << v.x << "," << v.y << "," << v.z << ")\n";
 }
 }  // namespace decade_debug
@@ -106,7 +110,7 @@ void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id,
   std::cout << ", ID: " << std::hex << id << std::dec;
   std::cout << ", Severity: " << GetSeverityString(severity);
   std::cout << ", Message: " << message;
-  std::cout << std::endl;
+  std::cout << '\n';
 }
 
 class MouseInteraction {
@@ -131,7 +135,7 @@ class MouseInteraction {
       translate_pre_scaled += current_mouse_pos - persistent_mouse_pos;
     }
 
-    if (wheel_rotation) {
+    if (wheel_rotation != 0) {
       const float mouse_wheel_step = 1200.F;
       const auto scale = static_cast<float>(wheel_rotation) / mouse_wheel_step;
 
@@ -216,7 +220,7 @@ class MouseInteraction {
 
 class GLCanvas {
  public:
-  GLCanvas(wxWindow* parent) {
+  explicit GLCanvas(wxWindow* parent) {
     wxGLAttributes attributes;
     attributes.PlatformDefaults().Defaults().EndList();
     bool const display_supported = wxGLCanvas::IsDisplaySupported(attributes);
@@ -382,8 +386,8 @@ class GLCanvas {
   void SavePNG(std::string file_path) {
     const int dpi = 600;
     const int msaa_samples = 16;
-    RenderToPNG const render_to_png(file_path, page_size, dpi, graphics_engine,
-                                    msaa_samples);
+    RenderToPNG const render_to_png(std::move(file_path), page_size, dpi,
+                                    graphics_engine, msaa_samples);
   }
 
   // Dumps the current window framebuffer (what is actually on screen) to PNG.
@@ -416,8 +420,8 @@ class GLCanvas {
     std::vector<unsigned char> flipped(buffer.size());
     const size_t row_bytes = w * kBytesPerPixel;
     for (size_t y = 0; y < h; ++y) {
-      std::copy_n(buffer.data() + (h - 1 - y) * row_bytes, row_bytes,
-                  flipped.data() + y * row_bytes);
+      std::copy_n(buffer.data() + ((h - 1 - y) * row_bytes), row_bytes,
+                  flipped.data() + (y * row_bytes));
     }
 
     RenderToPNG::SaveRgbaPng(file_path.c_str(), flipped, w, h);
