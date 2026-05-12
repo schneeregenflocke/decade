@@ -50,7 +50,10 @@
       "Bash(ctest --output-on-failure -R DateIntervalBundleStoreTest)",
       "Bash(ninja -C /home/titan99/code/decade.bak/build decade)",
       "Bash(DECADE_DUMP_PNG=/tmp/decade_render.png DECADE_EXIT_AFTER_MS=2000 stdbuf -oL -eL timeout 12 /home/titan99/code/decade.bak/build/decade)",
-      "Bash(echo \"===EXIT $?===\")"
+      "Bash(echo \"===EXIT $?===\")",
+      "Bash(rm -rf /home/titan99/code/decade.bak/build)",
+      "Bash(ninja -C build)",
+      "Bash(tee /tmp/build_output.log)"
     ],
     "additionalDirectories": [
       "/tmp"

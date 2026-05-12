@@ -178,8 +178,9 @@ class ShaderInfos {
       GLsizei written = 0;
       GLint size = 0;
       GLenum type = 0;
-      glGetActiveAttrib(program, index, max_attrib_name_length, &written, &size,
-                        &type, attrib_name.data());
+      glGetActiveAttrib(program, static_cast<GLuint>(index),
+                        max_attrib_name_length, &written, &size, &type,
+                        attrib_name.data());
       const GLint location = glGetAttribLocation(program, attrib_name.data());
 
       attribute_infos.emplace_back(
@@ -203,8 +204,9 @@ class ShaderInfos {
       GLsizei written = 0;
       GLint size = 0;
       GLenum type = 0;
-      glGetActiveUniform(program, index, max_uniforms_name_length, &written,
-                         &size, &type, uniform_name.data());
+      glGetActiveUniform(program, static_cast<GLuint>(index),
+                         max_uniforms_name_length, &written, &size, &type,
+                         uniform_name.data());
 
       const GLint location = glGetUniformLocation(program, uniform_name.data());
 

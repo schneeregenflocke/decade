@@ -147,16 +147,19 @@ class Shape {
 
       vbos[index].bind();
 
+      const auto attribute_location =
+          static_cast<GLuint>(attribute_info.GetLocation());
+
       // glVertexArrayAttribFormat(vao.get(), attribute_info.location,
       // attribute_info.number, GL_FLOAT, GL_FALSE, 0);
-      glVertexAttribFormat(attribute_info.GetLocation(),
+      glVertexAttribFormat(attribute_location,
                            static_cast<GLint>(attribute_info.GetNumber()),
                            GL_FLOAT, GL_FALSE, 0);
 
       const auto binding_index = static_cast<GLuint>(index);
 
       // glVertexArrayAttribBinding(vao.get(), attribute_info.location, index);
-      glVertexAttribBinding(attribute_info.GetLocation(), binding_index);
+      glVertexAttribBinding(attribute_location, binding_index);
 
       // glVertexArrayVertexBuffer(vao.get(), index, vbos[index].get(), 0,
       // attribute_info.type_size);
@@ -164,7 +167,7 @@ class Shape {
                          static_cast<GLsizei>(attribute_info.GetTypeSize()));
 
       // glEnableVertexArrayAttrib(vao.get(), attribute_info.location);
-      glEnableVertexAttribArray(attribute_info.GetLocation());
+      glEnableVertexAttribArray(attribute_location);
 
       VertexBufferObject::Unbind();
     }

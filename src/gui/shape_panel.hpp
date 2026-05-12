@@ -64,7 +64,9 @@ class ElementsSetupsPanel {
     shape_configuration_storage.resize(static_cast<size_t>(adjusted_size));
 
     if (adjust_number_dynamic_configurations > 0) {
-      size_t index = date_groups.size() - adjust_number_dynamic_configurations;
+      size_t index = date_groups.size() -
+                     static_cast<std::size_t>(
+                         adjust_number_dynamic_configurations);
 
       constexpr float kDynamicLineWidth = 0.5F;
       constexpr float kOutlineRed = 0.25F;

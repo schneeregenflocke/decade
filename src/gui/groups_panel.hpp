@@ -103,13 +103,13 @@ class DateGroupsTablePanel {
 
     if (change_row_count > 0) {
       for (int index = 0; index < change_row_count; ++index) {
-        InsertRow(data_table->GetItemCount());
+        InsertRow(static_cast<std::size_t>(data_table->GetItemCount()));
       }
     }
 
     if (change_row_count < 0) {
       for (int index = 0; index > change_row_count; --index) {
-        RemoveRow(data_table->GetItemCount() - 1);
+        RemoveRow(static_cast<std::size_t>(data_table->GetItemCount()) - 1);
       }
     }
 
@@ -143,7 +143,7 @@ class DateGroupsTablePanel {
     if (row <= static_cast<size_t>(data_table->GetItemCount())) {
       wxVector<wxVariant> empty_row;
       empty_row.resize(data_table->GetColumnCount());
-      empty_row[2] = wxVariant(static_cast<bool>(false));
+      empty_row[2] = wxVariant(false);
       data_table->InsertItem(static_cast<unsigned int>(row), empty_row);
     }
   }
@@ -165,20 +165,22 @@ class DateGroupsTablePanel {
         ++selected_row;
       }
 
-      InsertRow(selected_row);
+      const auto unsigned_row = static_cast<unsigned int>(selected_row);
+      InsertRow(unsigned_row);
 
       date_groups.insert(date_groups.cbegin() + selected_row, DateGroup(""));
 
       signal_table_date_groups(date_groups);
 
-      data_table->SelectRow(selected_row);
+      data_table->SelectRow(unsigned_row);
       data_table->EnsureVisible(data_table->RowToItem(selected_row));
       UpdateButtons();
     }
 
     if (event.GetId() == wxID_DELETE && selected_row != wxNOT_FOUND &&
         selected_row >= 1) {
-      RemoveRow(selected_row);
+      const auto unsigned_row = static_cast<unsigned int>(selected_row);
+      RemoveRow(unsigned_row);
 
       date_groups.erase(date_groups.cbegin() + selected_row);
 
@@ -186,9 +188,9 @@ class DateGroupsTablePanel {
 
       if (data_table->GetItemCount() > 0) {
         if (data_table->GetItemCount() == selected_row) {
-          data_table->SelectRow(selected_row - 1);
+          data_table->SelectRow(unsigned_row - 1);
         } else {
-          data_table->SelectRow(selected_row);
+          data_table->SelectRow(unsigned_row);
         }
       }
 
@@ -208,10 +210,12 @@ class DateGroupsTablePanel {
       if (event.IsEditCancelled() == false) {
         if (event.GetColumn() == 1) {
           auto edited_string = event.GetValue().GetString().ToStdString();
-          data_table->SetValue(edited_string.c_str(),
-                               data_table->GetSelectedRow(), event.GetColumn());
+          const auto selected_row =
+              static_cast<unsigned int>(data_table->GetSelectedRow());
+          data_table->SetValue(edited_string.c_str(), selected_row,
+                               static_cast<unsigned int>(event.GetColumn()));
 
-          date_groups[data_table->GetSelectedRow()].SetName(edited_string);
+          date_groups[selected_row].SetName(edited_string);
 
           signal_table_date_groups(date_groups);
         }
@@ -224,10 +228,11 @@ class DateGroupsTablePanel {
   void CallbackValueChanged(wxDataViewEvent& event) {
     if (event.GetColumn() == 2 && data_table->GetSelectedRow() != wxNOT_FOUND) {
       if (toggle_value_changed_by_function_call_and_not_by_user == false) {
-        auto value =
-            data_table->GetToggleValue(data_table->GetSelectedRow(), 2);
+        const auto selected_row =
+            static_cast<unsigned int>(data_table->GetSelectedRow());
+        auto value = data_table->GetToggleValue(selected_row, 2);
         // std::cout << "value " << value << '\n';
-        date_groups[data_table->GetSelectedRow()].SetExcluded(value);
+        date_groups[selected_row].SetExcluded(value);
         signal_table_date_groups(date_groups);
       }
     }

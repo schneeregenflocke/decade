@@ -149,24 +149,24 @@ target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm)
 
 set(CSV2_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/csv2/include")
 if(EXISTS "${CSV2_INCLUDE_DIR}/csv2/reader.hpp")
-	target_include_directories(${PROJECT_NAME} PRIVATE ${CSV2_INCLUDE_DIR})
+	target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CSV2_INCLUDE_DIR})
 else()
 	find_path(P_RANAV_CSV2_INCLUDE_DIRS "csv2/mio.hpp")
 	if(P_RANAV_CSV2_INCLUDE_DIRS)
-		target_include_directories(${PROJECT_NAME} PRIVATE ${P_RANAV_CSV2_INCLUDE_DIRS})
+		target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${P_RANAV_CSV2_INCLUDE_DIRS})
 		cmake_print_variables(P_RANAV_CSV2_INCLUDE_DIRS)
 	else()
 		message(FATAL_ERROR "csv2 not found. Initialize submodule external/csv2 or provide csv2 include dir.")
 	endif()
 endif()
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/include)
+target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/include)
 
 find_package(Microsoft.GSL CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE Microsoft.GSL::GSL)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)
+target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)
 
 list(APPEND RESOURCE_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/shaders/font_fragment_shader.glsl shader

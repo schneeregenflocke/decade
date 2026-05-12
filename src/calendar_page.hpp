@@ -207,8 +207,7 @@ class CalendarPage {
 
     const size_t additional_rows = 2;
     const size_t number_rows =
-        additional_rows +
-        static_cast<size_t>(calendar_config.GetSpanLengthYears());
+        additional_rows + calendar_config.GetSpanLengthYears();
 
     cell_width = calendar_frame.width() / kCalendarColumns;
     row_height = calendar_frame.height() / static_cast<float>(number_rows);
@@ -361,14 +360,14 @@ class CalendarPage {
       return;
     }
 
-    const int span_years = calendar_config.GetSpanLengthYears();
-    if (span_years <= 0) {
+    const std::size_t span_years = calendar_config.GetSpanLengthYears();
+    if (span_years == 0) {
       return;
     }
 
-    std::vector<rectf> y_labels_frames(static_cast<size_t>(span_years));
+    std::vector<rectf> y_labels_frames(span_years);
     year_node->remove_children();
-    for (int index = 0; index < span_years; ++index) {
+    for (std::size_t index = 0; index < span_years; ++index) {
       const std::string current_year_text =
           std::to_string(calendar_config.GetYear(index));
 
@@ -379,16 +378,15 @@ class CalendarPage {
       year_node->add_child(year_text_node);
 
       const auto float_index = static_cast<float>(index);
-      const auto frame_index = static_cast<size_t>(index);
       const auto bottom = y_labels_frame.b() + (row_height * float_index);
-      y_labels_frames.at(frame_index).setL(y_labels_frame.l());
-      y_labels_frames.at(frame_index).setR(y_labels_frame.r());
-      y_labels_frames.at(frame_index).setB(bottom);
-      y_labels_frames.at(frame_index).setT(bottom + row_height);
+      y_labels_frames.at(index).setL(y_labels_frame.l());
+      y_labels_frames.at(index).setR(y_labels_frame.r());
+      y_labels_frames.at(index).setB(bottom);
+      y_labels_frames.at(index).setT(bottom + row_height);
 
-      year_text_shape->set_shape_centered(
-          current_year_text, y_labels_frames.at(frame_index).getCenter(),
-          labels_font_size);
+      year_text_shape->set_shape_centered(current_year_text,
+                                          y_labels_frames.at(index).getCenter(),
+                                          labels_font_size);
     }
 
     auto row_node =
@@ -406,14 +404,14 @@ class CalendarPage {
   }
 
   void SetupYearsShapes() {
-    const int span_years = calendar_config.GetSpanLengthYears();
-    if (span_years <= 0) {
+    const std::size_t span_years = calendar_config.GetSpanLengthYears();
+    if (span_years == 0) {
       return;
     }
 
-    std::vector<rectf> years_cells(static_cast<size_t>(span_years));
+    std::vector<rectf> years_cells(span_years);
 
-    for (int index = 0; index < span_years; ++index) {
+    for (std::size_t index = 0; index < span_years; ++index) {
       const int current_year = calendar_config.GetYear(index);
       const auto number_days =
           boost::gregorian::date_period(
@@ -426,7 +424,7 @@ class CalendarPage {
       const float year_length = static_cast<float>(number_days) * day_width;
       rectf year_cell = proportion_frame_layout.GetSubFrame(index, 1);
       year_cell.setR(year_cell.l() + year_length);
-      years_cells.at(static_cast<size_t>(index)) = year_cell;
+      years_cells.at(index) = year_cell;
     }
 
     auto config =
@@ -446,15 +444,15 @@ class CalendarPage {
 
   void SetupMonthsShapes() {
     constexpr size_t number_months = 12;
-    const int span_years = calendar_config.GetSpanLengthYears();
-    if (span_years <= 0) {
+    const std::size_t span_years = calendar_config.GetSpanLengthYears();
+    if (span_years == 0) {
       return;
     }
 
-    const auto store_size = number_months * static_cast<size_t>(span_years);
+    const auto store_size = number_months * span_years;
     std::vector<rectf> months_cells(store_size);
 
-    for (int index = 0; index < span_years; ++index) {
+    for (std::size_t index = 0; index < span_years; ++index) {
       const int current_year = calendar_config.GetYear(index);
       const boost::gregorian::date first_day_of_year = boost::gregorian::date(
           static_cast<unsigned short>(current_year), 1, 1);
@@ -484,8 +482,7 @@ class CalendarPage {
         month_cell.setB(current_cell.b());
         month_cell.setT(current_cell.t());
 
-        const auto store_index =
-            (static_cast<size_t>(index) * number_months) + subindex;
+        const auto store_index = (index * number_months) + subindex;
         months_cells.at(store_index) = month_cell;
       }
     }
@@ -524,17 +521,17 @@ class CalendarPage {
     days_cells0.resize(number_days_cells);
     days_cells1.resize(number_days_cells);
 
-    const int span_years = calendar_config.GetSpanLengthYears();
-    for (int index = 0; index < span_years; ++index) {
+    const std::size_t span_years = calendar_config.GetSpanLengthYears();
+    for (std::size_t index = 0; index < span_years; ++index) {
       const int current_year = calendar_config.GetYear(index);
-      const std::int64_t number_days = static_cast<std::int64_t>(
+      const std::int64_t number_days =
           boost::gregorian::date_period(
               boost::gregorian::date(static_cast<unsigned short>(current_year),
                                      1, 1),
               boost::gregorian::date(
                   static_cast<unsigned short>(current_year + 1), 1, 1))
               .length()
-              .days());
+              .days();
 
       for (std::int64_t subindex = 0; subindex < number_days; ++subindex) {
         const auto float_subindex = static_cast<float>(subindex);
@@ -632,8 +629,8 @@ class CalendarPage {
         auto current_shape_config =
             shape_configuration_storage.GetShapeConfiguration(search_string);
 
-        const int row =
-            bar.GetYear() - calendar_config.GetSpanLimitsYears().at(0);
+        const auto row = static_cast<std::size_t>(
+            bar.GetYear() - calendar_config.GetSpanLimitsYears().at(0));
         const auto current_sub_cell =
             proportion_frame_layout.GetSubFrame(row, 1);
 
@@ -701,28 +698,27 @@ class CalendarPage {
     }
     node_text->remove_children();
 
-    const int span_years = data_store.GetSpan();
-    if (span_years <= 0) {
+    const std::size_t span_years = data_store.GetSpan();
+    if (span_years == 0) {
       return;
     }
-    const auto span_size = static_cast<size_t>(span_years);
 
-    std::vector<rectf> years_totals_cells(span_size);
+    std::vector<rectf> years_totals_cells(span_years);
 
-    for (int index = 0; index < span_years; ++index) {
-      const auto span_index = static_cast<size_t>(index);
-      const int current_year = data_store.GetFirstYear() + index;
+    for (std::size_t index = 0; index < span_years; ++index) {
+      const int current_year =
+          data_store.GetFirstYear() + static_cast<int>(index);
       if (calendar_config.IsInSpan(current_year)) {
-        const int row =
-            current_year - calendar_config.GetSpanLimitsYears().at(0);
+        const auto row = static_cast<std::size_t>(
+            current_year - calendar_config.GetSpanLimitsYears().at(0));
         const auto current_cell = proportion_frame_layout.GetSubFrame(row, 0);
 
         rectf year_total_cell = current_cell;
         const auto year_total_width =
-            static_cast<float>(data_store.GetAnnualTotal(span_index)) *
+            static_cast<float>(data_store.GetAnnualTotal(index)) *
             day_width;
         year_total_cell.setR(current_cell.l() + year_total_width);
-        years_totals_cells.at(span_index) = year_total_cell;
+        years_totals_cells.at(index) = year_total_cell;
 
         const auto number_days =
             boost::gregorian::date_period(
@@ -734,7 +730,7 @@ class CalendarPage {
                 .days();
 
         const float percent =
-            static_cast<float>(data_store.GetAnnualTotal(span_index)) /
+            static_cast<float>(data_store.GetAnnualTotal(index)) /
             static_cast<float>(number_days);
 
         std::ostringstream year_total_stream;
@@ -758,7 +754,7 @@ class CalendarPage {
                                        year_total_text_cell.height());
 
         auto node_child = std::make_shared<SceneNode>(
-            std::string("year total label ") + std::to_string(span_index));
+            std::string("year total label ") + std::to_string(index));
         node_child->set_shape(text_shape);
         node_text->add_child(node_child);
       }
@@ -829,7 +825,7 @@ class CalendarPage {
         font->AdjustTextSize(legend_entries_frames.at(0), string_max_length,
                              Font::TextScale{kFontScaleMin, kFontScaleMax});
 
-    const int span_years = calendar_config.GetSpanLengthYears();
+    const std::size_t span_years = calendar_config.GetSpanLengthYears();
     for (size_t index = 0; index < date_group_store.GetDateGroups().size();
          ++index) {
       const auto label_index = index * 2;
@@ -844,7 +840,7 @@ class CalendarPage {
           date_group_store.GetDateGroups().at(index).GetName(),
           legend_entries_frames.at(label_index).getCenter(), legend_font_size);
 
-      if (span_years > 0) {
+      if (span_years > 0U) {
         const auto current_height =
             proportion_frame_layout.GetSubFrame(0, 1).height();
         auto current_cell = legend_entries_frames.at(label_index + 1);
@@ -885,7 +881,7 @@ class CalendarPage {
               .getCenter(),
           legend_font_size);
 
-      if (span_years > 0) {
+      if (span_years > 0U) {
         const auto current_height =
             proportion_frame_layout.GetSubFrame(0, 0).height();
         auto current_cell =

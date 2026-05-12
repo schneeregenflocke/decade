@@ -108,7 +108,7 @@ class Bar {
   [[nodiscard]] int GetYear() const { return date_interval_.begin().year(); }
 
   [[nodiscard]] std::int64_t GetLenght() const {
-    return static_cast<std::int64_t>(date_interval_.length().days());
+    return date_interval_.length().days();
   }
 
   [[nodiscard]] float GetFirstDay() const {
@@ -154,12 +154,11 @@ class DateIntervalBundleStore {
 
   [[nodiscard]] bool is_empty() const { return date_interval_bundles.empty(); }
 
-  [[nodiscard]] int GetSpan() const {
-    int span = 0;
-    if (!date_interval_bundles.empty()) {
-      span = GetLastYear() - GetFirstYear() + 1;
+  [[nodiscard]] std::size_t GetSpan() const {
+    if (date_interval_bundles.empty()) {
+      return 0;
     }
-    return span;
+    return static_cast<std::size_t>(GetLastYear() - GetFirstYear() + 1);
   }
 
   [[nodiscard]] int GetFirstYear() const {
@@ -378,12 +377,13 @@ class DateIntervalBundleBarStore : public DateIntervalBundleStore {
 
     for (const auto& bundle : GetDateIntervalBundlesInternal()) {
       const auto& interval = bundle.GetDateInterval();
-      const int span = interval.last().year() - interval.begin().year();
+      const auto span = static_cast<std::size_t>(interval.last().year() -
+                                                 interval.begin().year());
 
       std::vector<boost::gregorian::date_period> splitDatePeriods;
       splitDatePeriods.push_back(interval);
 
-      for (int subIndex = 0; subIndex < span; ++subIndex) {
+      for (std::size_t subIndex = 0; subIndex < span; ++subIndex) {
         const boost::gregorian::date split_date = boost::gregorian::date(
             splitDatePeriods[subIndex].begin().year() + 1, 1, 1);
         splitDatePeriods.emplace_back(split_date,

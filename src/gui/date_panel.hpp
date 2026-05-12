@@ -104,7 +104,8 @@ class DateTablePanel {
     if (change_row_number > 0) {
       for (int index = 0; index < change_row_number; ++index) {
         // append
-        auto append_index = table_widget->GetItemCount();
+        const auto append_index =
+            static_cast<std::size_t>(table_widget->GetItemCount());
         InsertRow(append_index);
         valid_rows_list.push_back(append_index);
       }
@@ -227,10 +228,10 @@ class DateTablePanel {
     for (size_t index = 0; index < valid_rows_list.size(); ++index) {
       const auto valid_index = valid_rows_list[index];
 
-      const auto begin_date =
-          GetDateByCell({static_cast<int>(valid_index), Columns::first_date});
-      const auto end_date =
-          GetDateByCell({static_cast<int>(valid_index), Columns::second_date});
+      const auto begin_date = GetDateByCell(
+          {static_cast<unsigned int>(valid_index), Columns::first_date});
+      const auto end_date = GetDateByCell(
+          {static_cast<unsigned int>(valid_index), Columns::second_date});
 
       boost::gregorian::date_period date_interval =
           boost::gregorian::date_period(begin_date, end_date);
@@ -277,9 +278,9 @@ class DateTablePanel {
     for (size_t index = 0;
          index < static_cast<size_t>(table_widget->GetItemCount()); ++index) {
       auto begin_date =
-          GetDateByCell({static_cast<int>(index), Columns::first_date});
-      auto end_date =
-          GetDateByCell({static_cast<int>(index), Columns::second_date});
+          GetDateByCell({static_cast<unsigned int>(index), Columns::first_date});
+      auto end_date = GetDateByCell(
+          {static_cast<unsigned int>(index), Columns::second_date});
 
       if (CheckDateInterval(begin_date, end_date) > 0) {
         valid_rows_list.push_back(index);
@@ -297,14 +298,14 @@ class DateTablePanel {
     return valid_rows_list;
   }
 
-  std::vector<int> GetSelectionList() {
+  std::vector<unsigned int> GetSelectionList() {
     wxDataViewItemArray selection_array;
     table_widget->GetSelections(selection_array);
 
-    std::vector<int> selections;
+    std::vector<unsigned int> selections;
     for (const auto& selected_item : selection_array) {
-      int selected_row = table_widget->ItemToRow(selected_item);
-      selections.push_back(selected_row);
+      const int selected_row = table_widget->ItemToRow(selected_item);
+      selections.push_back(static_cast<unsigned int>(selected_row));
     }
 
     return selections;
@@ -340,12 +341,12 @@ class DateTablePanel {
   };
 
   struct CellIndex {
-    int row{0};
+    unsigned int row{0};
     Columns column{Columns::first_date};
   };
 
-  static constexpr int ColumnIndex(Columns column) {
-    return static_cast<int>(column);
+  static constexpr unsigned int ColumnIndex(Columns column) {
+    return static_cast<unsigned int>(column);
   }
 
   boost::gregorian::date GetDateByCell(CellIndex cell) const {
@@ -374,17 +375,20 @@ class DateTablePanel {
       if (!event.IsEditCancelled()) {
         auto edited_string = event.GetValue().GetString().ToStdString();
 
+        const auto selected_row =
+            static_cast<unsigned int>(table_widget->GetSelectedRow());
+        const auto edited_column =
+            static_cast<unsigned int>(event.GetColumn());
+
         // Check Date
         auto edited_date = string_to_boost_date(edited_string, date_format);
         if (!edited_date.is_special()) {
           std::string parsed_string = boost_date_to_string(edited_date);
-          table_widget->SetValue(parsed_string.c_str(),
-                                 table_widget->GetSelectedRow(),
-                                 event.GetColumn());
+          table_widget->SetValue(parsed_string.c_str(), selected_row,
+                                 edited_column);
         } else {
-          table_widget->SetValue(edited_string.c_str(),
-                                 table_widget->GetSelectedRow(),
-                                 event.GetColumn());
+          table_widget->SetValue(edited_string.c_str(), selected_row,
+                                 edited_column);
         }
 
         SendDateIntervalBundles();
@@ -401,22 +405,23 @@ class DateTablePanel {
     auto selections = GetSelectionList();
 
     if (event.GetId() == wxID_ADD) {
-      int insert_row = 0;
+      unsigned int insert_row = 0;
       // if no selection do append
       if (selections.empty()) {
-        insert_row = table_widget->GetItemCount();
+        insert_row = static_cast<unsigned int>(table_widget->GetItemCount());
       } else {
         insert_row = selections.back() + 1;
       }
 
       InsertRow(insert_row);
       table_widget->SelectRow(insert_row);
-      table_widget->EnsureVisible(table_widget->RowToItem(insert_row));
+      table_widget->EnsureVisible(
+          table_widget->RowToItem(static_cast<int>(insert_row)));
       UpdateDeleteButton();
     }
 
     if (event.GetId() == wxID_DELETE && !selections.empty()) {
-      auto post_remove_select = selections.front();
+      const auto post_remove_select = selections.front();
 
       for (auto riter = selections.rbegin(); riter != selections.rend();
            ++riter) {
@@ -424,7 +429,8 @@ class DateTablePanel {
       }
 
       if (table_widget->GetItemCount() > 0) {
-        if (table_widget->GetItemCount() == post_remove_select) {
+        if (static_cast<unsigned int>(table_widget->GetItemCount()) ==
+            post_remove_select) {
           table_widget->SelectRow(post_remove_select - 1);
         } else {
           table_widget->SelectRow(post_remove_select);

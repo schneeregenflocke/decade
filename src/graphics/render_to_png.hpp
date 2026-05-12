@@ -230,12 +230,14 @@ class ImageComposer {
                     image.begin() + image_begin_offset);
         }
 
-        current_width_position += current_image_part.viewport[0];
+        current_width_position +=
+            static_cast<std::size_t>(current_image_part.viewport[0]);
       }
 
       auto& current_image_part = ImagePartRef(0, y_index);
       current_width_position = 0;
-      current_height_position += current_image_part.viewport[1];
+      current_height_position +=
+          static_cast<std::size_t>(current_image_part.viewport[1]);
     }
   }
 

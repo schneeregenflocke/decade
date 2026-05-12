@@ -57,11 +57,11 @@ class CalendarSpan {
     return CheckDateInterval(span.begin(), span.end()) == 1;
   }
 
-  [[nodiscard]] int GetSpanLengthYears() const {
+  [[nodiscard]] std::size_t GetSpanLengthYears() const {
     if (!IsValidSpan()) {
       throw std::runtime_error("Not valid calendar span!");
     }
-    return span.end().year() - span.begin().year();
+    return static_cast<std::size_t>(span.end().year() - span.begin().year());
   }
 
   [[nodiscard]] std::array<int, 2> GetSpanLimitsYears() const {
@@ -74,11 +74,11 @@ class CalendarSpan {
   }
 
   [[nodiscard]] std::int64_t GetSpanLengthDays() const {
-    return static_cast<std::int64_t>(span.length().days());
+    return span.length().days();
   }
 
-  [[nodiscard]] int GetYear(const int index) const {
-    const int year = span.begin().year() + index;
+  [[nodiscard]] int GetYear(const std::size_t index) const {
+    const int year = span.begin().year() + static_cast<int>(index);
 
     if (!IsInSpan(year)) {
       throw std::logic_error("Year not in span!");

@@ -70,7 +70,7 @@ class PropertyGridPanel : public wxPropertyGrid {
     if (number_spacings > gui_spacings_array.size()) {
       for (size_t index = gui_spacings_array.size(); index < number_spacings;
            ++index) {
-        int index_parity = index % 2;
+        const std::size_t index_parity = index % 2;
         std::string label_number_postfix =
             std::to_string((index - index_parity) / 2 + 1);
         std::string label;

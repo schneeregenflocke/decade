@@ -57,8 +57,8 @@ class Font {
 
   [[nodiscard]] float TextWidth(const std::string& text, float size) const {
     float width = 0.0F;
-    for (const unsigned char letter_number : text) {
-      width += GetLetterRef(letter_number).advance * size;
+    for (const char letter : text) {
+      width += GetLetterRef(static_cast<unsigned char>(letter)).advance * size;
     }
 
     return width;
