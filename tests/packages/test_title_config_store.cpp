@@ -24,11 +24,10 @@ TEST(TitleConfigStoreTest, ReceiveStoresAndEmits) {
 
   int emissions = 0;
   std::string observed_text;
-  store.SignalTitleConfig().connect(
-      [&](const TitleConfig& cfg) {
-        ++emissions;
-        observed_text = cfg.TitleText();
-      });
+  store.SignalTitleConfig().connect([&](const TitleConfig& cfg) {
+    ++emissions;
+    observed_text = cfg.TitleText();
+  });
 
   store.ReceiveTitleConfig(incoming);
 

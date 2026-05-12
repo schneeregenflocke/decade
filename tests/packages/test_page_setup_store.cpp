@@ -18,11 +18,10 @@ TEST(PageSetupStoreTest, ReceiveStoresConfigAndEmitsSignal) {
   PageSetupStore store;
   int emissions = 0;
   PageSetupConfig captured{};
-  store.signal_page_setup_config.connect(
-      [&](const PageSetupConfig& config) {
-        ++emissions;
-        captured = config;
-      });
+  store.signal_page_setup_config.connect([&](const PageSetupConfig& config) {
+    ++emissions;
+    captured = config;
+  });
 
   const auto config = MakeConfig(210.0F, 297.0F, 0);
   store.ReceivePageSetup(config);

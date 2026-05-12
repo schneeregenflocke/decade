@@ -34,11 +34,10 @@ TEST(DateGroupStoreTest, ReceiveEmitsSignalToConnectedSlot) {
   DateGroupStore store;
   int call_count = 0;
   std::size_t observed_size = 0;
-  store.SignalDateGroups().connect(
-      [&](const std::vector<DateGroup>& groups) {
-        ++call_count;
-        observed_size = groups.size();
-      });
+  store.SignalDateGroups().connect([&](const std::vector<DateGroup>& groups) {
+    ++call_count;
+    observed_size = groups.size();
+  });
 
   store.ReceiveDateGroups(MakeGroups({"a", "b"}));
 

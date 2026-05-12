@@ -22,7 +22,8 @@ TEST(ShapeConfigurationStorageTest, DefaultsContainExpectedNames) {
   EXPECT_TRUE(day_shapes.FillVisible());
 }
 
-TEST(ShapeConfigurationStorageTest, GetShapeConfigurationReturnsBlankForUnknownName) {
+TEST(ShapeConfigurationStorageTest,
+     GetShapeConfigurationReturnsBlankForUnknownName) {
   ShapeConfigurationStorage storage;
   const ShapeConfiguration unknown =
       storage.GetShapeConfiguration("Does Not Exist");
@@ -30,12 +31,11 @@ TEST(ShapeConfigurationStorageTest, GetShapeConfigurationReturnsBlankForUnknownN
 }
 
 TEST(ShapeConfigurationTest, OutlineColorReturnsZeroWhenInvisible) {
-  ShapeConfiguration shape("test", /*outline_visible=*/false,
-                           /*fill_visible=*/false, 1.0F,
-                           ShapeConfiguration::OutlineColorValue{
-                               glm::vec4{1.0F, 0.0F, 0.0F, 1.0F}},
-                           ShapeConfiguration::FillColorValue{
-                               glm::vec4{0.0F, 1.0F, 0.0F, 1.0F}});
+  ShapeConfiguration shape(
+      "test", /*outline_visible=*/false,
+      /*fill_visible=*/false, 1.0F,
+      ShapeConfiguration::OutlineColorValue{glm::vec4{1.0F, 0.0F, 0.0F, 1.0F}},
+      ShapeConfiguration::FillColorValue{glm::vec4{0.0F, 1.0F, 0.0F, 1.0F}});
   const glm::vec4 outline = shape.OutlineColor();
   EXPECT_FLOAT_EQ(outline[0], 0.0F);
   EXPECT_FLOAT_EQ(outline[3], 0.0F);
@@ -43,12 +43,11 @@ TEST(ShapeConfigurationTest, OutlineColorReturnsZeroWhenInvisible) {
 }
 
 TEST(ShapeConfigurationTest, OutlineColorReturnsValueWhenVisible) {
-  ShapeConfiguration shape("test", /*outline_visible=*/true,
-                           /*fill_visible=*/false, 2.5F,
-                           ShapeConfiguration::OutlineColorValue{
-                               glm::vec4{0.5F, 0.5F, 0.5F, 1.0F}},
-                           ShapeConfiguration::FillColorValue{
-                               glm::vec4{0.0F, 0.0F, 0.0F, 0.0F}});
+  ShapeConfiguration shape(
+      "test", /*outline_visible=*/true,
+      /*fill_visible=*/false, 2.5F,
+      ShapeConfiguration::OutlineColorValue{glm::vec4{0.5F, 0.5F, 0.5F, 1.0F}},
+      ShapeConfiguration::FillColorValue{glm::vec4{0.0F, 0.0F, 0.0F, 0.0F}});
   const glm::vec4 outline = shape.OutlineColor();
   EXPECT_FLOAT_EQ(outline[0], 0.5F);
   EXPECT_FLOAT_EQ(shape.LineWidth(), 2.5F);

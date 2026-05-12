@@ -8,8 +8,7 @@
 
 namespace {
 
-DateIntervalBundle MakeBundle(int year, int month, int day_begin,
-                              int day_end) {
+DateIntervalBundle MakeBundle(int year, int month, int day_begin, int day_end) {
   DateIntervalBundle bundle;
   bundle.SetDateInterval(boost::gregorian::date_period(
       boost::gregorian::date(static_cast<unsigned short>(year),
@@ -23,7 +22,8 @@ DateIntervalBundle MakeBundle(int year, int month, int day_begin,
 
 }  // namespace
 
-TEST(TransformDateIntervalBundleTest, IdentityTransformLeavesIntervalsUnchanged) {
+TEST(TransformDateIntervalBundleTest,
+     IdentityTransformLeavesIntervalsUnchanged) {
   TransformDateIntervalBundle transformer;
   transformer.SetTransform({.begin_days = 0, .end_days = 0});
 
