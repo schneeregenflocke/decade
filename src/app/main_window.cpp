@@ -6,7 +6,7 @@
 #include <wx/gdicmn.h>
 #include <wx/menu.h>
 #include <wx/notebook.h>
-#include <wx/panel.h>  // NOLINT(misc-include-cleaner)
+#include <wx/panel.h>
 #include <wx/sizer.h>
 #include <wx/splitter.h>
 #include <wx/string.h>
@@ -55,7 +55,7 @@ struct MainWindow::Impl {
   // avoids dangling references in slot callbacks.
   EventBus event_bus;
 
-  wxWeakRef<wxSplitterWindow> main_splitter;  // NOLINT(misc-include-cleaner)
+  wxWeakRef<wxSplitterWindow> main_splitter;
   wxWeakRef<wxNotebook> notebook;
 
   std::unique_ptr<DateGroupsTablePanel> date_groups_table_panel;
@@ -114,7 +114,6 @@ void MainWindow::CreateLayout(bool maximize_on_start) {
   wxSizerFlags sizer_flags;
   sizer_flags.Proportion(1).Expand().Border(wxALL, kSizerBorder);
 
-  // NOLINTNEXTLINE(misc-include-cleaner)
   auto notebook_panel = std::make_unique<wxPanel>(main_splitter_ptr, wxID_ANY);
   auto* notebook_panel_ptr = notebook_panel.release();
   auto notebook_panel_sizer = std::make_unique<wxBoxSizer>(wxVERTICAL);
