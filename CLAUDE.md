@@ -38,8 +38,7 @@ DECADE_DUMP_PNG=/tmp/decade_render.png DECADE_EXIT_AFTER_MS=2000 \
 
 ## Build hygiene
 
-- The project compiles with `-Wall -Wextra -Wpedantic -Wshadow -Wnon-virtual-dtor -Woverloaded-virtual -Wold-style-cast -Wcast-align -Wnull-dereference -Wdouble-promotion -Wformat=2 -Wmisleading-indentation -Wimplicit-fallthrough -Wconversion -Werror`. **Warnings break the build** — fix them, don't suppress.
-- `.clang-tidy` enables a broad set (`bugprone-*`, `cert-*`, `cppcoreguidelines-*`, `modernize-*`, `performance-*`, `readability-*`, etc.); use it during edits.
+- **Warnings break the build** — fix them, don't suppress.
 - `.clang-format` is the source of truth for formatting.
 - CI workflow is currently disabled (`.github/workflows/cmake.yml.disable`).
 
@@ -83,4 +82,5 @@ Deferred: `MainWindow` calls `GLCanvas::InitOpenGL(version, callback)`. The call
 - Header guards use the full-path style `HOME_TITAN99_CODE_DECADE_SRC_<...>_HPP` in most newer files; older files use short guards (e.g. `DECADE_APP_HPP`). Match the surrounding file's style when editing.
 - Naming is currently mixed: `*Store` vs. `*Storage`, snake_case members like `signal_page_setup_config` vs. PascalCase `SignalDateGroups()`. When touching a file, prefer the existing local style; do not perform mass renames as a side effect.
 - Rule-of-five: classes with explicit destructors should also delete or default copy/move (see `MainWindow`, `DateIntervalBundleStore`).
-- Avoid raw `new`/`delete`. Ownership via `std::unique_ptr`/`std::shared_ptr`; wx widgets typically transferred via `.release()` to wx-owned parents.
+- Never use raw `new`/`delete`. Always express ownership through smart pointers (`std::unique_ptr` for unique ownership, `std::shared_ptr` for shared ownership) so lifetime is encoded in the type system, exceptions cannot leak resources, and ownership transfer is explicit at call sites. wx widgets are typically transferred via `.release()` to wx-owned parents (wx then owns the lifetime).
+- For non-owning references to objects whose lifetime is managed by wxWidgets (wx-owned parents/children, or any class derived from `wxTrackable` — which includes `wxWindow`, `wxEvtHandler`, and most wx classes), prefer `wxWeakRef<T>` over raw pointers. It auto-nulls when the referenced object is destroyed, eliminating dangling-pointer bugs. See [wxWeakRef](https://docs.wxwidgets.org/3.2/classwx_weak_ref_3_01_t_01_4.html) and [wxTrackable](https://docs.wxwidgets.org/3.2/classwx_trackable.html).

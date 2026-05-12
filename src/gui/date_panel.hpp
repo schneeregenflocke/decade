@@ -17,6 +17,7 @@
 #include "../date_utils.hpp"
 #include "../packages/date_store.hpp"
 #include "../packages/group_store.hpp"
+
 class DateTablePanel {
  public:
   DateTablePanel(wxWindow* parent) {
@@ -277,8 +278,8 @@ class DateTablePanel {
 
     for (size_t index = 0;
          index < static_cast<size_t>(table_widget->GetItemCount()); ++index) {
-      auto begin_date =
-          GetDateByCell({static_cast<unsigned int>(index), Columns::first_date});
+      auto begin_date = GetDateByCell(
+          {static_cast<unsigned int>(index), Columns::first_date});
       auto end_date = GetDateByCell(
           {static_cast<unsigned int>(index), Columns::second_date});
 
@@ -377,8 +378,7 @@ class DateTablePanel {
 
         const auto selected_row =
             static_cast<unsigned int>(table_widget->GetSelectedRow());
-        const auto edited_column =
-            static_cast<unsigned int>(event.GetColumn());
+        const auto edited_column = static_cast<unsigned int>(event.GetColumn());
 
         // Check Date
         auto edited_date = string_to_boost_date(edited_string, date_format);
