@@ -41,64 +41,58 @@ class TitleSetupPanel : public wxPanel {
 
     std::array<wxStaticText*, kFieldCount> labels{};
 
-    labels[0] = std::make_unique<wxStaticText>(this, wxID_ANY,
-                                               L"Frame Height")
+    labels[0] = std::make_unique<wxStaticText>(this, wxID_ANY, L"Frame Height")
                     .release();
     labels[0]->SetMinSize(wxSize(kLabelWidth, -1));
     horizontal_sizers[0]->Add(labels[0], sizer_flags_1);
 
-    labels[1] = std::make_unique<wxStaticText>(this, wxID_ANY,
-                                               L"Font Size Ratio")
-                    .release();
+    labels[1] =
+        std::make_unique<wxStaticText>(this, wxID_ANY, L"Font Size Ratio")
+            .release();
     labels[1]->SetMinSize(wxSize(kLabelWidth, -1));
     horizontal_sizers[1]->Add(labels[1], sizer_flags_1);
 
     labels[2] =
-        std::make_unique<wxStaticText>(this, wxID_ANY, L"Text")
-            .release();
+        std::make_unique<wxStaticText>(this, wxID_ANY, L"Text").release();
     labels[2]->SetMinSize(wxSize(kLabelWidth, -1));
     horizontal_sizers[2]->Add(labels[2], sizer_flags_1);
 
     labels[3] =
-        std::make_unique<wxStaticText>(this, wxID_ANY, L"Text Color")
-            .release();
+        std::make_unique<wxStaticText>(this, wxID_ANY, L"Text Color").release();
     labels[3]->SetMinSize(wxSize(kLabelWidth, -1));
     horizontal_sizers[3]->Add(labels[3], sizer_flags_1);
     labels[3]->Enable(false);
 
-    labels[4] = std::make_unique<wxStaticText>(this, wxID_ANY,
-                                               L"Color Transparency")
-                    .release();
+    labels[4] =
+        std::make_unique<wxStaticText>(this, wxID_ANY, L"Color Transparency")
+            .release();
     labels[4]->SetMinSize(wxSize(kLabelWidth, -1));
     horizontal_sizers[4]->Add(labels[4], sizer_flags_1);
     labels[4]->Enable(false);
 
-    frame_height_ctrl =
-        std::make_unique<wxSpinCtrlDouble>(this).release();
+    frame_height_ctrl = std::make_unique<wxSpinCtrlDouble>(this).release();
     frame_height_ctrl->SetDigits(2);
     horizontal_sizers[0]->Add(frame_height_ctrl, sizer_flags_2);
 
-    size_ratio_ctrl =
-        std::make_unique<wxSpinCtrlDouble>(this).release();
+    size_ratio_ctrl = std::make_unique<wxSpinCtrlDouble>(this).release();
     size_ratio_ctrl->SetDigits(2);
     size_ratio_ctrl->SetIncrement(kSizeRatioIncrement);
     horizontal_sizers[1]->Add(size_ratio_ctrl, sizer_flags_2);
 
-    title_text_edit =
-        std::make_unique<wxTextCtrl>(this, wxID_ANY).release();
+    title_text_edit = std::make_unique<wxTextCtrl>(this, wxID_ANY).release();
     horizontal_sizers[2]->Add(title_text_edit, sizer_flags_2);
 
-    text_color_picker = std::make_unique<wxColourPickerCtrl>(
-                            this, wxID_ANY,
-                            *wxStockGDI::GetColour(wxStockGDI::COLOUR_BLACK),
-                            wxDefaultPosition, wxDefaultSize, wxCLRP_SHOW_ALPHA)
-                            .release();
+    text_color_picker =
+        std::make_unique<wxColourPickerCtrl>(
+            this, wxID_ANY, *wxStockGDI::GetColour(wxStockGDI::COLOUR_BLACK),
+            wxDefaultPosition, wxDefaultSize, wxCLRP_SHOW_ALPHA)
+            .release();
     text_color_picker->Enable(false);
     horizontal_sizers[3]->Add(text_color_picker, sizer_flags_2);
 
     alpha_slider =
-        std::make_unique<wxSlider>(this, wxID_ANY, kAlphaMax, 0,
-                                   kAlphaMax, wxDefaultPosition, wxDefaultSize,
+        std::make_unique<wxSlider>(this, wxID_ANY, kAlphaMax, 0, kAlphaMax,
+                                   wxDefaultPosition, wxDefaultSize,
                                    wxSL_HORIZONTAL | wxSL_LABELS)
             .release();
     alpha_slider->Enable(false);

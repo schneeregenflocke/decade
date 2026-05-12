@@ -19,8 +19,10 @@ inline MainWindowConfig DefaultMainWindowConfig() {
   constexpr int kMainWindowWidth = 1280;
   constexpr int kMainWindowHeight = 800;
 
-  return {"Decade", wxPoint(kMainWindowPosX, kMainWindowPosY),
-          wxSize(kMainWindowWidth, kMainWindowHeight), true};
+  return {.title = "Decade",
+          .position = wxPoint(kMainWindowPosX, kMainWindowPosY),
+          .size = wxSize(kMainWindowWidth, kMainWindowHeight),
+          .maximize_on_start = true};
 }
 }  // namespace app
 

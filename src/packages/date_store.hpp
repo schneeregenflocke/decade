@@ -252,8 +252,7 @@ class DateIntervalBundleStore {
              bundle1.GetDateInterval().begin();
     };
 
-    std::sort(date_interval_bundles.begin(), date_interval_bundles.end(),
-              sort_func);
+    std::ranges::sort(date_interval_bundles, sort_func);
   }
 
   void ProcessNumbers() {
@@ -437,7 +436,7 @@ class TransformDateIntervalBundle {
     int end_days;
   };
 
-  TransformDateIntervalBundle() : date_shift{0, 0} {};
+  TransformDateIntervalBundle() : date_shift{.begin_days = 0, .end_days = 0} {};
 
   void ReceiveDateIntervalBundles(
       const std::vector<DateIntervalBundle>& date_interval_bundles) {

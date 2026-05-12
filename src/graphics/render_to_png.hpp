@@ -327,11 +327,12 @@ class RenderToPNG {
       return;
     }
 
-    const ImageComposer image(ImageSize{image_width, image_height},
-                              ortho_dimensions, graphics_engine, msaa_samples);
+    const ImageComposer image(
+        ImageSize{.width = image_width, .height = image_height},
+        ortho_dimensions, graphics_engine, msaa_samples);
     auto image_data = image.CopyImage();
     SavePicture(file_path.c_str(), image_data,
-                PngSize{image_width, image_height});
+                PngSize{.width = image_width, .height = image_height});
   }
 
  public:
@@ -343,7 +344,7 @@ class RenderToPNG {
   static void SaveRgbaPng(const char* file_name,
                           std::vector<unsigned char>& image, size_t width,
                           size_t height) {
-    SavePicture(file_name, image, PngSize{width, height});
+    SavePicture(file_name, image, PngSize{.width = width, .height = height});
   }
 
  private:
@@ -438,7 +439,8 @@ class RenderToPNG {
     }
   }
 
-  float dots_per_inch_to_dots_per_millimeter(const float dpi_value) const {
+  [[nodiscard]] float dots_per_inch_to_dots_per_millimeter(
+      const float dpi_value) const {
     constexpr float ratio = 1.0F / 25.4F;
     const float dots_per_millimeter = ratio * dpi_value;
     return dots_per_millimeter;

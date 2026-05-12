@@ -13,7 +13,7 @@ class RenderBuffer {
 
   ~RenderBuffer() { glDeleteRenderbuffers(1, &name); }
 
-  GLuint Name() const { return name; }
+  [[nodiscard]] GLuint Name() const { return name; }
 
  private:
   GLuint name;
@@ -68,16 +68,16 @@ class FrameBuffer {
 
   ~FrameBuffer() { glDeleteFramebuffers(1, &name); }
 
-  GLenum CheckStatus() const {
+  [[nodiscard]] GLenum CheckStatus() const {
     glBindFramebuffer(GL_FRAMEBUFFER, name);
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     return status;
   }
 
-  GLuint Name() const { return name; }
+  [[nodiscard]] GLuint Name() const { return name; }
 
-  GLuint TextureName() const { return texture.Name(); }
+  [[nodiscard]] GLuint TextureName() const { return texture.Name(); }
 
  private:
   GLuint name;

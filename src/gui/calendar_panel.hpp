@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <sigslot/signal.hpp>
+#include <utility>
 #include <vector>
 
 #include "../packages/calendar_config.hpp"
@@ -140,8 +141,7 @@ class CalendarSetupPanel : public wxPanel {
         calendar_config_storage.MutableSpacingProportions();
     spacing_proportions.resize(static_cast<size_t>(number_subrows));
 
-    for (size_t index = 0; index < static_cast<size_t>(number_subrows);
-         ++index) {
+    for (size_t index = 0; std::cmp_less(index, number_subrows); ++index) {
       spacing_proportions[index] = static_cast<float>(
           property_grid
               ->GetPropertyValue(property_grid->gui_spacings_array[index])
@@ -159,8 +159,9 @@ class CalendarSetupPanel : public wxPanel {
         property_grid->GetPropertyValue(property_grid->gui_upper_limit)
             .GetInteger();
 
-    calendar_config_storage.SetSpan(CalendarSpan::YearSpan{
-        static_cast<int>(lower_limit), static_cast<int>(upper_limit)});
+    calendar_config_storage.SetSpan(
+        CalendarSpan::YearSpan{.first_year = static_cast<int>(lower_limit),
+                               .last_year = static_cast<int>(upper_limit)});
 
     signal_calendar_config_storage(calendar_config_storage);
   }

@@ -75,8 +75,8 @@ class Shader {
 
   void CompileProgram(const ShaderSources& sources) {
     const ShaderHandles handles{
-        CompileShader(sources.vertex, GL_VERTEX_SHADER),
-        CompileShader(sources.fragment, GL_FRAGMENT_SHADER)};
+        .vertex = CompileShader(sources.vertex, GL_VERTEX_SHADER),
+        .fragment = CompileShader(sources.fragment, GL_FRAGMENT_SHADER)};
 
     LinkShaders(handles);
   }
@@ -158,16 +158,19 @@ class Shaders {
     // LOAD_RESOURCE(shader_phong_fragment_shader);
 
     shaders.emplace_back(
-        Shader::ShaderSources{simple_vertex_shader_resource.toString(),
-                              simple_fragment_shader_resource.toString()},
+        Shader::ShaderSources{
+            .vertex = simple_vertex_shader_resource.toString(),
+            .fragment = simple_fragment_shader_resource.toString()},
         "Simple Shader");
     shaders.emplace_back(
-        Shader::ShaderSources{rectangles_vertex_shader_resource.toString(),
-                              rectangles_fragment_shader_resource.toString()},
+        Shader::ShaderSources{
+            .vertex = rectangles_vertex_shader_resource.toString(),
+            .fragment = rectangles_fragment_shader_resource.toString()},
         "Rectangles Shader");
     shaders.emplace_back(
-        Shader::ShaderSources{font_vertex_shader_resource.toString(),
-                              font_fragment_shader_resource.toString()},
+        Shader::ShaderSources{
+            .vertex = font_vertex_shader_resource.toString(),
+            .fragment = font_fragment_shader_resource.toString()},
         "Font Shader");
     // shaders.push_back(Shader(phong_vertex_shader_resource.toString(),
     // phong_fragment_shader_resource.toString(), std::string("Phong Shader")));

@@ -9,9 +9,11 @@
 #include <cstdint>
 #include <iostream>
 #include <memory>
+#include <ranges>
 #include <sigslot/signal.hpp>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "../date_utils.hpp"
@@ -23,12 +25,11 @@ class DateTablePanel : public wxPanel {
   DateTablePanel(wxWindow* parent)
       : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                 wxTAB_TRAVERSAL, wxPanelNameStr) {
-    table_widget =
-        std::make_unique<wxDataViewListCtrl>(
-            this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-            wxDV_MULTIPLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES,
-            wxDefaultValidator)
-            .release();
+    table_widget = std::make_unique<wxDataViewListCtrl>(
+                       this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                       wxDV_MULTIPLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES,
+                       wxDefaultValidator)
+                       .release();
 
     addRowButton =
         std::make_unique<wxButton>(this, wxID_ADD, "Add Row").release();
@@ -219,13 +220,13 @@ class DateTablePanel : public wxPanel {
 
     std::vector<DateIntervalBundle> date_interval_bundles;
 
-    for (size_t index = 0; index < valid_rows_list.size(); ++index) {
-      const auto valid_index = valid_rows_list[index];
-
-      const auto begin_date = GetDateByCell(
-          {static_cast<unsigned int>(valid_index), Columns::first_date});
-      const auto end_date = GetDateByCell(
-          {static_cast<unsigned int>(valid_index), Columns::second_date});
+    for (unsigned long valid_index : valid_rows_list) {
+      const auto begin_date =
+          GetDateByCell({.row = static_cast<unsigned int>(valid_index),
+                         .column = Columns::first_date});
+      const auto end_date =
+          GetDateByCell({.row = static_cast<unsigned int>(valid_index),
+                         .column = Columns::second_date});
 
       boost::gregorian::date_period date_interval =
           boost::gregorian::date_period(begin_date, end_date);
@@ -269,12 +270,12 @@ class DateTablePanel : public wxPanel {
   std::vector<size_t> BuildValidRowsList() {
     std::vector<size_t> valid_rows_list;
 
-    for (size_t index = 0;
-         index < static_cast<size_t>(table_widget->GetItemCount()); ++index) {
-      auto begin_date = GetDateByCell(
-          {static_cast<unsigned int>(index), Columns::first_date});
-      auto end_date = GetDateByCell(
-          {static_cast<unsigned int>(index), Columns::second_date});
+    for (size_t index = 0; std::cmp_less(index, table_widget->GetItemCount());
+         ++index) {
+      auto begin_date = GetDateByCell({.row = static_cast<unsigned int>(index),
+                                       .column = Columns::first_date});
+      auto end_date = GetDateByCell({.row = static_cast<unsigned int>(index),
+                                     .column = Columns::second_date});
 
       if (CheckDateInterval(begin_date, end_date) > 0) {
         valid_rows_list.push_back(index);
@@ -306,7 +307,7 @@ class DateTablePanel : public wxPanel {
   }
 
   void InsertRow(size_t row) {
-    if (row <= static_cast<size_t>(table_widget->GetItemCount())) {
+    if (std::cmp_less_equal(row, table_widget->GetItemCount())) {
       wxVector<wxVariant> empty_row;
       empty_row.resize(table_widget->GetColumnCount());
       empty_row[static_cast<size_t>(ColumnIndex(Columns::group))] =
@@ -316,7 +317,7 @@ class DateTablePanel : public wxPanel {
   }
 
   void RemoveRow(size_t row) {
-    if (row >= static_cast<size_t>(table_widget->GetItemCount())) {
+    if (std::cmp_greater_equal(row, table_widget->GetItemCount())) {
       std::cout << "try to remove not existent row" << '\n';
       throw std::runtime_error("try to remove not existent row");
     }
@@ -416,14 +417,12 @@ class DateTablePanel : public wxPanel {
     if (event.GetId() == wxID_DELETE && !selections.empty()) {
       const auto post_remove_select = selections.front();
 
-      for (auto riter = selections.rbegin(); riter != selections.rend();
-           ++riter) {
-        RemoveRow(*riter);
+      for (unsigned int& selection : std::views::reverse(selections)) {
+        RemoveRow(selection);
       }
 
       if (table_widget->GetItemCount() > 0) {
-        if (static_cast<unsigned int>(table_widget->GetItemCount()) ==
-            post_remove_select) {
+        if (std::cmp_equal(table_widget->GetItemCount(), post_remove_select)) {
           table_widget->SelectRow(post_remove_select - 1);
         } else {
           table_widget->SelectRow(post_remove_select);
@@ -442,8 +441,8 @@ class DateTablePanel : public wxPanel {
     auto group_number = event.GetSelection();
     auto group_name = date_group_store.GetName(group_number);
 
-    for (size_t index = 0; index < selections.size(); ++index) {
-      table_widget->SetValue(group_name, selections[index],
+    for (unsigned int selection : selections) {
+      table_widget->SetValue(group_name, selection,
                              ColumnIndex(Columns::group));
     }
 

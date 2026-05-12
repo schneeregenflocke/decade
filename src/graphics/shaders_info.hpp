@@ -153,17 +153,17 @@ class ShaderInfos {
 
  private:
   void SortAttributesInfo() {
-    std::sort(attribute_infos.begin(), attribute_infos.end(),
-              [](const ShaderInfo& left_info, const ShaderInfo& right_info) {
-                return left_info.GetLocation() < right_info.GetLocation();
-              });
+    std::ranges::sort(attribute_infos, [](const ShaderInfo& left_info,
+                                          const ShaderInfo& right_info) {
+      return left_info.GetLocation() < right_info.GetLocation();
+    });
   }
 
   void SortUniformsInfo() {
-    std::sort(uniform_infos.begin(), uniform_infos.end(),
-              [](const ShaderInfo& left_info, const ShaderInfo& right_info) {
-                return left_info.GetLocation() < right_info.GetLocation();
-              });
+    std::ranges::sort(uniform_infos, [](const ShaderInfo& left_info,
+                                        const ShaderInfo& right_info) {
+      return left_info.GetLocation() < right_info.GetLocation();
+    });
   }
 
   void GatherAttributesInfo() {
@@ -186,7 +186,8 @@ class ShaderInfos {
       attribute_infos.emplace_back(
           ShaderInfo::InfoType::ActiveAttribute,
           std::string(attrib_name.data(), static_cast<size_t>(written)),
-          ShaderInfo::InfoParams{location, size, type});
+          ShaderInfo::InfoParams{
+              .location = location, .size = size, .type = type});
     }
 
     SortAttributesInfo();
@@ -213,7 +214,8 @@ class ShaderInfos {
       uniform_infos.emplace_back(
           ShaderInfo::InfoType::ActiveUniform,
           std::string(uniform_name.data(), static_cast<size_t>(written)),
-          ShaderInfo::InfoParams{location, size, type});
+          ShaderInfo::InfoParams{
+              .location = location, .size = size, .type = type});
     }
 
     SortUniformsInfo();

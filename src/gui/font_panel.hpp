@@ -19,11 +19,10 @@ class FontPanel : public wxPanel {
     wxFont normal_font = *wxNORMAL_FONT;
     // auto normal_font_name = normal_font.GetFaceName();
 
-    wx_font_picker =
-        std::make_unique<wxFontPickerCtrl>(this, wxID_ANY, normal_font,
-                                           wxDefaultPosition, wxDefaultSize,
-                                           wxFNTP_FONTDESC_AS_LABEL)
-            .release();
+    wx_font_picker = std::make_unique<wxFontPickerCtrl>(
+                         this, wxID_ANY, normal_font, wxDefaultPosition,
+                         wxDefaultSize, wxFNTP_FONTDESC_AS_LABEL)
+                         .release();
 
     wxBoxSizer* horizontal_sizer =
         std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();

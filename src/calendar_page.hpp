@@ -143,7 +143,8 @@ class CalendarPage {
 
   void ReceivePageSetup(const PageSetupConfig& page_setup_config) {
     this->page_size = rectf::from_dimension(
-        rectf::Dimension{page_setup_config.size[0], page_setup_config.size[1]});
+        rectf::Dimension{.width = page_setup_config.size[0],
+                         .height = page_setup_config.size[1]});
     this->page_margin =
         rectf(page_setup_config.margins[0], page_setup_config.margins[1],
               page_setup_config.margins[2], page_setup_config.margins[3]);
@@ -201,8 +202,9 @@ class CalendarPage {
     calendar_frame = calendar_frame.reduce(calendar_frame_margin);
 
     if (calendar_config.IsAutoCalendarSpan() && !data_store.is_empty()) {
-      calendar_config.SetSpan(CalendarSpan::YearSpan{data_store.GetFirstYear(),
-                                                     data_store.GetLastYear()});
+      calendar_config.SetSpan(
+          CalendarSpan::YearSpan{.first_year = data_store.GetFirstYear(),
+                                 .last_year = data_store.GetLastYear()});
     }
 
     const size_t additional_rows = 2;
@@ -310,9 +312,12 @@ class CalendarPage {
         graphics_engine->search_shader("Font Shader").value_or(nullptr);
 
     std::vector<rectf> x_label_frames(number_months);
-    labels_font_size = font->AdjustTextSize(
-        rectf::from_dimension(rectf::Dimension{cell_width, row_height}),
-        "00000", Font::TextScale{kFontScaleMin, kFontScaleMax});
+    labels_font_size =
+        font->AdjustTextSize(rectf::from_dimension(rectf::Dimension{
+                                 .width = cell_width, .height = row_height}),
+                             "00000",
+                             Font::TextScale{.height_ratio = kFontScaleMin,
+                                             .width_ratio = kFontScaleMax});
 
     auto month_node = scene_graph->search_node("month text").value_or(nullptr);
     if (!month_node) {
@@ -715,8 +720,7 @@ class CalendarPage {
 
         rectf year_total_cell = current_cell;
         const auto year_total_width =
-            static_cast<float>(data_store.GetAnnualTotal(index)) *
-            day_width;
+            static_cast<float>(data_store.GetAnnualTotal(index)) * day_width;
         year_total_cell.setR(current_cell.l() + year_total_width);
         years_totals_cells.at(index) = year_total_cell;
 
@@ -823,7 +827,8 @@ class CalendarPage {
 
     const auto legend_font_size =
         font->AdjustTextSize(legend_entries_frames.at(0), string_max_length,
-                             Font::TextScale{kFontScaleMin, kFontScaleMax});
+                             Font::TextScale{.height_ratio = kFontScaleMin,
+                                             .width_ratio = kFontScaleMax});
 
     const std::size_t span_years = calendar_config.GetSpanLengthYears();
     for (size_t index = 0; index < date_group_store.GetDateGroups().size();

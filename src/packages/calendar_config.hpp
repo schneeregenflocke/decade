@@ -88,6 +88,8 @@ class CalendarSpan {
   }
 
   [[nodiscard]] bool IsInSpan(const int year) const {
+    // NOLINTNEXTLINE(modernize-use-integer-sign-comparison) — greg_year is not
+    // a built-in integer type.
     return year >= span.begin().year() && year <= span.last().year();
   }
 

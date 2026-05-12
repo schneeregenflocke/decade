@@ -9,6 +9,7 @@
 #include <memory>
 #include <sigslot/signal.hpp>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "../packages/group_store.hpp"
@@ -106,8 +107,8 @@ class DateGroupsTablePanel : public wxPanel {
       }
     }
 
-    for (size_t index = 0;
-         index < static_cast<size_t>(data_table->GetItemCount()); ++index) {
+    for (size_t index = 0; std::cmp_less(index, data_table->GetItemCount());
+         ++index) {
       const auto row = static_cast<unsigned int>(index);
       data_table->SetValue(std::to_wstring(date_groups[index].GetNumber()), row,
                            0);
@@ -133,7 +134,7 @@ class DateGroupsTablePanel : public wxPanel {
     }
   }
   void InsertRow(size_t row) {
-    if (row <= static_cast<size_t>(data_table->GetItemCount())) {
+    if (std::cmp_less_equal(row, data_table->GetItemCount())) {
       wxVector<wxVariant> empty_row;
       empty_row.resize(data_table->GetColumnCount());
       empty_row[2] = wxVariant(false);
@@ -141,7 +142,7 @@ class DateGroupsTablePanel : public wxPanel {
     }
   }
   void RemoveRow(size_t row) {
-    if (row <= static_cast<size_t>(data_table->GetItemCount())) {
+    if (std::cmp_less_equal(row, data_table->GetItemCount())) {
       data_table->DeleteItem(static_cast<unsigned int>(row));
     }
   }

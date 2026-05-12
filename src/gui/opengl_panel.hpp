@@ -112,10 +112,10 @@ void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id,
 class MouseInteraction {
  public:
   MouseInteraction()
-      : persistent_scale_factor(1.f),
-        persistent_mouse_pos(0.f),
-        translate_pre_scaled(0.f),
-        translate_post_scaled(0.f) {}
+      : persistent_scale_factor(1.F),
+        persistent_mouse_pos(0.F),
+        translate_pre_scaled(0.F),
+        translate_post_scaled(0.F) {}
 
   void Interaction(MVP& mvp, wxPoint mouse_position, bool dragging,
                    int wheel_rotation) {
@@ -133,7 +133,7 @@ class MouseInteraction {
     }
 
     if (wheel_rotation) {
-      const float mouse_wheel_step = 1200.f;
+      const float mouse_wheel_step = 1200.F;
       const auto scale = static_cast<float>(wheel_rotation) / mouse_wheel_step;
 
       const auto pre_scale_view_matrix =
@@ -168,9 +168,9 @@ class MouseInteraction {
 
  private:
   glm::mat4 CalculateViewMatrix(float scale_factor) {
-    auto pre_scaled = glm::translate(glm::mat4(1.f), translate_pre_scaled);
+    auto pre_scaled = glm::translate(glm::mat4(1.F), translate_pre_scaled);
     auto post_scaled =
-        glm::scale(pre_scaled, glm::vec3(scale_factor, scale_factor, 1.f));
+        glm::scale(pre_scaled, glm::vec3(scale_factor, scale_factor, 1.F));
     auto view_matrix = glm::translate(post_scaled, translate_post_scaled);
     return view_matrix;
   }
@@ -181,13 +181,13 @@ class MouseInteraction {
 
     std::array<GLint, 4> viewport_px;
     glGetIntegerv(GL_VIEWPORT, viewport_px.data());
-    glm::vec4 viewport(0.f, 0.f, static_cast<float>(viewport_px[2]),
+    glm::vec4 viewport(0.F, 0.F, static_cast<float>(viewport_px[2]),
                        static_cast<float>(viewport_px[3]));
 
     auto viewport_ortho =
         glm::ortho(viewport.x, viewport.z, viewport.w, viewport.y);
     auto mouse_pos_clip_space =
-        viewport_ortho * glm::vec4(window_mouse_pos, 0.f, 1.f);
+        viewport_ortho * glm::vec4(window_mouse_pos, 0.F, 1.F);
     return mouse_pos_clip_space;
   }
 
@@ -196,8 +196,8 @@ class MouseInteraction {
     const auto inverse_projection_matrix = glm::inverse(projection_matrix);
 
     const auto mouse_pos = inverse_projection_matrix *
-                           glm::vec4(MouseClipSpace(mouse_pos_px), 1.f);
-    return glm::vec3(mouse_pos.x, mouse_pos.y, 0.f);
+                           glm::vec4(MouseClipSpace(mouse_pos_px), 1.F);
+    return {mouse_pos.x, mouse_pos.y, 0.F};
   }
 
   glm::vec3 MouseViewSpacePos(const glm::vec3& mouse_world_space_pos,
@@ -205,8 +205,8 @@ class MouseInteraction {
     const auto inverse_view_matrix = glm::inverse(view_matrix);
 
     const auto mouse_pos =
-        inverse_view_matrix * glm::vec4(mouse_world_space_pos, 1.f);
-    return glm::vec3(mouse_pos.x, mouse_pos.y, 0.f);
+        inverse_view_matrix * glm::vec4(mouse_world_space_pos, 1.F);
+    return {mouse_pos.x, mouse_pos.y, 0.F};
   }
 
   float persistent_scale_factor;
@@ -323,7 +323,8 @@ class GLCanvas {
 
   void ReceivePageSetup(const PageSetupConfig& page_setup_config) {
     page_size = rectf::from_dimension(
-        rectf::Dimension{page_setup_config.size[0], page_setup_config.size[1]});
+        rectf::Dimension{.width = page_setup_config.size[0],
+                         .height = page_setup_config.size[1]});
     if (decade_debug::LogEnabled()) {
       std::cout << "ReceivePageSetup: page=" << page_size.width() << "x"
                 << page_size.height() << " rect=(" << page_size.l() << ","
@@ -336,7 +337,7 @@ class GLCanvas {
   }
 
   void RefreshMVP() {
-    const float view_size_scale = 1.1f;
+    const float view_size_scale = 1.1F;
 
     const wxSize logical_size = wx_gl_canvas->GetClientSize();
     const double scale = wx_gl_canvas->GetContentScaleFactor();
@@ -355,7 +356,7 @@ class GLCanvas {
 
     const wxSize size(static_cast<int>(fb_width), static_cast<int>(fb_height));
 
-    if (page_size.width() <= 0.0f || page_size.height() <= 0.0f) {
+    if (page_size.width() <= 0.0F || page_size.height() <= 0.0F) {
       if (decade_debug::LogEnabled()) {
         std::cout << "RefreshMVP: skipped, page_size not yet initialised\n";
       }

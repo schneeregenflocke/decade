@@ -28,35 +28,29 @@ class PageSetupPanel : public wxPanel {
     dialog_data.SetMarginBottomRight(wxPoint(15, 15));
 
     wxStaticBoxSizer* static_box_sizer =
-        std::make_unique<wxStaticBoxSizer>(wxVERTICAL, this,
-                                           L"Paper Format")
+        std::make_unique<wxStaticBoxSizer>(wxVERTICAL, this, L"Paper Format")
             .release();
 
     wxBoxSizer* horizontal_sizer0 =
         std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
 
     wxButton* page_setup_dialog_button =
-        std::make_unique<wxButton>(this, wxID_ANY, L"Page Setup...")
-            .release();
+        std::make_unique<wxButton>(this, wxID_ANY, L"Page Setup...").release();
 
     wxStaticText* page_width_label =
-        std::make_unique<wxStaticText>(this, wxID_ANY, L"Width")
-            .release();
+        std::make_unique<wxStaticText>(this, wxID_ANY, L"Width").release();
     page_width_label->SetMinSize(wxSize(75, -1));
 
     wxStaticText* page_height_label =
-        std::make_unique<wxStaticText>(this, wxID_ANY, L"Height")
-            .release();
+        std::make_unique<wxStaticText>(this, wxID_ANY, L"Height").release();
     page_height_label->SetMinSize(wxSize(75, -1));
 
     page_width_spinctrl =
-        std::make_unique<wxSpinCtrlDouble>(this, ID_PAGE_WIDTH)
-            .release();
+        std::make_unique<wxSpinCtrlDouble>(this, ID_PAGE_WIDTH).release();
     page_width_spinctrl->SetRange(.0, 2000.);
 
     page_height_spinctrl =
-        std::make_unique<wxSpinCtrlDouble>(this, ID_PAGE_HEIGHT)
-            .release();
+        std::make_unique<wxSpinCtrlDouble>(this, ID_PAGE_HEIGHT).release();
     page_height_spinctrl->SetRange(.0, 2000.);
 
     horizontal_sizer0->Add(page_setup_dialog_button, 1, wxEXPAND | wxALL,
