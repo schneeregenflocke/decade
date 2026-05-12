@@ -54,7 +54,7 @@ class PropertyGridPanel : public wxPropertyGrid {
   }
 
   void RefreshPropertyGrid() {
-    bool auto_span = GetPropertyValue(gui_auto_span).GetBool();
+    bool const auto_span = GetPropertyValue(gui_auto_span).GetBool();
 
     if (auto_span) {
       DisableProperty(gui_lower_limit);
@@ -72,7 +72,7 @@ class PropertyGridPanel : public wxPropertyGrid {
       for (size_t index = gui_spacings_array.size(); index < number_spacings;
            ++index) {
         const std::size_t index_parity = index % 2;
-        std::string label_number_postfix =
+        std::string const label_number_postfix =
             std::to_string((index - index_parity) / 2 + 1);
         std::string label;
 
@@ -91,7 +91,8 @@ class PropertyGridPanel : public wxPropertyGrid {
     }
 
     if (number_spacings < gui_spacings_array.size()) {
-      for (size_t index = number_spacings; index < gui_spacings_array.size();) {
+      for (size_t const index = number_spacings;
+           index < gui_spacings_array.size();) {
         DeleteProperty(gui_spacings_array[index]);
         gui_spacings_array.pop_back();
       }
@@ -134,7 +135,7 @@ class CalendarSetupPanel : public wxPanel {
   void CallbackPropertyGridChanging(wxPropertyGridEvent& /*event*/) {
     property_grid->RefreshPropertyGrid();
 
-    long number_subrows =
+    long const number_subrows =
         property_grid->GetPropertyValue(property_grid->gui_number_spacings)
             .GetInteger();
     auto& spacing_proportions =
@@ -152,10 +153,10 @@ class CalendarSetupPanel : public wxPanel {
         property_grid->GetPropertyValue(property_grid->gui_auto_span)
             .GetBool());
 
-    long lower_limit =
+    long const lower_limit =
         property_grid->GetPropertyValue(property_grid->gui_lower_limit)
             .GetInteger();
-    long upper_limit =
+    long const upper_limit =
         property_grid->GetPropertyValue(property_grid->gui_upper_limit)
             .GetInteger();
 

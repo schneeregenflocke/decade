@@ -70,7 +70,7 @@ class FrameBuffer {
 
   [[nodiscard]] GLenum CheckStatus() const {
     glBindFramebuffer(GL_FRAMEBUFFER, name);
-    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    GLenum const status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     return status;
   }
@@ -92,11 +92,7 @@ class RenderToTexture {
         height(height_in),
         samples(samples_in),
         frame_buffer(width_in, height_in, samples_in, false),
-        frame_buffer_msaa(width_in, height_in, samples_in, true),
-        restore_width(0),
-        restore_height(0),
-        pixel_size(0),
-        valid(false) {
+        frame_buffer_msaa(width_in, height_in, samples_in, true) {
     pixel_size = 4 * sizeof(GLubyte);
 
     /*int gl_max_texture_size = 0;
@@ -161,12 +157,12 @@ class RenderToTexture {
   FrameBuffer frame_buffer;
   FrameBuffer frame_buffer_msaa;
 
-  GLint restore_width;
-  GLint restore_height;
+  GLint restore_width{0};
+  GLint restore_height{0};
 
-  GLsizei pixel_size;
+  GLsizei pixel_size{0};
   std::vector<unsigned char> image;
 
-  bool valid;
+  bool valid{false};
 };
 #endif  // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_RENDER_TO_TEXTURE_HPP

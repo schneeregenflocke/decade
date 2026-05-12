@@ -16,7 +16,7 @@ class FontPanel : public wxPanel {
   FontPanel(wxWindow* parent)
       : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                 wxTAB_TRAVERSAL, wxPanelNameStr) {
-    wxFont normal_font = *wxNORMAL_FONT;
+    wxFont const normal_font = *wxNORMAL_FONT;
     // auto normal_font_name = normal_font.GetFaceName();
 
     wx_font_picker = std::make_unique<wxFontPickerCtrl>(
@@ -112,10 +112,10 @@ class FontPanel : public wxPanel {
   }
 
   void ProcessFontData() {
-    wxString face_name = wx_font.GetFaceName();
-    int point_size = wx_font.GetPointSize();
-    wxFontWeight font_weight = wx_font.GetWeight();
-    wxFontStyle font_style = wx_font.GetStyle();
+    wxString const face_name = wx_font.GetFaceName();
+    int const point_size = wx_font.GetPointSize();
+    wxFontWeight const font_weight = wx_font.GetWeight();
+    wxFontStyle const font_style = wx_font.GetStyle();
 
     std::cout << "face_name: " << face_name << "\tpoint_size: " << point_size
               << "\tfont_style: " << font_style
@@ -130,10 +130,10 @@ class FontPanel : public wxPanel {
 
     FcPatternAddInteger(pattern, FC_SIZE, point_size);
 
-    int fc_weight = convertWxFontWeightToFcWeight(font_weight);
+    int const fc_weight = convertWxFontWeightToFcWeight(font_weight);
     FcPatternAddInteger(pattern, FC_WEIGHT, fc_weight);
 
-    int fc_slant = convertWxFontStyleToFcSlant(font_style);
+    int const fc_slant = convertWxFontStyleToFcSlant(font_style);
     FcPatternAddInteger(pattern, FC_SLANT, fc_slant);
 
     FcResult result;
@@ -148,7 +148,7 @@ class FontPanel : public wxPanel {
 
     // https://fontconfig.pages.freedesktop.org/fontconfig/fontconfig-devel/fcpatternget.html
     FcChar8* fc_filepath = nullptr;
-    [[maybe_unused]] FcResult fc_result =
+    [[maybe_unused]] FcResult const fc_result =
         FcPatternGetString(match, FC_FILE, 0, &fc_filepath);
 
     const size_t len = strlen(reinterpret_cast<const char*>(fc_filepath));

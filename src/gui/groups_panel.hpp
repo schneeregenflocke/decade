@@ -18,8 +18,7 @@ class DateGroupsTablePanel : public wxPanel {
  public:
   DateGroupsTablePanel(wxWindow* parent)
       : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                wxTAB_TRAVERSAL, wxPanelNameStr),
-        toggle_value_changed_by_function_call_and_not_by_user(false) {
+                wxTAB_TRAVERSAL, wxPanelNameStr) {
     data_table = std::make_unique<wxDataViewListCtrl>(
                      this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                      wxDV_SINGLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES,
@@ -52,20 +51,21 @@ class DateGroupsTablePanel : public wxPanel {
 
     wxBoxSizer* buttons_sizer =
         std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
-    wxSizerFlags buttons_flags = wxSizerFlags().Proportion(0).Border(wxALL, 5);
+    wxSizerFlags const buttons_flags =
+        wxSizerFlags().Proportion(0).Border(wxALL, 5);
     buttons_sizer->Add(addRowButton, buttons_flags);
     buttons_sizer->Add(deleteRowButton, buttons_flags);
 
     wxBoxSizer* table_sizer =
         std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
-    wxSizerFlags data_table_flags =
+    wxSizerFlags const data_table_flags =
         wxSizerFlags().Proportion(1).Expand().Border(wxALL, 5);
     table_sizer->Add(data_table, data_table_flags);
 
     wxBoxSizer* main_sizer = std::make_unique<wxBoxSizer>(wxVERTICAL).release();
-    wxSizerFlags buttons_sizer_flags =
+    wxSizerFlags const buttons_sizer_flags =
         wxSizerFlags().Proportion(0).Expand().Border(wxALL, 0);
-    wxSizerFlags table_sizer_flags =
+    wxSizerFlags const table_sizer_flags =
         wxSizerFlags().Proportion(1).Expand().Border(wxALL, 0);
     main_sizer->Add(buttons_sizer, buttons_sizer_flags);
     main_sizer->Add(table_sizer, table_sizer_flags);
@@ -240,6 +240,6 @@ class DateGroupsTablePanel : public wxPanel {
   sigslot::signal<const std::vector<DateGroup>&> signal_table_date_groups;
 
   // Please fix me, research in wxWidgets
-  bool toggle_value_changed_by_function_call_and_not_by_user;
+  bool toggle_value_changed_by_function_call_and_not_by_user{false};
 };
 #endif  // HOME_TITAN99_CODE_DECADE_SRC_GUI_GROUPS_PANEL_HPP

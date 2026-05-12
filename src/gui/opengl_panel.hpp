@@ -112,14 +112,13 @@ void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id,
 class MouseInteraction {
  public:
   MouseInteraction()
-      : persistent_scale_factor(1.F),
-        persistent_mouse_pos(0.F),
+      : persistent_mouse_pos(0.F),
         translate_pre_scaled(0.F),
         translate_post_scaled(0.F) {}
 
   void Interaction(MVP& mvp, wxPoint mouse_position, bool dragging,
                    int wheel_rotation) {
-    glm::vec3 current_mouse_pos = MouseWorldSpacePos(mouse_position, mvp);
+    glm::vec3 const current_mouse_pos = MouseWorldSpacePos(mouse_position, mvp);
 
     if (decade_debug::LogEnabled()) {
       std::cout << "Mouse: px=(" << mouse_position.x << "," << mouse_position.y
@@ -181,8 +180,8 @@ class MouseInteraction {
 
     std::array<GLint, 4> viewport_px;
     glGetIntegerv(GL_VIEWPORT, viewport_px.data());
-    glm::vec4 viewport(0.F, 0.F, static_cast<float>(viewport_px[2]),
-                       static_cast<float>(viewport_px[3]));
+    glm::vec4 const viewport(0.F, 0.F, static_cast<float>(viewport_px[2]),
+                             static_cast<float>(viewport_px[3]));
 
     auto viewport_ortho =
         glm::ortho(viewport.x, viewport.z, viewport.w, viewport.y);
@@ -209,7 +208,7 @@ class MouseInteraction {
     return {mouse_pos.x, mouse_pos.y, 0.F};
   }
 
-  float persistent_scale_factor;
+  float persistent_scale_factor{1.F};
   glm::vec3 persistent_mouse_pos;
   glm::vec3 translate_pre_scaled;
   glm::vec3 translate_post_scaled;
@@ -217,10 +216,10 @@ class MouseInteraction {
 
 class GLCanvas {
  public:
-  GLCanvas(wxWindow* parent) : gl_loaded(0) {
+  GLCanvas(wxWindow* parent) {
     wxGLAttributes attributes;
     attributes.PlatformDefaults().Defaults().EndList();
-    bool display_supported = wxGLCanvas::IsDisplaySupported(attributes);
+    bool const display_supported = wxGLCanvas::IsDisplaySupported(attributes);
     std::cout << "wxGLCanvas IsDisplaySupported " << std::boolalpha
               << display_supported << '\n';
     wx_gl_canvas = std::make_unique<wxGLCanvas>(parent, attributes).release();
@@ -244,7 +243,7 @@ class GLCanvas {
   }
 
   int LoadOpenGL(const std::array<int, 2>& version) {
-    bool canvas_shown_on_screen = wx_gl_canvas->IsShownOnScreen();
+    bool const canvas_shown_on_screen = wx_gl_canvas->IsShownOnScreen();
 
     if (!canvas_shown_on_screen) {
       std::cout << "!canvas_shown_on_screen\n";
@@ -363,7 +362,7 @@ class GLCanvas {
       return;
     }
 
-    rectf view_size = page_size.scale(view_size_scale);
+    rectf const view_size = page_size.scale(view_size_scale);
     mvp.SetProjection(Projection::OrthoMatrix(view_size));
 
     graphics_engine->SetMVP(mvp);
@@ -383,8 +382,8 @@ class GLCanvas {
   void SavePNG(std::string file_path) {
     const int dpi = 600;
     const int msaa_samples = 16;
-    RenderToPNG render_to_png(file_path, page_size, dpi, graphics_engine,
-                              msaa_samples);
+    RenderToPNG const render_to_png(file_path, page_size, dpi, graphics_engine,
+                                    msaa_samples);
   }
 
   // Dumps the current window framebuffer (what is actually on screen) to PNG.
@@ -426,7 +425,7 @@ class GLCanvas {
 
  private:
   void InitPaintCallback(wxPaintEvent& /*event*/) {
-    wxPaintDC dc(wx_gl_canvas);
+    wxPaintDC const dc(wx_gl_canvas);
     if (LoadOpenGL(gl_version_) != 0) {
       wx_gl_canvas->Unbind(wxEVT_PAINT, &GLCanvas::InitPaintCallback, this);
       if (on_gl_ready_) {
@@ -438,7 +437,7 @@ class GLCanvas {
   }
 
   void PaintCallback(wxPaintEvent& /*event*/) {
-    wxPaintDC dc(wx_gl_canvas);
+    wxPaintDC const dc(wx_gl_canvas);
     graphics_engine->SetMVP(mvp);
     graphics_engine->Render();
     wx_gl_canvas->SwapBuffers();
@@ -459,7 +458,7 @@ class GLCanvas {
     RefreshMVP();
   }
 
-  int gl_loaded;
+  int gl_loaded{0};
 
   wxWeakRef<wxGLCanvas> wx_gl_canvas;
 

@@ -294,8 +294,7 @@ class RenderToPNG {
       : file_path(std::move(file_path_in)),
         ortho_dimensions(image_dimension),
         dpi(dpi_in),
-        image_width(0),
-        image_height(0),
+
         graphics_engine(std::move(graphics_engine_in)),
         msaa_samples(msaa_samples_in) {
     RenderPicture();
@@ -449,8 +448,8 @@ class RenderToPNG {
   const std::string file_path;
   const rectf ortho_dimensions;
   const float dpi;
-  size_t image_width;
-  size_t image_height;
+  size_t image_width{0};
+  size_t image_height{0};
   std::shared_ptr<GraphicsEngine> graphics_engine;
   int msaa_samples;
 

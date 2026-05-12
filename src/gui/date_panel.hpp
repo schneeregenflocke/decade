@@ -47,21 +47,22 @@ class DateTablePanel : public wxPanel {
 
     wxBoxSizer* buttons_sizer =
         std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
-    wxSizerFlags buttons_flags = wxSizerFlags().Proportion(0).Border(wxALL, 5);
+    wxSizerFlags const buttons_flags =
+        wxSizerFlags().Proportion(0).Border(wxALL, 5);
     buttons_sizer->Add(addRowButton, buttons_flags);
     buttons_sizer->Add(deleteRowButton, buttons_flags);
     buttons_sizer->Add(select_group_control, buttons_flags);
 
     wxBoxSizer* table_sizer =
         std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
-    wxSizerFlags data_table_flags =
+    wxSizerFlags const data_table_flags =
         wxSizerFlags().Proportion(1).Expand().Border(wxALL, 5);
     table_sizer->Add(table_widget, data_table_flags);
 
     wxBoxSizer* main_sizer = std::make_unique<wxBoxSizer>(wxVERTICAL).release();
-    wxSizerFlags buttons_sizer_flags =
+    wxSizerFlags const buttons_sizer_flags =
         wxSizerFlags().Proportion(0).Expand().Border(wxALL, 0);
-    wxSizerFlags table_sizer_flags =
+    wxSizerFlags const table_sizer_flags =
         wxSizerFlags().Proportion(1).Expand().Border(wxALL, 0);
     main_sizer->Add(buttons_sizer, buttons_sizer_flags);
     main_sizer->Add(table_sizer, table_sizer_flags);
@@ -220,7 +221,7 @@ class DateTablePanel : public wxPanel {
 
     std::vector<DateIntervalBundle> date_interval_bundles;
 
-    for (unsigned long valid_index : valid_rows_list) {
+    for (unsigned long const valid_index : valid_rows_list) {
       const auto begin_date =
           GetDateByCell({.row = static_cast<unsigned int>(valid_index),
                          .column = Columns::first_date});
@@ -377,7 +378,7 @@ class DateTablePanel : public wxPanel {
         // Check Date
         auto edited_date = string_to_boost_date(edited_string, date_format);
         if (!edited_date.is_special()) {
-          std::string parsed_string = boost_date_to_string(edited_date);
+          std::string const parsed_string = boost_date_to_string(edited_date);
           table_widget->SetValue(parsed_string.c_str(), selected_row,
                                  edited_column);
         } else {
@@ -417,7 +418,7 @@ class DateTablePanel : public wxPanel {
     if (event.GetId() == wxID_DELETE && !selections.empty()) {
       const auto post_remove_select = selections.front();
 
-      for (unsigned int& selection : std::views::reverse(selections)) {
+      for (unsigned int const& selection : std::views::reverse(selections)) {
         RemoveRow(selection);
       }
 
@@ -441,7 +442,7 @@ class DateTablePanel : public wxPanel {
     auto group_number = event.GetSelection();
     auto group_name = date_group_store.GetName(group_number);
 
-    for (unsigned int selection : selections) {
+    for (unsigned int const selection : selections) {
       table_widget->SetValue(group_name, selection,
                              ColumnIndex(Columns::group));
     }
