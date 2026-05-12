@@ -1,90 +1,74 @@
-/*
-Decade
-Copyright (c) 2019-2022 Marco Peyer
+#ifndef HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_RENDER_TO_TEXTURE_HPP
+#define HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_RENDER_TO_TEXTURE_HPP
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-*/
-
-#pragma once
-
-#include "texture_object.hpp"
-
-#include <glad/glad.h>
+#include <epoxy/gl.h>
 
 #include <vector>
 
+#include "texture_object.hpp"
+
 class RenderBuffer {
-public:
+ public:
   explicit RenderBuffer() { glGenRenderbuffers(1, &name); }
 
   ~RenderBuffer() { glDeleteRenderbuffers(1, &name); }
 
   GLuint Name() const { return name; }
 
-private:
+ private:
   GLuint name;
 };
 
 class FrameBuffer {
-public:
-  explicit FrameBuffer(GLsizei width, GLsizei height, GLsizei samples, bool msaa)
-  {
+ public:
+  explicit FrameBuffer(GLsizei width, GLsizei height, GLsizei samples,
+                       bool msaa) {
     glGenFramebuffers(1, &name);
 
     if (msaa == false) {
       glBindTexture(GL_TEXTURE_2D, texture.Name());
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                   nullptr);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA,
+                   GL_UNSIGNED_BYTE, nullptr);
       // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
       // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
       glBindTexture(GL_TEXTURE_2D, 0);
 
       glBindRenderbuffer(GL_RENDERBUFFER, render_buffer.Name());
-      glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+      glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width,
+                            height);
       glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
       glBindFramebuffer(GL_FRAMEBUFFER, name);
-      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER,
-                                render_buffer.Name());
-      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.Name(),
-                             0);
+      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                                GL_RENDERBUFFER, render_buffer.Name());
+      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                             GL_TEXTURE_2D, texture.Name(), 0);
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
     if (msaa == true) {
       glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texture.Name());
-      glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGBA8, width, height, GL_TRUE);
+      glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGBA8,
+                              width, height, GL_TRUE);
       glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
 
       glBindRenderbuffer(GL_RENDERBUFFER, render_buffer.Name());
-      glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH_COMPONENT24, width,
-                                       height);
+      glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples,
+                                       GL_DEPTH_COMPONENT24, width, height);
       glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
       glBindFramebuffer(GL_FRAMEBUFFER, name);
-      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE,
-                             texture.Name(), 0);
-      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER,
-                                render_buffer.Name());
+      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                             GL_TEXTURE_2D_MULTISAMPLE, texture.Name(), 0);
+      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                                GL_RENDERBUFFER, render_buffer.Name());
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
   }
 
   ~FrameBuffer() { glDeleteFramebuffers(1, &name); }
 
-  GLenum CheckStatus() const
-  {
+  GLenum CheckStatus() const {
     glBindFramebuffer(GL_FRAMEBUFFER, name);
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -95,20 +79,24 @@ public:
 
   GLuint TextureName() const { return texture.Name(); }
 
-private:
+ private:
   GLuint name;
   Texture texture;
   RenderBuffer render_buffer;
 };
 
 class RenderToTexture {
-public:
-  RenderToTexture(GLsizei width, GLsizei height, GLsizei samples)
-      : width(width), height(height), samples(samples), frame_buffer(width, height, samples, false),
-        frame_buffer_msaa(width, height, samples, true), valid(false), pixel_size(0),
-        restore_width(0), restore_height(0)
-  {
-
+ public:
+  RenderToTexture(GLsizei width_in, GLsizei height_in, GLsizei samples_in)
+      : width(width_in),
+        height(height_in),
+        samples(samples_in),
+        frame_buffer(width_in, height_in, samples_in, false),
+        frame_buffer_msaa(width_in, height_in, samples_in, true),
+        restore_width(0),
+        restore_height(0),
+        pixel_size(0),
+        valid(false) {
     pixel_size = 4 * sizeof(GLubyte);
 
     /*int gl_max_texture_size = 0;
@@ -131,8 +119,7 @@ public:
 
   bool Valid() { return valid; }
 
-  void BeginRender()
-  {
+  void BeginRender() {
     GLint viewport[4];
     glGetIntegerv(GL_VIEWPORT, viewport);
 
@@ -143,20 +130,20 @@ public:
     glViewport(0, 0, width, height);
   }
 
-  void EndRender()
-  {
+  void EndRender() {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, frame_buffer_msaa.Name());
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, frame_buffer.Name());
-    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height,
+                      GL_COLOR_BUFFER_BIT, GL_NEAREST);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glViewport(0, 0, restore_width, restore_height);
   }
 
-  std::vector<unsigned char> CopyImage()
-  {
-    const size_t image_size =
-        static_cast<size_t>(width) * static_cast<size_t>(height) * static_cast<size_t>(pixel_size);
+  std::vector<unsigned char> CopyImage() {
+    const size_t image_size = static_cast<size_t>(width) *
+                              static_cast<size_t>(height) *
+                              static_cast<size_t>(pixel_size);
     image.resize(image_size);
 
     glBindTexture(GL_TEXTURE_2D, frame_buffer.TextureName());
@@ -166,7 +153,7 @@ public:
     return image;
   }
 
-private:
+ private:
   GLsizei width;
   GLsizei height;
   GLsizei samples;
@@ -182,3 +169,4 @@ private:
 
   bool valid;
 };
+#endif  // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_RENDER_TO_TEXTURE_HPP

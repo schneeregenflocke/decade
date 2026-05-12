@@ -1,154 +1,180 @@
-/*
-Decade
-Copyright (c) 2019-2022 Marco Peyer
+#ifndef HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SHAPES_BASE_HPP
+#define HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SHAPES_BASE_HPP
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+#include <epoxy/gl.h>
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-*/
-
-#pragma once
-
-#include "shaders.hpp"
-#include "shaders_info.hpp"
-
-#include <iostream>
-// #include <variant>
-#include <vector>
-
-// #define GLM_FORCE_MESSAGES
+#include <cstddef>
 #include <glm/geometric.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
+#include <iostream>
+#include <utility>
+#include <vector>
 
-#include <glad/glad.h>
+#include "shaders.hpp"
+#include "shaders_info.hpp"
 
-void PrintError()
-{
-  GLenum error = glGetError();
-  if (error != GL_NO_ERROR)
-    std::cout << "OpenGL Error: " << std::hex << error << std::dec << std::endl;
+inline void PrintError() {
+  const GLenum error = glGetError();
+  if (error != GL_NO_ERROR) {
+    std::cout << "OpenGL Error: " << std::hex << error << std::dec << '\n';
+  }
 }
 
 class VertexArrayObject {
-public:
-  explicit VertexArrayObject() { glCreateVertexArrays(1, &vao); }
+ public:
+  VertexArrayObject() { glCreateVertexArrays(1, &vao); }
 
-  virtual ~VertexArrayObject() { glDeleteVertexArrays(1, &vao); }
+  ~VertexArrayObject() { glDeleteVertexArrays(1, &vao); }
 
-  bool is_valid() const { return glIsVertexArray(vao); }
+  VertexArrayObject(const VertexArrayObject&) = delete;
+  VertexArrayObject& operator=(const VertexArrayObject&) = delete;
+
+  VertexArrayObject(VertexArrayObject&& other) noexcept
+      : vao(std::exchange(other.vao, 0)) {}
+  VertexArrayObject& operator=(VertexArrayObject&& other) noexcept {
+    if (this != &other) {
+      if (vao != 0) {
+        glDeleteVertexArrays(1, &vao);
+      }
+      vao = std::exchange(other.vao, 0);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] bool is_valid() const { return glIsVertexArray(vao); }
 
   void bind() const { glBindVertexArray(vao); }
 
-  void unbind() const { glBindVertexArray(0); }
+  static void Unbind() { glBindVertexArray(0); }
 
-  GLuint get() const { return vao; }
+  [[nodiscard]] GLuint get() const { return vao; }
 
-private:
-  GLuint vao;
+ private:
+  GLuint vao{0};
 };
 
 class VertexBufferObject {
-public:
-  explicit VertexBufferObject() { glCreateBuffers(1, &vbo); }
+ public:
+  VertexBufferObject() { glCreateBuffers(1, &vbo); }
 
-  virtual ~VertexBufferObject() { glDeleteBuffers(1, &vbo); }
+  ~VertexBufferObject() { glDeleteBuffers(1, &vbo); }
+
+  VertexBufferObject(const VertexBufferObject&) = delete;
+  VertexBufferObject& operator=(const VertexBufferObject&) = delete;
+
+  VertexBufferObject(VertexBufferObject&& other) noexcept
+      : vbo(std::exchange(other.vbo, 0)) {}
+  VertexBufferObject& operator=(VertexBufferObject&& other) noexcept {
+    if (this != &other) {
+      if (vbo != 0) {
+        glDeleteBuffers(1, &vbo);
+      }
+      vbo = std::exchange(other.vbo, 0);
+    }
+    return *this;
+  }
 
   void bind() const { glBindBuffer(GL_ARRAY_BUFFER, vbo); }
 
-  void unbind() const { glBindBuffer(GL_ARRAY_BUFFER, 0); }
+  static void Unbind() { glBindBuffer(GL_ARRAY_BUFFER, 0); }
 
-  GLuint get() const { return vbo; }
+  [[nodiscard]] GLuint get() const { return vbo; }
 
-private:
-  GLuint vbo;
+ private:
+  GLuint vbo{0};
 };
 
 class Shape {
-public:
-  explicit Shape(Shader *shader_ptr) : number_vertices(0) { set_shader(shader_ptr); }
+ public:
+  struct BufferIndex {
+    size_t value;
+  };
 
-  void set_buffer(size_t index, GLsizeiptr number_vertices, const void *data)
-  {
-    this->number_vertices = number_vertices;
+  explicit Shape(Shader* shader_ptr_in) { set_shader(shader_ptr_in); }
+  virtual ~Shape() = default;
 
-    GLsizeiptr type_size = attributes_infos[index].type_size;
-    GLsizeiptr buffer_size = number_vertices * type_size;
+  Shape(const Shape&) = delete;
+  Shape& operator=(const Shape&) = delete;
+  Shape(Shape&&) = delete;
+  Shape& operator=(Shape&&) = delete;
 
-    auto data_pointer_size = sizeof(data);
+  void set_buffer(BufferIndex index, GLsizei vertex_count, const void* data) {
+    number_vertices = vertex_count;
+
+    const auto& attribute_info = attributes_infos.at(index.value);
+    const auto type_size =
+        static_cast<GLsizeiptr>(attribute_info.GetTypeSize());
+    const auto buffer_size = static_cast<GLsizeiptr>(vertex_count) * type_size;
 
     vao.bind();
-    vbos[index].bind();
+    vbos.at(index.value).bind();
 
     glBufferData(GL_ARRAY_BUFFER, buffer_size, data, GL_DYNAMIC_DRAW);
     // glNamedBufferData(vbos[index].get(), buffer_size, data, GL_DYNAMIC_DRAW);
 
-    vbos[index].unbind();
-    vao.unbind();
+    VertexBufferObject::Unbind();
+    VertexArrayObject::Unbind();
   }
 
-  virtual void draw() const
-  {
+  virtual void draw() const {
     shader_ptr->UseProgram();
     vao.bind();
     glDrawArrays(GL_TRIANGLES, 0, number_vertices);
-    vao.unbind();
+    VertexArrayObject::Unbind();
   }
 
-  Shader *get_shader() const { return shader_ptr; }
+  [[nodiscard]] Shader* get_shader() const { return shader_ptr; }
 
-protected:
-  GLsizei number_vertices;
-  VertexArrayObject vao;
-  Shader *shader_ptr;
+ protected:
+  [[nodiscard]] GLsizei vertex_count() const { return number_vertices; }
+  [[nodiscard]] Shader* shader() const { return shader_ptr; }
+  [[nodiscard]] VertexArrayObject& vao_ref() { return vao; }
+  [[nodiscard]] const VertexArrayObject& vao_ref() const { return vao; }
 
-private:
-  void set_shader(Shader *shader_ptr)
-  {
-    this->shader_ptr = shader_ptr;
-    attributes_infos = shader_ptr->GetShaderAttributesInfos();
+ private:
+  void set_shader(Shader* new_shader_ptr) {
+    shader_ptr = new_shader_ptr;
+    attributes_infos = new_shader_ptr->GetShaderAttributesInfos();
 
     vao.bind();
 
     vbos.resize(attributes_infos.size());
 
     for (size_t index = 0; index < attributes_infos.size(); ++index) {
-      const auto &attribute_info = attributes_infos[index];
+      const auto& attribute_info = attributes_infos[index];
 
       vbos[index].bind();
 
-      // glVertexArrayAttribFormat(vao.get(), attribute_info.location, attribute_info.number,
-      // GL_FLOAT, GL_FALSE, 0);
-      glVertexAttribFormat(attribute_info.location, attribute_info.number, GL_FLOAT, GL_FALSE, 0);
+      // glVertexArrayAttribFormat(vao.get(), attribute_info.location,
+      // attribute_info.number, GL_FLOAT, GL_FALSE, 0);
+      glVertexAttribFormat(attribute_info.GetLocation(),
+                           static_cast<GLint>(attribute_info.GetNumber()),
+                           GL_FLOAT, GL_FALSE, 0);
 
-      GLuint binding_index = index;
+      const auto binding_index = static_cast<GLuint>(index);
 
       // glVertexArrayAttribBinding(vao.get(), attribute_info.location, index);
-      glVertexAttribBinding(attribute_info.location, binding_index);
+      glVertexAttribBinding(attribute_info.GetLocation(), binding_index);
 
       // glVertexArrayVertexBuffer(vao.get(), index, vbos[index].get(), 0,
       // attribute_info.type_size);
-      glBindVertexBuffer(binding_index, vbos[index].get(), 0, attribute_info.type_size);
+      glBindVertexBuffer(binding_index, vbos[index].get(), 0,
+                         static_cast<GLsizei>(attribute_info.GetTypeSize()));
 
       // glEnableVertexArrayAttrib(vao.get(), attribute_info.location);
-      glEnableVertexAttribArray(attribute_info.location);
+      glEnableVertexAttribArray(attribute_info.GetLocation());
 
-      vbos[index].unbind();
+      VertexBufferObject::Unbind();
     }
 
-    vao.unbind();
+    VertexArrayObject::Unbind();
   }
 
+  GLsizei number_vertices{0};
+  VertexArrayObject vao;
+  Shader* shader_ptr{nullptr};
   std::vector<VertexBufferObject> vbos;
   std::vector<ShaderInfo> attributes_infos;
 };
@@ -193,15 +219,15 @@ protected:
 
                 vbo.bind();
                 glNamedBufferData
-                glBufferData(GL_ARRAY_BUFFER, buffer_size, nullptr, GL_DYNAMIC_DRAW);
-                vbo.unbind();
+                glBufferData(GL_ARRAY_BUFFER, buffer_size, nullptr,
+GL_DYNAMIC_DRAW); vbo.unbind();
         }
 
         void UpdateBuffer()
         {
                 vbo.bind();
-                glBufferSubData(GL_ARRAY_BUFFER, 0, buffer_size, vertices.data());
-                vbo.unbind();
+                glBufferSubData(GL_ARRAY_BUFFER, 0, buffer_size,
+vertices.data()); vbo.unbind();
         }
 
         U& GetVertexRef(size_t index)
@@ -223,8 +249,8 @@ private:
 {
         for (auto index = 0U; index < vertices.size(); index += 3)
         {
-                vec3 subvector0 = vertices[index].point - vertices[index + 1].point;
-                vec3 subvector1 = vertices[index].point - vertices[index + 2].point;
+                vec3 subvector0 = vertices[index].point - vertices[index +
+1].point; vec3 subvector1 = vertices[index].point - vertices[index + 2].point;
 
                 vec3 cross = glm::cross(subvector0, subvector1);
                 vec3 normal = glm::normalize(cross);
@@ -234,3 +260,4 @@ private:
                 vertices[index + 2].normal = normal;
         }
 }*/
+#endif  // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SHAPES_BASE_HPP

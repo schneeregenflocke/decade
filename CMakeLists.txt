@@ -1,10 +1,5 @@
 ﻿cmake_minimum_required(VERSION 3.15)
 
-set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE PATH "Path to your vcpkg installation" FORCE)
-# set(VCPKG_ROOT "$ENV{VCPKG_ROOT}" CACHE PATH "Path to your vcpkg installation" FORCE)
-# set(VCPKG_TARGET_TRIPLET "x64-windows" CACHE STRING "Target triplet for vcpkg" FORCE)
-# set(VCPKG_MANIFEST_MODE OFF CACHE BOOL "Enable vcpkg manifest mode" FORCE)
-
 include(CMakePrintHelpers)
 
 project(decade VERSION 0.0.0)
@@ -13,31 +8,46 @@ cmake_print_variables(CMAKE_VERSION CMAKE_PROJECT_VERSION CMAKE_SYSTEM_NAME CMAK
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Generate compile_commands.json for clang tooling" FORCE)
 
-cmake_print_variables(CMAKE_TOOLCHAIN_FILE VCPKG_ROOT VCPKG_INSTALLED_DIR VCPKG_TARGET_TRIPLET)
+add_executable(${PROJECT_NAME})
 
-add_executable(${PROJECT_NAME} WIN32)
-#add_executable(${PROJECT_NAME})
-
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
 get_target_property(${PROJECT_NAME}_CXX_STANDARD ${PROJECT_NAME} CXX_STANDARD)
 cmake_print_variables(${PROJECT_NAME}_CXX_STANDARD CMAKE_CXX_STANDARD CMAKE_CXX_EXTENSIONS)
 cmake_print_variables(CMAKE_EXPORT_COMPILE_COMMANDS)
 
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 	target_compile_options(${PROJECT_NAME} PRIVATE
-        "$<$<CONFIG:Debug>:/Zc:__cplusplus;/fsanitize=address;/Zi;/EHsc>"
-		"$<$<CONFIG:Release>:/Zc:__cplusplus>"
-    )
-
-	target_link_options(${PROJECT_NAME} PRIVATE
-        "$<$<CONFIG:Debug>:/fsanitize=address;/INCREMENTAL:NO;/DEBUG>"
-        "$<$<CONFIG:Release>:/OPT:REF;/OPT:ICF>"
+		-Wall
+		-Wextra
+		-Wpedantic
+		-Wshadow
+		-Wnon-virtual-dtor
+		-Woverloaded-virtual
+		-Wold-style-cast
+		-Wcast-align
+		-Wnull-dereference
+		-Wdouble-promotion
+		-Wformat=2
+		-Wmisleading-indentation
+		-Wimplicit-fallthrough
+		-Wconversion
+		-Werror
 	)
+elseif(MSVC)
+	target_compile_options(${PROJECT_NAME} PRIVATE /W4 /WX)
 endif()
 
 target_sources(${PROJECT_NAME} PRIVATE 
-	${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/main_window.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/app/main.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/app/decade_app.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/app/main_window.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/app/services/project_io.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/app/decade_app.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/app/app_config.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/app/main_window.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/app/services/project_io.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/event_bus.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/main_window_binder.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/date_utils.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/casts.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/calendar_page.hpp
@@ -48,6 +58,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/page_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/shape_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/title_config.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/detail/reentry_guard.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/calendar_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/date_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/font_panel.hpp
@@ -73,20 +84,26 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/scene_graph.hpp
 )
 
+
 find_package(Boost CONFIG REQUIRED COMPONENTS date_time serialization wserialization)
 cmake_print_variables(Boost_FOUND Boost_INCLUDE_DIRS Boost_LIBRARY_DIRS Boost_LIBRARIES Boost_USE_STATIC_LIBS)
 if(${Boost_FOUND})
 	target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
 	target_link_libraries(${PROJECT_NAME} PRIVATE ${Boost_LIBRARIES})
-endif()
+	endif()
 
 find_package(OpenGL REQUIRED)
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(EPOXY REQUIRED epoxy)
+target_include_directories(${PROJECT_NAME} PRIVATE ${EPOXY_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${EPOXY_LIBRARIES})
+target_compile_options(${PROJECT_NAME} PRIVATE ${EPOXY_CFLAGS_OTHER})
 
 find_package(wxWidgets CONFIG REQUIRED COMPONENTS propgrid gl core base)
 target_link_libraries(${PROJECT_NAME} PRIVATE ${wxWidgets_LIBRARIES})
 cmake_print_variables(wxWidgets_FOUND wxWidgets_INCLUDE_DIRS wxWidgets_LIBRARIES wxWidgets_LIBRARY_DIRS wxWidgets_DEFINITIONS wxWidgets_DEFINITIONS_DEBUG wxWidgets_CXX_FLAGS wxWidgets_USE_FILE)
 
-target_sources(${PROJECT_NAME} PRIVATE ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/wx/msw/wx_dpi_aware_pmv2.manifest)
 
 find_package(ZLIB REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
@@ -98,25 +115,34 @@ target_link_libraries(${PROJECT_NAME} PRIVATE PNG::PNG)
 find_package(Fontconfig REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE Fontconfig::Fontconfig)
 
-find_package(freetype CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE freetype)
-
-set(GLAD_PROFILE "core" CACHE STRING "OpenGL profile" FORCE)
-find_package(glad CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE glad::glad)
+find_package(Freetype REQUIRED)
+if(TARGET freetype)
+	target_link_libraries(${PROJECT_NAME} PRIVATE freetype)
+elseif(TARGET Freetype::Freetype)
+	target_link_libraries(${PROJECT_NAME} PRIVATE Freetype::Freetype)
+else()
+	target_include_directories(${PROJECT_NAME} PRIVATE ${FREETYPE_INCLUDE_DIRS})
+	target_link_libraries(${PROJECT_NAME} PRIVATE ${FREETYPE_LIBRARIES})
+endif()
 
 find_package(glm CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm)
 #target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm-header-only)
 
-find_path(P_RANAV_CSV2_INCLUDE_DIRS "csv2/mio.hpp")
-target_include_directories(${PROJECT_NAME} PRIVATE ${P_RANAV_CSV2_INCLUDE_DIRS})
-cmake_print_variables(P_RANAV_CSV2_INCLUDE_DIRS)
+set(CSV2_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/csv2/include")
+if(EXISTS "${CSV2_INCLUDE_DIR}/csv2/reader.hpp")
+	target_include_directories(${PROJECT_NAME} PRIVATE ${CSV2_INCLUDE_DIR})
+else()
+	find_path(P_RANAV_CSV2_INCLUDE_DIRS "csv2/mio.hpp")
+	if(P_RANAV_CSV2_INCLUDE_DIRS)
+		target_include_directories(${PROJECT_NAME} PRIVATE ${P_RANAV_CSV2_INCLUDE_DIRS})
+		cmake_print_variables(P_RANAV_CSV2_INCLUDE_DIRS)
+	else()
+		message(FATAL_ERROR "csv2 not found. Initialize submodule external/csv2 or provide csv2 include dir.")
+	endif()
+endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/include)
-
-find_package(tabulate CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE tabulate::tabulate)
 
 find_package(Microsoft.GSL CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE Microsoft.GSL::GSL)
@@ -137,24 +163,21 @@ list(APPEND RESOURCE_FILES
 
 list(APPEND RESOURCE_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt decade
+)
 
-	${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource/LICENSE.txt embed-resource	 
-	${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/LICENSE sigslot
-
-	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/boost-date-time/copyright boost
-	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/freetype/copyright freetype
-	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/zlib/copyright zlib
-	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/libpng/copyright libpng
-	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/p-ranav-csv2/copyright csv2
-	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/p-ranav-csv2/LICENSE.mio csv2mio
-	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/glad/copyright glad
-	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/glm/copyright glm
-	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/wxwidgets/copyright wxwidgets
-	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/fontconfig/copyright fontconfig
-	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/opengl/copyright opengl
-	${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/tabulate/copyright tabulate
+list(APPEND RESOURCE_FILES
+	${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource/LICENSE.txt embed_resource_LICENSE
+	${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/LICENSE sigslot_LICENSE
+	${CMAKE_CURRENT_SOURCE_DIR}/external/csv2/LICENSE csv2_copyright
+	${CMAKE_CURRENT_SOURCE_DIR}/external/csv2/LICENSE.mio csv2mio_LICENSE
 )
 
 embed_resources(${PROJECT_NAME}_RESOURCES ${RESOURCE_FILES})
 cmake_print_variables(${PROJECT_NAME}_RESOURCES)
 target_sources(${PROJECT_NAME} PRIVATE ${${PROJECT_NAME}_RESOURCES})
+
+option(DECADE_BUILD_TESTS "Build unit tests for src/packages/" ON)
+if(DECADE_BUILD_TESTS)
+	enable_testing()
+	add_subdirectory(tests)
+endif()

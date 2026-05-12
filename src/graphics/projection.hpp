@@ -1,50 +1,30 @@
-/*
-Decade
-Copyright (c) 2019-2022 Marco Peyer
+#ifndef HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_PROJECTION_HPP
+#define HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_PROJECTION_HPP
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+#include <epoxy/gl.h>
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-*/
-
-#pragma once
-
-#include "rect.hpp"
-
-#include <glad/glad.h>
-
+#include <array>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-// #include <iostream>
+#include "rect.hpp"
 
 class Projection {
-public:
-  static float AspectRatio()
-  {
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
+ public:
+  static float AspectRatio() {
+    std::array<GLint, 4> viewport{};
+    glGetIntegerv(GL_VIEWPORT, viewport.data());
 
-    float width = static_cast<float>(viewport[2]);
-    float height = static_cast<float>(viewport[3]);
+    const auto width = static_cast<float>(viewport[2]);
+    const auto height = static_cast<float>(viewport[3]);
 
     return width / height;
   }
 
-  static glm::mat4 OrthoMatrix(const rectf &view_size)
-  {
-    float page_height_ratio = view_size.width() / view_size.height();
-    float viewport_height_ratio = AspectRatio();
+  static glm::mat4 OrthoMatrix(const rectf& view_size) {
+    const auto page_height_ratio = view_size.width() / view_size.height();
+    const auto viewport_height_ratio = AspectRatio();
 
     glm::mat4 ortho_matrix;
     if (page_height_ratio >= viewport_height_ratio) {
@@ -56,22 +36,23 @@ public:
     return ortho_matrix;
   }
 
-  static glm::mat4 PerspectiveMatrix(const float fovy, const float z_near, const float z_far)
-  {
+  static glm::mat4 PerspectiveMatrix(const float fovy, const float z_near,
+                                     const float z_far) {
     return glm::perspective(fovy, AspectRatio(), z_near, z_far);
   }
 
-  static glm::mat4 OrthoMatrixWidth(float width)
-  {
-    float x_half_size = width / 2.f;
-    float y_half_size = width / AspectRatio() / 2.f;
+  static glm::mat4 OrthoMatrixWidth(float width) {
+    constexpr float kHalf = 0.5F;
+    const float x_half_size = width * kHalf;
+    const float y_half_size = width / AspectRatio() * kHalf;
     return glm::ortho(-x_half_size, x_half_size, -y_half_size, y_half_size);
   }
 
-  static glm::mat4 OrthoMatrixHeight(float height)
-  {
-    float x_half_size = height * AspectRatio() / 2.f;
-    float y_half_size = height / 2.f;
+  static glm::mat4 OrthoMatrixHeight(float height) {
+    constexpr float kHalf = 0.5F;
+    const float x_half_size = height * AspectRatio() * kHalf;
+    const float y_half_size = height * kHalf;
     return glm::ortho(-x_half_size, x_half_size, -y_half_size, y_half_size);
   }
 };
+#endif  // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_PROJECTION_HPP

@@ -1,224 +1,224 @@
-/*
-Decade
-Copyright (c) 2019-2024 Marco Peyer
+#ifndef HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SHADERS_INFO_HPP
+#define HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SHADERS_INFO_HPP
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+#include <epoxy/gl.h>
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-*/
-
-#pragma once
-
-#include <tabulate/table.hpp>
-
-#include <glad/glad.h>
-
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
 #include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
-
-#include <cstddef> // for offsetof
 #include <iostream>
 #include <string>
 #include <vector>
 
 class ShaderInfo {
-public:
-  ShaderInfo()
-      : info_type(NONE), name(""), location(0), size(0), type(0), number(0), type_size(0),
-        type_str("")
-  {
+ public:
+  enum class InfoType : std::uint8_t { ActiveAttribute, ActiveUniform, None };
+
+  struct InfoParams {
+    GLint location;
+    GLint size;
+    GLenum type;
+  };
+
+  ShaderInfo() = default;
+
+  ShaderInfo(InfoType info_type_value, std::string name_value,
+             InfoParams params)
+      : info_type(info_type_value),
+        name(std::move(name_value)),
+        location(params.location),
+        size(params.size),
+        type(params.type) {
+    UpdateTypeInfo();
   }
 
-  enum InfoType { ACTIVE_ATTRIBUTE, ACTIVE_UNIFORM, NONE };
+  void UpdateTypeInfo() {
+    constexpr size_t kVec2Components = 2;
+    constexpr size_t kVec3Components = 3;
+    constexpr size_t kVec4Components = 4;
+    constexpr size_t kMat4Components = 16;
 
-  InfoType info_type;
-  std::string name;
-  GLint location;
-  GLint size;
-  GLenum type;
-  size_t number;
-  size_t type_size;
-  std::string type_str;
-
-  void set_type_sizes()
-  {
-    if (type == GL_FLOAT_VEC2) {
-      type_str = "GL_FLOAT_VEC2";
-      number = 2;
-      type_size = sizeof(glm::vec2);
-    }
-    if (type == GL_FLOAT_VEC3) {
-      type_str = "GL_FLOAT_VEC3";
-      number = 3;
-      type_size = sizeof(glm::vec3);
-    }
-    if (type == GL_FLOAT_VEC4) {
-      type_str = "GL_FLOAT_VEC4";
-      number = 4;
-      type_size = sizeof(glm::vec4);
-    }
-    if (type == GL_FLOAT_MAT4) {
-      type_str = "GL_FLOAT_MAT4";
-      number = 16;
-      type_size = sizeof(glm::mat4);
-    }
-    if (type == GL_SAMPLER_2D) {
-      type_str = "GL_SAMPLER_2D";
+    switch (type) {
+      case GL_FLOAT_VEC2:
+        type_str = "GL_FLOAT_VEC2";
+        number = kVec2Components;
+        type_size = sizeof(glm::vec2);
+        break;
+      case GL_FLOAT_VEC3:
+        type_str = "GL_FLOAT_VEC3";
+        number = kVec3Components;
+        type_size = sizeof(glm::vec3);
+        break;
+      case GL_FLOAT_VEC4:
+        type_str = "GL_FLOAT_VEC4";
+        number = kVec4Components;
+        type_size = sizeof(glm::vec4);
+        break;
+      case GL_FLOAT_MAT4:
+        type_str = "GL_FLOAT_MAT4";
+        number = kMat4Components;
+        type_size = sizeof(glm::mat4);
+        break;
+      case GL_SAMPLER_2D:
+        type_str = "GL_SAMPLER_2D";
+        number = 1;
+        type_size = sizeof(GLint);
+        break;
+      default:
+        type_str = "UNKNOWN";
+        number = 0;
+        type_size = 0;
+        break;
     }
   }
 
-  void Print() const
-  {
+  [[nodiscard]] InfoType GetInfoType() const { return info_type; }
+  [[nodiscard]] const std::string& GetName() const { return name; }
+  [[nodiscard]] GLint GetLocation() const { return location; }
+  [[nodiscard]] GLint GetSize() const { return size; }
+  [[nodiscard]] GLenum GetType() const { return type; }
+  [[nodiscard]] size_t GetNumber() const { return number; }
+  [[nodiscard]] size_t GetTypeSize() const { return type_size; }
+  [[nodiscard]] const std::string& GetTypeString() const { return type_str; }
+
+  void Print() const {
     std::string info_type_str;
 
-    if (info_type == ACTIVE_ATTRIBUTE) {
+    if (info_type == InfoType::ActiveAttribute) {
       info_type_str = "Active Attribute";
-    } else if (info_type == ACTIVE_UNIFORM) {
+    } else if (info_type == InfoType::ActiveUniform) {
       info_type_str = "Active Uniform";
     }
 
-    std::cout << "Info_Type: " << info_type_str << ", Name: " << name << ", Location: " << location
-              << ", Type_String: " << type_str << ", Number: " << number
-              << ", Type_Size: " << type_size << ", Size: " << size << ", Type: " << std::hex
-              << type << std::dec << '\n';
+    std::cout << "Info_Type: " << info_type_str << ", Name: " << name
+              << ", Location: " << location << ", Type_String: " << type_str
+              << ", Number: " << number << ", Type_Size: " << type_size
+              << ", Size: " << size << ", Type: " << std::hex << type
+              << std::dec << '\n';
   }
+
+ private:
+  InfoType info_type{InfoType::None};
+  std::string name;
+  GLint location{0};
+  GLint size{0};
+  GLenum type{0};
+  size_t number{0};
+  size_t type_size{0};
+  std::string type_str;
 };
 
 class ShaderInfos {
-public:
-  ShaderInfos() : program(0) {}
+ public:
+  ShaderInfos() = default;
 
-  void SetProgram(GLuint program)
-  {
-    this->program = program;
+  void SetProgram(GLuint new_program) {
+    program = new_program;
 
     GatherAttributesInfo();
     GatherUniformsInfo();
   }
 
-  const std::vector<ShaderInfo> &GetAttributesInfos() const { return attribute_infos; }
+  [[nodiscard]] const std::vector<ShaderInfo>& GetAttributesInfos() const {
+    return attribute_infos;
+  }
 
-  int GetNumberAttributes() const
-  {
-    GLint num_attribs;
+  [[nodiscard]] int GetNumberAttributes() const {
+    GLint num_attribs = 0;
     glGetProgramiv(program, GL_ACTIVE_ATTRIBUTES, &num_attribs);
     return num_attribs;
   }
 
-  int GetNumberUniforms() const
-  {
-    GLint num_uniforms;
+  [[nodiscard]] int GetNumberUniforms() const {
+    GLint num_uniforms = 0;
     glGetProgramiv(program, GL_ACTIVE_UNIFORMS, &num_uniforms);
     return num_uniforms;
   }
 
-  void PrintAttributesInfo() const
-  {
-    for (const auto &shader_info : attribute_infos) {
+  void PrintAttributesInfo() const {
+    for (const auto& shader_info : attribute_infos) {
       shader_info.Print();
     }
   }
 
-  void PrintUniformsInfo() const
-  {
-    for (const auto &shader_info : uniform_infos) {
+  void PrintUniformsInfo() const {
+    for (const auto& shader_info : uniform_infos) {
       shader_info.Print();
     }
   }
 
-private:
-  void SortAttributesInfo()
-  {
+ private:
+  void SortAttributesInfo() {
     std::sort(attribute_infos.begin(), attribute_infos.end(),
-              [](const ShaderInfo &a, const ShaderInfo &b) { return a.location < b.location; });
+              [](const ShaderInfo& left_info, const ShaderInfo& right_info) {
+                return left_info.GetLocation() < right_info.GetLocation();
+              });
   }
 
-  void SortUniformsInfo()
-  {
+  void SortUniformsInfo() {
     std::sort(uniform_infos.begin(), uniform_infos.end(),
-              [](const ShaderInfo &a, const ShaderInfo &b) { return a.location < b.location; });
+              [](const ShaderInfo& left_info, const ShaderInfo& right_info) {
+                return left_info.GetLocation() < right_info.GetLocation();
+              });
   }
 
-  void GatherInfo() {}
-
-  void GatherAttributesInfo()
-  {
-    GLint num_attribs = GetNumberAttributes();
+  void GatherAttributesInfo() {
+    const GLint num_attribs = GetNumberAttributes();
     GLint max_attrib_name_length = 0;
-    glGetProgramiv(program, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &max_attrib_name_length);
+    glGetProgramiv(program, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH,
+                   &max_attrib_name_length);
 
     for (int index = 0; index < num_attribs; ++index) {
-      char *attrib_name_cstr = new char[max_attrib_name_length];
+      std::vector<char> attrib_name(static_cast<size_t>(max_attrib_name_length),
+                                    '\0');
       GLsizei written = 0;
       GLint size = 0;
       GLenum type = 0;
-      glGetActiveAttrib(program, index, max_attrib_name_length, &written, &size, &type,
-                        attrib_name_cstr);
-      GLint location = glGetAttribLocation(program, attrib_name_cstr);
+      glGetActiveAttrib(program, index, max_attrib_name_length, &written, &size,
+                        &type, attrib_name.data());
+      const GLint location = glGetAttribLocation(program, attrib_name.data());
 
-      std::cout << "Written: " << written << ", max_attrib_name_length: " << max_attrib_name_length
-                << '\n';
-
-      ShaderInfo shader_info;
-      shader_info.info_type = ShaderInfo::ACTIVE_ATTRIBUTE;
-      shader_info.name = std::string(attrib_name_cstr, written);
-      shader_info.location = location;
-      shader_info.size = size;
-      shader_info.type = type;
-      shader_info.set_type_sizes();
-
-      delete[] attrib_name_cstr;
-
-      attribute_infos.push_back(shader_info);
+      attribute_infos.emplace_back(
+          ShaderInfo::InfoType::ActiveAttribute,
+          std::string(attrib_name.data(), static_cast<size_t>(written)),
+          ShaderInfo::InfoParams{location, size, type});
     }
 
     SortAttributesInfo();
   }
 
-  void GatherUniformsInfo()
-  {
-    GLint num_uniforms = GetNumberUniforms();
+  void GatherUniformsInfo() {
+    const GLint num_uniforms = GetNumberUniforms();
     GLint max_uniforms_name_length = 0;
-    glGetProgramiv(program, GL_ACTIVE_UNIFORM_MAX_LENGTH, &max_uniforms_name_length);
+    glGetProgramiv(program, GL_ACTIVE_UNIFORM_MAX_LENGTH,
+                   &max_uniforms_name_length);
 
     for (int index = 0; index < num_uniforms; ++index) {
-      char *uniform_name_cstr = new char[max_uniforms_name_length];
+      std::vector<char> uniform_name(
+          static_cast<size_t>(max_uniforms_name_length), '\0');
       GLsizei written = 0;
       GLint size = 0;
       GLenum type = 0;
-      glGetActiveUniform(program, index, max_uniforms_name_length, &written, &size, &type,
-                         uniform_name_cstr);
+      glGetActiveUniform(program, index, max_uniforms_name_length, &written,
+                         &size, &type, uniform_name.data());
 
-      GLint location = glGetUniformLocation(program, uniform_name_cstr);
+      const GLint location = glGetUniformLocation(program, uniform_name.data());
 
-      ShaderInfo shader_info;
-      shader_info.info_type = ShaderInfo::ACTIVE_UNIFORM;
-      shader_info.name = std::string(uniform_name_cstr, written);
-      shader_info.location = location;
-      shader_info.size = size;
-      shader_info.type = type;
-      shader_info.set_type_sizes();
-
-      delete[] uniform_name_cstr;
-
-      uniform_infos.push_back(shader_info);
+      uniform_infos.emplace_back(
+          ShaderInfo::InfoType::ActiveUniform,
+          std::string(uniform_name.data(), static_cast<size_t>(written)),
+          ShaderInfo::InfoParams{location, size, type});
     }
 
     SortUniformsInfo();
   }
 
-  GLuint program;
+  GLuint program{0};
   std::vector<ShaderInfo> attribute_infos;
   std::vector<ShaderInfo> uniform_infos;
 };
+#endif  // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SHADERS_INFO_HPP
