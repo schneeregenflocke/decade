@@ -9,23 +9,10 @@
 
 The codebase follows a four-layer architecture. Dependencies only flow **inward** (Presentation → Application → Domain; Infrastructure is consumed by Application). Domain knows about nothing else; Infrastructure knows about Domain types it serialises.
 
-```
-┌────────────────────────────────────────────────────────────┐
-│ Presentation        src/gui/ , src/app/main_window.*       │
-│   wxWidgets panels, GLCanvas, menus, dialogs               │
-├────────────────────────────────────────────────────────────┤
-│ Application         src/app/ (incl. src/app/binding/)      │
-│   composition root, EventBus, main_window_binder,          │
-│   wx app lifecycle, command callbacks                      │
-├────────────────────────────────────────────────────────────┤
-│ Domain              src/packages/                          │
-│   stores, config value types, transformation logic,        │
-│   sigslot signals — UI-agnostic                            │
-├────────────────────────────────────────────────────────────┤
-│ Infrastructure      src/graphics/ , src/app/services/      │
-│   OpenGL pipeline, FreeType, XML/CSV/PNG I/O               │
-└────────────────────────────────────────────────────────────┘
-```
+- **Presentation:**	src/gui/ , src/app/main_window.* - wxWidgets panels, GLCanvas, menus, dialogs
+- **Application:**	src/app/ (incl. src/app/binding/) - composition root, EventBus, main_window_binder, wx app lifecycle, command callbacks
+- **Domain:**	src/packages/ - stores, config value types, transformation logic, sigslot signals - UI-agnostic
+- **Infrastructure:**	src/graphics/ , src/app/services/ - OpenGL pipeline, FreeType, XML/CSV/PNG I/O
 
 `src/calendar_page.hpp` is the rendering adapter: it bridges Domain state into the Infrastructure scene graph. It belongs conceptually to the Application layer but is kept at the `src/` root for legacy reasons.
 
