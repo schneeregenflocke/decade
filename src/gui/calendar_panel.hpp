@@ -106,29 +106,23 @@ class PropertyGridPanel : public wxPropertyGrid {
   std::vector<wxFloatProperty*> gui_spacings_array;
 };
 
-class CalendarSetupPanel {
+class CalendarSetupPanel : public wxPanel {
  public:
   CalendarSetupPanel(wxWindow* parent)
-      : wx_panel(nullptr), property_grid(nullptr) {
-    wx_panel = std::make_unique<wxPanel>(parent, wxID_ANY, wxDefaultPosition,
-                                         wxDefaultSize, wxTAB_TRAVERSAL,
-                                         wxPanelNameStr)
-                   .release();
-
+      : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                wxTAB_TRAVERSAL, wxPanelNameStr),
+        property_grid(nullptr) {
     wxBoxSizer* vertical_sizer =
         std::make_unique<wxBoxSizer>(wxVERTICAL).release();
-    wx_panel->SetSizer(vertical_sizer);
+    SetSizer(vertical_sizer);
 
-    property_grid =
-        std::make_unique<PropertyGridPanel>(wx_panel.get()).release();
+    property_grid = std::make_unique<PropertyGridPanel>(this).release();
 
-    wx_panel->Bind(wxEVT_PG_CHANGED,
-                   &CalendarSetupPanel::CallbackPropertyGridChanging, this);
+    Bind(wxEVT_PG_CHANGED, &CalendarSetupPanel::CallbackPropertyGridChanging,
+         this);
 
     UpdatePropertyGrid();
   }
-
-  wxPanel* PanelPtr() { return wx_panel.get(); }
 
   void ReceiveCalendarConfigStorage(
       const CalendarConfigStorage& incoming_calendar_config_storage) {
@@ -204,7 +198,6 @@ class CalendarSetupPanel {
   }
 
  private:
-  wxWeakRef<wxPanel> wx_panel;
   wxWeakRef<PropertyGridPanel> property_grid;
   CalendarConfigStorage calendar_config_storage;
   sigslot::signal<const CalendarConfigStorage&> signal_calendar_config_storage;

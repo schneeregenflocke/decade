@@ -16,28 +16,22 @@
 #include "../packages/group_store.hpp"
 #include "../packages/shape_config.hpp"
 
-class ElementsSetupsPanel {
+class ElementsSetupsPanel : public wxPanel {
  public:
-  explicit ElementsSetupsPanel(wxWindow* parent) {
-    wx_panel =
-        std::make_unique<wxPanel>(parent, wxID_ANY, wxDefaultPosition,
-                                  wxDefaultSize, wxTAB_TRAVERSAL, wxEmptyString)
-            .release();
-
+  explicit ElementsSetupsPanel(wxWindow* parent)
+      : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                wxTAB_TRAVERSAL, wxEmptyString) {
     InitWidgets();
     InitSizers();
 
-    wx_panel->Bind(wxEVT_LISTBOX, &ElementsSetupsPanel::CallbackListBook, this);
-    wx_panel->Bind(wxEVT_CHECKBOX, &ElementsSetupsPanel::CallbackCheckBox,
-                   this);
-    wx_panel->Bind(wxEVT_SPINCTRLDOUBLE,
-                   &ElementsSetupsPanel::CallbackSpinControlDouble, this);
-    wx_panel->Bind(wxEVT_COLOURPICKER_CHANGED,
-                   &ElementsSetupsPanel::CallbackColorPicker, this);
-    wx_panel->Bind(wxEVT_SLIDER, &ElementsSetupsPanel::CallbackSlider, this);
+    Bind(wxEVT_LISTBOX, &ElementsSetupsPanel::CallbackListBook, this);
+    Bind(wxEVT_CHECKBOX, &ElementsSetupsPanel::CallbackCheckBox, this);
+    Bind(wxEVT_SPINCTRLDOUBLE,
+         &ElementsSetupsPanel::CallbackSpinControlDouble, this);
+    Bind(wxEVT_COLOURPICKER_CHANGED, &ElementsSetupsPanel::CallbackColorPicker,
+         this);
+    Bind(wxEVT_SLIDER, &ElementsSetupsPanel::CallbackSlider, this);
   }
-
-  wxPanel* PanelPtr() { return wx_panel.get(); }
 
   void ReceiveShapeConfigurationStorage(
       const ShapeConfigurationStorage& incoming_shape_configuration_storage) {
@@ -116,32 +110,32 @@ class ElementsSetupsPanel {
     constexpr double kLineWidthIncrement = 0.05;
 
     shape_configuration_list_box =
-        std::make_unique<wxListBox>(wx_panel.get(), wxID_ANY, wxDefaultPosition,
+        std::make_unique<wxListBox>(this, wxID_ANY, wxDefaultPosition,
                                     wxDefaultSize, 0, nullptr,
                                     wxLB_SINGLE | wxLB_NEEDED_SB,
                                     wxDefaultValidator, wxEmptyString)
             .release();
 
     outline_visible_ctrl = std::make_unique<wxCheckBox>(
-                               wx_panel.get(), wxID_ANY, L"Outline Visible")
+                               this, wxID_ANY, L"Outline Visible")
                                .release();
     fill_visible_ctrl =
-        std::make_unique<wxCheckBox>(wx_panel.get(), wxID_ANY, L"Fill Visible")
+        std::make_unique<wxCheckBox>(this, wxID_ANY, L"Fill Visible")
             .release();
 
     line_color_picker = std::make_unique<wxColourPickerCtrl>(
-                            wx_panel.get(), wxID_ANY,
+                            this, wxID_ANY,
                             *wxStockGDI::GetColour(wxStockGDI::COLOUR_BLACK),
                             wxDefaultPosition, wxDefaultSize, wxCLRP_SHOW_ALPHA)
                             .release();
     fill_color_picker = std::make_unique<wxColourPickerCtrl>(
-                            wx_panel.get(), wxID_ANY,
+                            this, wxID_ANY,
                             *wxStockGDI::GetColour(wxStockGDI::COLOUR_BLACK),
                             wxDefaultPosition, wxDefaultSize, wxCLRP_SHOW_ALPHA)
                             .release();
 
     linewidth_ctrl = std::make_unique<wxSpinCtrlDouble>(
-                         wx_panel.get(), wxID_ANY, wxEmptyString,
+                         this, wxID_ANY, wxEmptyString,
                          wxDefaultPosition, wxDefaultSize,
                          /*16384L*/ wxSP_ARROW_KEYS | wxALIGN_RIGHT)
                          .release();
@@ -151,33 +145,33 @@ class ElementsSetupsPanel {
 
     const wxSize default_label_size(kDefaultLabelWidth, -1);
     linewidth_label =
-        std::make_unique<wxStaticText>(wx_panel.get(), wxID_ANY, "Line Width",
+        std::make_unique<wxStaticText>(this, wxID_ANY, "Line Width",
                                        wxDefaultPosition, default_label_size)
             .release();
     linecolor_label =
-        std::make_unique<wxStaticText>(wx_panel.get(), wxID_ANY, "Line Color",
+        std::make_unique<wxStaticText>(this, wxID_ANY, "Line Color",
                                        wxDefaultPosition, default_label_size)
             .release();
     fillcolor_label =
-        std::make_unique<wxStaticText>(wx_panel.get(), wxID_ANY, "Fill Color",
+        std::make_unique<wxStaticText>(this, wxID_ANY, "Fill Color",
                                        wxDefaultPosition, default_label_size)
             .release();
     line_transparency_label =
-        std::make_unique<wxStaticText>(wx_panel.get(), wxID_ANY, "Transparency",
+        std::make_unique<wxStaticText>(this, wxID_ANY, "Transparency",
                                        wxDefaultPosition, default_label_size)
             .release();
     fill_transparency_label =
-        std::make_unique<wxStaticText>(wx_panel.get(), wxID_ANY, "Transparency",
+        std::make_unique<wxStaticText>(this, wxID_ANY, "Transparency",
                                        wxDefaultPosition, default_label_size)
             .release();
 
     line_color_alpha_slider =
-        std::make_unique<wxSlider>(wx_panel.get(), wxID_ANY, kAlphaMin,
+        std::make_unique<wxSlider>(this, wxID_ANY, kAlphaMin,
                                    kAlphaMin, kAlphaMax, wxDefaultPosition,
                                    wxDefaultSize, wxSL_HORIZONTAL)
             .release();
     fill_color_alpha_slider =
-        std::make_unique<wxSlider>(wx_panel.get(), wxID_ANY, kAlphaMin,
+        std::make_unique<wxSlider>(this, wxID_ANY, kAlphaMin,
                                    kAlphaMin, kAlphaMax, wxDefaultPosition,
                                    wxDefaultSize, wxSL_HORIZONTAL)
             .release();
@@ -195,17 +189,17 @@ class ElementsSetupsPanel {
     sizer_flags[2].Proportion(1).Expand().Border(wxALL, kDefaultSizerBorder);
 
     auto* vertical_sizer = std::make_unique<wxBoxSizer>(wxVERTICAL).release();
-    wx_panel->SetSizer(vertical_sizer);
+    SetSizer(vertical_sizer);
 
     auto* static_box_sizer_elements =
-        std::make_unique<wxStaticBoxSizer>(wxVERTICAL, wx_panel.get(),
+        std::make_unique<wxStaticBoxSizer>(wxVERTICAL, this,
                                            "Elements")
             .release();
     auto* static_box_sizer_outline = std::make_unique<wxStaticBoxSizer>(
-                                         wxVERTICAL, wx_panel.get(), "Outline")
+                                         wxVERTICAL, this, "Outline")
                                          .release();
     auto* static_box_sizer_fill =
-        std::make_unique<wxStaticBoxSizer>(wxVERTICAL, wx_panel.get(), "Fill")
+        std::make_unique<wxStaticBoxSizer>(wxVERTICAL, this, "Fill")
             .release();
 
     vertical_sizer->Add(static_box_sizer_elements, sizer_flags[2]);
@@ -396,8 +390,6 @@ class ElementsSetupsPanel {
   }
 
   ShapeConfigurationStorage shape_configuration_storage;
-
-  wxWeakRef<wxPanel> wx_panel{nullptr};
 
   wxWeakRef<wxListBox> shape_configuration_list_box{nullptr};
   wxWeakRef<wxCheckBox> outline_visible_ctrl{nullptr};

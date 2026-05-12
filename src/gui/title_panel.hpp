@@ -14,11 +14,9 @@
 
 #include "../packages/title_config.hpp"
 
-class TitleSetupPanel {
+class TitleSetupPanel : public wxPanel {
  public:
-  explicit TitleSetupPanel(wxWindow* parent) {
-    wx_panel = std::make_unique<wxPanel>(parent, wxID_ANY).release();
-
+  explicit TitleSetupPanel(wxWindow* parent) : wxPanel(parent, wxID_ANY) {
     constexpr int kFieldCount = 5;
     constexpr int kSizerBorder = 5;
     constexpr int kLabelWidth = 120;
@@ -32,7 +30,7 @@ class TitleSetupPanel {
         wxSizerFlags().Proportion(1).Expand().Border(wxALL, kSizerBorder);
 
     auto* vertical_sizer = std::make_unique<wxBoxSizer>(wxVERTICAL).release();
-    wx_panel->SetSizer(vertical_sizer);
+    SetSizer(vertical_sizer);
 
     std::array<wxBoxSizer*, kFieldCount> horizontal_sizers{};
 
@@ -43,32 +41,32 @@ class TitleSetupPanel {
 
     std::array<wxStaticText*, kFieldCount> labels{};
 
-    labels[0] = std::make_unique<wxStaticText>(wx_panel.get(), wxID_ANY,
+    labels[0] = std::make_unique<wxStaticText>(this, wxID_ANY,
                                                L"Frame Height")
                     .release();
     labels[0]->SetMinSize(wxSize(kLabelWidth, -1));
     horizontal_sizers[0]->Add(labels[0], sizer_flags_1);
 
-    labels[1] = std::make_unique<wxStaticText>(wx_panel.get(), wxID_ANY,
+    labels[1] = std::make_unique<wxStaticText>(this, wxID_ANY,
                                                L"Font Size Ratio")
                     .release();
     labels[1]->SetMinSize(wxSize(kLabelWidth, -1));
     horizontal_sizers[1]->Add(labels[1], sizer_flags_1);
 
     labels[2] =
-        std::make_unique<wxStaticText>(wx_panel.get(), wxID_ANY, L"Text")
+        std::make_unique<wxStaticText>(this, wxID_ANY, L"Text")
             .release();
     labels[2]->SetMinSize(wxSize(kLabelWidth, -1));
     horizontal_sizers[2]->Add(labels[2], sizer_flags_1);
 
     labels[3] =
-        std::make_unique<wxStaticText>(wx_panel.get(), wxID_ANY, L"Text Color")
+        std::make_unique<wxStaticText>(this, wxID_ANY, L"Text Color")
             .release();
     labels[3]->SetMinSize(wxSize(kLabelWidth, -1));
     horizontal_sizers[3]->Add(labels[3], sizer_flags_1);
     labels[3]->Enable(false);
 
-    labels[4] = std::make_unique<wxStaticText>(wx_panel.get(), wxID_ANY,
+    labels[4] = std::make_unique<wxStaticText>(this, wxID_ANY,
                                                L"Color Transparency")
                     .release();
     labels[4]->SetMinSize(wxSize(kLabelWidth, -1));
@@ -76,22 +74,22 @@ class TitleSetupPanel {
     labels[4]->Enable(false);
 
     frame_height_ctrl =
-        std::make_unique<wxSpinCtrlDouble>(wx_panel.get()).release();
+        std::make_unique<wxSpinCtrlDouble>(this).release();
     frame_height_ctrl->SetDigits(2);
     horizontal_sizers[0]->Add(frame_height_ctrl, sizer_flags_2);
 
     size_ratio_ctrl =
-        std::make_unique<wxSpinCtrlDouble>(wx_panel.get()).release();
+        std::make_unique<wxSpinCtrlDouble>(this).release();
     size_ratio_ctrl->SetDigits(2);
     size_ratio_ctrl->SetIncrement(kSizeRatioIncrement);
     horizontal_sizers[1]->Add(size_ratio_ctrl, sizer_flags_2);
 
     title_text_edit =
-        std::make_unique<wxTextCtrl>(wx_panel.get(), wxID_ANY).release();
+        std::make_unique<wxTextCtrl>(this, wxID_ANY).release();
     horizontal_sizers[2]->Add(title_text_edit, sizer_flags_2);
 
     text_color_picker = std::make_unique<wxColourPickerCtrl>(
-                            wx_panel.get(), wxID_ANY,
+                            this, wxID_ANY,
                             *wxStockGDI::GetColour(wxStockGDI::COLOUR_BLACK),
                             wxDefaultPosition, wxDefaultSize, wxCLRP_SHOW_ALPHA)
                             .release();
@@ -99,7 +97,7 @@ class TitleSetupPanel {
     horizontal_sizers[3]->Add(text_color_picker, sizer_flags_2);
 
     alpha_slider =
-        std::make_unique<wxSlider>(wx_panel.get(), wxID_ANY, kAlphaMax, 0,
+        std::make_unique<wxSlider>(this, wxID_ANY, kAlphaMax, 0,
                                    kAlphaMax, wxDefaultPosition, wxDefaultSize,
                                    wxSL_HORIZONTAL | wxSL_LABELS)
             .release();
@@ -110,17 +108,14 @@ class TitleSetupPanel {
 
     ////////////////////////////////////////
 
-    wx_panel->Bind(wxEVT_SPINCTRLDOUBLE, &TitleSetupPanel::CallbackSpinControl,
-                   this);
-    wx_panel->Bind(wxEVT_TEXT, &TitleSetupPanel::CallbackTextControl, this);
-    wx_panel->Bind(wxEVT_COLOURPICKER_CHANGED,
-                   &TitleSetupPanel::CallbackColorPickerControl, this);
-    wx_panel->Bind(wxEVT_SLIDER, &TitleSetupPanel::CallbackSliderControl, this);
+    Bind(wxEVT_SPINCTRLDOUBLE, &TitleSetupPanel::CallbackSpinControl, this);
+    Bind(wxEVT_TEXT, &TitleSetupPanel::CallbackTextControl, this);
+    Bind(wxEVT_COLOURPICKER_CHANGED,
+         &TitleSetupPanel::CallbackColorPickerControl, this);
+    Bind(wxEVT_SLIDER, &TitleSetupPanel::CallbackSliderControl, this);
 
     ////////////////////////////////////////
   }
-
-  wxPanel* PanelPtr() { return wx_panel.get(); }
 
   void SendDefaultValues() { SendTitleConfig(); }
 
@@ -203,8 +198,6 @@ class TitleSetupPanel {
 
     // SendTitleConfig();
   }
-
-  wxWeakRef<wxPanel> wx_panel{nullptr};
 
   TitleConfig title_config;
   sigslot::signal<const TitleConfig&> signal_title_config;

@@ -11,20 +11,18 @@
 #include <sigslot/signal.hpp>
 #include <string>
 
-class FontPanel {
+class FontPanel : public wxPanel {
  public:
-  FontPanel(wxWindow* parent) {
+  FontPanel(wxWindow* parent)
+      : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                wxTAB_TRAVERSAL, wxPanelNameStr) {
     wxFont normal_font = *wxNORMAL_FONT;
     // auto normal_font_name = normal_font.GetFaceName();
 
-    wx_panel = std::make_unique<wxPanel>(parent, wxID_ANY, wxDefaultPosition,
-                                         wxDefaultSize, wxTAB_TRAVERSAL,
-                                         wxPanelNameStr)
-                   .release();
     wx_font_picker =
-        std::make_unique<wxFontPickerCtrl>(
-            wx_panel.get(), wxID_ANY, normal_font, wxDefaultPosition,
-            wxDefaultSize, wxFNTP_FONTDESC_AS_LABEL)
+        std::make_unique<wxFontPickerCtrl>(this, wxID_ANY, normal_font,
+                                           wxDefaultPosition, wxDefaultSize,
+                                           wxFNTP_FONTDESC_AS_LABEL)
             .release();
 
     wxBoxSizer* horizontal_sizer =
@@ -33,10 +31,9 @@ class FontPanel {
     wxBoxSizer* vertical_sizer =
         std::make_unique<wxBoxSizer>(wxVERTICAL).release();
     vertical_sizer->Add(horizontal_sizer, 0, wxEXPAND);
-    wx_panel->SetSizer(vertical_sizer);
+    SetSizer(vertical_sizer);
 
-    wx_panel->Bind(wxEVT_FONTPICKER_CHANGED, &FontPanel::CallbackFontChanged,
-                   this);
+    Bind(wxEVT_FONTPICKER_CHANGED, &FontPanel::CallbackFontChanged, this);
     wx_font = wx_font_picker->GetFont();
 
     initConvertWxFontWeightToFcWeight();
@@ -46,8 +43,6 @@ class FontPanel {
   }
 
   const std::string& GetFontFilePath() const { return font_filepath; }
-
-  wxPanel* PanelPtr() { return wx_panel.get(); }
 
   // sigslot::signal<const std::vector<unsigned char>&> signal_font_file_path;
   sigslot::signal<const std::string&> signal_font_filepath;
@@ -179,7 +174,6 @@ class FontPanel {
     }
   }
 
-  wxWeakRef<wxPanel> wx_panel;
   wxWeakRef<wxFontPickerCtrl> wx_font_picker;
   wxFont wx_font;
   // std::vector<unsigned char> font_data;

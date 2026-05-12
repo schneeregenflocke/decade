@@ -53,7 +53,8 @@
       "Bash(echo \"===EXIT $?===\")",
       "Bash(rm -rf /home/titan99/code/decade.bak/build)",
       "Bash(ninja -C build)",
-      "Bash(tee /tmp/build_output.log)"
+      "Bash(tee /tmp/build_output.log)",
+      "Bash(DECADE_DUMP_PNG=/tmp/decade_render_refactor.png DECADE_EXIT_AFTER_MS=2000 stdbuf -oL -eL timeout 12 ./build/decade)"
     ],
     "additionalDirectories": [
       "/tmp"

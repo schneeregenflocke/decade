@@ -18,32 +18,28 @@
 #include "../packages/date_store.hpp"
 #include "../packages/group_store.hpp"
 
-class DateTablePanel {
+class DateTablePanel : public wxPanel {
  public:
-  DateTablePanel(wxWindow* parent) {
-    wx_panel = std::make_unique<wxPanel>(parent, wxID_ANY, wxDefaultPosition,
-                                         wxDefaultSize, wxTAB_TRAVERSAL,
-                                         wxPanelNameStr)
-                   .release();
+  DateTablePanel(wxWindow* parent)
+      : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                wxTAB_TRAVERSAL, wxPanelNameStr) {
     table_widget =
         std::make_unique<wxDataViewListCtrl>(
-            wx_panel.get(), wxID_ANY, wxDefaultPosition, wxDefaultSize,
+            this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
             wxDV_MULTIPLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES,
             wxDefaultValidator)
             .release();
 
     addRowButton =
-        std::make_unique<wxButton>(wx_panel.get(), wxID_ADD, "Add Row")
-            .release();
+        std::make_unique<wxButton>(this, wxID_ADD, "Add Row").release();
     deleteRowButton =
-        std::make_unique<wxButton>(wx_panel.get(), wxID_DELETE, "Delete Row")
-            .release();
+        std::make_unique<wxButton>(this, wxID_DELETE, "Delete Row").release();
     deleteRowButton->Disable();
 
     select_group_control =
         std::make_unique<wxComboBox>(
-            wx_panel.get(), wxID_ANY, wxEmptyString, wxDefaultPosition,
-            wxDefaultSize, 0, nullptr, 0L, wxDefaultValidator, wxChoiceNameStr)
+            this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,
+            nullptr, 0L, wxDefaultValidator, wxChoiceNameStr)
             .release();
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -69,29 +65,26 @@ class DateTablePanel {
     main_sizer->Add(buttons_sizer, buttons_sizer_flags);
     main_sizer->Add(table_sizer, table_sizer_flags);
 
-    wx_panel->SetSizer(main_sizer);
+    SetSizer(main_sizer);
     // Layout();
 
-    wx_panel->Bind(wxEVT_DATAVIEW_ITEM_ACTIVATED,
-                   &DateTablePanel::OnItemActivated, this);
-    wx_panel->Bind(wxEVT_DATAVIEW_ITEM_EDITING_DONE,
-                   &DateTablePanel::OnItemEditing, this);
-    wx_panel->Bind(wxEVT_DATAVIEW_SELECTION_CHANGED,
-                   &DateTablePanel::OnSelectionChanged, this);
+    Bind(wxEVT_DATAVIEW_ITEM_ACTIVATED, &DateTablePanel::OnItemActivated, this);
+    Bind(wxEVT_DATAVIEW_ITEM_EDITING_DONE, &DateTablePanel::OnItemEditing,
+         this);
+    Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &DateTablePanel::OnSelectionChanged,
+         this);
 
     // Bind(wxEVT_DATAVIEW_ITEM_START_EDITING, &DateTablePanel::OnItemEditing,
     // this); Bind(wxEVT_DATAVIEW_ITEM_EDITING_STARTED,
     // &DateTablePanel::OnItemEditing, this);
-    wx_panel->Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED,
-                   &DateTablePanel::OnValueChanged, this);
-    wx_panel->Bind(wxEVT_BUTTON, &DateTablePanel::OnButtonClicked, this);
-    wx_panel->Bind(wxEVT_COMBOBOX, &DateTablePanel::OnComboBoxSelection, this);
+    Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED, &DateTablePanel::OnValueChanged,
+         this);
+    Bind(wxEVT_BUTTON, &DateTablePanel::OnButtonClicked, this);
+    Bind(wxEVT_COMBOBOX, &DateTablePanel::OnComboBoxSelection, this);
 
     InitColumns();
     date_format = InitDateFormat();
   }
-
-  wxPanel* PanelPtr() { return wx_panel.get(); }
 
   void ReceiveDateIntervalBundles(
       const std::vector<DateIntervalBundle>& date_interval_bundles) {
@@ -457,7 +450,6 @@ class DateTablePanel {
     SendDateIntervalBundles();
   }
 
-  wxWeakRef<wxPanel> wx_panel;
   wxWeakRef<wxDataViewListCtrl> table_widget;
   wxWeakRef<wxButton> addRowButton;
   wxWeakRef<wxButton> deleteRowButton;

@@ -12,45 +12,39 @@
 
 #include "../packages/group_store.hpp"
 
-class DateGroupsTablePanel {
+class DateGroupsTablePanel : public wxPanel {
  public:
   DateGroupsTablePanel(wxWindow* parent)
-      : wx_panel(nullptr),
+      : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                wxTAB_TRAVERSAL, wxPanelNameStr),
         toggle_value_changed_by_function_call_and_not_by_user(false) {
-    wx_panel = std::make_unique<wxPanel>(parent, wxID_ANY, wxDefaultPosition,
-                                         wxDefaultSize, wxTAB_TRAVERSAL,
-                                         wxPanelNameStr)
-                   .release();
     data_table = std::make_unique<wxDataViewListCtrl>(
-                     wx_panel.get(), wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                     this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                      wxDV_SINGLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES,
                      wxDefaultValidator)
                      .release();
 
-    wx_panel->Bind(wxEVT_DATAVIEW_ITEM_ACTIVATED,
-                   &DateGroupsTablePanel::CallbackItemActivated, this);
-    wx_panel->Bind(wxEVT_DATAVIEW_ITEM_EDITING_DONE,
-                   &DateGroupsTablePanel::CallbackItemEditing, this);
-    wx_panel->Bind(wxEVT_DATAVIEW_SELECTION_CHANGED,
-                   &DateGroupsTablePanel::CallbackSelectionChanged, this);
+    Bind(wxEVT_DATAVIEW_ITEM_ACTIVATED,
+         &DateGroupsTablePanel::CallbackItemActivated, this);
+    Bind(wxEVT_DATAVIEW_ITEM_EDITING_DONE,
+         &DateGroupsTablePanel::CallbackItemEditing, this);
+    Bind(wxEVT_DATAVIEW_SELECTION_CHANGED,
+         &DateGroupsTablePanel::CallbackSelectionChanged, this);
 
     // Bind(wxEVT_DATAVIEW_ITEM_START_EDITING,
     // &DateGroupsTablePanel::OnItemEditing, this);
     // Bind(wxEVT_DATAVIEW_ITEM_EDITING_STARTED,
     // &DateGroupsTablePanel::OnItemEditing, this);
-    wx_panel->Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED,
-                   &DateGroupsTablePanel::CallbackValueChanged, this);
+    Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED,
+         &DateGroupsTablePanel::CallbackValueChanged, this);
 
     addRowButton =
-        std::make_unique<wxButton>(wx_panel.get(), wxID_ADD, "Add Row")
-            .release();
+        std::make_unique<wxButton>(this, wxID_ADD, "Add Row").release();
     deleteRowButton =
-        std::make_unique<wxButton>(wx_panel.get(), wxID_DELETE, "Delete Row")
-            .release();
+        std::make_unique<wxButton>(this, wxID_DELETE, "Delete Row").release();
     deleteRowButton->Disable();
 
-    wx_panel->Bind(wxEVT_BUTTON, &DateGroupsTablePanel::CallbackButtonClicked,
-                   this);
+    Bind(wxEVT_BUTTON, &DateGroupsTablePanel::CallbackButtonClicked, this);
 
     ////////////////////////////////////////////////////////////////////////////////
 
@@ -74,7 +68,7 @@ class DateGroupsTablePanel {
     main_sizer->Add(buttons_sizer, buttons_sizer_flags);
     main_sizer->Add(table_sizer, table_sizer_flags);
 
-    wx_panel->SetSizer(main_sizer);
+    SetSizer(main_sizer);
     // Layout();
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -83,8 +77,6 @@ class DateGroupsTablePanel {
     data_table->AppendTextColumn(L"Group Name", wxDATAVIEW_CELL_EDITABLE);
     data_table->AppendToggleColumn(L"Exclude", wxDATAVIEW_CELL_ACTIVATABLE);
   }
-
-  wxPanel* PanelPtr() { return wx_panel.get(); }
 
   std::wstring GetPanelName() const {
     return std::wstring(L"Date Group Table");
@@ -238,7 +230,6 @@ class DateGroupsTablePanel {
     }
   }
 
-  wxWeakRef<wxPanel> wx_panel;
   wxWeakRef<wxDataViewListCtrl> data_table;
   wxWeakRef<wxButton> addRowButton;
   wxWeakRef<wxButton> deleteRowButton;

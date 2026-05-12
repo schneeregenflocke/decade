@@ -28,7 +28,6 @@
 #include "../gui/font_panel.hpp"
 #include "../gui/groups_panel.hpp"
 #include "../gui/license_panel.hpp"
-#include "../gui/log_panel.hpp"
 #include "../gui/opengl_panel.hpp"
 #include "../gui/page_panel.hpp"
 #include "../gui/shape_panel.hpp"
@@ -58,15 +57,14 @@ struct MainWindow::Impl {
   wxWeakRef<wxSplitterWindow> main_splitter;
   wxWeakRef<wxNotebook> notebook;
 
-  std::unique_ptr<DateGroupsTablePanel> date_groups_table_panel;
-  std::unique_ptr<ElementsSetupsPanel> elements_setup_panel;
-  std::unique_ptr<PageSetupPanel> page_setup_panel;
-  std::unique_ptr<TitleSetupPanel> title_setup_panel;
-  std::unique_ptr<CalendarSetupPanel> calendar_setup_panel;
+  wxWeakRef<DateGroupsTablePanel> date_groups_table_panel;
+  wxWeakRef<ElementsSetupsPanel> elements_setup_panel;
+  wxWeakRef<PageSetupPanel> page_setup_panel;
+  wxWeakRef<TitleSetupPanel> title_setup_panel;
+  wxWeakRef<CalendarSetupPanel> calendar_setup_panel;
   std::unique_ptr<GLCanvas> gl_canvas;
-  std::unique_ptr<FontPanel> font_panel;
-  std::unique_ptr<LogPanel> log_panel;
-  std::unique_ptr<DateTablePanel> data_table_panel;
+  wxWeakRef<FontPanel> font_panel;
+  wxWeakRef<DateTablePanel> data_table_panel;
 
   DateGroupStore date_groups_store;
   DateIntervalBundleStore date_interval_bundle_store;
@@ -141,25 +139,27 @@ void MainWindow::CreateLayout(bool maximize_on_start) {
 }
 
 void MainWindow::CreatePanels(wxNotebook* notebook) {
-  impl_->log_panel = std::make_unique<LogPanel>(notebook);
-  notebook->AddPage(impl_->log_panel->PanelPtr(), "Log");
-
-  impl_->data_table_panel = std::make_unique<DateTablePanel>(notebook);
+  impl_->data_table_panel =
+      std::make_unique<DateTablePanel>(notebook).release();
   impl_->date_groups_table_panel =
-      std::make_unique<DateGroupsTablePanel>(notebook);
-  impl_->calendar_setup_panel = std::make_unique<CalendarSetupPanel>(notebook);
-  impl_->elements_setup_panel = std::make_unique<ElementsSetupsPanel>(notebook);
-  impl_->page_setup_panel = std::make_unique<PageSetupPanel>(notebook);
-  impl_->font_panel = std::make_unique<FontPanel>(notebook);
-  impl_->title_setup_panel = std::make_unique<TitleSetupPanel>(notebook);
+      std::make_unique<DateGroupsTablePanel>(notebook).release();
+  impl_->calendar_setup_panel =
+      std::make_unique<CalendarSetupPanel>(notebook).release();
+  impl_->elements_setup_panel =
+      std::make_unique<ElementsSetupsPanel>(notebook).release();
+  impl_->page_setup_panel =
+      std::make_unique<PageSetupPanel>(notebook).release();
+  impl_->font_panel = std::make_unique<FontPanel>(notebook).release();
+  impl_->title_setup_panel =
+      std::make_unique<TitleSetupPanel>(notebook).release();
 
-  notebook->AddPage(impl_->data_table_panel->PanelPtr(), "Dates");
-  notebook->AddPage(impl_->date_groups_table_panel->PanelPtr(), "Groups");
-  notebook->AddPage(impl_->calendar_setup_panel->PanelPtr(), "Calendar");
-  notebook->AddPage(impl_->elements_setup_panel->PanelPtr(), "Shapes");
-  notebook->AddPage(impl_->page_setup_panel->PanelPtr(), "Page");
-  notebook->AddPage(impl_->font_panel->PanelPtr(), "Font");
-  notebook->AddPage(impl_->title_setup_panel->PanelPtr(), "Title");
+  notebook->AddPage(impl_->data_table_panel, "Dates");
+  notebook->AddPage(impl_->date_groups_table_panel, "Groups");
+  notebook->AddPage(impl_->calendar_setup_panel, "Calendar");
+  notebook->AddPage(impl_->elements_setup_panel, "Shapes");
+  notebook->AddPage(impl_->page_setup_panel, "Page");
+  notebook->AddPage(impl_->font_panel, "Font");
+  notebook->AddPage(impl_->title_setup_panel, "Title");
 }
 
 void MainWindow::InitializeOpenGL() {
