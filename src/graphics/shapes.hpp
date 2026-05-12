@@ -12,7 +12,6 @@
 #include <glm/trigonometric.hpp>
 #include <glm/vec3.hpp>
 
-#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/rotate_vector.hpp>
 
 // #include <array>

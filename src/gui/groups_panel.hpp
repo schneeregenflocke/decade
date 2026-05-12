@@ -1,6 +1,7 @@
 #ifndef HOME_TITAN99_CODE_DECADE_SRC_GUI_GROUPS_PANEL_HPP
 #define HOME_TITAN99_CODE_DECADE_SRC_GUI_GROUPS_PANEL_HPP
 
+#include <wx/dataview.h>
 #include <wx/weakref.h>
 #include <wx/wx.h>
 
