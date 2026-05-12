@@ -178,7 +178,7 @@ class MouseInteraction {
     return view_matrix;
   }
 
-  glm::vec3 MouseClipSpace(const wxPoint& mouse_pos_px) {
+  static glm::vec3 MouseClipSpace(const wxPoint& mouse_pos_px) {
     const glm::vec2 window_mouse_pos(static_cast<float>(mouse_pos_px.x),
                                      static_cast<float>(mouse_pos_px.y));
 
@@ -203,8 +203,8 @@ class MouseInteraction {
     return {mouse_pos.x, mouse_pos.y, 0.F};
   }
 
-  glm::vec3 MouseViewSpacePos(const glm::vec3& mouse_world_space_pos,
-                              const glm::mat4& view_matrix) {
+  static glm::vec3 MouseViewSpacePos(const glm::vec3& mouse_world_space_pos,
+                                     const glm::mat4& view_matrix) {
     const auto inverse_view_matrix = glm::inverse(view_matrix);
 
     const auto mouse_pos =

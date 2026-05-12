@@ -437,8 +437,8 @@ class RenderToPNG {
     }
   }
 
-  [[nodiscard]] float dots_per_inch_to_dots_per_millimeter(
-      const float dpi_value) const {
+  [[nodiscard]] static float dots_per_inch_to_dots_per_millimeter(
+      const float dpi_value) {
     constexpr float ratio = 1.0F / 25.4F;
     const float dots_per_millimeter = ratio * dpi_value;
     return dots_per_millimeter;

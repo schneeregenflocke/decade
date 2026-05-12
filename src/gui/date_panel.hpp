@@ -360,6 +360,8 @@ class DateTablePanel : public wxPanel {
     }
   }
 
+  // NOLINTNEXTLINE(readability-convert-member-functions-to-static) — bound as
+  // wxEvtHandler callback.
   void OnValueChanged(wxDataViewEvent& event) { (void)event; }
 
   void OnItemEditing(wxDataViewEvent& event) {
