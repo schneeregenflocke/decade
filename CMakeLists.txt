@@ -83,10 +83,12 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/font_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/groups_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/license_panel.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/mouse_interaction.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/opengl_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/page_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/shape_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/title_panel.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/debug_log.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/font.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/graphics_engine.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/projection.hpp

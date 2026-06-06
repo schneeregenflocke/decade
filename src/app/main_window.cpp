@@ -63,7 +63,7 @@ struct MainWindow::Impl {
   wxWeakRef<PageSetupPanel> page_setup_panel;
   wxWeakRef<TitleSetupPanel> title_setup_panel;
   wxWeakRef<CalendarSetupPanel> calendar_setup_panel;
-  std::unique_ptr<GLCanvas> gl_canvas;
+  wxWeakRef<GLCanvas> gl_canvas;
   wxWeakRef<FontPanel> font_panel;
   wxWeakRef<DateTablePanel> data_table_panel;
 
@@ -130,11 +130,13 @@ void MainWindow::CreateLayout(bool maximize_on_start) {
 
   auto gl_canvas_panel = std::make_unique<wxPanel>(main_splitter_ptr, wxID_ANY);
   auto* gl_canvas_panel_ptr = gl_canvas_panel.release();
-  impl_->gl_canvas = std::make_unique<GLCanvas>(gl_canvas_panel_ptr);
+  auto gl_canvas = std::make_unique<GLCanvas>(gl_canvas_panel_ptr);
+  impl_->gl_canvas = gl_canvas.get();
+  auto* gl_canvas_ptr = gl_canvas.release();
   auto gl_canvas_panel_sizer = std::make_unique<wxBoxSizer>(wxVERTICAL);
   auto* gl_canvas_panel_sizer_ptr = gl_canvas_panel_sizer.release();
   gl_canvas_panel_ptr->SetSizer(gl_canvas_panel_sizer_ptr);
-  gl_canvas_panel_sizer_ptr->Add(impl_->gl_canvas->GLCanvasPtr(), sizer_flags);
+  gl_canvas_panel_sizer_ptr->Add(gl_canvas_ptr, sizer_flags);
 
   main_splitter_ptr->SplitVertically(notebook_panel_ptr, gl_canvas_panel_ptr);
 }
