@@ -57,9 +57,6 @@ endif()
 
 target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/main.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/app/decade_app.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/app/main_window.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/app/services/project_io.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/decade_app.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/app_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/main_window.hpp

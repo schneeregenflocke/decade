@@ -50,11 +50,11 @@ DECADE_DUMP_PNG=/tmp/decade_render.png DECADE_EXIT_AFTER_MS=2000 \
 
 ## Architecture
 
-The codebase is **header-only by design** (only `main.cpp`, `decade_app.cpp`, `main_window.cpp`, `services/project_io.cpp` are translation units). When adding code, prefer extending headers in place over splitting into `.cpp`. Keep this convention even during refactors.
+The codebase is **header-only by design** (`main.cpp` is the only translation unit). When adding code, prefer extending headers in place over splitting into `.cpp`. Keep this convention even during refactors. Definitions that live in a header must be `inline` (free functions and out-of-class member definitions), so the single-TU rule does not silently mask ODR violations if a header is ever included from elsewhere (e.g. tests).
 
 ### Layers (see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the canonical statement)
 
-- **`src/app/`** — process entry (`main.cpp`), wx app lifecycle (`decade_app.*`), and the composition root [main_window.cpp](src/app/main_window.cpp). `MainWindow` owns all stores, panels, and the renderer via PIMPL (`struct Impl`).
+- **`src/app/`** — process entry (`main.cpp`), wx app lifecycle (`decade_app.hpp`), and the composition root [main_window.hpp](src/app/main_window.hpp). `MainWindow` owns all stores, panels, and the renderer via PIMPL (`struct Impl`).
 - **`src/app/services/`** — XML/CSV/PNG I/O. UI-agnostic, takes stores by reference.
 - **`src/packages/`** — domain stores and config (`DateIntervalBundleStore`, `DateGroupStore`, `PageSetupStore`, `TitleConfigStore`, `ShapeConfigurationStorage`, `CalendarConfigStorage`). **Must remain UI-agnostic** (no wx, no GL). Stores emit `sigslot::signal` and serialize via Boost.
 - **`src/gui/`** — wxWidgets panels. Each panel owns its widgets and exposes signals matching its store's interface.
@@ -63,7 +63,7 @@ The codebase is **header-only by design** (only `main.cpp`, `decade_app.cpp`, `m
 
 ### Data flow (signal/slot via sigslot)
 
-Wiring is performed manually in [`MainWindow::EstablishConnections`](src/app/main_window.cpp). Pattern:
+Wiring is performed manually in [`MainWindow::EstablishConnections`](src/app/main_window.hpp). Pattern:
 
 ```
 Panel → Store (user edits)         Store → Panel       (refresh after load)
