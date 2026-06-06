@@ -30,6 +30,37 @@ TEST(ShapeConfigurationStorageTest,
   EXPECT_TRUE(unknown.Name().empty());
 }
 
+TEST(ShapeConfigurationStorageTest, DynamicConfigurationNameMatchesFormat) {
+  EXPECT_EQ(ShapeConfigurationStorage::DynamicConfigurationName(0),
+            "Bar Group 0");
+  EXPECT_EQ(ShapeConfigurationStorage::DynamicConfigurationName(7),
+            "Bar Group 7");
+}
+
+TEST(ShapeConfigurationStorageTest, GetDynamicConfigurationAddressesByIndex) {
+  ShapeConfigurationStorage storage;
+  const size_t persistent = storage.GetNumberPersistentConfigurations();
+
+  // Append two dynamic configurations, mirroring how the panel grows storage
+  // when date groups are added.
+  storage.resize(persistent + 2);
+  storage[persistent + 1] = ShapeConfiguration{
+      ShapeConfigurationStorage::DynamicConfigurationName(1),
+      /*outline_visible=*/true,
+      /*fill_visible=*/true,
+      0.5F,
+      ShapeConfiguration::OutlineColorValue{glm::vec4{0.1F, 0.2F, 0.3F, 1.0F}},
+      ShapeConfiguration::FillColorValue{glm::vec4{0.1F, 0.2F, 0.3F, 0.5F}}};
+
+  const ShapeConfiguration second = storage.GetDynamicConfiguration(1);
+  EXPECT_EQ(second.Name(), "Bar Group 1");
+  EXPECT_FLOAT_EQ(second.OutlineColorDisabled()[0], 0.1F);
+
+  // Out-of-range indices return a blank configuration instead of throwing.
+  const ShapeConfiguration missing = storage.GetDynamicConfiguration(99);
+  EXPECT_TRUE(missing.Name().empty());
+}
+
 TEST(ShapeConfigurationTest, OutlineColorReturnsZeroWhenInvisible) {
   ShapeConfiguration shape(
       "test", /*outline_visible=*/false,

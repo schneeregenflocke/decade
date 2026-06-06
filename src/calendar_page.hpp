@@ -629,10 +629,8 @@ class CalendarPage {
       const auto& bar = data_store.GetBar(index);
       if (calendar_config.IsInSpan(bar.GetYear())) {
         const auto current_group = static_cast<size_t>(bar.GetGroup());
-        auto search_string =
-            std::string("Bar Group ") + std::to_string(current_group);
         auto current_shape_config =
-            shape_configuration_storage.GetShapeConfiguration(search_string);
+            shape_configuration_storage.GetDynamicConfiguration(current_group);
 
         const auto row = static_cast<std::size_t>(
             bar.GetYear() - calendar_config.GetSpanLimitsYears().at(0));
@@ -676,9 +674,8 @@ class CalendarPage {
       auto shape = std::make_shared<RectanglesShape>(rectangles_shader);
       node_children[index]->set_shape(shape);
 
-      auto search_string = std::string("Bar Group ") + std::to_string(index);
       auto current_shape_config =
-          shape_configuration_storage.GetShapeConfiguration(search_string);
+          shape_configuration_storage.GetDynamicConfiguration(index);
 
       shape->set_shape(bars_cells.at(index), current_shape_config.LineWidth());
       shape->set_color({current_shape_config.OutlineColor(),
@@ -854,9 +851,8 @@ class CalendarPage {
         current_cell.setT(current_vertical_center + (current_height * kHalf));
         bars_cells.emplace_back(current_cell);
 
-        auto search_string = std::string("Bar Group ") + std::to_string(index);
         auto current_shape_config =
-            shape_configuration_storage.GetShapeConfiguration(search_string);
+            shape_configuration_storage.GetDynamicConfiguration(index);
 
         auto node_entrie = std::make_shared<SceneNode>(
             std::string("legend bar ") + std::to_string(index));

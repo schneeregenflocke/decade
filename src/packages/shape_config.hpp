@@ -13,7 +13,6 @@
 #include <glm/vec4.hpp>
 #include <sigslot/signal.hpp>
 // #include <exception>
-#include <random>
 #include <string>
 #include <vector>
 
@@ -105,17 +104,6 @@ class ShapeConfiguration {
     return {fill_color_[0], fill_color_[1], fill_color_[2], fill_color_[3]};
   }
 
-  void RandomColor() {
-    const float alpha_channel = 0.5F;
-
-    std::random_device random_device;
-    std::uniform_real_distribution<float> dist(0.0F, 1.0F);
-
-    fill_color_ = std::array<float, 4>{dist(random_device), dist(random_device),
-                                       dist(random_device), alpha_channel};
-    outline_color_ = fill_color_;
-  }
-
   bool operator==(const std::string& compare) const {
     return Name() == compare;
   }
@@ -194,6 +182,27 @@ class ShapeConfigurationStorage {
       return {};
     }
     return *found;
+  }
+
+  // Display name of the dynamic (per date group) configuration at the given
+  // zero-based group index. Kept here so producers and consumers share one
+  // definition instead of reconstructing the string in several places.
+  [[nodiscard]] static std::string DynamicConfigurationName(
+      size_t group_index) {
+    return "Bar Group " + std::to_string(group_index);
+  }
+
+  // Dynamic configurations are stored immediately after the persistent ones, so
+  // a group's configuration can be addressed by its index directly. This
+  // replaces the previous name-based lookup, which coupled callers to the
+  // display-name format and failed silently on a mismatch.
+  [[nodiscard]] ShapeConfiguration GetDynamicConfiguration(
+      size_t group_index) const {
+    const size_t storage_index = number_persistent_configurations + group_index;
+    if (storage_index >= shape_configurations.size()) {
+      return {};
+    }
+    return shape_configurations.at(storage_index);
   }
 
   [[nodiscard]] size_t GetNumberPersistentConfigurations() const {

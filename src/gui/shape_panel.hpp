@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "../casts.hpp"
+#include "../packages/color_palette.hpp"
 #include "../packages/group_store.hpp"
 #include "../packages/shape_config.hpp"
 
@@ -39,52 +40,24 @@ class ElementsSetupsPanel : public wxPanel {
     UpdateConfigurationList();
   }
 
+  // One dynamic "Bar Group" shape configuration mirrors each date group. When
+  // groups are added we synthesise fresh configurations from the color palette;
+  // existing configurations are left untouched so user customisations survive.
   void ReceiveDateGroups(const std::vector<DateGroup>& date_groups) {
-    const size_t number_dynamic_configurations =
-        shape_configuration_storage.size() -
+    const size_t persistent_count =
         shape_configuration_storage.GetNumberPersistentConfigurations();
+    const size_t desired_size = persistent_count + date_groups.size();
+    const size_t previous_size = shape_configuration_storage.size();
 
-    const int adjust_number_dynamic_configurations =
-        static_cast<int>(date_groups.size()) -
-        static_cast<int>(number_dynamic_configurations);
+    shape_configuration_storage.resize(desired_size);
 
-    const int current_size =
-        static_cast<int>(shape_configuration_storage.size());
-    const int minimum_size = static_cast<int>(
-        shape_configuration_storage.GetNumberPersistentConfigurations());
-    const int desired_size =
-        current_size + adjust_number_dynamic_configurations;
-    const int adjusted_size = std::max(desired_size, minimum_size);
-    shape_configuration_storage.resize(static_cast<size_t>(adjusted_size));
-
-    if (adjust_number_dynamic_configurations > 0) {
-      size_t index =
-          date_groups.size() -
-          static_cast<std::size_t>(adjust_number_dynamic_configurations);
-
-      constexpr float kDynamicLineWidth = 0.5F;
-      constexpr float kOutlineRed = 0.25F;
-      constexpr float kOutlineGreen = 0.25F;
-      constexpr float kOutlineBlue = 0.75F;
-      constexpr float kOutlineAlpha = 0.75F;
-      constexpr float kFillRed = 0.25F;
-      constexpr float kFillGreen = 0.25F;
-      constexpr float kFillBlue = 0.75F;
-      constexpr float kFillAlpha = 0.35F;
-
-      for (; index < date_groups.size(); ++index) {
-        ShapeConfiguration temporary(
-            std::string("Bar Group ") + std::to_string(index), true, true,
-            kDynamicLineWidth,
-            ShapeConfiguration::OutlineColorValue{glm::vec4(
-                kOutlineRed, kOutlineGreen, kOutlineBlue, kOutlineAlpha)},
-            ShapeConfiguration::FillColorValue{
-                glm::vec4(kFillRed, kFillGreen, kFillBlue, kFillAlpha)});
-        temporary.RandomColor();
-        shape_configuration_storage[shape_configuration_storage
-                                        .GetNumberPersistentConfigurations() +
-                                    index] = temporary;
-      }
+    // Only the newly appended entries need defaults; entries that already
+    // existed keep whatever the user (or a loaded project) configured.
+    for (size_t index = std::max(previous_size, persistent_count);
+         index < desired_size; ++index) {
+      const size_t group_index = index - persistent_count;
+      shape_configuration_storage[index] =
+          MakeBarGroupConfiguration(group_index);
     }
 
     UpdateConfigurationList();
@@ -100,6 +73,25 @@ class ElementsSetupsPanel : public wxPanel {
  private:
   sigslot::signal<const ShapeConfigurationStorage&>
       signal_shape_configuration_storage;
+
+  // Builds the default shape configuration for the dynamic bar group at the
+  // given zero-based index, taking its color from the categorical palette so
+  // each group is visually distinct and reproducible across sessions.
+  static ShapeConfiguration MakeBarGroupConfiguration(size_t group_index) {
+    constexpr float kDynamicLineWidth = 0.5F;
+    constexpr float kOutlineAlpha = 0.75F;
+    constexpr float kFillAlpha = 0.35F;
+
+    const glm::vec3 color = palette::CategoricalColor(group_index);
+
+    return ShapeConfiguration{
+        ShapeConfigurationStorage::DynamicConfigurationName(group_index),
+        true,
+        true,
+        kDynamicLineWidth,
+        ShapeConfiguration::OutlineColorValue{glm::vec4(color, kOutlineAlpha)},
+        ShapeConfiguration::FillColorValue{glm::vec4(color, kFillAlpha)}};
+  }
 
   void InitWidgets() {
     constexpr int kAlphaMax = 100;

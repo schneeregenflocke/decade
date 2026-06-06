@@ -71,6 +71,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/calendar_page.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/frame_layout.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/calendar_config.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/color_palette.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_store.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/group_store.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/page_config.hpp
@@ -162,6 +163,12 @@ endif()
 
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/include)
 
+set(TINYCOLORMAP_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/tinycolormap/include")
+if(NOT EXISTS "${TINYCOLORMAP_INCLUDE_DIR}/tinycolormap.hpp")
+	message(FATAL_ERROR "tinycolormap not found. Initialize submodule external/tinycolormap (git submodule update --init --recursive).")
+endif()
+target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${TINYCOLORMAP_INCLUDE_DIR})
+
 find_package(Microsoft.GSL CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE Microsoft.GSL::GSL)
 
@@ -188,6 +195,7 @@ list(APPEND RESOURCE_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/LICENSE sigslot_LICENSE
 	${CMAKE_CURRENT_SOURCE_DIR}/external/csv2/LICENSE csv2_copyright
 	${CMAKE_CURRENT_SOURCE_DIR}/external/csv2/LICENSE.mio csv2mio_LICENSE
+	${CMAKE_CURRENT_SOURCE_DIR}/external/tinycolormap/LICENSE tinycolormap_LICENSE
 )
 
 embed_resources(${PROJECT_NAME}_RESOURCES ${RESOURCE_FILES})
