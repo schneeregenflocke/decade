@@ -25,7 +25,6 @@
 #include <memory>
 #include <string>
 
-#include "../calendar_page.hpp"
 #include "../gui/calendar_panel.hpp"
 #include "../gui/date_panel.hpp"
 #include "../gui/font_panel.hpp"
@@ -41,6 +40,7 @@
 #include "../packages/page_config.hpp"
 #include "../packages/shape_config.hpp"
 #include "../packages/title_config.hpp"
+#include "binding/calendar_page.hpp"
 #include "binding/event_bus.hpp"
 #include "binding/main_window_binder.hpp"
 #include "services/project_io.hpp"

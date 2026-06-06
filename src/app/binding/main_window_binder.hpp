@@ -3,7 +3,6 @@
 
 #include <vector>
 
-#include "../../calendar_page.hpp"
 #include "../../gui/calendar_panel.hpp"
 #include "../../gui/date_panel.hpp"
 #include "../../gui/font_panel.hpp"
@@ -18,6 +17,7 @@
 #include "../../packages/page_config.hpp"
 #include "../../packages/shape_config.hpp"
 #include "../../packages/title_config.hpp"
+#include "calendar_page.hpp"
 #include "event_bus.hpp"
 
 // Centralised wiring between domain stores, presentation panels, the

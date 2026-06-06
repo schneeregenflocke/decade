@@ -61,11 +61,12 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/app_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/main_window.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/services/project_io.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/calendar_page.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/calendar_scene_builder.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/event_bus.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/main_window_binder.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/date_utils.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/casts.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/calendar_page.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/frame_layout.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/calendar_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/color_palette.hpp

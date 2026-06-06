@@ -75,9 +75,10 @@ the Domain types it serialises.
 - **Domain:** `src/packages/` — stores, config value types, transformation logic, sigslot signals — UI-agnostic.
 - **Infrastructure:** `src/graphics/`, `src/app/services/` — OpenGL pipeline, FreeType, XML/CSV/PNG I/O.
 
-`src/calendar_page.hpp` is the rendering adapter: it bridges Domain state into
-the Infrastructure scene graph. It belongs conceptually to the Application layer
-but is kept at the `src/` root for legacy reasons.
+`src/app/binding/calendar_page.hpp` is the rendering adapter: it bridges Domain
+state into the Infrastructure scene graph. It belongs to the Application layer.
+The scene-graph construction itself lives in a dedicated builder,
+`src/app/binding/calendar_scene_builder.hpp` (see below).
 
 ### Directory map
 
@@ -89,10 +90,12 @@ but is kept at the `src/` root for legacy reasons.
   - `services/project_io.hpp` — XML/CSV/PNG persistence (Infrastructure). UI-agnostic, takes stores by reference.
   - `binding/event_bus.hpp` — typed signal hub for domain events (Application).
   - `binding/main_window_binder.hpp` — wires producers/consumers via the EventBus (Application).
+  - `binding/calendar_page.hpp` — rendering adapter: owns the calendar-relevant domain state, exposes the `Receive*` slots, and drives the scene builder on updates (Application).
+  - `binding/calendar_scene_builder.hpp` — builds and fills the calendar scene graph from the (referenced) domain state; GL-canvas free, knows only `GraphicsEngine` and the scene graph (Application/Infrastructure bridge).
 - `src/packages/` — Domain stores and config (`DateIntervalBundleStore`, `DateGroupStore`, `PageSetupStore`, `TitleConfigStore`, `ShapeConfigurationStorage`, `CalendarConfigStorage`). **Must remain UI-agnostic** (no wx, no GL). Stores emit `sigslot::signal` and serialize via Boost.
 - `src/gui/` — Presentation: wxWidgets panels and the GL canvas wrapper. Each panel owns its widgets and exposes signals matching its store's interface.
 - `src/graphics/` — Infrastructure: OpenGL engine, shaders, `SceneNode` scene graph, `RectanglesShape` / `QuadrilateralShape` / `FontShape`, `RenderToTexture`, `RenderToPng`, FreeType wrapper.
-- `src/calendar_page.hpp` — rendering adapter (Application/Infrastructure bridge): receives store updates, builds the scene graph for the calendar layout, and pushes shapes into `GraphicsEngine`. Currently the largest file in the codebase.
+- `src/app/binding/calendar_page.hpp` / `calendar_scene_builder.hpp` — the rendering adapter (Application/Infrastructure bridge): `CalendarPage` receives store updates and owns the state; `CalendarSceneBuilder` builds the scene graph for the calendar layout and pushes shapes into `GraphicsEngine`.
 
 ### Layering rules
 
@@ -136,8 +139,7 @@ this callback fires.
 ### Follow-up refactor targets
 
 1. Add unit tests for CSV/XML conversion logic in `services/project_io`.
-2. Consider moving `src/calendar_page.hpp` into `src/app/binding/` and splitting its scene-graph construction into a dedicated builder.
-3. Promote stores to publish directly into `EventBus` (removing their internal signals) once all consumers are bus-only.
+2. Promote stores to publish directly into `EventBus` (removing their internal signals) once all consumers are bus-only.
 
 ## Design principles
 
@@ -149,9 +151,11 @@ this file conflicts with a general principle, the concrete instruction wins.
 
 Every class, header, and free function should have exactly one reason to change.
 A `*Store` changes when domain rules change; a panel changes when its UI layout
-changes; `project_io` changes when a file format changes. If a single file
-accumulates several of these reasons (as `calendar_page.hpp` currently does),
-treat that as technical debt and prefer extraction over further growth.
+changes; `project_io` changes when a file format changes. The split of the
+former `calendar_page.hpp` into `CalendarPage` (state + update slots) and
+`CalendarSceneBuilder` (scene-graph layout) is the reference example: when a
+single file accumulates several reasons to change, prefer extraction over
+further growth.
 
 ### Separation of Concerns (SoC)
 

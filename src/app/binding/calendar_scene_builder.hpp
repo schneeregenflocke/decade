@@ -1,5 +1,5 @@
-#ifndef CALENDAR_PAGE_HPP
-#define CALENDAR_PAGE_HPP
+#ifndef CALENDAR_SCENE_BUILDER_HPP
+#define CALENDAR_SCENE_BUILDER_HPP
 
 #include <array>
 #include <cstdint>
@@ -10,25 +10,42 @@
 #include <string>
 #include <vector>
 
-#include "frame_layout.hpp"
-#include "graphics/font.hpp"
-#include "graphics/scene_graph.hpp"
-#include "graphics/shapes.hpp"
-#include "gui/opengl_panel.hpp"
-#include "packages/calendar_config.hpp"
-#include "packages/date_store.hpp"
-#include "packages/group_store.hpp"
-#include "packages/page_config.hpp"
-#include "packages/shape_config.hpp"
-#include "packages/title_config.hpp"
+#include "../../frame_layout.hpp"
+#include "../../graphics/font.hpp"
+#include "../../graphics/graphics_engine.hpp"
+#include "../../graphics/scene_graph.hpp"
+#include "../../graphics/shapes.hpp"
+#include "../../packages/calendar_config.hpp"
+#include "../../packages/date_store.hpp"
+#include "../../packages/group_store.hpp"
+#include "../../packages/shape_config.hpp"
+#include "../../packages/title_config.hpp"
 
-class CalendarPage {
+// Builds and fills the calendar scene graph from domain state. This is the
+// rendering/layout half of the former CalendarPage: it owns the scene graph and
+// translates the (referenced) domain state into shapes. It is GL-canvas free —
+// it only knows about the GraphicsEngine and the scene graph. CalendarPage owns
+// the state and drives Build() in reaction to store updates.
+class CalendarSceneBuilder {
  public:
-  CalendarPage(GLCanvas* gl_canvas_in, const std::string& font_filepath)
+  CalendarSceneBuilder(
+      GraphicsEngine* graphics_engine_in, const std::shared_ptr<Font>& font_in,
+      const rectf& page_size_in, const rectf& page_margin_in,
+      const TitleConfig& title_config_in,
+      CalendarConfigStorage& calendar_config_in,
+      const ShapeConfigurationStorage& shape_configuration_storage_in,
+      const DateGroupStore& date_group_store_in,
+      const DateIntervalBundleBarStore& data_store_in)
       : scene_graph(std::make_shared<SceneNode>("root")),
-        font(std::make_shared<Font>(font_filepath)),
-        gl_canvas(gl_canvas_in),
-        graphics_engine(gl_canvas_in->GraphicsEnginePtr()) {
+        graphics_engine(graphics_engine_in),
+        font(font_in),
+        page_size(page_size_in),
+        page_margin(page_margin_in),
+        title_config(title_config_in),
+        calendar_config(calendar_config_in),
+        shape_configuration_storage(shape_configuration_storage_in),
+        date_group_store(date_group_store_in),
+        data_store(data_store_in) {
     graphics_engine->set_scene_graph(scene_graph);
     auto* simple_shader =
         graphics_engine->search_shader("Simple Shader").value_or(nullptr);
@@ -129,51 +146,7 @@ class CalendarPage {
     print_area_node->add_child(bar_labels_node);
   }
 
-  void ReceiveDateGroups(const std::vector<DateGroup>& date_groups) {
-    date_group_store.ReceiveDateGroups(date_groups);
-    data_store.ReceiveDateGroups(date_groups);
-    Update();
-  }
-
-  void ReceiveDateIntervalBundles(
-      const std::vector<DateIntervalBundle>& date_interval_bundles) {
-    data_store.ReceiveDateIntervalBundles(date_interval_bundles);
-    Update();
-  }
-
-  void ReceivePageSetup(const PageSetupConfig& page_setup_config) {
-    this->page_size = rectf::from_dimension(
-        rectf::Dimension{.width = page_setup_config.size[0],
-                         .height = page_setup_config.size[1]});
-    this->page_margin =
-        rectf(page_setup_config.margins[0], page_setup_config.margins[1],
-              page_setup_config.margins[2], page_setup_config.margins[3]);
-    Update();
-  }
-
-  void ReceiveFont(const std::string& font_filepath) {
-    font = std::make_shared<Font>(font_filepath);
-    Update();
-  }
-
-  void ReceiveTitleConfig(const TitleConfig& incoming_title_config) {
-    title_config = incoming_title_config;
-    Update();
-  }
-
-  void ReceiveCalendarConfig(
-      const CalendarConfigStorage& incoming_calendar_config) {
-    calendar_config = incoming_calendar_config;
-    Update();
-  }
-
-  void ReceiveShapeConfigurationStorage(
-      const ShapeConfigurationStorage& incoming_shape_configuration_storage) {
-    shape_configuration_storage.CopyFrom(incoming_shape_configuration_storage);
-    Update();
-  }
-
-  void Update() {
+  void Build() {
     auto node = scene_graph->search_node("page").value_or(nullptr);
     if (!node) {
       return;
@@ -241,10 +214,9 @@ class CalendarPage {
     SetupBarsShape();
     SetupYearsTotals();
     SetupLegend();
-
-    gl_canvas->RefreshMVP();
   }
 
+ private:
   void SetupPrintAreaShape() {
     auto config =
         shape_configuration_storage.GetShapeConfiguration("Page Margin");
@@ -910,7 +882,6 @@ class CalendarPage {
     }
   }
 
- private:
   static constexpr float kZero = 0.0F;
   static constexpr float kOne = 1.0F;
   static constexpr float kHalf = 0.5F;
@@ -924,20 +895,21 @@ class CalendarPage {
   static constexpr size_t kMonthNameBufferSize = 100;
 
   std::shared_ptr<SceneNode> scene_graph;
-  std::shared_ptr<Font> font;
-
-  GLCanvas* gl_canvas{nullptr};
   GraphicsEngine* graphics_engine{nullptr};
 
-  DateIntervalBundleBarStore data_store;
-  DateGroupStore date_group_store;
-  CalendarConfigStorage calendar_config;
-  ShapeConfigurationStorage shape_configuration_storage;
-  TitleConfig title_config;
-  ProportionFrameLayout proportion_frame_layout;
+  // State owned by CalendarPage, referenced here. The referenced objects stay
+  // alive and stable for the builder's lifetime; only their contents change.
+  const std::shared_ptr<Font>& font;
+  const rectf& page_size;
+  const rectf& page_margin;
+  const TitleConfig& title_config;
+  CalendarConfigStorage& calendar_config;
+  const ShapeConfigurationStorage& shape_configuration_storage;
+  const DateGroupStore& date_group_store;
+  const DateIntervalBundleBarStore& data_store;
 
-  rectf page_size;
-  rectf page_margin;
+  // Transient layout state, recomputed on every Build().
+  ProportionFrameLayout proportion_frame_layout;
   rectf print_area;
   rectf title_frame;
   rectf page_margin_frame;
@@ -951,4 +923,4 @@ class CalendarPage {
   float day_width{0.0F};
   float labels_font_size{0.0F};
 };
-#endif  // CALENDAR_PAGE_HPP
+#endif  // CALENDAR_SCENE_BUILDER_HPP

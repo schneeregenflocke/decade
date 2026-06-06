@@ -2,6 +2,10 @@
 #define DATE_STORE_HPP
 
 #include <algorithm>
+#include <boost/serialization/split_free.hpp>
+// split_free.hpp must precede greg_serialize.hpp: the latter expands
+// BOOST_DATE_TIME_SPLIT_FREE, which references boost::serialization::split_free
+// without including its declaration itself.
 #include <boost/date_time/date.hpp>
 #include <boost/date_time/gregorian/formatters.hpp>
 #include <boost/date_time/gregorian/greg_date.hpp>
