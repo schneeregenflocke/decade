@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <cstring>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
@@ -21,6 +22,59 @@
 #include "shaders.hpp"
 #include "shapes_base.hpp"
 #include "texture_object.hpp"
+
+// The glyph table holds one texture per codepoint in the range 0..255, which
+// maps exactly onto Latin-1. Strings reaching the renderer are UTF-8 (e.g.
+// strftime month names like "März", or user-entered title text), so a raw
+// byte-per-glyph walk would split a multi-byte character such as 'ä'
+// (0xC3 0xA4) into two stray glyphs ("Ã¤"). Decode UTF-8 into codepoints first
+// and fall back to '?' for anything outside the available glyph range.
+[[nodiscard]] inline std::vector<unsigned char> DecodeLatin1FromUtf8(
+    const std::string& text) {
+  std::vector<unsigned char> result;
+  result.reserve(text.size());
+
+  const auto* bytes = reinterpret_cast<const unsigned char*>(text.data());
+  const std::size_t length = text.size();
+  std::size_t index = 0;
+
+  while (index < length) {
+    const unsigned char lead = bytes[index];
+    std::uint32_t codepoint = lead;
+    std::size_t continuation_count = 0;
+
+    if ((lead & 0x80U) == 0x00U) {
+      continuation_count = 0;
+    } else if ((lead & 0xE0U) == 0xC0U) {
+      codepoint = lead & 0x1FU;
+      continuation_count = 1;
+    } else if ((lead & 0xF0U) == 0xE0U) {
+      codepoint = lead & 0x0FU;
+      continuation_count = 2;
+    } else if ((lead & 0xF8U) == 0xF0U) {
+      codepoint = lead & 0x07U;
+      continuation_count = 3;
+    }
+    ++index;
+
+    for (std::size_t step = 0; step < continuation_count && index < length;
+         ++step, ++index) {
+      if ((bytes[index] & 0xC0U) != 0x80U) {
+        break;  // malformed continuation byte
+      }
+      codepoint = (codepoint << 6U) | (bytes[index] & 0x3FU);
+    }
+
+    constexpr std::uint32_t kGlyphLimit = 256;
+    constexpr auto kFallbackGlyph = static_cast<unsigned char>('?');
+    result.push_back(codepoint < kGlyphLimit
+                         ? static_cast<unsigned char>(codepoint)
+                         : kFallbackGlyph);
+  }
+
+  return result;
+}
+
 struct Letter {
   Texture texture_object;
   glm::vec2 size{0.0F, 0.0F};
@@ -57,8 +111,8 @@ class Font {
 
   [[nodiscard]] float TextWidth(const std::string& text, float size) const {
     float width = 0.0F;
-    for (const char letter : text) {
-      width += GetLetterRef(static_cast<unsigned char>(letter)).advance * size;
+    for (const unsigned char glyph : DecodeLatin1FromUtf8(text)) {
+      width += GetLetterRef(glyph).advance * size;
     }
 
     return width;
@@ -246,7 +300,8 @@ class FontShape : public Shape {
 
   void set_shape(const std::string& text, const glm::vec3& position,
                  float size) {
-    const auto glyph_count = text.size();
+    const auto glyphs = DecodeLatin1FromUtf8(text);
+    const auto glyph_count = glyphs.size();
     positions.resize(glyph_count * kVerticesPerGlyph);
     texture_positions.resize(glyph_count * kVerticesPerGlyph);
 
@@ -256,7 +311,7 @@ class FontShape : public Shape {
     const float current_y = position[1];
 
     for (size_t index = 0; index < glyph_count; ++index) {
-      const auto letter_index = static_cast<unsigned char>(text[index]);
+      const auto letter_index = glyphs[index];
 
       const GLuint texture =
           font->GetLetterRef(letter_index).texture_object.Name();

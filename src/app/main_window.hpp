@@ -28,6 +28,7 @@ class MainWindow : public wxFrame {
   void CreatePanels(wxNotebook* notebook);
   void InitializeOpenGL();
   void EstablishConnections();
+  void LoadDefaultDates();
   void ConfigureAutoExitTimer();
   void DumpPngIfRequested();
   void InitMenu();

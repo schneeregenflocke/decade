@@ -749,7 +749,7 @@ class CalendarPage {
         year_total_text_cell.setR(year_total_text_cell.l() +
                                   year_total_text_width);
         year_total_text_cell.setB(year_total_cell.b());
-        year_total_text_cell.setT(year_total_text_cell.t());
+        year_total_text_cell.setT(year_total_cell.t());
 
         auto text_shape = std::make_shared<FontShape>(font_shader);
         text_shape->set_font(font);

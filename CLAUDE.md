@@ -29,6 +29,8 @@ The binary honors several environment variables that are essential for non-inter
 - `DECADE_DUMP_PNG=<path>` — render the calendar page to PNG via off-screen FBO once OpenGL is ready.
 - `DECADE_DUMP_WINDOW_PNG=<path>` — capture the actual window back buffer after first paint (deferred via `CallAfter`).
 - `DECADE_DEBUG_LOG=1` — enable OpenGL/runtime debug logging.
+- `DECADE_DEFAULT_CSV=<path>` — override the sample CSV auto-loaded at startup (default `test-files/test_dates_1.csv`).
+- `DECADE_NO_DEFAULT_CSV=1` — disable auto-loading the default CSV entirely.
 
 Typical smoke test:
 ```bash

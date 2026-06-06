@@ -172,8 +172,35 @@ void MainWindow::InitializeOpenGL() {
     impl_->calendar_page = std::make_unique<CalendarPage>(
         impl_->gl_canvas.get(), impl_->font_panel->GetFontFilePath());
     EstablishConnections();
+    LoadDefaultDates();
     DumpPngIfRequested();
   });
+}
+
+void MainWindow::LoadDefaultDates() {
+  // Auto-load a sample data set on every start so the calendar is populated
+  // without a manual CSV import.
+  //   DECADE_NO_DEFAULT_CSV=1     disables the auto-load entirely.
+  //   DECADE_DEFAULT_CSV=<path>   overrides the file that gets loaded.
+  // The default path is resolved relative to the working directory (the repo
+  // root for typical runs).
+  if (wxGetEnv("DECADE_NO_DEFAULT_CSV", nullptr)) {
+    std::cout << "LoadDefaultDates: disabled via DECADE_NO_DEFAULT_CSV\n";
+    return;
+  }
+
+  wxString override_path;
+  const std::string default_csv =
+      wxGetEnv("DECADE_DEFAULT_CSV", &override_path)
+          ? override_path.ToStdString()
+          : std::string("test-files/test_dates_1.csv");
+
+  if (!wxFileExists(default_csv)) {
+    std::cout << "LoadDefaultDates: " << default_csv << " not found, skipping\n";
+    return;
+  }
+  impl_->date_interval_bundle_store.ReceiveDateIntervalBundles(
+      app::io::ReadDateIntervalBundlesFromCsv(default_csv));
 }
 
 void MainWindow::DumpPngIfRequested() {
