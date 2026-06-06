@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_GUI_FONT_PANEL_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_GUI_FONT_PANEL_HPP
+#ifndef FONT_PANEL_HPP
+#define FONT_PANEL_HPP
 
 #include <fontconfig/fontconfig.h>
 #include <wx/fontpicker.h>
@@ -180,4 +180,4 @@ class FontPanel : public wxPanel {
   std::map<int, int> fontWeightMap;
   std::map<int, int> fontStyleMap;
 };
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_GUI_FONT_PANEL_HPP
+#endif  // FONT_PANEL_HPP

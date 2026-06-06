@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_MVP_MATRICES_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_MVP_MATRICES_HPP
+#ifndef MVP_MATRICES_HPP
+#define MVP_MATRICES_HPP
 
 #include <glm/glm.hpp>
 
@@ -22,4 +22,4 @@ class MVP {
   glm::mat4 view;
   glm::mat4 model;
 };
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_MVP_MATRICES_HPP
+#endif  // MVP_MATRICES_HPP

@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_TITLE_CONFIG_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_TITLE_CONFIG_HPP
+#ifndef TITLE_CONFIG_HPP
+#define TITLE_CONFIG_HPP
 
 #include <array>
 #include <boost/serialization/access.hpp>
@@ -90,4 +90,4 @@ class TitleConfigStore {
   }
   BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_TITLE_CONFIG_HPP
+#endif  // TITLE_CONFIG_HPP

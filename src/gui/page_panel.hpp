@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_GUI_PAGE_PANEL_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_GUI_PAGE_PANEL_HPP
+#ifndef PAGE_PANEL_HPP
+#define PAGE_PANEL_HPP
 
 #include <wx/printdlg.h>
 #include <wx/spinctrl.h>
@@ -207,4 +207,4 @@ class PageSetupPanel : public wxPanel {
   wxWeakRef<wxSpinCtrlDouble> page_width_spinctrl;
   wxWeakRef<wxSpinCtrlDouble> page_height_spinctrl;
 };
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_GUI_PAGE_PANEL_HPP
+#endif  // PAGE_PANEL_HPP

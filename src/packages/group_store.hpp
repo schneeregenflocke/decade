@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_GROUP_STORE_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_GROUP_STORE_HPP
+#ifndef GROUP_STORE_HPP
+#define GROUP_STORE_HPP
 
 #include <algorithm>
 #include <boost/serialization/access.hpp>
@@ -141,4 +141,4 @@ class DateGroupStore {
   sigslot::signal<const std::vector<DateGroup>&> signal_date_groups;
   bool emitting_{false};
 };
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_GROUP_STORE_HPP
+#endif  // GROUP_STORE_HPP

@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_RECT_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_RECT_HPP
+#ifndef RECT_HPP
+#define RECT_HPP
 
 #include <array>
 #include <glm/vec2.hpp>
@@ -110,4 +110,4 @@ class rect {
 };
 
 using rectf = rect<float>;
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_RECT_HPP
+#endif  // RECT_HPP

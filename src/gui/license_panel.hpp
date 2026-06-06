@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_GUI_LICENSE_PANEL_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_GUI_LICENSE_PANEL_HPP
+#ifndef LICENSE_PANEL_HPP
+#define LICENSE_PANEL_HPP
 
 #include <wx/weakref.h>
 #include <wx/wx.h>
@@ -114,4 +114,4 @@ class LicenseInformationDialog : public wxDialog {
 
   std::vector<std::pair<std::string, std::string>> collected_licenses;
 };
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_GUI_LICENSE_PANEL_HPP
+#endif  // LICENSE_PANEL_HPP

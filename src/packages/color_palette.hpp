@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_COLOR_PALETTE_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_COLOR_PALETTE_HPP
+#ifndef COLOR_PALETTE_HPP
+#define COLOR_PALETTE_HPP
 
 #include <cmath>
 #include <cstddef>
@@ -45,4 +45,4 @@ inline constexpr tinycolormap::ColormapType kCategoricalColormap =
 }
 
 }  // namespace palette
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_COLOR_PALETTE_HPP
+#endif  // COLOR_PALETTE_HPP

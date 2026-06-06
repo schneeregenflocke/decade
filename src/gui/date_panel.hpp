@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_GUI_DATE_PANEL_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_GUI_DATE_PANEL_HPP
+#ifndef DATE_PANEL_HPP
+#define DATE_PANEL_HPP
 
 #include <wx/dataview.h>
 #include <wx/weakref.h>
@@ -462,4 +462,4 @@ class DateTablePanel : public wxPanel {
   sigslot::signal<const std::vector<DateIntervalBundle>&>
       signal_table_date_interval_bundles;
 };
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_GUI_DATE_PANEL_HPP
+#endif  // DATE_PANEL_HPP

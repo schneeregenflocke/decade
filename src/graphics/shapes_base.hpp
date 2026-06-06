@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SHAPES_BASE_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SHAPES_BASE_HPP
+#ifndef SHAPES_BASE_HPP
+#define SHAPES_BASE_HPP
 
 #include <epoxy/gl.h>
 
@@ -263,4 +263,4 @@ private:
                 vertices[index + 2].normal = normal;
         }
 }*/
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SHAPES_BASE_HPP
+#endif  // SHAPES_BASE_HPP

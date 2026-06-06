@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SCENE_GRAPH_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SCENE_GRAPH_HPP
+#ifndef SCENE_GRAPH_HPP
+#define SCENE_GRAPH_HPP
 
 #include <memory>
 #include <optional>
@@ -99,4 +99,4 @@ class SceneNode : public std::enable_shared_from_this<SceneNode> {
   std::shared_ptr<Shape> shape;
   bool is_dirty;
 };
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SCENE_GRAPH_HPP
+#endif  // SCENE_GRAPH_HPP

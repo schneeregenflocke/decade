@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_GUI_CALENDAR_PANEL_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_GUI_CALENDAR_PANEL_HPP
+#ifndef CALENDAR_PANEL_HPP
+#define CALENDAR_PANEL_HPP
 
 #include <wx/propgrid/propgrid.h>
 #include <wx/weakref.h>
@@ -204,4 +204,4 @@ class CalendarSetupPanel : public wxPanel {
   CalendarConfigStorage calendar_config_storage;
   sigslot::signal<const CalendarConfigStorage&> signal_calendar_config_storage;
 };
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_GUI_CALENDAR_PANEL_HPP
+#endif  // CALENDAR_PANEL_HPP

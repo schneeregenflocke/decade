@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_CALENDAR_PAGE_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_CALENDAR_PAGE_HPP
+#ifndef CALENDAR_PAGE_HPP
+#define CALENDAR_PAGE_HPP
 
 #include <array>
 #include <cstdint>
@@ -951,4 +951,4 @@ class CalendarPage {
   float day_width{0.0F};
   float labels_font_size{0.0F};
 };
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_CALENDAR_PAGE_HPP
+#endif  // CALENDAR_PAGE_HPP

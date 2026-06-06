@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_GUI_OPENGL_PANEL_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_GUI_OPENGL_PANEL_HPP
+#ifndef OPENGL_PANEL_HPP
+#define OPENGL_PANEL_HPP
 
 #include <epoxy/gl.h>
 #include <wx/glcanvas.h>
@@ -349,4 +349,4 @@ class GLCanvas : public wxGLCanvas {
   std::array<int, 2> gl_version_{};
   std::function<void()> on_gl_ready_;
 };
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_GUI_OPENGL_PANEL_HPP
+#endif  // OPENGL_PANEL_HPP

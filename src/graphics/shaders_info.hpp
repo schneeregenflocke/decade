@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SHADERS_INFO_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SHADERS_INFO_HPP
+#ifndef SHADERS_INFO_HPP
+#define SHADERS_INFO_HPP
 
 #include <epoxy/gl.h>
 
@@ -225,4 +225,4 @@ class ShaderInfos {
   std::vector<ShaderInfo> attribute_infos;
   std::vector<ShaderInfo> uniform_infos;
 };
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SHADERS_INFO_HPP
+#endif  // SHADERS_INFO_HPP

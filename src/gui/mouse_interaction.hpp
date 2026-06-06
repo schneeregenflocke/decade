@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_GUI_MOUSE_INTERACTION_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_GUI_MOUSE_INTERACTION_HPP
+#ifndef MOUSE_INTERACTION_HPP
+#define MOUSE_INTERACTION_HPP
 
 #include <epoxy/gl.h>
 #include <wx/gdicmn.h>
@@ -122,4 +122,4 @@ class MouseInteraction {
   glm::vec3 translate_post_scaled;
 };
 
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_GUI_MOUSE_INTERACTION_HPP
+#endif  // MOUSE_INTERACTION_HPP

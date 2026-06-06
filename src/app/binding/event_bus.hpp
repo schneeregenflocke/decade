@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_APP_BINDING_EVENT_BUS_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_APP_BINDING_EVENT_BUS_HPP
+#ifndef EVENT_BUS_HPP
+#define EVENT_BUS_HPP
 
 #include <sigslot/signal.hpp>
 #include <string>
@@ -39,4 +39,4 @@ class EventBus {
   sigslot::signal<const CalendarConfigStorage&> calendar_config_storage;
 };
 
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_APP_BINDING_EVENT_BUS_HPP
+#endif  // EVENT_BUS_HPP

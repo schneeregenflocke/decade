@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_PROJECTION_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_PROJECTION_HPP
+#ifndef PROJECTION_HPP
+#define PROJECTION_HPP
 
 #include <epoxy/gl.h>
 
@@ -55,4 +55,4 @@ class Projection {
     return glm::ortho(-x_half_size, x_half_size, -y_half_size, y_half_size);
   }
 };
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_PROJECTION_HPP
+#endif  // PROJECTION_HPP

@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_DEBUG_LOG_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_DEBUG_LOG_HPP
+#ifndef DEBUG_LOG_HPP
+#define DEBUG_LOG_HPP
 
 #include <cstdlib>
 #include <glm/glm.hpp>
@@ -34,4 +34,4 @@ inline void LogVec3(const char* tag, const glm::vec3& vector) {
 
 }  // namespace decade_debug
 
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_DEBUG_LOG_HPP
+#endif  // DEBUG_LOG_HPP

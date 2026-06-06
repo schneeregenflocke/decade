@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_DATE_STORE_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_DATE_STORE_HPP
+#ifndef DATE_STORE_HPP
+#define DATE_STORE_HPP
 
 #include <algorithm>
 #include <boost/date_time/date.hpp>
@@ -498,4 +498,4 @@ class TransformDateIntervalBundle {
   DateShift date_shift;
   bool emitting_{false};
 };
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_DATE_STORE_HPP
+#endif  // DATE_STORE_HPP

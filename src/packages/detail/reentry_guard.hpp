@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_DETAIL_REENTRY_GUARD_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_DETAIL_REENTRY_GUARD_HPP
+#ifndef REENTRY_GUARD_HPP
+#define REENTRY_GUARD_HPP
 
 namespace packages::detail {
 
@@ -22,4 +22,4 @@ class ScopedReentryFlag {
 
 }  // namespace packages::detail
 
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_DETAIL_REENTRY_GUARD_HPP
+#endif  // REENTRY_GUARD_HPP

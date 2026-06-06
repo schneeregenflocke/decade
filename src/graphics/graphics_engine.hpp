@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_GRAPHICS_ENGINE_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_GRAPHICS_ENGINE_HPP
+#ifndef GRAPHICS_ENGINE_HPP
+#define GRAPHICS_ENGINE_HPP
 
 #include <memory>
 #include <optional>
@@ -44,4 +44,4 @@ class GraphicsEngine {
   Shaders shaders;
   std::shared_ptr<SceneNode> scene_graph;
 };
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_GRAPHICS_ENGINE_HPP
+#endif  // GRAPHICS_ENGINE_HPP

@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SHAPES_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SHAPES_HPP
+#ifndef SHAPES_HPP
+#define SHAPES_HPP
 
 #include "rect.hpp"
 #include "shaders.hpp"
@@ -389,4 +389,4 @@ static_cast<float>(resolution);
                 UpdateBuffer();
         }
 };*/
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SHAPES_HPP
+#endif  // SHAPES_HPP

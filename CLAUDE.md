@@ -81,7 +81,7 @@ Deferred: `MainWindow` calls `GLCanvas::InitOpenGL(version, callback)`. The call
 ## Conventions
 
 - C++23, no compiler extensions.
-- Header guards use the full-path style `HOME_TITAN99_CODE_DECADE_SRC_<...>_HPP` in most newer files; older files use short guards (e.g. `DECADE_APP_HPP`). Match the surrounding file's style when editing.
+- Header guards use the filename style: the uppercased file name with the dot before the suffix as `_`, e.g. `main_window.hpp` → `MAIN_WINDOW_HPP`, `opengl_panel.hpp` → `OPENGL_PANEL_HPP`. No directory path prefix. Apply this consistently in `#ifndef`, `#define`, and the trailing `#endif  // <GUARD>` comment. (The clang-tidy `llvm-header-guard` check, which would otherwise impose a full-path style like `HOME_TITAN99_CODE_DECADE_SRC_..._HPP`, is disabled in `.clang-tidy` — keep it disabled.)
 - Naming is currently mixed: `*Store` vs. `*Storage`, snake_case members like `signal_page_setup_config` vs. PascalCase `SignalDateGroups()`. When touching a file, prefer the existing local style; do not perform mass renames as a side effect.
 - Rule-of-five: classes with explicit destructors should also delete or default copy/move (see `MainWindow`, `DateIntervalBundleStore`).
 - Never use raw `new`/`delete`. Always express ownership through smart pointers (`std::unique_ptr` for unique ownership, `std::shared_ptr` for shared ownership) so lifetime is encoded in the type system, exceptions cannot leak resources, and ownership transfer is explicit at call sites. wx widgets are typically transferred via `.release()` to wx-owned parents (wx then owns the lifetime).

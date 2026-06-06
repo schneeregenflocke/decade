@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_GUI_SHAPE_PANEL_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_GUI_SHAPE_PANEL_HPP
+#ifndef SHAPE_PANEL_HPP
+#define SHAPE_PANEL_HPP
 
 #include <wx/clrpicker.h>
 #include <wx/spinctrl.h>
@@ -394,4 +394,4 @@ class ElementsSetupsPanel : public wxPanel {
   wxWeakRef<wxStaticText> line_transparency_label{nullptr};
   wxWeakRef<wxStaticText> fill_transparency_label{nullptr};
 };
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_GUI_SHAPE_PANEL_HPP
+#endif  // SHAPE_PANEL_HPP

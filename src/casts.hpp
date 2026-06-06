@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_CASTS_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_CASTS_HPP
+#ifndef CASTS_HPP
+#define CASTS_HPP
 
 // #include "wx_widgets_include.hpp"
 
@@ -32,4 +32,4 @@ inline wxColour to_wx_color(const glm::vec4& color) {
 
   return {red, green, blue, alpha};
 }
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_CASTS_HPP
+#endif  // CASTS_HPP

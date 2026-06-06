@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_PAGE_CONFIG_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_PAGE_CONFIG_HPP
+#ifndef PAGE_CONFIG_HPP
+#define PAGE_CONFIG_HPP
 
 #include <array>
 #include <boost/serialization/access.hpp>
@@ -57,4 +57,4 @@ class PageSetupStore {
   }
   BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_PACKAGES_PAGE_CONFIG_HPP
+#endif  // PAGE_CONFIG_HPP

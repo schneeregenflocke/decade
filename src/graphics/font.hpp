@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_FONT_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_FONT_HPP
+#ifndef FONT_HPP
+#define FONT_HPP
 
 #include <epoxy/gl.h>
 
@@ -392,4 +392,4 @@ class FontShape : public Shape {
   std::vector<GLuint> text_textures;
   std::shared_ptr<Font> font;
 };
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_FONT_HPP
+#endif  // FONT_HPP

@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_FRAME_LAYOUT_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_FRAME_LAYOUT_HPP
+#ifndef FRAME_LAYOUT_HPP
+#define FRAME_LAYOUT_HPP
 
 #include <iterator>
 #include <numeric>
@@ -76,4 +76,4 @@ class ProportionFrameLayout {
   std::vector<rectf> sub_frames;
   size_t number_sub_frames_per_row{0};
 };
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_FRAME_LAYOUT_HPP
+#endif  // FRAME_LAYOUT_HPP

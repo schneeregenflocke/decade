@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_APP_BINDING_MAIN_WINDOW_BINDER_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_APP_BINDING_MAIN_WINDOW_BINDER_HPP
+#ifndef MAIN_WINDOW_BINDER_HPP
+#define MAIN_WINDOW_BINDER_HPP
 
 #include <vector>
 
@@ -204,4 +204,4 @@ inline void SendInitialValues(MainWindowComponents& components) {
 
 }  // namespace main_window_binder
 
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_APP_BINDING_MAIN_WINDOW_BINDER_HPP
+#endif  // MAIN_WINDOW_BINDER_HPP

@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_RENDER_TO_PNG_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_RENDER_TO_PNG_HPP
+#ifndef RENDER_TO_PNG_HPP
+#define RENDER_TO_PNG_HPP
 
 #include <epoxy/gl.h>
 
@@ -454,4 +454,4 @@ class RenderToPNG {
 
   static constexpr size_t kBytesPerPixel = 4;
 };
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_RENDER_TO_PNG_HPP
+#endif  // RENDER_TO_PNG_HPP

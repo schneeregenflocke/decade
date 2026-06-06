@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_GUI_GROUPS_PANEL_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_GUI_GROUPS_PANEL_HPP
+#ifndef GROUPS_PANEL_HPP
+#define GROUPS_PANEL_HPP
 
 #include <wx/dataview.h>
 #include <wx/weakref.h>
@@ -242,4 +242,4 @@ class DateGroupsTablePanel : public wxPanel {
   // Please fix me, research in wxWidgets
   bool toggle_value_changed_by_function_call_and_not_by_user{false};
 };
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_GUI_GROUPS_PANEL_HPP
+#endif  // GROUPS_PANEL_HPP

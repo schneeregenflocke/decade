@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_GUI_TITLE_PANEL_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_GUI_TITLE_PANEL_HPP
+#ifndef TITLE_PANEL_HPP
+#define TITLE_PANEL_HPP
 
 // #include "../wx_widgets_include.hpp"
 #include <wx/clrpicker.h>
@@ -204,4 +204,4 @@ class TitleSetupPanel : public wxPanel {
   wxWeakRef<wxColourPickerCtrl> text_color_picker;
   wxWeakRef<wxSlider> alpha_slider;
 };
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_GUI_TITLE_PANEL_HPP
+#endif  // TITLE_PANEL_HPP

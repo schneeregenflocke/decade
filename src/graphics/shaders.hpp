@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SHADERS_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SHADERS_HPP
+#ifndef SHADERS_HPP
+#define SHADERS_HPP
 
 #include <epoxy/gl.h>
 
@@ -205,4 +205,4 @@ class Shaders {
  private:
   std::vector<Shader> shaders;
 };
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_GRAPHICS_SHADERS_HPP
+#endif  // SHADERS_HPP

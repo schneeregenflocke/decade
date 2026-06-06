@@ -1,5 +1,5 @@
-#ifndef HOME_TITAN99_CODE_DECADE_SRC_DATE_UTILS_HPP
-#define HOME_TITAN99_CODE_DECADE_SRC_DATE_UTILS_HPP
+#ifndef DATE_UTILS_HPP
+#define DATE_UTILS_HPP
 
 #include <array>
 #include <boost/date_time/gregorian/conversion.hpp>
@@ -201,4 +201,4 @@ inline int CheckAndAdjustDateInterval(
 
   return case_id;
 }
-#endif  // HOME_TITAN99_CODE_DECADE_SRC_DATE_UTILS_HPP
+#endif  // DATE_UTILS_HPP
