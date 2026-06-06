@@ -1,0 +1,27 @@
+# EditorConfig — https://editorconfig.org
+# Keeps encoding and line endings consistent across editors. Formatting of C++
+# itself is owned by .clang-format; this only covers the basics.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{cpp,hpp,h,c}]
+indent_style = space
+indent_size = 2
+
+[*.{cmake,txt}]
+indent_style = tab
+
+[CMakeLists.txt]
+indent_style = tab
+
+[*.{yaml,yml}]
+indent_style = space
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false

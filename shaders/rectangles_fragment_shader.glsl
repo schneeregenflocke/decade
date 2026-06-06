@@ -10,8 +10,8 @@ void main()
     if (gl_PrimitiveID % 10 == 0 || gl_PrimitiveID % 10 == 1)
     {
         fragment_color = fill_color;
-    } 
-    else 
+    }
+    else
     {
         fragment_color = outline_color;
     }

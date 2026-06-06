@@ -1,0 +1,61 @@
+# Local quality gates. There is no CI by design — these hooks run on your
+# machine via the pre-commit framework. Install once per clone with:
+#
+#     pre-commit install
+#
+# Hook stages:
+#   commit : fast formatting/hygiene checks (auto-fix where possible)
+#   push   : full build + unit tests — must be green to push
+#   manual : clang-tidy (advisory only; the project still carries pre-existing
+#            warnings, so it is NOT a blocking gate). Run it on demand with:
+#                pre-commit run clang-tidy --hook-stage manual
+exclude: '^(external/|build/)'
+default_install_hook_types: [pre-commit, pre-push]
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-merge-conflict
+      - id: check-yaml
+        # Only real YAML files — .clang-tidy / .clang-format are YAML-ish but
+        # have their own validators (clang-tidy / clang-format).
+        files: '\.(yaml|yml)$'
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+      - id: check-added-large-files
+        args: ['--maxkb=2048']
+
+  - repo: local
+    hooks:
+      - id: clang-format
+        name: clang-format
+        entry: clang-format -i
+        language: system
+        files: '\.(cpp|hpp|h)$'
+
+      - id: build
+        name: ninja build
+        entry: ninja -C build
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
+
+      - id: tests
+        name: ctest
+        entry: ctest --test-dir build --output-on-failure
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
+
+      - id: clang-tidy
+        name: clang-tidy (advisory)
+        entry: run-clang-tidy -p build -quiet
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [manual]

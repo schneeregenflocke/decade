@@ -55,7 +55,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 	)
 endif()
 
-target_sources(${PROJECT_NAME} PRIVATE 
+target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/main.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/decade_app.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/main_window.cpp

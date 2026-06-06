@@ -13,4 +13,4 @@ void main()
 {
 	gl_Position = projection * view * model * vec4(position, 1.0);
 	vertex_texture_coord = texture_coord;
-} 
+}

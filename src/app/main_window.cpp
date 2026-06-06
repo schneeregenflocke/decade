@@ -3,6 +3,7 @@
 #include <wx/defs.h>
 #include <wx/event.h>
 #include <wx/filedlg.h>
+#include <wx/filefn.h>
 #include <wx/gdicmn.h>
 #include <wx/menu.h>
 #include <wx/notebook.h>
@@ -196,7 +197,8 @@ void MainWindow::LoadDefaultDates() {
           : std::string("test-files/test_dates_1.csv");
 
   if (!wxFileExists(default_csv)) {
-    std::cout << "LoadDefaultDates: " << default_csv << " not found, skipping\n";
+    std::cout << "LoadDefaultDates: " << default_csv
+              << " not found, skipping\n";
     return;
   }
   impl_->date_interval_bundle_store.ReceiveDateIntervalBundles(

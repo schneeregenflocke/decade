@@ -1,0 +1,26 @@
+# Normalize line endings: text files are stored with LF in the repo.
+* text=auto eol=lf
+
+# Source and config are text.
+*.cpp   text
+*.hpp   text
+*.h     text
+*.c     text
+*.cmake text
+*.txt   text
+*.md    text
+*.yaml  text
+*.yml   text
+*.glsl  text
+*.vert  text
+*.frag  text
+*.csv   text
+
+# Binary assets — never normalize or diff as text.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.ico   binary
+*.ttf   binary
+*.otf   binary
+*.decade binary
