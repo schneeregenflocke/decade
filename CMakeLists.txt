@@ -61,6 +61,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/app_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/main_window.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/services/project_io.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/app/services/value_serialization.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/calendar_page.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/calendar_scene_builder.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/event_bus.hpp

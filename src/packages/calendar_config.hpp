@@ -3,26 +3,18 @@
 
 #include <algorithm>
 #include <array>
-#include <boost/serialization/split_free.hpp>
-// split_free.hpp must precede greg_serialize.hpp: the latter expands
-// BOOST_DATE_TIME_SPLIT_FREE, which references boost::serialization::split_free
-// without including its declaration itself.
-#include <boost/date_time/gregorian/greg_serialize.hpp>
 #include <boost/date_time/gregorian/gregorian.hpp>
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/base_object.hpp>
-#include <boost/serialization/nvp.hpp>
-#include <boost/serialization/split_member.hpp>
-#include <boost/serialization/string.hpp>
-#include <boost/serialization/vector.hpp>
 #include <cstdint>
 #include <sigslot/signal.hpp>
 #include <stdexcept>
-#include <utility>
 #include <vector>
 
 #include "../date_utils.hpp"
 #include "detail/reentry_guard.hpp"
+
+// Pure domain value: the year span of the calendar. boost::gregorian is the
+// domain data representation; there is no serialization or signal here ->
+// copyable. Persistence lives non-intrusively in the infrastructure layer.
 class CalendarSpan {
  public:
   struct YearSpan {
@@ -103,62 +95,12 @@ class CalendarSpan {
 
   boost::gregorian::date_period span;
   int valid_id{0};
-
-  friend class boost::serialization::access;
-  template <class Archive>
-  void serialize(Archive& archive, const unsigned int version) {
-    (void)version;
-    archive& BOOST_SERIALIZATION_NVP(span);
-    archive& BOOST_SERIALIZATION_NVP(valid_id);
-  }
 };
 
-class CalendarConfigStorage : public CalendarSpan {
+// Pure domain value: the full calendar configuration. Rule of Zero (no signal,
+// no hand-written copy/move) -> freely and correctly copyable.
+class CalendarConfig : public CalendarSpan {
  public:
-  CalendarConfigStorage() = default;
-  CalendarConfigStorage(const CalendarConfigStorage& other)
-      : CalendarSpan(other),
-        auto_calendar_span(other.auto_calendar_span),
-        spacing_proportions(other.spacing_proportions) {}
-  CalendarConfigStorage(CalendarConfigStorage&& other) noexcept
-      : CalendarSpan(other),
-        auto_calendar_span(other.auto_calendar_span),
-        spacing_proportions(std::move(other.spacing_proportions)) {}
-  CalendarConfigStorage& operator=(CalendarConfigStorage&& other) noexcept {
-    if (this == &other) {
-      return *this;
-    }
-    auto_calendar_span = other.auto_calendar_span;
-    spacing_proportions = std::move(other.spacing_proportions);
-    CalendarSpan::operator=(other);
-    return *this;
-  }
-  ~CalendarConfigStorage() = default;
-
-  void ReceiveCalendarConfigStorage(
-      const CalendarConfigStorage& calendar_config_storage) {
-    if (emitting_) {
-      return;
-    }
-    const packages::detail::ScopedReentryFlag guard(emitting_);
-    *this = calendar_config_storage;
-    signal_calendar_config_storage(*this);
-  }
-
-  void SendCalendarConfigStorage() { signal_calendar_config_storage(*this); }
-
-  CalendarConfigStorage& operator=(const CalendarConfigStorage& other) {
-    if (this == &other) {
-      return *this;
-    }
-    auto_calendar_span = other.auto_calendar_span;
-    spacing_proportions = other.spacing_proportions;
-
-    CalendarSpan::operator=(other);
-
-    return *this;
-  }
-
   [[nodiscard]] bool IsAutoCalendarSpan() const { return auto_calendar_span; }
   void SetAutoCalendarSpan(bool auto_span) { auto_calendar_span = auto_span; }
 
@@ -172,10 +114,6 @@ class CalendarConfigStorage : public CalendarSpan {
     spacing_proportions = proportions;
   }
 
-  sigslot::signal<const CalendarConfigStorage&>& SignalCalendarConfigStorage() {
-    return signal_calendar_config_storage;
-  }
-
  private:
   static constexpr float kSpacingSmall = 25.0F;
   static constexpr float kSpacingMedium = 50.0F;
@@ -187,28 +125,94 @@ class CalendarConfigStorage : public CalendarSpan {
   bool auto_calendar_span{true};
   std::vector<float> spacing_proportions{std::vector<float>(
       kDefaultSpacingProportions.begin(), kDefaultSpacingProportions.end())};
+};
 
+// Owns a CalendarConfig value plus the change signal and re-entry guard. Has
+// identity -> non-copyable. Delegates the value API so callers stay stable;
+// carries no serialization code.
+class CalendarConfigStorage {
+ public:
+  CalendarConfigStorage() = default;
+  ~CalendarConfigStorage() = default;
+  CalendarConfigStorage(const CalendarConfigStorage&) = delete;
+  CalendarConfigStorage(CalendarConfigStorage&&) = delete;
+  CalendarConfigStorage& operator=(const CalendarConfigStorage&) = delete;
+  CalendarConfigStorage& operator=(CalendarConfigStorage&&) = delete;
+
+  void ReceiveCalendarConfigStorage(
+      const CalendarConfigStorage& calendar_config_storage) {
+    if (emitting_) {
+      return;
+    }
+    const packages::detail::ScopedReentryFlag guard(emitting_);
+    CopyFrom(calendar_config_storage);
+    signal_calendar_config_storage(*this);
+  }
+
+  void SendCalendarConfigStorage() { signal_calendar_config_storage(*this); }
+
+  void CopyFrom(const CalendarConfigStorage& other) {
+    calendar_config = other.calendar_config;
+  }
+
+  // --- CalendarSpan delegation ---
+  void SetSpan(CalendarSpan::YearSpan span_years) {
+    calendar_config.SetSpan(span_years);
+  }
+  [[nodiscard]] bool IsValidSpan() const {
+    return calendar_config.IsValidSpan();
+  }
+  [[nodiscard]] std::size_t GetSpanLengthYears() const {
+    return calendar_config.GetSpanLengthYears();
+  }
+  [[nodiscard]] std::array<int, 2> GetSpanLimitsYears() const {
+    return calendar_config.GetSpanLimitsYears();
+  }
+  [[nodiscard]] std::array<boost::gregorian::date, 2> GetSpanLimitsDate()
+      const {
+    return calendar_config.GetSpanLimitsDate();
+  }
+  [[nodiscard]] std::int64_t GetSpanLengthDays() const {
+    return calendar_config.GetSpanLengthDays();
+  }
+  [[nodiscard]] int GetYear(const std::size_t index) const {
+    return calendar_config.GetYear(index);
+  }
+  [[nodiscard]] bool IsInSpan(const int year) const {
+    return calendar_config.IsInSpan(year);
+  }
+
+  // --- CalendarConfig delegation ---
+  [[nodiscard]] bool IsAutoCalendarSpan() const {
+    return calendar_config.IsAutoCalendarSpan();
+  }
+  void SetAutoCalendarSpan(bool auto_span) {
+    calendar_config.SetAutoCalendarSpan(auto_span);
+  }
+  [[nodiscard]] const std::vector<float>& GetSpacingProportions() const {
+    return calendar_config.GetSpacingProportions();
+  }
+  std::vector<float>& MutableSpacingProportions() {
+    return calendar_config.MutableSpacingProportions();
+  }
+  void SetSpacingProportions(const std::vector<float>& proportions) {
+    calendar_config.SetSpacingProportions(proportions);
+  }
+
+  [[nodiscard]] const CalendarConfig& Value() const { return calendar_config; }
+
+  void SetValue(const CalendarConfig& value) {
+    calendar_config = value;
+    signal_calendar_config_storage(*this);
+  }
+
+  sigslot::signal<const CalendarConfigStorage&>& SignalCalendarConfigStorage() {
+    return signal_calendar_config_storage;
+  }
+
+ private:
+  CalendarConfig calendar_config;
   sigslot::signal<const CalendarConfigStorage&> signal_calendar_config_storage;
   bool emitting_{false};
-
-  friend class boost::serialization::access;
-  template <class Archive>
-  void save(Archive& archive, const unsigned int version) const {
-    (void)version;
-    archive& BOOST_SERIALIZATION_NVP(auto_calendar_span);
-    archive& BOOST_SERIALIZATION_NVP(spacing_proportions);
-    // boost::serialization::base_object<CalendarSpan>(*this);
-    archive& BOOST_SERIALIZATION_BASE_OBJECT_NVP(CalendarSpan);
-  }
-  template <class Archive>
-  void load(Archive& archive, const unsigned int version) {
-    (void)version;
-    archive& BOOST_SERIALIZATION_NVP(auto_calendar_span);
-    archive& BOOST_SERIALIZATION_NVP(spacing_proportions);
-    // boost::serialization::base_object<CalendarSpan>(*this);
-    archive& BOOST_SERIALIZATION_BASE_OBJECT_NVP(CalendarSpan);
-    SendCalendarConfigStorage();
-  }
-  BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 #endif  // CALENDAR_CONFIG_HPP

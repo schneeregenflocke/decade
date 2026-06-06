@@ -2,9 +2,6 @@
 #define GROUP_STORE_HPP
 
 #include <algorithm>
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/nvp.hpp>
-#include <boost/serialization/split_member.hpp>
 #include <sigslot/signal.hpp>
 #include <stdexcept>
 #include <string>
@@ -13,6 +10,9 @@
 
 #include "detail/reentry_guard.hpp"
 
+// Pure domain value: one date group. No serialization, no signal -> Rule of
+// Zero, freely copyable. Persistence is handled non-intrusively in the
+// infrastructure layer (see app/services/project_serialization.hpp).
 class DateGroup {
  public:
   DateGroup() = default;
@@ -32,38 +32,22 @@ class DateGroup {
   int number_{0};
   std::string name_{"no name"};
   bool exclude_{false};
-
-  friend class boost::serialization::access;
-  template <class Archive>
-  void serialize(Archive& archive, const unsigned int version) {
-    (void)version;
-    archive& BOOST_SERIALIZATION_NVP(number_);
-    archive& BOOST_SERIALIZATION_NVP(name_);
-    archive& BOOST_SERIALIZATION_NVP(exclude_);
-  }
 };
 
-class DateGroupStore {
+// Pure value object: the set of date groups plus the queries that are the
+// information expert over that data. No signal, no identity -> Rule of Zero,
+// freely copyable. The owning DateGroupStore adds the publish/subscribe and
+// re-entry concerns on top.
+class DateGroups {
  public:
-  void ReceiveDateGroups(const std::vector<DateGroup>& incoming_date_groups) {
-    if (emitting_) {
-      return;
-    }
-    const packages::detail::ScopedReentryFlag guard(emitting_);
+  // Replace the contents and renumber the groups in order.
+  void Assign(const std::vector<DateGroup>& incoming_date_groups) {
     date_groups = incoming_date_groups;
     UpdateNumbers();
-    signal_date_groups(date_groups);
   }
 
-  [[nodiscard]] const std::vector<DateGroup>& GetDateGroups() const {
+  [[nodiscard]] const std::vector<DateGroup>& Items() const {
     return date_groups;
-  }
-
-  // call after connecting
-  void SendDefaultValues() {
-    std::vector<DateGroup> temporary_date_groups;
-    temporary_date_groups.emplace_back("Default");
-    ReceiveDateGroups(temporary_date_groups);
   }
 
   [[nodiscard]] int GetNumber(const std::string& name) const {
@@ -111,25 +95,7 @@ class DateGroupStore {
     return date_groups.at(static_cast<size_t>(number)).IsExcluded();
   }
 
-  sigslot::signal<const std::vector<DateGroup>&>& SignalDateGroups() {
-    return signal_date_groups;
-  }
-
  private:
-  friend class boost::serialization::access;
-  template <class Archive>
-  void save(Archive& archive, const unsigned int version) const {
-    (void)version;
-    archive& BOOST_SERIALIZATION_NVP(date_groups);
-  }
-  template <class Archive>
-  void load(Archive& archive, const unsigned int version) {
-    (void)version;
-    archive& BOOST_SERIALIZATION_NVP(date_groups);
-    signal_date_groups(date_groups);
-  }
-  BOOST_SERIALIZATION_SPLIT_MEMBER()
-
   void UpdateNumbers() {
     int number = 0;
     for (auto& date_group : date_groups) {
@@ -138,6 +104,66 @@ class DateGroupStore {
     }
   }
   std::vector<DateGroup> date_groups;
+};
+
+// Owns a DateGroups value plus the change signal and the re-entry guard. Has
+// identity -> non-copyable. Delegates all queries to the value; the public API
+// is unchanged so callers stay stable. Carries no serialization code.
+class DateGroupStore {
+ public:
+  DateGroupStore() = default;
+  ~DateGroupStore() = default;
+  DateGroupStore(const DateGroupStore&) = delete;
+  DateGroupStore& operator=(const DateGroupStore&) = delete;
+  DateGroupStore(DateGroupStore&&) = delete;
+  DateGroupStore& operator=(DateGroupStore&&) = delete;
+
+  void ReceiveDateGroups(const std::vector<DateGroup>& incoming_date_groups) {
+    if (emitting_) {
+      return;
+    }
+    const packages::detail::ScopedReentryFlag guard(emitting_);
+    date_groups.Assign(incoming_date_groups);
+    signal_date_groups(date_groups.Items());
+  }
+
+  [[nodiscard]] const std::vector<DateGroup>& GetDateGroups() const {
+    return date_groups.Items();
+  }
+
+  [[nodiscard]] const DateGroups& Value() const { return date_groups; }
+
+  // call after connecting
+  void SendDefaultValues() {
+    std::vector<DateGroup> temporary_date_groups;
+    temporary_date_groups.emplace_back("Default");
+    ReceiveDateGroups(temporary_date_groups);
+  }
+
+  [[nodiscard]] int GetNumber(const std::string& name) const {
+    return date_groups.GetNumber(name);
+  }
+
+  [[nodiscard]] std::string GetName(int number) const {
+    return date_groups.GetName(number);
+  }
+
+  [[nodiscard]] std::vector<std::string> GetDateGroupsNames() const {
+    return date_groups.GetDateGroupsNames();
+  }
+
+  [[nodiscard]] int GetGroupMax() const { return date_groups.GetGroupMax(); }
+
+  [[nodiscard]] bool GetExclude(int number) const {
+    return date_groups.GetExclude(number);
+  }
+
+  sigslot::signal<const std::vector<DateGroup>&>& SignalDateGroups() {
+    return signal_date_groups;
+  }
+
+ private:
+  DateGroups date_groups;
   sigslot::signal<const std::vector<DateGroup>&> signal_date_groups;
   bool emitting_{false};
 };

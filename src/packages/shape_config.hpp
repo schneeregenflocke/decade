@@ -1,23 +1,18 @@
 #ifndef SHAPE_CONFIG_HPP
 #define SHAPE_CONFIG_HPP
 
-// #include "../casts.hpp"
-
+#include <algorithm>
 #include <array>
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/array.hpp>
-#include <boost/serialization/nvp.hpp>
-#include <boost/serialization/split_member.hpp>
-#include <boost/serialization/string.hpp>
-#include <boost/serialization/vector.hpp>
 #include <glm/vec4.hpp>
 #include <sigslot/signal.hpp>
-// #include <exception>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "detail/reentry_guard.hpp"
 
+// Pure domain value: the visual configuration of one shape kind. No
+// serialization, no signal -> Rule of Zero, copyable.
 class ShapeConfiguration {
  public:
   struct OutlineColorValue {
@@ -115,51 +110,16 @@ class ShapeConfiguration {
   float line_width_{1.0F};
   std::array<float, 4> outline_color_{0.0F, 0.0F, 0.0F, 1.0F};
   std::array<float, 4> fill_color_{0.0F, 0.0F, 0.0F, 1.0F};
-
-  friend class boost::serialization::access;
-  template <class Archive>
-  void serialize(Archive& archive, const unsigned int version) {
-    (void)version;
-    archive& BOOST_SERIALIZATION_NVP(name_);
-    archive& BOOST_SERIALIZATION_NVP(outline_visible_);
-    archive& BOOST_SERIALIZATION_NVP(fill_visible_);
-    archive& BOOST_SERIALIZATION_NVP(line_width_);
-    archive& BOOST_SERIALIZATION_NVP(outline_color_);
-    archive& BOOST_SERIALIZATION_NVP(fill_color_);
-  }
 };
 
-class ShapeConfigurationStorage {
+// Pure value object: the ordered set of shape configurations (persistent ones
+// followed by per-date-group dynamic ones) plus the lookups over them. No
+// signal -> Rule of Zero, copyable.
+class ShapeConfigSet {
  public:
-  ShapeConfigurationStorage()
+  ShapeConfigSet()
       : shape_configurations(BuildDefaults()),
         number_persistent_configurations(shape_configurations.size()) {}
-
-  void ReceiveShapeConfigurationStorage(
-      const ShapeConfigurationStorage& shape_configuration_storage) {
-    if (emitting_) {
-      return;
-    }
-    const packages::detail::ScopedReentryFlag guard(emitting_);
-    CopyFrom(shape_configuration_storage);
-    signal_shape_configuration_storage(*this);
-  }
-
-  void SendShapeConfigurationStorage() {
-    signal_shape_configuration_storage(*this);
-  }
-
-  void CopyFrom(const ShapeConfigurationStorage& other) {
-    shape_configurations = other.shape_configurations;
-    number_persistent_configurations = other.number_persistent_configurations;
-  }
-
-  ShapeConfigurationStorage(const ShapeConfigurationStorage&) = delete;
-  ShapeConfigurationStorage(ShapeConfigurationStorage&&) = delete;
-  ShapeConfigurationStorage& operator=(const ShapeConfigurationStorage&) =
-      delete;
-  ShapeConfigurationStorage& operator=(ShapeConfigurationStorage&&) = delete;
-  ~ShapeConfigurationStorage() = default;
 
   [[nodiscard]] size_t size() const { return shape_configurations.size(); }
 
@@ -178,7 +138,6 @@ class ShapeConfigurationStorage {
                            shape_configurations.end(), name);
 
     if (found == shape_configurations.end()) {
-      // throw std::runtime_error("Can't find shape configuration!");
       return {};
     }
     return *found;
@@ -193,9 +152,7 @@ class ShapeConfigurationStorage {
   }
 
   // Dynamic configurations are stored immediately after the persistent ones, so
-  // a group's configuration can be addressed by its index directly. This
-  // replaces the previous name-based lookup, which coupled callers to the
-  // display-name format and failed silently on a mismatch.
+  // a group's configuration can be addressed by its index directly.
   [[nodiscard]] ShapeConfiguration GetDynamicConfiguration(
       size_t group_index) const {
     const size_t storage_index = number_persistent_configurations + group_index;
@@ -209,9 +166,18 @@ class ShapeConfigurationStorage {
     return number_persistent_configurations;
   }
 
-  sigslot::signal<const ShapeConfigurationStorage&>&
-  SignalShapeConfigurationStorage() {
-    return signal_shape_configuration_storage;
+  // Raw access for non-intrusive serialization in the infrastructure layer.
+  [[nodiscard]] const std::vector<ShapeConfiguration>& Configurations() const {
+    return shape_configurations;
+  }
+  [[nodiscard]] std::vector<ShapeConfiguration>& MutableConfigurations() {
+    return shape_configurations;
+  }
+  [[nodiscard]] size_t NumberPersistent() const {
+    return number_persistent_configurations;
+  }
+  void SetNumberPersistent(size_t value) {
+    number_persistent_configurations = value;
   }
 
  private:
@@ -278,24 +244,87 @@ class ShapeConfigurationStorage {
 
   std::vector<ShapeConfiguration> shape_configurations;
   size_t number_persistent_configurations{0};
+};
+
+// Owns a ShapeConfigSet value plus the change signal and re-entry guard. Has
+// identity -> non-copyable. Delegates the whole set API so callers (panels)
+// stay stable. Carries no serialization code.
+class ShapeConfigurationStorage {
+ public:
+  ShapeConfigurationStorage() = default;
+  ~ShapeConfigurationStorage() = default;
+  ShapeConfigurationStorage(const ShapeConfigurationStorage&) = delete;
+  ShapeConfigurationStorage(ShapeConfigurationStorage&&) = delete;
+  ShapeConfigurationStorage& operator=(const ShapeConfigurationStorage&) =
+      delete;
+  ShapeConfigurationStorage& operator=(ShapeConfigurationStorage&&) = delete;
+
+  void ReceiveShapeConfigurationStorage(
+      const ShapeConfigurationStorage& shape_configuration_storage) {
+    if (emitting_) {
+      return;
+    }
+    const packages::detail::ScopedReentryFlag guard(emitting_);
+    CopyFrom(shape_configuration_storage);
+    signal_shape_configuration_storage(*this);
+  }
+
+  void SendShapeConfigurationStorage() {
+    signal_shape_configuration_storage(*this);
+  }
+
+  void CopyFrom(const ShapeConfigurationStorage& other) {
+    shape_configurations = other.shape_configurations;
+  }
+
+  [[nodiscard]] size_t size() const { return shape_configurations.size(); }
+
+  void resize(size_t size) { shape_configurations.resize(size); }
+
+  ShapeConfiguration& operator[](size_t index) {
+    return shape_configurations[index];
+  }
+  const ShapeConfiguration& operator[](size_t index) const {
+    return shape_configurations[index];
+  }
+
+  [[nodiscard]] ShapeConfiguration GetShapeConfiguration(
+      const std::string& name) const {
+    return shape_configurations.GetShapeConfiguration(name);
+  }
+
+  [[nodiscard]] static std::string DynamicConfigurationName(
+      size_t group_index) {
+    return ShapeConfigSet::DynamicConfigurationName(group_index);
+  }
+
+  [[nodiscard]] ShapeConfiguration GetDynamicConfiguration(
+      size_t group_index) const {
+    return shape_configurations.GetDynamicConfiguration(group_index);
+  }
+
+  [[nodiscard]] size_t GetNumberPersistentConfigurations() const {
+    return shape_configurations.GetNumberPersistentConfigurations();
+  }
+
+  [[nodiscard]] const ShapeConfigSet& Value() const {
+    return shape_configurations;
+  }
+
+  void SetValue(const ShapeConfigSet& value) {
+    shape_configurations = value;
+    signal_shape_configuration_storage(*this);
+  }
+
+  sigslot::signal<const ShapeConfigurationStorage&>&
+  SignalShapeConfigurationStorage() {
+    return signal_shape_configuration_storage;
+  }
+
+ private:
+  ShapeConfigSet shape_configurations;
   sigslot::signal<const ShapeConfigurationStorage&>
       signal_shape_configuration_storage;
   bool emitting_{false};
-
-  friend class boost::serialization::access;
-  template <class Archive>
-  void save(Archive& archive, const unsigned int version) const {
-    (void)version;
-    archive& BOOST_SERIALIZATION_NVP(shape_configurations);
-    archive& BOOST_SERIALIZATION_NVP(number_persistent_configurations);
-  }
-  template <class Archive>
-  void load(Archive& archive, const unsigned int version) {
-    (void)version;
-    archive& BOOST_SERIALIZATION_NVP(shape_configurations);
-    archive& BOOST_SERIALIZATION_NVP(number_persistent_configurations);
-    SendShapeConfigurationStorage();
-  }
-  BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 #endif  // SHAPE_CONFIG_HPP

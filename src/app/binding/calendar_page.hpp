@@ -18,22 +18,21 @@
 
 // Rendering adapter: owns the domain state relevant to the calendar drawing,
 // receives store updates via the Receive* slots, and drives the
-// CalendarSceneBuilder to (re)build the scene graph. The actual scene-graph
-// construction lives in CalendarSceneBuilder; this class only holds state and
-// triggers re-renders.
+// CalendarSceneBuilder to (re)build the scene graph. The config state is held
+// as plain value objects (copyable); the incoming signals still carry the
+// owning stores, from which we extract the value.
 class CalendarPage {
  public:
   CalendarPage(GLCanvas* gl_canvas_in, const std::string& font_filepath)
       : gl_canvas(gl_canvas_in),
         font(std::make_shared<Font>(font_filepath)),
         scene_builder(gl_canvas_in->GraphicsEnginePtr(), font, page_size,
-                      page_margin, title_config, calendar_config,
-                      shape_configuration_storage, date_group_store,
-                      data_store) {}
+                      page_margin, title_config, calendar_config, shape_config,
+                      date_groups, data_store) {}
 
-  void ReceiveDateGroups(const std::vector<DateGroup>& date_groups) {
-    date_group_store.ReceiveDateGroups(date_groups);
-    data_store.ReceiveDateGroups(date_groups);
+  void ReceiveDateGroups(const std::vector<DateGroup>& date_groups_in) {
+    date_groups.Assign(date_groups_in);
+    data_store.ReceiveDateGroups(date_groups_in);
     Update();
   }
 
@@ -65,13 +64,13 @@ class CalendarPage {
 
   void ReceiveCalendarConfig(
       const CalendarConfigStorage& incoming_calendar_config) {
-    calendar_config = incoming_calendar_config;
+    calendar_config = incoming_calendar_config.Value();
     Update();
   }
 
   void ReceiveShapeConfigurationStorage(
       const ShapeConfigurationStorage& incoming_shape_configuration_storage) {
-    shape_configuration_storage.CopyFrom(incoming_shape_configuration_storage);
+    shape_config = incoming_shape_configuration_storage.Value();
     Update();
   }
 
@@ -88,12 +87,12 @@ class CalendarPage {
   rectf page_margin;
 
   DateIntervalBundleBarStore data_store;
-  DateGroupStore date_group_store;
-  CalendarConfigStorage calendar_config;
-  ShapeConfigurationStorage shape_configuration_storage;
+  DateGroups date_groups;
+  CalendarConfig calendar_config;
+  ShapeConfigSet shape_config;
   TitleConfig title_config;
 
-  // Declared last: binds references to the state members above, which must
+  // Declared last: binds references to the value members above, which must
   // already be constructed when the builder is initialised.
   CalendarSceneBuilder scene_builder;
 };

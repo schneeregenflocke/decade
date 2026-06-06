@@ -2,20 +2,12 @@
 #define DATE_STORE_HPP
 
 #include <algorithm>
-#include <boost/serialization/split_free.hpp>
-// split_free.hpp must precede greg_serialize.hpp: the latter expands
-// BOOST_DATE_TIME_SPLIT_FREE, which references boost::serialization::split_free
-// without including its declaration itself.
 #include <boost/date_time/date.hpp>
 #include <boost/date_time/gregorian/formatters.hpp>
 #include <boost/date_time/gregorian/greg_date.hpp>
-#include <boost/date_time/gregorian/greg_serialize.hpp>
 #include <boost/date_time/gregorian/gregorian_types.hpp>
 #include <boost/date_time/period.hpp>
 #include <boost/date_time/special_defs.hpp>
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/nvp.hpp>
-#include <boost/serialization/split_member.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <map>
@@ -79,19 +71,6 @@ class DateIntervalBundle {
   int group_number_{0};
   std::string comment_;
   bool exclude_{false};
-
-  friend class boost::serialization::access;
-  template <class Archive>
-  void serialize(Archive& archive, const unsigned int version) {
-    (void)version;
-    archive& BOOST_SERIALIZATION_NVP(date_interval_);
-    archive& BOOST_SERIALIZATION_NVP(date_inter_interval_);
-    archive& BOOST_SERIALIZATION_NVP(number_);
-    archive& BOOST_SERIALIZATION_NVP(group_);
-    archive& BOOST_SERIALIZATION_NVP(group_number_);
-    archive& BOOST_SERIALIZATION_NVP(exclude_);
-    archive& BOOST_SERIALIZATION_NVP(comment_);
-  }
 };
 
 namespace detail {
@@ -235,19 +214,6 @@ class DateIntervalBundleStore {
 
   sigslot::signal<const std::vector<DateIntervalBundle>&>
       signal_date_interval_bundles;
-  friend class boost::serialization::access;
-  template <class Archive>
-  void save(Archive& archive, const unsigned int version) const {
-    (void)version;
-    archive& BOOST_SERIALIZATION_NVP(date_interval_bundles);
-  }
-  template <class Archive>
-  void load(Archive& archive, const unsigned int version) {
-    (void)version;
-    archive& BOOST_SERIALIZATION_NVP(date_interval_bundles);
-    signal_date_interval_bundles(date_interval_bundles);
-  }
-  BOOST_SERIALIZATION_SPLIT_MEMBER()
 
   void Sort() {
     auto sort_func = [](const DateIntervalBundle& bundle0,

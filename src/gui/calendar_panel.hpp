@@ -128,7 +128,7 @@ class CalendarSetupPanel : public wxPanel {
 
   void ReceiveCalendarConfigStorage(
       const CalendarConfigStorage& incoming_calendar_config_storage) {
-    calendar_config_storage = incoming_calendar_config_storage;
+    calendar_config_storage.CopyFrom(incoming_calendar_config_storage);
     UpdatePropertyGrid();
   }
 

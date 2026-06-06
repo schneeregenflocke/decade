@@ -28,14 +28,14 @@
 // the state and drives Build() in reaction to store updates.
 class CalendarSceneBuilder {
  public:
-  CalendarSceneBuilder(
-      GraphicsEngine* graphics_engine_in, const std::shared_ptr<Font>& font_in,
-      const rectf& page_size_in, const rectf& page_margin_in,
-      const TitleConfig& title_config_in,
-      CalendarConfigStorage& calendar_config_in,
-      const ShapeConfigurationStorage& shape_configuration_storage_in,
-      const DateGroupStore& date_group_store_in,
-      const DateIntervalBundleBarStore& data_store_in)
+  CalendarSceneBuilder(GraphicsEngine* graphics_engine_in,
+                       const std::shared_ptr<Font>& font_in,
+                       const rectf& page_size_in, const rectf& page_margin_in,
+                       const TitleConfig& title_config_in,
+                       CalendarConfig& calendar_config_in,
+                       const ShapeConfigSet& shape_config_in,
+                       const DateGroups& date_groups_in,
+                       const DateIntervalBundleBarStore& data_store_in)
       : scene_graph(std::make_shared<SceneNode>("root")),
         graphics_engine(graphics_engine_in),
         font(font_in),
@@ -43,8 +43,8 @@ class CalendarSceneBuilder {
         page_margin(page_margin_in),
         title_config(title_config_in),
         calendar_config(calendar_config_in),
-        shape_configuration_storage(shape_configuration_storage_in),
-        date_group_store(date_group_store_in),
+        shape_config(shape_config_in),
+        date_groups(date_groups_in),
         data_store(data_store_in) {
     graphics_engine->set_scene_graph(scene_graph);
     auto* simple_shader =
@@ -218,8 +218,7 @@ class CalendarSceneBuilder {
 
  private:
   void SetupPrintAreaShape() {
-    auto config =
-        shape_configuration_storage.GetShapeConfiguration("Page Margin");
+    auto config = shape_config.GetShapeConfiguration("Page Margin");
 
     auto node = scene_graph->search_node("print area").value_or(nullptr);
     if (!node) {
@@ -235,8 +234,7 @@ class CalendarSceneBuilder {
   }
 
   void SetupTitleShape() {
-    auto config =
-        shape_configuration_storage.GetShapeConfiguration("Title Frame");
+    auto config = shape_config.GetShapeConfiguration("Title Frame");
 
     auto node = scene_graph->search_node("title area").value_or(nullptr);
     if (!node) {
@@ -316,8 +314,7 @@ class CalendarSceneBuilder {
                                            labels_font_size);
     }
 
-    auto config =
-        shape_configuration_storage.GetShapeConfiguration("Calendar Labels");
+    auto config = shape_config.GetShapeConfiguration("Calendar Labels");
 
     auto column_node =
         scene_graph->search_node("column label area").value_or(nullptr);
@@ -404,8 +401,7 @@ class CalendarSceneBuilder {
       years_cells.at(index) = year_cell;
     }
 
-    auto config =
-        shape_configuration_storage.GetShapeConfiguration("Years Shapes");
+    auto config = shape_config.GetShapeConfiguration("Years Shapes");
 
     auto node = scene_graph->search_node("year cells").value_or(nullptr);
     if (!node) {
@@ -464,8 +460,7 @@ class CalendarSceneBuilder {
       }
     }
 
-    auto config =
-        shape_configuration_storage.GetShapeConfiguration("Months Shapes");
+    auto config = shape_config.GetShapeConfiguration("Months Shapes");
 
     auto node = scene_graph->search_node("month cells").value_or(nullptr);
     if (!node) {
@@ -538,10 +533,8 @@ class CalendarSceneBuilder {
       }
     }
 
-    auto config =
-        shape_configuration_storage.GetShapeConfiguration("Day Shapes");
-    auto sunday_config =
-        shape_configuration_storage.GetShapeConfiguration("Sunday Shapes");
+    auto config = shape_config.GetShapeConfiguration("Day Shapes");
+    auto sunday_config = shape_config.GetShapeConfiguration("Sunday Shapes");
 
     auto node0 = scene_graph->search_node("day cells 0").value_or(nullptr);
     if (!node0) {
@@ -576,7 +569,7 @@ class CalendarSceneBuilder {
     }
     node->remove_children();
 
-    const auto number_groups = date_group_store.GetDateGroups().size();
+    const auto number_groups = date_groups.Items().size();
     for (size_t index = 0; index < number_groups; ++index) {
       auto child_node = std::make_shared<SceneNode>(std::string("group node ") +
                                                     std::to_string(index));
@@ -602,7 +595,7 @@ class CalendarSceneBuilder {
       if (calendar_config.IsInSpan(bar.GetYear())) {
         const auto current_group = static_cast<size_t>(bar.GetGroup());
         auto current_shape_config =
-            shape_configuration_storage.GetDynamicConfiguration(current_group);
+            shape_config.GetDynamicConfiguration(current_group);
 
         const auto row = static_cast<std::size_t>(
             bar.GetYear() - calendar_config.GetSpanLimitsYears().at(0));
@@ -646,8 +639,7 @@ class CalendarSceneBuilder {
       auto shape = std::make_shared<RectanglesShape>(rectangles_shader);
       node_children[index]->set_shape(shape);
 
-      auto current_shape_config =
-          shape_configuration_storage.GetDynamicConfiguration(index);
+      auto current_shape_config = shape_config.GetDynamicConfiguration(index);
 
       shape->set_shape(bars_cells.at(index), current_shape_config.LineWidth());
       shape->set_color({current_shape_config.OutlineColor(),
@@ -733,8 +725,7 @@ class CalendarSceneBuilder {
       }
     }
 
-    auto config =
-        shape_configuration_storage.GetShapeConfiguration("Years Totals");
+    auto config = shape_config.GetShapeConfiguration("Years Totals");
 
     auto shape =
         std::dynamic_pointer_cast<RectanglesShape>(node_cells->get_shape());
@@ -768,8 +759,7 @@ class CalendarSceneBuilder {
     }
     node_text->remove_children();
 
-    const size_t number_entrie_frames =
-        (date_group_store.GetDateGroups().size() + 1) * 2;
+    const size_t number_entrie_frames = (date_groups.Items().size() + 1) * 2;
     std::vector<rectf> legend_entries_frames(number_entrie_frames);
     const auto entries_width =
         legend_frame.width() / static_cast<float>(number_entrie_frames);
@@ -784,7 +774,7 @@ class CalendarSceneBuilder {
 
     std::vector<rectf> bars_cells;
 
-    auto print_strings = date_group_store.GetDateGroupsNames();
+    auto print_strings = date_groups.GetDateGroupsNames();
     print_strings.emplace_back("Annual Sums");
 
     std::string string_max_length;
@@ -800,8 +790,7 @@ class CalendarSceneBuilder {
                                              .width_ratio = kFontScaleMax});
 
     const std::size_t span_years = calendar_config.GetSpanLengthYears();
-    for (size_t index = 0; index < date_group_store.GetDateGroups().size();
-         ++index) {
+    for (size_t index = 0; index < date_groups.Items().size(); ++index) {
       const auto label_index = index * 2;
       auto node_text_child = std::make_shared<SceneNode>(
           std::string("legend label ") + std::to_string(index));
@@ -811,7 +800,7 @@ class CalendarSceneBuilder {
       node_text_child->set_shape(shape_text);
       shape_text->set_font(font);
       shape_text->set_shape_centered(
-          date_group_store.GetDateGroups().at(index).GetName(),
+          date_groups.Items().at(index).GetName(),
           legend_entries_frames.at(label_index).getCenter(), legend_font_size);
 
       if (span_years > 0U) {
@@ -823,8 +812,7 @@ class CalendarSceneBuilder {
         current_cell.setT(current_vertical_center + (current_height * kHalf));
         bars_cells.emplace_back(current_cell);
 
-        auto current_shape_config =
-            shape_configuration_storage.GetDynamicConfiguration(index);
+        auto current_shape_config = shape_config.GetDynamicConfiguration(index);
 
         auto node_entrie = std::make_shared<SceneNode>(
             std::string("legend bar ") + std::to_string(index));
@@ -865,7 +853,7 @@ class CalendarSceneBuilder {
         bars_cells.emplace_back(current_cell);
 
         auto current_shape_config =
-            shape_configuration_storage.GetShapeConfiguration("Years Totals");
+            shape_config.GetShapeConfiguration("Years Totals");
 
         auto node_entrie =
             std::make_shared<SceneNode>(std::string("legend bar annual sum"));
@@ -903,9 +891,9 @@ class CalendarSceneBuilder {
   const rectf& page_size;
   const rectf& page_margin;
   const TitleConfig& title_config;
-  CalendarConfigStorage& calendar_config;
-  const ShapeConfigurationStorage& shape_configuration_storage;
-  const DateGroupStore& date_group_store;
+  CalendarConfig& calendar_config;
+  const ShapeConfigSet& shape_config;
+  const DateGroups& date_groups;
   const DateIntervalBundleBarStore& data_store;
 
   // Transient layout state, recomputed on every Build().

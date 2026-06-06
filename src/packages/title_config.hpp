@@ -2,17 +2,13 @@
 #define TITLE_CONFIG_HPP
 
 #include <array>
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/array.hpp>
-#include <boost/serialization/nvp.hpp>
-#include <boost/serialization/split_member.hpp>
-#include <boost/serialization/string.hpp>
 #include <sigslot/signal.hpp>
 #include <string>
 #include <utility>
 
 #include "detail/reentry_guard.hpp"
 
+// Pure domain value. No serialization, no signal -> Rule of Zero, copyable.
 class TitleConfig {
  public:
   TitleConfig() = default;
@@ -42,20 +38,19 @@ class TitleConfig {
   std::string title_text{"title config constructor text"};
   std::array<float, 4> text_color{kDefaultTextColor, kDefaultTextColor,
                                   kDefaultTextColor, kDefaultTextAlpha};
-
-  friend class boost::serialization::access;
-  template <class Archive>
-  void serialize(Archive& archive, const unsigned int version) {
-    (void)version;
-    archive& BOOST_SERIALIZATION_NVP(frame_height);
-    archive& BOOST_SERIALIZATION_NVP(font_size_ratio);
-    archive& BOOST_SERIALIZATION_NVP(title_text);
-    archive& BOOST_SERIALIZATION_NVP(text_color);
-  }
 };
 
+// Owns a TitleConfig value plus the change signal. Non-copyable. No
+// serialization code (handled non-intrusively in the infrastructure layer).
 class TitleConfigStore {
  public:
+  TitleConfigStore() = default;
+  ~TitleConfigStore() = default;
+  TitleConfigStore(const TitleConfigStore&) = delete;
+  TitleConfigStore& operator=(const TitleConfigStore&) = delete;
+  TitleConfigStore(TitleConfigStore&&) = delete;
+  TitleConfigStore& operator=(TitleConfigStore&&) = delete;
+
   void SendTitleConfig() { signal_title_config(title_config); }
 
   void ReceiveTitleConfig(const TitleConfig& incoming_title_config) {
@@ -67,6 +62,10 @@ class TitleConfigStore {
     signal_title_config(title_config);
   }
 
+  [[nodiscard]] const TitleConfig& GetTitleConfig() const {
+    return title_config;
+  }
+
   sigslot::signal<const TitleConfig&>& SignalTitleConfig() {
     return signal_title_config;
   }
@@ -75,19 +74,5 @@ class TitleConfigStore {
   TitleConfig title_config;
   sigslot::signal<const TitleConfig&> signal_title_config;
   bool emitting_{false};
-
-  friend class boost::serialization::access;
-  template <class Archive>
-  void save(Archive& archive, const unsigned int version) const {
-    (void)version;
-    archive& BOOST_SERIALIZATION_NVP(title_config);
-  }
-  template <class Archive>
-  void load(Archive& archive, const unsigned int version) {
-    (void)version;
-    archive& BOOST_SERIALIZATION_NVP(title_config);
-    signal_title_config(title_config);
-  }
-  BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 #endif  // TITLE_CONFIG_HPP

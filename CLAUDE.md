@@ -72,8 +72,8 @@ the Domain types it serialises.
 
 - **Presentation:** `src/gui/`, `src/app/main_window.*` — wxWidgets panels, GLCanvas, menus, dialogs.
 - **Application:** `src/app/` (incl. `src/app/binding/`) — composition root, EventBus, `main_window_binder`, wx app lifecycle, command callbacks.
-- **Domain:** `src/packages/` — stores, config value types, transformation logic, sigslot signals — UI-agnostic.
-- **Infrastructure:** `src/graphics/`, `src/app/services/` — OpenGL pipeline, FreeType, XML/CSV/PNG I/O.
+- **Domain:** `src/packages/` — value objects, stores, transformation logic, sigslot signals — UI-agnostic **and Boost-free** (no `friend boost::serialization::access`, no `serialize` members).
+- **Infrastructure:** `src/graphics/`, `src/app/services/` — OpenGL pipeline, FreeType, XML/CSV/PNG I/O, **non-intrusive serialization**.
 
 `src/app/binding/calendar_page.hpp` is the rendering adapter: it bridges Domain
 state into the Infrastructure scene graph. It belongs to the Application layer.
@@ -87,12 +87,16 @@ The scene-graph construction itself lives in a dedicated builder,
   - `decade_app.hpp` — wx app lifecycle and locale initialisation (Application).
   - `app_config.hpp` — startup/window defaults (Application).
   - `main_window.hpp` — composition root: owns all stores, panels, and the renderer via PIMPL (`struct Impl`) (Presentation/Application boundary).
-  - `services/project_io.hpp` — XML/CSV/PNG persistence (Infrastructure). UI-agnostic, takes stores by reference.
+  - `services/project_io.hpp` — XML/CSV/PNG persistence (Infrastructure). UI-agnostic, takes stores by reference; serializes the stores' value objects and pushes them back via `Receive*` / `SetValue` on load.
+  - `services/value_serialization.hpp` — non-intrusive Boost.Serialization free functions for every domain value type (Infrastructure). Goes through public APIs only; owns the on-disk format. Keeps the domain layer Boost-free.
   - `binding/event_bus.hpp` — typed signal hub for domain events (Application).
   - `binding/main_window_binder.hpp` — wires producers/consumers via the EventBus (Application).
   - `binding/calendar_page.hpp` — rendering adapter: owns the calendar-relevant domain state, exposes the `Receive*` slots, and drives the scene builder on updates (Application).
   - `binding/calendar_scene_builder.hpp` — builds and fills the calendar scene graph from the (referenced) domain state; GL-canvas free, knows only `GraphicsEngine` and the scene graph (Application/Infrastructure bridge).
-- `src/packages/` — Domain stores and config (`DateIntervalBundleStore`, `DateGroupStore`, `PageSetupStore`, `TitleConfigStore`, `ShapeConfigurationStorage`, `CalendarConfigStorage`). **Must remain UI-agnostic** (no wx, no GL). Stores emit `sigslot::signal` and serialize via Boost.
+- `src/packages/` — Domain layer, split into **value objects** and **stores**:
+  - **Value objects** (`DateGroup`/`DateGroups`, `DateIntervalBundle`, `PageSetupConfig`, `TitleConfig`, `ShapeConfiguration`/`ShapeConfigSet`, `CalendarSpan`/`CalendarConfig`) hold data + the queries over it. No signal, no serialization, no `friend` → Rule of Zero, freely copyable.
+  - **Stores** (`DateGroupStore`, `DateIntervalBundleStore`, `PageSetupStore`, `TitleConfigStore`, `ShapeConfigurationStorage`, `CalendarConfigStorage`) compose a value object plus a `sigslot::signal` and the re-entry guard. They have identity → explicitly non-copyable; they delegate queries to the held value and expose it via `Value()`/getters.
+  - **Must remain UI-agnostic (no wx, no GL) and Boost-free** — persistence lives in `services/value_serialization.hpp`.
 - `src/gui/` — Presentation: wxWidgets panels and the GL canvas wrapper. Each panel owns its widgets and exposes signals matching its store's interface.
 - `src/graphics/` — Infrastructure: OpenGL engine, shaders, `SceneNode` scene graph, `RectanglesShape` / `QuadrilateralShape` / `FontShape`, `RenderToTexture`, `RenderToPng`, FreeType wrapper.
 - `src/app/binding/calendar_page.hpp` / `calendar_scene_builder.hpp` — the rendering adapter (Application/Infrastructure bridge): `CalendarPage` receives store updates and owns the state; `CalendarSceneBuilder` builds the scene graph for the calendar layout and pushes shapes into `GraphicsEngine`.
@@ -124,10 +128,12 @@ Store ──Send──▶ EventBus.<event> ──▶ Panel.Receive , CalendarPag
 The `TransformDateIntervalBundle` adapter sits between `date_interval_bundles`
 (input) and `transformed_date_interval_bundles` (output) on the bus.
 
-When adding a new piece of state: create a `*Store` in `packages/`, a panel in
-`gui/`, add a typed signal to `EventBus`, and register both ends in
-`main_window_binder::Bind`. `CalendarPage` only needs the `Receive*` slot if the
-state affects rendering.
+When adding a new piece of state: create a Boost-free **value object** plus a
+`*Store` wrapping it in `packages/`, a panel in `gui/`, add a typed signal to
+`EventBus`, and register both ends in `main_window_binder::Bind`. If the state
+is persisted, add non-intrusive `save`/`load` (or `serialize`) for the value in
+`services/value_serialization.hpp` and a line in `project_io`. `CalendarPage`
+only needs the `Receive*` slot if the state affects rendering.
 
 ### OpenGL initialization
 
@@ -195,12 +201,17 @@ belongs:
 
 ### Domain-Driven Design (DDD)
 
-`src/packages/` is the **domain model**: stores are aggregates that guard their
-own invariants, and config value types are value objects. Keep the domain free
-of infrastructure and UI vocabulary. Persistence (`project_io`) and rendering
-(`calendar_page`) are adapters around the domain, not part of it. Use the
-domain's own terms (intervals, bundles, date groups, page setup) consistently in
-names.
+`src/packages/` is the **domain model**, with a deliberate split between **value
+objects** (data + queries, Rule of Zero, copyable) and **stores** (a value plus
+a `sigslot::signal` and re-entry guard; identity, non-copyable). This is the
+reference example of separating value from publisher: the signal — the only
+non-copyable, identity-bearing part — lives in the store, never in the value, so
+values copy correctly by default and stores guard their own change
+notifications. Keep the domain free of infrastructure and UI vocabulary **and
+free of Boost**: persistence is non-intrusive and lives in
+`services/value_serialization.hpp`. Rendering (`calendar_page`) is an adapter
+around the domain, not part of it. Use the domain's own terms (intervals,
+bundles, date groups, page setup) consistently in names.
 
 ### Layered architecture
 
