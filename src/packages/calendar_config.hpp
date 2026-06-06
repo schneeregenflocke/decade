@@ -128,8 +128,8 @@ class CalendarConfig : public CalendarSpan {
 };
 
 // Owns a CalendarConfig value plus the change signal and re-entry guard. Has
-// identity -> non-copyable. Delegates the value API so callers stay stable;
-// carries no serialization code.
+// identity -> non-copyable. The signal carries the value, so the store needs no
+// query delegation: consumers work with the CalendarConfig value directly.
 class CalendarConfigStorage {
  public:
   CalendarConfigStorage() = default;
@@ -139,80 +139,28 @@ class CalendarConfigStorage {
   CalendarConfigStorage& operator=(const CalendarConfigStorage&) = delete;
   CalendarConfigStorage& operator=(CalendarConfigStorage&&) = delete;
 
-  void ReceiveCalendarConfigStorage(
-      const CalendarConfigStorage& calendar_config_storage) {
+  void ReceiveCalendarConfig(const CalendarConfig& incoming_calendar_config) {
     if (emitting_) {
       return;
     }
     const packages::detail::ScopedReentryFlag guard(emitting_);
-    CopyFrom(calendar_config_storage);
-    signal_calendar_config_storage(*this);
+    calendar_config = incoming_calendar_config;
+    signal_calendar_config(calendar_config);
   }
 
-  void SendCalendarConfigStorage() { signal_calendar_config_storage(*this); }
+  void SendCalendarConfig() { signal_calendar_config(calendar_config); }
 
-  void CopyFrom(const CalendarConfigStorage& other) {
-    calendar_config = other.calendar_config;
-  }
-
-  // --- CalendarSpan delegation ---
-  void SetSpan(CalendarSpan::YearSpan span_years) {
-    calendar_config.SetSpan(span_years);
-  }
-  [[nodiscard]] bool IsValidSpan() const {
-    return calendar_config.IsValidSpan();
-  }
-  [[nodiscard]] std::size_t GetSpanLengthYears() const {
-    return calendar_config.GetSpanLengthYears();
-  }
-  [[nodiscard]] std::array<int, 2> GetSpanLimitsYears() const {
-    return calendar_config.GetSpanLimitsYears();
-  }
-  [[nodiscard]] std::array<boost::gregorian::date, 2> GetSpanLimitsDate()
-      const {
-    return calendar_config.GetSpanLimitsDate();
-  }
-  [[nodiscard]] std::int64_t GetSpanLengthDays() const {
-    return calendar_config.GetSpanLengthDays();
-  }
-  [[nodiscard]] int GetYear(const std::size_t index) const {
-    return calendar_config.GetYear(index);
-  }
-  [[nodiscard]] bool IsInSpan(const int year) const {
-    return calendar_config.IsInSpan(year);
+  [[nodiscard]] const CalendarConfig& GetCalendarConfig() const {
+    return calendar_config;
   }
 
-  // --- CalendarConfig delegation ---
-  [[nodiscard]] bool IsAutoCalendarSpan() const {
-    return calendar_config.IsAutoCalendarSpan();
-  }
-  void SetAutoCalendarSpan(bool auto_span) {
-    calendar_config.SetAutoCalendarSpan(auto_span);
-  }
-  [[nodiscard]] const std::vector<float>& GetSpacingProportions() const {
-    return calendar_config.GetSpacingProportions();
-  }
-  std::vector<float>& MutableSpacingProportions() {
-    return calendar_config.MutableSpacingProportions();
-  }
-  void SetSpacingProportions(const std::vector<float>& proportions) {
-    calendar_config.SetSpacingProportions(proportions);
-  }
-
-  [[nodiscard]] const CalendarConfig& Value() const { return calendar_config; }
-
-  void SetValue(const CalendarConfig& value) {
-    calendar_config = value;
-    signal_calendar_config_storage(*this);
-  }
-
-  sigslot::signal<const CalendarConfigStorage&>& SignalCalendarConfigStorage() {
-    return signal_calendar_config_storage;
+  sigslot::signal<const CalendarConfig&>& SignalCalendarConfig() {
+    return signal_calendar_config;
   }
 
  private:
   CalendarConfig calendar_config;
-  sigslot::signal<const CalendarConfigStorage&> signal_calendar_config_storage;
+  sigslot::signal<const CalendarConfig&> signal_calendar_config;
   bool emitting_{false};
 };
 #endif  // CALENDAR_CONFIG_HPP

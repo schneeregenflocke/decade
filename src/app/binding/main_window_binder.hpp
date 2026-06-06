@@ -147,39 +147,32 @@ inline void BindTitleConfig(EventBus& bus, MainWindowComponents& components) {
 
 inline void BindShapeConfiguration(EventBus& bus,
                                    MainWindowComponents& components) {
-  components.elements_setup_panel.SignalShapeConfigurationStorage().connect(
-      &ShapeConfigurationStorage::ReceiveShapeConfigurationStorage,
+  components.elements_setup_panel.SignalShapeConfigSet().connect(
+      &ShapeConfigurationStorage::ReceiveShapeConfigSet,
       &components.shape_configuration_storage);
 
-  components.shape_configuration_storage.SignalShapeConfigurationStorage()
-      .connect([&bus](const ShapeConfigurationStorage& value) {
-        bus.shape_configuration_storage(value);
-      });
+  components.shape_configuration_storage.SignalShapeConfigSet().connect(
+      [&bus](const ShapeConfigSet& value) { bus.shape_config_set(value); });
 
-  bus.shape_configuration_storage.connect(
-      &ElementsSetupsPanel::ReceiveShapeConfigurationStorage,
-      &components.elements_setup_panel);
-  bus.shape_configuration_storage.connect(
-      &CalendarPage::ReceiveShapeConfigurationStorage,
-      &components.calendar_page);
+  bus.shape_config_set.connect(&ElementsSetupsPanel::ReceiveShapeConfigSet,
+                               &components.elements_setup_panel);
+  bus.shape_config_set.connect(&CalendarPage::ReceiveShapeConfigSet,
+                               &components.calendar_page);
 }
 
 inline void BindCalendarConfig(EventBus& bus,
                                MainWindowComponents& components) {
-  components.calendar_setup_panel.SignalCalendarConfigStorage().connect(
-      &CalendarConfigStorage::ReceiveCalendarConfigStorage,
+  components.calendar_setup_panel.SignalCalendarConfig().connect(
+      &CalendarConfigStorage::ReceiveCalendarConfig,
       &components.calendar_configuration_storage);
 
-  components.calendar_configuration_storage.SignalCalendarConfigStorage()
-      .connect([&bus](const CalendarConfigStorage& value) {
-        bus.calendar_config_storage(value);
-      });
+  components.calendar_configuration_storage.SignalCalendarConfig().connect(
+      [&bus](const CalendarConfig& value) { bus.calendar_config(value); });
 
-  bus.calendar_config_storage.connect(
-      &CalendarSetupPanel::ReceiveCalendarConfigStorage,
-      &components.calendar_setup_panel);
-  bus.calendar_config_storage.connect(&CalendarPage::ReceiveCalendarConfig,
-                                      &components.calendar_page);
+  bus.calendar_config.connect(&CalendarSetupPanel::ReceiveCalendarConfig,
+                              &components.calendar_setup_panel);
+  bus.calendar_config.connect(&CalendarPage::ReceiveCalendarConfig,
+                              &components.calendar_page);
 }
 
 }  // namespace detail
@@ -195,11 +188,11 @@ inline void Bind(EventBus& bus, MainWindowComponents& components) {
 }
 
 inline void SendInitialValues(MainWindowComponents& components) {
-  components.shape_configuration_storage.SendShapeConfigurationStorage();
+  components.shape_configuration_storage.SendShapeConfigSet();
   components.date_groups_store.SendDefaultValues();
   components.page_setup_panel.SendDefaultValues();
   components.title_setup_panel.SendDefaultValues();
-  components.calendar_configuration_storage.SendCalendarConfigStorage();
+  components.calendar_configuration_storage.SendCalendarConfig();
 }
 
 }  // namespace main_window_binder

@@ -17,10 +17,9 @@
 #include "calendar_scene_builder.hpp"
 
 // Rendering adapter: owns the domain state relevant to the calendar drawing,
-// receives store updates via the Receive* slots, and drives the
-// CalendarSceneBuilder to (re)build the scene graph. The config state is held
-// as plain value objects (copyable); the incoming signals still carry the
-// owning stores, from which we extract the value.
+// receives updates via the Receive* slots, and drives the CalendarSceneBuilder
+// to (re)build the scene graph. All state is held as plain value objects
+// (copyable); every incoming signal carries a value, so the slots just assign.
 class CalendarPage {
  public:
   CalendarPage(GLCanvas* gl_canvas_in, const std::string& font_filepath)
@@ -62,15 +61,13 @@ class CalendarPage {
     Update();
   }
 
-  void ReceiveCalendarConfig(
-      const CalendarConfigStorage& incoming_calendar_config) {
-    calendar_config = incoming_calendar_config.Value();
+  void ReceiveCalendarConfig(const CalendarConfig& incoming_calendar_config) {
+    calendar_config = incoming_calendar_config;
     Update();
   }
 
-  void ReceiveShapeConfigurationStorage(
-      const ShapeConfigurationStorage& incoming_shape_configuration_storage) {
-    shape_config = incoming_shape_configuration_storage.Value();
+  void ReceiveShapeConfigSet(const ShapeConfigSet& incoming_shape_config_set) {
+    shape_config = incoming_shape_config_set;
     Update();
   }
 

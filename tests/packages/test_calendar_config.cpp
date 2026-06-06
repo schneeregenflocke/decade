@@ -42,37 +42,36 @@ TEST(CalendarSpanTest, GetYearThrowsWhenOutOfRange) {
 }
 
 TEST(CalendarConfigStorageTest, ReceiveCopiesAndEmits) {
-  CalendarConfigStorage source;
+  CalendarConfig source;
   source.SetSpan({.first_year = 2040, .last_year = 2042});
   source.SetAutoCalendarSpan(false);
 
   CalendarConfigStorage target;
   int emissions = 0;
-  target.SignalCalendarConfigStorage().connect(
-      [&](const CalendarConfigStorage&) { ++emissions; });
+  target.SignalCalendarConfig().connect(
+      [&](const CalendarConfig&) { ++emissions; });
 
-  target.ReceiveCalendarConfigStorage(source);
+  target.ReceiveCalendarConfig(source);
 
   EXPECT_EQ(emissions, 1);
-  EXPECT_FALSE(target.IsAutoCalendarSpan());
-  EXPECT_EQ(target.GetSpanLimitsYears()[0], 2040);
+  EXPECT_FALSE(target.GetCalendarConfig().IsAutoCalendarSpan());
+  EXPECT_EQ(target.GetCalendarConfig().GetSpanLimitsYears()[0], 2040);
 }
 
 TEST(CalendarConfigStorageTest, ReentryGuardBlocksRecursiveReceive) {
-  CalendarConfigStorage primary;
-  CalendarConfigStorage secondary;
+  CalendarConfig secondary;
   secondary.SetSpan({.first_year = 2050, .last_year = 2050});
 
+  CalendarConfigStorage primary;
   int emissions = 0;
-  primary.SignalCalendarConfigStorage().connect(
-      [&](const CalendarConfigStorage&) {
-        ++emissions;
-        if (emissions == 1) {
-          primary.ReceiveCalendarConfigStorage(secondary);
-        }
-      });
+  primary.SignalCalendarConfig().connect([&](const CalendarConfig&) {
+    ++emissions;
+    if (emissions == 1) {
+      primary.ReceiveCalendarConfig(secondary);
+    }
+  });
 
-  primary.ReceiveCalendarConfigStorage(secondary);
+  primary.ReceiveCalendarConfig(secondary);
 
   EXPECT_EQ(emissions, 1);
 }

@@ -116,12 +116,12 @@ inline void LoadProjectXml(
 
   ShapeConfigSet shape_config_set;
   iarchive >> boost::serialization::make_nvp("shape_config", shape_config_set);
-  shape_configuration_storage.SetValue(shape_config_set);
+  shape_configuration_storage.ReceiveShapeConfigSet(shape_config_set);
 
   CalendarConfig calendar_config;
   iarchive >>
       boost::serialization::make_nvp("calendar_config", calendar_config);
-  calendar_configuration_storage.SetValue(calendar_config);
+  calendar_configuration_storage.ReceiveCalendarConfig(calendar_config);
 }
 
 inline void SaveProjectXml(
@@ -146,9 +146,9 @@ inline void SaveProjectXml(
   oarchive << boost::serialization::make_nvp(
       "title_config", title_config_store.GetTitleConfig());
   oarchive << boost::serialization::make_nvp(
-      "shape_config", shape_configuration_storage.Value());
+      "shape_config", shape_configuration_storage.GetShapeConfigSet());
   oarchive << boost::serialization::make_nvp(
-      "calendar_config", calendar_configuration_storage.Value());
+      "calendar_config", calendar_configuration_storage.GetCalendarConfig());
 }
 
 inline void PrintRuntimeInfo(std::ostream& out) {

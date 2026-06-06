@@ -247,8 +247,8 @@ class ShapeConfigSet {
 };
 
 // Owns a ShapeConfigSet value plus the change signal and re-entry guard. Has
-// identity -> non-copyable. Delegates the whole set API so callers (panels)
-// stay stable. Carries no serialization code.
+// identity -> non-copyable. The signal carries the value, so the store needs no
+// set-API delegation: consumers work with the ShapeConfigSet value directly.
 class ShapeConfigurationStorage {
  public:
   ShapeConfigurationStorage() = default;
@@ -259,72 +259,28 @@ class ShapeConfigurationStorage {
       delete;
   ShapeConfigurationStorage& operator=(ShapeConfigurationStorage&&) = delete;
 
-  void ReceiveShapeConfigurationStorage(
-      const ShapeConfigurationStorage& shape_configuration_storage) {
+  void ReceiveShapeConfigSet(const ShapeConfigSet& incoming_shape_config_set) {
     if (emitting_) {
       return;
     }
     const packages::detail::ScopedReentryFlag guard(emitting_);
-    CopyFrom(shape_configuration_storage);
-    signal_shape_configuration_storage(*this);
+    shape_config_set = incoming_shape_config_set;
+    signal_shape_config_set(shape_config_set);
   }
 
-  void SendShapeConfigurationStorage() {
-    signal_shape_configuration_storage(*this);
+  void SendShapeConfigSet() { signal_shape_config_set(shape_config_set); }
+
+  [[nodiscard]] const ShapeConfigSet& GetShapeConfigSet() const {
+    return shape_config_set;
   }
 
-  void CopyFrom(const ShapeConfigurationStorage& other) {
-    shape_configurations = other.shape_configurations;
-  }
-
-  [[nodiscard]] size_t size() const { return shape_configurations.size(); }
-
-  void resize(size_t size) { shape_configurations.resize(size); }
-
-  ShapeConfiguration& operator[](size_t index) {
-    return shape_configurations[index];
-  }
-  const ShapeConfiguration& operator[](size_t index) const {
-    return shape_configurations[index];
-  }
-
-  [[nodiscard]] ShapeConfiguration GetShapeConfiguration(
-      const std::string& name) const {
-    return shape_configurations.GetShapeConfiguration(name);
-  }
-
-  [[nodiscard]] static std::string DynamicConfigurationName(
-      size_t group_index) {
-    return ShapeConfigSet::DynamicConfigurationName(group_index);
-  }
-
-  [[nodiscard]] ShapeConfiguration GetDynamicConfiguration(
-      size_t group_index) const {
-    return shape_configurations.GetDynamicConfiguration(group_index);
-  }
-
-  [[nodiscard]] size_t GetNumberPersistentConfigurations() const {
-    return shape_configurations.GetNumberPersistentConfigurations();
-  }
-
-  [[nodiscard]] const ShapeConfigSet& Value() const {
-    return shape_configurations;
-  }
-
-  void SetValue(const ShapeConfigSet& value) {
-    shape_configurations = value;
-    signal_shape_configuration_storage(*this);
-  }
-
-  sigslot::signal<const ShapeConfigurationStorage&>&
-  SignalShapeConfigurationStorage() {
-    return signal_shape_configuration_storage;
+  sigslot::signal<const ShapeConfigSet&>& SignalShapeConfigSet() {
+    return signal_shape_config_set;
   }
 
  private:
-  ShapeConfigSet shape_configurations;
-  sigslot::signal<const ShapeConfigurationStorage&>
-      signal_shape_configuration_storage;
+  ShapeConfigSet shape_config_set;
+  sigslot::signal<const ShapeConfigSet&> signal_shape_config_set;
   bool emitting_{false};
 };
 #endif  // SHAPE_CONFIG_HPP

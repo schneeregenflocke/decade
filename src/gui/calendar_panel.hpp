@@ -126,9 +126,8 @@ class CalendarSetupPanel : public wxPanel {
     UpdatePropertyGrid();
   }
 
-  void ReceiveCalendarConfigStorage(
-      const CalendarConfigStorage& incoming_calendar_config_storage) {
-    calendar_config_storage.CopyFrom(incoming_calendar_config_storage);
+  void ReceiveCalendarConfig(const CalendarConfig& incoming_calendar_config) {
+    calendar_config = incoming_calendar_config;
     UpdatePropertyGrid();
   }
 
@@ -138,8 +137,7 @@ class CalendarSetupPanel : public wxPanel {
     long const number_subrows =
         property_grid->GetPropertyValue(property_grid->gui_number_spacings)
             .GetInteger();
-    auto& spacing_proportions =
-        calendar_config_storage.MutableSpacingProportions();
+    auto& spacing_proportions = calendar_config.MutableSpacingProportions();
     spacing_proportions.resize(static_cast<size_t>(number_subrows));
 
     for (size_t index = 0; std::cmp_less(index, number_subrows); ++index) {
@@ -149,7 +147,7 @@ class CalendarSetupPanel : public wxPanel {
               .GetDouble());
     }
 
-    calendar_config_storage.SetAutoCalendarSpan(
+    calendar_config.SetAutoCalendarSpan(
         property_grid->GetPropertyValue(property_grid->gui_auto_span)
             .GetBool());
 
@@ -160,48 +158,43 @@ class CalendarSetupPanel : public wxPanel {
         property_grid->GetPropertyValue(property_grid->gui_upper_limit)
             .GetInteger();
 
-    calendar_config_storage.SetSpan(
+    calendar_config.SetSpan(
         CalendarSpan::YearSpan{.first_year = static_cast<int>(lower_limit),
                                .last_year = static_cast<int>(upper_limit)});
 
-    signal_calendar_config_storage(calendar_config_storage);
+    signal_calendar_config(calendar_config);
   }
 
   void UpdatePropertyGrid() {
     property_grid->SetPropertyValue(
         property_grid->gui_number_spacings,
-        static_cast<int>(
-            calendar_config_storage.GetSpacingProportions().size()));
+        static_cast<int>(calendar_config.GetSpacingProportions().size()));
 
     property_grid->RefreshPropertyGrid();
 
-    const auto& spacing_proportions =
-        calendar_config_storage.GetSpacingProportions();
+    const auto& spacing_proportions = calendar_config.GetSpacingProportions();
     for (size_t index = 0; index < spacing_proportions.size(); ++index) {
       property_grid->SetPropertyValue(property_grid->gui_spacings_array[index],
                                       spacing_proportions[index]);
     }
 
-    property_grid->SetPropertyValue(
-        property_grid->gui_auto_span,
-        calendar_config_storage.IsAutoCalendarSpan());
-    property_grid->SetPropertyValue(
-        property_grid->gui_lower_limit,
-        calendar_config_storage.GetSpanLimitsYears()[0]);
-    property_grid->SetPropertyValue(
-        property_grid->gui_upper_limit,
-        calendar_config_storage.GetSpanLimitsYears()[1]);
+    property_grid->SetPropertyValue(property_grid->gui_auto_span,
+                                    calendar_config.IsAutoCalendarSpan());
+    property_grid->SetPropertyValue(property_grid->gui_lower_limit,
+                                    calendar_config.GetSpanLimitsYears()[0]);
+    property_grid->SetPropertyValue(property_grid->gui_upper_limit,
+                                    calendar_config.GetSpanLimitsYears()[1]);
 
     property_grid->RefreshPropertyGrid();
   }
 
-  sigslot::signal<const CalendarConfigStorage&>& SignalCalendarConfigStorage() {
-    return signal_calendar_config_storage;
+  sigslot::signal<const CalendarConfig&>& SignalCalendarConfig() {
+    return signal_calendar_config;
   }
 
  private:
   wxWeakRef<PropertyGridPanel> property_grid;
-  CalendarConfigStorage calendar_config_storage;
-  sigslot::signal<const CalendarConfigStorage&> signal_calendar_config_storage;
+  CalendarConfig calendar_config;
+  sigslot::signal<const CalendarConfig&> signal_calendar_config;
 };
 #endif  // CALENDAR_PANEL_HPP

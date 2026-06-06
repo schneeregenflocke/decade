@@ -35,8 +35,8 @@ class EventBus {
   sigslot::signal<const PageSetupConfig&> page_setup;
   sigslot::signal<const std::string&> font_filepath;
   sigslot::signal<const TitleConfig&> title_config;
-  sigslot::signal<const ShapeConfigurationStorage&> shape_configuration_storage;
-  sigslot::signal<const CalendarConfigStorage&> calendar_config_storage;
+  sigslot::signal<const ShapeConfigSet&> shape_config_set;
+  sigslot::signal<const CalendarConfig&> calendar_config;
 };
 
 #endif  // EVENT_BUS_HPP

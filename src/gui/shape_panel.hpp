@@ -34,9 +34,8 @@ class ElementsSetupsPanel : public wxPanel {
     Bind(wxEVT_SLIDER, &ElementsSetupsPanel::CallbackSlider, this);
   }
 
-  void ReceiveShapeConfigurationStorage(
-      const ShapeConfigurationStorage& incoming_shape_configuration_storage) {
-    shape_configuration_storage.CopyFrom(incoming_shape_configuration_storage);
+  void ReceiveShapeConfigSet(const ShapeConfigSet& incoming_shape_config_set) {
+    shape_config_set = incoming_shape_config_set;
     UpdateConfigurationList();
   }
 
@@ -45,34 +44,31 @@ class ElementsSetupsPanel : public wxPanel {
   // existing configurations are left untouched so user customisations survive.
   void ReceiveDateGroups(const std::vector<DateGroup>& date_groups) {
     const size_t persistent_count =
-        shape_configuration_storage.GetNumberPersistentConfigurations();
+        shape_config_set.GetNumberPersistentConfigurations();
     const size_t desired_size = persistent_count + date_groups.size();
-    const size_t previous_size = shape_configuration_storage.size();
+    const size_t previous_size = shape_config_set.size();
 
-    shape_configuration_storage.resize(desired_size);
+    shape_config_set.resize(desired_size);
 
     // Only the newly appended entries need defaults; entries that already
     // existed keep whatever the user (or a loaded project) configured.
     for (size_t index = std::max(previous_size, persistent_count);
          index < desired_size; ++index) {
       const size_t group_index = index - persistent_count;
-      shape_configuration_storage[index] =
-          MakeBarGroupConfiguration(group_index);
+      shape_config_set[index] = MakeBarGroupConfiguration(group_index);
     }
 
     UpdateConfigurationList();
 
-    signal_shape_configuration_storage(shape_configuration_storage);
+    signal_shape_config_set(shape_config_set);
   }
 
-  sigslot::signal<const ShapeConfigurationStorage&>&
-  SignalShapeConfigurationStorage() {
-    return signal_shape_configuration_storage;
+  sigslot::signal<const ShapeConfigSet&>& SignalShapeConfigSet() {
+    return signal_shape_config_set;
   }
 
  private:
-  sigslot::signal<const ShapeConfigurationStorage&>
-      signal_shape_configuration_storage;
+  sigslot::signal<const ShapeConfigSet&> signal_shape_config_set;
 
   // Builds the default shape configuration for the dynamic bar group at the
   // given zero-based index, taking its color from the categorical palette so
@@ -85,7 +81,7 @@ class ElementsSetupsPanel : public wxPanel {
     const glm::vec3 color = palette::CategoricalColor(group_index);
 
     return ShapeConfiguration{
-        ShapeConfigurationStorage::DynamicConfigurationName(group_index),
+        ShapeConfigSet::DynamicConfigurationName(group_index),
         true,
         true,
         kDynamicLineWidth,
@@ -229,10 +225,9 @@ class ElementsSetupsPanel : public wxPanel {
   void UpdateConfigurationList() {
     shape_configuration_list_box->Clear();
 
-    for (size_t index = 0; index < shape_configuration_storage.size();
-         ++index) {
+    for (size_t index = 0; index < shape_config_set.size(); ++index) {
       shape_configuration_list_box->AppendString(
-          shape_configuration_storage[index].Name());
+          shape_config_set[index].Name());
     }
 
     const int number_of_items =
@@ -251,11 +246,11 @@ class ElementsSetupsPanel : public wxPanel {
   }
 
   void UpdateWidgetForSelection(size_t selection) {
-    if (selection >= shape_configuration_storage.size()) {
+    if (selection >= shape_config_set.size()) {
       return;
     }
 
-    auto& current_configuration = shape_configuration_storage[selection];
+    auto& current_configuration = shape_config_set[selection];
 
     auto outline_visible = current_configuration.OutlineVisible();
     outline_visible_ctrl->SetValue(outline_visible);
@@ -300,16 +295,16 @@ class ElementsSetupsPanel : public wxPanel {
     const auto selection = static_cast<size_t>(selection_index);
 
     if (event.GetEventObject() == outline_visible_ctrl.get()) {
-      shape_configuration_storage[selection].OutlineVisible(check_status);
+      shape_config_set[selection].OutlineVisible(check_status);
     }
 
     if (event.GetEventObject() == fill_visible_ctrl.get()) {
-      shape_configuration_storage[selection].FillVisible(check_status);
+      shape_config_set[selection].FillVisible(check_status);
     }
 
     UpdateWidgetForSelection(selection);
 
-    signal_shape_configuration_storage(shape_configuration_storage);
+    signal_shape_config_set(shape_config_set);
   }
 
   void CallbackSpinControlDouble(wxSpinDoubleEvent& event) {
@@ -319,9 +314,9 @@ class ElementsSetupsPanel : public wxPanel {
       return;
     }
     const auto element_selection = static_cast<size_t>(selection_index);
-    shape_configuration_storage[element_selection].LineWidth(line_width);
+    shape_config_set[element_selection].LineWidth(line_width);
 
-    signal_shape_configuration_storage(shape_configuration_storage);
+    signal_shape_config_set(shape_config_set);
   }
 
   void CallbackColorPicker(wxColourPickerEvent& event) {
@@ -334,19 +329,19 @@ class ElementsSetupsPanel : public wxPanel {
 
     if (event.GetEventObject() == line_color_picker.get()) {
       auto current_line_color_alpha =
-          shape_configuration_storage[selection].OutlineColor()[3];
+          shape_config_set[selection].OutlineColor()[3];
       color[3] = current_line_color_alpha;
-      shape_configuration_storage[selection].OutlineColor(color);
+      shape_config_set[selection].OutlineColor(color);
     }
 
     if (event.GetEventObject() == fill_color_picker.get()) {
       auto current_line_color_alpha =
-          shape_configuration_storage[selection].FillColor()[3];
+          shape_config_set[selection].FillColor()[3];
       color[3] = current_line_color_alpha;
-      shape_configuration_storage[selection].FillColor(color);
+      shape_config_set[selection].FillColor(color);
     }
 
-    signal_shape_configuration_storage(shape_configuration_storage);
+    signal_shape_config_set(shape_config_set);
   }
 
   void CallbackSlider(wxCommandEvent& event) {
@@ -361,23 +356,21 @@ class ElementsSetupsPanel : public wxPanel {
     const auto selection = static_cast<size_t>(selection_index);
 
     if (event.GetEventObject() == line_color_alpha_slider.get()) {
-      auto current_line_color =
-          shape_configuration_storage[selection].OutlineColor();
+      auto current_line_color = shape_config_set[selection].OutlineColor();
       current_line_color[3] = alpha_value;
-      shape_configuration_storage[selection].OutlineColor(current_line_color);
+      shape_config_set[selection].OutlineColor(current_line_color);
     }
 
     if (event.GetEventObject() == fill_color_alpha_slider.get()) {
-      auto current_line_color =
-          shape_configuration_storage[selection].FillColor();
+      auto current_line_color = shape_config_set[selection].FillColor();
       current_line_color[3] = alpha_value;
-      shape_configuration_storage[selection].FillColor(current_line_color);
+      shape_config_set[selection].FillColor(current_line_color);
     }
 
-    signal_shape_configuration_storage(shape_configuration_storage);
+    signal_shape_config_set(shape_config_set);
   }
 
-  ShapeConfigurationStorage shape_configuration_storage;
+  ShapeConfigSet shape_config_set;
 
   wxWeakRef<wxListBox> shape_configuration_list_box{nullptr};
   wxWeakRef<wxCheckBox> outline_visible_ctrl{nullptr};

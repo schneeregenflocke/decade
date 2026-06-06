@@ -5,59 +5,55 @@
 
 #include "packages/shape_config.hpp"
 
-TEST(ShapeConfigurationStorageTest, DefaultsContainExpectedNames) {
-  ShapeConfigurationStorage storage;
-  ASSERT_GT(storage.size(), 0U);
-  EXPECT_EQ(storage.GetNumberPersistentConfigurations(), storage.size());
+TEST(ShapeConfigSetTest, DefaultsContainExpectedNames) {
+  ShapeConfigSet set;
+  ASSERT_GT(set.size(), 0U);
+  EXPECT_EQ(set.GetNumberPersistentConfigurations(), set.size());
 
   // A handful of named entries we expect from the default set.
   const ShapeConfiguration page_margin =
-      storage.GetShapeConfiguration("Page Margin");
+      set.GetShapeConfiguration("Page Margin");
   EXPECT_EQ(page_margin.Name(), "Page Margin");
   EXPECT_TRUE(page_margin.OutlineVisible());
 
-  const ShapeConfiguration day_shapes =
-      storage.GetShapeConfiguration("Day Shapes");
+  const ShapeConfiguration day_shapes = set.GetShapeConfiguration("Day Shapes");
   EXPECT_EQ(day_shapes.Name(), "Day Shapes");
   EXPECT_TRUE(day_shapes.FillVisible());
 }
 
-TEST(ShapeConfigurationStorageTest,
-     GetShapeConfigurationReturnsBlankForUnknownName) {
-  ShapeConfigurationStorage storage;
+TEST(ShapeConfigSetTest, GetShapeConfigurationReturnsBlankForUnknownName) {
+  ShapeConfigSet set;
   const ShapeConfiguration unknown =
-      storage.GetShapeConfiguration("Does Not Exist");
+      set.GetShapeConfiguration("Does Not Exist");
   EXPECT_TRUE(unknown.Name().empty());
 }
 
-TEST(ShapeConfigurationStorageTest, DynamicConfigurationNameMatchesFormat) {
-  EXPECT_EQ(ShapeConfigurationStorage::DynamicConfigurationName(0),
-            "Bar Group 0");
-  EXPECT_EQ(ShapeConfigurationStorage::DynamicConfigurationName(7),
-            "Bar Group 7");
+TEST(ShapeConfigSetTest, DynamicConfigurationNameMatchesFormat) {
+  EXPECT_EQ(ShapeConfigSet::DynamicConfigurationName(0), "Bar Group 0");
+  EXPECT_EQ(ShapeConfigSet::DynamicConfigurationName(7), "Bar Group 7");
 }
 
-TEST(ShapeConfigurationStorageTest, GetDynamicConfigurationAddressesByIndex) {
-  ShapeConfigurationStorage storage;
-  const size_t persistent = storage.GetNumberPersistentConfigurations();
+TEST(ShapeConfigSetTest, GetDynamicConfigurationAddressesByIndex) {
+  ShapeConfigSet set;
+  const size_t persistent = set.GetNumberPersistentConfigurations();
 
-  // Append two dynamic configurations, mirroring how the panel grows storage
+  // Append two dynamic configurations, mirroring how the panel grows the set
   // when date groups are added.
-  storage.resize(persistent + 2);
-  storage[persistent + 1] = ShapeConfiguration{
-      ShapeConfigurationStorage::DynamicConfigurationName(1),
+  set.resize(persistent + 2);
+  set[persistent + 1] = ShapeConfiguration{
+      ShapeConfigSet::DynamicConfigurationName(1),
       /*outline_visible=*/true,
       /*fill_visible=*/true,
       0.5F,
       ShapeConfiguration::OutlineColorValue{glm::vec4{0.1F, 0.2F, 0.3F, 1.0F}},
       ShapeConfiguration::FillColorValue{glm::vec4{0.1F, 0.2F, 0.3F, 0.5F}}};
 
-  const ShapeConfiguration second = storage.GetDynamicConfiguration(1);
+  const ShapeConfiguration second = set.GetDynamicConfiguration(1);
   EXPECT_EQ(second.Name(), "Bar Group 1");
   EXPECT_FLOAT_EQ(second.OutlineColorDisabled()[0], 0.1F);
 
   // Out-of-range indices return a blank configuration instead of throwing.
-  const ShapeConfiguration missing = storage.GetDynamicConfiguration(99);
+  const ShapeConfiguration missing = set.GetDynamicConfiguration(99);
   EXPECT_TRUE(missing.Name().empty());
 }
 
@@ -85,32 +81,31 @@ TEST(ShapeConfigurationTest, OutlineColorReturnsValueWhenVisible) {
 }
 
 TEST(ShapeConfigurationStorageTest, ReceiveEmitsAndCopiesContents) {
-  ShapeConfigurationStorage source;
+  ShapeConfigSet source;
   ShapeConfigurationStorage target;
 
   int emissions = 0;
-  target.SignalShapeConfigurationStorage().connect(
-      [&](const ShapeConfigurationStorage&) { ++emissions; });
+  target.SignalShapeConfigSet().connect(
+      [&](const ShapeConfigSet&) { ++emissions; });
 
-  target.ReceiveShapeConfigurationStorage(source);
+  target.ReceiveShapeConfigSet(source);
 
   EXPECT_EQ(emissions, 1);
-  EXPECT_EQ(target.size(), source.size());
+  EXPECT_EQ(target.GetShapeConfigSet().size(), source.size());
 }
 
 TEST(ShapeConfigurationStorageTest, ReentryGuardBlocksRecursiveReceive) {
+  ShapeConfigSet secondary;
   ShapeConfigurationStorage primary;
-  ShapeConfigurationStorage secondary;
   int emissions = 0;
-  primary.SignalShapeConfigurationStorage().connect(
-      [&](const ShapeConfigurationStorage&) {
-        ++emissions;
-        if (emissions == 1) {
-          primary.ReceiveShapeConfigurationStorage(secondary);
-        }
-      });
+  primary.SignalShapeConfigSet().connect([&](const ShapeConfigSet&) {
+    ++emissions;
+    if (emissions == 1) {
+      primary.ReceiveShapeConfigSet(secondary);
+    }
+  });
 
-  primary.ReceiveShapeConfigurationStorage(secondary);
+  primary.ReceiveShapeConfigSet(secondary);
 
   EXPECT_EQ(emissions, 1);
 }
