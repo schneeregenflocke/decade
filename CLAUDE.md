@@ -1,9 +1,7 @@
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) and other coding
-agents when working with code in this repository. It is the single, canonical
-source of truth — it consolidates what used to live in `CLAUDE.md`,
-`AGENTS.md`, and `docs/ARCHITECTURE.md`.
+agents when working with code in this repository.
 
 ## Project
 
