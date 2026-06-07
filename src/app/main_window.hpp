@@ -14,16 +14,16 @@
 #include <wx/splitter.h>
 #include <wx/string.h>
 #include <wx/timer.h>
-#include <wx/utils.h>
 #include <wx/weakref.h>
 #include <wx/window.h>
 
 #include <array>
 #include <cstdint>
-#include <exception>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <string>
+#include <utility>
 
 #include "../gui/calendar_panel.hpp"
 #include "../gui/date_panel.hpp"
@@ -44,12 +44,14 @@
 #include "binding/calendar_page.hpp"
 #include "binding/event_bus.hpp"
 #include "binding/main_window_binder.hpp"
+#include "runtime_options.hpp"
 #include "services/project_io.hpp"
 
 class MainWindow : public wxFrame {
  public:
   MainWindow(wxWindow* parent, const wxString& title, const wxPoint& pos,
-             const wxSize& size, bool maximize_on_start = true);
+             const wxSize& size, bool maximize_on_start = true,
+             app::RuntimeOptions runtime_options = {});
   ~MainWindow() override;
   MainWindow(const MainWindow&) = delete;
   MainWindow& operator=(const MainWindow&) = delete;
@@ -61,7 +63,7 @@ class MainWindow : public wxFrame {
   void CreatePanels(wxNotebook* notebook);
   void InitializeOpenGL();
   void EstablishConnections();
-  void LoadDefaultDates();
+  void LoadStartupFile();
   void ConfigureAutoExitTimer();
   void DumpPngIfRequested();
   void InitMenu();
@@ -85,6 +87,7 @@ class MainWindow : public wxFrame {
   wxTimer exit_timer;
 
   MainMenu menu;
+  app::RuntimeOptions runtime_options_;
 };
 
 namespace main_window_detail {
@@ -123,11 +126,13 @@ struct MainWindow::Impl {
 
 inline MainWindow::MainWindow(wxWindow* parent, const wxString& title,
                               const wxPoint& pos, const wxSize& size,
-                              bool maximize_on_start)
+                              bool maximize_on_start,
+                              app::RuntimeOptions runtime_options)
     : wxFrame(parent, wxID_ANY, title, pos, size),
       impl_(std::make_unique<Impl>()),
       exit_timer(this),
-      menu(GLCanvas::kExportPngDpi) {
+      menu(GLCanvas::kExportPngDpi),
+      runtime_options_(std::move(runtime_options)) {
   CreateLayout(maximize_on_start);
   InitMenu();
   InitializeOpenGL();
@@ -219,48 +224,44 @@ inline void MainWindow::InitializeOpenGL() {
     impl_->calendar_page = std::make_unique<CalendarPage>(
         impl_->gl_canvas.get(), impl_->font_panel->GetFontFilePath());
     EstablishConnections();
-    LoadDefaultDates();
+    LoadStartupFile();
     DumpPngIfRequested();
   });
 }
 
-inline void MainWindow::LoadDefaultDates() {
-  // Auto-load a sample data set on every start so the calendar is populated
-  // without a manual CSV import.
-  //   DECADE_NO_DEFAULT_CSV=1     disables the auto-load entirely.
-  //   DECADE_DEFAULT_CSV=<path>   overrides the file that gets loaded.
-  // The default path is resolved relative to the working directory (the repo
-  // root for typical runs).
-  if (wxGetEnv("DECADE_NO_DEFAULT_CSV", nullptr)) {
-    std::cout << "LoadDefaultDates: disabled via DECADE_NO_DEFAULT_CSV\n";
+inline void MainWindow::LoadStartupFile() {
+  // Opt-in: a file is loaded only when one was supplied, either as the
+  // positional command-line argument or via DECADE_DEFAULT_CSV. With neither
+  // set the application starts with an empty project. The caller is responsible
+  // for the path, so there is no hidden working-directory-relative default.
+  if (!runtime_options_.startup_file) {
+    return;
+  }
+  const std::string& path = *runtime_options_.startup_file;
+
+  if (!wxFileExists(path)) {
+    std::cout << "LoadStartupFile: " << path << " not found, skipping\n";
     return;
   }
 
-  wxString override_path;
-  const std::string default_csv =
-      wxGetEnv("DECADE_DEFAULT_CSV", &override_path)
-          ? override_path.ToStdString()
-          : std::string("test-files/test_dates_1.csv");
-
-  if (!wxFileExists(default_csv)) {
-    std::cout << "LoadDefaultDates: " << default_csv
-              << " not found, skipping\n";
-    return;
+  std::cout << "LoadStartupFile: loading " << path << '\n';
+  if (path.ends_with(".xml")) {
+    LoadXML(path);
+    xml_file_path = path;
+  } else {
+    impl_->date_interval_bundle_store.ReceiveDateIntervalBundles(
+        app::io::ReadDateIntervalBundlesFromCsv(path));
   }
-  impl_->date_interval_bundle_store.ReceiveDateIntervalBundles(
-      app::io::ReadDateIntervalBundlesFromCsv(default_csv));
 }
 
 inline void MainWindow::DumpPngIfRequested() {
-  wxString png_path;
-  if (wxGetEnv("DECADE_DUMP_PNG", &png_path)) {
-    const auto path = png_path.ToStdString();
+  if (runtime_options_.dump_png_path) {
+    const std::string& path = *runtime_options_.dump_png_path;
     std::cout << "DECADE_DUMP_PNG: writing " << path << '\n';
     impl_->gl_canvas->SavePNG(path);
   }
-  wxString window_png_path;
-  if (wxGetEnv("DECADE_DUMP_WINDOW_PNG", &window_png_path)) {
-    const auto path = window_png_path.ToStdString();
+  if (runtime_options_.dump_window_png_path) {
+    const std::string path = *runtime_options_.dump_window_png_path;
     // Defer until after the first real paint so the back buffer is populated.
     CallAfter([this, path]() {
       std::cout << "DECADE_DUMP_WINDOW_PNG: writing " << path << '\n';
@@ -294,22 +295,14 @@ inline void MainWindow::EstablishConnections() {
 }
 
 inline void MainWindow::ConfigureAutoExitTimer() {
-  wxString exit_after_ms_env;
-  if (!wxGetEnv("DECADE_EXIT_AFTER_MS", &exit_after_ms_env)) {
+  if (!runtime_options_.exit_after_ms) {
     return;
   }
 
-  const std::string exit_after_ms_str = exit_after_ms_env.ToStdString();
-  try {
-    const std::int64_t exit_after_ms = std::stoll(exit_after_ms_str);
-    if (exit_after_ms > 0) {
-      std::cout << "Auto-exit in ms: " << exit_after_ms << '\n';
-      exit_timer.Bind(wxEVT_TIMER, &MainWindow::OnExitTimer, this);
-      exit_timer.StartOnce(static_cast<int>(exit_after_ms));
-    }
-  } catch (const std::exception& ex) {
-    std::cout << "Invalid DECADE_EXIT_AFTER_MS: " << ex.what() << '\n';
-  }
+  const std::int64_t exit_after_ms = *runtime_options_.exit_after_ms;
+  std::cout << "Auto-exit in ms: " << exit_after_ms << '\n';
+  exit_timer.Bind(wxEVT_TIMER, &MainWindow::OnExitTimer, this);
+  exit_timer.StartOnce(static_cast<int>(exit_after_ms));
 }
 
 inline void MainWindow::InitMenu() {

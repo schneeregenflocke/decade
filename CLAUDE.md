@@ -22,6 +22,22 @@ ninja -C build
 ./build/decade
 ```
 
+### Startup file
+
+A project/data file can be opened at startup via a positional argument — the
+idiomatic "open with file" entry point. The path is resolved against the current
+working directory, so it works regardless of where the binary lives:
+
+```bash
+./build/decade test-files/test_dates_1.csv   # CSV import
+./build/decade myproject.xml                  # XML project (dispatched by extension)
+```
+
+Loading is **opt-in**: with no argument and no `DECADE_DEFAULT_CSV` set, the app
+starts with an empty project. The startup-file resolution (CLI argument and the
+env-var fallback) is centralised in `src/app/runtime_options.hpp`
+(`app::RuntimeOptions`).
+
 ### Headless / scripted runs
 
 The binary honors several environment variables that are essential for non-interactive use (CI, screenshots, smoke tests):
@@ -30,13 +46,12 @@ The binary honors several environment variables that are essential for non-inter
 - `DECADE_DUMP_PNG=<path>` — render the calendar page to PNG via off-screen FBO once OpenGL is ready.
 - `DECADE_DUMP_WINDOW_PNG=<path>` — capture the actual window back buffer after first paint (deferred via `CallAfter`).
 - `DECADE_DEBUG_LOG=1` — enable OpenGL/runtime debug logging.
-- `DECADE_DEFAULT_CSV=<path>` — override the sample CSV auto-loaded at startup (default `test-files/test_dates_1.csv`).
-- `DECADE_NO_DEFAULT_CSV=1` — disable auto-loading the default CSV entirely.
+- `DECADE_DEFAULT_CSV=<path>` — opt-in startup file (CSV or XML) when no positional argument is given; the CLI argument takes precedence. No file is loaded if this is unset.
 
-Typical smoke test:
+Typical smoke test (pass the sample data explicitly):
 ```bash
 DECADE_DUMP_PNG=/tmp/decade_render.png DECADE_EXIT_AFTER_MS=2000 \
-  stdbuf -oL -eL timeout 12 ./build/decade
+  stdbuf -oL -eL timeout 12 ./build/decade test-files/test_dates_1.csv
 ```
 
 ## Build hygiene
@@ -103,8 +118,9 @@ The scene-graph construction itself lives in a dedicated builder,
 
 - `src/app/`
   - `main.cpp` — process entrypoint only (Application).
-  - `decade_app.hpp` — wx app lifecycle and locale initialisation (Application).
+  - `decade_app.hpp` — wx app lifecycle, locale initialisation, and command-line parsing (the optional positional startup-file argument) (Application).
   - `app_config.hpp` — startup/window defaults (Application).
+  - `runtime_options.hpp` — `app::RuntimeOptions` plus `RuntimeOptionsFromEnv()`: the single place that reads the `DECADE_*` env vars (startup file, PNG dumps, auto-exit). CLI arguments override the env-derived values in `DecadeApp::OnInit` (Application).
   - `main_window.hpp` — composition root: owns all stores, panels, and the renderer via PIMPL (`struct Impl`) (Presentation/Application boundary).
   - `services/project_io.hpp` — XML/CSV/PNG persistence (Infrastructure). UI-agnostic, takes stores by reference; serializes the stores' value objects and pushes them back via `Receive*` / `SetValue` on load.
   - `services/value_serialization.hpp` — non-intrusive Boost.Serialization free functions for every domain value type (Infrastructure). Goes through public APIs only; owns the on-disk format. Keeps the domain layer Boost-free.
