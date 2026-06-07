@@ -208,3 +208,23 @@ if(DECADE_BUILD_TESTS)
 	enable_testing()
 	add_subdirectory(tests)
 endif()
+
+# clang-tidy gate. Runs the documented invocation on the single translation
+# unit (which transitively covers every src/ header via HeaderFilterRegex) and
+# fails on ANY finding (--warnings-as-errors=*). Deliberately NOT part of the
+# default build, so normal compiles stay fast; run it explicitly or in CI:
+#     cmake --build build --target clang-tidy
+# The --extra-arg flags mirror the ones documented in CLAUDE.md (work around a
+# wx/meta include bug under clang and GCC-only flags in compile_commands.json).
+find_program(CLANG_TIDY_EXE NAMES clang-tidy)
+if(CLANG_TIDY_EXE)
+	add_custom_target(clang-tidy
+		COMMAND ${CLANG_TIDY_EXE} -p ${CMAKE_BINARY_DIR}
+			--warnings-as-errors=*
+			--extra-arg=-include --extra-arg=type_traits
+			--extra-arg=-Wno-error --extra-arg=-Wno-unknown-warning-option
+			${CMAKE_CURRENT_SOURCE_DIR}/src/app/main.cpp
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+		COMMENT "clang-tidy gate (warnings = errors) on src/app/main.cpp"
+		VERBATIM USES_TERMINAL)
+endif()

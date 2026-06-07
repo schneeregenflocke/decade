@@ -41,7 +41,28 @@ DECADE_DUMP_PNG=/tmp/decade_render.png DECADE_EXIT_AFTER_MS=2000 \
 
 ## Build hygiene
 
-- **Warnings break the build** — fix them, don't suppress.
+- **Warnings break the build — fix them, don't suppress. This rule applies to
+  BOTH compiler warnings AND clang-tidy diagnostics.** Do not silence a finding
+  with `NOLINT` / `NOLINTNEXTLINE` / `NOLINTBEGIN`, a `#pragma`, a `-Wno-…`
+  flag, or a `.clang-tidy` per-line exclusion just to make it quiet. Change the
+  code so the finding no longer applies. Restructuring, RAII, and proper type
+  annotations are fixes; suppression is not.
+  - **Prefer a real fix even when it looks like the warning is "unfixable."**
+    Most are not. Example: `cppcoreguidelines-owning-memory` over a raw C
+    resource is satisfied by expressing ownership with `gsl::owner<>` (the
+    project already links `Microsoft.GSL::GSL`) and/or a `std::unique_ptr` with
+    a custom deleter — see `src/graphics/png_writer.hpp`. A check that is
+    genuinely inapplicable to the project's style is disabled **once, globally**
+    in `.clang-tidy` with a comment (as `-modernize-use-trailing-return-type`,
+    `-llvm-header-guard`, … already are) — never scattered per-line.
+  - **Suppression is a last resort, allowed only for a construct a third-party
+    C API contractually forces on us and that has no in-code fix.** The
+    canonical (and currently only sanctioned) example is libpng's mandatory
+    `setjmp`/`longjmp` error handling in `src/graphics/png_writer.hpp`. When you
+    must suppress: scope the `NOLINT` to the **specific check names** (never a
+    bare `NOLINT`), keep it to the narrowest line, and add a comment stating
+    *why* it cannot be fixed. If a whole dependency makes a class of warnings
+    unavoidable, prefer replacing that dependency over spreading suppressions.
 - `.clang-format` is the source of truth for formatting.
 - CI workflow is currently disabled (`.github/workflows/cmake.yml.disable`).
 
@@ -92,7 +113,7 @@ The scene-graph construction itself lives in a dedicated builder,
   - `binding/calendar_page.hpp` — rendering adapter: owns the calendar-relevant domain state, exposes the `Receive*` slots, and drives the scene builder on updates (Application).
   - `binding/calendar_scene_builder.hpp` — builds and fills the calendar scene graph from the (referenced) domain state; GL-canvas free, knows only `GraphicsEngine` and the scene graph (Application/Infrastructure bridge).
 - `src/packages/` — Domain layer, split into **value objects** and **stores**:
-  - **Value objects** (`DateGroup`/`DateGroups`, `DateIntervalBundle`, `PageSetupConfig`, `TitleConfig`, `ShapeConfiguration`/`ShapeConfigSet`, `CalendarSpan`/`CalendarConfig`) hold data + the queries over it. No signal, no serialization, no `friend` → Rule of Zero, freely copyable.
+  - **Value objects** (`DateGroup`/`DateGroups`, `DateIntervalBundle`, `PageSetupConfig`, `TitleConfig`, `ShapeConfiguration`/`ShapeConfigSet`, `CalendarSpan`/`CalendarConfig`) hold data + the queries over it. They **encapsulate their state**: data members are `private`, exposed through const accessor/query methods and mutated only through named setters — this is the orthodox DDD form (a value object is defined by its attributes, not by exposing them as public fields), and it keeps the on-disk format and invariants in one place. No signal, no serialization, no `friend` → Rule of Zero, freely copyable.
   - **Stores** (`DateGroupStore`, `DateIntervalBundleStore`, `PageSetupStore`, `TitleConfigStore`, `ShapeConfigurationStorage`, `CalendarConfigStorage`) compose a value object plus a `sigslot::signal` and the re-entry guard. They have identity → explicitly non-copyable. Their **signal carries the value** (`signal<const Value&>`), so consumers (panels, `CalendarPage`) work with copyable value objects directly; the store exposes `Receive<Value>` / `Send<Value>` / a `Get<Value>` getter and adds no query delegation of its own.
   - **Must remain UI-agnostic (no wx, no GL) and Boost-free** — persistence lives in `services/value_serialization.hpp`.
 - `src/gui/` — Presentation: wxWidgets panels and the GL canvas wrapper. Each panel owns its widgets and exposes signals matching its store's interface.
@@ -200,7 +221,8 @@ belongs:
 ### Domain-Driven Design (DDD)
 
 `src/packages/` is the **domain model**, with a deliberate split between **value
-objects** (data + queries, Rule of Zero, copyable) and **stores** (a value plus
+objects** (data + queries, *encapsulated* behind accessors with private fields,
+Rule of Zero, copyable) and **stores** (a value plus
 a `sigslot::signal` and re-entry guard; identity, non-copyable). This is the
 reference example of separating value from publisher: the signal — the only
 non-copyable, identity-bearing part — lives in the store, never in the value, so
@@ -238,6 +260,23 @@ formats and remains testable in isolation.
 ## Tooling
 
 ### clang-tidy
+
+**Enforcement gate (build-breaker).** The gate runs clang-tidy on the single
+translation unit `src/app/main.cpp` — which transitively covers every `src/`
+header via `HeaderFilterRegex` — with every finding promoted to an error:
+
+```
+cmake --build build --target clang-tidy   # fails on ANY finding
+```
+
+The tree is kept at **zero findings**; introducing one breaks this target. The
+gate is deliberately *not* part of the default build, so normal compiles stay
+fast — run it explicitly or in CI. Prefer this single-TU form over globbing
+`src/**/*.hpp` directly: analysing headers in isolation produces spurious
+`misc-include-cleaner` noise for the GL/wx umbrella headers that never appears in
+a real translation unit. The disabled checks in `.clang-tidy` each carry a
+comment explaining why (glm unions, GL/wx C-API interop, deliberate style); see
+also the suppression policy under [Build hygiene](#build-hygiene).
 
 Voller Lauf (Bericht in `build/clang-tidy.log`):
 ```

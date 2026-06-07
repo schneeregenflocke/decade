@@ -4,12 +4,33 @@ Checks:
   - clang-diagnostic-*
   - clang-analyzer-*
   - bugprone-*
+  # Flags two same-typed parameters as "swappable"; high false-positive rate on
+  # semantically distinct arguments (e.g. width/height, x/y) — not actionable.
+  - -bugprone-easily-swappable-parameters
   - cert-*
   - concurrency-*
   - cppcoreguidelines-*
   - -cppcoreguidelines-pro-bounds-avoid-unchecked-container-access
+  # glm vectors expose components via a union (.x/.y/.z); using glm at all trips
+  # this. The only "fix" is [] indexing, which hurts readability.
+  - -cppcoreguidelines-pro-type-union-access
+  # reinterpret_cast and raw pointer/array handling are required for the
+  # OpenGL and wxWidgets C APIs (buffer offsets, glGetIntegerv out-params,
+  # native handles). Unavoidable at the infrastructure boundary.
+  - -cppcoreguidelines-pro-type-reinterpret-cast
+  - -cppcoreguidelines-pro-bounds-pointer-arithmetic
+  - -cppcoreguidelines-pro-bounds-array-to-pointer-decay
+  # The codebase deliberately holds const and reference members (e.g. EventBus
+  # references, immutable config); they make the owning type non-assignable on
+  # purpose. Enforcing this would force redesigns against that intent.
+  - -cppcoreguidelines-avoid-const-or-ref-data-members
   - google-*
+  # wxWidgets and Boost APIs use plain long/short directly; fixed-width
+  # substitutes would fight those library signatures.
+  - -google-runtime-int
   - hicpp-*
+  # Same C-array-to-GL-C-API decay as the cppcoreguidelines variant above.
+  - -hicpp-no-array-decay
   - llvm-*
   - -llvm-header-guard
   - misc-*
@@ -18,6 +39,9 @@ Checks:
   - performance-*
   - portability-*
   - readability-*
+  # Short names (i, x, ar, dc, ft) are idiomatic in loop/lambda/GL/wx contexts;
+  # enforcing a minimum length hurts more than it helps here.
+  - -readability-identifier-length
 WarningsAsErrors: ""
 HeaderFileExtensions:
   - ""
@@ -30,8 +54,11 @@ ImplementationFileExtensions:
   - cc
   - cpp
   - cxx
-HeaderFilterRegex: ""
-ExcludeHeaderFilterRegex: ""
+# Analyse the project's own headers (this is a header-only codebase — almost
+# all code lives in headers, so an empty filter would hide nearly everything).
+# external/ submodules are excluded here; system headers via SystemHeaders.
+HeaderFilterRegex: ".*/(src|tests)/.*"
+ExcludeHeaderFilterRegex: ".*/external/.*"
 FormatStyle: file
 User: schneeregenflocke
 SystemHeaders: false
