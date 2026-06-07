@@ -18,6 +18,7 @@
 #include "../graphics/debug_log.hpp"
 #include "../graphics/graphics_engine.hpp"
 #include "../graphics/mvp_matrices.hpp"
+#include "../graphics/png_writer.hpp"
 #include "../graphics/projection.hpp"
 #include "../graphics/render_to_png.hpp"
 #include "../packages/page_config.hpp"
@@ -297,7 +298,8 @@ class GLCanvas : public wxGLCanvas {
                   flipped.data() + (y * row_bytes));
     }
 
-    RenderToPNG::SaveRgbaPng(file_path.c_str(), flipped, w, h);
+    png_io::WriteRgbaPng(file_path.c_str(), flipped,
+                         png_io::PngImageSize{.width = w, .height = h});
   }
 
  private:

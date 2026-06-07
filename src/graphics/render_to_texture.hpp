@@ -4,6 +4,7 @@
 #include <epoxy/gl.h>
 
 #include <array>
+#include <memory>
 #include <vector>
 
 #include "texture_object.hpp"
@@ -38,8 +39,6 @@ class FrameBuffer {
       glBindTexture(GL_TEXTURE_2D, texture.Name());
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA,
                    GL_UNSIGNED_BYTE, nullptr);
-      // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
       glBindTexture(GL_TEXTURE_2D, 0);
 
       glBindRenderbuffer(GL_RENDERBUFFER, render_buffer.Name());
@@ -99,17 +98,26 @@ class FrameBuffer {
   RenderBuffer render_buffer;
 };
 
+// Renders into an off-screen framebuffer and reads the result back as RGBA
+// bytes. With multisampling (samples > 1) it renders into a dedicated MSAA
+// framebuffer and resolves it into the readable output buffer; without it,
+// rendering goes straight into the output buffer and the extra MSAA buffer is
+// never allocated.
 class RenderToTexture {
  public:
   RenderToTexture(GLsizei width_in, GLsizei height_in, GLsizei samples_in)
       : width(width_in),
         height(height_in),
-        frame_buffer(width_in, height_in, samples_in, false),
-        frame_buffer_msaa(width_in, height_in, samples_in, true) {
-    if (frame_buffer.CheckStatus() == GL_FRAMEBUFFER_COMPLETE &&
-        frame_buffer_msaa.CheckStatus() == GL_FRAMEBUFFER_COMPLETE) {
-      valid = true;
+        multisampled(samples_in > 1),
+        output_frame_buffer(width_in, height_in, samples_in, false) {
+    if (multisampled) {
+      multisample_frame_buffer =
+          std::make_unique<FrameBuffer>(width_in, height_in, samples_in, true);
     }
+
+    valid = output_frame_buffer.CheckStatus() == GL_FRAMEBUFFER_COMPLETE &&
+            (!multisampled || multisample_frame_buffer->CheckStatus() ==
+                                  GL_FRAMEBUFFER_COMPLETE);
   }
 
   [[nodiscard]] bool Valid() const { return valid; }
@@ -118,30 +126,37 @@ class RenderToTexture {
     std::array<GLint, 4> viewport{};
     glGetIntegerv(GL_VIEWPORT, viewport.data());
 
-    restore_width = viewport[2];
-    restore_height = viewport[3];
+    previous_viewport_width = viewport[2];
+    previous_viewport_height = viewport[3];
 
-    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_msaa.Name());
+    const GLuint render_target = multisampled ? multisample_frame_buffer->Name()
+                                              : output_frame_buffer.Name();
+    glBindFramebuffer(GL_FRAMEBUFFER, render_target);
     glViewport(0, 0, width, height);
   }
 
   void EndRender() {
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, frame_buffer_msaa.Name());
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, frame_buffer.Name());
-    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height,
-                      GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    // Resolve the multisampled colour buffer into the single-sample output
+    // buffer. Without MSAA we render straight into the output buffer, so no
+    // blit is needed.
+    if (multisampled) {
+      glBindFramebuffer(GL_READ_FRAMEBUFFER, multisample_frame_buffer->Name());
+      glBindFramebuffer(GL_DRAW_FRAMEBUFFER, output_frame_buffer.Name());
+      glBlitFramebuffer(0, 0, width, height, 0, 0, width, height,
+                        GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    glViewport(0, 0, restore_width, restore_height);
+    glViewport(0, 0, previous_viewport_width, previous_viewport_height);
   }
 
   std::vector<unsigned char> CopyImage() {
     const size_t image_size = static_cast<size_t>(width) *
                               static_cast<size_t>(height) *
-                              static_cast<size_t>(pixel_size);
+                              static_cast<size_t>(bytes_per_pixel);
     image.resize(image_size);
 
-    glBindTexture(GL_TEXTURE_2D, frame_buffer.TextureName());
+    glBindTexture(GL_TEXTURE_2D, output_frame_buffer.TextureName());
     glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.data());
     glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -153,14 +168,15 @@ class RenderToTexture {
 
   GLsizei width;
   GLsizei height;
+  bool multisampled;
 
-  FrameBuffer frame_buffer;
-  FrameBuffer frame_buffer_msaa;
+  FrameBuffer output_frame_buffer;
+  std::unique_ptr<FrameBuffer> multisample_frame_buffer;
 
-  GLint restore_width{0};
-  GLint restore_height{0};
+  GLint previous_viewport_width{0};
+  GLint previous_viewport_height{0};
 
-  GLsizei pixel_size{kBytesPerPixel};
+  GLsizei bytes_per_pixel{kBytesPerPixel};
   std::vector<unsigned char> image;
 
   bool valid{false};
