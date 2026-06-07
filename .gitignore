@@ -26,3 +26,5 @@ CMakePresets.json
 
 
 /gh_act_token.txt
+
+.claude/settings.json
