@@ -184,70 +184,26 @@ this callback fires.
 
 ## Design principles
 
-These are the binding design guidelines for this codebase. They formalise the
-intent behind the layered architecture above; when a concrete instruction in
-this file conflicts with a general principle, the concrete instruction wins.
+These are the binding design guidelines for this codebase.
 
-### Single Responsibility Principle (SRP)
-
-Every class, header, and free function should have exactly one reason to change.
-A `*Store` changes when domain rules change; a panel changes when its UI layout
-changes; `project_io` changes when a file format changes. The split of the
-former `calendar_page.hpp` into `CalendarPage` (state + update slots) and
-`CalendarSceneBuilder` (scene-graph layout) is the reference example: when a
-single file accumulates several reasons to change, prefer extraction over
-further growth.
-
-### Separation of Concerns (SoC)
-
-Keep the four concerns — presentation, application/wiring, domain logic, and
-infrastructure I/O — in their respective layers. Do not let wx or GL types leak
-into `packages/`, and do not embed file-format or rendering details in panels.
-The EventBus exists precisely to keep producers and consumers from knowing about
-each other directly.
-
-### Coupling and cohesion
-
-Aim for **low coupling, high cohesion**. Prefer communication through the
-EventBus and Domain types over direct references between components. Members of a
-class should operate on shared state toward one purpose; if a class's methods
-split into disjoint groups touching disjoint fields, that is a cohesion smell and
-a candidate for splitting.
+- Single Responsibility Principle (SRP)
+- Separation of Concerns (SoC)
+- Coupling and cohesion
+- Domain-Driven Design (DDD)
+- Clean Architecture
 
 ### GRASP patterns
 
 Apply the GRASP responsibility-assignment heuristics when deciding where code
 belongs:
 
-- **Information Expert** — assign a responsibility to the class that holds the
-  data it needs (e.g. serialization logic stays close to the store that owns the
-  state, mediated by `project_io`).
-- **Creator** — the owner of an object's lifetime creates it (`MainWindow` /
-  `Impl` is the composition root and creator of stores, panels, renderer).
-- **Controller** — `MainWindow` / command callbacks act as the controller that
-  receives UI/system events and delegates to the right collaborators.
-- **Low Coupling / High Cohesion** — see above; the primary tie-breaker.
-- **Indirection** — the `EventBus` and `TransformDateIntervalBundle` adapter
-  decouple producers from consumers.
-- **Pure Fabrication** — `main_window_binder` and `EventBus` are fabricated
-  helpers that exist to keep wiring out of domain and presentation code.
-- **Polymorphism / Protected Variations** — isolate variation points (shapes,
-  render targets) behind stable interfaces in `src/graphics/`.
-
-### Domain-Driven Design (DDD)
-
-`src/packages/` is the **domain model**, with a deliberate split between **value
-objects** (data + queries, *encapsulated* behind accessors with private fields,
-Rule of Zero, copyable) and **stores** (a value plus
-a `sigslot::signal` and re-entry guard; identity, non-copyable). This is the
-reference example of separating value from publisher: the signal — the only
-non-copyable, identity-bearing part — lives in the store, never in the value, so
-values copy correctly by default and stores guard their own change
-notifications. Keep the domain free of infrastructure and UI vocabulary **and
-free of Boost**: persistence is non-intrusive and lives in
-`services/value_serialization.hpp`. Rendering (`calendar_page`) is an adapter
-around the domain, not part of it. Use the domain's own terms (intervals,
-bundles, date groups, page setup) consistently in names.
+- Information Expert
+- Creator
+- Controller
+- Low Coupling / High Cohesion
+- Indirection
+- Pure Fabrication
+- Polymorphism / Protected Variations
 
 ### Layered architecture
 
@@ -255,14 +211,6 @@ Respect the four layers and the inward-only dependency rule stated under
 [Layering rules](#layering-rules). New code must declare which layer it belongs
 to and obey that layer's dependency constraints.
 
-### Clean Architecture
-
-Dependencies point inward toward the domain; the domain depends on nothing
-outward. Outer layers (Presentation, Infrastructure) depend on inner layers
-(Application, Domain) and never the reverse. The EventBus and the `*_binder`
-free functions are the boundary-crossing mechanism that keeps this dependency
-direction intact, so that the domain stays independent of wx, OpenGL, and file
-formats and remains testable in isolation.
 
 ## Conventions
 
