@@ -28,11 +28,9 @@
 #include "value_serialization.hpp"
 
 namespace app::io {
-namespace {
 using CsvReader = csv2::Reader<csv2::delimiter<','>, csv2::quote_character<'"'>,
                                csv2::first_row_is_header<false>,
                                csv2::trim_policy::trim_whitespace>;
-}  // namespace
 
 inline std::vector<DateIntervalBundle> ReadDateIntervalBundlesFromCsv(
     const std::string& file_path) {

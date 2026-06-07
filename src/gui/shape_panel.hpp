@@ -263,7 +263,8 @@ class ElementsSetupsPanel : public wxPanel {
     fill_color_picker->Enable(fill_visible);
     fill_color_alpha_slider->Enable(fill_visible);
 
-    linewidth_ctrl->SetValue(current_configuration.LineWidthDisabled());
+    linewidth_ctrl->SetValue(
+        static_cast<double>(current_configuration.LineWidthDisabled()));
 
     constexpr float kAlphaScale = 100.0F;
     const auto outline_color = current_configuration.OutlineColorDisabled();

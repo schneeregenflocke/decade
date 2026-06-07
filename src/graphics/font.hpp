@@ -38,31 +38,49 @@
   const std::size_t length = text.size();
   std::size_t index = 0;
 
+  // UTF-8 lead-byte classification: mask isolates the prefix bits, the bare
+  // value is the expected prefix, the payload mask keeps the data bits.
+  constexpr std::uint32_t kOneByteLeadMask = 0x80U;  // 0xxxxxxx
+  constexpr std::uint32_t kTwoByteLeadMask = 0xE0U;  // 110xxxxx
+  constexpr std::uint32_t kTwoByteLead = 0xC0U;
+  constexpr std::uint32_t kTwoBytePayloadMask = 0x1FU;
+  constexpr std::uint32_t kThreeByteLeadMask = 0xF0U;  // 1110xxxx
+  constexpr std::uint32_t kThreeByteLead = 0xE0U;
+  constexpr std::uint32_t kThreeBytePayloadMask = 0x0FU;
+  constexpr std::uint32_t kFourByteLeadMask = 0xF8U;  // 11110xxx
+  constexpr std::uint32_t kFourByteLead = 0xF0U;
+  constexpr std::uint32_t kFourBytePayloadMask = 0x07U;
+  constexpr std::uint32_t kContinuationMask = 0xC0U;  // 10xxxxxx
+  constexpr std::uint32_t kContinuationLead = 0x80U;
+  constexpr std::uint32_t kContinuationPayloadMask = 0x3FU;
+  constexpr std::uint32_t kContinuationShift = 6U;
+
   while (index < length) {
     const unsigned char lead = bytes[index];
     std::uint32_t codepoint = lead;
     std::size_t continuation_count = 0;
 
-    if ((lead & 0x80U) == 0x00U) {
+    if ((lead & kOneByteLeadMask) == 0U) {
       continuation_count = 0;
-    } else if ((lead & 0xE0U) == 0xC0U) {
-      codepoint = lead & 0x1FU;
+    } else if ((lead & kTwoByteLeadMask) == kTwoByteLead) {
+      codepoint = lead & kTwoBytePayloadMask;
       continuation_count = 1;
-    } else if ((lead & 0xF0U) == 0xE0U) {
-      codepoint = lead & 0x0FU;
+    } else if ((lead & kThreeByteLeadMask) == kThreeByteLead) {
+      codepoint = lead & kThreeBytePayloadMask;
       continuation_count = 2;
-    } else if ((lead & 0xF8U) == 0xF0U) {
-      codepoint = lead & 0x07U;
+    } else if ((lead & kFourByteLeadMask) == kFourByteLead) {
+      codepoint = lead & kFourBytePayloadMask;
       continuation_count = 3;
     }
     ++index;
 
     for (std::size_t step = 0; step < continuation_count && index < length;
          ++step, ++index) {
-      if ((bytes[index] & 0xC0U) != 0x80U) {
+      if ((bytes[index] & kContinuationMask) != kContinuationLead) {
         break;  // malformed continuation byte
       }
-      codepoint = (codepoint << 6U) | (bytes[index] & 0x3FU);
+      codepoint = (codepoint << kContinuationShift) |
+                  (bytes[index] & kContinuationPayloadMask);
     }
 
     constexpr std::uint32_t kGlyphLimit = 256;

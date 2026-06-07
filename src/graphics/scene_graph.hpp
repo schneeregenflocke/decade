@@ -10,7 +10,7 @@
 #include "shapes.hpp"
 class SceneNode : public std::enable_shared_from_this<SceneNode> {
  public:
-  SceneNode() : model_matrix(1.0F), is_dirty(false) {}
+  SceneNode() : model_matrix(1.0F) {}
 
   explicit SceneNode(const std::string& name) : SceneNode() {
     node_name = name;
@@ -97,6 +97,5 @@ class SceneNode : public std::enable_shared_from_this<SceneNode> {
   std::vector<std::shared_ptr<SceneNode>> children;
   glm::mat4 model_matrix;
   std::shared_ptr<Shape> shape;
-  bool is_dirty;
 };
 #endif  // SCENE_GRAPH_HPP

@@ -83,9 +83,10 @@ class PropertyGridPanel : public wxPropertyGrid {
           label = std::string("Subrow ") + label_number_postfix;
         }
 
-        gui_spacings_array.push_back(
-            std::make_unique<wxFloatProperty>(label, wxPG_LABEL, 10.0)
-                .release());
+        constexpr double kDefaultSpacing = 10.0;
+        gui_spacings_array.push_back(std::make_unique<wxFloatProperty>(
+                                         label, wxPG_LABEL, kDefaultSpacing)
+                                         .release());
         Append(gui_spacings_array[index]);
       }
     }
@@ -98,6 +99,11 @@ class PropertyGridPanel : public wxPropertyGrid {
       }
     }
   }
+
+ private:
+  // The setup panel drives this grid's widgets directly; granting friendship
+  // keeps the widget handles private without a verbose accessor per control.
+  friend class CalendarSetupPanel;
 
   wxBoxSizer* box_sizer;
 
@@ -174,8 +180,9 @@ class CalendarSetupPanel : public wxPanel {
 
     const auto& spacing_proportions = calendar_config.GetSpacingProportions();
     for (size_t index = 0; index < spacing_proportions.size(); ++index) {
-      property_grid->SetPropertyValue(property_grid->gui_spacings_array[index],
-                                      spacing_proportions[index]);
+      property_grid->SetPropertyValue(
+          property_grid->gui_spacings_array[index],
+          static_cast<double>(spacing_proportions[index]));
     }
 
     property_grid->SetPropertyValue(property_grid->gui_auto_span,

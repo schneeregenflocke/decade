@@ -141,7 +141,8 @@ class DateIntervalBundleStore {
     if (date_interval_bundles.empty()) {
       return 0;
     }
-    return static_cast<std::size_t>(GetLastYear() - GetFirstYear() + 1);
+    const int year_span = GetLastYear() - GetFirstYear() + 1;
+    return static_cast<std::size_t>(year_span);
   }
 
   [[nodiscard]] int GetFirstYear() const {
@@ -168,7 +169,9 @@ class DateIntervalBundleStore {
   }
 
  protected:
-  bool emitting_{false};
+  // Re-entry guard flag, owned privately but reachable by subclasses through
+  // this accessor (the flag itself stays private to keep data encapsulated).
+  [[nodiscard]] bool& Emitting() { return emitting_; }
 
   [[nodiscard]] const std::vector<DateIntervalBundle>&
   GetDateIntervalBundlesInternal() const {
@@ -209,6 +212,7 @@ class DateIntervalBundleStore {
   }
 
  private:
+  bool emitting_{false};
   std::vector<DateIntervalBundle> date_interval_bundles;
   DateGroupStore date_group_store;
 
@@ -322,10 +326,10 @@ class DateIntervalBundleBarStore : public DateIntervalBundleStore {
  public:
   void ReceiveDateIntervalBundles(const std::vector<DateIntervalBundle>&
                                       incoming_date_interval_bundles) override {
-    if (emitting_) {
+    if (Emitting()) {
       return;
     }
-    const packages::detail::ScopedReentryFlag guard(emitting_);
+    const packages::detail::ScopedReentryFlag guard(Emitting());
     ProcessDateIntervalBundles(incoming_date_interval_bundles);
 
     ProcessBars();

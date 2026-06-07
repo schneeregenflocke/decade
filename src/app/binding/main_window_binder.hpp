@@ -65,13 +65,14 @@ inline void BindDateIntervalBundles(EventBus& bus,
   // Store -> Bus
   components.date_interval_bundle_store.SignalDateIntervalBundles().connect(
       [&bus](const std::vector<DateIntervalBundle>& value) {
-        bus.date_interval_bundles(value);
+        bus.date_interval_bundles()(value);
       });
 
   // Bus -> consumers
-  bus.date_interval_bundles.connect(&DateTablePanel::ReceiveDateIntervalBundles,
-                                    &components.data_table_panel);
-  bus.date_interval_bundles.connect(
+  bus.date_interval_bundles().connect(
+      &DateTablePanel::ReceiveDateIntervalBundles,
+      &components.data_table_panel);
+  bus.date_interval_bundles().connect(
       &TransformDateIntervalBundle::ReceiveDateIntervalBundles,
       &components.transform_date_interval_bundle);
 
@@ -80,11 +81,11 @@ inline void BindDateIntervalBundles(EventBus& bus,
       {.begin_days = 0, .end_days = 1});
   components.transform_date_interval_bundle.SignalTransformDateIntervalBundles()
       .connect([&bus](const std::vector<DateIntervalBundle>& value) {
-        bus.transformed_date_interval_bundles(value);
+        bus.transformed_date_interval_bundles()(value);
       });
 
   // Bus (transformed) -> CalendarPage
-  bus.transformed_date_interval_bundles.connect(
+  bus.transformed_date_interval_bundles().connect(
       &CalendarPage::ReceiveDateIntervalBundles, &components.calendar_page);
 }
 
@@ -93,43 +94,45 @@ inline void BindDateGroups(EventBus& bus, MainWindowComponents& components) {
       &DateGroupStore::ReceiveDateGroups, &components.date_groups_store);
 
   components.date_groups_store.SignalDateGroups().connect(
-      [&bus](const std::vector<DateGroup>& value) { bus.date_groups(value); });
+      [&bus](const std::vector<DateGroup>& value) {
+        bus.date_groups()(value);
+      });
 
-  bus.date_groups.connect(&DateGroupsTablePanel::ReceiveDateGroups,
-                          &components.date_groups_table_panel);
-  bus.date_groups.connect(&DateIntervalBundleStore::ReceiveDateGroups,
-                          &components.date_interval_bundle_store);
-  bus.date_groups.connect(&DateTablePanel::ReceiveDateGroups,
-                          &components.data_table_panel);
-  bus.date_groups.connect(&ElementsSetupsPanel::ReceiveDateGroups,
-                          &components.elements_setup_panel);
-  bus.date_groups.connect(&CalendarPage::ReceiveDateGroups,
-                          &components.calendar_page);
+  bus.date_groups().connect(&DateGroupsTablePanel::ReceiveDateGroups,
+                            &components.date_groups_table_panel);
+  bus.date_groups().connect(&DateIntervalBundleStore::ReceiveDateGroups,
+                            &components.date_interval_bundle_store);
+  bus.date_groups().connect(&DateTablePanel::ReceiveDateGroups,
+                            &components.data_table_panel);
+  bus.date_groups().connect(&ElementsSetupsPanel::ReceiveDateGroups,
+                            &components.elements_setup_panel);
+  bus.date_groups().connect(&CalendarPage::ReceiveDateGroups,
+                            &components.calendar_page);
 }
 
 inline void BindPageSetup(EventBus& bus, MainWindowComponents& components) {
-  components.page_setup_panel.signal_page_setup_config.connect(
+  components.page_setup_panel.SignalPageSetupConfig().connect(
       &PageSetupStore::ReceivePageSetup, &components.page_setup_store);
 
-  components.page_setup_store.signal_page_setup_config.connect(
-      [&bus](const PageSetupConfig& value) { bus.page_setup(value); });
+  components.page_setup_store.SignalPageSetupConfig().connect(
+      [&bus](const PageSetupConfig& value) { bus.page_setup()(value); });
 
-  bus.page_setup.connect(&PageSetupPanel::ReceivePageSetup,
-                         &components.page_setup_panel);
-  bus.page_setup.connect(&CalendarPage::ReceivePageSetup,
-                         &components.calendar_page);
-  bus.page_setup.connect(&GLCanvas::ReceivePageSetup, &components.gl_canvas);
+  bus.page_setup().connect(&PageSetupPanel::ReceivePageSetup,
+                           &components.page_setup_panel);
+  bus.page_setup().connect(&CalendarPage::ReceivePageSetup,
+                           &components.calendar_page);
+  bus.page_setup().connect(&GLCanvas::ReceivePageSetup, &components.gl_canvas);
 }
 
 // Font has no domain store — the panel value flows directly to the bus and on
 // to the renderer. If font ever needs to be persisted with a project, replace
 // this with a Panel -> FontStore -> Bus chain to match the other topics.
 inline void BindFont(EventBus& bus, MainWindowComponents& components) {
-  components.font_panel.signal_font_filepath.connect(
-      [&bus](const std::string& value) { bus.font_filepath(value); });
+  components.font_panel.SignalFontFilepath().connect(
+      [&bus](const std::string& value) { bus.font_filepath()(value); });
 
-  bus.font_filepath.connect(&CalendarPage::ReceiveFont,
-                            &components.calendar_page);
+  bus.font_filepath().connect(&CalendarPage::ReceiveFont,
+                              &components.calendar_page);
 }
 
 inline void BindTitleConfig(EventBus& bus, MainWindowComponents& components) {
@@ -137,12 +140,12 @@ inline void BindTitleConfig(EventBus& bus, MainWindowComponents& components) {
       &TitleConfigStore::ReceiveTitleConfig, &components.title_config_store);
 
   components.title_config_store.SignalTitleConfig().connect(
-      [&bus](const TitleConfig& value) { bus.title_config(value); });
+      [&bus](const TitleConfig& value) { bus.title_config()(value); });
 
-  bus.title_config.connect(&TitleSetupPanel::ReceiveTitleConfig,
-                           &components.title_setup_panel);
-  bus.title_config.connect(&CalendarPage::ReceiveTitleConfig,
-                           &components.calendar_page);
+  bus.title_config().connect(&TitleSetupPanel::ReceiveTitleConfig,
+                             &components.title_setup_panel);
+  bus.title_config().connect(&CalendarPage::ReceiveTitleConfig,
+                             &components.calendar_page);
 }
 
 inline void BindShapeConfiguration(EventBus& bus,
@@ -152,12 +155,12 @@ inline void BindShapeConfiguration(EventBus& bus,
       &components.shape_configuration_storage);
 
   components.shape_configuration_storage.SignalShapeConfigSet().connect(
-      [&bus](const ShapeConfigSet& value) { bus.shape_config_set(value); });
+      [&bus](const ShapeConfigSet& value) { bus.shape_config_set()(value); });
 
-  bus.shape_config_set.connect(&ElementsSetupsPanel::ReceiveShapeConfigSet,
-                               &components.elements_setup_panel);
-  bus.shape_config_set.connect(&CalendarPage::ReceiveShapeConfigSet,
-                               &components.calendar_page);
+  bus.shape_config_set().connect(&ElementsSetupsPanel::ReceiveShapeConfigSet,
+                                 &components.elements_setup_panel);
+  bus.shape_config_set().connect(&CalendarPage::ReceiveShapeConfigSet,
+                                 &components.calendar_page);
 }
 
 inline void BindCalendarConfig(EventBus& bus,
@@ -167,12 +170,12 @@ inline void BindCalendarConfig(EventBus& bus,
       &components.calendar_configuration_storage);
 
   components.calendar_configuration_storage.SignalCalendarConfig().connect(
-      [&bus](const CalendarConfig& value) { bus.calendar_config(value); });
+      [&bus](const CalendarConfig& value) { bus.calendar_config()(value); });
 
-  bus.calendar_config.connect(&CalendarSetupPanel::ReceiveCalendarConfig,
-                              &components.calendar_setup_panel);
-  bus.calendar_config.connect(&CalendarPage::ReceiveCalendarConfig,
-                              &components.calendar_page);
+  bus.calendar_config().connect(&CalendarSetupPanel::ReceiveCalendarConfig,
+                                &components.calendar_setup_panel);
+  bus.calendar_config().connect(&CalendarPage::ReceiveCalendarConfig,
+                                &components.calendar_page);
 }
 
 }  // namespace detail

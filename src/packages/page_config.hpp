@@ -8,9 +8,9 @@
 
 // Pure domain value. No serialization, no signal -> aggregate, copyable.
 struct PageSetupConfig {
-  std::array<float, 2> size;
-  std::array<float, 4> margins;
-  int orientation;
+  std::array<float, 2> size{};
+  std::array<float, 4> margins{};
+  int orientation{};
 };
 
 // Owns a PageSetupConfig value plus the change signal. Non-copyable. No
@@ -39,11 +39,13 @@ class PageSetupStore {
     return page_setup_config;
   }
 
-  sigslot::signal<const PageSetupConfig&> signal_page_setup_config;
-
-  PageSetupConfig page_setup_config;
+  [[nodiscard]] auto& SignalPageSetupConfig() {
+    return signal_page_setup_config;
+  }
 
  private:
+  sigslot::signal<const PageSetupConfig&> signal_page_setup_config;
+  PageSetupConfig page_setup_config;
   bool emitting_{false};
 };
 #endif  // PAGE_CONFIG_HPP

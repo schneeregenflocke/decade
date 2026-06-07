@@ -98,8 +98,8 @@ class LicenseInformationDialog : public wxDialog {
     EndModal(0);
   }
   void SelectLicense(const std::string& map_key) {
-    auto iter = std::find_if(
-        collected_licenses.cbegin(), collected_licenses.cend(),
+    auto iter = std::ranges::find_if(
+        collected_licenses,
         [&](const string_pair& compare) { return compare.first == map_key; });
 
     text_view_ctrl->Clear();

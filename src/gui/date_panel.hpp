@@ -152,11 +152,10 @@ class DateTablePanel : public wxPanel {
         table_widget->SetValue(std::to_string(0), row,
                                ColumnIndex(Columns::group));
         throw std::runtime_error("group cannot exist");
-      } else {
-        auto group_name =
-            date_group_store.GetName(date_interval_bundles[index].GetGroup());
-        table_widget->SetValue(group_name, row, ColumnIndex(Columns::group));
       }
+      auto group_name =
+          date_group_store.GetName(date_interval_bundles[index].GetGroup());
+      table_widget->SetValue(group_name, row, ColumnIndex(Columns::group));
 
       table_widget->SetValue(
           std::to_string(date_interval_bundles[index].GetGroupNumber() + 1),
@@ -360,8 +359,9 @@ class DateTablePanel : public wxPanel {
     }
   }
 
-  // NOLINTNEXTLINE(readability-convert-member-functions-to-static) — bound as
-  // wxEvtHandler callback.
+  // Bound as a wxEvtHandler callback, so it must stay a non-static member even
+  // though it ignores `this`.
+  // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
   void OnValueChanged(wxDataViewEvent& event) { (void)event; }
 
   void OnItemEditing(wxDataViewEvent& event) {
@@ -457,7 +457,7 @@ class DateTablePanel : public wxPanel {
   wxWeakRef<wxButton> deleteRowButton;
   wxWeakRef<wxComboBox> select_group_control;
 
-  date_format_descriptor date_format;
+  date_format_descriptor date_format{};
   DateGroupStore date_group_store;
   sigslot::signal<const std::vector<DateIntervalBundle>&>
       signal_table_date_interval_bundles;

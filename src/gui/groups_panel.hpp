@@ -80,9 +80,7 @@ class DateGroupsTablePanel : public wxPanel {
     data_table->AppendToggleColumn(L"Exclude", wxDATAVIEW_CELL_ACTIVATABLE);
   }
 
-  static std::wstring GetPanelName() {
-    return std::wstring(L"Date Group Table");
-  }
+  static std::wstring GetPanelName() { return {L"Date Group Table"}; }
 
   void ReceiveDateGroups(const std::vector<DateGroup>& argument_date_groups) {
     date_groups = argument_date_groups;

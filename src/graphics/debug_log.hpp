@@ -11,6 +11,10 @@
 namespace decade_debug {
 
 inline bool LogEnabled() {
+  // std::getenv is the only standard way to read the environment and is
+  // mt-unsafe by the C standard; the app never calls setenv, and this runs once
+  // in a thread-safe static initializer.
+  // NOLINTNEXTLINE(concurrency-mt-unsafe)
   static const bool enabled = std::getenv("DECADE_DEBUG_LOG") != nullptr;
   return enabled;
 }

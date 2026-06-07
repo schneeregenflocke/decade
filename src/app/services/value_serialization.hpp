@@ -37,7 +37,7 @@ namespace boost::serialization {
 template <class Archive>
 void save(Archive& ar, const DateGroup& group, const unsigned int /*v*/) {
   const int number = group.GetNumber();
-  const std::string name = group.GetName();
+  const std::string& name = group.GetName();
   const bool exclude = group.IsExcluded();
   ar& make_nvp("number", number);
   ar& make_nvp("name", name);
@@ -67,7 +67,7 @@ void save(Archive& ar, const DateIntervalBundle& bundle,
   const int group = bundle.GetGroup();
   const int group_number = bundle.GetGroupNumber();
   const bool exclude = bundle.IsExcluded();
-  const std::string comment = bundle.GetComment();
+  const std::string& comment = bundle.GetComment();
   ar& make_nvp("date_interval", date_interval);
   ar& make_nvp("date_inter_interval", date_inter_interval);
   ar& make_nvp("number", number);
@@ -78,9 +78,12 @@ void save(Archive& ar, const DateIntervalBundle& bundle,
 }
 template <class Archive>
 void load(Archive& ar, DateIntervalBundle& bundle, const unsigned int /*v*/) {
-  boost::gregorian::date_period date_interval(
-      boost::gregorian::date(boost::date_time::not_a_date_time),
-      boost::gregorian::date(boost::date_time::not_a_date_time));
+  // Placeholder ("not a date") endpoints; the real values are read from the
+  // archive below. A named temporary avoids the most-vexing-parse: written
+  // inline as date(...) inside the date_period(...) argument list, the
+  // construct is ambiguously parseable as a function declaration.
+  const boost::gregorian::date invalid_date(boost::date_time::not_a_date_time);
+  boost::gregorian::date_period date_interval(invalid_date, invalid_date);
   boost::gregorian::date_period date_inter_interval(date_interval);
   int number = 0;
   int group = 0;
@@ -116,7 +119,7 @@ template <class Archive>
 void save(Archive& ar, const TitleConfig& config, const unsigned int /*v*/) {
   const float frame_height = config.FrameHeight();
   const float font_size_ratio = config.FontSizeRatio();
-  const std::string title_text = config.TitleText();
+  const std::string& title_text = config.TitleText();
   const std::array<float, 4> text_color = config.TextColor();
   ar& make_nvp("frame_height", frame_height);
   ar& make_nvp("font_size_ratio", font_size_ratio);
@@ -143,7 +146,7 @@ void load(Archive& ar, TitleConfig& config, const unsigned int /*v*/) {
 template <class Archive>
 void save(Archive& ar, const ShapeConfiguration& config,
           const unsigned int /*v*/) {
-  const std::string name = config.Name();
+  const std::string& name = config.Name();
   const bool outline_visible = config.OutlineVisible();
   const bool fill_visible = config.FillVisible();
   const float line_width = config.LineWidthDisabled();
@@ -207,7 +210,8 @@ void save(Archive& ar, const CalendarConfig& config, const unsigned int /*v*/) {
   const int first_year = limits[0];
   const int last_year = limits[1];
   const bool auto_calendar_span = config.IsAutoCalendarSpan();
-  const std::vector<float> spacing_proportions = config.GetSpacingProportions();
+  const std::vector<float>& spacing_proportions =
+      config.GetSpacingProportions();
   ar& make_nvp("first_year", first_year);
   ar& make_nvp("last_year", last_year);
   ar& make_nvp("auto_calendar_span", auto_calendar_span);

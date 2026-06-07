@@ -86,7 +86,7 @@ class MouseInteraction {
     const glm::vec2 window_mouse_pos(static_cast<float>(mouse_pos_px.x),
                                      static_cast<float>(mouse_pos_px.y));
 
-    std::array<GLint, 4> viewport_px;
+    std::array<GLint, 4> viewport_px{};
     glGetIntegerv(GL_VIEWPORT, viewport_px.data());
     glm::vec4 const viewport(0.F, 0.F, static_cast<float>(viewport_px[2]),
                              static_cast<float>(viewport_px[3]));
@@ -98,7 +98,8 @@ class MouseInteraction {
     return mouse_pos_clip_space;
   }
 
-  glm::vec3 MouseWorldSpacePos(const wxPoint& mouse_pos_px, const MVP& mvp) {
+  static glm::vec3 MouseWorldSpacePos(const wxPoint& mouse_pos_px,
+                                      const MVP& mvp) {
     const glm::mat4 projection_matrix = mvp.GetProjection();
     const auto inverse_projection_matrix = glm::inverse(projection_matrix);
 

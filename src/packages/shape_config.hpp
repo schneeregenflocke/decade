@@ -134,8 +134,9 @@ class ShapeConfigSet {
 
   [[nodiscard]] ShapeConfiguration GetShapeConfiguration(
       const std::string& name) const {
-    auto found = std::find(shape_configurations.begin(),
-                           shape_configurations.end(), name);
+    auto found = std::ranges::find_if(
+        shape_configurations,
+        [&](const ShapeConfiguration& config) { return config == name; });
 
     if (found == shape_configurations.end()) {
       return {};

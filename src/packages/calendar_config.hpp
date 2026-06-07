@@ -84,9 +84,12 @@ class CalendarSpan {
   }
 
   [[nodiscard]] bool IsInSpan(const int year) const {
-    // NOLINTNEXTLINE(modernize-use-integer-sign-comparison) — greg_year is not
-    // a built-in integer type.
-    return year >= span.begin().year() && year <= span.last().year();
+    // greg_year is not a built-in integer type, so std::cmp_* does not apply;
+    // pull the endpoints into plain ints first to avoid a signed/unsigned
+    // comparison.
+    const int first_year = static_cast<int>(span.begin().year());
+    const int last_year = static_cast<int>(span.last().year());
+    return year >= first_year && year <= last_year;
   }
 
  private:

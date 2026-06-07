@@ -24,9 +24,10 @@ class FontPanel : public wxPanel {
                          wxDefaultSize, wxFNTP_FONTDESC_AS_LABEL)
                          .release();
 
+    constexpr int kSizerBorderPx = 5;
     wxBoxSizer* horizontal_sizer =
         std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
-    horizontal_sizer->Add(wx_font_picker, 1, wxALL | wxEXPAND, 5);
+    horizontal_sizer->Add(wx_font_picker, 1, wxALL | wxEXPAND, kSizerBorderPx);
     wxBoxSizer* vertical_sizer =
         std::make_unique<wxBoxSizer>(wxVERTICAL).release();
     vertical_sizer->Add(horizontal_sizer, 0, wxEXPAND);
@@ -43,10 +44,10 @@ class FontPanel : public wxPanel {
 
   const std::string& GetFontFilePath() const { return font_filepath; }
 
-  // sigslot::signal<const std::vector<unsigned char>&> signal_font_file_path;
-  sigslot::signal<const std::string&> signal_font_filepath;
+  [[nodiscard]] auto& SignalFontFilepath() { return signal_font_filepath; }
 
  private:
+  sigslot::signal<const std::string&> signal_font_filepath;
   void initConvertWxFontWeightToFcWeight() {
     fontWeightMap = {{wxFONTWEIGHT_THIN, FC_WEIGHT_THIN},
                      {wxFONTWEIGHT_EXTRALIGHT, FC_WEIGHT_EXTRALIGHT},
@@ -136,7 +137,7 @@ class FontPanel : public wxPanel {
     int const fc_slant = convertWxFontStyleToFcSlant(font_style);
     FcPatternAddInteger(pattern, FC_SLANT, fc_slant);
 
-    FcResult result;
+    FcResult result = FcResultNoMatch;
     FcPattern* match = FcFontMatch(ft_config, pattern, &result);
     FcChar8* name_unparse = FcNameUnparse(match);
     /*int name_unparse_len = strlen(reinterpret_cast<const

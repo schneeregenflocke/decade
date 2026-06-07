@@ -54,8 +54,7 @@ class DateGroups {
     auto find_lambda = [&](const DateGroup& compare) {
       return compare.GetName() == name;
     };
-    auto found =
-        std::find_if(date_groups.cbegin(), date_groups.cend(), find_lambda);
+    auto found = std::ranges::find_if(date_groups, find_lambda);
     if (found != date_groups.end()) {
       return found->GetNumber();
     }
@@ -66,8 +65,7 @@ class DateGroups {
     auto find_lambda = [&](const DateGroup& compare) {
       return compare.GetNumber() == number;
     };
-    auto found =
-        std::find_if(date_groups.cbegin(), date_groups.cend(), find_lambda);
+    auto found = std::ranges::find_if(date_groups, find_lambda);
     if (found != date_groups.end()) {
       return found->GetName();
     }

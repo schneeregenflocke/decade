@@ -24,8 +24,14 @@ class PageSetupPanel : public wxPanel {
     dialog_data.SetPrintData(print_data);
     dialog_data.SetPaperId(wxPaperSize::wxPAPER_A4);
     dialog_data.CalculatePaperSizeFromId();
-    dialog_data.SetMarginTopLeft(wxPoint(15, 15));
-    dialog_data.SetMarginBottomRight(wxPoint(15, 15));
+
+    constexpr int kPageMarginMm = 15;
+    constexpr int kLabelMinWidthPx = 75;
+    constexpr double kMaxPageSizeMm = 2000.0;
+    constexpr int kSizerBorderPx = 5;
+
+    dialog_data.SetMarginTopLeft(wxPoint(kPageMarginMm, kPageMarginMm));
+    dialog_data.SetMarginBottomRight(wxPoint(kPageMarginMm, kPageMarginMm));
 
     wxStaticBoxSizer* static_box_sizer =
         std::make_unique<wxStaticBoxSizer>(wxVERTICAL, this, L"Paper Format")
@@ -39,34 +45,36 @@ class PageSetupPanel : public wxPanel {
 
     wxStaticText* page_width_label =
         std::make_unique<wxStaticText>(this, wxID_ANY, L"Width").release();
-    page_width_label->SetMinSize(wxSize(75, -1));
+    page_width_label->SetMinSize(wxSize(kLabelMinWidthPx, -1));
 
     wxStaticText* page_height_label =
         std::make_unique<wxStaticText>(this, wxID_ANY, L"Height").release();
-    page_height_label->SetMinSize(wxSize(75, -1));
+    page_height_label->SetMinSize(wxSize(kLabelMinWidthPx, -1));
 
     page_width_spinctrl =
         std::make_unique<wxSpinCtrlDouble>(this, ID_PAGE_WIDTH).release();
-    page_width_spinctrl->SetRange(.0, 2000.);
+    page_width_spinctrl->SetRange(.0, kMaxPageSizeMm);
 
     page_height_spinctrl =
         std::make_unique<wxSpinCtrlDouble>(this, ID_PAGE_HEIGHT).release();
-    page_height_spinctrl->SetRange(.0, 2000.);
+    page_height_spinctrl->SetRange(.0, kMaxPageSizeMm);
 
     horizontal_sizer0->Add(page_setup_dialog_button, 1, wxEXPAND | wxALL,
-                           5);  //| wxALIGN_CENTER_VERTICAL
+                           kSizerBorderPx);  //| wxALIGN_CENTER_VERTICAL
 
     wxBoxSizer* horizontal_sizer1 =
         std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
     horizontal_sizer1->Add(page_width_label, 0, wxALL | wxALIGN_CENTER_VERTICAL,
-                           5);
-    horizontal_sizer1->Add(page_width_spinctrl, 1, wxEXPAND | wxALL, 5);
+                           kSizerBorderPx);
+    horizontal_sizer1->Add(page_width_spinctrl, 1, wxEXPAND | wxALL,
+                           kSizerBorderPx);
 
     wxBoxSizer* horizontal_sizer2 =
         std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
     horizontal_sizer2->Add(page_height_label, 0,
-                           wxALL | wxALIGN_CENTER_VERTICAL, 5);
-    horizontal_sizer2->Add(page_height_spinctrl, 1, wxEXPAND | wxALL, 5);
+                           wxALL | wxALIGN_CENTER_VERTICAL, kSizerBorderPx);
+    horizontal_sizer2->Add(page_height_spinctrl, 1, wxEXPAND | wxALL,
+                           kSizerBorderPx);
 
     static_box_sizer->Add(horizontal_sizer0, 0, wxEXPAND);
     static_box_sizer->Add(horizontal_sizer1, 0, wxEXPAND);
@@ -151,9 +159,12 @@ class PageSetupPanel : public wxPanel {
 
   void SendDefaultValues() { SendPageSetup(); }
 
-  sigslot::signal<const PageSetupConfig&> signal_page_setup_config;
+  [[nodiscard]] auto& SignalPageSetupConfig() {
+    return signal_page_setup_config;
+  }
 
  private:
+  sigslot::signal<const PageSetupConfig&> signal_page_setup_config;
   void UpdateSpinControl() {
     const wxPrintData print_data = dialog_data.GetPrintData();
     const wxSize paper_size = dialog_data.GetPaperSize();
