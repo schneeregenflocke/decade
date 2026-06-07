@@ -30,6 +30,7 @@
 #include "../gui/font_panel.hpp"
 #include "../gui/groups_panel.hpp"
 #include "../gui/license_panel.hpp"
+#include "../gui/main_menu.hpp"
 #include "../gui/opengl_panel.hpp"
 #include "../gui/page_panel.hpp"
 #include "../gui/shape_panel.hpp"
@@ -83,8 +84,7 @@ class MainWindow : public wxFrame {
   std::string xml_file_path;
   wxTimer exit_timer;
 
-  const int id_save_xml;
-  const int id_save_as_xml;
+  MainMenu menu;
 };
 
 namespace main_window_detail {
@@ -127,8 +127,7 @@ inline MainWindow::MainWindow(wxWindow* parent, const wxString& title,
     : wxFrame(parent, wxID_ANY, title, pos, size),
       impl_(std::make_unique<Impl>()),
       exit_timer(this),
-      id_save_xml(wxWindow::NewControlId()),
-      id_save_as_xml(wxWindow::NewControlId()) {
+      menu(GLCanvas::kExportPngDpi) {
   CreateLayout(maximize_on_start);
   InitMenu();
   InitializeOpenGL();
@@ -314,44 +313,18 @@ inline void MainWindow::ConfigureAutoExitTimer() {
 }
 
 inline void MainWindow::InitMenu() {
-  const int id_export_png = wxWindow::NewControlId();
-  const int id_import_csv = wxWindow::NewControlId();
-  const int id_export_csv = wxWindow::NewControlId();
-  const int id_open_xml = wxWindow::NewControlId();
-  const int id_license_info = wxWindow::NewControlId();
+  const MainMenuIds& ids = menu.Ids();
 
-  Bind(wxEVT_MENU, &MainWindow::CallbackLoadXML, this, id_open_xml);
-  Bind(wxEVT_MENU, &MainWindow::CallbackSaveXML, this, id_save_xml);
-  Bind(wxEVT_MENU, &MainWindow::CallbackSaveXML, this, id_save_as_xml);
-  Bind(wxEVT_MENU, &MainWindow::CallbackImportCSV, this, id_import_csv);
-  Bind(wxEVT_MENU, &MainWindow::CallbackExportCSV, this, id_export_csv);
-  Bind(wxEVT_MENU, &MainWindow::CallbackExportPNG, this, id_export_png);
+  Bind(wxEVT_MENU, &MainWindow::CallbackLoadXML, this, ids.open_xml);
+  Bind(wxEVT_MENU, &MainWindow::CallbackSaveXML, this, ids.save_xml);
+  Bind(wxEVT_MENU, &MainWindow::CallbackSaveXML, this, ids.save_as_xml);
+  Bind(wxEVT_MENU, &MainWindow::CallbackImportCSV, this, ids.import_csv);
+  Bind(wxEVT_MENU, &MainWindow::CallbackExportCSV, this, ids.export_csv);
+  Bind(wxEVT_MENU, &MainWindow::CallbackExportPNG, this, ids.export_png);
   Bind(wxEVT_MENU, &MainWindow::CallbackExit, this, wxID_EXIT);
-  Bind(wxEVT_MENU, &MainWindow::CallbackLicenseInfo, this, id_license_info);
+  Bind(wxEVT_MENU, &MainWindow::CallbackLicenseInfo, this, ids.license_info);
 
-  auto menu_bar = std::make_unique<wxMenuBar>();
-  auto* menu_bar_ptr = menu_bar.release();
-  SetMenuBar(menu_bar_ptr);
-
-  auto menu_file = std::make_unique<wxMenu>();
-  auto* menu_file_ptr = menu_file.release();
-  menu_bar_ptr->Append(menu_file_ptr, "&File");
-  menu_file_ptr->Append(id_open_xml, L"&Open...");
-  menu_file_ptr->AppendSeparator();
-  menu_file_ptr->Append(id_save_xml, L"&Save \tCTRL+S");
-  menu_file_ptr->Append(id_save_as_xml, L"&Save As...");
-  menu_file_ptr->AppendSeparator();
-  menu_file_ptr->Append(id_import_csv, L"&Import csv...");
-  menu_file_ptr->Append(id_export_csv, L"&Export csv...");
-  menu_file_ptr->AppendSeparator();
-  menu_file_ptr->Append(id_export_png, L"&Export png (600 dpi)...");
-  menu_file_ptr->AppendSeparator();
-  menu_file_ptr->Append(wxID_EXIT);
-
-  auto menu_help = std::make_unique<wxMenu>();
-  auto* menu_help_ptr = menu_help.release();
-  menu_bar_ptr->Append(menu_help_ptr, "&Help");
-  menu_help_ptr->Append(id_license_info, L"&Open Source Licenses");
+  menu.AttachTo(*this);
 }
 
 inline void MainWindow::CallbackLoadXML(wxCommandEvent& event) {
@@ -370,12 +343,13 @@ inline void MainWindow::CallbackLoadXML(wxCommandEvent& event) {
 }
 
 inline void MainWindow::CallbackSaveXML(wxCommandEvent& event) {
-  if (event.GetId() == id_save_xml && !xml_file_path.empty()) {
+  const MainMenuIds& ids = menu.Ids();
+  if (event.GetId() == ids.save_xml && !xml_file_path.empty()) {
     SaveXML(xml_file_path);
     return;
   }
 
-  if (event.GetId() != id_save_as_xml && !xml_file_path.empty()) {
+  if (event.GetId() != ids.save_as_xml && !xml_file_path.empty()) {
     return;
   }
 

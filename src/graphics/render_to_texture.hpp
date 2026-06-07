@@ -3,26 +3,35 @@
 
 #include <epoxy/gl.h>
 
+#include <array>
 #include <vector>
 
 #include "texture_object.hpp"
 
+// Owns a single OpenGL renderbuffer handle. Non-copyable/non-movable because
+// the destructor deletes the handle — a copy would delete it twice.
 class RenderBuffer {
  public:
-  explicit RenderBuffer() { glGenRenderbuffers(1, &name); }
+  RenderBuffer() { glGenRenderbuffers(1, &name); }
 
   ~RenderBuffer() { glDeleteRenderbuffers(1, &name); }
+
+  RenderBuffer(const RenderBuffer&) = delete;
+  RenderBuffer& operator=(const RenderBuffer&) = delete;
+  RenderBuffer(RenderBuffer&&) = delete;
+  RenderBuffer& operator=(RenderBuffer&&) = delete;
 
   [[nodiscard]] GLuint Name() const { return name; }
 
  private:
-  GLuint name;
+  GLuint name{0};
 };
 
+// Owns a single OpenGL framebuffer plus its colour texture and depth
+// renderbuffer. Non-copyable/non-movable for the same reason as RenderBuffer.
 class FrameBuffer {
  public:
-  explicit FrameBuffer(GLsizei width, GLsizei height, GLsizei samples,
-                       bool msaa) {
+  FrameBuffer(GLsizei width, GLsizei height, GLsizei samples, bool msaa) {
     glGenFramebuffers(1, &name);
 
     if (!msaa) {
@@ -68,6 +77,11 @@ class FrameBuffer {
 
   ~FrameBuffer() { glDeleteFramebuffers(1, &name); }
 
+  FrameBuffer(const FrameBuffer&) = delete;
+  FrameBuffer& operator=(const FrameBuffer&) = delete;
+  FrameBuffer(FrameBuffer&&) = delete;
+  FrameBuffer& operator=(FrameBuffer&&) = delete;
+
   [[nodiscard]] GLenum CheckStatus() const {
     glBindFramebuffer(GL_FRAMEBUFFER, name);
     GLenum const status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -80,7 +94,7 @@ class FrameBuffer {
   [[nodiscard]] GLuint TextureName() const { return texture.Name(); }
 
  private:
-  GLuint name;
+  GLuint name{0};
   Texture texture;
   RenderBuffer render_buffer;
 };
@@ -90,34 +104,19 @@ class RenderToTexture {
   RenderToTexture(GLsizei width_in, GLsizei height_in, GLsizei samples_in)
       : width(width_in),
         height(height_in),
-        samples(samples_in),
         frame_buffer(width_in, height_in, samples_in, false),
         frame_buffer_msaa(width_in, height_in, samples_in, true) {
-    pixel_size = 4 * sizeof(GLubyte);
-
-    /*int gl_max_texture_size = 0;
-    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &gl_max_texture_size);
-
-    int gl_max_renderbuffer_size = 0;
-    glGetIntegerv(GL_MAX_RENDERBUFFER_SIZE, &gl_max_renderbuffer_size);
-
-    int gl_max_samples = 0;
-    glGetIntegerv(GL_MAX_SAMPLES, &gl_max_samples);
-
-    int gl_max_viewport_dims = 0;
-    glGetIntegerv(GL_MAX_VIEWPORT_DIMS, &gl_max_viewport_dims);*/
-
     if (frame_buffer.CheckStatus() == GL_FRAMEBUFFER_COMPLETE &&
         frame_buffer_msaa.CheckStatus() == GL_FRAMEBUFFER_COMPLETE) {
       valid = true;
     }
   }
 
-  bool Valid() const { return valid; }
+  [[nodiscard]] bool Valid() const { return valid; }
 
   void BeginRender() {
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
+    std::array<GLint, 4> viewport{};
+    glGetIntegerv(GL_VIEWPORT, viewport.data());
 
     restore_width = viewport[2];
     restore_height = viewport[3];
@@ -150,9 +149,10 @@ class RenderToTexture {
   }
 
  private:
+  static constexpr GLsizei kBytesPerPixel = 4;
+
   GLsizei width;
   GLsizei height;
-  GLsizei samples;
 
   FrameBuffer frame_buffer;
   FrameBuffer frame_buffer_msaa;
@@ -160,7 +160,7 @@ class RenderToTexture {
   GLint restore_width{0};
   GLint restore_height{0};
 
-  GLsizei pixel_size{0};
+  GLsizei pixel_size{kBytesPerPixel};
   std::vector<unsigned char> image;
 
   bool valid{false};

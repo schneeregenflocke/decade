@@ -93,6 +93,12 @@ inline void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id,
 
 class GLCanvas : public wxGLCanvas {
  public:
+  // Resolution and multisampling used by the PNG export (SavePNG). Kept public
+  // so the menu label can be derived from the same value — single source of
+  // truth instead of repeating the number in a hard-coded string.
+  static constexpr int kExportPngDpi = 200;
+  static constexpr int kExportMsaaSamples = 16;
+
   explicit GLCanvas(wxWindow* parent)
       : wxGLCanvas(parent, DisplayAttributes()) {
     std::cout << "wxGLCanvas IsDisplaySupported " << std::boolalpha
@@ -252,10 +258,9 @@ class GLCanvas : public wxGLCanvas {
   }
 
   void SavePNG(std::string file_path) {
-    const int dpi = 600;
-    const int msaa_samples = 16;
-    RenderToPNG const render_to_png(std::move(file_path), page_size, dpi,
-                                    graphics_engine, msaa_samples);
+    RenderToPNG const render_to_png(std::move(file_path), page_size,
+                                    kExportPngDpi, graphics_engine,
+                                    kExportMsaaSamples);
   }
 
   // Dumps the current window framebuffer (what is actually on screen) to PNG.

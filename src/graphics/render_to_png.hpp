@@ -26,6 +26,22 @@ extern "C" {
 #include <zlib.h>
 }
 
+// One tile of the final image. The full picture is rendered in pieces because
+// a single FBO/texture is capped at kStandardTextureSize (4096) per side; a
+// 200-dpi page easily exceeds that. `viewport` is the tile's pixel size,
+// `dimension` the slice of the orthographic world it maps to, `image` the
+// rendered RGBA pixels.
+//
+// On MSAA at the seams (a question worth recording): the tiles do *not* overlap
+// and they must not. Each tile covers an integer-pixel region whose projection
+// maps that region exactly onto the tile's pixel grid, and every tile boundary
+// falls on a pixel edge that both neighbours share. So every output pixel is
+// owned by exactly one tile and is MSAA-resolved (the blit in RenderToTexture)
+// using only that tile's samples — there is no pixel split across two resolves.
+// The full scene is drawn into every tile, just clipped by the per-tile
+// projection, so geometry crossing a seam gets correct coverage on each side
+// and the halves line up. Adding overlap would re-render shared pixels and
+// blend them twice, which is exactly what we avoid.
 struct ImagePart {
   std::array<GLsizei, 2> viewport{0, 0};
   rectf dimension;
@@ -279,7 +295,7 @@ class ImageComposer {
   float height_ortho_standard{0.0F};
   float width_ortho_remainder{0.0F};
   float height_ortho_remainder{0.0F};
-  const int msaa_samples;
+  int msaa_samples;
 
   static constexpr size_t kBytesPerPixel = 4;
   static constexpr size_t kStandardTextureSize = 4096;
@@ -294,7 +310,6 @@ class RenderToPNG {
       : file_path(std::move(file_path_in)),
         ortho_dimensions(image_dimension),
         dpi(dpi_in),
-
         graphics_engine(std::move(graphics_engine_in)),
         msaa_samples(msaa_samples_in) {
     RenderPicture();
@@ -405,7 +420,8 @@ class RenderToPNG {
 
     const auto png_width = static_cast<png_uint_32>(size.width);
     const auto png_height = static_cast<png_uint_32>(size.height);
-    png_set_IHDR(png_ptr, info_ptr, png_width, png_height, 8,
+    constexpr int kBitDepth = 8;  // bits per RGBA channel
+    png_set_IHDR(png_ptr, info_ptr, png_width, png_height, kBitDepth,
                  PNG_COLOR_TYPE_RGB_ALPHA, PNG_INTERLACE_NONE,
                  PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 
@@ -444,9 +460,9 @@ class RenderToPNG {
     return dots_per_millimeter;
   }
 
-  const std::string file_path;
-  const rectf ortho_dimensions;
-  const float dpi;
+  std::string file_path;
+  rectf ortho_dimensions;
+  float dpi;
   size_t image_width{0};
   size_t image_height{0};
   std::shared_ptr<GraphicsEngine> graphics_engine;
