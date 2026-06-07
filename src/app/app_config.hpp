@@ -22,7 +22,7 @@ inline MainWindowConfig DefaultMainWindowConfig() {
   return {.title = "Decade",
           .position = wxPoint(kMainWindowPosX, kMainWindowPosY),
           .size = wxSize(kMainWindowWidth, kMainWindowHeight),
-          .maximize_on_start = true};
+          .maximize_on_start = false};
 }
 }  // namespace app
 
