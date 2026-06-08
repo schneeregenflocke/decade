@@ -1,15 +1,12 @@
-#ifndef SHAPE_CONFIG_HPP
-#define SHAPE_CONFIG_HPP
+#ifndef SHAPE_CONFIGURATION_HPP
+#define SHAPE_CONFIGURATION_HPP
 
 #include <algorithm>
 #include <array>
 #include <glm/vec4.hpp>
-#include <sigslot/signal.hpp>
 #include <string>
 #include <utility>
 #include <vector>
-
-#include "detail/reentry_guard.hpp"
 
 // Pure domain value: the visual configuration of one shape kind. No
 // serialization, no signal -> Rule of Zero, copyable.
@@ -118,27 +115,27 @@ class ShapeConfiguration {
 class ShapeConfigSet {
  public:
   ShapeConfigSet()
-      : shape_configurations(BuildDefaults()),
-        number_persistent_configurations(shape_configurations.size()) {}
+      : shape_configurations_(BuildDefaults()),
+        number_persistent_configurations_(shape_configurations_.size()) {}
 
-  [[nodiscard]] size_t size() const { return shape_configurations.size(); }
+  [[nodiscard]] size_t size() const { return shape_configurations_.size(); }
 
-  void resize(size_t size) { shape_configurations.resize(size); }
+  void resize(size_t size) { shape_configurations_.resize(size); }
 
   ShapeConfiguration& operator[](size_t index) {
-    return shape_configurations.at(index);
+    return shape_configurations_.at(index);
   }
   const ShapeConfiguration& operator[](size_t index) const {
-    return shape_configurations.at(index);
+    return shape_configurations_.at(index);
   }
 
   [[nodiscard]] ShapeConfiguration GetShapeConfiguration(
       const std::string& name) const {
     auto found = std::ranges::find_if(
-        shape_configurations,
+        shape_configurations_,
         [&](const ShapeConfiguration& config) { return config == name; });
 
-    if (found == shape_configurations.end()) {
+    if (found == shape_configurations_.end()) {
       return {};
     }
     return *found;
@@ -156,29 +153,30 @@ class ShapeConfigSet {
   // a group's configuration can be addressed by its index directly.
   [[nodiscard]] ShapeConfiguration GetDynamicConfiguration(
       size_t group_index) const {
-    const size_t storage_index = number_persistent_configurations + group_index;
-    if (storage_index >= shape_configurations.size()) {
+    const size_t storage_index =
+        number_persistent_configurations_ + group_index;
+    if (storage_index >= shape_configurations_.size()) {
       return {};
     }
-    return shape_configurations.at(storage_index);
+    return shape_configurations_.at(storage_index);
   }
 
   [[nodiscard]] size_t GetNumberPersistentConfigurations() const {
-    return number_persistent_configurations;
+    return number_persistent_configurations_;
   }
 
   // Raw access for non-intrusive serialization in the infrastructure layer.
   [[nodiscard]] const std::vector<ShapeConfiguration>& Configurations() const {
-    return shape_configurations;
+    return shape_configurations_;
   }
   [[nodiscard]] std::vector<ShapeConfiguration>& MutableConfigurations() {
-    return shape_configurations;
+    return shape_configurations_;
   }
   [[nodiscard]] size_t NumberPersistent() const {
-    return number_persistent_configurations;
+    return number_persistent_configurations_;
   }
   void SetNumberPersistent(size_t value) {
-    number_persistent_configurations = value;
+    number_persistent_configurations_ = value;
   }
 
  private:
@@ -243,45 +241,7 @@ class ShapeConfigSet {
     };
   }
 
-  std::vector<ShapeConfiguration> shape_configurations;
-  size_t number_persistent_configurations{0};
+  std::vector<ShapeConfiguration> shape_configurations_;
+  size_t number_persistent_configurations_{0};
 };
-
-// Owns a ShapeConfigSet value plus the change signal and re-entry guard. Has
-// identity -> non-copyable. The signal carries the value, so the store needs no
-// set-API delegation: consumers work with the ShapeConfigSet value directly.
-class ShapeConfigurationStorage {
- public:
-  ShapeConfigurationStorage() = default;
-  ~ShapeConfigurationStorage() = default;
-  ShapeConfigurationStorage(const ShapeConfigurationStorage&) = delete;
-  ShapeConfigurationStorage(ShapeConfigurationStorage&&) = delete;
-  ShapeConfigurationStorage& operator=(const ShapeConfigurationStorage&) =
-      delete;
-  ShapeConfigurationStorage& operator=(ShapeConfigurationStorage&&) = delete;
-
-  void ReceiveShapeConfigSet(const ShapeConfigSet& incoming_shape_config_set) {
-    if (emitting_) {
-      return;
-    }
-    const packages::detail::ScopedReentryFlag guard(emitting_);
-    shape_config_set = incoming_shape_config_set;
-    signal_shape_config_set(shape_config_set);
-  }
-
-  void SendShapeConfigSet() { signal_shape_config_set(shape_config_set); }
-
-  [[nodiscard]] const ShapeConfigSet& GetShapeConfigSet() const {
-    return shape_config_set;
-  }
-
-  sigslot::signal<const ShapeConfigSet&>& SignalShapeConfigSet() {
-    return signal_shape_config_set;
-  }
-
- private:
-  ShapeConfigSet shape_config_set;
-  sigslot::signal<const ShapeConfigSet&> signal_shape_config_set;
-  bool emitting_{false};
-};
-#endif  // SHAPE_CONFIG_HPP
+#endif  // SHAPE_CONFIGURATION_HPP

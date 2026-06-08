@@ -4,7 +4,8 @@
 #include <boost/date_time/period.hpp>
 #include <vector>
 
-#include "packages/date_store.hpp"
+#include "packages/date_interval_bundle.hpp"
+#include "packages/transform_date_interval_bundle.hpp"
 
 namespace {
 

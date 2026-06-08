@@ -30,35 +30,35 @@ class TitleSetupPanel : public wxPanel {
     auto* vertical_sizer = std::make_unique<wxBoxSizer>(wxVERTICAL).release();
     SetSizer(vertical_sizer);
 
-    frame_height_ctrl = std::make_unique<wxSpinCtrlDouble>(this).release();
-    frame_height_ctrl->SetDigits(2);
-    AddLabelledRow(vertical_sizer, L"Frame Height", frame_height_ctrl,
+    frame_height_ctrl_ = std::make_unique<wxSpinCtrlDouble>(this).release();
+    frame_height_ctrl_->SetDigits(2);
+    AddLabelledRow(vertical_sizer, L"Frame Height", frame_height_ctrl_,
                    row_flags, label_flags, field_flags, kLabelWidth);
 
-    size_ratio_ctrl = std::make_unique<wxSpinCtrlDouble>(this).release();
-    size_ratio_ctrl->SetDigits(2);
-    size_ratio_ctrl->SetIncrement(kSizeRatioIncrement);
-    AddLabelledRow(vertical_sizer, L"Font Size Ratio", size_ratio_ctrl,
+    size_ratio_ctrl_ = std::make_unique<wxSpinCtrlDouble>(this).release();
+    size_ratio_ctrl_->SetDigits(2);
+    size_ratio_ctrl_->SetIncrement(kSizeRatioIncrement);
+    AddLabelledRow(vertical_sizer, L"Font Size Ratio", size_ratio_ctrl_,
                    row_flags, label_flags, field_flags, kLabelWidth);
 
-    title_text_edit = std::make_unique<wxTextCtrl>(this, wxID_ANY).release();
-    AddLabelledRow(vertical_sizer, L"Text", title_text_edit, row_flags,
+    title_text_edit_ = std::make_unique<wxTextCtrl>(this, wxID_ANY).release();
+    AddLabelledRow(vertical_sizer, L"Text", title_text_edit_, row_flags,
                    label_flags, field_flags, kLabelWidth);
 
     constexpr int kAlphaMax = 255;
-    text_color_picker =
+    text_color_picker_ =
         std::make_unique<wxColourPickerCtrl>(
             this, wxID_ANY, *wxStockGDI::GetColour(wxStockGDI::COLOUR_BLACK))
             .release();
-    AddLabelledRow(vertical_sizer, L"Color", text_color_picker, row_flags,
+    AddLabelledRow(vertical_sizer, L"Color", text_color_picker_, row_flags,
                    label_flags, field_flags, kLabelWidth);
 
-    alpha_slider =
+    alpha_slider_ =
         std::make_unique<wxSlider>(this, wxID_ANY, kAlphaMax, 0, kAlphaMax,
                                    wxDefaultPosition, wxDefaultSize,
                                    wxSL_HORIZONTAL | wxSL_LABELS)
             .release();
-    AddLabelledRow(vertical_sizer, L"Transparency", alpha_slider, row_flags,
+    AddLabelledRow(vertical_sizer, L"Transparency", alpha_slider_, row_flags,
                    label_flags, field_flags, kLabelWidth);
 
     vertical_sizer->Layout();
@@ -76,15 +76,15 @@ class TitleSetupPanel : public wxPanel {
 
   void SendDefaultValues() { SendTitleConfig(); }
 
-  void SendTitleConfig() { signal_title_config(title_config); }
+  void SendTitleConfig() { signal_title_config_(title_config_); }
 
   void ReceiveTitleConfig(const TitleConfig& incoming_title_config) {
-    title_config = incoming_title_config;
+    title_config_ = incoming_title_config;
     UpdateWidgetForSelection();
   }
 
   sigslot::signal<const TitleConfig&>& SignalTitleConfig() {
-    return signal_title_config;
+    return signal_title_config_;
   }
 
  private:
@@ -114,38 +114,38 @@ class TitleSetupPanel : public wxPanel {
   }
 
   void UpdateWidgetForSelection() {
-    frame_height_ctrl->SetValue(
-        static_cast<double>(title_config.FrameHeight()));
-    size_ratio_ctrl->SetValue(
-        static_cast<double>(title_config.FontSizeRatio()));
+    frame_height_ctrl_->SetValue(
+        static_cast<double>(title_config_.FrameHeight()));
+    size_ratio_ctrl_->SetValue(
+        static_cast<double>(title_config_.FontSizeRatio()));
 
-    title_text_edit->ChangeValue(title_config.TitleText());
+    title_text_edit_->ChangeValue(title_config_.TitleText());
 
-    const std::array<float, 4>& text_color = title_config.TextColor();
-    text_color_picker->SetColour(wxColour(
+    const std::array<float, 4>& text_color = title_config_.TextColor();
+    text_color_picker_->SetColour(wxColour(
         ToByte(text_color[0]), ToByte(text_color[1]), ToByte(text_color[2])));
-    alpha_slider->SetValue(static_cast<int>(ToByte(text_color[3])));
+    alpha_slider_->SetValue(static_cast<int>(ToByte(text_color[3])));
   }
 
   void CallbackSpinControl(wxSpinDoubleEvent& event) {
     auto float_value = static_cast<float>(event.GetValue());
 
-    if (frame_height_ctrl.get() == event.GetEventObject()) {
-      title_config.SetFrameHeight(float_value);
+    if (frame_height_ctrl_.get() == event.GetEventObject()) {
+      title_config_.SetFrameHeight(float_value);
 
       SendTitleConfig();
     }
 
-    if (size_ratio_ctrl.get() == event.GetEventObject()) {
-      title_config.SetFontSizeRatio(float_value);
+    if (size_ratio_ctrl_.get() == event.GetEventObject()) {
+      title_config_.SetFontSizeRatio(float_value);
 
       SendTitleConfig();
     }
   }
 
   void CallbackTextControl(wxCommandEvent& event) {
-    if (title_text_edit.get() == event.GetEventObject()) {
-      title_config.SetTitleText(event.GetString().ToStdString());
+    if (title_text_edit_.get() == event.GetEventObject()) {
+      title_config_.SetTitleText(event.GetString().ToStdString());
 
       SendTitleConfig();
     }
@@ -153,32 +153,32 @@ class TitleSetupPanel : public wxPanel {
 
   void CallbackColorPickerControl(wxColourPickerEvent& event) {
     const wxColour color = event.GetColour();
-    std::array<float, 4> text_color = title_config.TextColor();
+    std::array<float, 4> text_color = title_config_.TextColor();
     text_color[0] = ToChannel(color.Red());
     text_color[1] = ToChannel(color.Green());
     text_color[2] = ToChannel(color.Blue());
-    title_config.SetTextColor(text_color);
+    title_config_.SetTextColor(text_color);
 
     SendTitleConfig();
   }
 
   void CallbackSliderControl(wxCommandEvent& event) {
-    std::array<float, 4> text_color = title_config.TextColor();
+    std::array<float, 4> text_color = title_config_.TextColor();
     text_color[3] = ToChannel(event.GetInt());
-    title_config.SetTextColor(text_color);
+    title_config_.SetTextColor(text_color);
 
     SendTitleConfig();
   }
 
-  TitleConfig title_config;
-  sigslot::signal<const TitleConfig&> signal_title_config;
+  TitleConfig title_config_;
+  sigslot::signal<const TitleConfig&> signal_title_config_;
 
-  wxWeakRef<wxSpinCtrlDouble> frame_height_ctrl;
-  wxWeakRef<wxSpinCtrlDouble> size_ratio_ctrl;
+  wxWeakRef<wxSpinCtrlDouble> frame_height_ctrl_;
+  wxWeakRef<wxSpinCtrlDouble> size_ratio_ctrl_;
 
-  wxWeakRef<wxTextCtrl> title_text_edit;
+  wxWeakRef<wxTextCtrl> title_text_edit_;
 
-  wxWeakRef<wxColourPickerCtrl> text_color_picker;
-  wxWeakRef<wxSlider> alpha_slider;
+  wxWeakRef<wxColourPickerCtrl> text_color_picker_;
+  wxWeakRef<wxSlider> alpha_slider_;
 };
 #endif  // TITLE_PANEL_HPP

@@ -41,12 +41,13 @@
 #include "../gui/page_panel.hpp"
 #include "../gui/shape_panel.hpp"
 #include "../gui/title_panel.hpp"
-#include "../packages/calendar_config.hpp"
-#include "../packages/date_store.hpp"
-#include "../packages/group_store.hpp"
-#include "../packages/page_config.hpp"
-#include "../packages/shape_config.hpp"
-#include "../packages/title_config.hpp"
+#include "../packages/calendar_config_store.hpp"
+#include "../packages/date_group_store.hpp"
+#include "../packages/date_interval_bundle_store.hpp"
+#include "../packages/page_setup_store.hpp"
+#include "../packages/shape_configuration_store.hpp"
+#include "../packages/title_config_store.hpp"
+#include "../packages/transform_date_interval_bundle.hpp"
 #include "binding/calendar_page.hpp"
 #include "binding/event_bus.hpp"
 #include "binding/main_window_binder.hpp"
@@ -91,10 +92,10 @@ class MainWindow : public wxFrame {
   struct Impl;
   std::unique_ptr<Impl> impl_;
 
-  std::string xml_file_path;
-  wxTimer exit_timer;
+  std::string xml_file_path_;
+  wxTimer exit_timer_;
 
-  MainMenu menu;
+  MainMenu menu_;
   app::RuntimeOptions runtime_options_;
 };
 
@@ -127,8 +128,8 @@ struct MainWindow::Impl {
   TransformDateIntervalBundle transform_date_interval_bundle;
   PageSetupStore page_setup_store;
   TitleConfigStore title_config_store;
-  ShapeConfigurationStorage shape_configuration_storage;
-  CalendarConfigStorage calendar_configuration_storage;
+  ShapeConfigurationStore shape_configuration_storage;
+  CalendarConfigStore calendar_configuration_storage;
   std::unique_ptr<CalendarPage> calendar_page;
 };
 
@@ -138,8 +139,8 @@ inline MainWindow::MainWindow(wxWindow* parent, const wxString& title,
                               app::RuntimeOptions runtime_options)
     : wxFrame(parent, wxID_ANY, title, pos, size),
       impl_(std::make_unique<Impl>()),
-      exit_timer(this),
-      menu(GLCanvas::kExportPngDpi),
+      exit_timer_(this),
+      menu_(GLCanvas::kExportPngDpi),
       runtime_options_(std::move(runtime_options)) {
   CreateLayout(maximize_on_start);
   InitMenu();
@@ -273,7 +274,7 @@ inline void MainWindow::LoadStartupFile() {
   std::cout << "LoadStartupFile: loading " << path << '\n';
   if (path.ends_with(".xml")) {
     LoadXML(path);
-    xml_file_path = path;
+    xml_file_path_ = path;
   } else {
     impl_->date_interval_bundle_store.ReceiveDateIntervalBundles(
         app::io::ReadDateIntervalBundlesFromCsv(path));
@@ -375,12 +376,12 @@ inline void MainWindow::ConfigureAutoExitTimer() {
 
   const std::int64_t exit_after_ms = *runtime_options_.exit_after_ms;
   std::cout << "Auto-exit in ms: " << exit_after_ms << '\n';
-  exit_timer.Bind(wxEVT_TIMER, &MainWindow::OnExitTimer, this);
-  exit_timer.StartOnce(static_cast<int>(exit_after_ms));
+  exit_timer_.Bind(wxEVT_TIMER, &MainWindow::OnExitTimer, this);
+  exit_timer_.StartOnce(static_cast<int>(exit_after_ms));
 }
 
 inline void MainWindow::InitMenu() {
-  const MainMenuIds& ids = menu.Ids();
+  const MainMenuIds& ids = menu_.Ids();
 
   Bind(wxEVT_MENU, &MainWindow::CallbackLoadXML, this, ids.open_xml);
   Bind(wxEVT_MENU, &MainWindow::CallbackSaveXML, this, ids.save_xml);
@@ -391,7 +392,7 @@ inline void MainWindow::InitMenu() {
   Bind(wxEVT_MENU, &MainWindow::CallbackExit, this, wxID_EXIT);
   Bind(wxEVT_MENU, &MainWindow::CallbackLicenseInfo, this, ids.license_info);
 
-  menu.AttachTo(*this);
+  menu_.AttachTo(*this);
 }
 
 inline void MainWindow::CallbackLoadXML(wxCommandEvent& event) {
@@ -406,17 +407,17 @@ inline void MainWindow::CallbackLoadXML(wxCommandEvent& event) {
 
   const std::string file_path = open_file_dialog.GetPath().ToStdString();
   LoadXML(file_path);
-  xml_file_path = file_path;
+  xml_file_path_ = file_path;
 }
 
 inline void MainWindow::CallbackSaveXML(wxCommandEvent& event) {
-  const MainMenuIds& ids = menu.Ids();
-  if (event.GetId() == ids.save_xml && !xml_file_path.empty()) {
-    SaveXML(xml_file_path);
+  const MainMenuIds& ids = menu_.Ids();
+  if (event.GetId() == ids.save_xml && !xml_file_path_.empty()) {
+    SaveXML(xml_file_path_);
     return;
   }
 
-  if (event.GetId() != ids.save_as_xml && !xml_file_path.empty()) {
+  if (event.GetId() != ids.save_as_xml && !xml_file_path_.empty()) {
     return;
   }
 
@@ -429,7 +430,7 @@ inline void MainWindow::CallbackSaveXML(wxCommandEvent& event) {
 
   const std::string file_path = save_file_dialog.GetPath().ToStdString();
   SaveXML(file_path);
-  xml_file_path = file_path;
+  xml_file_path_ = file_path;
 }
 
 inline void MainWindow::LoadXML(const std::string& filepath) {

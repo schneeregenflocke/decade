@@ -20,9 +20,9 @@
 class MouseInteraction {
  public:
   MouseInteraction()
-      : persistent_mouse_pos(0.F),
-        translate_pre_scaled(0.F),
-        translate_post_scaled(0.F) {}
+      : persistent_mouse_pos_(0.F),
+        translate_pre_scaled_(0.F),
+        translate_post_scaled_(0.F) {}
 
   void Apply(MVP& mvp, wxPoint mouse_position, bool dragging,
              int wheel_rotation) {
@@ -32,11 +32,11 @@ class MouseInteraction {
       std::cout << "Mouse: px=(" << mouse_position.x << "," << mouse_position.y
                 << ") drag=" << dragging << " wheel=" << wheel_rotation << '\n';
       decade_debug::LogVec3("Mouse current (view-space)", current_mouse_pos);
-      decade_debug::LogVec3("Mouse persistent (prev)", persistent_mouse_pos);
+      decade_debug::LogVec3("Mouse persistent (prev)", persistent_mouse_pos_);
     }
 
     if (dragging) {
-      translate_pre_scaled += current_mouse_pos - persistent_mouse_pos;
+      translate_pre_scaled_ += current_mouse_pos - persistent_mouse_pos_;
     }
 
     if (wheel_rotation != 0) {
@@ -44,41 +44,41 @@ class MouseInteraction {
       const auto scale = static_cast<float>(wheel_rotation) / mouse_wheel_step;
 
       const auto pre_scale_view_matrix =
-          CalculateViewMatrix(persistent_scale_factor);
+          CalculateViewMatrix(persistent_scale_factor_);
       const auto pre_scale_mouse_pos =
           MouseViewSpacePos(current_mouse_pos, pre_scale_view_matrix);
 
-      persistent_scale_factor *= std::exp(scale);
+      persistent_scale_factor_ *= std::exp(scale);
 
       const auto post_scale_view_matrix =
-          CalculateViewMatrix(persistent_scale_factor);
+          CalculateViewMatrix(persistent_scale_factor_);
       const auto post_scale_mouse_pos =
           MouseViewSpacePos(current_mouse_pos, post_scale_view_matrix);
 
       const glm::vec3 view_space_correction =
           post_scale_mouse_pos - pre_scale_mouse_pos;
-      translate_post_scaled += view_space_correction;
+      translate_post_scaled_ += view_space_correction;
     }
 
-    auto view_matrix = CalculateViewMatrix(persistent_scale_factor);
+    auto view_matrix = CalculateViewMatrix(persistent_scale_factor_);
     mvp.SetView(view_matrix);
 
     if (decade_debug::LogEnabled()) {
-      decade_debug::LogVec3("translate_pre_scaled", translate_pre_scaled);
-      decade_debug::LogVec3("translate_post_scaled", translate_post_scaled);
-      std::cout << "scale=" << persistent_scale_factor << '\n';
+      decade_debug::LogVec3("translate_pre_scaled", translate_pre_scaled_);
+      decade_debug::LogVec3("translate_post_scaled", translate_post_scaled_);
+      std::cout << "scale=" << persistent_scale_factor_ << '\n';
       decade_debug::LogMat4("view_matrix", view_matrix);
     }
 
-    persistent_mouse_pos = current_mouse_pos;
+    persistent_mouse_pos_ = current_mouse_pos;
   }
 
  private:
   glm::mat4 CalculateViewMatrix(float scale_factor) {
-    auto pre_scaled = glm::translate(glm::mat4(1.F), translate_pre_scaled);
+    auto pre_scaled = glm::translate(glm::mat4(1.F), translate_pre_scaled_);
     auto post_scaled =
         glm::scale(pre_scaled, glm::vec3(scale_factor, scale_factor, 1.F));
-    auto view_matrix = glm::translate(post_scaled, translate_post_scaled);
+    auto view_matrix = glm::translate(post_scaled, translate_post_scaled_);
     return view_matrix;
   }
 
@@ -117,10 +117,10 @@ class MouseInteraction {
     return {mouse_pos.x, mouse_pos.y, 0.F};
   }
 
-  float persistent_scale_factor{1.F};
-  glm::vec3 persistent_mouse_pos;
-  glm::vec3 translate_pre_scaled;
-  glm::vec3 translate_post_scaled;
+  float persistent_scale_factor_{1.F};
+  glm::vec3 persistent_mouse_pos_;
+  glm::vec3 translate_pre_scaled_;
+  glm::vec3 translate_post_scaled_;
 };
 
 #endif  // MOUSE_INTERACTION_HPP

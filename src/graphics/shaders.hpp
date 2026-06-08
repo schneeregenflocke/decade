@@ -25,46 +25,48 @@ class Shader {
   };
 
   explicit Shader(const ShaderSources& sources, std::string name_in)
-      : name(std::move(name_in)) {
+      : name_(std::move(name_in)) {
     CompileProgram(sources);
 
-    shader_info.SetProgram(program);
+    shader_info_.SetProgram(program_);
   }
 
-  [[nodiscard]] GLuint GetProgram() const { return program; }
+  [[nodiscard]] GLuint GetProgram() const { return program_; }
 
-  [[nodiscard]] std::string get_name() const { return name; }
+  [[nodiscard]] std::string get_name() const { return name_; }
 
-  void UseProgram() const { glUseProgram(program); }
+  void UseProgram() const { glUseProgram(program_); }
 
   void SetUniform(const std::string& uniform_name,
                   const glm::mat4& matrix) const {
-    auto location = glGetUniformLocation(program, uniform_name.c_str());
+    auto location = glGetUniformLocation(program_, uniform_name.c_str());
     glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
   }
 
   void SetUniform(const std::string& uniform_name,
                   const glm::vec4& vector) const {
-    auto location = glGetUniformLocation(program, uniform_name.c_str());
+    auto location = glGetUniformLocation(program_, uniform_name.c_str());
     glUniform4fv(location, 1, glm::value_ptr(vector));
     // glProgramUniform
   }
 
   void PrintShaderInfo() const {
-    std::cout << "Shader: " << name
-              << ", Number of attributes: " << shader_info.GetNumberAttributes()
-              << ", Number of uniforms: " << shader_info.GetNumberUniforms()
+    std::cout << "Shader: " << name_ << ", Number of attributes: "
+              << shader_info_.GetNumberAttributes()
+              << ", Number of uniforms: " << shader_info_.GetNumberUniforms()
               << '\n';
 
-    shader_info.PrintAttributesInfo();
-    shader_info.PrintUniformsInfo();
+    shader_info_.PrintAttributesInfo();
+    shader_info_.PrintUniformsInfo();
   }
 
-  [[nodiscard]] const ShaderInfos& GetShaderInfo() const { return shader_info; }
+  [[nodiscard]] const ShaderInfos& GetShaderInfo() const {
+    return shader_info_;
+  }
 
   [[nodiscard]] const std::vector<ShaderInfo>& GetShaderAttributesInfos()
       const {
-    return shader_info.GetAttributesInfos();
+    return shader_info_.GetAttributesInfos();
   }
 
  private:
@@ -82,30 +84,30 @@ class Shader {
   }
 
   void LinkShaders(const ShaderHandles& handles) {
-    program = glCreateProgram();
+    program_ = glCreateProgram();
 
-    glAttachShader(program, handles.vertex);
-    glAttachShader(program, handles.fragment);
+    glAttachShader(program_, handles.vertex);
+    glAttachShader(program_, handles.fragment);
 
-    glLinkProgram(program);
+    glLinkProgram(program_);
 
-    glValidateProgram(program);
+    glValidateProgram(program_);
 
     GLint status = 0;
-    glGetProgramiv(program, GL_LINK_STATUS, &status);
-    std::cout << "GL_LINK_STATUS: " << program << " " << std::boolalpha
+    glGetProgramiv(program_, GL_LINK_STATUS, &status);
+    std::cout << "GL_LINK_STATUS: " << program_ << " " << std::boolalpha
               << static_cast<bool>(status) << std::noboolalpha << '\n';
 
     GLint info_length = 0;
-    glGetProgramiv(program, GL_INFO_LOG_LENGTH, &info_length);
+    glGetProgramiv(program_, GL_INFO_LOG_LENGTH, &info_length);
     if (info_length > 0) {
       std::vector<char> info_log(static_cast<size_t>(info_length));
-      glGetProgramInfoLog(program, info_length, nullptr, info_log.data());
+      glGetProgramInfoLog(program_, info_length, nullptr, info_log.data());
       std::cout << info_log.data();
     }
 
-    glDetachShader(program, handles.vertex);
-    glDetachShader(program, handles.fragment);
+    glDetachShader(program_, handles.vertex);
+    glDetachShader(program_, handles.fragment);
     glDeleteShader(handles.vertex);
     glDeleteShader(handles.fragment);
   }
@@ -133,9 +135,9 @@ class Shader {
     return shader;
   }
 
-  GLuint program{0};
-  std::string name;
-  ShaderInfos shader_info;
+  GLuint program_{0};
+  std::string name_;
+  ShaderInfos shader_info_;
 };
 
 class Shaders {
@@ -157,17 +159,17 @@ class Shaders {
     // phong_fragment_shader_resource =
     // LOAD_RESOURCE(shader_phong_fragment_shader);
 
-    shaders.emplace_back(
+    shaders_.emplace_back(
         Shader::ShaderSources{
             .vertex = simple_vertex_shader_resource.toString(),
             .fragment = simple_fragment_shader_resource.toString()},
         "Simple Shader");
-    shaders.emplace_back(
+    shaders_.emplace_back(
         Shader::ShaderSources{
             .vertex = rectangles_vertex_shader_resource.toString(),
             .fragment = rectangles_fragment_shader_resource.toString()},
         "Rectangles Shader");
-    shaders.emplace_back(
+    shaders_.emplace_back(
         Shader::ShaderSources{
             .vertex = font_vertex_shader_resource.toString(),
             .fragment = font_fragment_shader_resource.toString()},
@@ -179,20 +181,20 @@ class Shaders {
   }
 
   void PrintInfo() const {
-    for (const auto& shader : shaders) {
+    for (const auto& shader : shaders_) {
       shader.PrintShaderInfo();
     }
   }
 
   Shader* GetShader(size_t index) {
-    if (index < shaders.size()) {
-      return &shaders[index];
+    if (index < shaders_.size()) {
+      return &shaders_[index];
     }
     throw std::invalid_argument("Shader index out of bounds");
   }
 
   std::optional<Shader*> search_shader(const std::string& search_name) {
-    for (auto& shader : shaders) {
+    for (auto& shader : shaders_) {
       if (shader.get_name() == search_name) {
         return std::optional<Shader*>{&shader};
       }
@@ -200,9 +202,9 @@ class Shaders {
     return std::nullopt;
   }
 
-  [[nodiscard]] size_t GetNumberShaders() const { return shaders.size(); }
+  [[nodiscard]] size_t GetNumberShaders() const { return shaders_.size(); }
 
  private:
-  std::vector<Shader> shaders;
+  std::vector<Shader> shaders_;
 };
 #endif  // SHADERS_HPP

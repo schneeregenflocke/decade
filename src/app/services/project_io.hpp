@@ -19,12 +19,18 @@
 #include <vector>
 
 #include "../../packages/calendar_config.hpp"
-#include "../../packages/date_store.hpp"
+#include "../../packages/calendar_config_store.hpp"
+#include "../../packages/date_group.hpp"
+#include "../../packages/date_group_store.hpp"
+#include "../../packages/date_interval_bundle.hpp"
+#include "../../packages/date_interval_bundle_store.hpp"
 #include "../../packages/date_utils.hpp"
-#include "../../packages/group_store.hpp"
-#include "../../packages/page_config.hpp"
-#include "../../packages/shape_config.hpp"
+#include "../../packages/page_setup_config.hpp"
+#include "../../packages/page_setup_store.hpp"
+#include "../../packages/shape_configuration.hpp"
+#include "../../packages/shape_configuration_store.hpp"
 #include "../../packages/title_config.hpp"
+#include "../../packages/title_config_store.hpp"
 #include "value_serialization.hpp"
 
 namespace app::io {
@@ -85,8 +91,8 @@ inline void LoadProjectXml(
     const std::string& file_path, DateGroupStore& date_groups_store,
     DateIntervalBundleStore& date_interval_bundle_store,
     PageSetupStore& page_setup_store, TitleConfigStore& title_config_store,
-    ShapeConfigurationStorage& shape_configuration_storage,
-    CalendarConfigStorage& calendar_configuration_storage) {
+    ShapeConfigurationStore& shape_configuration_storage,
+    CalendarConfigStore& calendar_configuration_storage) {
   std::ifstream filestream(file_path);
   boost::archive::xml_iarchive iarchive(filestream);
 
@@ -126,8 +132,8 @@ inline void SaveProjectXml(
     const DateIntervalBundleStore& date_interval_bundle_store,
     const PageSetupStore& page_setup_store,
     const TitleConfigStore& title_config_store,
-    const ShapeConfigurationStorage& shape_configuration_storage,
-    const CalendarConfigStorage& calendar_configuration_storage) {
+    const ShapeConfigurationStore& shape_configuration_storage,
+    const CalendarConfigStore& calendar_configuration_storage) {
   std::ofstream filestream(file_path);
   boost::archive::xml_oarchive oarchive(filestream);
 

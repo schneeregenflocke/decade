@@ -7,10 +7,10 @@
 template <typename Ty>
 class rect {
  public:
-  rect() : edges({0, 0, 0, 0}) {}
+  rect() : edges_({0, 0, 0, 0}) {}
 
   rect(Ty left, Ty right, Ty bottom, Ty top)
-      : edges({left, right, bottom, top}) {}
+      : edges_({left, right, bottom, top}) {}
 
   struct Dimension {
     Ty width;
@@ -26,17 +26,17 @@ class rect {
     return result;
   }
 
-  [[nodiscard]] Ty l() const { return edges[0]; }
+  [[nodiscard]] Ty l() const { return edges_[0]; }
 
-  [[nodiscard]] Ty r() const { return edges[1]; }
+  [[nodiscard]] Ty r() const { return edges_[1]; }
 
-  [[nodiscard]] Ty b() const { return edges[2]; }
+  [[nodiscard]] Ty b() const { return edges_[2]; }
 
-  [[nodiscard]] Ty t() const { return edges[3]; }
+  [[nodiscard]] Ty t() const { return edges_[3]; }
 
-  [[nodiscard]] Ty width() const { return edges[1] - edges[0]; }
+  [[nodiscard]] Ty width() const { return edges_[1] - edges_[0]; }
 
-  [[nodiscard]] Ty height() const { return edges[3] - edges[2]; }
+  [[nodiscard]] Ty height() const { return edges_[3] - edges_[2]; }
 
   [[nodiscard]] rect shift(Ty x_offset, Ty y_offset) const {
     return rect(l() + x_offset, r() + x_offset, b() + y_offset, t() + y_offset);
@@ -68,45 +68,45 @@ class rect {
   }
 
   [[nodiscard]] glm::vec3 getCenter() const {
-    return glm::vec3(edges[0] + (width() / static_cast<Ty>(2)),
-                     edges[2] + (height() / static_cast<Ty>(2)),
+    return glm::vec3(edges_[0] + (width() / static_cast<Ty>(2)),
+                     edges_[2] + (height() / static_cast<Ty>(2)),
                      static_cast<Ty>(0));
   }
 
   [[nodiscard]] glm::vec3 getLB() const {
-    return glm::vec3(edges[0], edges[2], static_cast<Ty>(0));
+    return glm::vec3(edges_[0], edges_[2], static_cast<Ty>(0));
   }
 
   [[nodiscard]] glm::vec3 getRB() const {
-    return glm::vec3(edges[1], edges[2], static_cast<Ty>(0));
+    return glm::vec3(edges_[1], edges_[2], static_cast<Ty>(0));
   }
 
   [[nodiscard]] glm::vec3 getLT() const {
-    return glm::vec3(edges[0], edges[3], static_cast<Ty>(0));
+    return glm::vec3(edges_[0], edges_[3], static_cast<Ty>(0));
   }
 
   [[nodiscard]] glm::vec3 getRT() const {
-    return glm::vec3(edges[1], edges[3], static_cast<Ty>(0));
+    return glm::vec3(edges_[1], edges_[3], static_cast<Ty>(0));
   }
 
-  void setL(Ty value) { edges[0] = value; }
+  void setL(Ty value) { edges_[0] = value; }
 
-  void setR(Ty value) { edges[1] = value; }
+  void setR(Ty value) { edges_[1] = value; }
 
-  void setB(Ty value) { edges[2] = value; }
+  void setB(Ty value) { edges_[2] = value; }
 
-  void setT(Ty value) { edges[3] = value; }
+  void setT(Ty value) { edges_[3] = value; }
 
  private:
-  void addL(Ty value) { edges[0] += value; }
+  void addL(Ty value) { edges_[0] += value; }
 
-  void addR(Ty value) { edges[1] += value; }
+  void addR(Ty value) { edges_[1] += value; }
 
-  void addB(Ty value) { edges[2] += value; }
+  void addB(Ty value) { edges_[2] += value; }
 
-  void addT(Ty value) { edges[3] += value; }
+  void addT(Ty value) { edges_[3] += value; }
 
-  std::array<Ty, 4> edges;
+  std::array<Ty, 4> edges_;
 };
 
 using rectf = rect<float>;

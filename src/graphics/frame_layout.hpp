@@ -10,25 +10,26 @@
 class ProportionFrameLayout {
  public:
   void SetupRowFrames(const rectf& frame, const size_t number_rows) {
-    row_frames.resize(number_rows);
+    row_frames_.resize(number_rows);
 
     const auto row_height = frame.height() / static_cast<float>(number_rows);
 
-    for (size_t index = 0; index < row_frames.size(); ++index) {
+    for (size_t index = 0; index < row_frames_.size(); ++index) {
       const auto float_index = static_cast<float>(index);
       const auto current_bottom = frame.b() + (float_index * row_height);
-      row_frames.at(index) = rectf(frame.l(), frame.r(), current_bottom,
-                                   current_bottom + row_height);
+      row_frames_.at(index) = rectf(frame.l(), frame.r(), current_bottom,
+                                    current_bottom + row_height);
     }
   }
 
   void SetupSubFrames(const std::vector<float>& proportions) {
-    number_sub_frames_per_row = (proportions.size() - 1) / 2;
+    number_sub_frames_per_row_ = (proportions.size() - 1) / 2;
 
-    sub_frames.resize(row_frames.size() * number_sub_frames_per_row);
+    sub_frames_.resize(row_frames_.size() * number_sub_frames_per_row_);
 
-    for (size_t index = 0; index < row_frames.size(); ++index) {
-      const auto sections = Section(proportions, row_frames.at(index).height());
+    for (size_t index = 0; index < row_frames_.size(); ++index) {
+      const auto sections =
+          Section(proportions, row_frames_.at(index).height());
       std::vector<float> cumulative_sections(sections.size());
 
       for (size_t subindex = 0; subindex < cumulative_sections.size();
@@ -39,23 +40,24 @@ class ProportionFrameLayout {
             0.0F);
       }
 
-      for (size_t subindex = 0; subindex < number_sub_frames_per_row;
+      for (size_t subindex = 0; subindex < number_sub_frames_per_row_;
            ++subindex) {
-        const auto frame_index = (index * number_sub_frames_per_row) + subindex;
-        sub_frames.at(frame_index).setL(row_frames.at(index).l());
-        sub_frames.at(frame_index).setR(row_frames.at(index).r());
-        sub_frames.at(frame_index)
-            .setB(row_frames.at(index).b() +
+        const auto frame_index =
+            (index * number_sub_frames_per_row_) + subindex;
+        sub_frames_.at(frame_index).setL(row_frames_.at(index).l());
+        sub_frames_.at(frame_index).setR(row_frames_.at(index).r());
+        sub_frames_.at(frame_index)
+            .setB(row_frames_.at(index).b() +
                   cumulative_sections.at((subindex * 2) + 1));
-        sub_frames.at(frame_index)
-            .setT(row_frames.at(index).b() +
+        sub_frames_.at(frame_index)
+            .setT(row_frames_.at(index).b() +
                   cumulative_sections.at((subindex * 2) + 2));
       }
     }
   }
 
   [[nodiscard]] rectf GetSubFrame(const size_t row, const size_t sub) const {
-    return sub_frames.at((number_sub_frames_per_row * row) + sub);
+    return sub_frames_.at((number_sub_frames_per_row_ * row) + sub);
   }
 
  private:
@@ -74,8 +76,8 @@ class ProportionFrameLayout {
     return sections;
   }
 
-  std::vector<rectf> row_frames;
-  std::vector<rectf> sub_frames;
-  size_t number_sub_frames_per_row{0};
+  std::vector<rectf> row_frames_;
+  std::vector<rectf> sub_frames_;
+  size_t number_sub_frames_per_row_{0};
 };
 #endif  // FRAME_LAYOUT_HPP

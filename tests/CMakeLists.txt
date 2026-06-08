@@ -5,7 +5,7 @@ add_executable(decade_tests
 	packages/test_date_group_store.cpp
 	packages/test_page_setup_store.cpp
 	packages/test_title_config_store.cpp
-	packages/test_shape_configuration_storage.cpp
+	packages/test_shape_configuration_store.cpp
 	packages/test_calendar_config.cpp
 	packages/test_date_interval_bundle_store.cpp
 	packages/test_transform_date_interval_bundle.cpp

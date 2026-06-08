@@ -24,66 +24,66 @@ inline void PrintError() {
 
 class VertexArrayObject {
  public:
-  VertexArrayObject() { glCreateVertexArrays(1, &vao); }
+  VertexArrayObject() { glCreateVertexArrays(1, &vao_); }
 
-  ~VertexArrayObject() { glDeleteVertexArrays(1, &vao); }
+  ~VertexArrayObject() { glDeleteVertexArrays(1, &vao_); }
 
   VertexArrayObject(const VertexArrayObject&) = delete;
   VertexArrayObject& operator=(const VertexArrayObject&) = delete;
 
   VertexArrayObject(VertexArrayObject&& other) noexcept
-      : vao(std::exchange(other.vao, 0)) {}
+      : vao_(std::exchange(other.vao_, 0)) {}
   VertexArrayObject& operator=(VertexArrayObject&& other) noexcept {
     if (this != &other) {
-      if (vao != 0) {
-        glDeleteVertexArrays(1, &vao);
+      if (vao_ != 0) {
+        glDeleteVertexArrays(1, &vao_);
       }
-      vao = std::exchange(other.vao, 0);
+      vao_ = std::exchange(other.vao_, 0);
     }
     return *this;
   }
 
-  [[nodiscard]] bool is_valid() const { return glIsVertexArray(vao); }
+  [[nodiscard]] bool is_valid() const { return glIsVertexArray(vao_); }
 
-  void bind() const { glBindVertexArray(vao); }
+  void bind() const { glBindVertexArray(vao_); }
 
   static void Unbind() { glBindVertexArray(0); }
 
-  [[nodiscard]] GLuint get() const { return vao; }
+  [[nodiscard]] GLuint get() const { return vao_; }
 
  private:
-  GLuint vao{0};
+  GLuint vao_{0};
 };
 
 class VertexBufferObject {
  public:
-  VertexBufferObject() { glCreateBuffers(1, &vbo); }
+  VertexBufferObject() { glCreateBuffers(1, &vbo_); }
 
-  ~VertexBufferObject() { glDeleteBuffers(1, &vbo); }
+  ~VertexBufferObject() { glDeleteBuffers(1, &vbo_); }
 
   VertexBufferObject(const VertexBufferObject&) = delete;
   VertexBufferObject& operator=(const VertexBufferObject&) = delete;
 
   VertexBufferObject(VertexBufferObject&& other) noexcept
-      : vbo(std::exchange(other.vbo, 0)) {}
+      : vbo_(std::exchange(other.vbo_, 0)) {}
   VertexBufferObject& operator=(VertexBufferObject&& other) noexcept {
     if (this != &other) {
-      if (vbo != 0) {
-        glDeleteBuffers(1, &vbo);
+      if (vbo_ != 0) {
+        glDeleteBuffers(1, &vbo_);
       }
-      vbo = std::exchange(other.vbo, 0);
+      vbo_ = std::exchange(other.vbo_, 0);
     }
     return *this;
   }
 
-  void bind() const { glBindBuffer(GL_ARRAY_BUFFER, vbo); }
+  void bind() const { glBindBuffer(GL_ARRAY_BUFFER, vbo_); }
 
   static void Unbind() { glBindBuffer(GL_ARRAY_BUFFER, 0); }
 
-  [[nodiscard]] GLuint get() const { return vbo; }
+  [[nodiscard]] GLuint get() const { return vbo_; }
 
  private:
-  GLuint vbo{0};
+  GLuint vbo_{0};
 };
 
 class Shape {
@@ -101,15 +101,15 @@ class Shape {
   Shape& operator=(Shape&&) = delete;
 
   void set_buffer(BufferIndex index, GLsizei vertex_count, const void* data) {
-    number_vertices = vertex_count;
+    number_vertices_ = vertex_count;
 
-    const auto& attribute_info = attributes_infos.at(index.value);
+    const auto& attribute_info = attributes_infos_.at(index.value);
     const auto type_size =
         static_cast<GLsizeiptr>(attribute_info.GetTypeSize());
     const auto buffer_size = static_cast<GLsizeiptr>(vertex_count) * type_size;
 
-    vao.bind();
-    vbos.at(index.value).bind();
+    vao_.bind();
+    vbos_.at(index.value).bind();
 
     glBufferData(GL_ARRAY_BUFFER, buffer_size, data, GL_DYNAMIC_DRAW);
     // glNamedBufferData(vbos[index].get(), buffer_size, data, GL_DYNAMIC_DRAW);
@@ -119,33 +119,33 @@ class Shape {
   }
 
   virtual void draw() const {
-    shader_ptr->UseProgram();
-    vao.bind();
-    glDrawArrays(GL_TRIANGLES, 0, number_vertices);
+    shader_ptr_->UseProgram();
+    vao_.bind();
+    glDrawArrays(GL_TRIANGLES, 0, number_vertices_);
     VertexArrayObject::Unbind();
   }
 
-  [[nodiscard]] Shader* get_shader() const { return shader_ptr; }
+  [[nodiscard]] Shader* get_shader() const { return shader_ptr_; }
 
  protected:
-  [[nodiscard]] GLsizei vertex_count() const { return number_vertices; }
-  [[nodiscard]] Shader* shader() const { return shader_ptr; }
-  [[nodiscard]] VertexArrayObject& vao_ref() { return vao; }
-  [[nodiscard]] const VertexArrayObject& vao_ref() const { return vao; }
+  [[nodiscard]] GLsizei vertex_count() const { return number_vertices_; }
+  [[nodiscard]] Shader* shader() const { return shader_ptr_; }
+  [[nodiscard]] VertexArrayObject& vao_ref() { return vao_; }
+  [[nodiscard]] const VertexArrayObject& vao_ref() const { return vao_; }
 
  private:
   void set_shader(Shader* new_shader_ptr) {
-    shader_ptr = new_shader_ptr;
-    attributes_infos = new_shader_ptr->GetShaderAttributesInfos();
+    shader_ptr_ = new_shader_ptr;
+    attributes_infos_ = new_shader_ptr->GetShaderAttributesInfos();
 
-    vao.bind();
+    vao_.bind();
 
-    vbos.resize(attributes_infos.size());
+    vbos_.resize(attributes_infos_.size());
 
-    for (size_t index = 0; index < attributes_infos.size(); ++index) {
-      const auto& attribute_info = attributes_infos[index];
+    for (size_t index = 0; index < attributes_infos_.size(); ++index) {
+      const auto& attribute_info = attributes_infos_[index];
 
-      vbos[index].bind();
+      vbos_[index].bind();
 
       const auto attribute_location =
           static_cast<GLuint>(attribute_info.GetLocation());
@@ -163,7 +163,7 @@ class Shape {
 
       // glVertexArrayVertexBuffer(vao.get(), index, vbos[index].get(), 0,
       // attribute_info.type_size);
-      glBindVertexBuffer(binding_index, vbos[index].get(), 0,
+      glBindVertexBuffer(binding_index, vbos_[index].get(), 0,
                          static_cast<GLsizei>(attribute_info.GetTypeSize()));
 
       // glEnableVertexArrayAttrib(vao.get(), attribute_info.location);
@@ -175,11 +175,11 @@ class Shape {
     VertexArrayObject::Unbind();
   }
 
-  GLsizei number_vertices{0};
-  VertexArrayObject vao;
-  Shader* shader_ptr{nullptr};
-  std::vector<VertexBufferObject> vbos;
-  std::vector<ShaderInfo> attributes_infos;
+  GLsizei number_vertices_{0};
+  VertexArrayObject vao_;
+  Shader* shader_ptr_{nullptr};
+  std::vector<VertexBufferObject> vbos_;
+  std::vector<ShaderInfo> attributes_infos_;
 };
 
 /*template<typename T>

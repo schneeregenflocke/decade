@@ -23,7 +23,7 @@
 #include "../graphics/png_writer.hpp"
 #include "../graphics/projection.hpp"
 #include "../graphics/render_to_png.hpp"
-#include "../packages/page_config.hpp"
+#include "../packages/page_setup_config.hpp"
 #include "mouse_interaction.hpp"
 
 // Funktion zur Umwandlung der OpenGL-Enums in menschenlesbare Strings
@@ -108,7 +108,7 @@ class GLCanvas : public wxGLCanvas {
               << wxGLCanvas::IsDisplaySupported(DisplayAttributes()) << '\n';
   }
 
-  GraphicsEngine* GraphicsEnginePtr() { return graphics_engine.get(); }
+  GraphicsEngine* GraphicsEnginePtr() { return graphics_engine_.get(); }
 
   // Verzögerter GL-Init: bindet wxEVT_PAINT auf einen einmaligen
   // Init-Handler. Beim ersten Paint ist das Canvas garantiert gemappt,
@@ -130,20 +130,20 @@ class GLCanvas : public wxGLCanvas {
       std::cout << "!canvas_shown_on_screen\n";
     }
 
-    if (gl_loaded == 0 && canvas_shown_on_screen) {
+    if (gl_loaded_ == 0 && canvas_shown_on_screen) {
       wxGLContextAttrs context_attributes;
       context_attributes.PlatformDefaults()
           .CoreProfile()
           .OGLVersion(version[0], version[1])
           .EndList();
-      context =
+      context_ =
           std::make_unique<wxGLContext>(this, nullptr, &context_attributes);
-      std::cout << "context IsOK " << context->IsOK() << '\n';
+      std::cout << "context IsOK " << context_->IsOK() << '\n';
 
-      SetCurrent(*context);
-      gl_loaded = context->IsOK() ? 1 : 0;
+      SetCurrent(*context_);
+      gl_loaded_ = context_->IsOK() ? 1 : 0;
 
-      std::cout << "OpenGL ready: " << gl_loaded
+      std::cout << "OpenGL ready: " << gl_loaded_
                 << " version: " << GetGLVersionString() << '\n';
 
       // glEnable(GL_DEBUG_OUTPUT);
@@ -169,12 +169,12 @@ class GLCanvas : public wxGLCanvas {
       glGetIntegerv(GL_SAMPLES, &sample_buffers);
       std::cout << "msaa_sample_buffers " << sample_buffers << '\n';
 
-      graphics_engine = std::make_unique<GraphicsEngine>();
+      graphics_engine_ = std::make_unique<GraphicsEngine>();
 
       Bind(wxEVT_SIZE, &GLCanvas::SizeCallback, this);
       Bind(wxEVT_PAINT, &GLCanvas::PaintCallback, this);
 
-      mouse_interaction = std::make_unique<MouseInteraction>();
+      mouse_interaction_ = std::make_unique<MouseInteraction>();
 
       Bind(wxEVT_MOTION, &GLCanvas::MouseCallback, this);
       Bind(wxEVT_LEFT_DOWN, &GLCanvas::MouseCallback, this);
@@ -182,7 +182,7 @@ class GLCanvas : public wxGLCanvas {
       Bind(wxEVT_MOUSEWHEEL, &GLCanvas::MouseCallback, this);
     }
 
-    return gl_loaded;
+    return gl_loaded_;
   }
 
   static std::string GetGLVersionString() {
@@ -202,16 +202,16 @@ class GLCanvas : public wxGLCanvas {
   }
 
   void ReceivePageSetup(const PageSetupConfig& page_setup_config) {
-    page_size = rectf::from_dimension(
+    page_size_ = rectf::from_dimension(
         rectf::Dimension{.width = page_setup_config.size[0],
                          .height = page_setup_config.size[1]});
     if (decade_debug::LogEnabled()) {
-      std::cout << "ReceivePageSetup: page=" << page_size.width() << "x"
-                << page_size.height() << " rect=(" << page_size.l() << ","
-                << page_size.r() << "," << page_size.b() << "," << page_size.t()
-                << ")\n";
+      std::cout << "ReceivePageSetup: page=" << page_size_.width() << "x"
+                << page_size_.height() << " rect=(" << page_size_.l() << ","
+                << page_size_.r() << "," << page_size_.b() << ","
+                << page_size_.t() << ")\n";
     }
-    if (graphics_engine) {
+    if (graphics_engine_) {
       RefreshMVP();
     }
   }
@@ -236,33 +236,33 @@ class GLCanvas : public wxGLCanvas {
 
     const wxSize size(static_cast<int>(fb_width), static_cast<int>(fb_height));
 
-    if (page_size.width() <= 0.0F || page_size.height() <= 0.0F) {
+    if (page_size_.width() <= 0.0F || page_size_.height() <= 0.0F) {
       if (decade_debug::LogEnabled()) {
         std::cout << "RefreshMVP: skipped, page_size not yet initialised\n";
       }
       return;
     }
 
-    rectf const view_size = page_size.scale(view_size_scale);
-    mvp.SetProjection(Projection::OrthoMatrix(view_size));
+    rectf const view_size = page_size_.scale(view_size_scale);
+    mvp_.SetProjection(Projection::OrthoMatrix(view_size));
 
-    graphics_engine->SetMVP(mvp);
+    graphics_engine_->SetMVP(mvp_);
 
     if (decade_debug::LogEnabled()) {
       std::cout << "RefreshMVP: viewport=" << size.GetWidth() << "x"
-                << size.GetHeight() << " page=" << page_size.width() << "x"
-                << page_size.height() << " view=" << view_size.width() << "x"
+                << size.GetHeight() << " page=" << page_size_.width() << "x"
+                << page_size_.height() << " view=" << view_size.width() << "x"
                 << view_size.height() << '\n';
-      decade_debug::LogMat4("RefreshMVP proj", mvp.GetProjection());
-      decade_debug::LogMat4("RefreshMVP view", mvp.GetView());
+      decade_debug::LogMat4("RefreshMVP proj", mvp_.GetProjection());
+      decade_debug::LogMat4("RefreshMVP view", mvp_.GetView());
     }
 
     Refresh(false);
   }
 
   void SavePNG(std::string file_path) {
-    RenderToPNG const render_to_png(std::move(file_path), page_size,
-                                    kExportPngDpi, graphics_engine,
+    RenderToPNG const render_to_png(std::move(file_path), page_size_,
+                                    kExportPngDpi, graphics_engine_,
                                     kExportMsaaSamples);
   }
 
@@ -270,9 +270,9 @@ class GLCanvas : public wxGLCanvas {
   // Uses glReadPixels on the back buffer; flips y because OpenGL origin is
   // bottom-left while PNG is top-left.
   void SaveWindowPNG(const std::string& file_path) {
-    SetCurrent(*context);
-    graphics_engine->SetMVP(mvp);
-    graphics_engine->Render();
+    SetCurrent(*context_);
+    graphics_engine_->SetMVP(mvp_);
+    graphics_engine_->Render();
     glFinish();
 
     const wxSize logical_size = GetClientSize();
@@ -310,9 +310,9 @@ class GLCanvas : public wxGLCanvas {
   // top of the GL canvas region. Returns an invalid image when the canvas has
   // no area yet.
   wxImage CaptureBackBufferImage() {
-    SetCurrent(*context);
-    graphics_engine->SetMVP(mvp);
-    graphics_engine->Render();
+    SetCurrent(*context_);
+    graphics_engine_->SetMVP(mvp_);
+    graphics_engine_->Render();
     glFinish();
 
     const wxSize logical_size = GetClientSize();
@@ -364,8 +364,8 @@ class GLCanvas : public wxGLCanvas {
 
   void PaintCallback(wxPaintEvent& /*event*/) {
     wxPaintDC const dc(this);
-    graphics_engine->SetMVP(mvp);
-    graphics_engine->Render();
+    graphics_engine_->SetMVP(mvp_);
+    graphics_engine_->Render();
     SwapBuffers();
   }
 
@@ -379,20 +379,20 @@ class GLCanvas : public wxGLCanvas {
     const wxPoint pos_physical(
         static_cast<int>(std::lround(event.GetPosition().x * scale)),
         static_cast<int>(std::lround(event.GetPosition().y * scale)));
-    mouse_interaction->Apply(mvp, pos_physical, event.Dragging(),
-                             event.GetWheelRotation());
+    mouse_interaction_->Apply(mvp_, pos_physical, event.Dragging(),
+                              event.GetWheelRotation());
     RefreshMVP();
   }
 
-  int gl_loaded{0};
+  int gl_loaded_{0};
 
-  std::unique_ptr<wxGLContext> context;
+  std::unique_ptr<wxGLContext> context_;
 
-  std::shared_ptr<GraphicsEngine> graphics_engine;
-  std::unique_ptr<MouseInteraction> mouse_interaction;
+  std::shared_ptr<GraphicsEngine> graphics_engine_;
+  std::unique_ptr<MouseInteraction> mouse_interaction_;
 
-  rectf page_size;
-  MVP mvp;
+  rectf page_size_;
+  MVP mvp_;
 
   std::array<int, 2> gl_version_{};
   std::function<void()> on_gl_ready_;
