@@ -3,8 +3,10 @@
 
 #include <epoxy/gl.h>
 #include <wx/glcanvas.h>
+#include <wx/image.h>
 #include <wx/wx.h>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <functional>
@@ -300,6 +302,45 @@ class GLCanvas : public wxGLCanvas {
 
     png_io::WriteRgbaPng(file_path.c_str(), flipped,
                          png_io::PngImageSize{.width = w, .height = h});
+  }
+
+  // Returns the current GL back buffer as a top-left-origin RGB wxImage so it
+  // can be composited into a full-window screenshot. A wxDC cannot read the GL
+  // surface directly, so callers that screenshot the whole frame paste this on
+  // top of the GL canvas region. Returns an invalid image when the canvas has
+  // no area yet.
+  wxImage CaptureBackBufferImage() {
+    SetCurrent(*context);
+    graphics_engine->SetMVP(mvp);
+    graphics_engine->Render();
+    glFinish();
+
+    const wxSize logical_size = GetClientSize();
+    const double scale = GetContentScaleFactor();
+    const auto w =
+        static_cast<size_t>(std::lround(logical_size.GetWidth() * scale));
+    const auto h =
+        static_cast<size_t>(std::lround(logical_size.GetHeight() * scale));
+    if (w == 0 || h == 0) {
+      return {};
+    }
+    constexpr size_t kBytesPerPixel = 3;
+    std::vector<unsigned char> buffer(w * h * kBytesPerPixel);
+
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadBuffer(GL_BACK);
+    glReadPixels(0, 0, static_cast<GLsizei>(w), static_cast<GLsizei>(h), GL_RGB,
+                 GL_UNSIGNED_BYTE, buffer.data());
+
+    wxImage image(static_cast<int>(w), static_cast<int>(h));
+    unsigned char* destination = image.GetData();
+    const size_t row_bytes = w * kBytesPerPixel;
+    for (size_t y = 0; y < h; ++y) {
+      // OpenGL origin is bottom-left, wxImage is top-left, so flip rows.
+      std::copy_n(buffer.data() + ((h - 1 - y) * row_bytes), row_bytes,
+                  destination + (y * row_bytes));
+    }
+    return image;
   }
 
  private:

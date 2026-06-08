@@ -1,12 +1,17 @@
 #ifndef MAIN_WINDOW_HPP
 #define MAIN_WINDOW_HPP
 
+#include <wx/bitmap.h>
+#include <wx/dcclient.h>
+#include <wx/dcmemory.h>
 #include <wx/defs.h>
 #include <wx/event.h>
 #include <wx/filedlg.h>
 #include <wx/filefn.h>
 #include <wx/frame.h>
 #include <wx/gdicmn.h>
+#include <wx/image.h>
+#include <wx/imagpng.h>
 #include <wx/menu.h>
 #include <wx/notebook.h>
 #include <wx/panel.h>
@@ -62,11 +67,13 @@ class MainWindow : public wxFrame {
  private:
   void CreateLayout(bool maximize_on_start);
   void CreatePanels(wxNotebook* notebook);
+  void SelectStartupTab();
   void InitializeOpenGL();
   void EstablishConnections();
   void LoadStartupFile();
   void ConfigureAutoExitTimer();
   void DumpPngIfRequested();
+  void DumpFramePng(const std::string& path);
   void InitMenu();
 
   void CallbackLoadXML(wxCommandEvent& event);
@@ -175,6 +182,7 @@ inline void MainWindow::CreateLayout(bool maximize_on_start) {
   notebook_panel_sizer_ptr->Add(notebook_ptr, sizer_flags);
 
   CreatePanels(notebook_ptr);
+  SelectStartupTab();
   app::io::PrintRuntimeInfo(std::cout);
 
   auto gl_canvas_panel = std::make_unique<wxPanel>(main_splitter_ptr, wxID_ANY);
@@ -214,6 +222,21 @@ inline void MainWindow::CreatePanels(wxNotebook* notebook) {
   notebook->AddPage(document_setup_panel, "Document");
   notebook->AddPage(impl_->calendar_setup_panel, "Timeframe");
   notebook->AddPage(impl_->elements_setup_panel, "Layout");
+}
+
+inline void MainWindow::SelectStartupTab() {
+  if (!runtime_options_.select_tab || impl_->notebook == nullptr) {
+    return;
+  }
+  const wxString wanted = wxString::FromUTF8(*runtime_options_.select_tab);
+  for (size_t index = 0; index < impl_->notebook->GetPageCount(); ++index) {
+    if (impl_->notebook->GetPageText(index).IsSameAs(wanted, false)) {
+      impl_->notebook->SetSelection(index);
+      return;
+    }
+  }
+  std::cerr << "DECADE_SELECT_TAB: no tab labelled '"
+            << *runtime_options_.select_tab << "'\n";
 }
 
 inline void MainWindow::InitializeOpenGL() {
@@ -270,6 +293,54 @@ inline void MainWindow::DumpPngIfRequested() {
       std::cout << "DECADE_DUMP_WINDOW_PNG: writing " << path << '\n';
       impl_->gl_canvas->SaveWindowPNG(path);
     });
+  }
+  if (runtime_options_.dump_frame_png_path) {
+    const std::string path = *runtime_options_.dump_frame_png_path;
+    // Defer until after the first real paint so every panel has drawn itself.
+    CallAfter([this, path]() {
+      std::cout << "DECADE_DUMP_FRAME_PNG: writing " << path << '\n';
+      DumpFramePng(path);
+    });
+  }
+}
+
+inline void MainWindow::DumpFramePng(const std::string& path) {
+  const wxSize size = GetClientSize();
+  if (size.GetWidth() <= 0 || size.GetHeight() <= 0) {
+    return;
+  }
+
+  // Grab the wx widget tree (menu bar, tabs, panels) through a client DC.
+  wxBitmap bitmap(size.GetWidth(), size.GetHeight());
+  {
+    wxClientDC client_dc(this);
+    wxMemoryDC memory_dc(bitmap);
+    memory_dc.Blit(0, 0, size.GetWidth(), size.GetHeight(), &client_dc, 0, 0);
+  }
+
+  // The OpenGL canvas is invisible to a wxDC, so paste its back buffer on top
+  // at the canvas's position within the frame.
+  if (impl_->gl_canvas.get() != nullptr) {
+    const wxImage gl_image = impl_->gl_canvas->CaptureBackBufferImage();
+    if (gl_image.IsOk()) {
+      const wxPoint origin =
+          ScreenToClient(impl_->gl_canvas->GetScreenPosition());
+      const wxSize canvas_size = impl_->gl_canvas->GetSize();
+      const wxImage fitted =
+          (gl_image.GetWidth() == canvas_size.GetWidth() &&
+           gl_image.GetHeight() == canvas_size.GetHeight())
+              ? gl_image
+              : gl_image.Scale(canvas_size.GetWidth(), canvas_size.GetHeight());
+      wxMemoryDC memory_dc(bitmap);
+      memory_dc.DrawBitmap(wxBitmap(fitted), origin, false);
+    }
+  }
+
+  if (wxImage::FindHandler(wxBITMAP_TYPE_PNG) == nullptr) {
+    wxImage::AddHandler(std::make_unique<wxPNGHandler>().release());
+  }
+  if (!bitmap.ConvertToImage().SaveFile(path, wxBITMAP_TYPE_PNG)) {
+    std::cerr << "DECADE_DUMP_FRAME_PNG: failed to write " << path << '\n';
   }
 }
 

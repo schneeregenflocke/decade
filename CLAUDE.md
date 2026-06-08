@@ -40,11 +40,28 @@ env-var fallback) is centralised in `src/app/runtime_options.hpp`
 
 ### Headless / scripted runs
 
-The binary honors several environment variables that are essential for non-interactive use (CI, screenshots, smoke tests):
+The binary honors several environment variables (read in
+`src/app/runtime_options.hpp`) for non-interactive use — CI, screenshots, smoke
+tests.
 
-- `DECADE_EXIT_AFTER_MS=<ms>` — auto-close the main window after N ms. Use for smoke tests.
-- `DECADE_DUMP_PNG=<path>` — render the calendar page to PNG via off-screen FBO once OpenGL is ready.
-- `DECADE_DUMP_WINDOW_PNG=<path>` — capture the actual window back buffer after first paint (deferred via `CallAfter`).
+**Image capture** — three variables capture three different things; they are not
+redundant:
+
+| Variable | Captures | Resolution / look | Needs |
+| --- | --- | --- | --- |
+| `DECADE_DUMP_PNG=<path>` | the calendar **page artwork** only, via an off-screen FBO | export DPI, white background, no app chrome | OpenGL only |
+| `DECADE_DUMP_WINDOW_PNG=<path>` | the **GL canvas pane** exactly as on screen (`glReadPixels` on the back buffer) | screen resolution, dark margins around the page | OpenGL only — works on Wayland |
+| `DECADE_DUMP_FRAME_PNG=<path>` | the **whole frame**: tabs + panels (`wxClientDC` blit) with the GL back buffer composited on top | screen resolution | widget read-back needs X11/Xvfb (blank under Wayland) |
+
+`DUMP_WINDOW_PNG` is the canvas-only subset of `DUMP_FRAME_PNG`; prefer it when
+you only need the rendered canvas (and to avoid Xvfb), and `DUMP_PNG` when you
+need a clean high-DPI export of the page itself. All dumps are deferred via
+`CallAfter` so the first paint has happened.
+
+**Control:**
+
+- `DECADE_EXIT_AFTER_MS=<ms>` — auto-close the main window after N ms.
+- `DECADE_SELECT_TAB=<label>` — pre-select a notebook tab by label (case-insensitive), e.g. for screenshotting a specific tab.
 - `DECADE_DEBUG_LOG=1` — enable OpenGL/runtime debug logging.
 - `DECADE_DEFAULT_CSV=<path>` — opt-in startup file (CSV or XML) when no positional argument is given; the CLI argument takes precedence. No file is loaded if this is unset.
 
@@ -52,6 +69,19 @@ Typical smoke test (pass the sample data explicitly):
 ```bash
 DECADE_DUMP_PNG=/tmp/decade_render.png DECADE_EXIT_AFTER_MS=2000 \
   stdbuf -oL -eL timeout 12 ./build/decade test-files/test_dates_1.csv
+```
+
+Full-UI screenshot (tabs + panels + canvas) of a specific tab. The widget
+read-back only works on the **X11 backend** — a `wxClientDC` blit returns black
+under Wayland — so run it headless under **Xvfb** with software GL. This is the
+supported way to screenshot the actual GUI: GNOME/Wayland blocks programmatic
+screen capture, and forcing `GDK_BACKEND=x11` on a live XWayland session breaks
+the GL canvas' EGL surface.
+```bash
+xvfb-run -a -s "-screen 0 1600x1000x24" \
+  env GDK_BACKEND=x11 LIBGL_ALWAYS_SOFTWARE=1 \
+  DECADE_SELECT_TAB=Timeframe DECADE_DUMP_FRAME_PNG=/tmp/decade_ui.png \
+  DECADE_EXIT_AFTER_MS=3000 timeout 30 ./build/decade test-files/test_dates_1.csv
 ```
 
 ## Build hygiene

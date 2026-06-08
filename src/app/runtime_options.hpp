@@ -24,6 +24,17 @@ namespace app {
 //                                 set.
 //   DECADE_DUMP_PNG=<path>        render the calendar page to PNG via FBO.
 //   DECADE_DUMP_WINDOW_PNG=<path> capture the window back buffer after paint.
+//   DECADE_DUMP_FRAME_PNG=<path>  capture the whole main frame (tabs + panels +
+//                                 canvas) to PNG via wxDC, compositing the GL
+//                                 back buffer on top. The widget read-back
+//                                 needs the X11 backend (a wxClientDC blit
+//                                 returns black under Wayland), so run it
+//                                 headless under Xvfb (see CLAUDE.md, "Headless
+//                                 / scripted runs", for the full xvfb-run
+//                                 line).
+//   DECADE_SELECT_TAB=<label>     pre-select a notebook tab by its label
+//                                 (case-insensitive) at startup, e.g. for
+//                                 screenshotting a specific tab.
 //   DECADE_EXIT_AFTER_MS=<ms>     auto-close the main window after N ms.
 //
 // (DECADE_DEBUG_LOG is read by the Infrastructure layer in
@@ -34,6 +45,8 @@ struct RuntimeOptions {
   std::optional<std::string> startup_file;
   std::optional<std::string> dump_png_path;
   std::optional<std::string> dump_window_png_path;
+  std::optional<std::string> dump_frame_png_path;
+  std::optional<std::string> select_tab;
   std::optional<std::int64_t> exit_after_ms;
 };
 
@@ -56,6 +69,8 @@ inline RuntimeOptions RuntimeOptionsFromEnv() {
   options.startup_file = GetEnvString("DECADE_DEFAULT_CSV");
   options.dump_png_path = GetEnvString("DECADE_DUMP_PNG");
   options.dump_window_png_path = GetEnvString("DECADE_DUMP_WINDOW_PNG");
+  options.dump_frame_png_path = GetEnvString("DECADE_DUMP_FRAME_PNG");
+  options.select_tab = GetEnvString("DECADE_SELECT_TAB");
 
   if (const std::optional<std::string> exit_after_ms =
           GetEnvString("DECADE_EXIT_AFTER_MS")) {

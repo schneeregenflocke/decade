@@ -141,6 +141,10 @@ class FontPanel : public wxPanel {
     }
 
     FcPattern* pattern = FcPatternCreate();
+    if (pattern == nullptr) {
+      std::cerr << "ProcessFontData: FcPatternCreate failed\n";
+      return;
+    }
     FcPatternAddString(
         pattern, FC_FAMILY,
         reinterpret_cast<const FcChar8*>(face_name.utf8_str().data()));
@@ -155,18 +159,22 @@ class FontPanel : public wxPanel {
 
     FcResult result = FcResultNoMatch;
     FcPattern* match = FcFontMatch(fc_config_.get(), pattern, &result);
-    FcChar8* name_unparse = FcNameUnparse(match);
-    /*int name_unparse_len = strlen(reinterpret_cast<const
-    char*>(name_unparse)); std::string name_unparse_string(name_unparse,
-    name_unparse + name_unparse_len); std::cout << "font unparse: " <<
-    name_unparse_string << '\n';*/
-
-    FcStrFree(name_unparse);
+    if (match == nullptr) {
+      std::cerr << "ProcessFontData: no matching font found\n";
+      FcPatternDestroy(pattern);
+      return;
+    }
 
     // https://fontconfig.pages.freedesktop.org/fontconfig/fontconfig-devel/fcpatternget.html
     FcChar8* fc_filepath = nullptr;
-    [[maybe_unused]] FcResult const fc_result =
+    FcResult const fc_result =
         FcPatternGetString(match, FC_FILE, 0, &fc_filepath);
+    if (fc_result != FcResultMatch || fc_filepath == nullptr) {
+      std::cerr << "ProcessFontData: matched font has no file path\n";
+      FcPatternDestroy(match);
+      FcPatternDestroy(pattern);
+      return;
+    }
 
     const size_t len = strlen(reinterpret_cast<const char*>(fc_filepath));
     font_filepath = std::string(fc_filepath, fc_filepath + len);
