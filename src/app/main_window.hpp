@@ -27,6 +27,7 @@
 
 #include "../gui/calendar_panel.hpp"
 #include "../gui/date_panel.hpp"
+#include "../gui/document_panel.hpp"
 #include "../gui/font_panel.hpp"
 #include "../gui/groups_panel.hpp"
 #include "../gui/license_panel.hpp"
@@ -198,19 +199,21 @@ inline void MainWindow::CreatePanels(wxNotebook* notebook) {
       std::make_unique<CalendarSetupPanel>(notebook).release();
   impl_->elements_setup_panel =
       std::make_unique<ElementsSetupsPanel>(notebook).release();
-  impl_->page_setup_panel =
-      std::make_unique<PageSetupPanel>(notebook).release();
-  impl_->font_panel = std::make_unique<FontPanel>(notebook).release();
-  impl_->title_setup_panel =
-      std::make_unique<TitleSetupPanel>(notebook).release();
 
-  notebook->AddPage(impl_->data_table_panel, "Dates");
-  notebook->AddPage(impl_->date_groups_table_panel, "Groups");
-  notebook->AddPage(impl_->calendar_setup_panel, "Calendar");
-  notebook->AddPage(impl_->elements_setup_panel, "Shapes");
-  notebook->AddPage(impl_->page_setup_panel, "Page");
-  notebook->AddPage(impl_->font_panel, "Font");
-  notebook->AddPage(impl_->title_setup_panel, "Title");
+  // Page, font and title settings are merged into a single "Document" tab; the
+  // composite panel owns the three child panels, which the binder still wires
+  // individually via the weak references below.
+  auto* document_setup_panel =
+      std::make_unique<DocumentSetupPanel>(notebook).release();
+  impl_->page_setup_panel = document_setup_panel->GetPageSetupPanel();
+  impl_->font_panel = document_setup_panel->GetFontPanel();
+  impl_->title_setup_panel = document_setup_panel->GetTitleSetupPanel();
+
+  notebook->AddPage(impl_->date_groups_table_panel, "Categories");
+  notebook->AddPage(impl_->data_table_panel, "Intervals");
+  notebook->AddPage(document_setup_panel, "Document");
+  notebook->AddPage(impl_->calendar_setup_panel, "Timeframe");
+  notebook->AddPage(impl_->elements_setup_panel, "Bars");
 }
 
 inline void MainWindow::InitializeOpenGL() {

@@ -316,6 +316,8 @@ class FontShape : public Shape {
 
   void set_font(std::shared_ptr<Font> font_ptr) { font = std::move(font_ptr); }
 
+  void set_color(const glm::vec4& new_color) { color = new_color; }
+
   void set_shape(const std::string& text, const glm::vec3& position,
                  float size) {
     const auto glyphs = DecodeLatin1FromUtf8(text);
@@ -381,7 +383,6 @@ class FontShape : public Shape {
   void draw() const override {
     shader()->UseProgram();
 
-    const glm::vec4 color(kZero, kZero, kZero, kOne);
     shader()->SetUniform("texture_color", color);
 
     vao_ref().bind();
@@ -409,5 +410,6 @@ class FontShape : public Shape {
   std::vector<glm::vec2> texture_positions;
   std::vector<GLuint> text_textures;
   std::shared_ptr<Font> font;
+  glm::vec4 color{kZero, kZero, kZero, kOne};
 };
 #endif  // FONT_HPP

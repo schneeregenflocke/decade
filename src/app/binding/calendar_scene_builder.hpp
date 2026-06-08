@@ -258,6 +258,9 @@ class CalendarSceneBuilder {
       return;
     }
     title_shape->set_font(font);
+    const std::array<float, 4>& text_color = title_config.TextColor();
+    title_shape->set_color(
+        glm::vec4(text_color[0], text_color[1], text_color[2], text_color[3]));
     title_shape->set_shape_centered(
         title_config.TitleText(), title_frame.getCenter(),
         title_frame.height() * title_config.FontSizeRatio());

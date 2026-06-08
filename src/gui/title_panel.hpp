@@ -8,7 +8,7 @@
 #include <wx/wx.h>
 
 #include <array>
-#include <glm/glm.hpp>
+#include <cmath>
 #include <memory>
 #include <sigslot/signal.hpp>
 
@@ -17,87 +17,57 @@
 class TitleSetupPanel : public wxPanel {
  public:
   explicit TitleSetupPanel(wxWindow* parent) : wxPanel(parent, wxID_ANY) {
-    constexpr int kFieldCount = 5;
     constexpr int kSizerBorder = 5;
     constexpr int kLabelWidth = 120;
-    constexpr int kAlphaMax = 255;
     constexpr double kSizeRatioIncrement = 0.05;
 
-    const wxSizerFlags sizer_flags_0 = wxSizerFlags().Proportion(0).Expand();
-    const wxSizerFlags sizer_flags_1 =
+    const wxSizerFlags row_flags = wxSizerFlags().Proportion(0).Expand();
+    const wxSizerFlags label_flags =
         wxSizerFlags().Proportion(0).Expand().Border(wxALL, kSizerBorder);
-    const wxSizerFlags sizer_flags_2 =
+    const wxSizerFlags field_flags =
         wxSizerFlags().Proportion(1).Expand().Border(wxALL, kSizerBorder);
 
     auto* vertical_sizer = std::make_unique<wxBoxSizer>(wxVERTICAL).release();
     SetSizer(vertical_sizer);
 
-    std::array<wxBoxSizer*, kFieldCount> horizontal_sizers{};
-
-    for (auto& sizer : horizontal_sizers) {
-      sizer = std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
-      vertical_sizer->Add(sizer, sizer_flags_0);
-    }
-
-    std::array<wxStaticText*, kFieldCount> labels{};
-
-    labels[0] = std::make_unique<wxStaticText>(this, wxID_ANY, L"Frame Height")
-                    .release();
-    labels[0]->SetMinSize(wxSize(kLabelWidth, -1));
-    horizontal_sizers[0]->Add(labels[0], sizer_flags_1);
-
-    labels[1] =
-        std::make_unique<wxStaticText>(this, wxID_ANY, L"Font Size Ratio")
-            .release();
-    labels[1]->SetMinSize(wxSize(kLabelWidth, -1));
-    horizontal_sizers[1]->Add(labels[1], sizer_flags_1);
-
-    labels[2] =
-        std::make_unique<wxStaticText>(this, wxID_ANY, L"Text").release();
-    labels[2]->SetMinSize(wxSize(kLabelWidth, -1));
-    horizontal_sizers[2]->Add(labels[2], sizer_flags_1);
-
-    labels[3] =
-        std::make_unique<wxStaticText>(this, wxID_ANY, L"Text Color").release();
-    labels[3]->SetMinSize(wxSize(kLabelWidth, -1));
-    horizontal_sizers[3]->Add(labels[3], sizer_flags_1);
-    labels[3]->Enable(false);
-
-    labels[4] =
-        std::make_unique<wxStaticText>(this, wxID_ANY, L"Color Transparency")
-            .release();
-    labels[4]->SetMinSize(wxSize(kLabelWidth, -1));
-    horizontal_sizers[4]->Add(labels[4], sizer_flags_1);
-    labels[4]->Enable(false);
-
     frame_height_ctrl = std::make_unique<wxSpinCtrlDouble>(this).release();
     frame_height_ctrl->SetDigits(2);
-    horizontal_sizers[0]->Add(frame_height_ctrl, sizer_flags_2);
+    AddLabelledRow(vertical_sizer, L"Frame Height", frame_height_ctrl,
+                   row_flags, label_flags, field_flags, kLabelWidth);
 
     size_ratio_ctrl = std::make_unique<wxSpinCtrlDouble>(this).release();
     size_ratio_ctrl->SetDigits(2);
     size_ratio_ctrl->SetIncrement(kSizeRatioIncrement);
-    horizontal_sizers[1]->Add(size_ratio_ctrl, sizer_flags_2);
+    AddLabelledRow(vertical_sizer, L"Font Size Ratio", size_ratio_ctrl,
+                   row_flags, label_flags, field_flags, kLabelWidth);
 
     title_text_edit = std::make_unique<wxTextCtrl>(this, wxID_ANY).release();
-    horizontal_sizers[2]->Add(title_text_edit, sizer_flags_2);
+    AddLabelledRow(vertical_sizer, L"Text", title_text_edit, row_flags,
+                   label_flags, field_flags, kLabelWidth);
 
+    // "Color Transparency" belongs to the text colour, so both controls live in
+    // a dedicated "Text Color" group.
+    auto* color_box =
+        std::make_unique<wxStaticBoxSizer>(wxVERTICAL, this, L"Text Color")
+            .release();
+
+    constexpr int kAlphaMax = 255;
     text_color_picker =
         std::make_unique<wxColourPickerCtrl>(
-            this, wxID_ANY, *wxStockGDI::GetColour(wxStockGDI::COLOUR_BLACK),
-            wxDefaultPosition, wxDefaultSize, wxCLRP_SHOW_ALPHA)
+            this, wxID_ANY, *wxStockGDI::GetColour(wxStockGDI::COLOUR_BLACK))
             .release();
-    text_color_picker->Enable(false);
-    horizontal_sizers[3]->Add(text_color_picker, sizer_flags_2);
+    AddLabelledRow(color_box, L"Color", text_color_picker, row_flags,
+                   label_flags, field_flags, kLabelWidth);
 
     alpha_slider =
         std::make_unique<wxSlider>(this, wxID_ANY, kAlphaMax, 0, kAlphaMax,
                                    wxDefaultPosition, wxDefaultSize,
                                    wxSL_HORIZONTAL | wxSL_LABELS)
             .release();
-    alpha_slider->Enable(false);
-    horizontal_sizers[4]->Add(alpha_slider, sizer_flags_2);
+    AddLabelledRow(color_box, L"Transparency", alpha_slider, row_flags,
+                   label_flags, field_flags, kLabelWidth);
 
+    vertical_sizer->Add(color_box, row_flags);
     vertical_sizer->Layout();
 
     ////////////////////////////////////////
@@ -125,6 +95,31 @@ class TitleSetupPanel : public wxPanel {
   }
 
  private:
+  // Colour channels are stored as floats in [0, 1] in the domain but exposed by
+  // wx as 8-bit byte values.
+  static constexpr float kByteMax = 255.0F;
+
+  static unsigned char ToByte(float channel) {
+    return static_cast<unsigned char>(std::lround(channel * kByteMax));
+  }
+
+  static float ToChannel(int byte_value) {
+    return static_cast<float>(byte_value) / kByteMax;
+  }
+
+  void AddLabelledRow(wxSizer* parent_sizer, const wxString& text,
+                      wxWindow* field, const wxSizerFlags& row_flags,
+                      const wxSizerFlags& label_flags,
+                      const wxSizerFlags& field_flags, int label_width) {
+    auto* row_sizer = std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
+    auto* label =
+        std::make_unique<wxStaticText>(this, wxID_ANY, text).release();
+    label->SetMinSize(wxSize(label_width, -1));
+    row_sizer->Add(label, label_flags);
+    row_sizer->Add(field, field_flags);
+    parent_sizer->Add(row_sizer, row_flags);
+  }
+
   void UpdateWidgetForSelection() {
     frame_height_ctrl->SetValue(
         static_cast<double>(title_config.FrameHeight()));
@@ -133,16 +128,10 @@ class TitleSetupPanel : public wxPanel {
 
     title_text_edit->ChangeValue(title_config.TitleText());
 
-    /*wxColour color;
-    color.Set(
-            glm::floatBitsToUint(title_config.text_color[0]),
-            glm::floatBitsToUint(title_config.text_color[1]),
-            glm::floatBitsToUint(title_config.text_color[2]),
-            glm::floatBitsToUint(title_config.text_color[3])
-    );
-
-    text_color_picker->SetColour(color);
-    alpha_slider->SetValue(glm::floatBitsToUint(title_config.text_color[3]));*/
+    const std::array<float, 4>& text_color = title_config.TextColor();
+    text_color_picker->SetColour(wxColour(
+        ToByte(text_color[0]), ToByte(text_color[1]), ToByte(text_color[2])));
+    alpha_slider->SetValue(static_cast<int>(ToByte(text_color[3])));
   }
 
   void CallbackSpinControl(wxSpinDoubleEvent& event) {
@@ -169,28 +158,23 @@ class TitleSetupPanel : public wxPanel {
     }
   }
 
-  void CallbackColorPickerControl(wxColourPickerEvent& /*event*/) {
-    // if (event.GetId() == ID_COLOR_PICKER)
-    //{
-    /*auto color = event.GetColour();
+  void CallbackColorPickerControl(wxColourPickerEvent& event) {
+    const wxColour color = event.GetColour();
+    std::array<float, 4> text_color = title_config.TextColor();
+    text_color[0] = ToChannel(color.Red());
+    text_color[1] = ToChannel(color.Green());
+    text_color[2] = ToChannel(color.Blue());
+    title_config.SetTextColor(text_color);
 
-    title_config.text_color[0] = glm::uintBitsToFloat(color.Red());
-    title_config.text_color[1] = glm::uintBitsToFloat(color.Green());
-    title_config.text_color[2] = glm::uintBitsToFloat(color.Blue());
-    title_config.text_color[3] = 1.0f;*/
-    // title_config.text_color[3] = glm::uintBitsToFloat(color.Alpha());
-    //}
-
-    // SendTitleConfig();
+    SendTitleConfig();
   }
 
-  void CallbackSliderControl(wxCommandEvent& /*event*/) {
-    // if (event.GetId() == ID_SLIDER)
-    //{
-    // title_config.text_color[3] = glm::uintBitsToFloat(event.GetInt());
-    //}
+  void CallbackSliderControl(wxCommandEvent& event) {
+    std::array<float, 4> text_color = title_config.TextColor();
+    text_color[3] = ToChannel(event.GetInt());
+    title_config.SetTextColor(text_color);
 
-    // SendTitleConfig();
+    SendTitleConfig();
   }
 
   TitleConfig title_config;

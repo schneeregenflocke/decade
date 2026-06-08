@@ -11,11 +11,14 @@
 #include <sigslot/signal.hpp>
 #include <string>
 
+#include "../graphics/debug_log.hpp"
+
 class FontPanel : public wxPanel {
  public:
   explicit FontPanel(wxWindow* parent)
       : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                wxTAB_TRAVERSAL, wxPanelNameStr) {
+                wxTAB_TRAVERSAL, wxPanelNameStr),
+        fc_config_(FcInitLoadConfigAndFonts()) {
     wxFont const normal_font = *wxNORMAL_FONT;
     // auto normal_font_name = normal_font.GetFaceName();
 
@@ -47,6 +50,15 @@ class FontPanel : public wxPanel {
   [[nodiscard]] auto& SignalFontFilepath() { return signal_font_filepath; }
 
  private:
+  // Owns the fontconfig configuration for this panel's lifetime. Loading it
+  // once (instead of FcInitLoadConfigAndFonts()/FcFini() on every font change)
+  // avoids repeated, expensive global re-initialisation of fontconfig. RAII
+  // keeps the class at Rule of Zero.
+  struct FcConfigDeleter {
+    void operator()(FcConfig* config) const { FcConfigDestroy(config); }
+  };
+
+  std::unique_ptr<FcConfig, FcConfigDeleter> fc_config_;
   sigslot::signal<const std::string&> signal_font_filepath;
   void initConvertWxFontWeightToFcWeight() {
     fontWeightMap = {{wxFONTWEIGHT_THIN, FC_WEIGHT_THIN},
@@ -84,8 +96,10 @@ class FontPanel : public wxPanel {
       throw std::runtime_error("convertWxFontWeightToFcWeight");
     }
 
-    std::cout << "convertWxFontWeightToFcWeight: " << wx_font_weight
-              << " to: " << fc_weight << '\n';
+    if (decade_debug::LogEnabled()) {
+      std::cout << "convertWxFontWeightToFcWeight: " << wx_font_weight
+                << " to: " << fc_weight << '\n';
+    }
 
     return fc_weight;
   }
@@ -106,8 +120,10 @@ class FontPanel : public wxPanel {
       throw std::runtime_error("convertWxFontStyleToFcSlant");
     }
 
-    std::cout << "convertWxFontStyleToFcSlant: " << wx_font_style
-              << " to: " << fc_slant << '\n';
+    if (decade_debug::LogEnabled()) {
+      std::cout << "convertWxFontStyleToFcSlant: " << wx_font_style
+                << " to: " << fc_slant << '\n';
+    }
 
     return fc_slant;
   }
@@ -118,11 +134,11 @@ class FontPanel : public wxPanel {
     wxFontWeight const font_weight = wx_font.GetWeight();
     wxFontStyle const font_style = wx_font.GetStyle();
 
-    std::cout << "face_name: " << face_name << "\tpoint_size: " << point_size
-              << "\tfont_style: " << font_style
-              << "\t font_weight: " << font_weight << '\n';
-
-    FcConfig* ft_config = FcInitLoadConfigAndFonts();
+    if (decade_debug::LogEnabled()) {
+      std::cout << "face_name: " << face_name << "\tpoint_size: " << point_size
+                << "\tfont_style: " << font_style
+                << "\t font_weight: " << font_weight << '\n';
+    }
 
     FcPattern* pattern = FcPatternCreate();
     FcPatternAddString(
@@ -138,7 +154,7 @@ class FontPanel : public wxPanel {
     FcPatternAddInteger(pattern, FC_SLANT, fc_slant);
 
     FcResult result = FcResultNoMatch;
-    FcPattern* match = FcFontMatch(ft_config, pattern, &result);
+    FcPattern* match = FcFontMatch(fc_config_.get(), pattern, &result);
     FcChar8* name_unparse = FcNameUnparse(match);
     /*int name_unparse_len = strlen(reinterpret_cast<const
     char*>(name_unparse)); std::string name_unparse_string(name_unparse,
@@ -154,13 +170,12 @@ class FontPanel : public wxPanel {
 
     const size_t len = strlen(reinterpret_cast<const char*>(fc_filepath));
     font_filepath = std::string(fc_filepath, fc_filepath + len);
-    std::cout << "font_filepath: " << font_filepath << '\n';
+    if (decade_debug::LogEnabled()) {
+      std::cout << "font_filepath: " << font_filepath << '\n';
+    }
 
     FcPatternDestroy(match);
     FcPatternDestroy(pattern);
-    FcConfigDestroy(ft_config);
-
-    FcFini();
   }
 
   void CallbackFontChanged(wxFontPickerEvent& event) {
