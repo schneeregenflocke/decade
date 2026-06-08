@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "packages/page_config.hpp"
+#include "packages/page_setup_config.hpp"
+#include "packages/page_setup_store.hpp"
 
 namespace {
 

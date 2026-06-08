@@ -27,21 +27,21 @@ class DocumentSetupPanel : public wxPanel {
     auto* vertical_sizer = std::make_unique<wxBoxSizer>(wxVERTICAL).release();
     SetSizer(vertical_sizer);
 
-    page_setup_panel = std::make_unique<PageSetupPanel>(this).release();
-    font_panel = std::make_unique<FontPanel>(this).release();
-    title_setup_panel = std::make_unique<TitleSetupPanel>(this).release();
+    page_setup_panel_ = std::make_unique<PageSetupPanel>(this).release();
+    font_panel_ = std::make_unique<FontPanel>(this).release();
+    title_setup_panel_ = std::make_unique<TitleSetupPanel>(this).release();
 
-    vertical_sizer->Add(WrapInGroup(L"Page", page_setup_panel), group_flags);
-    vertical_sizer->Add(WrapInGroup(L"Font", font_panel), group_flags);
-    vertical_sizer->Add(WrapInGroup(L"Title", title_setup_panel), group_flags);
+    vertical_sizer->Add(WrapInGroup(L"Page", page_setup_panel_), group_flags);
+    vertical_sizer->Add(WrapInGroup(L"Font", font_panel_), group_flags);
+    vertical_sizer->Add(WrapInGroup(L"Title", title_setup_panel_), group_flags);
   }
 
   [[nodiscard]] PageSetupPanel* GetPageSetupPanel() const {
-    return page_setup_panel;
+    return page_setup_panel_;
   }
-  [[nodiscard]] FontPanel* GetFontPanel() const { return font_panel; }
+  [[nodiscard]] FontPanel* GetFontPanel() const { return font_panel_; }
   [[nodiscard]] TitleSetupPanel* GetTitleSetupPanel() const {
-    return title_setup_panel;
+    return title_setup_panel_;
   }
 
  private:
@@ -52,8 +52,8 @@ class DocumentSetupPanel : public wxPanel {
     return box_sizer;
   }
 
-  wxWeakRef<PageSetupPanel> page_setup_panel;
-  wxWeakRef<FontPanel> font_panel;
-  wxWeakRef<TitleSetupPanel> title_setup_panel;
+  wxWeakRef<PageSetupPanel> page_setup_panel_;
+  wxWeakRef<FontPanel> font_panel_;
+  wxWeakRef<TitleSetupPanel> title_setup_panel_;
 };
 #endif  // DOCUMENT_PANEL_HPP

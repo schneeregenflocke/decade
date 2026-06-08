@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "packages/title_config.hpp"
+#include "packages/title_config_store.hpp"
 
 TEST(TitleConfigTest, GettersReturnSetValues) {
   TitleConfig config;

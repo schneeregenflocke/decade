@@ -19,16 +19,16 @@ class LicenseInformationDialog : public wxDialog {
                  wxDefaultPosition,
                  wxSize(kDefaultWidth, kDefaultHeight) /*wxDefaultSize*/,
                  wxCAPTION | wxRESIZE_BORDER | wxMAXIMIZE_BOX) {
-    license_select_list_box =
+    license_select_list_box_ =
         std::make_unique<wxListBox>(this, wxID_ANY, wxDefaultPosition,
                                     wxDefaultSize, 0, nullptr,
                                     wxLB_SINGLE | wxLB_NEEDED_SB)
             .release();
 
-    text_view_ctrl = std::make_unique<wxTextCtrl>(
-                         this, wxID_ANY, wxEmptyString, wxDefaultPosition,
-                         wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY)
-                         .release();
+    text_view_ctrl_ = std::make_unique<wxTextCtrl>(
+                          this, wxID_ANY, wxEmptyString, wxDefaultPosition,
+                          wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY)
+                          .release();
 
     const wxSizerFlags flags0 = wxSizerFlags().Proportion(1).Expand();
     const wxSizerFlags flags1 =
@@ -45,8 +45,8 @@ class LicenseInformationDialog : public wxDialog {
         std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
     vertical_sizer->Add(horizontal_sizer, flags0);
 
-    horizontal_sizer->Add(license_select_list_box, flags2);
-    horizontal_sizer->Add(text_view_ctrl, flags1);
+    horizontal_sizer->Add(license_select_list_box_, flags2);
+    horizontal_sizer->Add(text_view_ctrl_, flags1);
 
     auto* close_button = std::make_unique<wxButton>(this, wxID_CLOSE).release();
 
@@ -61,8 +61,8 @@ class LicenseInformationDialog : public wxDialog {
 
     CollectLicenses();
 
-    license_select_list_box->Select(0);
-    SelectLicense(collected_licenses.begin()->first);
+    license_select_list_box_->Select(0);
+    SelectLicense(collected_licenses_.begin()->first);
   }
 
  private:
@@ -71,22 +71,22 @@ class LicenseInformationDialog : public wxDialog {
   static constexpr int kBorderSize = 10;
 
   void CollectLicenses() {
-    collected_licenses.clear();
+    collected_licenses_.clear();
 
-    collected_licenses.emplace_back("Decade",
-                                    LOAD_RESOURCE(decade_LICENSE).toString());
-    collected_licenses.emplace_back(
+    collected_licenses_.emplace_back("Decade",
+                                     LOAD_RESOURCE(decade_LICENSE).toString());
+    collected_licenses_.emplace_back(
         "embed-resource",
         LOAD_RESOURCE(embed_resource_LICENSE_LICENSE).toString());
-    collected_licenses.emplace_back(
+    collected_licenses_.emplace_back(
         "csv2", LOAD_RESOURCE(csv2_copyright_LICENSE).toString());
-    collected_licenses.emplace_back(
+    collected_licenses_.emplace_back(
         "csv2mio", LOAD_RESOURCE(csv2mio_LICENSE_LICENSE).toString());
-    collected_licenses.emplace_back(
+    collected_licenses_.emplace_back(
         "sigslot", LOAD_RESOURCE(sigslot_LICENSE_LICENSE).toString());
 
-    for (const auto& license : collected_licenses) {
-      license_select_list_box->AppendString(license.first);
+    for (const auto& license : collected_licenses_) {
+      license_select_list_box_->AppendString(license.first);
     }
   }
 
@@ -99,19 +99,19 @@ class LicenseInformationDialog : public wxDialog {
   }
   void SelectLicense(const std::string& map_key) {
     auto iter = std::ranges::find_if(
-        collected_licenses,
+        collected_licenses_,
         [&](const string_pair& compare) { return compare.first == map_key; });
 
-    text_view_ctrl->Clear();
-    *text_view_ctrl << iter->second;
-    text_view_ctrl->ShowPosition(0);
+    text_view_ctrl_->Clear();
+    *text_view_ctrl_ << iter->second;
+    text_view_ctrl_->ShowPosition(0);
   }
 
-  wxWeakRef<wxListBox> license_select_list_box{nullptr};
-  wxWeakRef<wxTextCtrl> text_view_ctrl{nullptr};
+  wxWeakRef<wxListBox> license_select_list_box_{nullptr};
+  wxWeakRef<wxTextCtrl> text_view_ctrl_{nullptr};
 
   using string_pair = std::pair<std::string, std::string>;
 
-  std::vector<std::pair<std::string, std::string>> collected_licenses;
+  std::vector<std::pair<std::string, std::string>> collected_licenses_;
 };
 #endif  // LICENSE_PANEL_HPP

@@ -1,17 +1,10 @@
-#ifndef PAGE_CONFIG_HPP
-#define PAGE_CONFIG_HPP
+#ifndef PAGE_SETUP_STORE_HPP
+#define PAGE_SETUP_STORE_HPP
 
-#include <array>
 #include <sigslot/signal.hpp>
 
 #include "detail/reentry_guard.hpp"
-
-// Pure domain value. No serialization, no signal -> aggregate, copyable.
-struct PageSetupConfig {
-  std::array<float, 2> size{};
-  std::array<float, 4> margins{};
-  int orientation{};
-};
+#include "page_setup_config.hpp"
 
 // Owns a PageSetupConfig value plus the change signal. Non-copyable. No
 // serialization code (handled non-intrusively in the infrastructure layer).
@@ -29,23 +22,23 @@ class PageSetupStore {
       return;
     }
     const packages::detail::ScopedReentryFlag guard(emitting_);
-    page_setup_config = incoming_page_setup_config;
-    signal_page_setup_config(page_setup_config);
+    page_setup_config_ = incoming_page_setup_config;
+    signal_page_setup_config_(page_setup_config_);
   }
 
-  void SendPageSetup() { signal_page_setup_config(page_setup_config); }
+  void SendPageSetup() { signal_page_setup_config_(page_setup_config_); }
 
   [[nodiscard]] const PageSetupConfig& GetPageSetup() const {
-    return page_setup_config;
+    return page_setup_config_;
   }
 
   [[nodiscard]] auto& SignalPageSetupConfig() {
-    return signal_page_setup_config;
+    return signal_page_setup_config_;
   }
 
  private:
-  sigslot::signal<const PageSetupConfig&> signal_page_setup_config;
-  PageSetupConfig page_setup_config;
+  sigslot::signal<const PageSetupConfig&> signal_page_setup_config_;
+  PageSetupConfig page_setup_config_;
   bool emitting_{false};
 };
-#endif  // PAGE_CONFIG_HPP
+#endif  // PAGE_SETUP_STORE_HPP

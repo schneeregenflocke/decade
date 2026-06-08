@@ -16,9 +16,9 @@
 #include "../../graphics/scene_graph.hpp"
 #include "../../graphics/shapes.hpp"
 #include "../../packages/calendar_config.hpp"
-#include "../../packages/date_store.hpp"
-#include "../../packages/group_store.hpp"
-#include "../../packages/shape_config.hpp"
+#include "../../packages/date_group.hpp"
+#include "../../packages/date_interval_bundle_bar_store.hpp"
+#include "../../packages/shape_configuration.hpp"
 #include "../../packages/title_config.hpp"
 
 // Builds and fills the calendar scene graph from domain state. This is the
@@ -36,27 +36,27 @@ class CalendarSceneBuilder {
                        const ShapeConfigSet& shape_config_in,
                        const DateGroups& date_groups_in,
                        const DateIntervalBundleBarStore& data_store_in)
-      : scene_graph(std::make_shared<SceneNode>("root")),
-        graphics_engine(graphics_engine_in),
-        font(font_in),
-        page_size(page_size_in),
-        page_margin(page_margin_in),
-        title_config(title_config_in),
-        calendar_config(calendar_config_in),
-        shape_config(shape_config_in),
-        date_groups(date_groups_in),
-        data_store(data_store_in) {
-    graphics_engine->set_scene_graph(scene_graph);
+      : scene_graph_(std::make_shared<SceneNode>("root")),
+        graphics_engine_(graphics_engine_in),
+        font_(font_in),
+        page_size_(page_size_in),
+        page_margin_(page_margin_in),
+        title_config_(title_config_in),
+        calendar_config_(calendar_config_in),
+        shape_config_(shape_config_in),
+        date_groups_(date_groups_in),
+        data_store_(data_store_in) {
+    graphics_engine_->set_scene_graph(scene_graph_);
     auto* simple_shader =
-        graphics_engine->search_shader("Simple Shader").value_or(nullptr);
+        graphics_engine_->search_shader("Simple Shader").value_or(nullptr);
     auto* rectangles_shader =
-        graphics_engine->search_shader("Rectangles Shader").value_or(nullptr);
+        graphics_engine_->search_shader("Rectangles Shader").value_or(nullptr);
     auto* font_shader =
-        graphics_engine->search_shader("Font Shader").value_or(nullptr);
+        graphics_engine_->search_shader("Font Shader").value_or(nullptr);
 
     auto page_shape = std::make_shared<QuadrilateralShape>(simple_shader);
     auto page_node = std::make_shared<SceneNode>("page", page_shape);
-    scene_graph->add_child(page_node);
+    scene_graph_->add_child(page_node);
 
     auto print_area_shape =
         std::make_shared<RectanglesShape>(rectangles_shader);
@@ -131,7 +131,7 @@ class CalendarSceneBuilder {
     print_area_node->add_child(legend_text_node);
 
     auto title_font_shape = std::make_shared<FontShape>(font_shader);
-    title_font_shape->set_font(font);
+    title_font_shape->set_font(font_);
     auto title_font_node =
         std::make_shared<SceneNode>("title text", title_font_shape);
     print_area_node->add_child(title_font_node);
@@ -147,7 +147,7 @@ class CalendarSceneBuilder {
   }
 
   void Build() {
-    auto node = scene_graph->search_node("page").value_or(nullptr);
+    auto node = scene_graph_->search_node("page").value_or(nullptr);
     if (!node) {
       return;
     }
@@ -156,54 +156,54 @@ class CalendarSceneBuilder {
     if (!shape) {
       return;
     }
-    shape->set_shape(page_size);
+    shape->set_shape(page_size_);
     shape->set_color(glm::vec4(kOne, kOne, kOne, kOne));
 
-    print_area = page_size.reduce(page_margin);
+    print_area_ = page_size_.reduce(page_margin_);
 
-    title_frame = print_area;
-    title_frame.setB(title_frame.t() - title_config.FrameHeight());
+    title_frame_ = print_area_;
+    title_frame_.setB(title_frame_.t() - title_config_.FrameHeight());
 
-    page_margin_frame = print_area;
-    page_margin_frame.setT(title_frame.b());
+    page_margin_frame_ = print_area_;
+    page_margin_frame_.setT(title_frame_.b());
     // const rectf page_margin_frame_margin(0.0f, 0.0f, 0.0f, 0.f);
     // page_margin_frame = page_margin_frame.reduce(page_margin_frame_margin);
 
-    calendar_frame = page_margin_frame;
+    calendar_frame_ = page_margin_frame_;
     const rectf calendar_frame_margin =
         rectf(kZero, kDefaultMargin, kZero, kZero);
-    calendar_frame = calendar_frame.reduce(calendar_frame_margin);
+    calendar_frame_ = calendar_frame_.reduce(calendar_frame_margin);
 
-    if (calendar_config.IsAutoCalendarSpan() && !data_store.is_empty()) {
-      calendar_config.SetSpan(
-          CalendarSpan::YearSpan{.first_year = data_store.GetFirstYear(),
-                                 .last_year = data_store.GetLastYear()});
+    if (calendar_config_.IsAutoCalendarSpan() && !data_store_.is_empty()) {
+      calendar_config_.SetSpan(
+          CalendarSpan::YearSpan{.first_year = data_store_.GetFirstYear(),
+                                 .last_year = data_store_.GetLastYear()});
     }
 
     const size_t additional_rows = 2;
     const size_t number_rows =
-        additional_rows + calendar_config.GetSpanLengthYears();
+        additional_rows + calendar_config_.GetSpanLengthYears();
 
-    cell_width = calendar_frame.width() / kCalendarColumns;
-    row_height = calendar_frame.height() / static_cast<float>(number_rows);
+    cell_width_ = calendar_frame_.width() / kCalendarColumns;
+    row_height_ = calendar_frame_.height() / static_cast<float>(number_rows);
 
-    const rectf cells_frame_margin(cell_width, kZero,
-                                   row_height * kRowHeaderScale, kZero);
-    cells_frame = calendar_frame.reduce(cells_frame_margin);
+    const rectf cells_frame_margin(cell_width_, kZero,
+                                   row_height_ * kRowHeaderScale, kZero);
+    cells_frame_ = calendar_frame_.reduce(cells_frame_margin);
 
-    proportion_frame_layout.SetupRowFrames(
-        cells_frame, calendar_config.GetSpanLengthYears());
-    proportion_frame_layout.SetupSubFrames(
-        calendar_config.GetSpacingProportions());
+    proportion_frame_layout_.SetupRowFrames(
+        cells_frame_, calendar_config_.GetSpanLengthYears());
+    proportion_frame_layout_.SetupSubFrames(
+        calendar_config_.GetSpacingProportions());
 
-    day_width = cells_frame.width() / kDaysPerYear;
+    day_width_ = cells_frame_.width() / kDaysPerYear;
 
-    x_labels_frame = calendar_frame.reduce(
-        rectf(cell_width, kZero, row_height, cells_frame.height()));
-    y_labels_frame = calendar_frame.reduce(
-        rectf(kZero, cells_frame.width(), row_height * kRowHeaderScale, kZero));
-    legend_frame = calendar_frame.reduce(
-        rectf(cell_width, kZero, kZero, cells_frame.height() + row_height));
+    x_labels_frame_ = calendar_frame_.reduce(
+        rectf(cell_width_, kZero, row_height_, cells_frame_.height()));
+    y_labels_frame_ = calendar_frame_.reduce(rectf(
+        kZero, cells_frame_.width(), row_height_ * kRowHeaderScale, kZero));
+    legend_frame_ = calendar_frame_.reduce(
+        rectf(cell_width_, kZero, kZero, cells_frame_.height() + row_height_));
 
     SetupPrintAreaShape();
     SetupTitleShape();
@@ -218,9 +218,9 @@ class CalendarSceneBuilder {
 
  private:
   void SetupPrintAreaShape() {
-    auto config = shape_config.GetShapeConfiguration("Page Margin");
+    auto config = shape_config_.GetShapeConfiguration("Page Margin");
 
-    auto node = scene_graph->search_node("print area").value_or(nullptr);
+    auto node = scene_graph_->search_node("print area").value_or(nullptr);
     if (!node) {
       return;
     }
@@ -229,14 +229,14 @@ class CalendarSceneBuilder {
       return;
     }
 
-    shape->set_shape(print_area, config.LineWidth());
+    shape->set_shape(print_area_, config.LineWidth());
     shape->set_color({config.OutlineColor(), config.FillColor()});
   }
 
   void SetupTitleShape() {
-    auto config = shape_config.GetShapeConfiguration("Title Frame");
+    auto config = shape_config_.GetShapeConfiguration("Title Frame");
 
-    auto node = scene_graph->search_node("title area").value_or(nullptr);
+    auto node = scene_graph_->search_node("title area").value_or(nullptr);
     if (!node) {
       return;
     }
@@ -245,10 +245,10 @@ class CalendarSceneBuilder {
       return;
     }
 
-    shape->set_shape(title_frame, config.LineWidth());
+    shape->set_shape(title_frame_, config.LineWidth());
     shape->set_color({config.OutlineColor(), config.FillColor()});
 
-    auto title_node = scene_graph->search_node("title text").value_or(nullptr);
+    auto title_node = scene_graph_->search_node("title text").value_or(nullptr);
     if (!title_node) {
       return;
     }
@@ -257,13 +257,13 @@ class CalendarSceneBuilder {
     if (!title_shape) {
       return;
     }
-    title_shape->set_font(font);
-    const std::array<float, 4>& text_color = title_config.TextColor();
+    title_shape->set_font(font_);
+    const std::array<float, 4>& text_color = title_config_.TextColor();
     title_shape->set_color(
         glm::vec4(text_color[0], text_color[1], text_color[2], text_color[3]));
     title_shape->set_shape_centered(
-        title_config.TitleText(), title_frame.getCenter(),
-        title_frame.height() * title_config.FontSizeRatio());
+        title_config_.TitleText(), title_frame_.getCenter(),
+        title_frame_.height() * title_config_.FontSizeRatio());
   }
 
   void SetupCalendarLabelsShape() {
@@ -282,17 +282,17 @@ class CalendarSceneBuilder {
     }
 
     auto* font_shader =
-        graphics_engine->search_shader("Font Shader").value_or(nullptr);
+        graphics_engine_->search_shader("Font Shader").value_or(nullptr);
 
     std::vector<rectf> x_label_frames(number_months);
-    labels_font_size =
-        font->AdjustTextSize(rectf::from_dimension(rectf::Dimension{
-                                 .width = cell_width, .height = row_height}),
-                             "00000",
-                             Font::TextScale{.height_ratio = kFontScaleMin,
-                                             .width_ratio = kFontScaleMax});
+    labels_font_size_ =
+        font_->AdjustTextSize(rectf::from_dimension(rectf::Dimension{
+                                  .width = cell_width_, .height = row_height_}),
+                              "00000",
+                              Font::TextScale{.height_ratio = kFontScaleMin,
+                                              .width_ratio = kFontScaleMax});
 
-    auto month_node = scene_graph->search_node("month text").value_or(nullptr);
+    auto month_node = scene_graph_->search_node("month text").value_or(nullptr);
     if (!month_node) {
       return;
     }
@@ -300,27 +300,27 @@ class CalendarSceneBuilder {
     month_node->remove_children();
     for (size_t index = 0; index < number_months; ++index) {
       auto month_text_shape = std::make_shared<FontShape>(font_shader);
-      month_text_shape->set_font(font);
+      month_text_shape->set_font(font_);
       auto month_text_node =
           std::make_shared<SceneNode>(months_names.at(index), month_text_shape);
       month_node->add_child(month_text_node);
 
       const auto float_index = static_cast<float>(index);
-      const auto left = x_labels_frame.l() + (cell_width * float_index);
+      const auto left = x_labels_frame_.l() + (cell_width_ * float_index);
       x_label_frames.at(index).setL(left);
-      x_label_frames.at(index).setR(left + cell_width);
-      x_label_frames.at(index).setB(x_labels_frame.b());
-      x_label_frames.at(index).setT(x_labels_frame.t());
+      x_label_frames.at(index).setR(left + cell_width_);
+      x_label_frames.at(index).setB(x_labels_frame_.b());
+      x_label_frames.at(index).setT(x_labels_frame_.t());
 
       month_text_shape->set_shape_centered(months_names.at(index),
                                            x_label_frames.at(index).getCenter(),
-                                           labels_font_size);
+                                           labels_font_size_);
     }
 
-    auto config = shape_config.GetShapeConfiguration("Calendar Labels");
+    auto config = shape_config_.GetShapeConfiguration("Calendar Labels");
 
     auto column_node =
-        scene_graph->search_node("column label area").value_or(nullptr);
+        scene_graph_->search_node("column label area").value_or(nullptr);
     if (!column_node) {
       return;
     }
@@ -332,12 +332,12 @@ class CalendarSceneBuilder {
     column_shape->set_shape(x_label_frames, config.LineWidth());
     column_shape->set_color({config.OutlineColor(), config.FillColor()});
 
-    auto year_node = scene_graph->search_node("year text").value_or(nullptr);
+    auto year_node = scene_graph_->search_node("year text").value_or(nullptr);
     if (!year_node) {
       return;
     }
 
-    const std::size_t span_years = calendar_config.GetSpanLengthYears();
+    const std::size_t span_years = calendar_config_.GetSpanLengthYears();
     if (span_years == 0) {
       return;
     }
@@ -346,28 +346,28 @@ class CalendarSceneBuilder {
     year_node->remove_children();
     for (std::size_t index = 0; index < span_years; ++index) {
       const std::string current_year_text =
-          std::to_string(calendar_config.GetYear(index));
+          std::to_string(calendar_config_.GetYear(index));
 
       auto year_text_shape = std::make_shared<FontShape>(font_shader);
-      year_text_shape->set_font(font);
+      year_text_shape->set_font(font_);
       auto year_text_node =
           std::make_shared<SceneNode>(current_year_text, year_text_shape);
       year_node->add_child(year_text_node);
 
       const auto float_index = static_cast<float>(index);
-      const auto bottom = y_labels_frame.b() + (row_height * float_index);
-      y_labels_frames.at(index).setL(y_labels_frame.l());
-      y_labels_frames.at(index).setR(y_labels_frame.r());
+      const auto bottom = y_labels_frame_.b() + (row_height_ * float_index);
+      y_labels_frames.at(index).setL(y_labels_frame_.l());
+      y_labels_frames.at(index).setR(y_labels_frame_.r());
       y_labels_frames.at(index).setB(bottom);
-      y_labels_frames.at(index).setT(bottom + row_height);
+      y_labels_frames.at(index).setT(bottom + row_height_);
 
       year_text_shape->set_shape_centered(current_year_text,
                                           y_labels_frames.at(index).getCenter(),
-                                          labels_font_size);
+                                          labels_font_size_);
     }
 
     auto row_node =
-        scene_graph->search_node("row label area").value_or(nullptr);
+        scene_graph_->search_node("row label area").value_or(nullptr);
     if (!row_node) {
       return;
     }
@@ -381,7 +381,7 @@ class CalendarSceneBuilder {
   }
 
   void SetupYearsShapes() {
-    const std::size_t span_years = calendar_config.GetSpanLengthYears();
+    const std::size_t span_years = calendar_config_.GetSpanLengthYears();
     if (span_years == 0) {
       return;
     }
@@ -389,7 +389,7 @@ class CalendarSceneBuilder {
     std::vector<rectf> years_cells(span_years);
 
     for (std::size_t index = 0; index < span_years; ++index) {
-      const int current_year = calendar_config.GetYear(index);
+      const int current_year = calendar_config_.GetYear(index);
       const auto number_days =
           boost::gregorian::date_period(
               boost::gregorian::date(static_cast<unsigned short>(current_year),
@@ -398,15 +398,15 @@ class CalendarSceneBuilder {
                   static_cast<unsigned short>(current_year + 1), 1, 1))
               .length()
               .days();
-      const float year_length = static_cast<float>(number_days) * day_width;
-      rectf year_cell = proportion_frame_layout.GetSubFrame(index, 1);
+      const float year_length = static_cast<float>(number_days) * day_width_;
+      rectf year_cell = proportion_frame_layout_.GetSubFrame(index, 1);
       year_cell.setR(year_cell.l() + year_length);
       years_cells.at(index) = year_cell;
     }
 
-    auto config = shape_config.GetShapeConfiguration("Years Shapes");
+    auto config = shape_config_.GetShapeConfiguration("Years Shapes");
 
-    auto node = scene_graph->search_node("year cells").value_or(nullptr);
+    auto node = scene_graph_->search_node("year cells").value_or(nullptr);
     if (!node) {
       return;
     }
@@ -420,7 +420,7 @@ class CalendarSceneBuilder {
 
   void SetupMonthsShapes() {
     constexpr size_t number_months = 12;
-    const std::size_t span_years = calendar_config.GetSpanLengthYears();
+    const std::size_t span_years = calendar_config_.GetSpanLengthYears();
     if (span_years == 0) {
       return;
     }
@@ -429,12 +429,13 @@ class CalendarSceneBuilder {
     std::vector<rectf> months_cells(store_size);
 
     for (std::size_t index = 0; index < span_years; ++index) {
-      const int current_year = calendar_config.GetYear(index);
+      const int current_year = calendar_config_.GetYear(index);
       const boost::gregorian::date first_day_of_year = boost::gregorian::date(
           static_cast<unsigned short>(current_year), 1, 1);
 
       for (size_t subindex = 0; subindex < number_months; ++subindex) {
-        const auto current_cell = proportion_frame_layout.GetSubFrame(index, 1);
+        const auto current_cell =
+            proportion_frame_layout_.GetSubFrame(index, 1);
         const int month_index = static_cast<int>(subindex);
         rectf month_cell;
         const auto start_offset =
@@ -444,7 +445,7 @@ class CalendarSceneBuilder {
                     first_day_of_year + boost::gregorian::months(month_index))
                     .length()
                     .days()) *
-            day_width;
+            day_width_;
         const auto end_offset =
             static_cast<float>(boost::gregorian::date_period(
                                    first_day_of_year,
@@ -452,7 +453,7 @@ class CalendarSceneBuilder {
                                                            month_index + 1))
                                    .length()
                                    .days()) *
-            day_width;
+            day_width_;
         month_cell.setL(current_cell.l() + start_offset);
         month_cell.setR(current_cell.l() + end_offset);
         month_cell.setB(current_cell.b());
@@ -463,9 +464,9 @@ class CalendarSceneBuilder {
       }
     }
 
-    auto config = shape_config.GetShapeConfiguration("Months Shapes");
+    auto config = shape_config_.GetShapeConfiguration("Months Shapes");
 
-    auto node = scene_graph->search_node("month cells").value_or(nullptr);
+    auto node = scene_graph_->search_node("month cells").value_or(nullptr);
     if (!node) {
       return;
     }
@@ -478,11 +479,11 @@ class CalendarSceneBuilder {
   }
 
   void SetupDaysShapes() {
-    if (!calendar_config.IsValidSpan()) {
+    if (!calendar_config_.IsValidSpan()) {
       return;
     }
 
-    const auto span_days = calendar_config.GetSpanLengthDays();
+    const auto span_days = calendar_config_.GetSpanLengthDays();
     if (span_days <= 0) {
       return;
     }
@@ -496,9 +497,9 @@ class CalendarSceneBuilder {
     days_cells0.resize(number_days_cells);
     days_cells1.resize(number_days_cells);
 
-    const std::size_t span_years = calendar_config.GetSpanLengthYears();
+    const std::size_t span_years = calendar_config_.GetSpanLengthYears();
     for (std::size_t index = 0; index < span_years; ++index) {
-      const int current_year = calendar_config.GetYear(index);
+      const int current_year = calendar_config_.GetYear(index);
       const std::int64_t number_days =
           boost::gregorian::date_period(
               boost::gregorian::date(static_cast<unsigned short>(current_year),
@@ -510,24 +511,25 @@ class CalendarSceneBuilder {
 
       for (std::int64_t subindex = 0; subindex < number_days; ++subindex) {
         const auto float_subindex = static_cast<float>(subindex);
-        const auto current_cell = proportion_frame_layout.GetSubFrame(index, 1);
+        const auto current_cell =
+            proportion_frame_layout_.GetSubFrame(index, 1);
 
         const boost::gregorian::date current_date =
-            calendar_config.GetSpanLimitsDate().at(0) +
+            calendar_config_.GetSpanLimitsDate().at(0) +
             boost::gregorian::date_duration(
                 static_cast<DurationRep>(days_index));
 
         if (current_date.day_of_week() == boost::date_time::Sunday) {
           rectf day_cell;
-          day_cell.setL(current_cell.l() + (float_subindex * day_width));
-          day_cell.setR(day_cell.l() + day_width);
+          day_cell.setL(current_cell.l() + (float_subindex * day_width_));
+          day_cell.setR(day_cell.l() + day_width_);
           day_cell.setB(current_cell.b());
           day_cell.setT(current_cell.t());
           days_cells1[static_cast<size_t>(days_index)] = day_cell;
         } else {
           rectf day_cell;
-          day_cell.setL(current_cell.l() + (float_subindex * day_width));
-          day_cell.setR(day_cell.l() + day_width);
+          day_cell.setL(current_cell.l() + (float_subindex * day_width_));
+          day_cell.setR(day_cell.l() + day_width_);
           day_cell.setB(current_cell.b());
           day_cell.setT(current_cell.t());
           days_cells0[static_cast<size_t>(days_index)] = day_cell;
@@ -536,10 +538,10 @@ class CalendarSceneBuilder {
       }
     }
 
-    auto config = shape_config.GetShapeConfiguration("Day Shapes");
-    auto sunday_config = shape_config.GetShapeConfiguration("Sunday Shapes");
+    auto config = shape_config_.GetShapeConfiguration("Day Shapes");
+    auto sunday_config = shape_config_.GetShapeConfiguration("Sunday Shapes");
 
-    auto node0 = scene_graph->search_node("day cells 0").value_or(nullptr);
+    auto node0 = scene_graph_->search_node("day cells 0").value_or(nullptr);
     if (!node0) {
       return;
     }
@@ -551,7 +553,7 @@ class CalendarSceneBuilder {
     shape0->set_shape(days_cells0, config.LineWidth());
     shape0->set_color({config.OutlineColor(), config.FillColor()});
 
-    auto node1 = scene_graph->search_node("day cells 1").value_or(nullptr);
+    auto node1 = scene_graph_->search_node("day cells 1").value_or(nullptr);
     if (!node1) {
       return;
     }
@@ -566,13 +568,13 @@ class CalendarSceneBuilder {
   }
 
   void SetupBarsShape() {
-    auto node = scene_graph->search_node("bar cells").value_or(nullptr);
+    auto node = scene_graph_->search_node("bar cells").value_or(nullptr);
     if (!node) {
       return;
     }
     node->remove_children();
 
-    const auto number_groups = date_groups.Items().size();
+    const auto number_groups = date_groups_.Items().size();
     for (size_t index = 0; index < number_groups; ++index) {
       auto child_node = std::make_shared<SceneNode>(std::string("group node ") +
                                                     std::to_string(index));
@@ -581,35 +583,36 @@ class CalendarSceneBuilder {
 
     std::vector<std::vector<rectf>> bars_cells(number_groups);
 
-    auto node_labels = scene_graph->search_node("bar labels").value_or(nullptr);
+    auto node_labels =
+        scene_graph_->search_node("bar labels").value_or(nullptr);
     if (!node_labels) {
       return;
     }
     node_labels->remove_children();
 
     auto* font_shader =
-        graphics_engine->search_shader("Font Shader").value_or(nullptr);
+        graphics_engine_->search_shader("Font Shader").value_or(nullptr);
     auto* rectangles_shader =
-        graphics_engine->search_shader("Rectangles Shader").value_or(nullptr);
+        graphics_engine_->search_shader("Rectangles Shader").value_or(nullptr);
 
-    const auto number_bars = data_store.GetNumberBars();
+    const auto number_bars = data_store_.GetNumberBars();
     for (size_t index = 0; index < number_bars; ++index) {
-      const auto& bar = data_store.GetBar(index);
-      if (calendar_config.IsInSpan(bar.GetYear())) {
+      const auto& bar = data_store_.GetBar(index);
+      if (calendar_config_.IsInSpan(bar.GetYear())) {
         const auto current_group = static_cast<size_t>(bar.GetGroup());
         auto current_shape_config =
-            shape_config.GetDynamicConfiguration(current_group);
+            shape_config_.GetDynamicConfiguration(current_group);
 
         const auto row = static_cast<std::size_t>(
-            bar.GetYear() - calendar_config.GetSpanLimitsYears().at(0));
+            bar.GetYear() - calendar_config_.GetSpanLimitsYears().at(0));
         const auto current_sub_cell =
-            proportion_frame_layout.GetSubFrame(row, 1);
+            proportion_frame_layout_.GetSubFrame(row, 1);
 
         rectf bar_cell;
         const auto bar_left =
-            current_sub_cell.l() + (bar.GetFirstDay() * day_width);
+            current_sub_cell.l() + (bar.GetFirstDay() * day_width_);
         const auto bar_right =
-            current_sub_cell.l() + (bar.GetLastDay() * day_width);
+            current_sub_cell.l() + (bar.GetLastDay() * day_width_);
         bar_cell.setL(bar_left);
         bar_cell.setR(bar_right);
         bar_cell.setB(current_sub_cell.b());
@@ -624,10 +627,10 @@ class CalendarSceneBuilder {
         node_labels->add_child(child_node);
 
         auto text_shape = std::make_shared<FontShape>(font_shader);
-        text_shape->set_font(font);
+        text_shape->set_font(font_);
         child_node->set_shape(text_shape);
 
-        auto current_text_cell = proportion_frame_layout.GetSubFrame(row, 2);
+        auto current_text_cell = proportion_frame_layout_.GetSubFrame(row, 2);
         current_text_cell.setL(bar_cell.l());
         current_text_cell.setR(bar_cell.r());
 
@@ -642,7 +645,7 @@ class CalendarSceneBuilder {
       auto shape = std::make_shared<RectanglesShape>(rectangles_shader);
       node_children[index]->set_shape(shape);
 
-      auto current_shape_config = shape_config.GetDynamicConfiguration(index);
+      auto current_shape_config = shape_config_.GetDynamicConfiguration(index);
 
       shape->set_shape(bars_cells.at(index), current_shape_config.LineWidth());
       shape->set_color({current_shape_config.OutlineColor(),
@@ -652,22 +655,22 @@ class CalendarSceneBuilder {
 
   void SetupYearsTotals() {
     auto* font_shader =
-        graphics_engine->search_shader("Font Shader").value_or(nullptr);
+        graphics_engine_->search_shader("Font Shader").value_or(nullptr);
 
     auto node_cells =
-        scene_graph->search_node("year total cells").value_or(nullptr);
+        scene_graph_->search_node("year total cells").value_or(nullptr);
     if (!node_cells) {
       return;
     }
 
     auto node_text =
-        scene_graph->search_node("year total text").value_or(nullptr);
+        scene_graph_->search_node("year total text").value_or(nullptr);
     if (!node_text) {
       return;
     }
     node_text->remove_children();
 
-    const std::size_t span_years = data_store.GetSpan();
+    const std::size_t span_years = data_store_.GetSpan();
     if (span_years == 0) {
       return;
     }
@@ -676,15 +679,15 @@ class CalendarSceneBuilder {
 
     for (std::size_t index = 0; index < span_years; ++index) {
       const int current_year =
-          data_store.GetFirstYear() + static_cast<int>(index);
-      if (calendar_config.IsInSpan(current_year)) {
+          data_store_.GetFirstYear() + static_cast<int>(index);
+      if (calendar_config_.IsInSpan(current_year)) {
         const auto row = static_cast<std::size_t>(
-            current_year - calendar_config.GetSpanLimitsYears().at(0));
-        const auto current_cell = proportion_frame_layout.GetSubFrame(row, 0);
+            current_year - calendar_config_.GetSpanLimitsYears().at(0));
+        const auto current_cell = proportion_frame_layout_.GetSubFrame(row, 0);
 
         rectf year_total_cell = current_cell;
         const auto year_total_width =
-            static_cast<float>(data_store.GetAnnualTotal(index)) * day_width;
+            static_cast<float>(data_store_.GetAnnualTotal(index)) * day_width_;
         year_total_cell.setR(current_cell.l() + year_total_width);
         years_totals_cells.at(index) = year_total_cell;
 
@@ -698,7 +701,7 @@ class CalendarSceneBuilder {
                 .days();
 
         const float percent =
-            static_cast<float>(data_store.GetAnnualTotal(index)) /
+            static_cast<float>(data_store_.GetAnnualTotal(index)) /
             static_cast<float>(number_days);
 
         std::ostringstream year_total_stream;
@@ -706,7 +709,7 @@ class CalendarSceneBuilder {
                           << percent * kPercentScale << " %";
         const auto year_total_text = year_total_stream.str();
         const auto year_total_text_width =
-            font->TextWidth(year_total_text, year_total_cell.height());
+            font_->TextWidth(year_total_text, year_total_cell.height());
 
         rectf year_total_text_cell;
         year_total_text_cell.setL(year_total_cell.r() + current_cell.height());
@@ -716,7 +719,7 @@ class CalendarSceneBuilder {
         year_total_text_cell.setT(year_total_cell.t());
 
         auto text_shape = std::make_shared<FontShape>(font_shader);
-        text_shape->set_font(font);
+        text_shape->set_font(font_);
         text_shape->set_shape_centered(year_total_text,
                                        year_total_text_cell.getCenter(),
                                        year_total_text_cell.height());
@@ -728,7 +731,7 @@ class CalendarSceneBuilder {
       }
     }
 
-    auto config = shape_config.GetShapeConfiguration("Years Totals");
+    auto config = shape_config_.GetShapeConfiguration("Years Totals");
 
     auto shape =
         std::dynamic_pointer_cast<RectanglesShape>(node_cells->get_shape());
@@ -742,42 +745,42 @@ class CalendarSceneBuilder {
 
   void SetupLegend() {
     auto* font_shader =
-        graphics_engine->search_shader("Font Shader").value_or(nullptr);
+        graphics_engine_->search_shader("Font Shader").value_or(nullptr);
     auto* rectangles_shader =
-        graphics_engine->search_shader("Rectangles Shader").value_or(nullptr);
+        graphics_engine_->search_shader("Rectangles Shader").value_or(nullptr);
 
     // auto node_area = scene_graph->search_node("legend
     // area").value_or(nullptr);
 
     auto node_entries =
-        scene_graph->search_node("legend entries").value_or(nullptr);
+        scene_graph_->search_node("legend entries").value_or(nullptr);
     if (!node_entries) {
       return;
     }
     node_entries->remove_children();
 
-    auto node_text = scene_graph->search_node("legend text").value_or(nullptr);
+    auto node_text = scene_graph_->search_node("legend text").value_or(nullptr);
     if (!node_text) {
       return;
     }
     node_text->remove_children();
 
-    const size_t number_entrie_frames = (date_groups.Items().size() + 1) * 2;
+    const size_t number_entrie_frames = (date_groups_.Items().size() + 1) * 2;
     std::vector<rectf> legend_entries_frames(number_entrie_frames);
     const auto entries_width =
-        legend_frame.width() / static_cast<float>(number_entrie_frames);
+        legend_frame_.width() / static_cast<float>(number_entrie_frames);
 
     for (size_t index = 0; index < number_entrie_frames; ++index) {
       const auto float_index = static_cast<float>(index);
-      const auto left = legend_frame.l() + (entries_width * float_index);
-      legend_entries_frames.at(index) = legend_frame;
+      const auto left = legend_frame_.l() + (entries_width * float_index);
+      legend_entries_frames.at(index) = legend_frame_;
       legend_entries_frames.at(index).setL(left);
       legend_entries_frames.at(index).setR(left + entries_width);
     }
 
     std::vector<rectf> bars_cells;
 
-    auto print_strings = date_groups.GetDateGroupsNames();
+    auto print_strings = date_groups_.GetDateGroupsNames();
     print_strings.emplace_back("Annual Sums");
 
     std::string string_max_length;
@@ -788,12 +791,12 @@ class CalendarSceneBuilder {
     }
 
     const auto legend_font_size =
-        font->AdjustTextSize(legend_entries_frames.at(0), string_max_length,
-                             Font::TextScale{.height_ratio = kFontScaleMin,
-                                             .width_ratio = kFontScaleMax});
+        font_->AdjustTextSize(legend_entries_frames.at(0), string_max_length,
+                              Font::TextScale{.height_ratio = kFontScaleMin,
+                                              .width_ratio = kFontScaleMax});
 
-    const std::size_t span_years = calendar_config.GetSpanLengthYears();
-    for (size_t index = 0; index < date_groups.Items().size(); ++index) {
+    const std::size_t span_years = calendar_config_.GetSpanLengthYears();
+    for (size_t index = 0; index < date_groups_.Items().size(); ++index) {
       const auto label_index = index * 2;
       auto node_text_child = std::make_shared<SceneNode>(
           std::string("legend label ") + std::to_string(index));
@@ -801,21 +804,22 @@ class CalendarSceneBuilder {
 
       auto shape_text = std::make_shared<FontShape>(font_shader);
       node_text_child->set_shape(shape_text);
-      shape_text->set_font(font);
+      shape_text->set_font(font_);
       shape_text->set_shape_centered(
-          date_groups.Items().at(index).GetName(),
+          date_groups_.Items().at(index).GetName(),
           legend_entries_frames.at(label_index).getCenter(), legend_font_size);
 
       if (span_years > 0U) {
         const auto current_height =
-            proportion_frame_layout.GetSubFrame(0, 1).height();
+            proportion_frame_layout_.GetSubFrame(0, 1).height();
         auto current_cell = legend_entries_frames.at(label_index + 1);
         const auto current_vertical_center = current_cell.getCenter()[1];
         current_cell.setB(current_vertical_center - (current_height * kHalf));
         current_cell.setT(current_vertical_center + (current_height * kHalf));
         bars_cells.emplace_back(current_cell);
 
-        auto current_shape_config = shape_config.GetDynamicConfiguration(index);
+        auto current_shape_config =
+            shape_config_.GetDynamicConfiguration(index);
 
         auto node_entrie = std::make_shared<SceneNode>(
             std::string("legend bar ") + std::to_string(index));
@@ -838,7 +842,7 @@ class CalendarSceneBuilder {
 
       auto shape_text = std::make_shared<FontShape>(font_shader);
       node_text_child->set_shape(shape_text);
-      shape_text->set_font(font);
+      shape_text->set_font(font_);
       shape_text->set_shape_centered(
           "Annual sum",
           legend_entries_frames.at(legend_entries_frames.size() - 2)
@@ -847,7 +851,7 @@ class CalendarSceneBuilder {
 
       if (span_years > 0U) {
         const auto current_height =
-            proportion_frame_layout.GetSubFrame(0, 0).height();
+            proportion_frame_layout_.GetSubFrame(0, 0).height();
         auto current_cell =
             legend_entries_frames.at(legend_entries_frames.size() - 1);
         const auto current_vertical_center = current_cell.getCenter()[1];
@@ -856,7 +860,7 @@ class CalendarSceneBuilder {
         bars_cells.emplace_back(current_cell);
 
         auto current_shape_config =
-            shape_config.GetShapeConfiguration("Years Totals");
+            shape_config_.GetShapeConfiguration("Years Totals");
 
         auto node_entrie =
             std::make_shared<SceneNode>(std::string("legend bar annual sum"));
@@ -885,33 +889,33 @@ class CalendarSceneBuilder {
   static constexpr float kPercentScale = 100.0F;
   static constexpr size_t kMonthNameBufferSize = 100;
 
-  std::shared_ptr<SceneNode> scene_graph;
-  GraphicsEngine* graphics_engine{nullptr};
+  std::shared_ptr<SceneNode> scene_graph_;
+  GraphicsEngine* graphics_engine_{nullptr};
 
   // State owned by CalendarPage, referenced here. The referenced objects stay
   // alive and stable for the builder's lifetime; only their contents change.
-  const std::shared_ptr<Font>& font;
-  const rectf& page_size;
-  const rectf& page_margin;
-  const TitleConfig& title_config;
-  CalendarConfig& calendar_config;
-  const ShapeConfigSet& shape_config;
-  const DateGroups& date_groups;
-  const DateIntervalBundleBarStore& data_store;
+  const std::shared_ptr<Font>& font_;
+  const rectf& page_size_;
+  const rectf& page_margin_;
+  const TitleConfig& title_config_;
+  CalendarConfig& calendar_config_;
+  const ShapeConfigSet& shape_config_;
+  const DateGroups& date_groups_;
+  const DateIntervalBundleBarStore& data_store_;
 
   // Transient layout state, recomputed on every Build().
-  ProportionFrameLayout proportion_frame_layout;
-  rectf print_area;
-  rectf title_frame;
-  rectf page_margin_frame;
-  rectf calendar_frame;
-  rectf cells_frame;
-  rectf x_labels_frame;
-  rectf y_labels_frame;
-  rectf legend_frame;
-  float cell_width{0.0F};
-  float row_height{0.0F};
-  float day_width{0.0F};
-  float labels_font_size{0.0F};
+  ProportionFrameLayout proportion_frame_layout_;
+  rectf print_area_;
+  rectf title_frame_;
+  rectf page_margin_frame_;
+  rectf calendar_frame_;
+  rectf cells_frame_;
+  rectf x_labels_frame_;
+  rectf y_labels_frame_;
+  rectf legend_frame_;
+  float cell_width_{0.0F};
+  float row_height_{0.0F};
+  float day_width_{0.0F};
+  float labels_font_size_{0.0F};
 };
 #endif  // CALENDAR_SCENE_BUILDER_HPP

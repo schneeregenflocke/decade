@@ -6,10 +6,10 @@
 #include <vector>
 
 #include "../../packages/calendar_config.hpp"
-#include "../../packages/date_store.hpp"
-#include "../../packages/group_store.hpp"
-#include "../../packages/page_config.hpp"
-#include "../../packages/shape_config.hpp"
+#include "../../packages/date_group.hpp"
+#include "../../packages/date_interval_bundle.hpp"
+#include "../../packages/page_setup_config.hpp"
+#include "../../packages/shape_configuration.hpp"
 #include "../../packages/title_config.hpp"
 
 // Central typed event bus for cross-component communication.

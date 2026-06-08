@@ -3,6 +3,7 @@
 #include <stdexcept>
 
 #include "packages/calendar_config.hpp"
+#include "packages/calendar_config_store.hpp"
 
 TEST(CalendarSpanTest, DefaultSpanIsValid) {
   CalendarSpan span;
@@ -41,12 +42,12 @@ TEST(CalendarSpanTest, GetYearThrowsWhenOutOfRange) {
   EXPECT_THROW((void)span.GetYear(5), std::logic_error);
 }
 
-TEST(CalendarConfigStorageTest, ReceiveCopiesAndEmits) {
+TEST(CalendarConfigStoreTest, ReceiveCopiesAndEmits) {
   CalendarConfig source;
   source.SetSpan({.first_year = 2040, .last_year = 2042});
   source.SetAutoCalendarSpan(false);
 
-  CalendarConfigStorage target;
+  CalendarConfigStore target;
   int emissions = 0;
   target.SignalCalendarConfig().connect(
       [&](const CalendarConfig&) { ++emissions; });
@@ -58,11 +59,11 @@ TEST(CalendarConfigStorageTest, ReceiveCopiesAndEmits) {
   EXPECT_EQ(target.GetCalendarConfig().GetSpanLimitsYears()[0], 2040);
 }
 
-TEST(CalendarConfigStorageTest, ReentryGuardBlocksRecursiveReceive) {
+TEST(CalendarConfigStoreTest, ReentryGuardBlocksRecursiveReceive) {
   CalendarConfig secondary;
   secondary.SetSpan({.first_year = 2050, .last_year = 2050});
 
-  CalendarConfigStorage primary;
+  CalendarConfigStore primary;
   int emissions = 0;
   primary.SignalCalendarConfig().connect([&](const CalendarConfig&) {
     ++emissions;

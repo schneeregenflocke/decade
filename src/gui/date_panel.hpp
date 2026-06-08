@@ -16,28 +16,29 @@
 #include <utility>
 #include <vector>
 
-#include "../packages/date_store.hpp"
+#include "../packages/date_group.hpp"
+#include "../packages/date_group_store.hpp"
+#include "../packages/date_interval_bundle.hpp"
 #include "../packages/date_utils.hpp"
-#include "../packages/group_store.hpp"
 
 class DateTablePanel : public wxPanel {
  public:
   explicit DateTablePanel(wxWindow* parent)
       : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                 wxTAB_TRAVERSAL, wxPanelNameStr) {
-    table_widget = std::make_unique<wxDataViewListCtrl>(
-                       this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                       wxDV_MULTIPLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES,
-                       wxDefaultValidator)
-                       .release();
+    table_widget_ = std::make_unique<wxDataViewListCtrl>(
+                        this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                        wxDV_MULTIPLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES,
+                        wxDefaultValidator)
+                        .release();
 
-    addRowButton =
+    add_row_button_ =
         std::make_unique<wxButton>(this, wxID_ADD, "Add Row").release();
-    deleteRowButton =
+    delete_row_button_ =
         std::make_unique<wxButton>(this, wxID_DELETE, "Delete Row").release();
-    deleteRowButton->Disable();
+    delete_row_button_->Disable();
 
-    select_group_control =
+    select_group_control_ =
         std::make_unique<wxComboBox>(
             this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,
             nullptr, 0L, wxDefaultValidator, wxChoiceNameStr)
@@ -49,15 +50,15 @@ class DateTablePanel : public wxPanel {
         std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
     wxSizerFlags const buttons_flags =
         wxSizerFlags().Proportion(0).Border(wxALL, 5);
-    buttons_sizer->Add(addRowButton, buttons_flags);
-    buttons_sizer->Add(deleteRowButton, buttons_flags);
-    buttons_sizer->Add(select_group_control, buttons_flags);
+    buttons_sizer->Add(add_row_button_, buttons_flags);
+    buttons_sizer->Add(delete_row_button_, buttons_flags);
+    buttons_sizer->Add(select_group_control_, buttons_flags);
 
     wxBoxSizer* table_sizer =
         std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
     wxSizerFlags const data_table_flags =
         wxSizerFlags().Proportion(1).Expand().Border(wxALL, 5);
-    table_sizer->Add(table_widget, data_table_flags);
+    table_sizer->Add(table_widget_, data_table_flags);
 
     wxBoxSizer* main_sizer = std::make_unique<wxBoxSizer>(wxVERTICAL).release();
     wxSizerFlags const buttons_sizer_flags =
@@ -85,7 +86,7 @@ class DateTablePanel : public wxPanel {
     Bind(wxEVT_COMBOBOX, &DateTablePanel::OnComboBoxSelection, this);
 
     InitColumns();
-    date_format = InitDateFormat();
+    date_format_ = InitDateFormat();
   }
 
   void ReceiveDateIntervalBundles(
@@ -101,7 +102,7 @@ class DateTablePanel : public wxPanel {
       for (int index = 0; index < change_row_number; ++index) {
         // append
         const auto append_index =
-            static_cast<std::size_t>(table_widget->GetItemCount());
+            static_cast<std::size_t>(table_widget_->GetItemCount());
         InsertRow(append_index);
         valid_rows_list.push_back(append_index);
       }
@@ -121,7 +122,8 @@ class DateTablePanel : public wxPanel {
       const auto row = static_cast<unsigned int>(valid_rows_list[index]);
       const auto first_date = BoostDateToString(
           date_interval_bundles[index].GetDateInterval().begin());
-      table_widget->SetValue(first_date, row, ColumnIndex(Columns::first_date));
+      table_widget_->SetValue(first_date, row,
+                              ColumnIndex(Columns::first_date));
 
       std::string second_date;
       // single date
@@ -134,8 +136,8 @@ class DateTablePanel : public wxPanel {
         second_date = BoostDateToString(
             date_interval_bundles[index].GetDateInterval().end());
       }
-      table_widget->SetValue(second_date, row,
-                             ColumnIndex(Columns::second_date));
+      table_widget_->SetValue(second_date, row,
+                              ColumnIndex(Columns::second_date));
 
       std::string number;
       if (!date_interval_bundles[index].IsExcluded()) {
@@ -144,24 +146,24 @@ class DateTablePanel : public wxPanel {
       } else {
         number = "";
       }
-      table_widget->SetValue(number, row, ColumnIndex(Columns::number));
+      table_widget_->SetValue(number, row, ColumnIndex(Columns::number));
 
       // check if group exists
       if (date_interval_bundles[index].GetGroup() >
-          date_group_store.GetGroupMax()) {
-        table_widget->SetValue(std::to_string(0), row,
-                               ColumnIndex(Columns::group));
+          date_group_store_.GetGroupMax()) {
+        table_widget_->SetValue(std::to_string(0), row,
+                                ColumnIndex(Columns::group));
         throw std::runtime_error("group cannot exist");
       }
       auto group_name =
-          date_group_store.GetName(date_interval_bundles[index].GetGroup());
-      table_widget->SetValue(group_name, row, ColumnIndex(Columns::group));
+          date_group_store_.GetName(date_interval_bundles[index].GetGroup());
+      table_widget_->SetValue(group_name, row, ColumnIndex(Columns::group));
 
-      table_widget->SetValue(
+      table_widget_->SetValue(
           std::to_string(date_interval_bundles[index].GetGroupNumber() + 1),
           row, ColumnIndex(Columns::group_number));
 
-      table_widget->SetValue(
+      table_widget_->SetValue(
           std::to_string(
               date_interval_bundles[index].GetDateInterval().length().days() +
               1 /*!!!*/),
@@ -169,50 +171,50 @@ class DateTablePanel : public wxPanel {
 
       if ((index + 1) < date_interval_bundles.size() &&
           !date_interval_bundles[index].IsExcluded()) {
-        table_widget->SetValue(std::to_string(date_interval_bundles[index]
-                                                  .GetDateInterInterval()
-                                                  .length()
-                                                  .days() -
-                                              1 /*!!!*/),
-                               row, ColumnIndex(Columns::duration_to_next));
+        table_widget_->SetValue(std::to_string(date_interval_bundles[index]
+                                                   .GetDateInterInterval()
+                                                   .length()
+                                                   .days() -
+                                               1 /*!!!*/),
+                                row, ColumnIndex(Columns::duration_to_next));
       } else {
-        table_widget->SetValue(L"", row,
-                               ColumnIndex(Columns::duration_to_next));
+        table_widget_->SetValue(L"", row,
+                                ColumnIndex(Columns::duration_to_next));
       }
     }
   }
 
   void ReceiveDateGroups(const std::vector<DateGroup>& date_groups) {
-    date_group_store.ReceiveDateGroups(date_groups);
+    date_group_store_.ReceiveDateGroups(date_groups);
 
     SendDateIntervalBundles();
 
-    auto date_groups_std_string = date_group_store.GetDateGroupsNames();
+    auto date_groups_std_string = date_group_store_.GetDateGroupsNames();
     wxArrayString date_groups_strings;
     date_groups_strings.assign(date_groups_std_string.cbegin(),
                                date_groups_std_string.cend());
 
-    select_group_control->Set(date_groups_strings);
-    select_group_control->Select(0);
+    select_group_control_->Set(date_groups_strings);
+    select_group_control_->Select(0);
   }
 
   sigslot::signal<const std::vector<DateIntervalBundle>&>&
   SignalTableDateIntervalBundles() {
-    return signal_table_date_interval_bundles;
+    return signal_table_date_interval_bundles_;
   }
 
  private:
   void InitColumns() {
     // table_widget->ClearColumns();
 
-    table_widget->AppendTextColumn(L"From Date", wxDATAVIEW_CELL_EDITABLE);
-    table_widget->AppendTextColumn(L"To Date", wxDATAVIEW_CELL_EDITABLE);
-    table_widget->AppendTextColumn(L"Number", wxDATAVIEW_CELL_INERT);
-    table_widget->AppendTextColumn(L"Group", wxDATAVIEW_CELL_INERT);
-    table_widget->AppendTextColumn(L"Group Number", wxDATAVIEW_CELL_INERT);
-    table_widget->AppendTextColumn(L"Duration", wxDATAVIEW_CELL_INERT);
-    table_widget->AppendTextColumn(L"Duration to next", wxDATAVIEW_CELL_INERT);
-    table_widget->AppendTextColumn(L"Comment", wxDATAVIEW_CELL_EDITABLE);
+    table_widget_->AppendTextColumn(L"From Date", wxDATAVIEW_CELL_EDITABLE);
+    table_widget_->AppendTextColumn(L"To Date", wxDATAVIEW_CELL_EDITABLE);
+    table_widget_->AppendTextColumn(L"Number", wxDATAVIEW_CELL_INERT);
+    table_widget_->AppendTextColumn(L"Group", wxDATAVIEW_CELL_INERT);
+    table_widget_->AppendTextColumn(L"Group Number", wxDATAVIEW_CELL_INERT);
+    table_widget_->AppendTextColumn(L"Duration", wxDATAVIEW_CELL_INERT);
+    table_widget_->AppendTextColumn(L"Duration to next", wxDATAVIEW_CELL_INERT);
+    table_widget_->AppendTextColumn(L"Comment", wxDATAVIEW_CELL_EDITABLE);
   }
 
   void SendDateIntervalBundles() {
@@ -236,13 +238,13 @@ class DateTablePanel : public wxPanel {
         date_interval_bundle.SetDateInterval(date_interval);
 
         wxVariant group_string;
-        table_widget->GetValue(group_string,
-                               static_cast<unsigned int>(valid_index),
-                               ColumnIndex(Columns::group));
+        table_widget_->GetValue(group_string,
+                                static_cast<unsigned int>(valid_index),
+                                ColumnIndex(Columns::group));
 
         int group_number = 0;
         try {
-          group_number = date_group_store.GetNumber(
+          group_number = date_group_store_.GetNumber(
               group_string.GetString().ToStdString());
         } catch (const std::exception&) {
           group_number = 0;
@@ -254,23 +256,23 @@ class DateTablePanel : public wxPanel {
       }
     }
 
-    signal_table_date_interval_bundles(date_interval_bundles);
+    signal_table_date_interval_bundles_(date_interval_bundles);
   }
 
   void UpdateDeleteButton() {
     auto selections = GetSelectionList();
 
     if (selections.empty()) {
-      deleteRowButton->Enable(false);
+      delete_row_button_->Enable(false);
     } else {
-      deleteRowButton->Enable(true);
+      delete_row_button_->Enable(true);
     }
   }
 
   std::vector<size_t> BuildValidRowsList() {
     std::vector<size_t> valid_rows_list;
 
-    for (size_t index = 0; std::cmp_less(index, table_widget->GetItemCount());
+    for (size_t index = 0; std::cmp_less(index, table_widget_->GetItemCount());
          ++index) {
       auto begin_date = GetDateByCell({.row = static_cast<unsigned int>(index),
                                        .column = Columns::first_date});
@@ -283,11 +285,11 @@ class DateTablePanel : public wxPanel {
       }
 
       const auto row = static_cast<unsigned int>(index);
-      table_widget->SetValue("", row, ColumnIndex(Columns::number));
-      table_widget->SetValue("", row, ColumnIndex(Columns::group));
-      table_widget->SetValue("", row, ColumnIndex(Columns::group_number));
-      table_widget->SetValue("", row, ColumnIndex(Columns::duration));
-      table_widget->SetValue("", row, ColumnIndex(Columns::duration_to_next));
+      table_widget_->SetValue("", row, ColumnIndex(Columns::number));
+      table_widget_->SetValue("", row, ColumnIndex(Columns::group));
+      table_widget_->SetValue("", row, ColumnIndex(Columns::group_number));
+      table_widget_->SetValue("", row, ColumnIndex(Columns::duration));
+      table_widget_->SetValue("", row, ColumnIndex(Columns::duration_to_next));
     }
 
     return valid_rows_list;
@@ -295,11 +297,11 @@ class DateTablePanel : public wxPanel {
 
   std::vector<unsigned int> GetSelectionList() {
     wxDataViewItemArray selection_array;
-    table_widget->GetSelections(selection_array);
+    table_widget_->GetSelections(selection_array);
 
     std::vector<unsigned int> selections;
     for (const auto& selected_item : selection_array) {
-      const int selected_row = table_widget->ItemToRow(selected_item);
+      const int selected_row = table_widget_->ItemToRow(selected_item);
       selections.push_back(static_cast<unsigned int>(selected_row));
     }
 
@@ -307,21 +309,21 @@ class DateTablePanel : public wxPanel {
   }
 
   void InsertRow(size_t row) {
-    if (std::cmp_less_equal(row, table_widget->GetItemCount())) {
+    if (std::cmp_less_equal(row, table_widget_->GetItemCount())) {
       wxVector<wxVariant> empty_row;
-      empty_row.resize(table_widget->GetColumnCount());
+      empty_row.resize(table_widget_->GetColumnCount());
       empty_row[static_cast<size_t>(ColumnIndex(Columns::group))] =
-          date_group_store.GetName(0);
-      table_widget->InsertItem(static_cast<unsigned int>(row), empty_row);
+          date_group_store_.GetName(0);
+      table_widget_->InsertItem(static_cast<unsigned int>(row), empty_row);
     }
   }
 
   void RemoveRow(size_t row) {
-    if (std::cmp_greater_equal(row, table_widget->GetItemCount())) {
+    if (std::cmp_greater_equal(row, table_widget_->GetItemCount())) {
       std::cout << "try to remove not existent row" << '\n';
       throw std::runtime_error("try to remove not existent row");
     }
-    table_widget->DeleteItem(static_cast<unsigned int>(row));
+    table_widget_->DeleteItem(static_cast<unsigned int>(row));
   }
 
   enum class Columns : std::uint8_t {
@@ -346,15 +348,16 @@ class DateTablePanel : public wxPanel {
 
   boost::gregorian::date GetDateByCell(CellIndex cell) const {
     wxVariant cell_value;
-    table_widget->GetStore()->GetValueByRow(cell_value, cell.row,
-                                            ColumnIndex(cell.column));
-    return StringToBoostDate(cell_value.GetString().ToStdString(), date_format);
+    table_widget_->GetStore()->GetValueByRow(cell_value, cell.row,
+                                             ColumnIndex(cell.column));
+    return StringToBoostDate(cell_value.GetString().ToStdString(),
+                             date_format_);
   }
 
   void OnItemActivated(wxDataViewEvent& event) {
     // Change GUI interaction behavior
     if (event.GetItem().IsOk() && (event.GetDataViewColumn() != nullptr)) {
-      table_widget->EditItem(event.GetItem(), event.GetDataViewColumn());
+      table_widget_->EditItem(event.GetItem(), event.GetDataViewColumn());
     }
   }
 
@@ -373,18 +376,18 @@ class DateTablePanel : public wxPanel {
         auto edited_string = event.GetValue().GetString().ToStdString();
 
         const auto selected_row =
-            static_cast<unsigned int>(table_widget->GetSelectedRow());
+            static_cast<unsigned int>(table_widget_->GetSelectedRow());
         const auto edited_column = static_cast<unsigned int>(event.GetColumn());
 
         // Check Date
-        auto edited_date = StringToBoostDate(edited_string, date_format);
+        auto edited_date = StringToBoostDate(edited_string, date_format_);
         if (!edited_date.is_special()) {
           std::string const parsed_string = BoostDateToString(edited_date);
-          table_widget->SetValue(parsed_string.c_str(), selected_row,
-                                 edited_column);
+          table_widget_->SetValue(parsed_string.c_str(), selected_row,
+                                  edited_column);
         } else {
-          table_widget->SetValue(edited_string.c_str(), selected_row,
-                                 edited_column);
+          table_widget_->SetValue(edited_string.c_str(), selected_row,
+                                  edited_column);
         }
 
         SendDateIntervalBundles();
@@ -404,15 +407,15 @@ class DateTablePanel : public wxPanel {
       unsigned int insert_row = 0;
       // if no selection do append
       if (selections.empty()) {
-        insert_row = static_cast<unsigned int>(table_widget->GetItemCount());
+        insert_row = static_cast<unsigned int>(table_widget_->GetItemCount());
       } else {
         insert_row = selections.back() + 1;
       }
 
       InsertRow(insert_row);
-      table_widget->SelectRow(insert_row);
-      table_widget->EnsureVisible(
-          table_widget->RowToItem(static_cast<int>(insert_row)));
+      table_widget_->SelectRow(insert_row);
+      table_widget_->EnsureVisible(
+          table_widget_->RowToItem(static_cast<int>(insert_row)));
       UpdateDeleteButton();
     }
 
@@ -423,11 +426,11 @@ class DateTablePanel : public wxPanel {
         RemoveRow(selection);
       }
 
-      if (table_widget->GetItemCount() > 0) {
-        if (std::cmp_equal(table_widget->GetItemCount(), post_remove_select)) {
-          table_widget->SelectRow(post_remove_select - 1);
+      if (table_widget_->GetItemCount() > 0) {
+        if (std::cmp_equal(table_widget_->GetItemCount(), post_remove_select)) {
+          table_widget_->SelectRow(post_remove_select - 1);
         } else {
-          table_widget->SelectRow(post_remove_select);
+          table_widget_->SelectRow(post_remove_select);
         }
       }
 
@@ -441,24 +444,24 @@ class DateTablePanel : public wxPanel {
     auto selections = GetSelectionList();
 
     auto group_number = event.GetSelection();
-    auto group_name = date_group_store.GetName(group_number);
+    auto group_name = date_group_store_.GetName(group_number);
 
     for (unsigned int const selection : selections) {
-      table_widget->SetValue(group_name, selection,
-                             ColumnIndex(Columns::group));
+      table_widget_->SetValue(group_name, selection,
+                              ColumnIndex(Columns::group));
     }
 
     SendDateIntervalBundles();
   }
 
-  wxWeakRef<wxDataViewListCtrl> table_widget;
-  wxWeakRef<wxButton> addRowButton;
-  wxWeakRef<wxButton> deleteRowButton;
-  wxWeakRef<wxComboBox> select_group_control;
+  wxWeakRef<wxDataViewListCtrl> table_widget_;
+  wxWeakRef<wxButton> add_row_button_;
+  wxWeakRef<wxButton> delete_row_button_;
+  wxWeakRef<wxComboBox> select_group_control_;
 
-  DateFormatDescriptor date_format{};
-  DateGroupStore date_group_store;
+  DateFormatDescriptor date_format_{};
+  DateGroupStore date_group_store_;
   sigslot::signal<const std::vector<DateIntervalBundle>&>
-      signal_table_date_interval_bundles;
+      signal_table_date_interval_bundles_;
 };
 #endif  // DATE_PANEL_HPP

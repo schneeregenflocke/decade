@@ -16,7 +16,7 @@ inline glm::vec4 to_glm_vec4(const wxColour& color) {
   return {red, green, blue, alpha};
 }
 
-inline wxColour to_wx_color(const glm::vec4& color) {
+inline wxColour ToWxColor(const glm::vec4& color) {
   constexpr float kColorMax = 255.0F;
   const auto red = static_cast<unsigned char>(color[0] * kColorMax);
   const auto green = static_cast<unsigned char>(color[1] * kColorMax);

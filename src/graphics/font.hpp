@@ -116,7 +116,7 @@ class Font {
     float width_ratio;
   };
 
-  explicit Font(const std::string& filepath) : letters(kDefaultGlyphCount) {
+  explicit Font(const std::string& filepath) : letters_(kDefaultGlyphCount) {
     InitFreetype();
     LoadFont(filepath);
     LoadTextures();
@@ -124,7 +124,7 @@ class Font {
   }
 
   [[nodiscard]] const Letter& GetLetterRef(const unsigned char index) const {
-    return letters.at(index);
+    return letters_.at(index);
   }
 
   [[nodiscard]] float TextWidth(const std::string& text, float size) const {
@@ -173,7 +173,7 @@ class Font {
 
  private:
   void InitFreetype() {
-    const FT_Error ft_error = FT_Init_FreeType(&ft_library);
+    const FT_Error ft_error = FT_Init_FreeType(&ft_library_);
     if (ft_error == FT_Err_Ok) {
       PrintVersion();
     } else {
@@ -184,35 +184,35 @@ class Font {
   }
 
   void ReleaseFreetype() {
-    FT_Error ft_error = FT_Done_Face(ft_face);
+    FT_Error ft_error = FT_Done_Face(ft_face_);
     if (ft_error != FT_Err_Ok) {
       throw std::runtime_error(std::string("Freetype FT_Done_Face failed ") +
                                std::to_string(ft_error));
     }
-    ft_face = nullptr;
-    ft_error = FT_Done_FreeType(ft_library);
+    ft_face_ = nullptr;
+    ft_error = FT_Done_FreeType(ft_library_);
     if (ft_error != FT_Err_Ok) {
       throw std::runtime_error(
           std::string("Freetype FT_Done_FreeType failed ") +
           std::to_string(ft_error));
     }
-    ft_library = nullptr;
+    ft_library_ = nullptr;
   }
 
   void PrintVersion() {
     FT_Int major = 0;
     FT_Int minor = 0;
     FT_Int patch = 0;
-    FT_Library_Version(ft_library, &major, &minor, &patch);
+    FT_Library_Version(ft_library_, &major, &minor, &patch);
     std::cout << "FreeType Version " << major << "." << minor << "." << patch
               << '\n';
   }
 
   void LoadFont(const std::string& file_path) {
     const FT_Error ft_error =
-        FT_New_Face(ft_library, file_path.c_str(), 0, &ft_face);
+        FT_New_Face(ft_library_, file_path.c_str(), 0, &ft_face_);
     if (ft_error == FT_Err_Ok) {
-      std::cout << "ft_face->family_name " << ft_face->family_name << '\n';
+      std::cout << "ft_face->family_name " << ft_face_->family_name << '\n';
     } else {
       throw std::runtime_error(std::string("Freetype FT_New_Face failed ") +
                                std::to_string(ft_error));
@@ -237,7 +237,8 @@ class Font {
   void LoadTextures() {
     const FT_UInt font_pixel_height = kFontPixelHeight;
     // const FT_UInt font_pixel_height = 128;
-    const FT_Error ft_error = FT_Set_Pixel_Sizes(ft_face, 0, font_pixel_height);
+    const FT_Error ft_error =
+        FT_Set_Pixel_Sizes(ft_face_, 0, font_pixel_height);
 
     // FT_CONFIG_OPTION_ERROR_STRINGS, FT_DEBUG_LEVEL_ERROR
     const auto* ft_error_string = FT_Error_String(ft_error);
@@ -257,23 +258,23 @@ class Font {
 
     // const size_t number_letters = 256;
     // letters.resize(number_letters);
-    for (size_t index = 0; index < letters.size(); ++index) {
+    for (size_t index = 0; index < letters_.size(); ++index) {
       const FT_Error load_char_error =
-          FT_Load_Char(ft_face, index, FT_LOAD_RENDER);
+          FT_Load_Char(ft_face_, index, FT_LOAD_RENDER);
       if (load_char_error != FT_Err_Ok) {
         throw std::runtime_error(std::string("Freetype FT_Load_Char failed ") +
                                  std::to_string(load_char_error));
       }
-      if (ft_face->glyph->format != FT_GLYPH_FORMAT_BITMAP) {
+      if (ft_face_->glyph->format != FT_GLYPH_FORMAT_BITMAP) {
         throw std::runtime_error(
             std::string("Freetype glyph->format != FT_GLYPH_FORMAT_BITMAP"));
       }
 
-      const auto& bitmap = ft_face->glyph->bitmap;
+      const auto& bitmap = ft_face_->glyph->bitmap;
       const auto bitmap_width = bitmap.width;
       const auto bitmap_height = bitmap.rows;
 
-      const GLuint texture = letters[index].texture_object.Name();
+      const GLuint texture = letters_[index].texture_object.Name();
       glBindTexture(GL_TEXTURE_2D, texture);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -289,15 +290,15 @@ class Font {
 
       const float sizex = static_cast<float>(bitmap_width) / float_font_height;
       const float sizey = static_cast<float>(bitmap_height) / float_font_height;
-      letters[index].size = glm::vec2(sizex, sizey);
+      letters_[index].size = glm::vec2(sizex, sizey);
 
       const float bearingx =
-          static_cast<float>(ft_face->glyph->bitmap_left) / float_font_height;
+          static_cast<float>(ft_face_->glyph->bitmap_left) / float_font_height;
       const float bearingy =
-          static_cast<float>(ft_face->glyph->bitmap_top) / float_font_height;
-      letters[index].bearing = glm::vec2(bearingx, bearingy);
-      letters[index].advance = static_cast<float>(ft_face->glyph->advance.x) /
-                               kFreeTypeFixedScale / float_font_height;
+          static_cast<float>(ft_face_->glyph->bitmap_top) / float_font_height;
+      letters_[index].bearing = glm::vec2(bearingx, bearingy);
+      letters_[index].advance = static_cast<float>(ft_face_->glyph->advance.x) /
+                                kFreeTypeFixedScale / float_font_height;
     }
   }
 
@@ -305,27 +306,27 @@ class Font {
   static constexpr float kFreeTypeFixedScale = 64.0F;
   static constexpr FT_UInt kFontPixelHeight = 2048;
 
-  FT_Library ft_library{nullptr};
-  FT_Face ft_face{nullptr};
-  std::vector<Letter> letters;
+  FT_Library ft_library_{nullptr};
+  FT_Face ft_face_{nullptr};
+  std::vector<Letter> letters_;
 };
 
 class FontShape : public Shape {
  public:
   explicit FontShape(Shader* shader_ptr_in) : Shape(shader_ptr_in) {}
 
-  void set_font(std::shared_ptr<Font> font_ptr) { font = std::move(font_ptr); }
+  void set_font(std::shared_ptr<Font> font_ptr) { font_ = std::move(font_ptr); }
 
-  void set_color(const glm::vec4& new_color) { color = new_color; }
+  void set_color(const glm::vec4& new_color) { color_ = new_color; }
 
   void set_shape(const std::string& text, const glm::vec3& position,
                  float size) {
     const auto glyphs = DecodeLatin1FromUtf8(text);
     const auto glyph_count = glyphs.size();
-    positions.resize(glyph_count * kVerticesPerGlyph);
-    texture_positions.resize(glyph_count * kVerticesPerGlyph);
+    positions_.resize(glyph_count * kVerticesPerGlyph);
+    texture_positions_.resize(glyph_count * kVerticesPerGlyph);
 
-    text_textures.resize(glyph_count);
+    text_textures_.resize(glyph_count);
 
     float current_x = position[0];
     const float current_y = position[1];
@@ -334,48 +335,48 @@ class FontShape : public Shape {
       const auto letter_index = glyphs[index];
 
       const GLuint texture =
-          font->GetLetterRef(letter_index).texture_object.Name();
-      text_textures[index] = texture;
+          font_->GetLetterRef(letter_index).texture_object.Name();
+      text_textures_[index] = texture;
 
       const GLfloat xpos =
-          current_x + (font->GetLetterRef(letter_index).bearing[0] * size);
+          current_x + (font_->GetLetterRef(letter_index).bearing[0] * size);
       const GLfloat ypos =
-          current_y - ((font->GetLetterRef(letter_index).size[1] -
-                        font->GetLetterRef(letter_index).bearing[1]) *
+          current_y - ((font_->GetLetterRef(letter_index).size[1] -
+                        font_->GetLetterRef(letter_index).bearing[1]) *
                        size);
 
-      const GLfloat width = font->GetLetterRef(letter_index).size[0] * size;
-      const GLfloat height = font->GetLetterRef(letter_index).size[1] * size;
+      const GLfloat width = font_->GetLetterRef(letter_index).size[0] * size;
+      const GLfloat height = font_->GetLetterRef(letter_index).size[1] * size;
 
       const auto base = index * kVerticesPerGlyph;
-      positions[base + 0] = glm::vec3(xpos, ypos + height, kZero);
-      positions[base + 1] = glm::vec3(xpos, ypos, kZero);
-      positions[base + 2] = glm::vec3(xpos + width, ypos, kZero);
-      positions[base + 3] = glm::vec3(xpos, ypos + height, kZero);
-      positions[base + 4] = glm::vec3(xpos + width, ypos, kZero);
+      positions_[base + 0] = glm::vec3(xpos, ypos + height, kZero);
+      positions_[base + 1] = glm::vec3(xpos, ypos, kZero);
+      positions_[base + 2] = glm::vec3(xpos + width, ypos, kZero);
+      positions_[base + 3] = glm::vec3(xpos, ypos + height, kZero);
+      positions_[base + 4] = glm::vec3(xpos + width, ypos, kZero);
       const auto last = base + (kVerticesPerGlyph - 1);
-      positions[last] = glm::vec3(xpos + width, ypos + height, kZero);
+      positions_[last] = glm::vec3(xpos + width, ypos + height, kZero);
 
-      texture_positions[base + 0] = glm::vec2(kZero, kZero);
-      texture_positions[base + 1] = glm::vec2(kZero, kOne);
-      texture_positions[base + 2] = glm::vec2(kOne, kOne);
-      texture_positions[base + 3] = glm::vec2(kZero, kZero);
-      texture_positions[base + 4] = glm::vec2(kOne, kOne);
-      texture_positions[last] = glm::vec2(kOne, kZero);
+      texture_positions_[base + 0] = glm::vec2(kZero, kZero);
+      texture_positions_[base + 1] = glm::vec2(kZero, kOne);
+      texture_positions_[base + 2] = glm::vec2(kOne, kOne);
+      texture_positions_[base + 3] = glm::vec2(kZero, kZero);
+      texture_positions_[base + 4] = glm::vec2(kOne, kOne);
+      texture_positions_[last] = glm::vec2(kOne, kZero);
 
-      current_x += font->GetLetterRef(letter_index).advance * size;
+      current_x += font_->GetLetterRef(letter_index).advance * size;
     }
 
-    set_buffer(BufferIndex{0}, static_cast<GLsizei>(positions.size()),
-               positions.data());
-    set_buffer(BufferIndex{1}, static_cast<GLsizei>(texture_positions.size()),
-               texture_positions.data());
+    set_buffer(BufferIndex{0}, static_cast<GLsizei>(positions_.size()),
+               positions_.data());
+    set_buffer(BufferIndex{1}, static_cast<GLsizei>(texture_positions_.size()),
+               texture_positions_.data());
   }
 
   void set_shape_centered(const std::string& text, const glm::vec3& position,
                           float size) {
-    const auto half_width = font->TextWidth(text, size) * kHalf;
-    const auto half_height = font->TextHeight(size) * kHalf;
+    const auto half_width = font_->TextWidth(text, size) * kHalf;
+    const auto half_height = font_->TextHeight(size) * kHalf;
 
     set_shape(text, position - glm::vec3(half_width, half_height, kZero), size);
   }
@@ -383,14 +384,14 @@ class FontShape : public Shape {
   void draw() const override {
     shader()->UseProgram();
 
-    shader()->SetUniform("texture_color", color);
+    shader()->SetUniform("texture_color", color_);
 
     vao_ref().bind();
 
     glActiveTexture(GL_TEXTURE0);
 
-    for (size_t index = 0; index < text_textures.size(); ++index) {
-      glBindTexture(GL_TEXTURE_2D, text_textures[index]);
+    for (size_t index = 0; index < text_textures_.size(); ++index) {
+      glBindTexture(GL_TEXTURE_2D, text_textures_[index]);
       glDrawArrays(GL_TRIANGLES, static_cast<GLint>(index * kVerticesPerGlyph),
                    static_cast<GLsizei>(kVerticesPerGlyph));
     }
@@ -406,10 +407,10 @@ class FontShape : public Shape {
   static constexpr float kHalf = 0.5F;
   static constexpr size_t kVerticesPerGlyph = 6;
 
-  std::vector<glm::vec3> positions;
-  std::vector<glm::vec2> texture_positions;
-  std::vector<GLuint> text_textures;
-  std::shared_ptr<Font> font;
-  glm::vec4 color{kZero, kZero, kZero, kOne};
+  std::vector<glm::vec3> positions_;
+  std::vector<glm::vec2> texture_positions_;
+  std::vector<GLuint> text_textures_;
+  std::shared_ptr<Font> font_;
+  glm::vec4 color_{kZero, kZero, kZero, kOne};
 };
 #endif  // FONT_HPP

@@ -7,31 +7,31 @@
 
 class Texture {
  public:
-  Texture() { glGenTextures(1, &name); }
+  Texture() { glGenTextures(1, &name_); }
 
   ~Texture() {
-    if (name != 0) {
-      glDeleteTextures(1, &name);
+    if (name_ != 0) {
+      glDeleteTextures(1, &name_);
     }
   }
 
   Texture(const Texture&) = delete;
   Texture& operator=(const Texture&) = delete;
 
-  Texture(Texture&& other) noexcept : name(std::exchange(other.name, 0)) {}
+  Texture(Texture&& other) noexcept : name_(std::exchange(other.name_, 0)) {}
   Texture& operator=(Texture&& other) noexcept {
     if (this != &other) {
-      if (name != 0) {
-        glDeleteTextures(1, &name);
+      if (name_ != 0) {
+        glDeleteTextures(1, &name_);
       }
-      name = std::exchange(other.name, 0);
+      name_ = std::exchange(other.name_, 0);
     }
     return *this;
   }
 
-  [[nodiscard]] GLuint Name() const { return name; }
+  [[nodiscard]] GLuint Name() const { return name_; }
 
  private:
-  GLuint name{0};
+  GLuint name_{0};
 };
 #endif  // TEXTURE_OBJECT_HPP

@@ -22,22 +22,22 @@ class FontPanel : public wxPanel {
     wxFont const normal_font = *wxNORMAL_FONT;
     // auto normal_font_name = normal_font.GetFaceName();
 
-    wx_font_picker = std::make_unique<wxFontPickerCtrl>(
-                         this, wxID_ANY, normal_font, wxDefaultPosition,
-                         wxDefaultSize, wxFNTP_FONTDESC_AS_LABEL)
-                         .release();
+    wx_font_picker_ = std::make_unique<wxFontPickerCtrl>(
+                          this, wxID_ANY, normal_font, wxDefaultPosition,
+                          wxDefaultSize, wxFNTP_FONTDESC_AS_LABEL)
+                          .release();
 
     constexpr int kSizerBorderPx = 5;
     wxBoxSizer* horizontal_sizer =
         std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
-    horizontal_sizer->Add(wx_font_picker, 1, wxALL | wxEXPAND, kSizerBorderPx);
+    horizontal_sizer->Add(wx_font_picker_, 1, wxALL | wxEXPAND, kSizerBorderPx);
     wxBoxSizer* vertical_sizer =
         std::make_unique<wxBoxSizer>(wxVERTICAL).release();
     vertical_sizer->Add(horizontal_sizer, 0, wxEXPAND);
     SetSizer(vertical_sizer);
 
     Bind(wxEVT_FONTPICKER_CHANGED, &FontPanel::CallbackFontChanged, this);
-    wx_font = wx_font_picker->GetFont();
+    wx_font_ = wx_font_picker_->GetFont();
 
     initConvertWxFontWeightToFcWeight();
     initConvertWxFontStyleToFcSlant();
@@ -45,9 +45,9 @@ class FontPanel : public wxPanel {
     ProcessFontData();
   }
 
-  const std::string& GetFontFilePath() const { return font_filepath; }
+  const std::string& GetFontFilePath() const { return font_filepath_; }
 
-  [[nodiscard]] auto& SignalFontFilepath() { return signal_font_filepath; }
+  [[nodiscard]] auto& SignalFontFilepath() { return signal_font_filepath_; }
 
  private:
   // Owns the fontconfig configuration for this panel's lifetime. Loading it
@@ -59,28 +59,28 @@ class FontPanel : public wxPanel {
   };
 
   std::unique_ptr<FcConfig, FcConfigDeleter> fc_config_;
-  sigslot::signal<const std::string&> signal_font_filepath;
+  sigslot::signal<const std::string&> signal_font_filepath_;
   void initConvertWxFontWeightToFcWeight() {
-    fontWeightMap = {{wxFONTWEIGHT_THIN, FC_WEIGHT_THIN},
-                     {wxFONTWEIGHT_EXTRALIGHT, FC_WEIGHT_EXTRALIGHT},
-                     //{wxFONTWEIGHT_EXTRALIGHT, FC_WEIGHT_ULTRALIGHT},
-                     {wxFONTWEIGHT_LIGHT, FC_WEIGHT_LIGHT},
-                     //{wxFONTWEIGHT_LIGHT, FC_WEIGHT_DEMILIGHT},
-                     //{wxFONTWEIGHT_LIGHT, FC_WEIGHT_SEMILIGHT},
-                     //{wxFONTWEIGHT_NORMAL, FC_WEIGHT_BOOK},
-                     //{wxFONTWEIGHT_NORMAL, FC_WEIGHT_REGULAR},
-                     {wxFONTWEIGHT_NORMAL, FC_WEIGHT_NORMAL},
-                     {wxFONTWEIGHT_MEDIUM, FC_WEIGHT_MEDIUM},
-                     {wxFONTWEIGHT_SEMIBOLD, FC_WEIGHT_DEMIBOLD},
-                     //{wxFONTWEIGHT_SEMIBOLD, FC_WEIGHT_SEMIBOLD},
-                     {wxFONTWEIGHT_BOLD, FC_WEIGHT_BOLD},
-                     {wxFONTWEIGHT_EXTRABOLD, FC_WEIGHT_EXTRABOLD},
-                     //{wxFONTWEIGHT_EXTRABOLD, FC_WEIGHT_ULTRABOLD},
-                     {wxFONTWEIGHT_HEAVY, FC_WEIGHT_BLACK},
-                     //{wxFONTWEIGHT_HEAVY, FC_WEIGHT_HEAVY},
-                     {wxFONTWEIGHT_EXTRAHEAVY, FC_WEIGHT_EXTRABLACK},
-                     //{wxFONTWEIGHT_EXTRAHEAVY, FC_WEIGHT_ULTRABLACK},
-                     {wxFONTWEIGHT_MAX, FC_WEIGHT_EXTRABLACK}};
+    font_weight_map_ = {{wxFONTWEIGHT_THIN, FC_WEIGHT_THIN},
+                        {wxFONTWEIGHT_EXTRALIGHT, FC_WEIGHT_EXTRALIGHT},
+                        //{wxFONTWEIGHT_EXTRALIGHT, FC_WEIGHT_ULTRALIGHT},
+                        {wxFONTWEIGHT_LIGHT, FC_WEIGHT_LIGHT},
+                        //{wxFONTWEIGHT_LIGHT, FC_WEIGHT_DEMILIGHT},
+                        //{wxFONTWEIGHT_LIGHT, FC_WEIGHT_SEMILIGHT},
+                        //{wxFONTWEIGHT_NORMAL, FC_WEIGHT_BOOK},
+                        //{wxFONTWEIGHT_NORMAL, FC_WEIGHT_REGULAR},
+                        {wxFONTWEIGHT_NORMAL, FC_WEIGHT_NORMAL},
+                        {wxFONTWEIGHT_MEDIUM, FC_WEIGHT_MEDIUM},
+                        {wxFONTWEIGHT_SEMIBOLD, FC_WEIGHT_DEMIBOLD},
+                        //{wxFONTWEIGHT_SEMIBOLD, FC_WEIGHT_SEMIBOLD},
+                        {wxFONTWEIGHT_BOLD, FC_WEIGHT_BOLD},
+                        {wxFONTWEIGHT_EXTRABOLD, FC_WEIGHT_EXTRABOLD},
+                        //{wxFONTWEIGHT_EXTRABOLD, FC_WEIGHT_ULTRABOLD},
+                        {wxFONTWEIGHT_HEAVY, FC_WEIGHT_BLACK},
+                        //{wxFONTWEIGHT_HEAVY, FC_WEIGHT_HEAVY},
+                        {wxFONTWEIGHT_EXTRAHEAVY, FC_WEIGHT_EXTRABLACK},
+                        //{wxFONTWEIGHT_EXTRAHEAVY, FC_WEIGHT_ULTRABLACK},
+                        {wxFONTWEIGHT_MAX, FC_WEIGHT_EXTRABLACK}};
   }
 
   int convertWxFontWeightToFcWeight(const wxFontWeight wx_font_weight) const {
@@ -89,8 +89,8 @@ class FontPanel : public wxPanel {
     }
 
     int fc_weight = -1;
-    auto it = fontWeightMap.find(wx_font_weight);
-    if (it != fontWeightMap.end()) {
+    auto it = font_weight_map_.find(wx_font_weight);
+    if (it != font_weight_map_.end()) {
       fc_weight = it->second;
     } else {
       throw std::runtime_error("convertWxFontWeightToFcWeight");
@@ -105,16 +105,16 @@ class FontPanel : public wxPanel {
   }
 
   void initConvertWxFontStyleToFcSlant() {
-    fontStyleMap = {{wxFONTSTYLE_NORMAL, FC_SLANT_ROMAN},
-                    {wxFONTSTYLE_ITALIC, FC_SLANT_ITALIC},
-                    {wxFONTSTYLE_SLANT, FC_SLANT_OBLIQUE},
-                    {wxFONTSTYLE_MAX, FC_SLANT_OBLIQUE}};
+    font_style_map_ = {{wxFONTSTYLE_NORMAL, FC_SLANT_ROMAN},
+                       {wxFONTSTYLE_ITALIC, FC_SLANT_ITALIC},
+                       {wxFONTSTYLE_SLANT, FC_SLANT_OBLIQUE},
+                       {wxFONTSTYLE_MAX, FC_SLANT_OBLIQUE}};
   }
 
   int convertWxFontStyleToFcSlant(const wxFontStyle wx_font_style) const {
     int fc_slant = -1;
-    auto it = fontStyleMap.find(wx_font_style);
-    if (it != fontStyleMap.end()) {
+    auto it = font_style_map_.find(wx_font_style);
+    if (it != font_style_map_.end()) {
       fc_slant = it->second;
     } else {
       throw std::runtime_error("convertWxFontStyleToFcSlant");
@@ -129,10 +129,10 @@ class FontPanel : public wxPanel {
   }
 
   void ProcessFontData() {
-    wxString const face_name = wx_font.GetFaceName();
-    int const point_size = wx_font.GetPointSize();
-    wxFontWeight const font_weight = wx_font.GetWeight();
-    wxFontStyle const font_style = wx_font.GetStyle();
+    wxString const face_name = wx_font_.GetFaceName();
+    int const point_size = wx_font_.GetPointSize();
+    wxFontWeight const font_weight = wx_font_.GetWeight();
+    wxFontStyle const font_style = wx_font_.GetStyle();
 
     if (decade_debug::LogEnabled()) {
       std::cout << "face_name: " << face_name << "\tpoint_size: " << point_size
@@ -177,9 +177,9 @@ class FontPanel : public wxPanel {
     }
 
     const size_t len = strlen(reinterpret_cast<const char*>(fc_filepath));
-    font_filepath = std::string(fc_filepath, fc_filepath + len);
+    font_filepath_ = std::string(fc_filepath, fc_filepath + len);
     if (decade_debug::LogEnabled()) {
-      std::cout << "font_filepath: " << font_filepath << '\n';
+      std::cout << "font_filepath: " << font_filepath_ << '\n';
     }
 
     FcPatternDestroy(match);
@@ -188,20 +188,20 @@ class FontPanel : public wxPanel {
 
   void CallbackFontChanged(wxFontPickerEvent& event) {
     try {
-      wx_font = event.GetFont();
+      wx_font_ = event.GetFont();
       ProcessFontData();
-      signal_font_filepath(font_filepath);
+      signal_font_filepath_(font_filepath_);
       // font_data.clear();
     } catch (...) {
       std::cerr << "Loading Font failed" << '\n';
     }
   }
 
-  wxWeakRef<wxFontPickerCtrl> wx_font_picker;
-  wxFont wx_font;
+  wxWeakRef<wxFontPickerCtrl> wx_font_picker_;
+  wxFont wx_font_;
   // std::vector<unsigned char> font_data;
-  std::string font_filepath;
-  std::map<int, int> fontWeightMap;
-  std::map<int, int> fontStyleMap;
+  std::string font_filepath_;
+  std::map<int, int> font_weight_map_;
+  std::map<int, int> font_style_map_;
 };
 #endif  // FONT_PANEL_HPP

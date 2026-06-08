@@ -62,4 +62,14 @@ ExcludeHeaderFilterRegex: ".*/external/.*"
 FormatStyle: file
 User: schneeregenflocke
 SystemHeaders: false
+# Enforce the Google C++ Style member convention (decided naming target): class
+# data members are snake_case with a trailing underscore. Only the member
+# categories are configured, so readability-identifier-naming leaves functions,
+# types and locals alone (those are not part of the enforced rule). struct
+# members are public and intentionally carry no suffix.
+CheckOptions:
+  readability-identifier-naming.PrivateMemberCase: lower_case
+  readability-identifier-naming.PrivateMemberSuffix: "_"
+  readability-identifier-naming.ProtectedMemberCase: lower_case
+  readability-identifier-naming.ProtectedMemberSuffix: "_"
 ---

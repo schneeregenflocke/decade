@@ -4,8 +4,10 @@
 #include <boost/date_time/period.hpp>
 #include <vector>
 
-#include "packages/date_store.hpp"
-#include "packages/group_store.hpp"
+#include "packages/date_group.hpp"
+#include "packages/date_interval_bundle.hpp"
+#include "packages/date_interval_bundle_bar_store.hpp"
+#include "packages/date_interval_bundle_store.hpp"
 
 namespace {
 

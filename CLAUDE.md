@@ -156,9 +156,14 @@ Application/Infrastructure bridge; both are detailed in the directory map below.
   - `binding/main_window_binder.hpp` — wires producers/consumers via the EventBus (Application).
   - `binding/calendar_page.hpp` — rendering adapter: owns the calendar-relevant domain state, exposes the `Receive*` slots, and drives the scene builder on updates (Application).
   - `binding/calendar_scene_builder.hpp` — builds and fills the calendar scene graph from the (referenced) domain state; GL-canvas free, knows only `GraphicsEngine` and the scene graph (Application/Infrastructure bridge).
-- `src/packages/` — Domain layer, split into **value objects** and **stores**:
-  - **Value objects** (`DateGroup`/`DateGroups`, `DateIntervalBundle`, `PageSetupConfig`, `TitleConfig`, `ShapeConfiguration`/`ShapeConfigSet`, `CalendarSpan`/`CalendarConfig`) hold data + the queries over it. They **encapsulate their state**: data members are `private`, exposed through const accessor/query methods and mutated only through named setters — this is the orthodox DDD form (a value object is defined by its attributes, not by exposing them as public fields), and it keeps the on-disk format and invariants in one place. No signal, no serialization, no `friend` → Rule of Zero, freely copyable.
-  - **Stores** (`DateGroupStore`, `DateIntervalBundleStore`, `PageSetupStore`, `TitleConfigStore`, `ShapeConfigurationStorage`, `CalendarConfigStorage`) compose a value object plus a `sigslot::signal` and the re-entry guard. They have identity → explicitly non-copyable. Their **signal carries the value** (`signal<const Value&>`), so consumers (panels, `CalendarPage`) work with copyable value objects directly; the store exposes `Receive<Value>` / `Send<Value>` / a `Get<Value>` getter and adds no query delegation of its own.
+- `src/packages/` — Domain layer, split into **value objects** and **stores**. The
+  conceptual split is also physical: each value object and its store live in
+  **separate files** named after the primary class (e.g. `date_group.hpp` +
+  `date_group_store.hpp`, `date_interval_bundle.hpp` + `date_interval_bundle_store.hpp`,
+  `page_setup_config.hpp` + `page_setup_store.hpp`). The value-object header carries
+  no store dependency; the store header includes its value-object header.
+  - **Value objects** (`DateGroup`/`DateGroups`, `DateIntervalBundle`, `Bar`, `PageSetupConfig`, `TitleConfig`, `ShapeConfiguration`/`ShapeConfigSet`, `CalendarSpan`/`CalendarConfig`) hold data + the queries over it. They **encapsulate their state**: data members are `private`, exposed through const accessor/query methods and mutated only through named setters — this is the orthodox DDD form (a value object is defined by its attributes, not by exposing them as public fields), and it keeps the on-disk format and invariants in one place. No signal, no serialization, no `friend` → Rule of Zero, freely copyable.
+  - **Stores** (`DateGroupStore`, `DateIntervalBundleStore`/`DateIntervalBundleBarStore`, `TransformDateIntervalBundle`, `PageSetupStore`, `TitleConfigStore`, `ShapeConfigurationStore`, `CalendarConfigStore`) compose a value object plus a `sigslot::signal` and the re-entry guard. They have identity → explicitly non-copyable. Their **signal carries the value** (`signal<const Value&>`), so consumers (panels, `CalendarPage`) work with copyable value objects directly; the store exposes `Receive<Value>` / `Send<Value>` / a `Get<Value>` getter and adds no query delegation of its own. The store suffix is uniformly `…Store` (no `…Storage`).
   - **Must remain UI-agnostic (no wx, no GL) and Boost-free** — persistence lives in `services/value_serialization.hpp`.
 - `src/gui/` — Presentation: wxWidgets panels and the GL canvas wrapper. Each panel owns its widgets and exposes signals matching its store's interface.
 - `src/graphics/` — Infrastructure: OpenGL engine, shaders, `SceneNode` scene graph, `RectanglesShape` / `QuadrilateralShape` / `FontShape`, `RenderToTexture`, `RenderToPng`, FreeType wrapper.
@@ -208,22 +213,14 @@ this callback fires.
 
 1. Add unit tests for CSV/XML conversion logic in `services/project_io`.
 2. Promote stores to publish directly into `EventBus` (removing their internal signals) once all consumers are bus-only.
-3. **Style-Migration auf Google C++ Style** (Schreibweise): Klassen-Datenmember
-   auf Trailing-Underscore (`date_format_`) umstellen und die bekannten
-   Abweichungen beheben (`addRowButton` → `add_row_button_`, `to_wx_color` →
-   `ToWxColor`). Eine dedizierte, abgegrenzte Runde — bewusst beauftragt, nicht
-   als Nebeneffekt anderer Änderungen (siehe die Naming/Style-Notiz unter
-   [Conventions](#conventions)).
-4. **Datei- und Naming-Struktur in `packages/`** (Bedeutung der Bezeichner):
-   - Value-Object und zugehörigen Store in **getrennte Dateien** aufteilen
-     (physische Struktur = dokumentierter konzeptueller Split), Dateinamen an die
-     Hauptklasse angleichen (`date_store.hpp` → `date_interval_bundle.hpp` +
-     `date_interval_bundle_store.hpp`; `group_store.hpp` → `date_group.hpp` +
-     `date_group_store.hpp`).
-   - Store-Suffix vereinheitlichen: `ShapeConfigurationStorage`,
-     `CalendarConfigStorage` → `…Store`.
-   Ebenfalls dedizierte Runde; zusammen mit (3) zu fahren, da Datei-Rename =
-   Naming. Header-Guards und CMake-`target_sources` mitziehen.
+
+**Erledigt** (zur Nachvollziehbarkeit, nicht mehr offen):
+
+- ~~Style-Migration auf Google C++ Style~~ — Klassen-Datenmember tragen den
+  Trailing-Underscore; vom Gate erzwungen via `readability-identifier-naming`
+  (siehe `.clang-tidy` und die Naming/Style-Notiz unter [Conventions](#conventions)).
+- ~~Datei- und Naming-Struktur in `packages/`~~ — Value-Object und Store je eigene
+  Datei (nach Hauptklasse benannt), Store-Suffix einheitlich `…Store`.
 
 ## Design principles
 
@@ -259,21 +256,19 @@ to and obey that layer's dependency constraints.
 
 - C++23, no compiler extensions.
 - Header guards use the filename style: the uppercased file name with the dot before the suffix as `_`, e.g. `main_window.hpp` → `MAIN_WINDOW_HPP`, `opengl_panel.hpp` → `OPENGL_PANEL_HPP`. No directory path prefix. Apply this consistently in `#ifndef`, `#define`, and the trailing `#endif  // <GUARD>` comment. (The clang-tidy `llvm-header-guard` check, which would otherwise impose a full-path style like `HOME_TITAN99_CODE_DECADE_SRC_..._HPP`, is disabled in `.clang-tidy` — keep it disabled.)
-- **Naming/Style — Zielkonvention: Google C++ Style** (beschlossen; Migration
-  läuft in einer dedizierten Runde, siehe [Follow-up refactor targets](#follow-up-refactor-targets)):
-  - Typen: `PascalCase` (`DateGroup`) — bereits durchgehend so.
+- **Naming/Style — Konvention: Google C++ Style** (in Kraft):
+  - Typen: `PascalCase` (`DateGroup`).
   - Funktionen & Methoden: `PascalCase` (`GetDateGroups()`); triviale
     Accessor/Mutator dürfen `snake_case` wie ihr Member heissen (`set_count()`).
-  - Klassen-Datenmember: `snake_case` **mit Trailing-Underscore** (`date_format_`)
-    — die wesentliche noch ausstehende Änderung. Struct-Member ohne Underscore.
+  - Klassen-Datenmember: `snake_case` **mit Trailing-Underscore** (`date_format_`).
+    Struct-Member ohne Underscore. Diese Member-Regel wird vom clang-tidy-Gate
+    erzwungen (`readability-identifier-naming` in `.clang-tidy`); ein Member ohne
+    Underscore bricht den Build.
   - Locals: `snake_case`. Konstanten/Enumeratoren: `kPascalCase` (`kColorScale`).
-  - Bekannte Abweichungen vom Ziel (in der Runde zu beheben): `*Storage`-Suffix
-    (→ `*Store`), camelCase-Member wie `addRowButton` (→ `add_row_button_`),
-    snake_case-freie-Funktion `to_wx_color` (→ `ToWxColor`), fehlende
-    Trailing-Underscores an Klassenmembern.
-  - **Bis die Runde durch ist** ist der Baum gemischt: beim Bearbeiten einer Datei
-    den bestehenden lokalen Stil beibehalten und **keine Renames als Nebeneffekt**
-    fremder Änderungen — die Vereinheitlichung ist Sache der dedizierten Runde.
+  - Der Store-Suffix ist einheitlich `…Store` (kein `…Storage`).
+  - Renames weiterhin **nicht als Nebeneffekt** fremder Änderungen durchführen —
+    Schreibweise und Bezeichner sind jetzt vereinheitlicht; eine erneute breite
+    Umbenennung gehört in eine eigene, beauftragte Runde.
 - Rule-of-five: classes with explicit destructors should also delete or default copy/move (see `MainWindow`, `DateIntervalBundleStore`).
 - Never use raw `new`/`delete`. Always express ownership through smart pointers (`std::unique_ptr` for unique ownership, `std::shared_ptr` for shared ownership) so lifetime is encoded in the type system, exceptions cannot leak resources, and ownership transfer is explicit at call sites. wx widgets are typically transferred via `.release()` to wx-owned parents (wx then owns the lifetime).
 - For non-owning references to objects whose lifetime is managed by wxWidgets (wx-owned parents/children, or any class derived from `wxTrackable` — which includes `wxWindow`, `wxEvtHandler`, and most wx classes), prefer `wxWeakRef<T>` over raw pointers. It auto-nulls when the referenced object is destroyed, eliminating dangling-pointer bugs. See [wxWeakRef](https://docs.wxwidgets.org/3.2/classwx_weak_ref_3_01_t_01_4.html) and [wxTrackable](https://docs.wxwidgets.org/3.2/classwx_trackable.html).

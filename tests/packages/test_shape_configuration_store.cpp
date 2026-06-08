@@ -3,7 +3,8 @@
 #include <glm/vec4.hpp>
 #include <string>
 
-#include "packages/shape_config.hpp"
+#include "packages/shape_configuration.hpp"
+#include "packages/shape_configuration_store.hpp"
 
 TEST(ShapeConfigSetTest, DefaultsContainExpectedNames) {
   ShapeConfigSet set;
@@ -80,9 +81,9 @@ TEST(ShapeConfigurationTest, OutlineColorReturnsValueWhenVisible) {
   EXPECT_FLOAT_EQ(shape.LineWidth(), 2.5F);
 }
 
-TEST(ShapeConfigurationStorageTest, ReceiveEmitsAndCopiesContents) {
+TEST(ShapeConfigurationStoreTest, ReceiveEmitsAndCopiesContents) {
   ShapeConfigSet source;
-  ShapeConfigurationStorage target;
+  ShapeConfigurationStore target;
 
   int emissions = 0;
   target.SignalShapeConfigSet().connect(
@@ -94,9 +95,9 @@ TEST(ShapeConfigurationStorageTest, ReceiveEmitsAndCopiesContents) {
   EXPECT_EQ(target.GetShapeConfigSet().size(), source.size());
 }
 
-TEST(ShapeConfigurationStorageTest, ReentryGuardBlocksRecursiveReceive) {
+TEST(ShapeConfigurationStoreTest, ReentryGuardBlocksRecursiveReceive) {
   ShapeConfigSet secondary;
-  ShapeConfigurationStorage primary;
+  ShapeConfigurationStore primary;
   int emissions = 0;
   primary.SignalShapeConfigSet().connect([&](const ShapeConfigSet&) {
     ++emissions;

@@ -12,11 +12,18 @@
 #include "../../gui/shape_panel.hpp"
 #include "../../gui/title_panel.hpp"
 #include "../../packages/calendar_config.hpp"
-#include "../../packages/date_store.hpp"
-#include "../../packages/group_store.hpp"
-#include "../../packages/page_config.hpp"
-#include "../../packages/shape_config.hpp"
+#include "../../packages/calendar_config_store.hpp"
+#include "../../packages/date_group.hpp"
+#include "../../packages/date_group_store.hpp"
+#include "../../packages/date_interval_bundle.hpp"
+#include "../../packages/date_interval_bundle_store.hpp"
+#include "../../packages/page_setup_config.hpp"
+#include "../../packages/page_setup_store.hpp"
+#include "../../packages/shape_configuration.hpp"
+#include "../../packages/shape_configuration_store.hpp"
 #include "../../packages/title_config.hpp"
+#include "../../packages/title_config_store.hpp"
+#include "../../packages/transform_date_interval_bundle.hpp"
 #include "calendar_page.hpp"
 #include "event_bus.hpp"
 
@@ -36,8 +43,8 @@ struct MainWindowComponents {
   TransformDateIntervalBundle& transform_date_interval_bundle;
   PageSetupStore& page_setup_store;
   TitleConfigStore& title_config_store;
-  ShapeConfigurationStorage& shape_configuration_storage;
-  CalendarConfigStorage& calendar_configuration_storage;
+  ShapeConfigurationStore& shape_configuration_storage;
+  CalendarConfigStore& calendar_configuration_storage;
 
   DateTablePanel& data_table_panel;
   DateGroupsTablePanel& date_groups_table_panel;
@@ -151,7 +158,7 @@ inline void BindTitleConfig(EventBus& bus, MainWindowComponents& components) {
 inline void BindShapeConfiguration(EventBus& bus,
                                    MainWindowComponents& components) {
   components.elements_setup_panel.SignalShapeConfigSet().connect(
-      &ShapeConfigurationStorage::ReceiveShapeConfigSet,
+      &ShapeConfigurationStore::ReceiveShapeConfigSet,
       &components.shape_configuration_storage);
 
   components.shape_configuration_storage.SignalShapeConfigSet().connect(
@@ -166,7 +173,7 @@ inline void BindShapeConfiguration(EventBus& bus,
 inline void BindCalendarConfig(EventBus& bus,
                                MainWindowComponents& components) {
   components.calendar_setup_panel.SignalCalendarConfig().connect(
-      &CalendarConfigStorage::ReceiveCalendarConfig,
+      &CalendarConfigStore::ReceiveCalendarConfig,
       &components.calendar_configuration_storage);
 
   components.calendar_configuration_storage.SignalCalendarConfig().connect(
