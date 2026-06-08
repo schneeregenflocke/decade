@@ -1,11 +1,8 @@
 #ifndef CASTS_HPP
 #define CASTS_HPP
 
-// #include "wx_widgets_include.hpp"
-
 #include <wx/colour.h>
 
-#include <array>
 #include <glm/vec4.hpp>
 
 inline glm::vec4 to_glm_vec4(const wxColour& color) {
@@ -17,10 +14,6 @@ inline glm::vec4 to_glm_vec4(const wxColour& color) {
   const auto alpha = static_cast<float>(color.Alpha()) * kColorScale;
 
   return {red, green, blue, alpha};
-}
-
-inline glm::vec4 to_glm_vec4(const std::array<float, 4>& values) {
-  return {values[0], values[1], values[2], values[3]};
 }
 
 inline wxColour to_wx_color(const glm::vec4& color) {

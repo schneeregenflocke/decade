@@ -119,7 +119,7 @@ class DateTablePanel : public wxPanel {
     // fill table from received date_interval_bundles
     for (size_t index = 0; index < valid_rows_list.size(); ++index) {
       const auto row = static_cast<unsigned int>(valid_rows_list[index]);
-      const auto first_date = boost_date_to_string(
+      const auto first_date = BoostDateToString(
           date_interval_bundles[index].GetDateInterval().begin());
       table_widget->SetValue(first_date, row, ColumnIndex(Columns::first_date));
 
@@ -131,7 +131,7 @@ class DateTablePanel : public wxPanel {
       }
       // date interval
       else {
-        second_date = boost_date_to_string(
+        second_date = BoostDateToString(
             date_interval_bundles[index].GetDateInterval().end());
       }
       table_widget->SetValue(second_date, row,
@@ -348,8 +348,7 @@ class DateTablePanel : public wxPanel {
     wxVariant cell_value;
     table_widget->GetStore()->GetValueByRow(cell_value, cell.row,
                                             ColumnIndex(cell.column));
-    return string_to_boost_date(cell_value.GetString().ToStdString(),
-                                date_format);
+    return StringToBoostDate(cell_value.GetString().ToStdString(), date_format);
   }
 
   void OnItemActivated(wxDataViewEvent& event) {
@@ -378,9 +377,9 @@ class DateTablePanel : public wxPanel {
         const auto edited_column = static_cast<unsigned int>(event.GetColumn());
 
         // Check Date
-        auto edited_date = string_to_boost_date(edited_string, date_format);
+        auto edited_date = StringToBoostDate(edited_string, date_format);
         if (!edited_date.is_special()) {
-          std::string const parsed_string = boost_date_to_string(edited_date);
+          std::string const parsed_string = BoostDateToString(edited_date);
           table_widget->SetValue(parsed_string.c_str(), selected_row,
                                  edited_column);
         } else {
@@ -457,7 +456,7 @@ class DateTablePanel : public wxPanel {
   wxWeakRef<wxButton> deleteRowButton;
   wxWeakRef<wxComboBox> select_group_control;
 
-  date_format_descriptor date_format{};
+  DateFormatDescriptor date_format{};
   DateGroupStore date_group_store;
   sigslot::signal<const std::vector<DateIntervalBundle>&>
       signal_table_date_interval_bundles;

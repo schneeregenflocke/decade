@@ -13,13 +13,13 @@
 #include <sstream>
 #include <string>
 
-struct date_format_descriptor {
+struct DateFormatDescriptor {
   std::array<size_t, 3> date_order;
   std::array<unsigned char, 3> delimiters;
   bool shortyear;
 };
 
-inline date_format_descriptor InitDateFormat() {
+inline DateFormatDescriptor InitDateFormat() {
   constexpr int testyear = 1999;
   constexpr int testyearshort = 99;
   constexpr int testmonth = 4;
@@ -31,16 +31,16 @@ inline date_format_descriptor InitDateFormat() {
   ostrm << std::put_time(&test_tm, "%x");
   std::string date_string = ostrm.str();
 
-  date_format_descriptor date_format{};
+  DateFormatDescriptor date_format{};
 
-  size_t delimPos = 0;
+  size_t delim_pos = 0;
   for (size_t index = 0; index < 3; ++index) {
-    date_string = date_string.substr(delimPos);
-    const int number = std::stoi(date_string, &delimPos);
-    if (delimPos < date_string.size()) {
+    date_string = date_string.substr(delim_pos);
+    const int number = std::stoi(date_string, &delim_pos);
+    if (delim_pos < date_string.size()) {
       date_format.delimiters.at(index) =
-          static_cast<unsigned char>(date_string.at(delimPos));
-      ++delimPos;
+          static_cast<unsigned char>(date_string.at(delim_pos));
+      ++delim_pos;
     } else {
       date_format.delimiters.at(index) = 0;
     }
@@ -67,7 +67,7 @@ inline date_format_descriptor InitDateFormat() {
   return date_format;
 }
 
-inline std::string boost_date_to_string(
+inline std::string BoostDateToString(
     const boost::gregorian::date& date_variable) {
   std::ostringstream ostrm{};
 
@@ -80,23 +80,24 @@ inline std::string boost_date_to_string(
 
   return ostrm.str();
 }
-inline boost::gregorian::date string_to_boost_date(
-    const std::string& date_string, const date_format_descriptor& format) {
+
+inline boost::gregorian::date StringToBoostDate(
+    const std::string& date_string, const DateFormatDescriptor& format) {
   std::string non_const_date_string = date_string;
 
   bool failed = false;
   std::array<int, 3> date_parts{};
-  size_t delimPos = 0;
+  size_t delim_pos = 0;
   boost::gregorian::date date_variable;
 
   for (size_t index = 0; index < 3; ++index) {
-    if (delimPos >= non_const_date_string.length() ||
+    if (delim_pos >= non_const_date_string.length() ||
         non_const_date_string.empty()) {
       failed = true;
       break;
     }
 
-    non_const_date_string = non_const_date_string.substr(delimPos);
+    non_const_date_string = non_const_date_string.substr(delim_pos);
     if (non_const_date_string.empty()) {
       failed = true;
       break;
@@ -111,13 +112,13 @@ inline boost::gregorian::date string_to_boost_date(
     int number = 0;
 
     try {
-      number = std::stoi(non_const_date_string, &delimPos);
+      number = std::stoi(non_const_date_string, &delim_pos);
     } catch (const std::exception&) {
       failed = true;
       break;
     }
 
-    ++delimPos;
+    ++delim_pos;
 
     if (format.date_order.at(index) == 0 && format.shortyear) {
       constexpr int shortyear_pivot = 50;

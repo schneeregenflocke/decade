@@ -139,10 +139,8 @@ the Domain types it serialises.
 - **Domain:** `src/packages/` — value objects, stores, transformation logic, sigslot signals — UI-agnostic **and Boost-free** (no `friend boost::serialization::access`, no `serialize` members).
 - **Infrastructure:** `src/graphics/`, `src/app/services/` — OpenGL pipeline, FreeType, XML/CSV/PNG I/O, **non-intrusive serialization**.
 
-`src/app/binding/calendar_page.hpp` is the rendering adapter: it bridges Domain
-state into the Infrastructure scene graph. It belongs to the Application layer.
-The scene-graph construction itself lives in a dedicated builder,
-`src/app/binding/calendar_scene_builder.hpp` (see below).
+The rendering adapter (`calendar_page.hpp` + `calendar_scene_builder.hpp`) is the
+Application/Infrastructure bridge; both are detailed in the directory map below.
 
 ### Directory map
 
@@ -164,7 +162,6 @@ The scene-graph construction itself lives in a dedicated builder,
   - **Must remain UI-agnostic (no wx, no GL) and Boost-free** — persistence lives in `services/value_serialization.hpp`.
 - `src/gui/` — Presentation: wxWidgets panels and the GL canvas wrapper. Each panel owns its widgets and exposes signals matching its store's interface.
 - `src/graphics/` — Infrastructure: OpenGL engine, shaders, `SceneNode` scene graph, `RectanglesShape` / `QuadrilateralShape` / `FontShape`, `RenderToTexture`, `RenderToPng`, FreeType wrapper.
-- `src/app/binding/calendar_page.hpp` / `calendar_scene_builder.hpp` — the rendering adapter (Application/Infrastructure bridge): `CalendarPage` receives store updates and owns the state; `CalendarSceneBuilder` builds the scene graph for the calendar layout and pushes shapes into `GraphicsEngine`.
 
 ### Layering rules
 
@@ -211,6 +208,22 @@ this callback fires.
 
 1. Add unit tests for CSV/XML conversion logic in `services/project_io`.
 2. Promote stores to publish directly into `EventBus` (removing their internal signals) once all consumers are bus-only.
+3. **Style-Migration auf Google C++ Style** (Schreibweise): Klassen-Datenmember
+   auf Trailing-Underscore (`date_format_`) umstellen und die bekannten
+   Abweichungen beheben (`addRowButton` → `add_row_button_`, `to_wx_color` →
+   `ToWxColor`). Eine dedizierte, abgegrenzte Runde — bewusst beauftragt, nicht
+   als Nebeneffekt anderer Änderungen (siehe die Naming/Style-Notiz unter
+   [Conventions](#conventions)).
+4. **Datei- und Naming-Struktur in `packages/`** (Bedeutung der Bezeichner):
+   - Value-Object und zugehörigen Store in **getrennte Dateien** aufteilen
+     (physische Struktur = dokumentierter konzeptueller Split), Dateinamen an die
+     Hauptklasse angleichen (`date_store.hpp` → `date_interval_bundle.hpp` +
+     `date_interval_bundle_store.hpp`; `group_store.hpp` → `date_group.hpp` +
+     `date_group_store.hpp`).
+   - Store-Suffix vereinheitlichen: `ShapeConfigurationStorage`,
+     `CalendarConfigStorage` → `…Store`.
+   Ebenfalls dedizierte Runde; zusammen mit (3) zu fahren, da Datei-Rename =
+   Naming. Header-Guards und CMake-`target_sources` mitziehen.
 
 ## Design principles
 
@@ -246,7 +259,21 @@ to and obey that layer's dependency constraints.
 
 - C++23, no compiler extensions.
 - Header guards use the filename style: the uppercased file name with the dot before the suffix as `_`, e.g. `main_window.hpp` → `MAIN_WINDOW_HPP`, `opengl_panel.hpp` → `OPENGL_PANEL_HPP`. No directory path prefix. Apply this consistently in `#ifndef`, `#define`, and the trailing `#endif  // <GUARD>` comment. (The clang-tidy `llvm-header-guard` check, which would otherwise impose a full-path style like `HOME_TITAN99_CODE_DECADE_SRC_..._HPP`, is disabled in `.clang-tidy` — keep it disabled.)
-- Naming is currently mixed: `*Store` vs. `*Storage`, snake_case members like `signal_page_setup_config` vs. PascalCase `SignalDateGroups()`. When touching a file, prefer the existing local style; do not perform mass renames as a side effect.
+- **Naming/Style — Zielkonvention: Google C++ Style** (beschlossen; Migration
+  läuft in einer dedizierten Runde, siehe [Follow-up refactor targets](#follow-up-refactor-targets)):
+  - Typen: `PascalCase` (`DateGroup`) — bereits durchgehend so.
+  - Funktionen & Methoden: `PascalCase` (`GetDateGroups()`); triviale
+    Accessor/Mutator dürfen `snake_case` wie ihr Member heissen (`set_count()`).
+  - Klassen-Datenmember: `snake_case` **mit Trailing-Underscore** (`date_format_`)
+    — die wesentliche noch ausstehende Änderung. Struct-Member ohne Underscore.
+  - Locals: `snake_case`. Konstanten/Enumeratoren: `kPascalCase` (`kColorScale`).
+  - Bekannte Abweichungen vom Ziel (in der Runde zu beheben): `*Storage`-Suffix
+    (→ `*Store`), camelCase-Member wie `addRowButton` (→ `add_row_button_`),
+    snake_case-freie-Funktion `to_wx_color` (→ `ToWxColor`), fehlende
+    Trailing-Underscores an Klassenmembern.
+  - **Bis die Runde durch ist** ist der Baum gemischt: beim Bearbeiten einer Datei
+    den bestehenden lokalen Stil beibehalten und **keine Renames als Nebeneffekt**
+    fremder Änderungen — die Vereinheitlichung ist Sache der dedizierten Runde.
 - Rule-of-five: classes with explicit destructors should also delete or default copy/move (see `MainWindow`, `DateIntervalBundleStore`).
 - Never use raw `new`/`delete`. Always express ownership through smart pointers (`std::unique_ptr` for unique ownership, `std::shared_ptr` for shared ownership) so lifetime is encoded in the type system, exceptions cannot leak resources, and ownership transfer is explicit at call sites. wx widgets are typically transferred via `.release()` to wx-owned parents (wx then owns the lifetime).
 - For non-owning references to objects whose lifetime is managed by wxWidgets (wx-owned parents/children, or any class derived from `wxTrackable` — which includes `wxWindow`, `wxEvtHandler`, and most wx classes), prefer `wxWeakRef<T>` over raw pointers. It auto-nulls when the referenced object is destroyed, eliminating dangling-pointer bugs. See [wxWeakRef](https://docs.wxwidgets.org/3.2/classwx_weak_ref_3_01_t_01_4.html) and [wxTrackable](https://docs.wxwidgets.org/3.2/classwx_trackable.html).

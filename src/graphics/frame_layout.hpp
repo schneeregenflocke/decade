@@ -17,8 +17,8 @@ class ProportionFrameLayout {
     for (size_t index = 0; index < row_frames.size(); ++index) {
       const auto float_index = static_cast<float>(index);
       const auto current_bottom = frame.b() + (float_index * row_height);
-      row_frames[index] = rectf(frame.l(), frame.r(), current_bottom,
-                                current_bottom + row_height);
+      row_frames.at(index) = rectf(frame.l(), frame.r(), current_bottom,
+                                   current_bottom + row_height);
     }
   }
 
@@ -28,12 +28,12 @@ class ProportionFrameLayout {
     sub_frames.resize(row_frames.size() * number_sub_frames_per_row);
 
     for (size_t index = 0; index < row_frames.size(); ++index) {
-      const auto sections = Section(proportions, row_frames[index].height());
+      const auto sections = Section(proportions, row_frames.at(index).height());
       std::vector<float> cumulative_sections(sections.size());
 
       for (size_t subindex = 0; subindex < cumulative_sections.size();
            ++subindex) {
-        cumulative_sections[subindex] = std::accumulate(
+        cumulative_sections.at(subindex) = std::accumulate(
             sections.cbegin(),
             std::next(sections.cbegin(), static_cast<std::ptrdiff_t>(subindex)),
             0.0F);
@@ -42,18 +42,20 @@ class ProportionFrameLayout {
       for (size_t subindex = 0; subindex < number_sub_frames_per_row;
            ++subindex) {
         const auto frame_index = (index * number_sub_frames_per_row) + subindex;
-        sub_frames[frame_index].setL(row_frames[index].l());
-        sub_frames[frame_index].setR(row_frames[index].r());
-        sub_frames[frame_index].setB(row_frames[index].b() +
-                                     cumulative_sections[(subindex * 2) + 1]);
-        sub_frames[frame_index].setT(row_frames[index].b() +
-                                     cumulative_sections[(subindex * 2) + 2]);
+        sub_frames.at(frame_index).setL(row_frames.at(index).l());
+        sub_frames.at(frame_index).setR(row_frames.at(index).r());
+        sub_frames.at(frame_index)
+            .setB(row_frames.at(index).b() +
+                  cumulative_sections.at((subindex * 2) + 1));
+        sub_frames.at(frame_index)
+            .setT(row_frames.at(index).b() +
+                  cumulative_sections.at((subindex * 2) + 2));
       }
     }
   }
 
   [[nodiscard]] rectf GetSubFrame(const size_t row, const size_t sub) const {
-    return sub_frames[(number_sub_frames_per_row * row) + sub];
+    return sub_frames.at((number_sub_frames_per_row * row) + sub);
   }
 
  private:

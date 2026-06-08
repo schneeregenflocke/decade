@@ -40,7 +40,7 @@ inline std::vector<DateIntervalBundle> ReadDateIntervalBundlesFromCsv(
     return date_interval_bundles;
   }
 
-  const date_format_descriptor date_format = InitDateFormat();
+  const DateFormatDescriptor date_format = InitDateFormat();
   for (const auto& row : csv_reader) {
     size_t current_col = 0;
     std::string begin_date_string;
@@ -55,9 +55,8 @@ inline std::vector<DateIntervalBundle> ReadDateIntervalBundlesFromCsv(
       ++current_col;
     }
 
-    const auto begin_date =
-        string_to_boost_date(begin_date_string, date_format);
-    const auto end_date = string_to_boost_date(end_date_string, date_format);
+    const auto begin_date = StringToBoostDate(begin_date_string, date_format);
+    const auto end_date = StringToBoostDate(end_date_string, date_format);
 
     DateIntervalBundle date_interval_bundle;
     date_interval_bundle.SetDateInterval(
@@ -76,8 +75,8 @@ inline void WriteDateIntervalBundlesToCsv(
 
   for (const auto& date_interval_bundle : date_interval_bundles) {
     const std::array<std::string, 2> date_interval_strings{
-        boost_date_to_string(date_interval_bundle.GetDateInterval().begin()),
-        boost_date_to_string(date_interval_bundle.GetDateInterval().end())};
+        BoostDateToString(date_interval_bundle.GetDateInterval().begin()),
+        BoostDateToString(date_interval_bundle.GetDateInterval().end())};
     csv_writer.write_row(date_interval_strings);
   }
 }
