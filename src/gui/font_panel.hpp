@@ -185,7 +185,7 @@ class FontPanel : public wxPanel {
       signal_font_filepath(font_filepath);
       // font_data.clear();
     } catch (...) {
-      std::cout << "Loading Font failed" << '\n';
+      std::cerr << "Loading Font failed" << '\n';
     }
   }
 

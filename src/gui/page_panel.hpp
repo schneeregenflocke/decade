@@ -33,9 +33,8 @@ class PageSetupPanel : public wxPanel {
     dialog_data.SetMarginTopLeft(wxPoint(kPageMarginMm, kPageMarginMm));
     dialog_data.SetMarginBottomRight(wxPoint(kPageMarginMm, kPageMarginMm));
 
-    wxStaticBoxSizer* static_box_sizer =
-        std::make_unique<wxStaticBoxSizer>(wxVERTICAL, this, L"Paper Format")
-            .release();
+    wxBoxSizer* vertical_sizer =
+        std::make_unique<wxBoxSizer>(wxVERTICAL).release();
 
     wxBoxSizer* horizontal_sizer0 =
         std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
@@ -76,14 +75,9 @@ class PageSetupPanel : public wxPanel {
     horizontal_sizer2->Add(page_height_spinctrl, 1, wxEXPAND | wxALL,
                            kSizerBorderPx);
 
-    static_box_sizer->Add(horizontal_sizer0, 0, wxEXPAND);
-    static_box_sizer->Add(horizontal_sizer1, 0, wxEXPAND);
-    static_box_sizer->Add(horizontal_sizer2, 0, wxEXPAND);
-
-    wxBoxSizer* vertical_sizer =
-        std::make_unique<wxBoxSizer>(wxVERTICAL).release();
-    // vertical_sizer->Add(static_box_sizer, 0, wxEXPAND | wxALL, 5);
-    vertical_sizer->Add(static_box_sizer, 0, wxEXPAND);
+    vertical_sizer->Add(horizontal_sizer0, 0, wxEXPAND);
+    vertical_sizer->Add(horizontal_sizer1, 0, wxEXPAND);
+    vertical_sizer->Add(horizontal_sizer2, 0, wxEXPAND);
 
     SetSizer(vertical_sizer);
 

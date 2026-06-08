@@ -210,10 +210,10 @@ inline void MainWindow::CreatePanels(wxNotebook* notebook) {
   impl_->title_setup_panel = document_setup_panel->GetTitleSetupPanel();
 
   notebook->AddPage(impl_->date_groups_table_panel, "Categories");
-  notebook->AddPage(impl_->data_table_panel, "Intervals");
+  notebook->AddPage(impl_->data_table_panel, "Entries");
   notebook->AddPage(document_setup_panel, "Document");
   notebook->AddPage(impl_->calendar_setup_panel, "Timeframe");
-  notebook->AddPage(impl_->elements_setup_panel, "Bars");
+  notebook->AddPage(impl_->elements_setup_panel, "Layout");
 }
 
 inline void MainWindow::InitializeOpenGL() {

@@ -45,18 +45,12 @@ class TitleSetupPanel : public wxPanel {
     AddLabelledRow(vertical_sizer, L"Text", title_text_edit, row_flags,
                    label_flags, field_flags, kLabelWidth);
 
-    // "Color Transparency" belongs to the text colour, so both controls live in
-    // a dedicated "Text Color" group.
-    auto* color_box =
-        std::make_unique<wxStaticBoxSizer>(wxVERTICAL, this, L"Text Color")
-            .release();
-
     constexpr int kAlphaMax = 255;
     text_color_picker =
         std::make_unique<wxColourPickerCtrl>(
             this, wxID_ANY, *wxStockGDI::GetColour(wxStockGDI::COLOUR_BLACK))
             .release();
-    AddLabelledRow(color_box, L"Color", text_color_picker, row_flags,
+    AddLabelledRow(vertical_sizer, L"Color", text_color_picker, row_flags,
                    label_flags, field_flags, kLabelWidth);
 
     alpha_slider =
@@ -64,10 +58,9 @@ class TitleSetupPanel : public wxPanel {
                                    wxDefaultPosition, wxDefaultSize,
                                    wxSL_HORIZONTAL | wxSL_LABELS)
             .release();
-    AddLabelledRow(color_box, L"Transparency", alpha_slider, row_flags,
+    AddLabelledRow(vertical_sizer, L"Transparency", alpha_slider, row_flags,
                    label_flags, field_flags, kLabelWidth);
 
-    vertical_sizer->Add(color_box, row_flags);
     vertical_sizer->Layout();
 
     ////////////////////////////////////////
