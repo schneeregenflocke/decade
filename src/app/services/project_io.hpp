@@ -18,9 +18,9 @@
 #include <string>
 #include <vector>
 
-#include "../../date_utils.hpp"
 #include "../../packages/calendar_config.hpp"
 #include "../../packages/date_store.hpp"
+#include "../../packages/date_utils.hpp"
 #include "../../packages/group_store.hpp"
 #include "../../packages/page_config.hpp"
 #include "../../packages/shape_config.hpp"

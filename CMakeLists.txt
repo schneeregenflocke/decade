@@ -66,10 +66,8 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/calendar_scene_builder.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/event_bus.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/main_window_binder.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/date_utils.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/casts.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/frame_layout.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/calendar_config.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_utils.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/color_palette.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_store.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/group_store.hpp
@@ -78,6 +76,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/title_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/detail/reentry_guard.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/calendar_panel.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/casts.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/date_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/font_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/groups_panel.hpp
@@ -89,6 +88,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/title_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/debug_log.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/font.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/frame_layout.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/graphics_engine.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/projection.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/rect.hpp

@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <vector>
 
-#include "../date_utils.hpp"
+#include "date_utils.hpp"
 #include "detail/reentry_guard.hpp"
 
 // Pure domain value: the year span of the calendar. boost::gregorian is the

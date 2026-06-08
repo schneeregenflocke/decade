@@ -5,7 +5,7 @@
 #include <numeric>
 #include <vector>
 
-#include "graphics/rect.hpp"
+#include "rect.hpp"
 
 class ProportionFrameLayout {
  public:

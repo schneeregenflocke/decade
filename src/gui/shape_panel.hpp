@@ -12,10 +12,10 @@
 #include <string>
 #include <vector>
 
-#include "../casts.hpp"
 #include "../packages/color_palette.hpp"
 #include "../packages/group_store.hpp"
 #include "../packages/shape_config.hpp"
+#include "casts.hpp"
 
 class ElementsSetupsPanel : public wxPanel {
  public:

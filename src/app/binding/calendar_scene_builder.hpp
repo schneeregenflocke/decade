@@ -10,8 +10,8 @@
 #include <string>
 #include <vector>
 
-#include "../../frame_layout.hpp"
 #include "../../graphics/font.hpp"
+#include "../../graphics/frame_layout.hpp"
 #include "../../graphics/graphics_engine.hpp"
 #include "../../graphics/scene_graph.hpp"
 #include "../../graphics/shapes.hpp"

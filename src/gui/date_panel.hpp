@@ -16,8 +16,8 @@
 #include <utility>
 #include <vector>
 
-#include "../date_utils.hpp"
 #include "../packages/date_store.hpp"
+#include "../packages/date_utils.hpp"
 #include "../packages/group_store.hpp"
 
 class DateTablePanel : public wxPanel {
