@@ -149,6 +149,12 @@ class ShapeConfigSet {
     return "Bar Group " + std::to_string(group_index);
   }
 
+  // Name of the persistent "Annual Sum" (per-year total) configuration. Shared
+  // by the panel and the renderer so the string lives in exactly one place.
+  [[nodiscard]] static std::string AnnualSumConfigurationName() {
+    return "Years Totals";
+  }
+
   // Dynamic configurations are stored immediately after the persistent ones, so
   // a group's configuration can be addressed by its index directly.
   [[nodiscard]] ShapeConfiguration GetDynamicConfiguration(
@@ -206,7 +212,12 @@ class ShapeConfigSet {
     const glm::vec4 dark_quarter{kQuarter, kQuarter, kQuarter, kOne};
     const glm::vec4 dark_quarter_transparent{kQuarter, kQuarter, kQuarter,
                                              kZero};
-    const glm::vec4 green_accent{kQuarter, kThreeQuarters, kQuarter, kOne};
+    // Initial "Annual Sum" placeholder: a pastel fill with a stronger outline,
+    // matching the bar-group recipe. The panel re-derives the actual color from
+    // the categorical palette (index = group count) on the first update.
+    const glm::vec4 green_outline{kQuarter, kThreeQuarters, kQuarter,
+                                  kThreeQuarters};
+    const glm::vec4 green_fill{kQuarter, kThreeQuarters, kQuarter, kMid};
 
     return {
         ShapeConfiguration{
@@ -235,9 +246,10 @@ class ShapeConfigSet {
             "Years Shapes", false, false, kLineWidthThin,
             ShapeConfiguration::OutlineColorValue{dark_quarter},
             ShapeConfiguration::FillColorValue{dark_quarter_transparent}},
-        ShapeConfiguration{"Years Totals", false, true, kLineWidthThin,
-                           ShapeConfiguration::OutlineColorValue{green_accent},
-                           ShapeConfiguration::FillColorValue{green_accent}},
+        ShapeConfiguration{AnnualSumConfigurationName(), true, true,
+                           kLineWidthThick,
+                           ShapeConfiguration::OutlineColorValue{green_outline},
+                           ShapeConfiguration::FillColorValue{green_fill}},
     };
   }
 

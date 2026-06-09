@@ -859,8 +859,8 @@ class CalendarSceneBuilder {
         current_cell.setT(current_vertical_center + (current_height * kHalf));
         bars_cells.emplace_back(current_cell);
 
-        auto current_shape_config =
-            shape_config_.GetShapeConfiguration("Years Totals");
+        auto current_shape_config = shape_config_.GetShapeConfiguration(
+            ShapeConfigSet::AnnualSumConfigurationName());
 
         auto node_entrie =
             std::make_shared<SceneNode>(std::string("legend bar annual sum"));
