@@ -65,15 +65,15 @@ class PageSetupPanel : public wxPanel {
         std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
     horizontal_sizer1->Add(page_width_label, 0, wxALL | wxALIGN_CENTER_VERTICAL,
                            kSizerBorderPx);
-    horizontal_sizer1->Add(page_width_spinctrl_, 1, wxEXPAND | wxALL,
-                           kSizerBorderPx);
+    horizontal_sizer1->Add(page_width_spinctrl_, 1,
+                           wxALIGN_CENTER_VERTICAL | wxALL, kSizerBorderPx);
 
     wxBoxSizer* horizontal_sizer2 =
         std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
     horizontal_sizer2->Add(page_height_label, 0,
                            wxALL | wxALIGN_CENTER_VERTICAL, kSizerBorderPx);
-    horizontal_sizer2->Add(page_height_spinctrl_, 1, wxEXPAND | wxALL,
-                           kSizerBorderPx);
+    horizontal_sizer2->Add(page_height_spinctrl_, 1,
+                           wxALIGN_CENTER_VERTICAL | wxALL, kSizerBorderPx);
 
     vertical_sizer->Add(horizontal_sizer0, 0, wxEXPAND);
     vertical_sizer->Add(horizontal_sizer1, 0, wxEXPAND);

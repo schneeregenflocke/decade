@@ -205,11 +205,17 @@ class ElementsSetupsPanel : public wxPanel {
 
   void InitSizers() {
     constexpr int kDefaultSizerBorder = 5;
-    std::array<wxSizerFlags, 3> sizer_flags;
+    // [0] sub-sizers/static boxes, [1] labels, [2] widgets that should grow
+    // vertically (the elements box and its list), [3] fixed-height fields in a
+    // horizontal row (spin/colour/slider/checkbox): these must NOT be expanded
+    // on the cross (vertical) axis or GTK allocates them negative heights.
+    std::array<wxSizerFlags, 4> sizer_flags;
     sizer_flags[0].Proportion(0).Expand();
     sizer_flags[1].Proportion(0).CenterVertical().Border(wxALL,
                                                          kDefaultSizerBorder);
     sizer_flags[2].Proportion(1).Expand().Border(wxALL, kDefaultSizerBorder);
+    sizer_flags[3].Proportion(1).CenterVertical().Border(wxALL,
+                                                         kDefaultSizerBorder);
 
     auto* vertical_sizer = std::make_unique<wxBoxSizer>(wxVERTICAL).release();
     SetSizer(vertical_sizer);
@@ -242,19 +248,19 @@ class ElementsSetupsPanel : public wxPanel {
     static_box_sizer_elements->Add(shape_configuration_list_box_,
                                    sizer_flags[2]);
 
-    horizontal_sizers_outline[0]->Add(outline_visible_ctrl_, sizer_flags[2]);
+    horizontal_sizers_outline[0]->Add(outline_visible_ctrl_, sizer_flags[3]);
     horizontal_sizers_outline[1]->Add(linewidth_label_, sizer_flags[1]);
-    horizontal_sizers_outline[1]->Add(linewidth_ctrl_, sizer_flags[2]);
+    horizontal_sizers_outline[1]->Add(linewidth_ctrl_, sizer_flags[3]);
     horizontal_sizers_outline[2]->Add(linecolor_label_, sizer_flags[1]);
-    horizontal_sizers_outline[2]->Add(line_color_picker_, sizer_flags[2]);
+    horizontal_sizers_outline[2]->Add(line_color_picker_, sizer_flags[3]);
     horizontal_sizers_outline[3]->Add(line_transparency_label_, sizer_flags[1]);
-    horizontal_sizers_outline[3]->Add(line_color_alpha_slider_, sizer_flags[2]);
+    horizontal_sizers_outline[3]->Add(line_color_alpha_slider_, sizer_flags[3]);
 
-    horizontal_sizers_fill[0]->Add(fill_visible_ctrl_, sizer_flags[2]);
+    horizontal_sizers_fill[0]->Add(fill_visible_ctrl_, sizer_flags[3]);
     horizontal_sizers_fill[1]->Add(fillcolor_label_, sizer_flags[1]);
-    horizontal_sizers_fill[1]->Add(fill_color_picker_, sizer_flags[2]);
+    horizontal_sizers_fill[1]->Add(fill_color_picker_, sizer_flags[3]);
     horizontal_sizers_fill[2]->Add(fill_transparency_label_, sizer_flags[1]);
-    horizontal_sizers_fill[2]->Add(fill_color_alpha_slider_, sizer_flags[2]);
+    horizontal_sizers_fill[2]->Add(fill_color_alpha_slider_, sizer_flags[3]);
 
     vertical_sizer->Layout();
   }

@@ -25,7 +25,8 @@ class TitleSetupPanel : public wxPanel {
     const wxSizerFlags label_flags =
         wxSizerFlags().Proportion(0).Expand().Border(wxALL, kSizerBorder);
     const wxSizerFlags field_flags =
-        wxSizerFlags().Proportion(1).Expand().Border(wxALL, kSizerBorder);
+        wxSizerFlags().Proportion(1).CenterVertical().Border(wxALL,
+                                                             kSizerBorder);
 
     auto* vertical_sizer = std::make_unique<wxBoxSizer>(wxVERTICAL).release();
     SetSizer(vertical_sizer);

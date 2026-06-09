@@ -30,7 +30,8 @@ class FontPanel : public wxPanel {
     constexpr int kSizerBorderPx = 5;
     wxBoxSizer* horizontal_sizer =
         std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
-    horizontal_sizer->Add(wx_font_picker_, 1, wxALL | wxEXPAND, kSizerBorderPx);
+    horizontal_sizer->Add(wx_font_picker_, 1, wxALL | wxALIGN_CENTER_VERTICAL,
+                          kSizerBorderPx);
     wxBoxSizer* vertical_sizer =
         std::make_unique<wxBoxSizer>(wxVERTICAL).release();
     vertical_sizer->Add(horizontal_sizer, 0, wxEXPAND);
