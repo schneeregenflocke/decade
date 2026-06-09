@@ -42,12 +42,12 @@
 #include "../gui/shape_panel.hpp"
 #include "../gui/title_panel.hpp"
 #include "../packages/calendar_config_store.hpp"
+#include "../packages/date_entry_store.hpp"
 #include "../packages/date_group_store.hpp"
-#include "../packages/date_interval_bundle_store.hpp"
 #include "../packages/page_setup_store.hpp"
 #include "../packages/shape_configuration_store.hpp"
 #include "../packages/title_config_store.hpp"
-#include "../packages/transform_date_interval_bundle.hpp"
+#include "../packages/transform_date_entry.hpp"
 #include "binding/calendar_page.hpp"
 #include "binding/event_bus.hpp"
 #include "binding/main_window_binder.hpp"
@@ -124,8 +124,8 @@ struct MainWindow::Impl {
   wxWeakRef<DateTablePanel> data_table_panel;
 
   DateGroupStore date_groups_store;
-  DateIntervalBundleStore date_interval_bundle_store;
-  TransformDateIntervalBundle transform_date_interval_bundle;
+  DateEntryStore date_entry_store;
+  TransformDateEntry transform_date_entry;
   PageSetupStore page_setup_store;
   TitleConfigStore title_config_store;
   ShapeConfigurationStore shape_configuration_storage;
@@ -276,8 +276,8 @@ inline void MainWindow::LoadStartupFile() {
     LoadXML(path);
     xml_file_path_ = path;
   } else {
-    impl_->date_interval_bundle_store.ReceiveDateIntervalBundles(
-        app::io::ReadDateIntervalBundlesFromCsv(path));
+    impl_->date_entry_store.ReceiveDateEntries(
+        app::io::ReadDateEntriesFromCsv(path));
   }
 }
 
@@ -348,8 +348,8 @@ inline void MainWindow::DumpFramePng(const std::string& path) {
 inline void MainWindow::EstablishConnections() {
   MainWindowComponents components{
       .date_groups_store = impl_->date_groups_store,
-      .date_interval_bundle_store = impl_->date_interval_bundle_store,
-      .transform_date_interval_bundle = impl_->transform_date_interval_bundle,
+      .date_entry_store = impl_->date_entry_store,
+      .transform_date_entry = impl_->transform_date_entry,
       .page_setup_store = impl_->page_setup_store,
       .title_config_store = impl_->title_config_store,
       .shape_configuration_storage = impl_->shape_configuration_storage,
@@ -435,16 +435,16 @@ inline void MainWindow::CallbackSaveXML(wxCommandEvent& event) {
 
 inline void MainWindow::LoadXML(const std::string& filepath) {
   app::io::LoadProjectXml(filepath, impl_->date_groups_store,
-                          impl_->date_interval_bundle_store,
-                          impl_->page_setup_store, impl_->title_config_store,
+                          impl_->date_entry_store, impl_->page_setup_store,
+                          impl_->title_config_store,
                           impl_->shape_configuration_storage,
                           impl_->calendar_configuration_storage);
 }
 
 inline void MainWindow::SaveXML(const std::string& filepath) {
   app::io::SaveProjectXml(filepath, impl_->date_groups_store,
-                          impl_->date_interval_bundle_store,
-                          impl_->page_setup_store, impl_->title_config_store,
+                          impl_->date_entry_store, impl_->page_setup_store,
+                          impl_->title_config_store,
                           impl_->shape_configuration_storage,
                           impl_->calendar_configuration_storage);
 }
@@ -460,8 +460,8 @@ inline void MainWindow::CallbackImportCSV(wxCommandEvent& event) {
   }
 
   const std::string file_path = open_file_dialog.GetPath().ToStdString();
-  impl_->date_interval_bundle_store.ReceiveDateIntervalBundles(
-      app::io::ReadDateIntervalBundlesFromCsv(file_path));
+  impl_->date_entry_store.ReceiveDateEntries(
+      app::io::ReadDateEntriesFromCsv(file_path));
 }
 
 inline void MainWindow::CallbackExportCSV(wxCommandEvent& event) {
@@ -475,8 +475,8 @@ inline void MainWindow::CallbackExportCSV(wxCommandEvent& event) {
   }
 
   const std::string file_path = save_file_dialog.GetPath().ToStdString();
-  app::io::WriteDateIntervalBundlesToCsv(
-      file_path, impl_->date_interval_bundle_store.GetDateIntervalBundles());
+  app::io::WriteDateEntriesToCsv(file_path,
+                                 impl_->date_entry_store.GetDateEntries());
 }
 
 inline void MainWindow::CallbackExportPNG(wxCommandEvent& event) {

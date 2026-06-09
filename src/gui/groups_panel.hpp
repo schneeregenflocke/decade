@@ -36,8 +36,6 @@ class DateGroupsTablePanel : public wxPanel {
     // &DateGroupsTablePanel::OnItemEditing, this);
     // Bind(wxEVT_DATAVIEW_ITEM_EDITING_STARTED,
     // &DateGroupsTablePanel::OnItemEditing, this);
-    Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED,
-         &DateGroupsTablePanel::CallbackValueChanged, this);
 
     add_row_button_ =
         std::make_unique<wxButton>(this, wxID_ADD, "Add Row").release();
@@ -77,7 +75,6 @@ class DateGroupsTablePanel : public wxPanel {
 
     data_table_->AppendTextColumn(L"Group Number", wxDATAVIEW_CELL_INERT);
     data_table_->AppendTextColumn(L"Group Name", wxDATAVIEW_CELL_EDITABLE);
-    data_table_->AppendToggleColumn(L"Exclude", wxDATAVIEW_CELL_ACTIVATABLE);
   }
 
   static std::wstring GetPanelName() { return {L"Date Group Table"}; }
@@ -111,10 +108,6 @@ class DateGroupsTablePanel : public wxPanel {
       data_table_->SetValue(std::to_wstring(date_groups_[index].GetNumber()),
                             row, 0);
       data_table_->SetValue(date_groups_[index].GetName(), row, 1);
-
-      toggle_value_changed_by_function_call_and_not_by_user_ = true;
-      data_table_->SetToggleValue(date_groups_[index].IsExcluded(), row, 2);
-      toggle_value_changed_by_function_call_and_not_by_user_ = false;
     }
   }
 
@@ -135,7 +128,6 @@ class DateGroupsTablePanel : public wxPanel {
     if (std::cmp_less_equal(row, data_table_->GetItemCount())) {
       wxVector<wxVariant> empty_row;
       empty_row.resize(data_table_->GetColumnCount());
-      empty_row[2] = wxVariant(false);
       data_table_->InsertItem(static_cast<unsigned int>(row), empty_row);
     }
   }
@@ -217,28 +209,11 @@ class DateGroupsTablePanel : public wxPanel {
 
   void CallbackSelectionChanged(wxDataViewEvent& /*event*/) { UpdateButtons(); }
 
-  void CallbackValueChanged(wxDataViewEvent& event) {
-    if (event.GetColumn() == 2 &&
-        data_table_->GetSelectedRow() != wxNOT_FOUND) {
-      if (!toggle_value_changed_by_function_call_and_not_by_user_) {
-        const auto selected_row =
-            static_cast<unsigned int>(data_table_->GetSelectedRow());
-        auto value = data_table_->GetToggleValue(selected_row, 2);
-        // std::cout << "value " << value << '\n';
-        date_groups_[selected_row].SetExcluded(value);
-        signal_table_date_groups_(date_groups_);
-      }
-    }
-  }
-
   wxWeakRef<wxDataViewListCtrl> data_table_;
   wxWeakRef<wxButton> add_row_button_;
   wxWeakRef<wxButton> delete_row_button_;
 
   std::vector<DateGroup> date_groups_;
   sigslot::signal<const std::vector<DateGroup>&> signal_table_date_groups_;
-
-  // Please fix me, research in wxWidgets
-  bool toggle_value_changed_by_function_call_and_not_by_user_{false};
 };
 #endif  // GROUPS_PANEL_HPP

@@ -7,8 +7,8 @@ add_executable(decade_tests
 	packages/test_title_config_store.cpp
 	packages/test_shape_configuration_store.cpp
 	packages/test_calendar_config.cpp
-	packages/test_date_interval_bundle_store.cpp
-	packages/test_transform_date_interval_bundle.cpp
+	packages/test_date_entry_store.cpp
+	packages/test_transform_date_entry.cpp
 )
 
 target_compile_features(decade_tests PRIVATE cxx_std_23)

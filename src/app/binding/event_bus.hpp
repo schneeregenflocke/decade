@@ -6,8 +6,8 @@
 #include <vector>
 
 #include "../../packages/calendar_config.hpp"
+#include "../../packages/date_entry.hpp"
 #include "../../packages/date_group.hpp"
-#include "../../packages/date_interval_bundle.hpp"
 #include "../../packages/page_setup_config.hpp"
 #include "../../packages/shape_configuration.hpp"
 #include "../../packages/title_config.hpp"
@@ -29,9 +29,9 @@ class EventBus {
   EventBus(EventBus&&) = delete;
   EventBus& operator=(EventBus&&) = delete;
 
-  [[nodiscard]] auto& date_interval_bundles() { return date_interval_bundles_; }
-  [[nodiscard]] auto& transformed_date_interval_bundles() {
-    return transformed_date_interval_bundles_;
+  [[nodiscard]] auto& date_entries() { return date_entries_; }
+  [[nodiscard]] auto& transformed_date_entries() {
+    return transformed_date_entries_;
   }
   [[nodiscard]] auto& date_groups() { return date_groups_; }
   [[nodiscard]] auto& page_setup() { return page_setup_; }
@@ -41,10 +41,8 @@ class EventBus {
   [[nodiscard]] auto& calendar_config() { return calendar_config_; }
 
  private:
-  sigslot::signal<const std::vector<DateIntervalBundle>&>
-      date_interval_bundles_;
-  sigslot::signal<const std::vector<DateIntervalBundle>&>
-      transformed_date_interval_bundles_;
+  sigslot::signal<const std::vector<DateEntry>&> date_entries_;
+  sigslot::signal<const std::vector<DateEntry>&> transformed_date_entries_;
   sigslot::signal<const std::vector<DateGroup>&> date_groups_;
   sigslot::signal<const PageSetupConfig&> page_setup_;
   sigslot::signal<const std::string&> font_filepath_;

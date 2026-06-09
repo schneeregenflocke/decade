@@ -100,17 +100,3 @@ TEST(DateGroupStoreTest, ReentryGuardBlocksRecursiveReceive) {
   ASSERT_EQ(store.GetDateGroups().size(), 1U);
   EXPECT_EQ(store.GetDateGroups()[0].GetName(), "initial");
 }
-
-TEST(DateGroupStoreTest, ExcludeFlagPropagatesToBundleStore) {
-  DateGroup excluded("excluded");
-  excluded.SetExcluded(true);
-  std::vector<DateGroup> groups;
-  groups.push_back(excluded);
-  groups.emplace_back("normal");
-
-  DateGroupStore store;
-  store.ReceiveDateGroups(groups);
-
-  EXPECT_TRUE(store.GetExclude(0));
-  EXPECT_FALSE(store.GetExclude(1));
-}

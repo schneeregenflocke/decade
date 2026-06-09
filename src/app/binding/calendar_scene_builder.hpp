@@ -16,8 +16,8 @@
 #include "../../graphics/scene_graph.hpp"
 #include "../../graphics/shapes.hpp"
 #include "../../packages/calendar_config.hpp"
+#include "../../packages/date_entry_bar_store.hpp"
 #include "../../packages/date_group.hpp"
-#include "../../packages/date_interval_bundle_bar_store.hpp"
 #include "../../packages/shape_configuration.hpp"
 #include "../../packages/title_config.hpp"
 
@@ -35,7 +35,7 @@ class CalendarSceneBuilder {
                        CalendarConfig& calendar_config_in,
                        const ShapeConfigSet& shape_config_in,
                        const DateGroups& date_groups_in,
-                       const DateIntervalBundleBarStore& data_store_in)
+                       const DateEntryBarStore& data_store_in)
       : scene_graph_(std::make_shared<SceneNode>("root")),
         graphics_engine_(graphics_engine_in),
         font_(font_in),
@@ -901,7 +901,7 @@ class CalendarSceneBuilder {
   CalendarConfig& calendar_config_;
   const ShapeConfigSet& shape_config_;
   const DateGroups& date_groups_;
-  const DateIntervalBundleBarStore& data_store_;
+  const DateEntryBarStore& data_store_;
 
   // Transient layout state, recomputed on every Build().
   ProportionFrameLayout proportion_frame_layout_;

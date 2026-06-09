@@ -56,10 +56,6 @@ class DateGroupStore {
 
   [[nodiscard]] int GetGroupMax() const { return date_groups_.GetGroupMax(); }
 
-  [[nodiscard]] bool GetExclude(int number) const {
-    return date_groups_.GetExclude(number);
-  }
-
   sigslot::signal<const std::vector<DateGroup>&>& SignalDateGroups() {
     return signal_date_groups_;
   }

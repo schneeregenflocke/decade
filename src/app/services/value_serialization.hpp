@@ -25,8 +25,8 @@
 #include <glm/vec4.hpp>
 
 #include "../../packages/calendar_config.hpp"
+#include "../../packages/date_entry.hpp"
 #include "../../packages/date_group.hpp"
-#include "../../packages/date_interval_bundle.hpp"
 #include "../../packages/page_setup_config.hpp"
 #include "../../packages/shape_configuration.hpp"
 #include "../../packages/title_config.hpp"
@@ -38,46 +38,38 @@ template <class Archive>
 void save(Archive& ar, const DateGroup& group, const unsigned int /*v*/) {
   const int number = group.GetNumber();
   const std::string& name = group.GetName();
-  const bool exclude = group.IsExcluded();
   ar& make_nvp("number", number);
   ar& make_nvp("name", name);
-  ar& make_nvp("exclude", exclude);
 }
 template <class Archive>
 void load(Archive& ar, DateGroup& group, const unsigned int /*v*/) {
   int number = 0;
   std::string name;
-  bool exclude = false;
   ar& make_nvp("number", number);
   ar& make_nvp("name", name);
-  ar& make_nvp("exclude", exclude);
   group.SetNumber(number);
   group.SetName(std::move(name));
-  group.SetExcluded(exclude);
 }
 
-// --- DateIntervalBundle ---
+// --- DateEntry ---
 template <class Archive>
-void save(Archive& ar, const DateIntervalBundle& bundle,
-          const unsigned int /*v*/) {
-  const boost::gregorian::date_period date_interval = bundle.GetDateInterval();
+void save(Archive& ar, const DateEntry& entry, const unsigned int /*v*/) {
+  const boost::gregorian::date_period date_interval = entry.GetDateInterval();
   const boost::gregorian::date_period date_inter_interval =
-      bundle.GetDateInterInterval();
-  const int number = bundle.GetNumber();
-  const int group = bundle.GetGroup();
-  const int group_number = bundle.GetGroupNumber();
-  const bool exclude = bundle.IsExcluded();
-  const std::string& comment = bundle.GetComment();
+      entry.GetDateInterInterval();
+  const int number = entry.GetNumber();
+  const int group = entry.GetGroup();
+  const int group_number = entry.GetGroupNumber();
+  const std::string& comment = entry.GetComment();
   ar& make_nvp("date_interval", date_interval);
   ar& make_nvp("date_inter_interval", date_inter_interval);
   ar& make_nvp("number", number);
   ar& make_nvp("group", group);
   ar& make_nvp("group_number", group_number);
-  ar& make_nvp("exclude", exclude);
   ar& make_nvp("comment", comment);
 }
 template <class Archive>
-void load(Archive& ar, DateIntervalBundle& bundle, const unsigned int /*v*/) {
+void load(Archive& ar, DateEntry& entry, const unsigned int /*v*/) {
   // Placeholder ("not a date") endpoints; the real values are read from the
   // archive below. A named temporary avoids the most-vexing-parse: written
   // inline as date(...) inside the date_period(...) argument list, the
@@ -88,22 +80,19 @@ void load(Archive& ar, DateIntervalBundle& bundle, const unsigned int /*v*/) {
   int number = 0;
   int group = 0;
   int group_number = 0;
-  bool exclude = false;
   std::string comment;
   ar& make_nvp("date_interval", date_interval);
   ar& make_nvp("date_inter_interval", date_inter_interval);
   ar& make_nvp("number", number);
   ar& make_nvp("group", group);
   ar& make_nvp("group_number", group_number);
-  ar& make_nvp("exclude", exclude);
   ar& make_nvp("comment", comment);
-  bundle.SetDateInterval(date_interval);
-  bundle.SetDateInterInterval(date_inter_interval);
-  bundle.SetNumber(number);
-  bundle.SetGroup(group);
-  bundle.SetGroupNumber(group_number);
-  bundle.SetExcluded(exclude);
-  bundle.SetComment(std::move(comment));
+  entry.SetDateInterval(date_interval);
+  entry.SetDateInterInterval(date_inter_interval);
+  entry.SetNumber(number);
+  entry.SetGroup(group);
+  entry.SetGroupNumber(group_number);
+  entry.SetComment(std::move(comment));
 }
 
 // --- PageSetupConfig (aggregate, public members) ---
@@ -236,7 +225,7 @@ void load(Archive& ar, CalendarConfig& config, const unsigned int /*v*/) {
 }  // namespace boost::serialization
 
 BOOST_SERIALIZATION_SPLIT_FREE(DateGroup)
-BOOST_SERIALIZATION_SPLIT_FREE(DateIntervalBundle)
+BOOST_SERIALIZATION_SPLIT_FREE(DateEntry)
 BOOST_SERIALIZATION_SPLIT_FREE(TitleConfig)
 BOOST_SERIALIZATION_SPLIT_FREE(ShapeConfiguration)
 BOOST_SERIALIZATION_SPLIT_FREE(ShapeConfigSet)

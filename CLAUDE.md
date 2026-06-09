@@ -159,11 +159,11 @@ Application/Infrastructure bridge; both are detailed in the directory map below.
 - `src/packages/` — Domain layer, split into **value objects** and **stores**. The
   conceptual split is also physical: each value object and its store live in
   **separate files** named after the primary class (e.g. `date_group.hpp` +
-  `date_group_store.hpp`, `date_interval_bundle.hpp` + `date_interval_bundle_store.hpp`,
+  `date_group_store.hpp`, `date_entry.hpp` + `date_entry_store.hpp`,
   `page_setup_config.hpp` + `page_setup_store.hpp`). The value-object header carries
   no store dependency; the store header includes its value-object header.
-  - **Value objects** (`DateGroup`/`DateGroups`, `DateIntervalBundle`, `Bar`, `PageSetupConfig`, `TitleConfig`, `ShapeConfiguration`/`ShapeConfigSet`, `CalendarSpan`/`CalendarConfig`) hold data + the queries over it. They **encapsulate their state**: data members are `private`, exposed through const accessor/query methods and mutated only through named setters — this is the orthodox DDD form (a value object is defined by its attributes, not by exposing them as public fields), and it keeps the on-disk format and invariants in one place. No signal, no serialization, no `friend` → Rule of Zero, freely copyable.
-  - **Stores** (`DateGroupStore`, `DateIntervalBundleStore`/`DateIntervalBundleBarStore`, `TransformDateIntervalBundle`, `PageSetupStore`, `TitleConfigStore`, `ShapeConfigurationStore`, `CalendarConfigStore`) compose a value object plus a `sigslot::signal` and the re-entry guard. They have identity → explicitly non-copyable. Their **signal carries the value** (`signal<const Value&>`), so consumers (panels, `CalendarPage`) work with copyable value objects directly; the store exposes `Receive<Value>` / `Send<Value>` / a `Get<Value>` getter and adds no query delegation of its own. The store suffix is uniformly `…Store` (no `…Storage`).
+  - **Value objects** (`DateGroup`/`DateGroups`, `DateEntry`, `Bar`, `PageSetupConfig`, `TitleConfig`, `ShapeConfiguration`/`ShapeConfigSet`, `CalendarSpan`/`CalendarConfig`) hold data + the queries over it. They **encapsulate their state**: data members are `private`, exposed through const accessor/query methods and mutated only through named setters — this is the orthodox DDD form (a value object is defined by its attributes, not by exposing them as public fields), and it keeps the on-disk format and invariants in one place. No signal, no serialization, no `friend` → Rule of Zero, freely copyable.
+  - **Stores** (`DateGroupStore`, `DateEntryStore`/`DateEntryBarStore`, `TransformDateEntry`, `PageSetupStore`, `TitleConfigStore`, `ShapeConfigurationStore`, `CalendarConfigStore`) compose a value object plus a `sigslot::signal` and the re-entry guard. They have identity → explicitly non-copyable. Their **signal carries the value** (`signal<const Value&>`), so consumers (panels, `CalendarPage`) work with copyable value objects directly; the store exposes `Receive<Value>` / `Send<Value>` / a `Get<Value>` getter and adds no query delegation of its own. The store suffix is uniformly `…Store` (no `…Storage`).
   - **Must remain UI-agnostic (no wx, no GL) and Boost-free** — persistence lives in `services/value_serialization.hpp`.
 - `src/gui/` — Presentation: wxWidgets panels and the GL canvas wrapper. Each panel owns its widgets and exposes signals matching its store's interface.
 - `src/graphics/` — Infrastructure: OpenGL engine, shaders, `SceneNode` scene graph, `RectanglesShape` / `QuadrilateralShape` / `FontShape`, `RenderToTexture`, `RenderToPng`, FreeType wrapper.
@@ -192,8 +192,8 @@ Panel ──Send──▶ EventBus.<event> ──▶ Store.Receive
 Store ──Send──▶ EventBus.<event> ──▶ Panel.Receive , CalendarPage.Receive , GLCanvas.Receive
 ```
 
-The `TransformDateIntervalBundle` adapter sits between `date_interval_bundles`
-(input) and `transformed_date_interval_bundles` (output) on the bus.
+The `TransformDateEntry` adapter sits between `date_entries`
+(input) and `transformed_date_entries` (output) on the bus.
 
 When adding a new piece of state: create a Boost-free **value object** plus a
 `*Store` wrapping it in `packages/`, a panel in `gui/`, add a typed signal to
@@ -269,7 +269,7 @@ to and obey that layer's dependency constraints.
   - Renames weiterhin **nicht als Nebeneffekt** fremder Änderungen durchführen —
     Schreibweise und Bezeichner sind jetzt vereinheitlicht; eine erneute breite
     Umbenennung gehört in eine eigene, beauftragte Runde.
-- Rule-of-five: classes with explicit destructors should also delete or default copy/move (see `MainWindow`, `DateIntervalBundleStore`).
+- Rule-of-five: classes with explicit destructors should also delete or default copy/move (see `MainWindow`, `DateEntryStore`).
 - Never use raw `new`/`delete`. Always express ownership through smart pointers (`std::unique_ptr` for unique ownership, `std::shared_ptr` for shared ownership) so lifetime is encoded in the type system, exceptions cannot leak resources, and ownership transfer is explicit at call sites. wx widgets are typically transferred via `.release()` to wx-owned parents (wx then owns the lifetime).
 - For non-owning references to objects whose lifetime is managed by wxWidgets (wx-owned parents/children, or any class derived from `wxTrackable` — which includes `wxWindow`, `wxEvtHandler`, and most wx classes), prefer `wxWeakRef<T>` over raw pointers. It auto-nulls when the referenced object is destroyed, eliminating dangling-pointer bugs. See [wxWeakRef](https://docs.wxwidgets.org/3.2/classwx_weak_ref_3_01_t_01_4.html) and [wxTrackable](https://docs.wxwidgets.org/3.2/classwx_trackable.html).
 

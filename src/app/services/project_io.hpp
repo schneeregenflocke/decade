@@ -20,10 +20,10 @@
 
 #include "../../packages/calendar_config.hpp"
 #include "../../packages/calendar_config_store.hpp"
+#include "../../packages/date_entry.hpp"
+#include "../../packages/date_entry_store.hpp"
 #include "../../packages/date_group.hpp"
 #include "../../packages/date_group_store.hpp"
-#include "../../packages/date_interval_bundle.hpp"
-#include "../../packages/date_interval_bundle_store.hpp"
 #include "../../packages/date_utils.hpp"
 #include "../../packages/page_setup_config.hpp"
 #include "../../packages/page_setup_store.hpp"
@@ -38,12 +38,12 @@ using CsvReader = csv2::Reader<csv2::delimiter<','>, csv2::quote_character<'"'>,
                                csv2::first_row_is_header<false>,
                                csv2::trim_policy::trim_whitespace>;
 
-inline std::vector<DateIntervalBundle> ReadDateIntervalBundlesFromCsv(
+inline std::vector<DateEntry> ReadDateEntriesFromCsv(
     const std::string& file_path) {
   CsvReader csv_reader;
-  std::vector<DateIntervalBundle> date_interval_bundles;
+  std::vector<DateEntry> date_entries;
   if (!csv_reader.mmap(file_path)) {
-    return date_interval_bundles;
+    return date_entries;
   }
 
   const DateFormatDescriptor date_format = InitDateFormat();
@@ -64,33 +64,32 @@ inline std::vector<DateIntervalBundle> ReadDateIntervalBundlesFromCsv(
     const auto begin_date = StringToBoostDate(begin_date_string, date_format);
     const auto end_date = StringToBoostDate(end_date_string, date_format);
 
-    DateIntervalBundle date_interval_bundle;
-    date_interval_bundle.SetDateInterval(
+    DateEntry date_entry;
+    date_entry.SetDateInterval(
         boost::gregorian::date_period(begin_date, end_date));
-    date_interval_bundles.push_back(date_interval_bundle);
+    date_entries.push_back(date_entry);
   }
 
-  return date_interval_bundles;
+  return date_entries;
 }
 
-inline void WriteDateIntervalBundlesToCsv(
-    const std::string& file_path,
-    const std::vector<DateIntervalBundle>& date_interval_bundles) {
+inline void WriteDateEntriesToCsv(const std::string& file_path,
+                                  const std::vector<DateEntry>& date_entries) {
   std::ofstream file_stream(file_path, std::ios_base::trunc);
   csv2::Writer<csv2::delimiter<','>> csv_writer(file_stream);
 
-  for (const auto& date_interval_bundle : date_interval_bundles) {
+  for (const auto& date_entry : date_entries) {
     const std::array<std::string, 2> date_interval_strings{
-        BoostDateToString(date_interval_bundle.GetDateInterval().begin()),
-        BoostDateToString(date_interval_bundle.GetDateInterval().end())};
+        BoostDateToString(date_entry.GetDateInterval().begin()),
+        BoostDateToString(date_entry.GetDateInterval().end())};
     csv_writer.write_row(date_interval_strings);
   }
 }
 
 inline void LoadProjectXml(
     const std::string& file_path, DateGroupStore& date_groups_store,
-    DateIntervalBundleStore& date_interval_bundle_store,
-    PageSetupStore& page_setup_store, TitleConfigStore& title_config_store,
+    DateEntryStore& date_entry_store, PageSetupStore& page_setup_store,
+    TitleConfigStore& title_config_store,
     ShapeConfigurationStore& shape_configuration_storage,
     CalendarConfigStore& calendar_configuration_storage) {
   std::ifstream filestream(file_path);
@@ -98,16 +97,15 @@ inline void LoadProjectXml(
 
   // Load domain values, then push them into the stores via their Receive* /
   // SetValue entry points so the change signals fire exactly as for a user
-  // edit. Order matters: date groups before bundles, since the bundle store
+  // edit. Order matters: date groups before entries, since the entry store
   // re-derives group-dependent state on receipt.
   std::vector<DateGroup> date_groups;
   iarchive >> boost::serialization::make_nvp("date_groups", date_groups);
   date_groups_store.ReceiveDateGroups(date_groups);
 
-  std::vector<DateIntervalBundle> date_interval_bundles;
-  iarchive >> boost::serialization::make_nvp("date_interval_bundles",
-                                             date_interval_bundles);
-  date_interval_bundle_store.ReceiveDateIntervalBundles(date_interval_bundles);
+  std::vector<DateEntry> date_entries;
+  iarchive >> boost::serialization::make_nvp("date_entries", date_entries);
+  date_entry_store.ReceiveDateEntries(date_entries);
 
   PageSetupConfig page_setup_config{};
   iarchive >> boost::serialization::make_nvp("page_setup", page_setup_config);
@@ -129,7 +127,7 @@ inline void LoadProjectXml(
 
 inline void SaveProjectXml(
     const std::string& file_path, const DateGroupStore& date_groups_store,
-    const DateIntervalBundleStore& date_interval_bundle_store,
+    const DateEntryStore& date_entry_store,
     const PageSetupStore& page_setup_store,
     const TitleConfigStore& title_config_store,
     const ShapeConfigurationStore& shape_configuration_storage,
@@ -141,9 +139,8 @@ inline void SaveProjectXml(
   // no serialization code).
   oarchive << boost::serialization::make_nvp("date_groups",
                                              date_groups_store.GetDateGroups());
-  oarchive << boost::serialization::make_nvp(
-      "date_interval_bundles",
-      date_interval_bundle_store.GetDateIntervalBundles());
+  oarchive << boost::serialization::make_nvp("date_entries",
+                                             date_entry_store.GetDateEntries());
   oarchive << boost::serialization::make_nvp("page_setup",
                                              page_setup_store.GetPageSetup());
   oarchive << boost::serialization::make_nvp(

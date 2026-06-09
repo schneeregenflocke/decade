@@ -72,9 +72,9 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/color_palette.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_group.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_group_store.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_interval_bundle.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_interval_bundle_bar_store.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_interval_bundle_store.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_entry.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_entry_bar_store.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_entry_store.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_utils.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/page_setup_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/page_setup_store.hpp
@@ -82,7 +82,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/shape_configuration_store.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/title_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/title_config_store.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/transform_date_interval_bundle.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/transform_date_entry.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/detail/reentry_guard.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/calendar_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/casts.hpp

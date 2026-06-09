@@ -1,5 +1,5 @@
-#ifndef DATE_INTERVAL_BUNDLE_BAR_STORE_HPP
-#define DATE_INTERVAL_BUNDLE_BAR_STORE_HPP
+#ifndef DATE_ENTRY_BAR_STORE_HPP
+#define DATE_ENTRY_BAR_STORE_HPP
 
 #include <boost/date_time/gregorian/gregorian_types.hpp>
 #include <cstddef>
@@ -8,19 +8,19 @@
 #include <vector>
 
 #include "bar.hpp"
-#include "date_interval_bundle.hpp"
-#include "date_interval_bundle_store.hpp"
+#include "date_entry.hpp"
+#include "date_entry_store.hpp"
 #include "detail/reentry_guard.hpp"
 
-class DateIntervalBundleBarStore : public DateIntervalBundleStore {
+class DateEntryBarStore : public DateEntryStore {
  public:
-  void ReceiveDateIntervalBundles(const std::vector<DateIntervalBundle>&
-                                      incoming_date_interval_bundles) override {
+  void ReceiveDateEntries(
+      const std::vector<DateEntry>& incoming_date_entries) override {
     if (Emitting()) {
       return;
     }
     const packages::detail::ScopedReentryFlag guard(Emitting());
-    ProcessDateIntervalBundles(incoming_date_interval_bundles);
+    ProcessDateEntries(incoming_date_entries);
 
     ProcessBars();
     ProcessAnnualTotals();
@@ -38,8 +38,8 @@ class DateIntervalBundleBarStore : public DateIntervalBundleStore {
   void ProcessBars() {
     bars_.clear();
 
-    for (const auto& bundle : GetDateIntervalBundlesInternal()) {
-      const auto& interval = bundle.GetDateInterval();
+    for (const auto& entry : GetDateEntriesInternal()) {
+      const auto& interval = entry.GetDateInterval();
       const auto span = static_cast<std::size_t>(interval.last().year() -
                                                  interval.begin().year());
 
@@ -57,21 +57,8 @@ class DateIntervalBundleBarStore : public DateIntervalBundleStore {
 
       for (const auto& split_period : splitDatePeriods) {
         Bar bar(split_period);
-        if (!bundle.IsExcluded()) {
-          bar.SetText(std::to_string(bundle.GetNumber() + 1));
-        } else {
-          const std::string text_part_0 = std::to_string(bundle.GetGroup());
-          const std::string text_part_1 =
-              std::to_string(bundle.GetGroupNumber());
-
-          std::string label = "E";
-          label += text_part_0;
-          label += "N";
-          label += text_part_1;
-          bar.SetText(label);
-        }
-
-        bar.SetGroup(bundle.GetGroup());
+        bar.SetText(std::to_string(entry.GetNumber() + 1));
+        bar.SetGroup(entry.GetGroup());
         bars_.push_back(bar);
       }
     }
@@ -92,4 +79,4 @@ class DateIntervalBundleBarStore : public DateIntervalBundleStore {
   std::vector<Bar> bars_;
   std::vector<std::int64_t> annual_totals_;
 };
-#endif  // DATE_INTERVAL_BUNDLE_BAR_STORE_HPP
+#endif  // DATE_ENTRY_BAR_STORE_HPP

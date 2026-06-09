@@ -22,13 +22,9 @@ class DateGroup {
   [[nodiscard]] const std::string& GetName() const { return name_; }
   void SetName(std::string name) { name_ = std::move(name); }
 
-  [[nodiscard]] bool IsExcluded() const { return exclude_; }
-  void SetExcluded(bool exclude) { exclude_ = exclude; }
-
  private:
   int number_{0};
   std::string name_{"no name"};
-  bool exclude_{false};
 };
 
 // Pure value object: the set of date groups plus the queries that are the
@@ -84,10 +80,6 @@ class DateGroups {
       return -1;
     }
     return static_cast<int>(date_groups_.size()) - 1;
-  }
-
-  [[nodiscard]] bool GetExclude(int number) const {
-    return date_groups_.at(static_cast<size_t>(number)).IsExcluded();
   }
 
  private:

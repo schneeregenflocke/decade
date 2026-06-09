@@ -13,17 +13,17 @@
 #include "../../gui/title_panel.hpp"
 #include "../../packages/calendar_config.hpp"
 #include "../../packages/calendar_config_store.hpp"
+#include "../../packages/date_entry.hpp"
+#include "../../packages/date_entry_store.hpp"
 #include "../../packages/date_group.hpp"
 #include "../../packages/date_group_store.hpp"
-#include "../../packages/date_interval_bundle.hpp"
-#include "../../packages/date_interval_bundle_store.hpp"
 #include "../../packages/page_setup_config.hpp"
 #include "../../packages/page_setup_store.hpp"
 #include "../../packages/shape_configuration.hpp"
 #include "../../packages/shape_configuration_store.hpp"
 #include "../../packages/title_config.hpp"
 #include "../../packages/title_config_store.hpp"
-#include "../../packages/transform_date_interval_bundle.hpp"
+#include "../../packages/transform_date_entry.hpp"
 #include "calendar_page.hpp"
 #include "event_bus.hpp"
 
@@ -39,8 +39,8 @@
 //     feedback loops, while keeping consumer code unaware of producer identity.
 struct MainWindowComponents {
   DateGroupStore& date_groups_store;
-  DateIntervalBundleStore& date_interval_bundle_store;
-  TransformDateIntervalBundle& transform_date_interval_bundle;
+  DateEntryStore& date_entry_store;
+  TransformDateEntry& transform_date_entry;
   PageSetupStore& page_setup_store;
   TitleConfigStore& title_config_store;
   ShapeConfigurationStore& shape_configuration_storage;
@@ -62,38 +62,34 @@ namespace main_window_binder {
 
 namespace detail {
 
-inline void BindDateIntervalBundles(EventBus& bus,
-                                    MainWindowComponents& components) {
+inline void BindDateEntries(EventBus& bus, MainWindowComponents& components) {
   // Panel -> Store (user edit)
-  components.data_table_panel.SignalTableDateIntervalBundles().connect(
-      &DateIntervalBundleStore::ReceiveDateIntervalBundles,
-      &components.date_interval_bundle_store);
+  components.data_table_panel.SignalTableDateEntries().connect(
+      &DateEntryStore::ReceiveDateEntries, &components.date_entry_store);
 
   // Store -> Bus
-  components.date_interval_bundle_store.SignalDateIntervalBundles().connect(
-      [&bus](const std::vector<DateIntervalBundle>& value) {
-        bus.date_interval_bundles()(value);
+  components.date_entry_store.SignalDateEntries().connect(
+      [&bus](const std::vector<DateEntry>& value) {
+        bus.date_entries()(value);
       });
 
   // Bus -> consumers
-  bus.date_interval_bundles().connect(
-      &DateTablePanel::ReceiveDateIntervalBundles,
-      &components.data_table_panel);
-  bus.date_interval_bundles().connect(
-      &TransformDateIntervalBundle::ReceiveDateIntervalBundles,
-      &components.transform_date_interval_bundle);
+  bus.date_entries().connect(&DateTablePanel::ReceiveDateEntries,
+                             &components.data_table_panel);
+  bus.date_entries().connect(&TransformDateEntry::ReceiveDateEntries,
+                             &components.transform_date_entry);
 
   // Transform adapter -> Bus (transformed topic)
-  components.transform_date_interval_bundle.SetTransform(
+  components.transform_date_entry.SetTransform(
       {.begin_days = 0, .end_days = 1});
-  components.transform_date_interval_bundle.SignalTransformDateIntervalBundles()
-      .connect([&bus](const std::vector<DateIntervalBundle>& value) {
-        bus.transformed_date_interval_bundles()(value);
+  components.transform_date_entry.SignalTransformDateEntries().connect(
+      [&bus](const std::vector<DateEntry>& value) {
+        bus.transformed_date_entries()(value);
       });
 
   // Bus (transformed) -> CalendarPage
-  bus.transformed_date_interval_bundles().connect(
-      &CalendarPage::ReceiveDateIntervalBundles, &components.calendar_page);
+  bus.transformed_date_entries().connect(&CalendarPage::ReceiveDateEntries,
+                                         &components.calendar_page);
 }
 
 inline void BindDateGroups(EventBus& bus, MainWindowComponents& components) {
@@ -107,8 +103,8 @@ inline void BindDateGroups(EventBus& bus, MainWindowComponents& components) {
 
   bus.date_groups().connect(&DateGroupsTablePanel::ReceiveDateGroups,
                             &components.date_groups_table_panel);
-  bus.date_groups().connect(&DateIntervalBundleStore::ReceiveDateGroups,
-                            &components.date_interval_bundle_store);
+  bus.date_groups().connect(&DateEntryStore::ReceiveDateGroups,
+                            &components.date_entry_store);
   bus.date_groups().connect(&DateTablePanel::ReceiveDateGroups,
                             &components.data_table_panel);
   bus.date_groups().connect(&ElementsSetupsPanel::ReceiveDateGroups,
@@ -188,7 +184,7 @@ inline void BindCalendarConfig(EventBus& bus,
 }  // namespace detail
 
 inline void Bind(EventBus& bus, MainWindowComponents& components) {
-  detail::BindDateIntervalBundles(bus, components);
+  detail::BindDateEntries(bus, components);
   detail::BindDateGroups(bus, components);
   detail::BindPageSetup(bus, components);
   detail::BindFont(bus, components);

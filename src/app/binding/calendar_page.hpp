@@ -9,9 +9,9 @@
 #include "../../graphics/rect.hpp"
 #include "../../gui/opengl_panel.hpp"
 #include "../../packages/calendar_config.hpp"
+#include "../../packages/date_entry.hpp"
+#include "../../packages/date_entry_bar_store.hpp"
 #include "../../packages/date_group.hpp"
-#include "../../packages/date_interval_bundle.hpp"
-#include "../../packages/date_interval_bundle_bar_store.hpp"
 #include "../../packages/page_setup_config.hpp"
 #include "../../packages/shape_configuration.hpp"
 #include "../../packages/title_config.hpp"
@@ -36,9 +36,8 @@ class CalendarPage {
     Update();
   }
 
-  void ReceiveDateIntervalBundles(
-      const std::vector<DateIntervalBundle>& date_interval_bundles) {
-    data_store_.ReceiveDateIntervalBundles(date_interval_bundles);
+  void ReceiveDateEntries(const std::vector<DateEntry>& date_entries) {
+    data_store_.ReceiveDateEntries(date_entries);
     Update();
   }
 
@@ -84,7 +83,7 @@ class CalendarPage {
   rectf page_size_;
   rectf page_margin_;
 
-  DateIntervalBundleBarStore data_store_;
+  DateEntryBarStore data_store_;
   DateGroups date_groups_;
   CalendarConfig calendar_config_;
   ShapeConfigSet shape_config_;
