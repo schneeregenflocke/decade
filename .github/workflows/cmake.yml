@@ -1,0 +1,47 @@
+name: CMake
+
+# Manual-only: this workflow is never triggered by push or pull_request.
+# Run it from the Actions tab ("Run workflow") or via `gh workflow run cmake.yml`.
+on:
+  workflow_dispatch:
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            ninja-build \
+            pkg-config \
+            libboost-date-time-dev \
+            libboost-serialization-dev \
+            libepoxy-dev \
+            libgl1-mesa-dev \
+            libwxgtk3.2-dev \
+            libpng-dev \
+            zlib1g-dev \
+            libfontconfig1-dev \
+            libfreetype-dev \
+            libglm-dev \
+            libmsgsl-dev \
+            libgtest-dev
+
+      - name: Configure CMake
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        working-directory: build
+        run: ctest --output-on-failure
