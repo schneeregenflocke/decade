@@ -23,6 +23,8 @@ namespace app {
 //                                 loaded unless this (or a CLI argument) is
 //                                 set.
 //   DECADE_DUMP_PNG=<path>        render the calendar page to PNG via FBO.
+//   DECADE_DUMP_PNG_DPI=<dpi>     export DPI for DECADE_DUMP_PNG; defaults to
+//                                 GLCanvas::kExportPngDpi when unset.
 //   DECADE_DUMP_WINDOW_PNG=<path> capture the window back buffer after paint.
 //   DECADE_DUMP_FRAME_PNG=<path>  capture the whole main frame (tabs + panels +
 //                                 canvas) to PNG via wxDC, compositing the GL
@@ -44,6 +46,8 @@ struct RuntimeOptions {
   // File to load at startup. Opt-in: empty means "start with an empty project".
   std::optional<std::string> startup_file;
   std::optional<std::string> dump_png_path;
+  // Export DPI for dump_png_path; falls back to GLCanvas::kExportPngDpi.
+  std::optional<int> dump_png_dpi;
   std::optional<std::string> dump_window_png_path;
   std::optional<std::string> dump_frame_png_path;
   std::optional<std::string> select_tab;
@@ -69,6 +73,18 @@ inline RuntimeOptions RuntimeOptionsFromEnv() {
   options.startup_file = GetEnvString("DECADE_DEFAULT_CSV");
   options.dump_png_path = GetEnvString("DECADE_DUMP_PNG");
   options.dump_window_png_path = GetEnvString("DECADE_DUMP_WINDOW_PNG");
+
+  if (const std::optional<std::string> dump_png_dpi =
+          GetEnvString("DECADE_DUMP_PNG_DPI")) {
+    try {
+      const int parsed = std::stoi(*dump_png_dpi);
+      if (parsed > 0) {
+        options.dump_png_dpi = parsed;
+      }
+    } catch (const std::exception& ex) {
+      std::cerr << "Invalid DECADE_DUMP_PNG_DPI: " << ex.what() << '\n';
+    }
+  }
   options.dump_frame_png_path = GetEnvString("DECADE_DUMP_FRAME_PNG");
   options.select_tab = GetEnvString("DECADE_SELECT_TAB");
 

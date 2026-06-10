@@ -284,8 +284,11 @@ inline void MainWindow::LoadStartupFile() {
 inline void MainWindow::DumpPngIfRequested() {
   if (runtime_options_.dump_png_path) {
     const std::string& path = *runtime_options_.dump_png_path;
-    std::cout << "DECADE_DUMP_PNG: writing " << path << '\n';
-    impl_->gl_canvas->SavePNG(path);
+    const int dpi =
+        runtime_options_.dump_png_dpi.value_or(GLCanvas::kExportPngDpi);
+    std::cout << "DECADE_DUMP_PNG: writing " << path << " at " << dpi
+              << " dpi\n";
+    impl_->gl_canvas->SavePNG(path, dpi);
   }
   if (runtime_options_.dump_window_png_path) {
     const std::string path = *runtime_options_.dump_window_png_path;

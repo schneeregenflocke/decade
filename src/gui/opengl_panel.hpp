@@ -260,9 +260,9 @@ class GLCanvas : public wxGLCanvas {
     Refresh(false);
   }
 
-  void SavePNG(std::string file_path) {
+  void SavePNG(std::string file_path, int dpi = kExportPngDpi) {
     RenderToPNG const render_to_png(std::move(file_path), page_size_,
-                                    kExportPngDpi, graphics_engine_,
+                                    static_cast<float>(dpi), graphics_engine_,
                                     kExportMsaaSamples);
   }
 

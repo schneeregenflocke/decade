@@ -60,6 +60,7 @@ need a clean high-DPI export of the page itself. All dumps are deferred via
 
 **Control:**
 
+- `DECADE_DUMP_PNG_DPI=<dpi>` — export DPI for `DECADE_DUMP_PNG`; defaults to `GLCanvas::kExportPngDpi` (200) when unset. Used e.g. for high-resolution README renders.
 - `DECADE_EXIT_AFTER_MS=<ms>` — auto-close the main window after N ms.
 - `DECADE_SELECT_TAB=<label>` — pre-select a notebook tab by label (case-insensitive), e.g. for screenshotting a specific tab.
 - `DECADE_DEBUG_LOG=1` — enable OpenGL/runtime debug logging.
