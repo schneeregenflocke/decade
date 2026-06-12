@@ -7,90 +7,91 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <cstring>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "freetype.hpp"
+#include "icu.hpp"
 #include "rect.hpp"
 #include "shaders.hpp"
 #include "shapes_base.hpp"
 #include "texture_object.hpp"
 
-// The glyph table holds one texture per codepoint in the range 0..255, which
-// maps exactly onto Latin-1. Strings reaching the renderer are UTF-8 (e.g.
-// strftime month names like "März", or user-entered title text), so a raw
-// byte-per-glyph walk would split a multi-byte character such as 'ä'
-// (0xC3 0xA4) into two stray glyphs ("Ã¤"). Decode UTF-8 into codepoints first
-// and fall back to '?' for anything outside the available glyph range.
-[[nodiscard]] inline std::vector<unsigned char> DecodeLatin1FromUtf8(
-    const std::string& text) {
-  std::vector<unsigned char> result;
-  result.reserve(text.size());
+// Append the code points of the half-open UTF-16 range [begin, end) of an
+// ICU string to out. char32At returns the full code point at a unit index; a
+// code point above the BMP occupies two UTF-16 units, hence the variable step.
+inline void AppendCodePoints(const icu::UnicodeString& text, std::int32_t begin,
+                             std::int32_t end, std::vector<char32_t>& out) {
+  constexpr UChar32 kBmpMax = 0xFFFF;
+  for (std::int32_t index = begin; index < end;) {
+    const UChar32 code_point = text.char32At(index);
+    index += (code_point > kBmpMax) ? 2 : 1;
+    out.push_back(static_cast<char32_t>(code_point));
+  }
+}
 
-  const auto* bytes = reinterpret_cast<const unsigned char*>(text.data());
-  const std::size_t length = text.size();
-  std::size_t index = 0;
-
-  // UTF-8 lead-byte classification: mask isolates the prefix bits, the bare
-  // value is the expected prefix, the payload mask keeps the data bits.
-  constexpr std::uint32_t kOneByteLeadMask = 0x80U;  // 0xxxxxxx
-  constexpr std::uint32_t kTwoByteLeadMask = 0xE0U;  // 110xxxxx
-  constexpr std::uint32_t kTwoByteLead = 0xC0U;
-  constexpr std::uint32_t kTwoBytePayloadMask = 0x1FU;
-  constexpr std::uint32_t kThreeByteLeadMask = 0xF0U;  // 1110xxxx
-  constexpr std::uint32_t kThreeByteLead = 0xE0U;
-  constexpr std::uint32_t kThreeBytePayloadMask = 0x0FU;
-  constexpr std::uint32_t kFourByteLeadMask = 0xF8U;  // 11110xxx
-  constexpr std::uint32_t kFourByteLead = 0xF0U;
-  constexpr std::uint32_t kFourBytePayloadMask = 0x07U;
-  constexpr std::uint32_t kContinuationMask = 0xC0U;  // 10xxxxxx
-  constexpr std::uint32_t kContinuationLead = 0x80U;
-  constexpr std::uint32_t kContinuationPayloadMask = 0x3FU;
-  constexpr std::uint32_t kContinuationShift = 6U;
-
-  while (index < length) {
-    const unsigned char lead = bytes[index];
-    std::uint32_t codepoint = lead;
-    std::size_t continuation_count = 0;
-
-    if ((lead & kOneByteLeadMask) == 0U) {
-      continuation_count = 0;
-    } else if ((lead & kTwoByteLeadMask) == kTwoByteLead) {
-      codepoint = lead & kTwoBytePayloadMask;
-      continuation_count = 1;
-    } else if ((lead & kThreeByteLeadMask) == kThreeByteLead) {
-      codepoint = lead & kThreeBytePayloadMask;
-      continuation_count = 2;
-    } else if ((lead & kFourByteLeadMask) == kFourByteLead) {
-      codepoint = lead & kFourBytePayloadMask;
-      continuation_count = 3;
-    }
-    ++index;
-
-    for (std::size_t step = 0; step < continuation_count && index < length;
-         ++step, ++index) {
-      if ((bytes[index] & kContinuationMask) != kContinuationLead) {
-        break;  // malformed continuation byte
-      }
-      codepoint = (codepoint << kContinuationShift) |
-                  (bytes[index] & kContinuationPayloadMask);
-    }
-
-    constexpr std::uint32_t kGlyphLimit = 256;
-    constexpr auto kFallbackGlyph = static_cast<unsigned char>('?');
-    result.push_back(codepoint < kGlyphLimit
-                         ? static_cast<unsigned char>(codepoint)
-                         : kFallbackGlyph);
+// Decode UTF-8 into a sequence of Unicode code points ready for glyph lookup.
+//
+// Strings reaching the renderer are UTF-8 (e.g. strftime month names like
+// "März", or user-entered title text). ICU does the heavy lifting:
+//   1. fromUTF8 turns the bytes into a UTF-16 string, replacing malformed
+//      sequences with U+FFFD instead of producing stray glyphs.
+//   2. NFC normalisation folds a base letter plus a combining mark (a + ◌̈)
+//      into its precomposed form (ä) where one exists, so it renders as a
+//      single glyph — FreeType has no shaping engine of its own.
+//   3. A grapheme BreakIterator walks user-perceived characters; the code
+//      points of each cluster are emitted in order. Code points that have no
+//      precomposed form (and full complex-script shaping, e.g. Arabic/Indic)
+//      would need HarfBuzz and are out of scope; they fall back to per-code
+//      point glyphs, and a code point absent from the face renders as the
+//      font's .notdef glyph.
+[[nodiscard]] inline std::vector<char32_t> DecodeUtf8(const std::string& text) {
+  std::vector<char32_t> code_points;
+  if (text.empty()) {
+    return code_points;
   }
 
-  return result;
+  const icu::UnicodeString utf16 = icu::UnicodeString::fromUTF8(
+      icu::StringPiece(text.data(), static_cast<std::int32_t>(text.size())));
+
+  UErrorCode status = U_ZERO_ERROR;
+  const icu::Normalizer2* nfc = icu::Normalizer2::getNFCInstance(status);
+  // ICU's U_SUCCESS / U_FAILURE expand to UBool (signed char); compare against
+  // 0 to get a real bool rather than relying on an implicit conversion.
+  icu::UnicodeString normalized =
+      (U_SUCCESS(status) != 0) ? nfc->normalize(utf16, status) : utf16;
+  if (U_FAILURE(status) != 0) {
+    normalized = utf16;  // fall back to the unnormalised text
+  }
+
+  code_points.reserve(static_cast<std::size_t>(normalized.countChar32()));
+
+  status = U_ZERO_ERROR;
+  const std::unique_ptr<icu::BreakIterator> grapheme_breaks(
+      icu::BreakIterator::createCharacterInstance(icu::Locale::getRoot(),
+                                                  status));
+  if (U_FAILURE(status) != 0 || !grapheme_breaks) {
+    AppendCodePoints(normalized, 0, normalized.length(), code_points);
+    return code_points;
+  }
+
+  grapheme_breaks->setText(normalized);
+  std::int32_t start = grapheme_breaks->first();
+  for (std::int32_t end = grapheme_breaks->next();
+       end != icu::BreakIterator::DONE;
+       start = end, end = grapheme_breaks->next()) {
+    AppendCodePoints(normalized, start, end, code_points);
+  }
+
+  return code_points;
 }
 
 struct Letter {
@@ -100,59 +101,67 @@ struct Letter {
   float advance{0.0F};
 };
 
+// Renders glyphs from a font file on demand and caches them as GL textures.
+//
+// FreeType is kept alive for the whole lifetime of the object (RAII), because
+// glyphs are rasterised lazily the first time their code point is requested —
+// there is no fixed alphabet. A packed atlas is deliberately avoided: at
+// kFontPixelHeight a single glyph is several megabytes, so an atlas would hold
+// only a handful; one texture per used code point is both simpler and uses
+// less memory for the typical (Latin) text this application renders.
 class Font {
  public:
-  /*Font(const std::vector<unsigned char>& font_data) :
-          ft_library(nullptr), ft_face(nullptr), letters(256)
-  {
-          InitFreetype();
-          LoadFont(font_data);
-          LoadTextures();
-          ReleaseFreetype();
-  }*/
-
   struct TextScale {
     float height_ratio;
     float width_ratio;
   };
 
-  explicit Font(const std::string& filepath) : letters_(kDefaultGlyphCount) {
+  explicit Font(const std::string& filepath) {
     InitFreetype();
     LoadFont(filepath);
-    LoadTextures();
-    ReleaseFreetype();
+    ConfigureFace();
   }
 
-  [[nodiscard]] const Letter& GetLetterRef(const unsigned char index) const {
-    return letters_.at(index);
+  ~Font() { ReleaseFreetype(); }
+
+  Font(const Font&) = delete;
+  Font& operator=(const Font&) = delete;
+  Font(Font&&) = delete;
+  Font& operator=(Font&&) = delete;
+
+  // Memoised glyph lookup. Logically const (a cache), so the cache is mutable;
+  // references into it stay valid across later insertions because the cache is
+  // node-based (std::unordered_map).
+  [[nodiscard]] const Letter& GetLetter(char32_t code_point) const {
+    const auto found = glyph_cache_.find(code_point);
+    if (found != glyph_cache_.end()) {
+      return found->second;
+    }
+    return glyph_cache_.emplace(code_point, RenderGlyph(code_point))
+        .first->second;
   }
 
   [[nodiscard]] float TextWidth(const std::string& text, float size) const {
     float width = 0.0F;
-    for (const unsigned char glyph : DecodeLatin1FromUtf8(text)) {
-      width += GetLetterRef(glyph).advance * size;
+    for (const char32_t code_point : DecodeUtf8(text)) {
+      width += GetLetter(code_point).advance * size;
     }
 
     return width;
   }
 
   [[nodiscard]] float TextHeight(float size) const {
-    constexpr std::array<std::array<unsigned char, 2>, 3> kCharIntervals = {
+    constexpr std::array<std::array<char32_t, 2>, 3> kCharIntervals = {
         {{'0', '9'}, {'A', 'Z'}, {'a', 'z'}}};
-    std::vector<unsigned char> index_list;
-
-    for (const auto& char_interval : kCharIntervals) {
-      for (unsigned char index = char_interval[0]; index <= char_interval[1];
-           ++index) {
-        index_list.push_back(index);
-      }
-    }
 
     float height = 0.0F;
-    for (const auto index : index_list) {
-      const float current_character_bearing =
-          GetLetterRef(index).bearing[1] * size;
-      height = std::max(height, current_character_bearing);
+    for (const auto& char_interval : kCharIntervals) {
+      for (char32_t code_point = char_interval[0];
+           code_point <= char_interval[1]; ++code_point) {
+        const float current_character_bearing =
+            GetLetter(code_point).bearing[1] * size;
+        height = std::max(height, current_character_bearing);
+      }
     }
 
     return height;
@@ -183,20 +192,23 @@ class Font {
     }
   }
 
-  void ReleaseFreetype() {
-    FT_Error ft_error = FT_Done_Face(ft_face_);
-    if (ft_error != FT_Err_Ok) {
-      throw std::runtime_error(std::string("Freetype FT_Done_Face failed ") +
-                               std::to_string(ft_error));
+  // Releases the FreeType resources without throwing — it runs from the
+  // destructor, so failures are logged rather than propagated.
+  void ReleaseFreetype() noexcept {
+    if (ft_face_ != nullptr) {
+      const FT_Error ft_error = FT_Done_Face(ft_face_);
+      if (ft_error != FT_Err_Ok) {
+        std::cerr << "Freetype FT_Done_Face failed " << ft_error << '\n';
+      }
+      ft_face_ = nullptr;
     }
-    ft_face_ = nullptr;
-    ft_error = FT_Done_FreeType(ft_library_);
-    if (ft_error != FT_Err_Ok) {
-      throw std::runtime_error(
-          std::string("Freetype FT_Done_FreeType failed ") +
-          std::to_string(ft_error));
+    if (ft_library_ != nullptr) {
+      const FT_Error ft_error = FT_Done_FreeType(ft_library_);
+      if (ft_error != FT_Err_Ok) {
+        std::cerr << "Freetype FT_Done_FreeType failed " << ft_error << '\n';
+      }
+      ft_library_ = nullptr;
     }
-    ft_library_ = nullptr;
   }
 
   void PrintVersion() {
@@ -219,96 +231,67 @@ class Font {
     }
   }
 
-  /*void LoadFont(const std::vector<unsigned char>& font_data)
-  {
-          FT_Error ft_error = FT_New_Memory_Face(ft_library, font_data.data(),
-  font_data.size(), 0, &ft_face); if (ft_error == FT_Err_Ok)
-          {
-                  std::cout << "ft_face->family_name " << ft_face->family_name
-  <<  '\n';
-          }
-          else
-          {
-                  throw std::runtime_error(std::string("Freetype
-  FT_New_Memory_Face failed ") + std::to_string(ft_error));
-          }
-  }*/
-
-  void LoadTextures() {
-    const FT_UInt font_pixel_height = kFontPixelHeight;
-    // const FT_UInt font_pixel_height = 128;
+  void ConfigureFace() {
     const FT_Error ft_error =
-        FT_Set_Pixel_Sizes(ft_face_, 0, font_pixel_height);
-
-    // FT_CONFIG_OPTION_ERROR_STRINGS, FT_DEBUG_LEVEL_ERROR
-    const auto* ft_error_string = FT_Error_String(ft_error);
-    const std::string error_string =
-        (ft_error_string != nullptr)
-            ? std::string(ft_error_string, std::strlen(ft_error_string))
-            : std::string("Unknown error");
+        FT_Set_Pixel_Sizes(ft_face_, 0, font_pixel_height_);
     if (ft_error != FT_Err_Ok) {
-      std::cout << "FreeType Error: " << error_string << '\n';
       throw std::runtime_error(
           std::string("Freetype FT_Set_Pixel_Sizes failed ") +
           std::to_string(ft_error));
     }
-
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glActiveTexture(GL_TEXTURE0);
-
-    // const size_t number_letters = 256;
-    // letters.resize(number_letters);
-    for (size_t index = 0; index < letters_.size(); ++index) {
-      const FT_Error load_char_error =
-          FT_Load_Char(ft_face_, index, FT_LOAD_RENDER);
-      if (load_char_error != FT_Err_Ok) {
-        throw std::runtime_error(std::string("Freetype FT_Load_Char failed ") +
-                                 std::to_string(load_char_error));
-      }
-      if (ft_face_->glyph->format != FT_GLYPH_FORMAT_BITMAP) {
-        throw std::runtime_error(
-            std::string("Freetype glyph->format != FT_GLYPH_FORMAT_BITMAP"));
-      }
-
-      const auto& bitmap = ft_face_->glyph->bitmap;
-      const auto bitmap_width = bitmap.width;
-      const auto bitmap_height = bitmap.rows;
-
-      const GLuint texture = letters_[index].texture_object.Name();
-      glBindTexture(GL_TEXTURE_2D, texture);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, static_cast<GLsizei>(bitmap_width),
-                   static_cast<GLsizei>(bitmap_height), 0, GL_RED,
-                   GL_UNSIGNED_BYTE, bitmap.buffer);
-      // glGenerateMipmap(GL_TEXTURE_2D);
-      glBindTexture(GL_TEXTURE_2D, 0);
-
-      const auto float_font_height = static_cast<float>(font_pixel_height);
-
-      const float sizex = static_cast<float>(bitmap_width) / float_font_height;
-      const float sizey = static_cast<float>(bitmap_height) / float_font_height;
-      letters_[index].size = glm::vec2(sizex, sizey);
-
-      const float bearingx =
-          static_cast<float>(ft_face_->glyph->bitmap_left) / float_font_height;
-      const float bearingy =
-          static_cast<float>(ft_face_->glyph->bitmap_top) / float_font_height;
-      letters_[index].bearing = glm::vec2(bearingx, bearingy);
-      letters_[index].advance = static_cast<float>(ft_face_->glyph->advance.x) /
-                                kFreeTypeFixedScale / float_font_height;
-    }
   }
 
-  static constexpr size_t kDefaultGlyphCount = 256;
+  // Rasterises a single code point and uploads it as a GL_RED texture. Const
+  // because it only feeds the memoising cache; it mutates the shared FreeType
+  // glyph slot and GL state, not the logical state of the font.
+  [[nodiscard]] Letter RenderGlyph(char32_t code_point) const {
+    const FT_Error load_char_error = FT_Load_Char(
+        ft_face_, static_cast<FT_ULong>(code_point), FT_LOAD_RENDER);
+    if (load_char_error != FT_Err_Ok) {
+      throw std::runtime_error(std::string("Freetype FT_Load_Char failed ") +
+                               std::to_string(load_char_error));
+    }
+    if (ft_face_->glyph->format != FT_GLYPH_FORMAT_BITMAP) {
+      throw std::runtime_error(
+          std::string("Freetype glyph->format != FT_GLYPH_FORMAT_BITMAP"));
+    }
+
+    const FT_GlyphSlotRec_* const glyph = ft_face_->glyph;
+    const auto& bitmap = glyph->bitmap;
+
+    Letter letter;
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, letter.texture_object.Name());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, static_cast<GLsizei>(bitmap.width),
+                 static_cast<GLsizei>(bitmap.rows), 0, GL_RED, GL_UNSIGNED_BYTE,
+                 bitmap.buffer);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    const auto float_font_height = static_cast<float>(font_pixel_height_);
+    letter.size =
+        glm::vec2(static_cast<float>(bitmap.width) / float_font_height,
+                  static_cast<float>(bitmap.rows) / float_font_height);
+    letter.bearing =
+        glm::vec2(static_cast<float>(glyph->bitmap_left) / float_font_height,
+                  static_cast<float>(glyph->bitmap_top) / float_font_height);
+    letter.advance = static_cast<float>(glyph->advance.x) /
+                     kFreeTypeFixedScale / float_font_height;
+
+    return letter;
+  }
+
   static constexpr float kFreeTypeFixedScale = 64.0F;
   static constexpr FT_UInt kFontPixelHeight = 2048;
 
   FT_Library ft_library_{nullptr};
   FT_Face ft_face_{nullptr};
-  std::vector<Letter> letters_;
+  FT_UInt font_pixel_height_{kFontPixelHeight};
+  mutable std::unordered_map<char32_t, Letter> glyph_cache_;
 };
 
 class FontShape : public Shape {
@@ -321,7 +304,7 @@ class FontShape : public Shape {
 
   void set_shape(const std::string& text, const glm::vec3& position,
                  float size) {
-    const auto glyphs = DecodeLatin1FromUtf8(text);
+    const auto glyphs = DecodeUtf8(text);
     const auto glyph_count = glyphs.size();
     positions_.resize(glyph_count * kVerticesPerGlyph);
     texture_positions_.resize(glyph_count * kVerticesPerGlyph);
@@ -332,21 +315,17 @@ class FontShape : public Shape {
     const float current_y = position[1];
 
     for (size_t index = 0; index < glyph_count; ++index) {
-      const auto letter_index = glyphs[index];
+      const Letter& letter = font_->GetLetter(glyphs[index]);
 
-      const GLuint texture =
-          font_->GetLetterRef(letter_index).texture_object.Name();
+      const GLuint texture = letter.texture_object.Name();
       text_textures_[index] = texture;
 
-      const GLfloat xpos =
-          current_x + (font_->GetLetterRef(letter_index).bearing[0] * size);
+      const GLfloat xpos = current_x + (letter.bearing[0] * size);
       const GLfloat ypos =
-          current_y - ((font_->GetLetterRef(letter_index).size[1] -
-                        font_->GetLetterRef(letter_index).bearing[1]) *
-                       size);
+          current_y - ((letter.size[1] - letter.bearing[1]) * size);
 
-      const GLfloat width = font_->GetLetterRef(letter_index).size[0] * size;
-      const GLfloat height = font_->GetLetterRef(letter_index).size[1] * size;
+      const GLfloat width = letter.size[0] * size;
+      const GLfloat height = letter.size[1] * size;
 
       const auto base = index * kVerticesPerGlyph;
       positions_[base + 0] = glm::vec3(xpos, ypos + height, kZero);
@@ -364,7 +343,7 @@ class FontShape : public Shape {
       texture_positions_[base + 4] = glm::vec2(kOne, kOne);
       texture_positions_[last] = glm::vec2(kOne, kZero);
 
-      current_x += font_->GetLetterRef(letter_index).advance * size;
+      current_x += letter.advance * size;
     }
 
     set_buffer(BufferIndex{0}, static_cast<GLsizei>(positions_.size()),

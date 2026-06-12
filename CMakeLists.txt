@@ -98,7 +98,9 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/debug_log.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/font.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/frame_layout.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/freetype.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/graphics_engine.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/icu.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/projection.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/rect.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/render_to_texture.hpp
@@ -152,6 +154,16 @@ else()
 	target_include_directories(${PROJECT_NAME} PRIVATE ${FREETYPE_INCLUDE_DIRS})
 	target_link_libraries(${PROJECT_NAME} PRIVATE ${FREETYPE_LIBRARIES})
 endif()
+
+# ICU: Unicode text handling (UTF-8 decode, NFC normalisation, grapheme
+# segmentation) in src/graphics/font.hpp. icu-uc = Unicode/common (libicuuc),
+# icu-i18n = i18n services incl. BreakIterator (libicui18n). No CMake config
+# ships on every distro, so go through pkg-config like epoxy. Headers are added
+# as SYSTEM so their warnings/clang-tidy findings stay out of our gate.
+pkg_check_modules(ICU REQUIRED icu-uc icu-i18n)
+target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${ICU_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${ICU_LIBRARIES})
+target_compile_options(${PROJECT_NAME} PRIVATE ${ICU_CFLAGS_OTHER})
 
 find_package(glm CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm)
