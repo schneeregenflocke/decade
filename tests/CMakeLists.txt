@@ -10,6 +10,7 @@ add_executable(decade_tests
 	packages/test_title_config_store.cpp
 	packages/test_shape_configuration_store.cpp
 	packages/test_calendar_config.cpp
+	packages/test_timeline_projection.cpp
 	packages/test_date_entry_store.cpp
 	packages/test_transform_date_entry.cpp
 	services/test_csv_io.cpp

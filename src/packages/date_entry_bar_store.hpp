@@ -7,11 +7,10 @@
 #include <vector>
 
 #include "bar.hpp"
-#include "date.hpp"
 #include "date_entry.hpp"
 #include "date_entry_store.hpp"
-#include "date_period.hpp"
 #include "detail/reentry_guard.hpp"
+#include "timeline_projection.hpp"
 
 class DateEntryBarStore : public DateEntryStore {
  public:
@@ -40,23 +39,11 @@ class DateEntryBarStore : public DateEntryStore {
     bars_.clear();
 
     for (const auto& entry : GetDateEntriesInternal()) {
-      const auto& interval = entry.GetDateInterval();
-      // Stored periods are never null (filtered upstream), so Last() >=
-      // Begin() and the year difference cannot go negative.
-      const auto span = static_cast<std::size_t>(interval.Last().Year() -
-                                                 interval.Begin().Year());
-
-      std::vector<DatePeriod> split_date_periods;
-      split_date_periods.push_back(interval);
-
-      for (std::size_t sub_index = 0; sub_index < span; ++sub_index) {
-        const Date split_date = Date::FromYmd(
-            split_date_periods[sub_index].Begin().Year() + 1, 1, 1);
-        split_date_periods.emplace_back(split_date,
-                                        split_date_periods[sub_index].End());
-        split_date_periods[sub_index] =
-            DatePeriod(split_date_periods[sub_index].Begin(), split_date);
-      }
+      // Stored periods are never null (filtered upstream), so the row-period
+      // split is well-defined. The split rule (one bar per calendar year)
+      // lives in the domain projection, not in this store.
+      const auto split_date_periods =
+          SplitAtYearBoundaries(entry.GetDateInterval());
 
       for (const auto& split_period : split_date_periods) {
         Bar bar(split_period);

@@ -20,6 +20,7 @@
 #include "../../packages/date_entry_bar_store.hpp"
 #include "../../packages/date_group.hpp"
 #include "../../packages/shape_configuration.hpp"
+#include "../../packages/timeline_projection.hpp"
 #include "../../packages/title_config.hpp"
 
 // Builds and fills the calendar scene graph from domain state. This is the
@@ -341,11 +342,12 @@ class CalendarSceneBuilder {
       return;
     }
 
+    const TimelineProjection projection(calendar_config_);
     std::vector<rectf> y_labels_frames(span_years);
     year_node->remove_children();
     for (std::size_t index = 0; index < span_years; ++index) {
       const std::string current_year_text =
-          std::to_string(calendar_config_.GetYear(index));
+          std::to_string(projection.YearForRow(index));
 
       auto year_text_shape = std::make_shared<FontShape>(font_shader);
       year_text_shape->set_font(font_);
@@ -385,10 +387,11 @@ class CalendarSceneBuilder {
       return;
     }
 
+    const TimelineProjection projection(calendar_config_);
     std::vector<rectf> years_cells(span_years);
 
     for (std::size_t index = 0; index < span_years; ++index) {
-      const int current_year = calendar_config_.GetYear(index);
+      const int current_year = projection.YearForRow(index);
       const auto number_days = DaysInYear(current_year);
       const float year_length = static_cast<float>(number_days) * day_width_;
       rectf year_cell = proportion_frame_layout_.GetSubFrame(index, 1);
@@ -418,10 +421,11 @@ class CalendarSceneBuilder {
     }
 
     const auto store_size = number_months * span_years;
+    const TimelineProjection projection(calendar_config_);
     std::vector<rectf> months_cells(store_size);
 
     for (std::size_t index = 0; index < span_years; ++index) {
-      const int current_year = calendar_config_.GetYear(index);
+      const int current_year = projection.YearForRow(index);
       const Date first_day_of_year = Date::FromYmd(current_year, 1, 1);
 
       for (size_t subindex = 0; subindex < number_months; ++subindex) {
@@ -481,8 +485,9 @@ class CalendarSceneBuilder {
     days_cells1.resize(number_days_cells);
 
     const std::size_t span_years = calendar_config_.GetSpanLengthYears();
+    const TimelineProjection projection(calendar_config_);
     for (std::size_t index = 0; index < span_years; ++index) {
-      const int current_year = calendar_config_.GetYear(index);
+      const int current_year = projection.YearForRow(index);
       const std::int64_t number_days = DaysInYear(current_year);
 
       for (std::int64_t subindex = 0; subindex < number_days; ++subindex) {
@@ -570,6 +575,7 @@ class CalendarSceneBuilder {
     auto* rectangles_shader =
         graphics_engine_->search_shader("Rectangles Shader").value_or(nullptr);
 
+    const TimelineProjection projection(calendar_config_);
     const auto number_bars = data_store_.GetNumberBars();
     for (size_t index = 0; index < number_bars; ++index) {
       const auto& bar = data_store_.GetBar(index);
@@ -578,8 +584,7 @@ class CalendarSceneBuilder {
         auto current_shape_config =
             shape_config_.GetDynamicConfiguration(current_group);
 
-        const auto row = static_cast<std::size_t>(
-            bar.GetYear() - calendar_config_.GetSpanLimitsYears().at(0));
+        const auto row = projection.RowForYear(bar.GetYear());
         const auto current_sub_cell =
             proportion_frame_layout_.GetSubFrame(row, 1);
 
@@ -650,14 +655,14 @@ class CalendarSceneBuilder {
       return;
     }
 
+    const TimelineProjection projection(calendar_config_);
     std::vector<rectf> years_totals_cells(span_years);
 
     for (std::size_t index = 0; index < span_years; ++index) {
       const int current_year =
           data_store_.GetFirstYear() + static_cast<int>(index);
       if (calendar_config_.IsInSpan(current_year)) {
-        const auto row = static_cast<std::size_t>(
-            current_year - calendar_config_.GetSpanLimitsYears().at(0));
+        const auto row = projection.RowForYear(current_year);
         const auto current_cell = proportion_frame_layout_.GetSubFrame(row, 0);
 
         rectf year_total_cell = current_cell;
