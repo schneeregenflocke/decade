@@ -561,13 +561,14 @@ class CalendarSceneBuilder {
     node->remove_children();
 
     const auto number_groups = date_groups_.Items().size();
+    std::vector<std::shared_ptr<SceneNode>> group_nodes;
+    group_nodes.reserve(number_groups);
     for (size_t index = 0; index < number_groups; ++index) {
-      auto child_node = std::make_shared<SceneNode>(std::string("group node ") +
+      auto group_node = std::make_shared<SceneNode>(std::string("group node ") +
                                                     std::to_string(index));
-      node->add_child(child_node);
+      node->add_child(group_node);
+      group_nodes.push_back(group_node);
     }
-
-    std::vector<std::vector<rectf>> bars_cells(number_groups);
 
     auto& node_labels = bar_labels_node_;
     node_labels->remove_children();
@@ -581,57 +582,56 @@ class CalendarSceneBuilder {
     const auto number_bars = data_store_.GetNumberBars();
     for (size_t index = 0; index < number_bars; ++index) {
       const auto& bar = data_store_.GetBar(index);
-      if (calendar_config_.IsInSpan(bar.GetYear())) {
-        const auto current_group = static_cast<size_t>(bar.GetGroup());
-        auto current_shape_config =
-            shape_config_.GetDynamicConfiguration(current_group);
-
-        const auto row = projection.RowForYear(bar.GetYear());
-        const auto current_sub_cell =
-            proportion_frame_layout_.GetSubFrame(row, 1);
-
-        rectf bar_cell;
-        const auto bar_left =
-            current_sub_cell.l() + (bar.GetFirstDay() * day_width_);
-        const auto bar_right =
-            current_sub_cell.l() + (bar.GetLastDay() * day_width_);
-        bar_cell.setL(bar_left);
-        bar_cell.setR(bar_right);
-        bar_cell.setB(current_sub_cell.b());
-        bar_cell.setT(current_sub_cell.t());
-
-        bars_cells.at(current_group).push_back(bar_cell);
-
-        const std::string label_text = bar.GetText();
-
-        auto child_node = std::make_shared<SceneNode>(
-            std::string("label node ") + std::to_string(index));
-        node_labels->add_child(child_node);
-
-        auto text_shape = std::make_shared<FontShape>(font_shader);
-        text_shape->set_font(font_);
-        child_node->set_shape(text_shape);
-
-        auto current_text_cell = proportion_frame_layout_.GetSubFrame(row, 2);
-        current_text_cell.setL(bar_cell.l());
-        current_text_cell.setR(bar_cell.r());
-
-        text_shape->set_shape_centered(label_text,
-                                       current_text_cell.getCenter(),
-                                       current_text_cell.height());
+      if (!calendar_config_.IsInSpan(bar.GetYear())) {
+        continue;
       }
-    }
+      const auto current_group = static_cast<size_t>(bar.GetGroup());
+      auto current_shape_config =
+          shape_config_.GetDynamicConfiguration(current_group);
 
-    const auto& node_children = node->get_children();
-    for (size_t index = 0; index < node_children.size(); ++index) {
-      auto shape = std::make_shared<RectanglesShape>(rectangles_shader);
-      node_children[index]->set_shape(shape);
+      const auto row = projection.RowForYear(bar.GetYear());
+      const auto current_sub_cell =
+          proportion_frame_layout_.GetSubFrame(row, 1);
 
-      auto current_shape_config = shape_config_.GetDynamicConfiguration(index);
+      const auto bar_left =
+          current_sub_cell.l() + (bar.GetFirstDay() * day_width_);
+      const auto bar_width =
+          (bar.GetLastDay() - bar.GetFirstDay()) * day_width_;
+      const auto bar_height = current_sub_cell.height();
 
-      shape->set_shape(bars_cells.at(index), current_shape_config.LineWidth());
-      shape->set_color({current_shape_config.OutlineColor(),
-                        current_shape_config.FillColor()});
+      // Each bar is its own node: the position lives in the node transform
+      // (ready for dragging/animating), the size lives in the shape geometry.
+      // A pure translation keeps the outline width constant, which a scale
+      // matrix would distort. The bar's world rect is therefore unchanged.
+      auto bar_node = std::make_shared<SceneNode>(std::string("bar ") +
+                                                  std::to_string(index));
+      bar_node->set_model_matrix(glm::translate(
+          glm::mat4(1.0F), glm::vec3(bar_left, current_sub_cell.b(), kZero)));
+
+      auto bar_shape = std::make_shared<RectanglesShape>(rectangles_shader);
+      bar_shape->set_shape(rectf(kZero, bar_width, kZero, bar_height),
+                           current_shape_config.LineWidth());
+      bar_shape->set_color({current_shape_config.OutlineColor(),
+                            current_shape_config.FillColor()});
+      bar_node->set_shape(bar_shape);
+      group_nodes.at(current_group)->add_child(bar_node);
+
+      const std::string label_text = bar.GetText();
+
+      auto child_node = std::make_shared<SceneNode>(std::string("label node ") +
+                                                    std::to_string(index));
+      node_labels->add_child(child_node);
+
+      auto text_shape = std::make_shared<FontShape>(font_shader);
+      text_shape->set_font(font_);
+      child_node->set_shape(text_shape);
+
+      auto current_text_cell = proportion_frame_layout_.GetSubFrame(row, 2);
+      current_text_cell.setL(bar_left);
+      current_text_cell.setR(bar_left + bar_width);
+
+      text_shape->set_shape_centered(label_text, current_text_cell.getCenter(),
+                                     current_text_cell.height());
     }
   }
 
