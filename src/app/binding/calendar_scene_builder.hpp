@@ -57,105 +57,103 @@ class CalendarSceneBuilder {
     auto* font_shader =
         graphics_engine_->search_shader("Font Shader").value_or(nullptr);
 
+    // The scene skeleton is built once here; the named nodes are kept as
+    // members so Build()/Setup* can reach them directly instead of doing a
+    // string-keyed search_node() lookup on every rebuild.
     auto page_shape = std::make_shared<QuadrilateralShape>(simple_shader);
-    auto page_node = std::make_shared<SceneNode>("page", page_shape);
-    scene_graph_->add_child(page_node);
+    page_node_ = std::make_shared<SceneNode>("page", page_shape);
+    scene_graph_->add_child(page_node_);
 
     auto print_area_shape =
         std::make_shared<RectanglesShape>(rectangles_shader);
-    auto print_area_node =
+    print_area_node_ =
         std::make_shared<SceneNode>("print area", print_area_shape);
-    page_node->add_child(print_area_node);
+    page_node_->add_child(print_area_node_);
 
     auto title_area_shape =
         std::make_shared<RectanglesShape>(rectangles_shader);
-    auto title_area_node =
+    title_area_node_ =
         std::make_shared<SceneNode>("title area", title_area_shape);
-    print_area_node->add_child(title_area_node);
+    print_area_node_->add_child(title_area_node_);
 
     auto row_labels_shape =
         std::make_shared<RectanglesShape>(rectangles_shader);
-    auto row_labels_node =
+    row_labels_node_ =
         std::make_shared<SceneNode>("row label area", row_labels_shape);
-    print_area_node->add_child(row_labels_node);
+    print_area_node_->add_child(row_labels_node_);
 
     auto column_labels_shape =
         std::make_shared<RectanglesShape>(rectangles_shader);
-    auto column_labels_node =
+    column_labels_node_ =
         std::make_shared<SceneNode>("column label area", column_labels_shape);
-    print_area_node->add_child(column_labels_node);
+    print_area_node_->add_child(column_labels_node_);
 
     auto years_cells_shape =
         std::make_shared<RectanglesShape>(rectangles_shader);
-    auto years_cells_node =
+    years_cells_node_ =
         std::make_shared<SceneNode>("year cells", years_cells_shape);
-    print_area_node->add_child(years_cells_node);
+    print_area_node_->add_child(years_cells_node_);
 
     auto months_cells_shape =
         std::make_shared<RectanglesShape>(rectangles_shader);
-    auto months_cells_node =
+    months_cells_node_ =
         std::make_shared<SceneNode>("month cells", months_cells_shape);
-    print_area_node->add_child(months_cells_node);
+    print_area_node_->add_child(months_cells_node_);
 
     auto days_cells0_shape =
         std::make_shared<RectanglesShape>(rectangles_shader);
-    auto days_cells0_node =
+    days_cells0_node_ =
         std::make_shared<SceneNode>("day cells 0", days_cells0_shape);
-    print_area_node->add_child(days_cells0_node);
+    print_area_node_->add_child(days_cells0_node_);
 
     auto days_cells1_shape =
         std::make_shared<RectanglesShape>(rectangles_shader);
-    auto days_cells1_node =
+    days_cells1_node_ =
         std::make_shared<SceneNode>("day cells 1", days_cells1_shape);
-    print_area_node->add_child(days_cells1_node);
+    print_area_node_->add_child(days_cells1_node_);
 
-    auto bars_cells_node = std::make_shared<SceneNode>("bar cells");
-    print_area_node->add_child(bars_cells_node);
+    bars_cells_node_ = std::make_shared<SceneNode>("bar cells");
+    print_area_node_->add_child(bars_cells_node_);
 
     auto years_totals_shape =
         std::make_shared<RectanglesShape>(rectangles_shader);
-    auto years_totals_node =
+    years_totals_node_ =
         std::make_shared<SceneNode>("year total cells", years_totals_shape);
-    print_area_node->add_child(years_totals_node);
+    print_area_node_->add_child(years_totals_node_);
 
-    auto years_totals_text_node =
-        std::make_shared<SceneNode>("year total text");
-    print_area_node->add_child(years_totals_text_node);
+    years_totals_text_node_ = std::make_shared<SceneNode>("year total text");
+    print_area_node_->add_child(years_totals_text_node_);
 
     auto legend_shape = std::make_shared<RectanglesShape>(rectangles_shader);
     auto legend_shape_node =
         std::make_shared<SceneNode>("legend area", legend_shape);
-    print_area_node->add_child(legend_shape_node);
+    print_area_node_->add_child(legend_shape_node);
 
-    auto legend_entries_node = std::make_shared<SceneNode>("legend entries");
-    print_area_node->add_child(legend_entries_node);
+    legend_entries_node_ = std::make_shared<SceneNode>("legend entries");
+    print_area_node_->add_child(legend_entries_node_);
 
-    auto legend_text_node = std::make_shared<SceneNode>("legend text");
-    print_area_node->add_child(legend_text_node);
+    legend_text_node_ = std::make_shared<SceneNode>("legend text");
+    print_area_node_->add_child(legend_text_node_);
 
     auto title_font_shape = std::make_shared<FontShape>(font_shader);
     title_font_shape->set_font(font_);
-    auto title_font_node =
+    title_font_node_ =
         std::make_shared<SceneNode>("title text", title_font_shape);
-    print_area_node->add_child(title_font_node);
+    print_area_node_->add_child(title_font_node_);
 
-    auto month_text_node = std::make_shared<SceneNode>("month text");
-    print_area_node->add_child(month_text_node);
+    month_text_node_ = std::make_shared<SceneNode>("month text");
+    print_area_node_->add_child(month_text_node_);
 
-    auto year_text_node = std::make_shared<SceneNode>("year text");
-    print_area_node->add_child(year_text_node);
+    year_text_node_ = std::make_shared<SceneNode>("year text");
+    print_area_node_->add_child(year_text_node_);
 
-    auto bar_labels_node = std::make_shared<SceneNode>("bar labels");
-    print_area_node->add_child(bar_labels_node);
+    bar_labels_node_ = std::make_shared<SceneNode>("bar labels");
+    print_area_node_->add_child(bar_labels_node_);
   }
 
   void Build() {
-    auto node = scene_graph_->search_node("page").value_or(nullptr);
-    if (!node) {
-      return;
-    }
     auto shape =
-        std::dynamic_pointer_cast<QuadrilateralShape>(node->get_shape());
+        std::dynamic_pointer_cast<QuadrilateralShape>(page_node_->get_shape());
     if (!shape) {
       return;
     }
@@ -262,11 +260,8 @@ class CalendarSceneBuilder {
   void SetupPrintAreaShape() {
     auto config = shape_config_.GetShapeConfiguration("Page Margin");
 
-    auto node = scene_graph_->search_node("print area").value_or(nullptr);
-    if (!node) {
-      return;
-    }
-    auto shape = std::dynamic_pointer_cast<RectanglesShape>(node->get_shape());
+    auto shape = std::dynamic_pointer_cast<RectanglesShape>(
+        print_area_node_->get_shape());
     if (!shape) {
       return;
     }
@@ -278,11 +273,8 @@ class CalendarSceneBuilder {
   void SetupTitleShape() {
     auto config = shape_config_.GetShapeConfiguration("Title Frame");
 
-    auto node = scene_graph_->search_node("title area").value_or(nullptr);
-    if (!node) {
-      return;
-    }
-    auto shape = std::dynamic_pointer_cast<RectanglesShape>(node->get_shape());
+    auto shape = std::dynamic_pointer_cast<RectanglesShape>(
+        title_area_node_->get_shape());
     if (!shape) {
       return;
     }
@@ -290,12 +282,8 @@ class CalendarSceneBuilder {
     shape->set_shape(title_frame_, config.LineWidth());
     shape->set_color({config.OutlineColor(), config.FillColor()});
 
-    auto title_node = scene_graph_->search_node("title text").value_or(nullptr);
-    if (!title_node) {
-      return;
-    }
     auto title_shape =
-        std::dynamic_pointer_cast<FontShape>(title_node->get_shape());
+        std::dynamic_pointer_cast<FontShape>(title_font_node_->get_shape());
     if (!title_shape) {
       return;
     }
@@ -334,10 +322,7 @@ class CalendarSceneBuilder {
                               Font::TextScale{.height_ratio = kFontScaleMin,
                                               .width_ratio = kFontScaleMax});
 
-    auto month_node = scene_graph_->search_node("month text").value_or(nullptr);
-    if (!month_node) {
-      return;
-    }
+    auto& month_node = month_text_node_;
 
     month_node->remove_children();
     for (size_t index = 0; index < number_months; ++index) {
@@ -361,23 +346,15 @@ class CalendarSceneBuilder {
 
     auto config = shape_config_.GetShapeConfiguration("Calendar Labels");
 
-    auto column_node =
-        scene_graph_->search_node("column label area").value_or(nullptr);
-    if (!column_node) {
-      return;
-    }
-    auto column_shape =
-        std::dynamic_pointer_cast<RectanglesShape>(column_node->get_shape());
+    auto column_shape = std::dynamic_pointer_cast<RectanglesShape>(
+        column_labels_node_->get_shape());
     if (!column_shape) {
       return;
     }
     column_shape->set_shape(x_label_frames, config.LineWidth());
     column_shape->set_color({config.OutlineColor(), config.FillColor()});
 
-    auto year_node = scene_graph_->search_node("year text").value_or(nullptr);
-    if (!year_node) {
-      return;
-    }
+    auto& year_node = year_text_node_;
 
     const std::size_t span_years = calendar_config_.GetSpanLengthYears();
     if (span_years == 0) {
@@ -409,13 +386,8 @@ class CalendarSceneBuilder {
                                           labels_font_size_);
     }
 
-    auto row_node =
-        scene_graph_->search_node("row label area").value_or(nullptr);
-    if (!row_node) {
-      return;
-    }
-    auto row_shape =
-        std::dynamic_pointer_cast<RectanglesShape>(row_node->get_shape());
+    auto row_shape = std::dynamic_pointer_cast<RectanglesShape>(
+        row_labels_node_->get_shape());
     if (!row_shape) {
       return;
     }
@@ -443,11 +415,8 @@ class CalendarSceneBuilder {
 
     auto config = shape_config_.GetShapeConfiguration("Years Shapes");
 
-    auto node = scene_graph_->search_node("year cells").value_or(nullptr);
-    if (!node) {
-      return;
-    }
-    auto shape = std::dynamic_pointer_cast<RectanglesShape>(node->get_shape());
+    auto shape = std::dynamic_pointer_cast<RectanglesShape>(
+        years_cells_node_->get_shape());
     if (!shape) {
       return;
     }
@@ -496,11 +465,8 @@ class CalendarSceneBuilder {
 
     auto config = shape_config_.GetShapeConfiguration("Months Shapes");
 
-    auto node = scene_graph_->search_node("month cells").value_or(nullptr);
-    if (!node) {
-      return;
-    }
-    auto shape = std::dynamic_pointer_cast<RectanglesShape>(node->get_shape());
+    auto shape = std::dynamic_pointer_cast<RectanglesShape>(
+        months_cells_node_->get_shape());
     if (!shape) {
       return;
     }
@@ -563,24 +529,16 @@ class CalendarSceneBuilder {
     auto config = shape_config_.GetShapeConfiguration("Day Shapes");
     auto sunday_config = shape_config_.GetShapeConfiguration("Sunday Shapes");
 
-    auto node0 = scene_graph_->search_node("day cells 0").value_or(nullptr);
-    if (!node0) {
-      return;
-    }
-    auto shape0 =
-        std::dynamic_pointer_cast<RectanglesShape>(node0->get_shape());
+    auto shape0 = std::dynamic_pointer_cast<RectanglesShape>(
+        days_cells0_node_->get_shape());
     if (!shape0) {
       return;
     }
     shape0->set_shape(days_cells0, config.LineWidth());
     shape0->set_color({config.OutlineColor(), config.FillColor()});
 
-    auto node1 = scene_graph_->search_node("day cells 1").value_or(nullptr);
-    if (!node1) {
-      return;
-    }
-    auto shape1 =
-        std::dynamic_pointer_cast<RectanglesShape>(node1->get_shape());
+    auto shape1 = std::dynamic_pointer_cast<RectanglesShape>(
+        days_cells1_node_->get_shape());
     if (!shape1) {
       return;
     }
@@ -590,10 +548,7 @@ class CalendarSceneBuilder {
   }
 
   void SetupBarsShape() {
-    auto node = scene_graph_->search_node("bar cells").value_or(nullptr);
-    if (!node) {
-      return;
-    }
+    auto& node = bars_cells_node_;
     node->remove_children();
 
     const auto number_groups = date_groups_.Items().size();
@@ -605,11 +560,7 @@ class CalendarSceneBuilder {
 
     std::vector<std::vector<rectf>> bars_cells(number_groups);
 
-    auto node_labels =
-        scene_graph_->search_node("bar labels").value_or(nullptr);
-    if (!node_labels) {
-      return;
-    }
+    auto& node_labels = bar_labels_node_;
     node_labels->remove_children();
 
     auto* font_shader =
@@ -679,17 +630,8 @@ class CalendarSceneBuilder {
     auto* font_shader =
         graphics_engine_->search_shader("Font Shader").value_or(nullptr);
 
-    auto node_cells =
-        scene_graph_->search_node("year total cells").value_or(nullptr);
-    if (!node_cells) {
-      return;
-    }
-
-    auto node_text =
-        scene_graph_->search_node("year total text").value_or(nullptr);
-    if (!node_text) {
-      return;
-    }
+    auto& node_cells = years_totals_node_;
+    auto& node_text = years_totals_text_node_;
     node_text->remove_children();
 
     const std::size_t span_years = data_store_.GetSpan();
@@ -764,20 +706,10 @@ class CalendarSceneBuilder {
     auto* rectangles_shader =
         graphics_engine_->search_shader("Rectangles Shader").value_or(nullptr);
 
-    // auto node_area = scene_graph->search_node("legend
-    // area").value_or(nullptr);
-
-    auto node_entries =
-        scene_graph_->search_node("legend entries").value_or(nullptr);
-    if (!node_entries) {
-      return;
-    }
+    auto& node_entries = legend_entries_node_;
     node_entries->remove_children();
 
-    auto node_text = scene_graph_->search_node("legend text").value_or(nullptr);
-    if (!node_text) {
-      return;
-    }
+    auto& node_text = legend_text_node_;
     node_text->remove_children();
 
     const size_t number_entry_frames = (date_groups_.Items().size() + 1) * 2;
@@ -904,6 +836,28 @@ class CalendarSceneBuilder {
 
   std::shared_ptr<SceneNode> scene_graph_;
   GraphicsEngine* graphics_engine_{nullptr};
+
+  // Stable handles to the fixed scene-skeleton nodes, created once in the
+  // constructor. Build() and the Setup* methods reach them directly instead of
+  // a string-keyed search_node() lookup per rebuild.
+  std::shared_ptr<SceneNode> page_node_;
+  std::shared_ptr<SceneNode> print_area_node_;
+  std::shared_ptr<SceneNode> title_area_node_;
+  std::shared_ptr<SceneNode> title_font_node_;
+  std::shared_ptr<SceneNode> row_labels_node_;
+  std::shared_ptr<SceneNode> column_labels_node_;
+  std::shared_ptr<SceneNode> years_cells_node_;
+  std::shared_ptr<SceneNode> months_cells_node_;
+  std::shared_ptr<SceneNode> days_cells0_node_;
+  std::shared_ptr<SceneNode> days_cells1_node_;
+  std::shared_ptr<SceneNode> bars_cells_node_;
+  std::shared_ptr<SceneNode> years_totals_node_;
+  std::shared_ptr<SceneNode> years_totals_text_node_;
+  std::shared_ptr<SceneNode> legend_entries_node_;
+  std::shared_ptr<SceneNode> legend_text_node_;
+  std::shared_ptr<SceneNode> month_text_node_;
+  std::shared_ptr<SceneNode> year_text_node_;
+  std::shared_ptr<SceneNode> bar_labels_node_;
 
   // State owned by CalendarPage, referenced here. The referenced objects stay
   // alive and stable for the builder's lifetime; only their contents change.
