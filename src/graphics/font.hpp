@@ -7,6 +7,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
@@ -360,8 +361,9 @@ class FontShape : public Shape {
     set_shape(text, position - glm::vec3(half_width, half_height, kZero), size);
   }
 
-  void draw() const override {
+  void draw(const glm::mat4& model) const override {
     shader()->UseProgram();
+    shader()->SetUniform("model", model);
 
     shader()->SetUniform("texture_color", color_);
 

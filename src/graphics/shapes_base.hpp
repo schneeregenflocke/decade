@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <glm/geometric.hpp>
+#include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
@@ -118,8 +119,9 @@ class Shape {
     VertexArrayObject::Unbind();
   }
 
-  virtual void draw() const {
+  virtual void draw(const glm::mat4& model) const {
     shader_ptr_->UseProgram();
+    shader_ptr_->SetUniform("model", model);
     vao_.bind();
     glDrawArrays(GL_TRIANGLES, 0, number_vertices_);
     VertexArrayObject::Unbind();

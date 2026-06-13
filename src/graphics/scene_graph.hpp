@@ -1,6 +1,7 @@
 #ifndef SCENE_GRAPH_HPP
 #define SCENE_GRAPH_HPP
 
+#include <glm/mat4x4.hpp>
 #include <memory>
 #include <optional>
 #include <string>
@@ -44,17 +45,15 @@ class SceneNode : public std::enable_shared_from_this<SceneNode> {
 
   std::shared_ptr<Shape> get_shape() const { return shape_; }
 
-  void update() {
-    std::vector<std::shared_ptr<SceneNode>> stack;
-    stack.push_back(shared_from_this());
+  [[nodiscard]] const std::string& get_node_name() const { return node_name_; }
 
-    while (!stack.empty()) {
-      auto current = stack.back();
-      stack.pop_back();
-      for (const auto& child : current->children_) {
-        stack.push_back(child);
-      }
-    }
+  // Local transform of this node, relative to its parent. draw() composes it
+  // with the accumulated parent world transform; the default identity leaves a
+  // node positioned exactly by its shape's own (absolute) vertices.
+  void set_model_matrix(const glm::mat4& matrix) { model_matrix_ = matrix; }
+
+  [[nodiscard]] const glm::mat4& get_model_matrix() const {
+    return model_matrix_;
   }
 
   std::optional<std::shared_ptr<SceneNode>> search_node(
@@ -76,18 +75,27 @@ class SceneNode : public std::enable_shared_from_this<SceneNode> {
     return std::nullopt;
   }
 
-  void draw() {
-    std::vector<std::shared_ptr<SceneNode>> stack;
-    stack.push_back(shared_from_this());
+  // Traverses the subtree and draws each shape with its accumulated world
+  // transform (parent_world * local model matrix). The traversal order is the
+  // same depth-first order as before; only the per-node model matrix is new.
+  void draw(const glm::mat4& parent_world = glm::mat4(1.0F)) {
+    struct Entry {
+      SceneNode* node;
+      glm::mat4 world;
+    };
+
+    std::vector<Entry> stack;
+    stack.push_back({.node = this, .world = parent_world * model_matrix_});
 
     while (!stack.empty()) {
-      auto current = stack.back();
+      const Entry current = stack.back();
       stack.pop_back();
-      if (current->shape_ != nullptr) {
-        current->shape_->draw();
+      if (current.node->shape_ != nullptr) {
+        current.node->shape_->draw(current.world);
       }
-      for (const auto& child : current->children_) {
-        stack.push_back(child);
+      for (const auto& child : current.node->children_) {
+        stack.push_back({.node = child.get(),
+                         .world = current.world * child->model_matrix_});
       }
     }
   }

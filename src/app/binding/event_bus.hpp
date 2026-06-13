@@ -11,6 +11,7 @@
 #include "../../packages/page_setup_config.hpp"
 #include "../../packages/shape_configuration.hpp"
 #include "../../packages/title_config.hpp"
+#include "scene_snapshot.hpp"
 
 // Central typed event bus for cross-component communication.
 //
@@ -39,6 +40,7 @@ class EventBus {
   [[nodiscard]] auto& title_config() { return title_config_; }
   [[nodiscard]] auto& shape_config_set() { return shape_config_set_; }
   [[nodiscard]] auto& calendar_config() { return calendar_config_; }
+  [[nodiscard]] auto& scene_snapshot() { return scene_snapshot_; }
 
  private:
   sigslot::signal<const std::vector<DateEntry>&> date_entries_;
@@ -49,6 +51,7 @@ class EventBus {
   sigslot::signal<const TitleConfig&> title_config_;
   sigslot::signal<const ShapeConfigSet&> shape_config_set_;
   sigslot::signal<const CalendarConfig&> calendar_config_;
+  sigslot::signal<const SceneNodeSnapshot&> scene_snapshot_;
 };
 
 #endif  // EVENT_BUS_HPP

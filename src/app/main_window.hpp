@@ -39,6 +39,7 @@
 #include "../gui/main_menu.hpp"
 #include "../gui/opengl_panel.hpp"
 #include "../gui/page_panel.hpp"
+#include "../gui/scene_tree_panel.hpp"
 #include "../gui/shape_panel.hpp"
 #include "../gui/title_panel.hpp"
 #include "../packages/calendar_config_store.hpp"
@@ -125,6 +126,7 @@ struct MainWindow::Impl {
   wxWeakRef<GLCanvas> gl_canvas;
   wxWeakRef<FontPanel> font_panel;
   wxWeakRef<DateTablePanel> data_table_panel;
+  wxWeakRef<SceneTreePanel> scene_tree_panel;
 
   // Application-wide locale date formatter: constructed once here and handed
   // by reference to every consumer (date table panel, CSV import/export) so
@@ -217,6 +219,8 @@ inline void MainWindow::CreatePanels(wxNotebook* notebook) {
       std::make_unique<CalendarSetupPanel>(notebook).release();
   impl_->elements_setup_panel =
       std::make_unique<ElementsSetupsPanel>(notebook).release();
+  impl_->scene_tree_panel =
+      std::make_unique<SceneTreePanel>(notebook).release();
 
   // Page, font and title settings are merged into a single "Document" tab; the
   // composite panel owns the three child panels, which the binder still wires
@@ -232,6 +236,7 @@ inline void MainWindow::CreatePanels(wxNotebook* notebook) {
   notebook->AddPage(document_setup_panel, "Document");
   notebook->AddPage(impl_->calendar_setup_panel, "Timeframe");
   notebook->AddPage(impl_->elements_setup_panel, "Layout");
+  notebook->AddPage(impl_->scene_tree_panel, "Scene");
 }
 
 inline void MainWindow::SelectStartupTab() {
@@ -373,6 +378,7 @@ inline void MainWindow::EstablishConnections() {
       .title_setup_panel = *impl_->title_setup_panel,
       .calendar_setup_panel = *impl_->calendar_setup_panel,
       .font_panel = *impl_->font_panel,
+      .scene_tree_panel = *impl_->scene_tree_panel,
       .calendar_page = *impl_->calendar_page,
       .gl_canvas = *impl_->gl_canvas,
   };

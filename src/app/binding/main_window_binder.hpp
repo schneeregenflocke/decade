@@ -9,6 +9,7 @@
 #include "../../gui/groups_panel.hpp"
 #include "../../gui/opengl_panel.hpp"
 #include "../../gui/page_panel.hpp"
+#include "../../gui/scene_tree_panel.hpp"
 #include "../../gui/shape_panel.hpp"
 #include "../../gui/title_panel.hpp"
 #include "../../packages/calendar_config.hpp"
@@ -26,6 +27,7 @@
 #include "../../packages/transform_date_entry.hpp"
 #include "calendar_page.hpp"
 #include "event_bus.hpp"
+#include "scene_snapshot.hpp"
 
 // Centralised wiring between domain stores, presentation panels, the
 // rendering adapter, and the GL canvas — all routed through `EventBus`.
@@ -53,6 +55,7 @@ struct MainWindowComponents {
   TitleSetupPanel& title_setup_panel;
   CalendarSetupPanel& calendar_setup_panel;
   FontPanel& font_panel;
+  SceneTreePanel& scene_tree_panel;
 
   CalendarPage& calendar_page;
   GLCanvas& gl_canvas;
@@ -181,6 +184,17 @@ inline void BindCalendarConfig(EventBus& bus,
                                 &components.calendar_page);
 }
 
+// The rendering adapter is the producer of scene snapshots; the scene-tree
+// panel is the only consumer. Routed through the bus like every other topic so
+// neither side knows the other.
+inline void BindSceneSnapshot(EventBus& bus, MainWindowComponents& components) {
+  components.calendar_page.SignalSceneSnapshot().connect(
+      [&bus](const SceneNodeSnapshot& value) { bus.scene_snapshot()(value); });
+
+  bus.scene_snapshot().connect(&SceneTreePanel::ReceiveSceneSnapshot,
+                               &components.scene_tree_panel);
+}
+
 }  // namespace detail
 
 inline void Bind(EventBus& bus, MainWindowComponents& components) {
@@ -191,6 +205,7 @@ inline void Bind(EventBus& bus, MainWindowComponents& components) {
   detail::BindTitleConfig(bus, components);
   detail::BindShapeConfiguration(bus, components);
   detail::BindCalendarConfig(bus, components);
+  detail::BindSceneSnapshot(bus, components);
 }
 
 inline void SendInitialValues(MainWindowComponents& components) {

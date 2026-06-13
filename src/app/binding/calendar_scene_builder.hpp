@@ -22,6 +22,7 @@
 #include "../../packages/shape_configuration.hpp"
 #include "../../packages/timeline_projection.hpp"
 #include "../../packages/title_config.hpp"
+#include "scene_snapshot.hpp"
 
 // Builds and fills the calendar scene graph from domain state. This is the
 // rendering/layout half of the former CalendarPage: it owns the scene graph and
@@ -216,7 +217,48 @@ class CalendarSceneBuilder {
     SetupLegend();
   }
 
+  // Plain, GL-free mirror of the current scene-graph hierarchy for the
+  // presentation layer (the scene-tree widget). Rebuilt on demand from the
+  // live graph after Build().
+  [[nodiscard]] SceneNodeSnapshot SceneSnapshot() const {
+    return BuildSnapshot(*scene_graph_);
+  }
+
  private:
+  // Iterative tree copy (matching the scene graph's own non-recursive
+  // traversal style): each stack frame pairs a source SceneNode with the
+  // snapshot node it fills. Child vectors are sized once and never reallocated
+  // afterwards, so the stored destination pointers stay valid.
+  static SceneNodeSnapshot BuildSnapshot(const SceneNode& root) {
+    SceneNodeSnapshot result;
+    result.name = root.get_node_name();
+    result.has_shape = root.get_shape() != nullptr;
+
+    struct Frame {
+      const SceneNode* source;
+      SceneNodeSnapshot* destination;
+    };
+    std::vector<Frame> stack;
+    stack.push_back({.source = &root, .destination = &result});
+
+    while (!stack.empty()) {
+      const Frame frame = stack.back();
+      stack.pop_back();
+
+      const auto& children = frame.source->get_children();
+      frame.destination->children.resize(children.size());
+      for (std::size_t index = 0; index < children.size(); ++index) {
+        SceneNodeSnapshot& child = frame.destination->children[index];
+        child.name = children[index]->get_node_name();
+        child.has_shape = children[index]->get_shape() != nullptr;
+        stack.push_back(
+            {.source = children[index].get(), .destination = &child});
+      }
+    }
+
+    return result;
+  }
+
   void SetupPrintAreaShape() {
     auto config = shape_config_.GetShapeConfiguration("Page Margin");
 

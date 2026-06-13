@@ -40,8 +40,9 @@ class QuadrilateralShape : public Shape {
 
   void set_color(const glm::vec4& new_color) { color_ = new_color; }
 
-  void draw() const override {
+  void draw(const glm::mat4& model) const override {
     shader()->UseProgram();
+    shader()->SetUniform("model", model);
     shader()->SetUniform("color", color_);
 
     vao_ref().bind();
@@ -90,8 +91,9 @@ class RectanglesShape : public Shape {
     colors_ = new_colors;
   }
 
-  void draw() const override {
+  void draw(const glm::mat4& model) const override {
     shader()->UseProgram();
+    shader()->SetUniform("model", model);
 
     if (colors_.size() == 2) {
       shader()->SetUniform("outline_color", colors_[0]);

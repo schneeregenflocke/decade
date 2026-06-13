@@ -2,6 +2,7 @@
 #define CALENDAR_PAGE_HPP
 
 #include <memory>
+#include <sigslot/signal.hpp>
 #include <string>
 #include <vector>
 
@@ -16,6 +17,7 @@
 #include "../../packages/shape_configuration.hpp"
 #include "../../packages/title_config.hpp"
 #include "calendar_scene_builder.hpp"
+#include "scene_snapshot.hpp"
 
 // Rendering adapter: owns the domain state relevant to the calendar drawing,
 // receives updates via the Receive* slots, and drives the CalendarSceneBuilder
@@ -74,9 +76,14 @@ class CalendarPage {
   void Update() {
     scene_builder_.Build();
     gl_canvas_->RefreshMVP();
+    signal_scene_snapshot_(scene_builder_.SceneSnapshot());
   }
 
+  [[nodiscard]] auto& SignalSceneSnapshot() { return signal_scene_snapshot_; }
+
  private:
+  sigslot::signal<const SceneNodeSnapshot&> signal_scene_snapshot_;
+
   GLCanvas* gl_canvas_{nullptr};
 
   std::shared_ptr<Font> font_;
