@@ -4,6 +4,7 @@
 #include <array>
 #include <cstdint>
 #include <ctime>
+#include <glm/gtc/matrix_transform.hpp>
 #include <iomanip>
 #include <memory>
 #include <sstream>
@@ -57,9 +58,8 @@ class CalendarSceneBuilder {
     auto* font_shader =
         graphics_engine_->search_shader("Font Shader").value_or(nullptr);
 
-    // The scene skeleton is built once here; the named nodes are kept as
-    // members so Build()/Setup* can reach them directly instead of doing a
-    // string-keyed search_node() lookup on every rebuild.
+    // The scene skeleton is built once here; each named node is kept as a
+    // member so Build()/Setup* can reach it directly.
     auto page_shape = std::make_shared<QuadrilateralShape>(simple_shader);
     page_node_ = std::make_shared<SceneNode>("page", page_shape);
     scene_graph_->add_child(page_node_);
@@ -160,7 +160,16 @@ class CalendarSceneBuilder {
     shape->set_shape(page_size_);
     shape->set_color(glm::vec4(kOne, kOne, kOne, kOne));
 
+    // Position the whole calendar relative to the print-area node: the node
+    // carries the print area's offset within the page, and every descendant is
+    // computed in print-area-local coordinates (origin at the print area's
+    // bottom-left). The page rectangle itself stays in absolute page space on
+    // the untransformed page node above.
     print_area_ = page_size_.reduce(page_margin_);
+    const glm::vec3 print_area_origin = print_area_.getLB();
+    print_area_node_->set_model_matrix(
+        glm::translate(glm::mat4(1.0F), print_area_origin));
+    print_area_ = print_area_.shift(-print_area_origin.x, -print_area_origin.y);
 
     title_frame_ = print_area_;
     title_frame_.setB(title_frame_.t() - title_config_.FrameHeight());
@@ -838,8 +847,7 @@ class CalendarSceneBuilder {
   GraphicsEngine* graphics_engine_{nullptr};
 
   // Stable handles to the fixed scene-skeleton nodes, created once in the
-  // constructor. Build() and the Setup* methods reach them directly instead of
-  // a string-keyed search_node() lookup per rebuild.
+  // constructor and reached directly by Build() and the Setup* methods.
   std::shared_ptr<SceneNode> page_node_;
   std::shared_ptr<SceneNode> print_area_node_;
   std::shared_ptr<SceneNode> title_area_node_;
