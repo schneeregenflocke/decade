@@ -60,7 +60,9 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/decade_app.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/app_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/main_window.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/app/services/csv_io.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/services/project_io.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/app/services/runtime_info.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/services/value_serialization.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/calendar_page.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/calendar_scene_builder.hpp
@@ -70,12 +72,14 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/calendar_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/calendar_config_store.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/color_palette.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_format.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_group.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_group_store.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_entry.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_entry_bar_store.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_entry_store.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_utils.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_period.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/page_setup_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/page_setup_store.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/shape_configuration.hpp
@@ -83,6 +87,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/title_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/title_config_store.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/transform_date_entry.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/detail/icu_date_backend.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/detail/reentry_guard.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/calendar_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/casts.hpp
@@ -115,7 +120,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 )
 
 
-find_package(Boost CONFIG REQUIRED COMPONENTS date_time serialization wserialization)
+find_package(Boost CONFIG REQUIRED COMPONENTS serialization wserialization)
 cmake_print_variables(Boost_FOUND Boost_INCLUDE_DIRS Boost_LIBRARY_DIRS Boost_LIBRARIES Boost_USE_STATIC_LIBS)
 if(${Boost_FOUND})
 	target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})

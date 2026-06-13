@@ -2,7 +2,6 @@
 #define DATE_ENTRY_STORE_HPP
 
 #include <algorithm>
-#include <boost/date_time/gregorian/gregorian_types.hpp>
 #include <cstddef>
 #include <map>
 #include <sigslot/signal.hpp>
@@ -11,7 +10,7 @@
 #include "date_entry.hpp"
 #include "date_group.hpp"
 #include "date_group_store.hpp"
-#include "date_utils.hpp"
+#include "date_period.hpp"
 #include "detail/reentry_guard.hpp"
 
 class DateEntryStore {
@@ -51,14 +50,16 @@ class DateEntryStore {
     if (date_entries_.empty()) {
       return 0;
     }
-    return date_entries_.front().GetDateInterval().begin().year();
+    return date_entries_.front().GetDateInterval().Begin().Year();
   }
 
   [[nodiscard]] int GetLastYear() const {
     if (date_entries_.empty()) {
       return 0;
     }
-    return date_entries_.back().GetDateInterval().last().year();
+    // Stored periods are never null (filtered in ProcessDateEntries), so
+    // Last() >= Begin() always holds.
+    return date_entries_.back().GetDateInterval().Last().Year();
   }
 
   void ReceiveDateGroups(const std::vector<DateGroup>& date_groups) {
@@ -88,12 +89,10 @@ class DateEntryStore {
     date_entries_.clear();
     date_entries_.reserve(incoming_date_entries.size());
 
-    // copy, not const reference
-    for (auto date_entry : incoming_date_entries) {
-      auto case_id =
-          CheckAndAdjustDateInterval(&date_entry.MutableDateInterval());
-
-      if (case_id > 0) {
+    // Null periods carry no day and are dropped; everything stored is a
+    // well-formed half-open interval.
+    for (const auto& date_entry : incoming_date_entries) {
+      if (!date_entry.GetDateInterval().IsNull()) {
         date_entries_.push_back(date_entry);
       }
     }
@@ -116,8 +115,8 @@ class DateEntryStore {
 
   void Sort() {
     auto sort_func = [](const DateEntry& entry0, const DateEntry& entry1) {
-      return entry0.GetDateInterval().begin() <
-             entry1.GetDateInterval().begin();
+      return entry0.GetDateInterval().Begin() <
+             entry1.GetDateInterval().Begin();
     };
 
     std::ranges::sort(date_entries_, sort_func);
@@ -137,8 +136,8 @@ class DateEntryStore {
       const auto next = iterator + 1;
       if (next != date_entries_.end()) {
         iterator->SetDateInterInterval(
-            boost::gregorian::date_period(iterator->GetDateInterval().end(),
-                                          next->GetDateInterval().begin()));
+            DatePeriod(iterator->GetDateInterval().End(),
+                       next->GetDateInterval().Begin()));
       }
     }
   }

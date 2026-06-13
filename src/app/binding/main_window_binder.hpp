@@ -43,8 +43,8 @@ struct MainWindowComponents {
   TransformDateEntry& transform_date_entry;
   PageSetupStore& page_setup_store;
   TitleConfigStore& title_config_store;
-  ShapeConfigurationStore& shape_configuration_storage;
-  CalendarConfigStore& calendar_configuration_storage;
+  ShapeConfigurationStore& shape_configuration_store;
+  CalendarConfigStore& calendar_configuration_store;
 
   DateTablePanel& data_table_panel;
   DateGroupsTablePanel& date_groups_table_panel;
@@ -155,9 +155,9 @@ inline void BindShapeConfiguration(EventBus& bus,
                                    MainWindowComponents& components) {
   components.elements_setup_panel.SignalShapeConfigSet().connect(
       &ShapeConfigurationStore::ReceiveShapeConfigSet,
-      &components.shape_configuration_storage);
+      &components.shape_configuration_store);
 
-  components.shape_configuration_storage.SignalShapeConfigSet().connect(
+  components.shape_configuration_store.SignalShapeConfigSet().connect(
       [&bus](const ShapeConfigSet& value) { bus.shape_config_set()(value); });
 
   bus.shape_config_set().connect(&ElementsSetupsPanel::ReceiveShapeConfigSet,
@@ -170,9 +170,9 @@ inline void BindCalendarConfig(EventBus& bus,
                                MainWindowComponents& components) {
   components.calendar_setup_panel.SignalCalendarConfig().connect(
       &CalendarConfigStore::ReceiveCalendarConfig,
-      &components.calendar_configuration_storage);
+      &components.calendar_configuration_store);
 
-  components.calendar_configuration_storage.SignalCalendarConfig().connect(
+  components.calendar_configuration_store.SignalCalendarConfig().connect(
       [&bus](const CalendarConfig& value) { bus.calendar_config()(value); });
 
   bus.calendar_config().connect(&CalendarSetupPanel::ReceiveCalendarConfig,
@@ -194,11 +194,11 @@ inline void Bind(EventBus& bus, MainWindowComponents& components) {
 }
 
 inline void SendInitialValues(MainWindowComponents& components) {
-  components.shape_configuration_storage.SendShapeConfigSet();
+  components.shape_configuration_store.SendShapeConfigSet();
   components.date_groups_store.SendDefaultValues();
   components.page_setup_panel.SendDefaultValues();
   components.title_setup_panel.SendDefaultValues();
-  components.calendar_configuration_storage.SendCalendarConfig();
+  components.calendar_configuration_store.SendCalendarConfig();
 }
 
 }  // namespace main_window_binder

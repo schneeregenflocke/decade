@@ -5,27 +5,35 @@
 #include <wx/weakref.h>
 #include <wx/wx.h>
 
-#include <boost/date_time/gregorian/gregorian_types.hpp>
 #include <cstdint>
-#include <iostream>
+#include <exception>
 #include <memory>
 #include <ranges>
 #include <sigslot/signal.hpp>
-#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "../packages/date.hpp"
 #include "../packages/date_entry.hpp"
+#include "../packages/date_format.hpp"
 #include "../packages/date_group.hpp"
 #include "../packages/date_group_store.hpp"
-#include "../packages/date_utils.hpp"
+#include "../packages/date_period.hpp"
 
+// The panel is the user-facing boundary for date intervals: the "To Date"
+// column shows and accepts the *inclusive* end date, while every DateEntry
+// sent or received carries the internal half-open period [begin, end). The
+// conversion happens exactly here (PeriodFromInclusiveDates on input, Last()
+// on display) and nowhere else.
 class DateTablePanel : public wxPanel {
  public:
-  explicit DateTablePanel(wxWindow* parent)
+  // `date_format` is owned by the composition root (MainWindow) so the whole
+  // application shares one locale configuration.
+  DateTablePanel(wxWindow* parent, LocaleDateFormatter& date_format)
       : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                wxTAB_TRAVERSAL, wxPanelNameStr) {
+                wxTAB_TRAVERSAL, wxPanelNameStr),
+        date_format_(date_format) {
     table_widget_ = std::make_unique<wxDataViewListCtrl>(
                         this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                         wxDV_MULTIPLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES,
@@ -69,24 +77,16 @@ class DateTablePanel : public wxPanel {
     main_sizer->Add(table_sizer, table_sizer_flags);
 
     SetSizer(main_sizer);
-    // Layout();
 
     Bind(wxEVT_DATAVIEW_ITEM_ACTIVATED, &DateTablePanel::OnItemActivated, this);
     Bind(wxEVT_DATAVIEW_ITEM_EDITING_DONE, &DateTablePanel::OnItemEditing,
          this);
     Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &DateTablePanel::OnSelectionChanged,
          this);
-
-    // Bind(wxEVT_DATAVIEW_ITEM_START_EDITING, &DateTablePanel::OnItemEditing,
-    // this); Bind(wxEVT_DATAVIEW_ITEM_EDITING_STARTED,
-    // &DateTablePanel::OnItemEditing, this);
-    Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED, &DateTablePanel::OnValueChanged,
-         this);
     Bind(wxEVT_BUTTON, &DateTablePanel::OnButtonClicked, this);
     Bind(wxEVT_COMBOBOX, &DateTablePanel::OnComboBoxSelection, this);
 
     InitColumns();
-    date_format_ = InitDateFormat();
   }
 
   void ReceiveDateEntries(const std::vector<DateEntry>& date_entries) {
@@ -119,20 +119,16 @@ class DateTablePanel : public wxPanel {
     for (size_t index = 0; index < valid_rows_list.size(); ++index) {
       const auto row = static_cast<unsigned int>(valid_rows_list[index]);
       const auto first_date =
-          BoostDateToString(date_entries[index].GetDateInterval().begin());
+          date_format_.Format(date_entries[index].GetDateInterval().Begin());
       table_widget_->SetValue(first_date, row,
                               ColumnIndex(Columns::first_date));
 
+      // The to-column shows the inclusive last day; a single-day period
+      // (length 1) shows an empty to-date.
       std::string second_date;
-      // single date
-      if (date_entries[index].GetDateInterval().begin() ==
-          date_entries[index].GetDateInterval().end()) {
-        second_date = "";
-      }
-      // date interval
-      else {
+      if (date_entries[index].GetDateInterval().LengthDays() > 1) {
         second_date =
-            BoostDateToString(date_entries[index].GetDateInterval().end());
+            date_format_.Format(date_entries[index].GetDateInterval().Last());
       }
       table_widget_->SetValue(second_date, row,
                               ColumnIndex(Columns::second_date));
@@ -141,30 +137,29 @@ class DateTablePanel : public wxPanel {
           std::to_string(date_entries[index].GetNumber() + 1);
       table_widget_->SetValue(number, row, ColumnIndex(Columns::number));
 
-      // check if group exists
-      if (date_entries[index].GetGroup() > date_group_store_.GetGroupMax()) {
-        table_widget_->SetValue(std::to_string(0), row,
-                                ColumnIndex(Columns::group));
-        throw std::runtime_error("group cannot exist");
+      // Unknown groups fall back to the default group (0); the store resets
+      // them the same way on its side (CheckAndAdjustGroupIntegrity).
+      int group = date_entries[index].GetGroup();
+      if (group > date_group_store_.GetGroupMax()) {
+        group = 0;
       }
-      auto group_name =
-          date_group_store_.GetName(date_entries[index].GetGroup());
-      table_widget_->SetValue(group_name, row, ColumnIndex(Columns::group));
+      table_widget_->SetValue(date_group_store_.GetName(group), row,
+                              ColumnIndex(Columns::group));
 
       table_widget_->SetValue(
           std::to_string(date_entries[index].GetGroupNumber() + 1), row,
           ColumnIndex(Columns::group_number));
 
       table_widget_->SetValue(
-          std::to_string(date_entries[index].GetDateInterval().length().days() +
-                         1 /*!!!*/),
+          std::to_string(date_entries[index].GetDateInterval().LengthDays()),
           row, ColumnIndex(Columns::duration));
 
+      // The inter-interval (end_i, begin_{i+1}) is half-open as well, so its
+      // length is exactly the number of free days between the two entries.
       if ((index + 1) < date_entries.size()) {
         table_widget_->SetValue(
             std::to_string(
-                date_entries[index].GetDateInterInterval().length().days() -
-                1 /*!!!*/),
+                date_entries[index].GetDateInterInterval().LengthDays()),
             row, ColumnIndex(Columns::duration_to_next));
       } else {
         table_widget_->SetValue(L"", row,
@@ -202,7 +197,6 @@ class DateTablePanel : public wxPanel {
     table_widget_->AppendTextColumn(L"Group Number", wxDATAVIEW_CELL_INERT);
     table_widget_->AppendTextColumn(L"Duration", wxDATAVIEW_CELL_INERT);
     table_widget_->AppendTextColumn(L"Duration to next", wxDATAVIEW_CELL_INERT);
-    table_widget_->AppendTextColumn(L"Comment", wxDATAVIEW_CELL_EDITABLE);
   }
 
   void SendDateEntries() {
@@ -214,14 +208,14 @@ class DateTablePanel : public wxPanel {
       const auto begin_date =
           GetDateByCell({.row = static_cast<unsigned int>(valid_index),
                          .column = Columns::first_date});
-      const auto end_date =
+      const auto last_date =
           GetDateByCell({.row = static_cast<unsigned int>(valid_index),
                          .column = Columns::second_date});
 
-      boost::gregorian::date_period date_interval =
-          boost::gregorian::date_period(begin_date, end_date);
+      const DatePeriod date_interval =
+          PeriodFromInclusiveDates(begin_date, last_date);
 
-      if (CheckAndAdjustDateInterval(&date_interval) > 0) {
+      if (!date_interval.IsNull()) {
         DateEntry date_entry;
         date_entry.SetDateInterval(date_interval);
 
@@ -264,10 +258,10 @@ class DateTablePanel : public wxPanel {
          ++index) {
       auto begin_date = GetDateByCell({.row = static_cast<unsigned int>(index),
                                        .column = Columns::first_date});
-      auto end_date = GetDateByCell({.row = static_cast<unsigned int>(index),
-                                     .column = Columns::second_date});
+      auto last_date = GetDateByCell({.row = static_cast<unsigned int>(index),
+                                      .column = Columns::second_date});
 
-      if (CheckDateInterval(begin_date, end_date) > 0) {
+      if (!PeriodFromInclusiveDates(begin_date, last_date).IsNull()) {
         valid_rows_list.push_back(index);
         continue;
       }
@@ -307,9 +301,10 @@ class DateTablePanel : public wxPanel {
   }
 
   void RemoveRow(size_t row) {
+    // Guard against an out-of-range row instead of throwing: this runs inside a
+    // wx event handler, where an escaping exception would tear down the app.
     if (std::cmp_greater_equal(row, table_widget_->GetItemCount())) {
-      std::cout << "try to remove not existent row" << '\n';
-      throw std::runtime_error("try to remove not existent row");
+      return;
     }
     table_widget_->DeleteItem(static_cast<unsigned int>(row));
   }
@@ -321,8 +316,7 @@ class DateTablePanel : public wxPanel {
     group,
     group_number,
     duration,
-    duration_to_next,
-    comment
+    duration_to_next
   };
 
   struct CellIndex {
@@ -334,12 +328,11 @@ class DateTablePanel : public wxPanel {
     return static_cast<unsigned int>(column);
   }
 
-  boost::gregorian::date GetDateByCell(CellIndex cell) const {
+  Date GetDateByCell(CellIndex cell) {
     wxVariant cell_value;
     table_widget_->GetStore()->GetValueByRow(cell_value, cell.row,
                                              ColumnIndex(cell.column));
-    return StringToBoostDate(cell_value.GetString().ToStdString(),
-                             date_format_);
+    return date_format_.Parse(cell_value.GetString().ToStdString());
   }
 
   void OnItemActivated(wxDataViewEvent& event) {
@@ -348,11 +341,6 @@ class DateTablePanel : public wxPanel {
       table_widget_->EditItem(event.GetItem(), event.GetDataViewColumn());
     }
   }
-
-  // Bound as a wxEvtHandler callback, so it must stay a non-static member even
-  // though it ignores `this`.
-  // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-  void OnValueChanged(wxDataViewEvent& event) { (void)event; }
 
   void OnItemEditing(wxDataViewEvent& event) {
     if (event.GetEventType() == wxEVT_DATAVIEW_ITEM_EDITING_DONE &&
@@ -368,9 +356,9 @@ class DateTablePanel : public wxPanel {
         const auto edited_column = static_cast<unsigned int>(event.GetColumn());
 
         // Check Date
-        auto edited_date = StringToBoostDate(edited_string, date_format_);
-        if (!edited_date.is_special()) {
-          std::string const parsed_string = BoostDateToString(edited_date);
+        auto edited_date = date_format_.Parse(edited_string);
+        if (edited_date.IsValid()) {
+          std::string const parsed_string = date_format_.Format(edited_date);
           table_widget_->SetValue(parsed_string.c_str(), selected_row,
                                   edited_column);
         } else {
@@ -447,7 +435,7 @@ class DateTablePanel : public wxPanel {
   wxWeakRef<wxButton> delete_row_button_;
   wxWeakRef<wxComboBox> select_group_control_;
 
-  DateFormatDescriptor date_format_{};
+  LocaleDateFormatter& date_format_;
   DateGroupStore date_group_store_;
   sigslot::signal<const std::vector<DateEntry>&> signal_table_date_entries_;
 };

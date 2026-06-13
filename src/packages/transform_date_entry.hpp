@@ -1,11 +1,11 @@
 #ifndef TRANSFORM_DATE_ENTRY_HPP
 #define TRANSFORM_DATE_ENTRY_HPP
 
-#include <boost/date_time/gregorian/gregorian_types.hpp>
 #include <sigslot/signal.hpp>
 #include <vector>
 
 #include "date_entry.hpp"
+#include "date_period.hpp"
 #include "detail/reentry_guard.hpp"
 
 class TransformDateEntry {
@@ -27,11 +27,9 @@ class TransformDateEntry {
 
     for (const auto& date_entry : date_entries) {
       const auto& interval = date_entry.GetDateInterval();
-      entries_iterator->SetDateInterval(boost::gregorian::date_period(
-          interval.begin() +
-              boost::gregorian::date_duration(date_shift_.begin_days),
-          interval.end() +
-              boost::gregorian::date_duration(date_shift_.end_days)));
+      entries_iterator->SetDateInterval(
+          DatePeriod(interval.Begin().AddDays(date_shift_.begin_days),
+                     interval.End().AddDays(date_shift_.end_days)));
       ++entries_iterator;
     }
 
@@ -45,11 +43,9 @@ class TransformDateEntry {
 
     for (const auto& date_entry : date_entries) {
       const auto& interval = date_entry.GetDateInterval();
-      entries_iterator->SetDateInterval(boost::gregorian::date_period(
-          interval.begin() -
-              boost::gregorian::date_duration(date_shift_.begin_days),
-          interval.end() -
-              boost::gregorian::date_duration(date_shift_.end_days)));
+      entries_iterator->SetDateInterval(
+          DatePeriod(interval.Begin().AddDays(-date_shift_.begin_days),
+                     interval.End().AddDays(-date_shift_.end_days)));
       ++entries_iterator;
     }
 

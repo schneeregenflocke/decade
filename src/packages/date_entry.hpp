@@ -1,36 +1,21 @@
 #ifndef DATE_ENTRY_HPP
 #define DATE_ENTRY_HPP
 
-#include <boost/date_time/gregorian/gregorian_types.hpp>
-#include <boost/date_time/special_defs.hpp>
-#include <string>
-#include <utility>
+#include "date_period.hpp"
 
 class DateEntry {
  public:
-  DateEntry()
-      : date_interval_(boost::gregorian::date_period(
-            boost::gregorian::date(boost::date_time::not_a_date_time),
-            boost::gregorian::date(boost::date_time::not_a_date_time))),
-        date_inter_interval_(boost::gregorian::date_period(
-            boost::gregorian::date(boost::date_time::not_a_date_time),
-            boost::gregorian::date(boost::date_time::not_a_date_time))) {}
+  DateEntry() = default;  // both periods invalid until set
 
-  [[nodiscard]] const boost::gregorian::date_period& GetDateInterval() const {
+  [[nodiscard]] const DatePeriod& GetDateInterval() const {
     return date_interval_;
   }
-  boost::gregorian::date_period& MutableDateInterval() {
-    return date_interval_;
-  }
-  void SetDateInterval(const boost::gregorian::date_period& value) {
-    date_interval_ = value;
-  }
+  void SetDateInterval(const DatePeriod& value) { date_interval_ = value; }
 
-  [[nodiscard]] const boost::gregorian::date_period& GetDateInterInterval()
-      const {
+  [[nodiscard]] const DatePeriod& GetDateInterInterval() const {
     return date_inter_interval_;
   }
-  void SetDateInterInterval(const boost::gregorian::date_period& value) {
+  void SetDateInterInterval(const DatePeriod& value) {
     date_inter_interval_ = value;
   }
 
@@ -43,15 +28,11 @@ class DateEntry {
   [[nodiscard]] int GetGroupNumber() const { return group_number_; }
   void SetGroupNumber(int group_number) { group_number_ = group_number; }
 
-  [[nodiscard]] const std::string& GetComment() const { return comment_; }
-  void SetComment(std::string comment) { comment_ = std::move(comment); }
-
  private:
-  boost::gregorian::date_period date_interval_;
-  boost::gregorian::date_period date_inter_interval_;
+  DatePeriod date_interval_;
+  DatePeriod date_inter_interval_;
   int number_{0};
   int group_{0};
   int group_number_{0};
-  std::string comment_;
 };
 #endif  // DATE_ENTRY_HPP

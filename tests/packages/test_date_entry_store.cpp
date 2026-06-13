@@ -1,26 +1,21 @@
 #include <gtest/gtest.h>
 
-#include <boost/date_time/gregorian/greg_date.hpp>
-#include <boost/date_time/period.hpp>
 #include <vector>
 
+#include "packages/date.hpp"
 #include "packages/date_entry.hpp"
 #include "packages/date_entry_bar_store.hpp"
 #include "packages/date_entry_store.hpp"
 #include "packages/date_group.hpp"
+#include "packages/date_period.hpp"
 
 namespace {
 
 DateEntry MakeEntry(int year, int month_begin, int day_begin, int month_end,
                     int day_end) {
   DateEntry entry;
-  entry.SetDateInterval(boost::gregorian::date_period(
-      boost::gregorian::date(static_cast<unsigned short>(year),
-                             static_cast<unsigned short>(month_begin),
-                             static_cast<unsigned short>(day_begin)),
-      boost::gregorian::date(static_cast<unsigned short>(year),
-                             static_cast<unsigned short>(month_end),
-                             static_cast<unsigned short>(day_end))));
+  entry.SetDateInterval(DatePeriod(Date::FromYmd(year, month_begin, day_begin),
+                                   Date::FromYmd(year, month_end, day_end)));
   return entry;
 }
 
@@ -47,9 +42,9 @@ TEST(DateEntryStoreTest, ReceiveSortsByBeginDate) {
 
   const auto& stored = store.GetDateEntries();
   ASSERT_EQ(stored.size(), 3U);
-  EXPECT_EQ(stored[0].GetDateInterval().begin().month(), 1U);
-  EXPECT_EQ(stored[1].GetDateInterval().begin().month(), 3U);
-  EXPECT_EQ(stored[2].GetDateInterval().begin().month(), 6U);
+  EXPECT_EQ(stored[0].GetDateInterval().Begin().Month(), 1);
+  EXPECT_EQ(stored[1].GetDateInterval().Begin().Month(), 3);
+  EXPECT_EQ(stored[2].GetDateInterval().Begin().Month(), 6);
 }
 
 TEST(DateEntryStoreTest, ReceiveAssignsSequentialNumbers) {
@@ -116,7 +111,7 @@ TEST(DateEntryStoreTest, ReentryGuardBlocksRecursiveReceive) {
 
   EXPECT_EQ(emissions, 1);
   ASSERT_EQ(store.GetDateEntries().size(), 1U);
-  EXPECT_EQ(store.GetDateEntries()[0].GetDateInterval().begin().year(), 2030U);
+  EXPECT_EQ(store.GetDateEntries()[0].GetDateInterval().Begin().Year(), 2030);
 }
 
 TEST(DateEntryBarStoreTest, ProducesOneBarPerIntervalWithinYear) {
@@ -129,4 +124,60 @@ TEST(DateEntryBarStoreTest, ProducesOneBarPerIntervalWithinYear) {
   store.ReceiveDateEntries(input);
 
   EXPECT_EQ(store.GetNumberBars(), 2U);
+}
+
+TEST(DateEntryBarStoreTest, SplitsYearSpanningIntervalAtYearBoundary) {
+  DateEntryBarStore store;
+  SeedDefaultGroup(store);
+  DateEntry entry;
+  entry.SetDateInterval(
+      DatePeriod(Date::FromYmd(2030, 12, 20), Date::FromYmd(2031, 1, 10)));
+  std::vector<DateEntry> input;
+  input.push_back(entry);
+
+  store.ReceiveDateEntries(input);
+
+  ASSERT_EQ(store.GetNumberBars(), 2U);
+  EXPECT_EQ(store.GetBar(0).GetYear(), 2030);
+  EXPECT_EQ(store.GetBar(1).GetYear(), 2031);
+  EXPECT_EQ(store.GetBar(0).GetLength() + store.GetBar(1).GetLength(),
+            Date::DaysBetween(Date::FromYmd(2030, 12, 20),
+                              Date::FromYmd(2031, 1, 10)));
+}
+
+// A single day on January 1st is the half-open period [Jan 1, Jan 2): one
+// bar of length 1, entirely inside its year. (Under the old inclusive-end
+// model this input was the null period (d, d) whose Last() fell into the
+// previous year and broke the split loop.)
+TEST(DateEntryBarStoreTest, SingleDayOnJanuaryFirstProducesOneBar) {
+  DateEntryBarStore store;
+  SeedDefaultGroup(store);
+  DateEntry entry;
+  entry.SetDateInterval(
+      DatePeriod(Date::FromYmd(2030, 1, 1), Date::FromYmd(2030, 1, 2)));
+  std::vector<DateEntry> input;
+  input.push_back(entry);
+
+  store.ReceiveDateEntries(input);
+
+  ASSERT_EQ(store.GetNumberBars(), 1U);
+  EXPECT_EQ(store.GetBar(0).GetYear(), 2030);
+  EXPECT_EQ(store.GetBar(0).GetLength(), 1);
+  EXPECT_EQ(store.GetAnnualTotal(0), 1);
+}
+
+// Null periods (no contained day) carry no data and are filtered out.
+TEST(DateEntryStoreTest, DropsNullPeriodEntries) {
+  DateEntryStore store;
+  SeedDefaultGroup(store);
+  DateEntry null_entry;
+  null_entry.SetDateInterval(
+      DatePeriod(Date::FromYmd(2030, 1, 1), Date::FromYmd(2030, 1, 1)));
+  std::vector<DateEntry> input;
+  input.push_back(null_entry);
+  input.push_back(MakeEntry(2030, 2, 1, 2, 10));
+
+  store.ReceiveDateEntries(input);
+
+  EXPECT_EQ(store.GetDateEntries().size(), 1U);
 }

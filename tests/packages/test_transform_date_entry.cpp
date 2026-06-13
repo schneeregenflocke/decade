@@ -1,23 +1,18 @@
 #include <gtest/gtest.h>
 
-#include <boost/date_time/gregorian/greg_date.hpp>
-#include <boost/date_time/period.hpp>
 #include <vector>
 
+#include "packages/date.hpp"
 #include "packages/date_entry.hpp"
+#include "packages/date_period.hpp"
 #include "packages/transform_date_entry.hpp"
 
 namespace {
 
 DateEntry MakeEntry(int year, int month, int day_begin, int day_end) {
   DateEntry entry;
-  entry.SetDateInterval(boost::gregorian::date_period(
-      boost::gregorian::date(static_cast<unsigned short>(year),
-                             static_cast<unsigned short>(month),
-                             static_cast<unsigned short>(day_begin)),
-      boost::gregorian::date(static_cast<unsigned short>(year),
-                             static_cast<unsigned short>(month),
-                             static_cast<unsigned short>(day_end))));
+  entry.SetDateInterval(DatePeriod(Date::FromYmd(year, month, day_begin),
+                                   Date::FromYmd(year, month, day_end)));
   return entry;
 }
 
@@ -36,8 +31,8 @@ TEST(TransformDateEntryTest, IdentityTransformLeavesIntervalsUnchanged) {
   transformer.ReceiveDateEntries(input);
 
   ASSERT_EQ(captured.size(), 1U);
-  EXPECT_EQ(captured[0].GetDateInterval().begin().day(), 10U);
-  EXPECT_EQ(captured[0].GetDateInterval().end().day(), 20U);
+  EXPECT_EQ(captured[0].GetDateInterval().Begin().Day(), 10);
+  EXPECT_EQ(captured[0].GetDateInterval().End().Day(), 20);
 }
 
 TEST(TransformDateEntryTest, ShiftsBeginAndEndIndependently) {
@@ -53,8 +48,8 @@ TEST(TransformDateEntryTest, ShiftsBeginAndEndIndependently) {
   transformer.ReceiveDateEntries(input);
 
   ASSERT_EQ(captured.size(), 1U);
-  EXPECT_EQ(captured[0].GetDateInterval().begin().day(), 8U);
-  EXPECT_EQ(captured[0].GetDateInterval().end().day(), 23U);
+  EXPECT_EQ(captured[0].GetDateInterval().Begin().Day(), 8);
+  EXPECT_EQ(captured[0].GetDateInterval().End().Day(), 23);
 }
 
 TEST(TransformDateEntryTest, InputTransformedInvertsShift) {
@@ -70,8 +65,8 @@ TEST(TransformDateEntryTest, InputTransformedInvertsShift) {
   transformer.InputTransformedDateIntervals(input);
 
   ASSERT_EQ(captured.size(), 1U);
-  EXPECT_EQ(captured[0].GetDateInterval().begin().day(), 9U);
-  EXPECT_EQ(captured[0].GetDateInterval().end().day(), 15U);
+  EXPECT_EQ(captured[0].GetDateInterval().Begin().Day(), 9);
+  EXPECT_EQ(captured[0].GetDateInterval().End().Day(), 15);
 }
 
 TEST(TransformDateEntryTest, ReentryGuardBlocksRecursiveReceive) {

@@ -3,16 +3,17 @@
 
 #include <algorithm>
 #include <array>
-#include <boost/date_time/gregorian/gregorian.hpp>
 #include <cstdint>
 #include <stdexcept>
 #include <vector>
 
-#include "date_utils.hpp"
+#include "date.hpp"
+#include "date_period.hpp"
 
-// Pure domain value: the year span of the calendar. boost::gregorian is the
-// domain data representation; there is no serialization or signal here ->
-// copyable. Persistence lives non-intrusively in the infrastructure layer.
+// Pure domain value: the year span of the calendar, stored as the half-open
+// period [Jan 1 first_year, Jan 1 last_year + 1). There is no serialization or
+// signal here -> copyable. Persistence lives non-intrusively in the
+// infrastructure layer.
 class CalendarSpan {
  public:
   struct YearSpan {
@@ -21,58 +22,42 @@ class CalendarSpan {
   };
 
   CalendarSpan()
-      : span_(boost::gregorian::date(kDefaultStartYear, 1, 1),
-              boost::gregorian::date(kDefaultEndYear, 1, 1)),
-        valid_id_(CheckAndAdjustDateInterval(&span_)) {}
+      : span_(Date::FromYmd(kDefaultStartYear, 1, 1),
+              Date::FromYmd(kDefaultEndYear, 1, 1)) {}
 
   void SetSpan(YearSpan span_years) {
-    const boost::gregorian::date min_date =
-        boost::gregorian::date(boost::gregorian::min_date_time);
-    const boost::gregorian::date max_date =
-        boost::gregorian::date(boost::gregorian::max_date_time);
+    const int clamped_lower_year =
+        std::clamp(span_years.first_year, Date::kMinYear, Date::kMaxYear);
+    const int clamped_upper_year =
+        std::clamp(span_years.last_year + 1, Date::kMinYear, Date::kMaxYear);
 
-    auto clamped_lower_year =
-        std::clamp(span_years.first_year, static_cast<int>(min_date.year()),
-                   static_cast<int>(max_date.year()));
-    auto clamped_upper_year =
-        std::clamp(span_years.last_year + 1, static_cast<int>(min_date.year()),
-                   static_cast<int>(max_date.year()));
-
-    span_ = boost::gregorian::date_period(
-        boost::gregorian::date(static_cast<unsigned short>(clamped_lower_year),
-                               1, 1),
-        boost::gregorian::date(static_cast<unsigned short>(clamped_upper_year),
-                               1, 1));
-
-    valid_id_ = CheckAndAdjustDateInterval(&span_);
+    span_ = DatePeriod(Date::FromYmd(clamped_lower_year, 1, 1),
+                       Date::FromYmd(clamped_upper_year, 1, 1));
   }
 
-  [[nodiscard]] bool IsValidSpan() const {
-    return CheckDateInterval(span_.begin(), span_.end()) == 1;
-  }
+  [[nodiscard]] bool IsValidSpan() const { return !span_.IsNull(); }
 
   [[nodiscard]] std::size_t GetSpanLengthYears() const {
     if (!IsValidSpan()) {
       throw std::runtime_error("Not valid calendar span!");
     }
-    return static_cast<std::size_t>(span_.end().year() - span_.begin().year());
+    return static_cast<std::size_t>(span_.End().Year() - span_.Begin().Year());
   }
 
   [[nodiscard]] std::array<int, 2> GetSpanLimitsYears() const {
-    return std::array<int, 2>{span_.begin().year(), span_.last().year()};
+    return std::array<int, 2>{span_.Begin().Year(), span_.Last().Year()};
   }
 
-  [[nodiscard]] std::array<boost::gregorian::date, 2> GetSpanLimitsDate()
-      const {
-    return std::array<boost::gregorian::date, 2>{span_.begin(), span_.last()};
+  [[nodiscard]] std::array<Date, 2> GetSpanLimitsDate() const {
+    return std::array<Date, 2>{span_.Begin(), span_.Last()};
   }
 
   [[nodiscard]] std::int64_t GetSpanLengthDays() const {
-    return span_.length().days();
+    return span_.LengthDays();
   }
 
   [[nodiscard]] int GetYear(const std::size_t index) const {
-    const int year = span_.begin().year() + static_cast<int>(index);
+    const int year = span_.Begin().Year() + static_cast<int>(index);
 
     if (!IsInSpan(year)) {
       throw std::logic_error("Year not in span!");
@@ -82,20 +67,14 @@ class CalendarSpan {
   }
 
   [[nodiscard]] bool IsInSpan(const int year) const {
-    // greg_year is not a built-in integer type, so std::cmp_* does not apply;
-    // pull the endpoints into plain ints first to avoid a signed/unsigned
-    // comparison.
-    const int first_year = static_cast<int>(span_.begin().year());
-    const int last_year = static_cast<int>(span_.last().year());
-    return year >= first_year && year <= last_year;
+    return year >= span_.Begin().Year() && year <= span_.Last().Year();
   }
 
  private:
   static constexpr int kDefaultStartYear = 2000;
   static constexpr int kDefaultEndYear = 2010;
 
-  boost::gregorian::date_period span_;
-  int valid_id_{0};
+  DatePeriod span_;
 };
 
 // Pure domain value: the full calendar configuration. Rule of Zero (no signal,

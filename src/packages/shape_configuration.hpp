@@ -159,12 +159,11 @@ class ShapeConfigSet {
   // a group's configuration can be addressed by its index directly.
   [[nodiscard]] ShapeConfiguration GetDynamicConfiguration(
       size_t group_index) const {
-    const size_t storage_index =
-        number_persistent_configurations_ + group_index;
-    if (storage_index >= shape_configurations_.size()) {
+    const size_t config_index = number_persistent_configurations_ + group_index;
+    if (config_index >= shape_configurations_.size()) {
       return {};
     }
-    return shape_configurations_.at(storage_index);
+    return shape_configurations_.at(config_index);
   }
 
   [[nodiscard]] size_t GetNumberPersistentConfigurations() const {

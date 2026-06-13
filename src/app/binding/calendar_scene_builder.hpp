@@ -16,6 +16,7 @@
 #include "../../graphics/scene_graph.hpp"
 #include "../../graphics/shapes.hpp"
 #include "../../packages/calendar_config.hpp"
+#include "../../packages/date.hpp"
 #include "../../packages/date_entry_bar_store.hpp"
 #include "../../packages/date_group.hpp"
 #include "../../packages/shape_configuration.hpp"
@@ -166,8 +167,6 @@ class CalendarSceneBuilder {
 
     page_margin_frame_ = print_area_;
     page_margin_frame_.setT(title_frame_.b());
-    // const rectf page_margin_frame_margin(0.0f, 0.0f, 0.0f, 0.f);
-    // page_margin_frame = page_margin_frame.reduce(page_margin_frame_margin);
 
     calendar_frame_ = page_margin_frame_;
     const rectf calendar_frame_margin =
@@ -390,14 +389,7 @@ class CalendarSceneBuilder {
 
     for (std::size_t index = 0; index < span_years; ++index) {
       const int current_year = calendar_config_.GetYear(index);
-      const auto number_days =
-          boost::gregorian::date_period(
-              boost::gregorian::date(static_cast<unsigned short>(current_year),
-                                     1, 1),
-              boost::gregorian::date(
-                  static_cast<unsigned short>(current_year + 1), 1, 1))
-              .length()
-              .days();
+      const auto number_days = DaysInYear(current_year);
       const float year_length = static_cast<float>(number_days) * day_width_;
       rectf year_cell = proportion_frame_layout_.GetSubFrame(index, 1);
       year_cell.setR(year_cell.l() + year_length);
@@ -430,8 +422,7 @@ class CalendarSceneBuilder {
 
     for (std::size_t index = 0; index < span_years; ++index) {
       const int current_year = calendar_config_.GetYear(index);
-      const boost::gregorian::date first_day_of_year = boost::gregorian::date(
-          static_cast<unsigned short>(current_year), 1, 1);
+      const Date first_day_of_year = Date::FromYmd(current_year, 1, 1);
 
       for (size_t subindex = 0; subindex < number_months; ++subindex) {
         const auto current_cell =
@@ -439,20 +430,13 @@ class CalendarSceneBuilder {
         const int month_index = static_cast<int>(subindex);
         rectf month_cell;
         const auto start_offset =
-            static_cast<float>(
-                boost::gregorian::date_period(
-                    first_day_of_year,
-                    first_day_of_year + boost::gregorian::months(month_index))
-                    .length()
-                    .days()) *
+            static_cast<float>(Date::DaysBetween(
+                first_day_of_year, first_day_of_year.AddMonths(month_index))) *
             day_width_;
         const auto end_offset =
-            static_cast<float>(boost::gregorian::date_period(
-                                   first_day_of_year,
-                                   first_day_of_year + boost::gregorian::months(
-                                                           month_index + 1))
-                                   .length()
-                                   .days()) *
+            static_cast<float>(Date::DaysBetween(
+                first_day_of_year,
+                first_day_of_year.AddMonths(month_index + 1))) *
             day_width_;
         month_cell.setL(current_cell.l() + start_offset);
         month_cell.setR(current_cell.l() + end_offset);
@@ -488,7 +472,6 @@ class CalendarSceneBuilder {
       return;
     }
 
-    using DurationRep = boost::gregorian::date_duration::duration_rep;
     std::int64_t days_index = 0;
     const auto number_days_cells = static_cast<size_t>(span_days);
 
@@ -500,26 +483,18 @@ class CalendarSceneBuilder {
     const std::size_t span_years = calendar_config_.GetSpanLengthYears();
     for (std::size_t index = 0; index < span_years; ++index) {
       const int current_year = calendar_config_.GetYear(index);
-      const std::int64_t number_days =
-          boost::gregorian::date_period(
-              boost::gregorian::date(static_cast<unsigned short>(current_year),
-                                     1, 1),
-              boost::gregorian::date(
-                  static_cast<unsigned short>(current_year + 1), 1, 1))
-              .length()
-              .days();
+      const std::int64_t number_days = DaysInYear(current_year);
 
       for (std::int64_t subindex = 0; subindex < number_days; ++subindex) {
         const auto float_subindex = static_cast<float>(subindex);
         const auto current_cell =
             proportion_frame_layout_.GetSubFrame(index, 1);
 
-        const boost::gregorian::date current_date =
-            calendar_config_.GetSpanLimitsDate().at(0) +
-            boost::gregorian::date_duration(
-                static_cast<DurationRep>(days_index));
+        const Date current_date =
+            calendar_config_.GetSpanLimitsDate().at(0).AddDays(
+                static_cast<int>(days_index));
 
-        if (current_date.day_of_week() == boost::date_time::Sunday) {
+        if (current_date.DayOfWeek() == Weekday::kSunday) {
           rectf day_cell;
           day_cell.setL(current_cell.l() + (float_subindex * day_width_));
           day_cell.setR(day_cell.l() + day_width_);
@@ -691,14 +666,7 @@ class CalendarSceneBuilder {
         year_total_cell.setR(current_cell.l() + year_total_width);
         years_totals_cells.at(index) = year_total_cell;
 
-        const auto number_days =
-            boost::gregorian::date_period(
-                boost::gregorian::date(
-                    static_cast<unsigned short>(current_year), 1, 1),
-                boost::gregorian::date(
-                    static_cast<unsigned short>(current_year + 1), 1, 1))
-                .length()
-                .days();
+        const auto number_days = DaysInYear(current_year);
 
         const float percent =
             static_cast<float>(data_store_.GetAnnualTotal(index)) /
@@ -765,12 +733,12 @@ class CalendarSceneBuilder {
     }
     node_text->remove_children();
 
-    const size_t number_entrie_frames = (date_groups_.Items().size() + 1) * 2;
-    std::vector<rectf> legend_entries_frames(number_entrie_frames);
+    const size_t number_entry_frames = (date_groups_.Items().size() + 1) * 2;
+    std::vector<rectf> legend_entries_frames(number_entry_frames);
     const auto entries_width =
-        legend_frame_.width() / static_cast<float>(number_entrie_frames);
+        legend_frame_.width() / static_cast<float>(number_entry_frames);
 
-    for (size_t index = 0; index < number_entrie_frames; ++index) {
+    for (size_t index = 0; index < number_entry_frames; ++index) {
       const auto float_index = static_cast<float>(index);
       const auto left = legend_frame_.l() + (entries_width * float_index);
       legend_entries_frames.at(index) = legend_frame_;
@@ -821,17 +789,16 @@ class CalendarSceneBuilder {
         auto current_shape_config =
             shape_config_.GetDynamicConfiguration(index);
 
-        auto node_entrie = std::make_shared<SceneNode>(
+        auto node_entry = std::make_shared<SceneNode>(
             std::string("legend bar ") + std::to_string(index));
-        node_entries->add_child(node_entrie);
+        node_entries->add_child(node_entry);
 
-        auto entrie_shape =
-            std::make_shared<RectanglesShape>(rectangles_shader);
-        node_entrie->set_shape(entrie_shape);
+        auto entry_shape = std::make_shared<RectanglesShape>(rectangles_shader);
+        node_entry->set_shape(entry_shape);
 
-        entrie_shape->set_shape(current_cell, current_shape_config.LineWidth());
-        entrie_shape->set_color({current_shape_config.OutlineColor(),
-                                 current_shape_config.FillColor()});
+        entry_shape->set_shape(current_cell, current_shape_config.LineWidth());
+        entry_shape->set_color({current_shape_config.OutlineColor(),
+                                current_shape_config.FillColor()});
       }
     }
 
@@ -862,17 +829,16 @@ class CalendarSceneBuilder {
         auto current_shape_config = shape_config_.GetShapeConfiguration(
             ShapeConfigSet::AnnualSumConfigurationName());
 
-        auto node_entrie =
+        auto node_entry =
             std::make_shared<SceneNode>(std::string("legend bar annual sum"));
-        node_entries->add_child(node_entrie);
+        node_entries->add_child(node_entry);
 
-        auto entrie_shape =
-            std::make_shared<RectanglesShape>(rectangles_shader);
-        node_entrie->set_shape(entrie_shape);
+        auto entry_shape = std::make_shared<RectanglesShape>(rectangles_shader);
+        node_entry->set_shape(entry_shape);
 
-        entrie_shape->set_shape(current_cell, current_shape_config.LineWidth());
-        entrie_shape->set_color({current_shape_config.OutlineColor(),
-                                 current_shape_config.FillColor()});
+        entry_shape->set_shape(current_cell, current_shape_config.LineWidth());
+        entry_shape->set_color({current_shape_config.OutlineColor(),
+                                current_shape_config.FillColor()});
       }
     }
   }

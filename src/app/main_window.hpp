@@ -43,6 +43,7 @@
 #include "../gui/title_panel.hpp"
 #include "../packages/calendar_config_store.hpp"
 #include "../packages/date_entry_store.hpp"
+#include "../packages/date_format.hpp"
 #include "../packages/date_group_store.hpp"
 #include "../packages/page_setup_store.hpp"
 #include "../packages/shape_configuration_store.hpp"
@@ -52,7 +53,9 @@
 #include "binding/event_bus.hpp"
 #include "binding/main_window_binder.hpp"
 #include "runtime_options.hpp"
+#include "services/csv_io.hpp"
 #include "services/project_io.hpp"
+#include "services/runtime_info.hpp"
 
 class MainWindow : public wxFrame {
  public:
@@ -123,13 +126,18 @@ struct MainWindow::Impl {
   wxWeakRef<FontPanel> font_panel;
   wxWeakRef<DateTablePanel> data_table_panel;
 
+  // Application-wide locale date formatter: constructed once here and handed
+  // by reference to every consumer (date table panel, CSV import/export) so
+  // the locale configuration lives in exactly one place.
+  LocaleDateFormatter locale_date_format;
+
   DateGroupStore date_groups_store;
   DateEntryStore date_entry_store;
   TransformDateEntry transform_date_entry;
   PageSetupStore page_setup_store;
   TitleConfigStore title_config_store;
-  ShapeConfigurationStore shape_configuration_storage;
-  CalendarConfigStore calendar_configuration_storage;
+  ShapeConfigurationStore shape_configuration_store;
+  CalendarConfigStore calendar_configuration_store;
   std::unique_ptr<CalendarPage> calendar_page;
 };
 
@@ -201,7 +209,8 @@ inline void MainWindow::CreateLayout(bool maximize_on_start) {
 
 inline void MainWindow::CreatePanels(wxNotebook* notebook) {
   impl_->data_table_panel =
-      std::make_unique<DateTablePanel>(notebook).release();
+      std::make_unique<DateTablePanel>(notebook, impl_->locale_date_format)
+          .release();
   impl_->date_groups_table_panel =
       std::make_unique<DateGroupsTablePanel>(notebook).release();
   impl_->calendar_setup_panel =
@@ -277,7 +286,7 @@ inline void MainWindow::LoadStartupFile() {
     xml_file_path_ = path;
   } else {
     impl_->date_entry_store.ReceiveDateEntries(
-        app::io::ReadDateEntriesFromCsv(path));
+        app::io::ReadDateEntriesFromCsv(path, impl_->locale_date_format));
   }
 }
 
@@ -355,8 +364,8 @@ inline void MainWindow::EstablishConnections() {
       .transform_date_entry = impl_->transform_date_entry,
       .page_setup_store = impl_->page_setup_store,
       .title_config_store = impl_->title_config_store,
-      .shape_configuration_storage = impl_->shape_configuration_storage,
-      .calendar_configuration_storage = impl_->calendar_configuration_storage,
+      .shape_configuration_store = impl_->shape_configuration_store,
+      .calendar_configuration_store = impl_->calendar_configuration_store,
       .data_table_panel = *impl_->data_table_panel,
       .date_groups_table_panel = *impl_->date_groups_table_panel,
       .elements_setup_panel = *impl_->elements_setup_panel,
@@ -437,19 +446,17 @@ inline void MainWindow::CallbackSaveXML(wxCommandEvent& event) {
 }
 
 inline void MainWindow::LoadXML(const std::string& filepath) {
-  app::io::LoadProjectXml(filepath, impl_->date_groups_store,
-                          impl_->date_entry_store, impl_->page_setup_store,
-                          impl_->title_config_store,
-                          impl_->shape_configuration_storage,
-                          impl_->calendar_configuration_storage);
+  app::io::LoadProjectXml(
+      filepath, impl_->date_groups_store, impl_->date_entry_store,
+      impl_->page_setup_store, impl_->title_config_store,
+      impl_->shape_configuration_store, impl_->calendar_configuration_store);
 }
 
 inline void MainWindow::SaveXML(const std::string& filepath) {
-  app::io::SaveProjectXml(filepath, impl_->date_groups_store,
-                          impl_->date_entry_store, impl_->page_setup_store,
-                          impl_->title_config_store,
-                          impl_->shape_configuration_storage,
-                          impl_->calendar_configuration_storage);
+  app::io::SaveProjectXml(
+      filepath, impl_->date_groups_store, impl_->date_entry_store,
+      impl_->page_setup_store, impl_->title_config_store,
+      impl_->shape_configuration_store, impl_->calendar_configuration_store);
 }
 
 inline void MainWindow::CallbackImportCSV(wxCommandEvent& event) {
@@ -464,7 +471,7 @@ inline void MainWindow::CallbackImportCSV(wxCommandEvent& event) {
 
   const std::string file_path = open_file_dialog.GetPath().ToStdString();
   impl_->date_entry_store.ReceiveDateEntries(
-      app::io::ReadDateEntriesFromCsv(file_path));
+      app::io::ReadDateEntriesFromCsv(file_path, impl_->locale_date_format));
 }
 
 inline void MainWindow::CallbackExportCSV(wxCommandEvent& event) {
@@ -479,7 +486,8 @@ inline void MainWindow::CallbackExportCSV(wxCommandEvent& event) {
 
   const std::string file_path = save_file_dialog.GetPath().ToStdString();
   app::io::WriteDateEntriesToCsv(file_path,
-                                 impl_->date_entry_store.GetDateEntries());
+                                 impl_->date_entry_store.GetDateEntries(),
+                                 impl_->locale_date_format);
 }
 
 inline void MainWindow::CallbackExportPNG(wxCommandEvent& event) {

@@ -5,7 +5,7 @@ agents when working with code in this repository.
 
 ## Project
 
-C++23 desktop calendar/timeline application. wxWidgets GUI, OpenGL (4.6 core) rendering via libepoxy, Boost.DateTime for calendar logic, Boost.Serialization for XML project files, FreeType for text, csv2 for CSV import/export, sigslot for signal/slot wiring.
+C++23 desktop calendar/timeline application. wxWidgets GUI, OpenGL (4.6 core) rendering via libepoxy, ICU for calendar arithmetic, locale date parsing/formatting and Unicode text handling, Boost.Serialization for XML project files, FreeType for text, csv2 for CSV import/export, sigslot for signal/slot wiring.
 
 ## Build & Run
 
@@ -150,8 +150,10 @@ Application/Infrastructure bridge; both are detailed in the directory map below.
   - `decade_app.hpp` — wx app lifecycle, locale initialisation, and command-line parsing (the optional positional startup-file argument) (Application).
   - `app_config.hpp` — startup/window defaults (Application).
   - `runtime_options.hpp` — `app::RuntimeOptions` plus `RuntimeOptionsFromEnv()`: the single place that reads the `DECADE_*` env vars (startup file, PNG dumps, auto-exit). CLI arguments override the env-derived values in `DecadeApp::OnInit` (Application).
-  - `main_window.hpp` — composition root: owns all stores, panels, and the renderer via PIMPL (`struct Impl`) (Presentation/Application boundary).
-  - `services/project_io.hpp` — XML/CSV/PNG persistence (Infrastructure). UI-agnostic, takes stores by reference; serializes the stores' value objects and pushes them back via `Receive*` / `SetValue` on load.
+  - `main_window.hpp` — composition root: owns all stores, panels, the renderer, and the application-wide `LocaleDateFormatter` via PIMPL (`struct Impl`) (Presentation/Application boundary). The formatter is constructed once here and handed by reference to every consumer (date table panel, CSV I/O) so the locale configuration lives in one place.
+  - `services/project_io.hpp` — XML project-file persistence (`LoadProjectXml`/`SaveProjectXml`) (Infrastructure). UI-agnostic, takes stores by reference; serializes the stores' value objects and pushes them back via `Receive*` / `SetValue` on load.
+  - `services/csv_io.hpp` — CSV import/export for date entries (Infrastructure). wx-free and unit-tested; takes a `LocaleDateFormatter&`. This is a user-facing boundary: CSV to-dates are inclusive, converted to the internal half-open period on read (`PeriodFromInclusiveDates`) and back on write (`Last()`).
+  - `services/runtime_info.hpp` — `PrintRuntimeInfo`: startup diagnostics (compiler/OS/toolkit versions). Kept apart from the persistence services because it pulls in the wx platform headers.
   - `services/value_serialization.hpp` — non-intrusive Boost.Serialization free functions for every domain value type (Infrastructure). Goes through public APIs only; owns the on-disk format. Keeps the domain layer Boost-free.
   - `binding/event_bus.hpp` — typed signal hub for domain events (Application).
   - `binding/main_window_binder.hpp` — wires producers/consumers via the EventBus (Application).
@@ -163,9 +165,29 @@ Application/Infrastructure bridge; both are detailed in the directory map below.
   `date_group_store.hpp`, `date_entry.hpp` + `date_entry_store.hpp`,
   `page_setup_config.hpp` + `page_setup_store.hpp`). The value-object header carries
   no store dependency; the store header includes its value-object header.
-  - **Value objects** (`DateGroup`/`DateGroups`, `DateEntry`, `Bar`, `PageSetupConfig`, `TitleConfig`, `ShapeConfiguration`/`ShapeConfigSet`, `CalendarSpan`/`CalendarConfig`) hold data + the queries over it. They **encapsulate their state**: data members are `private`, exposed through const accessor/query methods and mutated only through named setters — this is the orthodox DDD form (a value object is defined by its attributes, not by exposing them as public fields), and it keeps the on-disk format and invariants in one place. No signal, no serialization, no `friend` → Rule of Zero, freely copyable.
+  - **Value objects** (`Date`/`DatePeriod`, `DateGroup`/`DateGroups`, `DateEntry`, `Bar`, `PageSetupConfig`, `TitleConfig`, `ShapeConfiguration`/`ShapeConfigSet`, `CalendarSpan`/`CalendarConfig`) hold data + the queries over it. They **encapsulate their state**: data members are `private`, exposed through const accessor/query methods and mutated only through named setters — this is the orthodox DDD form (a value object is defined by its attributes, not by exposing them as public fields), and it keeps the on-disk format and invariants in one place. No signal, no serialization, no `friend` → Rule of Zero, freely copyable.
   - **Stores** (`DateGroupStore`, `DateEntryStore`/`DateEntryBarStore`, `TransformDateEntry`, `PageSetupStore`, `TitleConfigStore`, `ShapeConfigurationStore`, `CalendarConfigStore`) compose a value object plus a `sigslot::signal` and the re-entry guard. They have identity → explicitly non-copyable. Their **signal carries the value** (`signal<const Value&>`), so consumers (panels, `CalendarPage`) work with copyable value objects directly; the store exposes `Receive<Value>` / `Send<Value>` / a `Get<Value>` getter and adds no query delegation of its own. The store suffix is uniformly `…Store` (no `…Storage`).
   - **Must remain UI-agnostic (no wx, no GL) and Boost-free** — persistence lives in `services/value_serialization.hpp`.
+  - **Dates:** `date.hpp` (`Date`, proleptic Gregorian, explicit invalid state)
+    and `date_period.hpp` (`DatePeriod`) expose a **date-library-free
+    interface**. The calendrical computation is delegated to ICU, deliberately
+    confined to exactly two headers: `detail/icu_date_backend.hpp` (arithmetic
+    backend) and `date_format.hpp` (`LocaleDateFormatter`, locale-aware text
+    parsing and formatting for GUI/CSV). Swapping the date library means
+    reimplementing those two headers — nothing else in the codebase touches ICU
+    date APIs. Dates are persisted as ISO-8601 strings
+    (`app::serialization_detail` in `services/value_serialization.hpp`); the
+    previous Boost.DateTime-based project-file format is **not** readable
+    anymore (deliberate format break).
+  - **Interval semantics:** `DatePeriod` is **uniformly half-open `[begin,
+    end)`** everywhere inside the model — `LengthDays()` is `end - begin`,
+    `Last()` is the day before `end`, and a period with no contained day
+    (`end <= begin`) is *null*. A single day is `(d, d+1)`, length 1; the
+    stores drop null periods on receipt. Users think in *inclusive* "from .. to"
+    dates, so the conversion happens at exactly two user-facing boundaries — the
+    date table panel and CSV I/O — via `PeriodFromInclusiveDates()` on input and
+    `Last()` on display. Nowhere else does ±1 day arithmetic appear; keep it
+    that way.
 - `src/gui/` — Presentation: wxWidgets panels and the GL canvas wrapper. Each panel owns its widgets and exposes signals matching its store's interface.
 - `src/graphics/` — Infrastructure: OpenGL engine, shaders, `SceneNode` scene graph, `RectanglesShape` / `QuadrilateralShape` / `FontShape`, `RenderToTexture`, `RenderToPng`, FreeType wrapper.
 
@@ -212,8 +234,7 @@ this callback fires.
 
 ### Follow-up refactor targets
 
-1. Add unit tests for CSV/XML conversion logic in `services/project_io`.
-2. Promote stores to publish directly into `EventBus` (removing their internal signals) once all consumers are bus-only.
+1. Promote stores to publish directly into `EventBus` (removing their internal signals) once all consumers are bus-only.
 
 **Erledigt** (zur Nachvollziehbarkeit, nicht mehr offen):
 
@@ -221,7 +242,12 @@ this callback fires.
   Trailing-Underscore; vom Gate erzwungen via `readability-identifier-naming`
   (siehe `.clang-tidy` und die Naming/Style-Notiz unter [Conventions](#conventions)).
 - ~~Datei- und Naming-Struktur in `packages/`~~ — Value-Object und Store je eigene
-  Datei (nach Hauptklasse benannt), Store-Suffix einheitlich `…Store`.
+  Datei (nach Hauptklasse benannt), Store-Suffix einheitlich `…Store`; auch die
+  Member-/Parameternamen sind auf `…_store` vereinheitlicht (kein `…_storage`).
+- ~~Unit-Tests für die CSV-/XML-Konvertierung~~ — `tests/services/test_csv_io.cpp`
+  und `tests/services/test_value_serialization.cpp` decken Lesen/Schreiben,
+  Rundläufe und Grenzfälle ab; die CSV-/XML-Logik liegt dafür in eigenen,
+  wx-freien Headern (`services/csv_io.hpp`, `services/value_serialization.hpp`).
 
 ## Design principles
 
@@ -266,10 +292,13 @@ to and obey that layer's dependency constraints.
     erzwungen (`readability-identifier-naming` in `.clang-tidy`); ein Member ohne
     Underscore bricht den Build.
   - Locals: `snake_case`. Konstanten/Enumeratoren: `kPascalCase` (`kColorScale`).
-  - Der Store-Suffix ist einheitlich `…Store` (kein `…Storage`).
-  - Renames weiterhin **nicht als Nebeneffekt** fremder Änderungen durchführen —
-    Schreibweise und Bezeichner sind jetzt vereinheitlicht; eine erneute breite
-    Umbenennung gehört in eine eigene, beauftragte Runde.
+  - Der Store-Suffix ist einheitlich `…Store` (kein `…Storage`) — bei Typen
+    **und** bei Member-/Parameternamen (`…_store`, nicht `…_storage`).
+  - Renames zur Vereinheitlichung von Schreibweise und Bezeichnern sind
+    erwünscht. Wenn umbenannt wird, dann **vollständig und konsistent** über
+    alle Vorkommen (Deklaration, Definition, Aufrufstellen, Tests, Doku) — kein
+    halber Rename, der zwei Schreibweisen nebeneinander stehen lässt. Den Build
+    danach grün halten (Compile + `ctest` + clang-tidy-Gate).
 - Rule-of-five: classes with explicit destructors should also delete or default copy/move (see `MainWindow`, `DateEntryStore`).
 - Never use raw `new`/`delete`. Always express ownership through smart pointers (`std::unique_ptr` for unique ownership, `std::shared_ptr` for shared ownership) so lifetime is encoded in the type system, exceptions cannot leak resources, and ownership transfer is explicit at call sites. wx widgets are typically transferred via `.release()` to wx-owned parents (wx then owns the lifetime).
 - For non-owning references to objects whose lifetime is managed by wxWidgets (wx-owned parents/children, or any class derived from `wxTrackable` — which includes `wxWindow`, `wxEvtHandler`, and most wx classes), prefer `wxWeakRef<T>` over raw pointers. It auto-nulls when the referenced object is destroyed, eliminating dangling-pointer bugs. See [wxWeakRef](https://docs.wxwidgets.org/3.2/classwx_weak_ref_3_01_t_01_4.html) and [wxTrackable](https://docs.wxwidgets.org/3.2/classwx_trackable.html).

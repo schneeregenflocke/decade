@@ -15,21 +15,64 @@
 #include <boost/serialization/split_free.hpp>
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/vector.hpp>
+#include <charconv>
 #include <cstddef>
-#include <string>
-#include <vector>
-// split_free.hpp must precede greg_serialize.hpp: the latter expands
-// BOOST_DATE_TIME_SPLIT_FREE, which references boost::serialization::split_free
-// without including its declaration itself.
-#include <boost/date_time/gregorian/greg_serialize.hpp>
+#include <format>
 #include <glm/vec4.hpp>
+#include <string>
+#include <system_error>
+#include <vector>
 
 #include "../../packages/calendar_config.hpp"
+#include "../../packages/date.hpp"
 #include "../../packages/date_entry.hpp"
 #include "../../packages/date_group.hpp"
+#include "../../packages/date_period.hpp"
 #include "../../packages/page_setup_config.hpp"
 #include "../../packages/shape_configuration.hpp"
 #include "../../packages/title_config.hpp"
+
+namespace app::serialization_detail {
+
+// Dates travel through the archive as ISO-8601 strings ("YYYY-MM-DD"); the
+// invalid date is the empty string. This replaces the previous
+// boost::gregorian greg_serialize representation — the on-disk format changed
+// with the migration away from Boost.DateTime.
+inline std::string DateToIsoString(const Date& date) {
+  if (!date.IsValid()) {
+    return {};
+  }
+  return std::format("{:04}-{:02}-{:02}", date.Year(), date.Month(),
+                     date.Day());
+}
+
+inline Date DateFromIsoString(const std::string& text) {
+  // Field positions inside "YYYY-MM-DD".
+  constexpr std::size_t kIsoLength = 10;
+  constexpr std::size_t kYearEnd = 4;
+  constexpr std::size_t kMonthBegin = 5;
+  constexpr std::size_t kMonthEnd = 7;
+  constexpr std::size_t kDayBegin = 8;
+  if (text.size() != kIsoLength || text[kYearEnd] != '-' ||
+      text[kMonthEnd] != '-') {
+    return {};
+  }
+  const auto parse_int = [](const char* first, const char* last, int& out) {
+    return std::from_chars(first, last, out).ec == std::errc{};
+  };
+  int year = 0;
+  int month = 0;
+  int day = 0;
+  const char* data = text.data();
+  if (!parse_int(data, data + kYearEnd, year) ||
+      !parse_int(data + kMonthBegin, data + kMonthEnd, month) ||
+      !parse_int(data + kDayBegin, data + kIsoLength, day)) {
+    return {};
+  }
+  return Date::FromYmd(year, month, day);
+}
+
+}  // namespace app::serialization_detail
 
 namespace boost::serialization {
 
@@ -52,47 +95,33 @@ void load(Archive& ar, DateGroup& group, const unsigned int /*v*/) {
 }
 
 // --- DateEntry ---
+// Only the primary state is persisted: the half-open interval (interval_end
+// is exclusive) and the group. The derived fields (inter-interval, number,
+// group number) are recomputed by DateEntryStore::ReceiveDateEntries when the
+// loaded entries are pushed back into the store.
 template <class Archive>
 void save(Archive& ar, const DateEntry& entry, const unsigned int /*v*/) {
-  const boost::gregorian::date_period date_interval = entry.GetDateInterval();
-  const boost::gregorian::date_period date_inter_interval =
-      entry.GetDateInterInterval();
-  const int number = entry.GetNumber();
+  const std::string interval_begin = app::serialization_detail::DateToIsoString(
+      entry.GetDateInterval().Begin());
+  const std::string interval_end =
+      app::serialization_detail::DateToIsoString(entry.GetDateInterval().End());
   const int group = entry.GetGroup();
-  const int group_number = entry.GetGroupNumber();
-  const std::string& comment = entry.GetComment();
-  ar& make_nvp("date_interval", date_interval);
-  ar& make_nvp("date_inter_interval", date_inter_interval);
-  ar& make_nvp("number", number);
+  ar& make_nvp("interval_begin", interval_begin);
+  ar& make_nvp("interval_end", interval_end);
   ar& make_nvp("group", group);
-  ar& make_nvp("group_number", group_number);
-  ar& make_nvp("comment", comment);
 }
 template <class Archive>
 void load(Archive& ar, DateEntry& entry, const unsigned int /*v*/) {
-  // Placeholder ("not a date") endpoints; the real values are read from the
-  // archive below. A named temporary avoids the most-vexing-parse: written
-  // inline as date(...) inside the date_period(...) argument list, the
-  // construct is ambiguously parseable as a function declaration.
-  const boost::gregorian::date invalid_date(boost::date_time::not_a_date_time);
-  boost::gregorian::date_period date_interval(invalid_date, invalid_date);
-  boost::gregorian::date_period date_inter_interval(date_interval);
-  int number = 0;
+  std::string interval_begin;
+  std::string interval_end;
   int group = 0;
-  int group_number = 0;
-  std::string comment;
-  ar& make_nvp("date_interval", date_interval);
-  ar& make_nvp("date_inter_interval", date_inter_interval);
-  ar& make_nvp("number", number);
+  ar& make_nvp("interval_begin", interval_begin);
+  ar& make_nvp("interval_end", interval_end);
   ar& make_nvp("group", group);
-  ar& make_nvp("group_number", group_number);
-  ar& make_nvp("comment", comment);
-  entry.SetDateInterval(date_interval);
-  entry.SetDateInterInterval(date_inter_interval);
-  entry.SetNumber(number);
+  entry.SetDateInterval(
+      DatePeriod(app::serialization_detail::DateFromIsoString(interval_begin),
+                 app::serialization_detail::DateFromIsoString(interval_end)));
   entry.SetGroup(group);
-  entry.SetGroupNumber(group_number);
-  entry.SetComment(std::move(comment));
 }
 
 // --- PageSetupConfig (aggregate, public members) ---
