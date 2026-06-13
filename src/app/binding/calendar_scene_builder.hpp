@@ -152,6 +152,22 @@ class CalendarSceneBuilder {
 
     bar_labels_node_ = std::make_shared<SceneNode>("bar labels");
     print_area_node_->add_child(bar_labels_node_);
+
+    // Painter layers for the fixed shape-bearing nodes. Container nodes (bar
+    // cells, the text groups, …) carry no shape; their dynamic children get
+    // their layer where they are created in the Setup* methods.
+    page_node_->set_draw_layer(kLayerPage);
+    print_area_node_->set_draw_layer(kLayerFrame);
+    title_area_node_->set_draw_layer(kLayerFrame);
+    legend_shape_node->set_draw_layer(kLayerFrame);
+    row_labels_node_->set_draw_layer(kLayerGrid);
+    column_labels_node_->set_draw_layer(kLayerGrid);
+    years_cells_node_->set_draw_layer(kLayerGrid);
+    months_cells_node_->set_draw_layer(kLayerGrid);
+    days_cells0_node_->set_draw_layer(kLayerGrid);
+    days_cells1_node_->set_draw_layer(kLayerGrid);
+    years_totals_node_->set_draw_layer(kLayerBars);
+    title_font_node_->set_draw_layer(kLayerText);
   }
 
   void Build() {
@@ -390,6 +406,7 @@ class CalendarSceneBuilder {
       month_text_shape->set_font(font_);
       auto month_text_node =
           std::make_shared<SceneNode>(months_names.at(index), month_text_shape);
+      month_text_node->set_draw_layer(kLayerText);
       month_node->add_child(month_text_node);
 
       const auto float_index = static_cast<float>(index);
@@ -432,6 +449,7 @@ class CalendarSceneBuilder {
       year_text_shape->set_font(font_);
       auto year_text_node =
           std::make_shared<SceneNode>(current_year_text, year_text_shape);
+      year_text_node->set_draw_layer(kLayerText);
       year_node->add_child(year_text_node);
 
       const auto float_index = static_cast<float>(index);
@@ -681,6 +699,7 @@ class CalendarSceneBuilder {
       bar_shape->set_color({current_shape_config.OutlineColor(),
                             current_shape_config.FillColor()});
       bar_node->set_shape(bar_shape);
+      bar_node->set_draw_layer(kLayerBars);
       group_nodes.at(current_group)->add_child(bar_node);
       bar_nodes_.emplace(index, bar_node);
 
@@ -688,6 +707,7 @@ class CalendarSceneBuilder {
 
       auto child_node = std::make_shared<SceneNode>(std::string("label node ") +
                                                     std::to_string(index));
+      child_node->set_draw_layer(kLayerText);
       node_labels->add_child(child_node);
 
       auto text_shape = std::make_shared<FontShape>(font_shader);
@@ -766,6 +786,7 @@ class CalendarSceneBuilder {
         auto node_child = std::make_shared<SceneNode>(
             std::string("year total label ") + std::to_string(index));
         node_child->set_shape(text_shape);
+        node_child->set_draw_layer(kLayerText);
         node_text->add_child(node_child);
       }
     }
@@ -829,6 +850,7 @@ class CalendarSceneBuilder {
       const auto label_index = index * 2;
       auto node_text_child = std::make_shared<SceneNode>(
           std::string("legend label ") + std::to_string(index));
+      node_text_child->set_draw_layer(kLayerText);
       node_text->add_child(node_text_child);
 
       auto shape_text = std::make_shared<FontShape>(font_shader);
@@ -852,6 +874,7 @@ class CalendarSceneBuilder {
 
         auto node_entry = std::make_shared<SceneNode>(
             std::string("legend bar ") + std::to_string(index));
+        node_entry->set_draw_layer(kLayerBars);
         node_entries->add_child(node_entry);
 
         auto entry_shape = std::make_shared<RectanglesShape>(rectangles_shader);
@@ -866,6 +889,7 @@ class CalendarSceneBuilder {
     {
       auto node_text_child =
           std::make_shared<SceneNode>(std::string("legend label year total"));
+      node_text_child->set_draw_layer(kLayerText);
       node_text->add_child(node_text_child);
 
       auto shape_text = std::make_shared<FontShape>(font_shader);
@@ -892,6 +916,7 @@ class CalendarSceneBuilder {
 
         auto node_entry =
             std::make_shared<SceneNode>(std::string("legend bar annual sum"));
+        node_entry->set_draw_layer(kLayerBars);
         node_entries->add_child(node_entry);
 
         auto entry_shape = std::make_shared<RectanglesShape>(rectangles_shader);
@@ -916,6 +941,15 @@ class CalendarSceneBuilder {
   static constexpr float kPercentScale = 100.0F;
   static constexpr size_t kMonthNameBufferSize = 100;
   static constexpr float kHoverOutlineGreen = 0.55F;
+
+  // Painter draw layers (lower = further back). The bars sit above the grid
+  // background so the day/sunday/month cells no longer cover them; text sits on
+  // top of everything.
+  static constexpr int kLayerPage = 0;
+  static constexpr int kLayerFrame = 10;
+  static constexpr int kLayerGrid = 20;
+  static constexpr int kLayerBars = 30;
+  static constexpr int kLayerText = 40;
 
   std::shared_ptr<SceneNode> scene_graph_;
   GraphicsEngine* graphics_engine_{nullptr};
