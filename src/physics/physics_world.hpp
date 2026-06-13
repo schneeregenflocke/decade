@@ -5,12 +5,12 @@
 
 #include <cstddef>
 #include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
 #include <memory>
 #include <optional>
 #include <vector>
 
 #include "../graphics/pick_id.hpp"
-#include "../graphics/rect.hpp"
 
 // Infrastructure: a thin RAII wrapper around a Bullet btCollisionWorld used for
 // 2D hit-testing (picking). Each pickable element is registered as a thin,
@@ -20,11 +20,6 @@
 // physics) will extend without changing the picking path.
 class PhysicsWorld {
  public:
-  struct PickBox {
-    PickId id;
-    rectf rect;  // page-space rectangle
-  };
-
   PhysicsWorld()
       : collision_configuration_(
             std::make_unique<btDefaultCollisionConfiguration>()),

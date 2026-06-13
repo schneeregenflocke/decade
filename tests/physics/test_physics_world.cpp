@@ -8,7 +8,7 @@
 
 namespace {
 
-std::vector<PhysicsWorld::PickBox> TwoBoxes() {
+std::vector<PickBox> TwoBoxes() {
   return {
       {PickId{PickId::Kind::kBar, 0}, rectf(0.0F, 10.0F, 0.0F, 10.0F)},
       {PickId{PickId::Kind::kBar, 1}, rectf(20.0F, 30.0F, 0.0F, 10.0F)},

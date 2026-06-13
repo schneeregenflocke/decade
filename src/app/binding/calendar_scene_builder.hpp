@@ -14,6 +14,7 @@
 #include "../../graphics/font.hpp"
 #include "../../graphics/frame_layout.hpp"
 #include "../../graphics/graphics_engine.hpp"
+#include "../../graphics/pick_id.hpp"
 #include "../../graphics/scene_graph.hpp"
 #include "../../graphics/shapes.hpp"
 #include "../../packages/calendar_config.hpp"
@@ -166,10 +167,11 @@ class CalendarSceneBuilder {
     // bottom-left). The page rectangle itself stays in absolute page space on
     // the untransformed page node above.
     print_area_ = page_size_.reduce(page_margin_);
-    const glm::vec3 print_area_origin = print_area_.getLB();
+    print_area_origin_ = print_area_.getLB();
     print_area_node_->set_model_matrix(
-        glm::translate(glm::mat4(1.0F), print_area_origin));
-    print_area_ = print_area_.shift(-print_area_origin.x, -print_area_origin.y);
+        glm::translate(glm::mat4(1.0F), print_area_origin_));
+    print_area_ =
+        print_area_.shift(-print_area_origin_.x, -print_area_origin_.y);
 
     title_frame_ = print_area_;
     title_frame_.setB(title_frame_.t() - title_config_.FrameHeight());
@@ -229,6 +231,12 @@ class CalendarSceneBuilder {
   // live graph after Build().
   [[nodiscard]] SceneNodeSnapshot SceneSnapshot() const {
     return BuildSnapshot(*scene_graph_);
+  }
+
+  // Page-space rectangles of the pickable bars, produced by the last Build().
+  // Handed to the picking layer; Bullet-free.
+  [[nodiscard]] const std::vector<PickBox>& BarPickBoxes() const {
+    return bar_pick_boxes_;
   }
 
  private:
@@ -573,6 +581,8 @@ class CalendarSceneBuilder {
     auto& node_labels = bar_labels_node_;
     node_labels->remove_children();
 
+    bar_pick_boxes_.clear();
+
     auto* font_shader =
         graphics_engine_->search_shader("Font Shader").value_or(nullptr);
     auto* rectangles_shader =
@@ -607,6 +617,19 @@ class CalendarSceneBuilder {
                                                   std::to_string(index));
       bar_node->set_model_matrix(glm::translate(
           glm::mat4(1.0F), glm::vec3(bar_left, current_sub_cell.b(), kZero)));
+
+      // Pick identity on the node + a page-space box for hit-testing. The
+      // node's world position is print_area_origin_ + (bar_left, sub_cell.b()),
+      // so the page-space rect is the local bar rect shifted by that origin.
+      const PickId pick_id{.kind = PickId::Kind::kBar, .index = index};
+      bar_node->set_pick_id(pick_id);
+      bar_pick_boxes_.push_back(PickBox{
+          .id = pick_id,
+          .rect =
+              rectf(bar_left + print_area_origin_.x,
+                    bar_left + bar_width + print_area_origin_.x,
+                    current_sub_cell.b() + print_area_origin_.y,
+                    current_sub_cell.b() + bar_height + print_area_origin_.y)});
 
       auto bar_shape = std::make_shared<RectanglesShape>(rectangles_shader);
       bar_shape->set_shape(rectf(kZero, bar_width, kZero, bar_height),
@@ -880,6 +903,8 @@ class CalendarSceneBuilder {
 
   // Transient layout state, recomputed on every Build().
   ProportionFrameLayout proportion_frame_layout_;
+  glm::vec3 print_area_origin_{0.0F};
+  std::vector<PickBox> bar_pick_boxes_;
   rectf print_area_;
   rectf title_frame_;
   rectf page_margin_frame_;

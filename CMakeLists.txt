@@ -68,6 +68,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/calendar_scene_builder.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/event_bus.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/main_window_binder.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/scene_snapshot.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/bar.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/calendar_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/calendar_config_store.hpp
@@ -84,6 +85,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/page_setup_store.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/shape_configuration.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/shape_configuration_store.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/timeline_projection.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/title_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/title_config_store.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/transform_date_entry.hpp
@@ -98,6 +100,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/mouse_interaction.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/opengl_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/page_panel.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/scene_tree_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/shape_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/title_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/debug_log.hpp
@@ -117,6 +120,8 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/texture_object.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/mvp_matrices.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/scene_graph.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/pick_id.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/physics/physics_world.hpp
 )
 
 
@@ -227,6 +232,9 @@ set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/bullet3 EXCLUDE_FROM_ALL)
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/bullet3/src)
 target_link_libraries(${PROJECT_NAME} PRIVATE BulletCollision LinearMath)
+# Treat Bullet's own interface include directories as system too, so its
+# headers stay out of our -Werror build and the clang-tidy gate.
+set_target_properties(BulletCollision LinearMath PROPERTIES SYSTEM TRUE)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)

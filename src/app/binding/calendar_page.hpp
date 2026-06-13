@@ -1,12 +1,15 @@
 #ifndef CALENDAR_PAGE_HPP
 #define CALENDAR_PAGE_HPP
 
+#include <glm/vec2.hpp>
 #include <memory>
+#include <optional>
 #include <sigslot/signal.hpp>
 #include <string>
 #include <vector>
 
 #include "../../graphics/font.hpp"
+#include "../../graphics/pick_id.hpp"
 #include "../../graphics/rect.hpp"
 #include "../../gui/opengl_panel.hpp"
 #include "../../packages/calendar_config.hpp"
@@ -16,6 +19,7 @@
 #include "../../packages/page_setup_config.hpp"
 #include "../../packages/shape_configuration.hpp"
 #include "../../packages/title_config.hpp"
+#include "../../physics/physics_world.hpp"
 #include "calendar_scene_builder.hpp"
 #include "scene_snapshot.hpp"
 
@@ -75,14 +79,21 @@ class CalendarPage {
 
   void Update() {
     scene_builder_.Build();
+    physics_world_.Rebuild(scene_builder_.BarPickBoxes());
     gl_canvas_->RefreshMVP();
     signal_scene_snapshot_(scene_builder_.SceneSnapshot());
   }
 
   [[nodiscard]] auto& SignalSceneSnapshot() { return signal_scene_snapshot_; }
 
+  // Hit-tests a page-space point against the bars, returning the bar's PickId.
+  [[nodiscard]] std::optional<PickId> Pick(glm::vec2 page_point) const {
+    return physics_world_.Raycast(page_point);
+  }
+
  private:
   sigslot::signal<const SceneNodeSnapshot&> signal_scene_snapshot_;
+  PhysicsWorld physics_world_;
 
   GLCanvas* gl_canvas_{nullptr};
 
