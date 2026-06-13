@@ -199,6 +199,35 @@ target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${TINYCOLORMAP_INCLUDE
 find_package(Microsoft.GSL CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE Microsoft.GSL::GSL)
 
+# Bullet Physics (git submodule external/bullet3, pinned to a release tag).
+# Built from source with demos/tests/extras/networking disabled, so only the
+# requested libraries compile. Picking needs the Bullet 2 collision world
+# (BulletCollision + LinearMath); BulletDynamics is linked later for dragging
+# and physics. EXCLUDE_FROM_ALL keeps the unused Bullet targets out of the
+# default build. Bullet headers are included as SYSTEM so the clang-tidy gate
+# and warning-as-error build ignore them.
+if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/bullet3/src/btBulletCollisionCommon.h")
+	message(FATAL_ERROR "Bullet not found. Initialize submodule external/bullet3 (git submodule update --init --recursive).")
+endif()
+set(BUILD_BULLET2_DEMOS OFF CACHE BOOL "" FORCE)
+set(BUILD_CPU_DEMOS OFF CACHE BOOL "" FORCE)
+set(BUILD_BULLET3 OFF CACHE BOOL "" FORCE)
+set(BUILD_EXTRAS OFF CACHE BOOL "" FORCE)
+set(BUILD_UNIT_TESTS OFF CACHE BOOL "" FORCE)
+set(BUILD_ENET OFF CACHE BOOL "" FORCE)
+set(BUILD_CLSOCKET OFF CACHE BOOL "" FORCE)
+set(BUILD_PYBULLET OFF CACHE BOOL "" FORCE)
+set(USE_GRAPHICAL_BENCHMARK OFF CACHE BOOL "" FORCE)
+set(ENABLE_VHACD OFF CACHE BOOL "" FORCE)
+set(INSTALL_CMAKE_FILES OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+# Bullet 3.25 still declares cmake_minimum_required < 3.5, which CMake 4.x
+# rejects. Allow it to configure without patching the vendored submodule.
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/bullet3 EXCLUDE_FROM_ALL)
+target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/bullet3/src)
+target_link_libraries(${PROJECT_NAME} PRIVATE BulletCollision LinearMath)
+
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)
 
@@ -223,6 +252,7 @@ list(APPEND RESOURCE_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/external/csv2/LICENSE csv2_copyright
 	${CMAKE_CURRENT_SOURCE_DIR}/external/csv2/LICENSE.mio csv2mio_LICENSE
 	${CMAKE_CURRENT_SOURCE_DIR}/external/tinycolormap/LICENSE tinycolormap_LICENSE
+	${CMAKE_CURRENT_SOURCE_DIR}/external/bullet3/LICENSE.txt bullet_LICENSE
 )
 
 embed_resources(${PROJECT_NAME}_RESOURCES ${RESOURCE_FILES})

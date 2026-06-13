@@ -15,6 +15,7 @@ add_executable(decade_tests
 	packages/test_transform_date_entry.cpp
 	services/test_csv_io.cpp
 	services/test_value_serialization.cpp
+	physics/test_physics_world.cpp
 )
 
 target_compile_features(decade_tests PRIVATE cxx_std_23)
@@ -31,6 +32,7 @@ target_include_directories(decade_tests PRIVATE
 target_include_directories(decade_tests SYSTEM PRIVATE
 	${ICU_INCLUDE_DIRS}
 	${CSV2_INCLUDE_DIR}
+	${CMAKE_SOURCE_DIR}/external/bullet3/src
 )
 
 target_link_libraries(decade_tests PRIVATE
@@ -39,6 +41,8 @@ target_link_libraries(decade_tests PRIVATE
 	glm::glm
 	${ICU_LIBRARIES}
 	${Boost_LIBRARIES}
+	BulletCollision
+	LinearMath
 )
 
 # Less strict than the main target — tests trade off some warning hygiene for

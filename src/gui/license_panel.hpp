@@ -84,6 +84,8 @@ class LicenseInformationDialog : public wxDialog {
         "csv2mio", LOAD_RESOURCE(csv2mio_LICENSE_LICENSE).toString());
     collected_licenses_.emplace_back(
         "sigslot", LOAD_RESOURCE(sigslot_LICENSE_LICENSE).toString());
+    collected_licenses_.emplace_back(
+        "Bullet Physics", LOAD_RESOURCE(bullet_LICENSE_LICENSE).toString());
 
     for (const auto& license : collected_licenses_) {
       license_select_list_box_->AppendString(license.first);
