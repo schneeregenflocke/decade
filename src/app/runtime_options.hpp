@@ -4,6 +4,7 @@
 #include <wx/string.h>
 #include <wx/utils.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <iostream>
@@ -38,6 +39,8 @@ namespace app {
 //                                 (case-insensitive) at startup, e.g. for
 //                                 screenshotting a specific tab.
 //   DECADE_EXIT_AFTER_MS=<ms>     auto-close the main window after N ms.
+//   DECADE_DEBUG_HOVER_BAR=<n>    force the hover highlight on bar N after load
+//                                 (debug/screenshot aid for picking, no mouse).
 //
 // (DECADE_DEBUG_LOG is read by the Infrastructure layer in
 // `src/graphics/debug_log.hpp`, which must not depend on this Application
@@ -52,6 +55,9 @@ struct RuntimeOptions {
   std::optional<std::string> dump_frame_png_path;
   std::optional<std::string> select_tab;
   std::optional<std::int64_t> exit_after_ms;
+  // Debug/screenshot aid: force the hover highlight on this bar index at
+  // startup, so the picking highlight can be verified without a pointer device.
+  std::optional<std::size_t> debug_hover_bar;
 };
 
 namespace runtime_options_detail {
@@ -97,6 +103,18 @@ inline RuntimeOptions RuntimeOptionsFromEnv() {
       }
     } catch (const std::exception& ex) {
       std::cerr << "Invalid DECADE_EXIT_AFTER_MS: " << ex.what() << '\n';
+    }
+  }
+
+  if (const std::optional<std::string> debug_hover_bar =
+          GetEnvString("DECADE_DEBUG_HOVER_BAR")) {
+    try {
+      const long long parsed = std::stoll(*debug_hover_bar);
+      if (parsed >= 0) {
+        options.debug_hover_bar = static_cast<std::size_t>(parsed);
+      }
+    } catch (const std::exception& ex) {
+      std::cerr << "Invalid DECADE_DEBUG_HOVER_BAR: " << ex.what() << '\n';
     }
   }
 

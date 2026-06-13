@@ -52,6 +52,7 @@
 #include "../packages/transform_date_entry.hpp"
 #include "binding/calendar_page.hpp"
 #include "binding/event_bus.hpp"
+#include "binding/interaction_controller.hpp"
 #include "binding/main_window_binder.hpp"
 #include "runtime_options.hpp"
 #include "services/csv_io.hpp"
@@ -141,6 +142,7 @@ struct MainWindow::Impl {
   ShapeConfigurationStore shape_configuration_store;
   CalendarConfigStore calendar_configuration_store;
   std::unique_ptr<CalendarPage> calendar_page;
+  InteractionController interaction_controller;
 };
 
 inline MainWindow::MainWindow(wxWindow* parent, const wxString& title,
@@ -266,6 +268,11 @@ inline void MainWindow::InitializeOpenGL() {
         impl_->gl_canvas.get(), impl_->font_panel->GetFontFilePath());
     EstablishConnections();
     LoadStartupFile();
+    if (runtime_options_.debug_hover_bar) {
+      impl_->calendar_page->ReceiveHovered(
+          PickId{.kind = PickId::Kind::kBar,
+                 .index = *runtime_options_.debug_hover_bar});
+    }
     DumpPngIfRequested();
   });
 }
@@ -381,6 +388,7 @@ inline void MainWindow::EstablishConnections() {
       .scene_tree_panel = *impl_->scene_tree_panel,
       .calendar_page = *impl_->calendar_page,
       .gl_canvas = *impl_->gl_canvas,
+      .interaction_controller = impl_->interaction_controller,
   };
 
   main_window_binder::Bind(impl_->event_bus, components);

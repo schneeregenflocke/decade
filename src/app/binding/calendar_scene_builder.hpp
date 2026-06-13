@@ -7,8 +7,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <iomanip>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "../../graphics/font.hpp"
@@ -239,6 +241,22 @@ class CalendarSceneBuilder {
     return bar_pick_boxes_;
   }
 
+  // Highlights the hovered bar (and restores the previously hovered one) by
+  // recolouring its shape in place — no scene rebuild. A null value clears the
+  // highlight.
+  void SetHoveredBar(const std::optional<PickId>& hovered) {
+    if (hovered == hovered_bar_) {
+      return;
+    }
+    if (hovered_bar_.has_value()) {
+      ApplyBarColor(hovered_bar_->index, /*highlighted=*/false);
+    }
+    hovered_bar_ = hovered;
+    if (hovered_bar_.has_value()) {
+      ApplyBarColor(hovered_bar_->index, /*highlighted=*/true);
+    }
+  }
+
  private:
   // Iterative tree copy (matching the scene graph's own non-recursive
   // traversal style): each stack frame pairs a source SceneNode with the
@@ -272,6 +290,31 @@ class CalendarSceneBuilder {
     }
 
     return result;
+  }
+
+  // Recolours one bar's shape: highlighted bars get a distinct outline, normal
+  // bars are restored to their group's configured colours. Fill is left as
+  // configured so the hover reads as an outline accent.
+  void ApplyBarColor(std::size_t bar_index, bool highlighted) {
+    const auto iterator = bar_nodes_.find(bar_index);
+    if (iterator == bar_nodes_.end() ||
+        bar_index >= data_store_.GetNumberBars()) {
+      return;
+    }
+    auto shape = std::dynamic_pointer_cast<RectanglesShape>(
+        iterator->second->get_shape());
+    if (!shape) {
+      return;
+    }
+    const auto group =
+        static_cast<std::size_t>(data_store_.GetBar(bar_index).GetGroup());
+    const auto config = shape_config_.GetDynamicConfiguration(group);
+    if (highlighted) {
+      const glm::vec4 hover_outline(kOne, kHoverOutlineGreen, kZero, kOne);
+      shape->set_color({hover_outline, config.FillColor()});
+    } else {
+      shape->set_color({config.OutlineColor(), config.FillColor()});
+    }
   }
 
   void SetupPrintAreaShape() {
@@ -582,6 +625,7 @@ class CalendarSceneBuilder {
     node_labels->remove_children();
 
     bar_pick_boxes_.clear();
+    bar_nodes_.clear();
 
     auto* font_shader =
         graphics_engine_->search_shader("Font Shader").value_or(nullptr);
@@ -638,6 +682,7 @@ class CalendarSceneBuilder {
                             current_shape_config.FillColor()});
       bar_node->set_shape(bar_shape);
       group_nodes.at(current_group)->add_child(bar_node);
+      bar_nodes_.emplace(index, bar_node);
 
       const std::string label_text = bar.GetText();
 
@@ -655,6 +700,11 @@ class CalendarSceneBuilder {
 
       text_shape->set_shape_centered(label_text, current_text_cell.getCenter(),
                                      current_text_cell.height());
+    }
+
+    // Re-apply the hover highlight to the freshly built node, if still hovered.
+    if (hovered_bar_.has_value()) {
+      ApplyBarColor(hovered_bar_->index, /*highlighted=*/true);
     }
   }
 
@@ -865,6 +915,7 @@ class CalendarSceneBuilder {
   static constexpr float kFontScaleMax = 0.75F;
   static constexpr float kPercentScale = 100.0F;
   static constexpr size_t kMonthNameBufferSize = 100;
+  static constexpr float kHoverOutlineGreen = 0.55F;
 
   std::shared_ptr<SceneNode> scene_graph_;
   GraphicsEngine* graphics_engine_{nullptr};
@@ -900,6 +951,12 @@ class CalendarSceneBuilder {
   const ShapeConfigSet& shape_config_;
   const DateGroups& date_groups_;
   const DateEntryBarStore& data_store_;
+
+  // Bar nodes by bar index, rebuilt each Build() — used to recolour a bar on
+  // hover. The hovered bar persists across rebuilds so the highlight is
+  // re-applied to the fresh node.
+  std::unordered_map<std::size_t, std::shared_ptr<SceneNode>> bar_nodes_;
+  std::optional<PickId> hovered_bar_;
 
   // Transient layout state, recomputed on every Build().
   ProportionFrameLayout proportion_frame_layout_;

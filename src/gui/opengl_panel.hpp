@@ -110,6 +110,12 @@ class GLCanvas : public wxGLCanvas {
 
   GraphicsEngine* GraphicsEnginePtr() { return graphics_engine_.get(); }
 
+  // Called on every mouse move with the cursor in page/world space, so an
+  // interaction controller can hit-test it. Set by the binder.
+  void SetPointerMoveCallback(std::function<void(glm::vec2)> callback) {
+    on_pointer_move_ = std::move(callback);
+  }
+
   // Verzögerter GL-Init: bindet wxEVT_PAINT auf einen einmaligen
   // Init-Handler. Beim ersten Paint ist das Canvas garantiert gemappt,
   // dann lädt LoadOpenGL und on_ready wird aufgerufen.
@@ -381,6 +387,11 @@ class GLCanvas : public wxGLCanvas {
         static_cast<int>(std::lround(event.GetPosition().y * scale)));
     mouse_interaction_->Apply(mvp_, pos_physical, event.Dragging(),
                               event.GetWheelRotation());
+    // Forward the cursor in page/world space for hit-testing. Computed after
+    // Apply so it uses the current (possibly just panned/zoomed) view.
+    if (on_pointer_move_) {
+      on_pointer_move_(MouseInteraction::ScreenToPage(pos_physical, mvp_));
+    }
     RefreshMVP();
   }
 
@@ -396,5 +407,6 @@ class GLCanvas : public wxGLCanvas {
 
   std::array<int, 2> gl_version_{};
   std::function<void()> on_gl_ready_;
+  std::function<void(glm::vec2)> on_pointer_move_;
 };
 #endif  // OPENGL_PANEL_HPP

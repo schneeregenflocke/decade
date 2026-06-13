@@ -91,6 +91,12 @@ class CalendarPage {
     return physics_world_.Raycast(page_point);
   }
 
+  // Highlights the hovered bar in place (no rebuild) and repaints.
+  void ReceiveHovered(const std::optional<PickId>& hovered) {
+    scene_builder_.SetHoveredBar(hovered);
+    gl_canvas_->RefreshMVP();
+  }
+
  private:
   sigslot::signal<const SceneNodeSnapshot&> signal_scene_snapshot_;
   PhysicsWorld physics_world_;

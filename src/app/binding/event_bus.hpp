@@ -1,10 +1,12 @@
 #ifndef EVENT_BUS_HPP
 #define EVENT_BUS_HPP
 
+#include <optional>
 #include <sigslot/signal.hpp>
 #include <string>
 #include <vector>
 
+#include "../../graphics/pick_id.hpp"
 #include "../../packages/calendar_config.hpp"
 #include "../../packages/date_entry.hpp"
 #include "../../packages/date_group.hpp"
@@ -41,6 +43,7 @@ class EventBus {
   [[nodiscard]] auto& shape_config_set() { return shape_config_set_; }
   [[nodiscard]] auto& calendar_config() { return calendar_config_; }
   [[nodiscard]] auto& scene_snapshot() { return scene_snapshot_; }
+  [[nodiscard]] auto& hovered() { return hovered_; }
 
  private:
   sigslot::signal<const std::vector<DateEntry>&> date_entries_;
@@ -52,6 +55,7 @@ class EventBus {
   sigslot::signal<const ShapeConfigSet&> shape_config_set_;
   sigslot::signal<const CalendarConfig&> calendar_config_;
   sigslot::signal<const SceneNodeSnapshot&> scene_snapshot_;
+  sigslot::signal<const std::optional<PickId>&> hovered_;
 };
 
 #endif  // EVENT_BUS_HPP

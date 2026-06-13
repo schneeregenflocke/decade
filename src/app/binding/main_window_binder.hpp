@@ -1,8 +1,11 @@
 #ifndef MAIN_WINDOW_BINDER_HPP
 #define MAIN_WINDOW_BINDER_HPP
 
+#include <glm/vec2.hpp>
+#include <optional>
 #include <vector>
 
+#include "../../graphics/pick_id.hpp"
 #include "../../gui/calendar_panel.hpp"
 #include "../../gui/date_panel.hpp"
 #include "../../gui/font_panel.hpp"
@@ -27,6 +30,7 @@
 #include "../../packages/transform_date_entry.hpp"
 #include "calendar_page.hpp"
 #include "event_bus.hpp"
+#include "interaction_controller.hpp"
 #include "scene_snapshot.hpp"
 
 // Centralised wiring between domain stores, presentation panels, the
@@ -59,6 +63,7 @@ struct MainWindowComponents {
 
   CalendarPage& calendar_page;
   GLCanvas& gl_canvas;
+  InteractionController& interaction_controller;
 };
 
 namespace main_window_binder {
@@ -195,6 +200,27 @@ inline void BindSceneSnapshot(EventBus& bus, MainWindowComponents& components) {
                                &components.scene_tree_panel);
 }
 
+// Picking: the canvas reports pointer moves in page space, the controller
+// hit-tests them via the rendering adapter, and the resulting hover is
+// published on the bus. The visual highlight consumer is wired separately.
+inline void BindInteraction(EventBus& bus, MainWindowComponents& components) {
+  components.interaction_controller.SetPickSource(
+      [page = &components.calendar_page](glm::vec2 point) {
+        return page->Pick(point);
+      });
+
+  components.gl_canvas.SetPointerMoveCallback(
+      [controller = &components.interaction_controller](glm::vec2 point) {
+        controller->OnPointerMove(point);
+      });
+
+  components.interaction_controller.SignalHovered().connect(
+      [&bus](const std::optional<PickId>& hovered) { bus.hovered()(hovered); });
+
+  bus.hovered().connect(&CalendarPage::ReceiveHovered,
+                        &components.calendar_page);
+}
+
 }  // namespace detail
 
 inline void Bind(EventBus& bus, MainWindowComponents& components) {
@@ -206,6 +232,7 @@ inline void Bind(EventBus& bus, MainWindowComponents& components) {
   detail::BindShapeConfiguration(bus, components);
   detail::BindCalendarConfig(bus, components);
   detail::BindSceneSnapshot(bus, components);
+  detail::BindInteraction(bus, components);
 }
 
 inline void SendInitialValues(MainWindowComponents& components) {

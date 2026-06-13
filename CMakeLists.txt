@@ -67,6 +67,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/calendar_page.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/calendar_scene_builder.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/event_bus.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/interaction_controller.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/main_window_binder.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/scene_snapshot.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/bar.hpp

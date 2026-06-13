@@ -73,6 +73,15 @@ class MouseInteraction {
     persistent_mouse_pos_ = current_mouse_pos;
   }
 
+  // Unprojects a pixel position to page/world space (the space in which the
+  // scene graph places geometry), inverting both projection and view so the
+  // result lines up with the bars' page-space rectangles for hit-testing.
+  static glm::vec2 ScreenToPage(const wxPoint& mouse_pos_px, const MVP& mvp) {
+    const glm::vec3 view_space = MouseWorldSpacePos(mouse_pos_px, mvp);
+    const glm::vec3 page = MouseViewSpacePos(view_space, mvp.GetView());
+    return {page.x, page.y};
+  }
+
  private:
   glm::mat4 CalculateViewMatrix(float scale_factor) {
     auto pre_scaled = glm::translate(glm::mat4(1.F), translate_pre_scaled_);
