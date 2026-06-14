@@ -148,23 +148,27 @@ class TitleSetupPanel : public wxPanel {
     }
   }
 
+  // Stores the new text colour on the config and publishes it. Shared by the
+  // colour picker (RGB) and the alpha slider (A), which only differ in which
+  // channels they touch.
+  void ApplyTextColor(const std::array<float, 4>& text_color) {
+    title_config_.SetTextColor(text_color);
+    SendTitleConfig();
+  }
+
   void CallbackColorPickerControl(wxColourPickerEvent& event) {
     const wxColour color = event.GetColour();
     std::array<float, 4> text_color = title_config_.TextColor();
     text_color[0] = ToChannel(color.Red());
     text_color[1] = ToChannel(color.Green());
     text_color[2] = ToChannel(color.Blue());
-    title_config_.SetTextColor(text_color);
-
-    SendTitleConfig();
+    ApplyTextColor(text_color);
   }
 
   void CallbackSliderControl(wxCommandEvent& event) {
     std::array<float, 4> text_color = title_config_.TextColor();
     text_color[3] = ToChannel(event.GetInt());
-    title_config_.SetTextColor(text_color);
-
-    SendTitleConfig();
+    ApplyTextColor(text_color);
   }
 
   TitleConfig title_config_;

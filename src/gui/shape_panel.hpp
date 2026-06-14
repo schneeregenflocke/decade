@@ -320,6 +320,21 @@ class ElementsSetupsPanel : public wxPanel {
         static_cast<int>(kAlphaScale - (fill_color[3] * kAlphaScale)));
   }
 
+  // Runs `mutate` on the currently selected configuration (passing the config
+  // and its index) and re-publishes the set. No-op when nothing is selected.
+  // Concentrates the "fetch selection, bail if none, emit afterwards" boiler-
+  // plate every editing callback shares.
+  template <typename Mutator>
+  void EditSelectedConfiguration(Mutator mutate) {
+    const int selection_index = shape_configuration_list_box_->GetSelection();
+    if (selection_index == wxNOT_FOUND) {
+      return;
+    }
+    const auto selection = static_cast<size_t>(selection_index);
+    mutate(shape_config_set_[selection], selection);
+    signal_shape_config_set_(shape_config_set_);
+  }
+
   void CallbackListBook(wxCommandEvent& event) {
     const int selection_index = event.GetSelection();
     if (selection_index == wxNOT_FOUND) {
@@ -329,61 +344,39 @@ class ElementsSetupsPanel : public wxPanel {
   }
 
   void CallbackCheckBox(wxCommandEvent& event) {
-    auto check_status = event.IsChecked();
-    const int selection_index = shape_configuration_list_box_->GetSelection();
-    if (selection_index == wxNOT_FOUND) {
-      return;
-    }
-    const auto selection = static_cast<size_t>(selection_index);
-
-    if (event.GetEventObject() == outline_visible_ctrl_.get()) {
-      shape_config_set_[selection].OutlineVisible(check_status);
-    }
-
-    if (event.GetEventObject() == fill_visible_ctrl_.get()) {
-      shape_config_set_[selection].FillVisible(check_status);
-    }
-
-    UpdateWidgetForSelection(selection);
-
-    signal_shape_config_set_(shape_config_set_);
+    const bool check_status = event.IsChecked();
+    EditSelectedConfiguration(
+        [&](ShapeConfiguration& config, size_t selection) {
+          if (event.GetEventObject() == outline_visible_ctrl_.get()) {
+            config.OutlineVisible(check_status);
+          }
+          if (event.GetEventObject() == fill_visible_ctrl_.get()) {
+            config.FillVisible(check_status);
+          }
+          UpdateWidgetForSelection(selection);
+        });
   }
 
   void CallbackSpinControlDouble(wxSpinDoubleEvent& event) {
     const auto line_width = static_cast<float>(event.GetValue());
-    const int selection_index = shape_configuration_list_box_->GetSelection();
-    if (selection_index == wxNOT_FOUND) {
-      return;
-    }
-    const auto element_selection = static_cast<size_t>(selection_index);
-    shape_config_set_[element_selection].LineWidth(line_width);
-
-    signal_shape_config_set_(shape_config_set_);
+    EditSelectedConfiguration([&](ShapeConfiguration& config, size_t /*sel*/) {
+      config.LineWidth(line_width);
+    });
   }
 
   void CallbackColorPicker(wxColourPickerEvent& event) {
     auto color = ToGlmVec4(event.GetColour());
-    const int selection_index = shape_configuration_list_box_->GetSelection();
-    if (selection_index == wxNOT_FOUND) {
-      return;
-    }
-    const auto selection = static_cast<size_t>(selection_index);
-
-    if (event.GetEventObject() == line_color_picker_.get()) {
-      auto current_line_color_alpha =
-          shape_config_set_[selection].OutlineColor()[3];
-      color[3] = current_line_color_alpha;
-      shape_config_set_[selection].OutlineColor(color);
-    }
-
-    if (event.GetEventObject() == fill_color_picker_.get()) {
-      auto current_line_color_alpha =
-          shape_config_set_[selection].FillColor()[3];
-      color[3] = current_line_color_alpha;
-      shape_config_set_[selection].FillColor(color);
-    }
-
-    signal_shape_config_set_(shape_config_set_);
+    EditSelectedConfiguration([&](ShapeConfiguration& config, size_t /*sel*/) {
+      // Keep the existing alpha; the colour picker only edits RGB.
+      if (event.GetEventObject() == line_color_picker_.get()) {
+        color[3] = config.OutlineColor()[3];
+        config.OutlineColor(color);
+      }
+      if (event.GetEventObject() == fill_color_picker_.get()) {
+        color[3] = config.FillColor()[3];
+        config.FillColor(color);
+      }
+    });
   }
 
   void CallbackSlider(wxCommandEvent& event) {
@@ -391,25 +384,18 @@ class ElementsSetupsPanel : public wxPanel {
     const auto slider_value = static_cast<float>(event.GetInt());
     const float alpha_value = 1.0F - (slider_value / kAlphaScale);
 
-    const int selection_index = shape_configuration_list_box_->GetSelection();
-    if (selection_index == wxNOT_FOUND) {
-      return;
-    }
-    const auto selection = static_cast<size_t>(selection_index);
-
-    if (event.GetEventObject() == line_color_alpha_slider_.get()) {
-      auto current_line_color = shape_config_set_[selection].OutlineColor();
-      current_line_color[3] = alpha_value;
-      shape_config_set_[selection].OutlineColor(current_line_color);
-    }
-
-    if (event.GetEventObject() == fill_color_alpha_slider_.get()) {
-      auto current_line_color = shape_config_set_[selection].FillColor();
-      current_line_color[3] = alpha_value;
-      shape_config_set_[selection].FillColor(current_line_color);
-    }
-
-    signal_shape_config_set_(shape_config_set_);
+    EditSelectedConfiguration([&](ShapeConfiguration& config, size_t /*sel*/) {
+      if (event.GetEventObject() == line_color_alpha_slider_.get()) {
+        auto current = config.OutlineColor();
+        current[3] = alpha_value;
+        config.OutlineColor(current);
+      }
+      if (event.GetEventObject() == fill_color_alpha_slider_.get()) {
+        auto current = config.FillColor();
+        current[3] = alpha_value;
+        config.FillColor(current);
+      }
+    });
   }
 
   ShapeConfigSet shape_config_set_;
