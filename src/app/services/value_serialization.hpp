@@ -124,12 +124,29 @@ void load(Archive& ar, DateEntry& entry, const unsigned int /*v*/) {
   entry.SetGroup(group);
 }
 
-// --- PageSetupConfig (aggregate, public members) ---
+// --- PageSetupConfig ---
 template <class Archive>
-void serialize(Archive& ar, PageSetupConfig& config, const unsigned int /*v*/) {
-  ar& make_nvp("size", config.size);
-  ar& make_nvp("margins", config.margins);
-  ar& make_nvp("orientation", config.orientation);
+void save(Archive& ar, const PageSetupConfig& config,
+          const unsigned int /*v*/) {
+  const std::array<float, 2> size = config.Size();
+  const std::array<float, 4> margins = config.Margins();
+  const int orientation = config.Orientation();
+  ar& make_nvp("size", size);
+  ar& make_nvp("margins", margins);
+  ar& make_nvp("orientation", orientation);
+}
+
+template <class Archive>
+void load(Archive& ar, PageSetupConfig& config, const unsigned int /*v*/) {
+  std::array<float, 2> size{};
+  std::array<float, 4> margins{};
+  int orientation = 0;
+  ar& make_nvp("size", size);
+  ar& make_nvp("margins", margins);
+  ar& make_nvp("orientation", orientation);
+  config.SetSize(size);
+  config.SetMargins(margins);
+  config.SetOrientation(orientation);
 }
 
 // --- TitleConfig ---
@@ -255,6 +272,7 @@ void load(Archive& ar, CalendarConfig& config, const unsigned int /*v*/) {
 
 BOOST_SERIALIZATION_SPLIT_FREE(DateGroup)
 BOOST_SERIALIZATION_SPLIT_FREE(DateEntry)
+BOOST_SERIALIZATION_SPLIT_FREE(PageSetupConfig)
 BOOST_SERIALIZATION_SPLIT_FREE(TitleConfig)
 BOOST_SERIALIZATION_SPLIT_FREE(ShapeConfiguration)
 BOOST_SERIALIZATION_SPLIT_FREE(ShapeConfigSet)

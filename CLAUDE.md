@@ -266,6 +266,11 @@ this callback fires.
   und `tests/services/test_value_serialization.cpp` decken Lesen/Schreiben,
   Rundläufe und Grenzfälle ab; die CSV-/XML-Logik liegt dafür in eigenen,
   wx-freien Headern (`services/csv_io.hpp`, `services/value_serialization.hpp`).
+- ~~`PageSetupConfig` als gekapseltes Value-Object~~ — war als einziges Value-Object
+  ein öffentliches Aggregat; jetzt private Member mit `Size()`/`Margins()`/
+  `Orientation()`-Accessoren und `Set*`-Settern, genau wie die übrigen Value-Objects
+  (siehe die Value-Objects-Notiz oben). Persistenz läuft non-intrusiv über die
+  `save`/`load`-Paarung in `services/value_serialization.hpp`.
 
 ## Design principles
 

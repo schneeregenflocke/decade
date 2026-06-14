@@ -129,8 +129,8 @@ class GLCanvas : public wxGLCanvas {
 
   void ReceivePageSetup(const PageSetupConfig& page_setup_config) {
     page_size_ = rectf::from_dimension(
-        rectf::Dimension{.width = page_setup_config.size[0],
-                         .height = page_setup_config.size[1]});
+        rectf::Dimension{.width = page_setup_config.Size()[0],
+                         .height = page_setup_config.Size()[1]});
     if (decade_debug::LogEnabled()) {
       std::cout << "ReceivePageSetup: page=" << page_size_.width() << "x"
                 << page_size_.height() << " rect=(" << page_size_.l() << ","
