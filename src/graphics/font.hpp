@@ -299,12 +299,12 @@ class FontShape : public Shape {
  public:
   explicit FontShape(Shader* shader_ptr_in) : Shape(shader_ptr_in) {}
 
-  void set_font(std::shared_ptr<Font> font_ptr) { font_ = std::move(font_ptr); }
+  void SetFont(std::shared_ptr<Font> font_ptr) { font_ = std::move(font_ptr); }
 
-  void set_color(const glm::vec4& new_color) { color_ = new_color; }
+  void SetColor(const glm::vec4& new_color) { color_ = new_color; }
 
-  void set_shape(const std::string& text, const glm::vec3& position,
-                 float size) {
+  void SetShape(const std::string& text, const glm::vec3& position,
+                float size) {
     const auto glyphs = DecodeUtf8(text);
     const auto glyph_count = glyphs.size();
     positions_.resize(glyph_count * kVerticesPerGlyph);
@@ -347,27 +347,27 @@ class FontShape : public Shape {
       current_x += letter.advance * size;
     }
 
-    set_buffer(BufferIndex{0}, static_cast<GLsizei>(positions_.size()),
-               positions_.data());
-    set_buffer(BufferIndex{1}, static_cast<GLsizei>(texture_positions_.size()),
-               texture_positions_.data());
+    SetBuffer(BufferIndex{0}, static_cast<GLsizei>(positions_.size()),
+              positions_.data());
+    SetBuffer(BufferIndex{1}, static_cast<GLsizei>(texture_positions_.size()),
+              texture_positions_.data());
   }
 
-  void set_shape_centered(const std::string& text, const glm::vec3& position,
-                          float size) {
+  void SetShapeCentered(const std::string& text, const glm::vec3& position,
+                        float size) {
     const auto half_width = font_->TextWidth(text, size) * kHalf;
     const auto half_height = font_->TextHeight(size) * kHalf;
 
-    set_shape(text, position - glm::vec3(half_width, half_height, kZero), size);
+    SetShape(text, position - glm::vec3(half_width, half_height, kZero), size);
   }
 
-  void draw(const glm::mat4& model) const override {
-    shader()->UseProgram();
-    shader()->SetUniform("model", model);
+  void Draw(const glm::mat4& model) const override {
+    GetShader()->UseProgram();
+    GetShader()->SetUniform("model", model);
 
-    shader()->SetUniform("texture_color", color_);
+    GetShader()->SetUniform("texture_color", color_);
 
-    vao_ref().bind();
+    VaoRef().Bind();
 
     glActiveTexture(GL_TEXTURE0);
 

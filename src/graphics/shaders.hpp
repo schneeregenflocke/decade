@@ -33,7 +33,7 @@ class Shader {
 
   [[nodiscard]] GLuint GetProgram() const { return program_; }
 
-  [[nodiscard]] std::string get_name() const { return name_; }
+  [[nodiscard]] std::string GetName() const { return name_; }
 
   void UseProgram() const { glUseProgram(program_); }
 
@@ -193,9 +193,9 @@ class Shaders {
     throw std::invalid_argument("Shader index out of bounds");
   }
 
-  std::optional<Shader*> search_shader(const std::string& search_name) {
+  std::optional<Shader*> SearchShader(const std::string& search_name) {
     for (auto& shader : shaders_) {
-      if (shader.get_name() == search_name) {
+      if (shader.GetName() == search_name) {
         return std::optional<Shader*>{&shader};
       }
     }
