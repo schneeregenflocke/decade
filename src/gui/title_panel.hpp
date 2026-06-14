@@ -1,18 +1,17 @@
 #ifndef TITLE_PANEL_HPP
 #define TITLE_PANEL_HPP
 
-// #include "../wx_widgets_include.hpp"
 #include <wx/clrpicker.h>
 #include <wx/spinctrl.h>
 #include <wx/weakref.h>
 #include <wx/wx.h>
 
-#include <array>
-#include <cmath>
+#include <glm/vec4.hpp>
 #include <memory>
 #include <sigslot/signal.hpp>
 
 #include "../packages/title_config.hpp"
+#include "casts.hpp"
 
 class TitleSetupPanel : public wxPanel {
  public:
@@ -85,17 +84,9 @@ class TitleSetupPanel : public wxPanel {
   }
 
  private:
-  // Colour channels are stored as floats in [0, 1] in the domain but exposed by
-  // wx as 8-bit byte values.
-  static constexpr float kByteMax = 255.0F;
-
-  static unsigned char ToByte(float channel) {
-    return static_cast<unsigned char>(std::lround(channel * kByteMax));
-  }
-
-  static float ToChannel(int byte_value) {
-    return static_cast<float>(byte_value) / kByteMax;
-  }
+  // The colour picker has no alpha channel (alpha lives on the separate
+  // slider, byte-valued 0..255); wx <-> glm conversion is shared via casts.hpp.
+  static constexpr float kAlphaByteMax = 255.0F;
 
   void AddLabelledRow(wxSizer* parent_sizer, const wxString& text,
                       wxWindow* field, const wxSizerFlags& row_flags,
@@ -118,10 +109,9 @@ class TitleSetupPanel : public wxPanel {
 
     title_text_edit_->ChangeValue(title_config_.TitleText());
 
-    const std::array<float, 4>& text_color = title_config_.TextColor();
-    text_color_picker_->SetColour(wxColour(
-        ToByte(text_color[0]), ToByte(text_color[1]), ToByte(text_color[2])));
-    alpha_slider_->SetValue(static_cast<int>(ToByte(text_color[3])));
+    const wxColour color = ToWxColor(title_config_.TextColor());
+    text_color_picker_->SetColour(color);
+    alpha_slider_->SetValue(color.Alpha());
   }
 
   void CallbackSpinControl(wxSpinDoubleEvent& event) {
@@ -151,23 +141,21 @@ class TitleSetupPanel : public wxPanel {
   // Stores the new text colour on the config and publishes it. Shared by the
   // colour picker (RGB) and the alpha slider (A), which only differ in which
   // channels they touch.
-  void ApplyTextColor(const std::array<float, 4>& text_color) {
+  void ApplyTextColor(const glm::vec4& text_color) {
     title_config_.SetTextColor(text_color);
     SendTitleConfig();
   }
 
   void CallbackColorPickerControl(wxColourPickerEvent& event) {
-    const wxColour color = event.GetColour();
-    std::array<float, 4> text_color = title_config_.TextColor();
-    text_color[0] = ToChannel(color.Red());
-    text_color[1] = ToChannel(color.Green());
-    text_color[2] = ToChannel(color.Blue());
+    // The picker carries no alpha, so keep the configured alpha and take RGB.
+    glm::vec4 text_color = ToGlmVec4(event.GetColour());
+    text_color[3] = title_config_.TextColor()[3];
     ApplyTextColor(text_color);
   }
 
   void CallbackSliderControl(wxCommandEvent& event) {
-    std::array<float, 4> text_color = title_config_.TextColor();
-    text_color[3] = ToChannel(event.GetInt());
+    glm::vec4 text_color = title_config_.TextColor();
+    text_color[3] = static_cast<float>(event.GetInt()) / kAlphaByteMax;
     ApplyTextColor(text_color);
   }
 

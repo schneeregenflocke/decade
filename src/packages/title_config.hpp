@@ -1,7 +1,7 @@
 #ifndef TITLE_CONFIG_HPP
 #define TITLE_CONFIG_HPP
 
-#include <array>
+#include <glm/vec4.hpp>
 #include <string>
 #include <utility>
 
@@ -19,10 +19,8 @@ class TitleConfig {
   [[nodiscard]] const std::string& TitleText() const { return title_text_; }
   void SetTitleText(std::string value) { title_text_ = std::move(value); }
 
-  [[nodiscard]] const std::array<float, 4>& TextColor() const {
-    return text_color_;
-  }
-  void SetTextColor(const std::array<float, 4>& value) { text_color_ = value; }
+  [[nodiscard]] const glm::vec4& TextColor() const { return text_color_; }
+  void SetTextColor(const glm::vec4& value) { text_color_ = value; }
 
  private:
   static constexpr float kDefaultFrameHeight = 10.0F;
@@ -33,7 +31,7 @@ class TitleConfig {
   float frame_height_{kDefaultFrameHeight};
   float font_size_ratio_{kDefaultFontSizeRatio};
   std::string title_text_{"title config constructor text"};
-  std::array<float, 4> text_color_{kDefaultTextColor, kDefaultTextColor,
-                                   kDefaultTextColor, kDefaultTextAlpha};
+  glm::vec4 text_color_{kDefaultTextColor, kDefaultTextColor, kDefaultTextColor,
+                        kDefaultTextAlpha};
 };
 #endif  // TITLE_CONFIG_HPP

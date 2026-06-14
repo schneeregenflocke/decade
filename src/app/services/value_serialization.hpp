@@ -72,6 +72,17 @@ inline Date DateFromIsoString(const std::string& text) {
   return Date::FromYmd(year, month, day);
 }
 
+// glm::vec4 is not directly archivable, so colours travel as a 4-float array.
+// These two converters localise the vec4 <-> array marshalling shared by every
+// colour field, keeping the per-field save/load explicit about the on-disk
+// format.
+inline std::array<float, 4> ColorToArray(const glm::vec4& color) {
+  return {color[0], color[1], color[2], color[3]};
+}
+inline glm::vec4 ColorFromArray(const std::array<float, 4>& array) {
+  return {array[0], array[1], array[2], array[3]};
+}
+
 }  // namespace app::serialization_detail
 
 namespace boost::serialization {
@@ -155,7 +166,8 @@ void save(Archive& ar, const TitleConfig& config, const unsigned int /*v*/) {
   const float frame_height = config.FrameHeight();
   const float font_size_ratio = config.FontSizeRatio();
   const std::string& title_text = config.TitleText();
-  const std::array<float, 4> text_color = config.TextColor();
+  const std::array<float, 4> text_color =
+      app::serialization_detail::ColorToArray(config.TextColor());
   ar& make_nvp("frame_height", frame_height);
   ar& make_nvp("font_size_ratio", font_size_ratio);
   ar& make_nvp("title_text", title_text);
@@ -174,7 +186,7 @@ void load(Archive& ar, TitleConfig& config, const unsigned int /*v*/) {
   config.SetFrameHeight(frame_height);
   config.SetFontSizeRatio(font_size_ratio);
   config.SetTitleText(std::move(title_text));
-  config.SetTextColor(text_color);
+  config.SetTextColor(app::serialization_detail::ColorFromArray(text_color));
 }
 
 // --- ShapeConfiguration ---
@@ -185,11 +197,10 @@ void save(Archive& ar, const ShapeConfiguration& config,
   const bool outline_visible = config.OutlineVisible();
   const bool fill_visible = config.FillVisible();
   const float line_width = config.LineWidthDisabled();
-  const glm::vec4 outline = config.OutlineColorDisabled();
-  const glm::vec4 fill = config.FillColorDisabled();
-  const std::array<float, 4> outline_color{outline[0], outline[1], outline[2],
-                                           outline[3]};
-  const std::array<float, 4> fill_color{fill[0], fill[1], fill[2], fill[3]};
+  const std::array<float, 4> outline_color =
+      app::serialization_detail::ColorToArray(config.OutlineColorDisabled());
+  const std::array<float, 4> fill_color =
+      app::serialization_detail::ColorToArray(config.FillColorDisabled());
   ar& make_nvp("name", name);
   ar& make_nvp("outline_visible", outline_visible);
   ar& make_nvp("fill_visible", fill_visible);
@@ -214,10 +225,9 @@ void load(Archive& ar, ShapeConfiguration& config, const unsigned int /*v*/) {
   config = ShapeConfiguration(
       std::move(name), outline_visible, fill_visible, line_width,
       ShapeConfiguration::OutlineColorValue{
-          glm::vec4{outline_color[0], outline_color[1], outline_color[2],
-                    outline_color[3]}},
-      ShapeConfiguration::FillColorValue{glm::vec4{
-          fill_color[0], fill_color[1], fill_color[2], fill_color[3]}});
+          app::serialization_detail::ColorFromArray(outline_color)},
+      ShapeConfiguration::FillColorValue{
+          app::serialization_detail::ColorFromArray(fill_color)});
 }
 
 // --- ShapeConfigSet ---
