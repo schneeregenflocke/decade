@@ -192,7 +192,7 @@ Application/Infrastructure bridge; both are detailed in the directory map below.
     date table panel and CSV I/O — via `PeriodFromInclusiveDates()` on input and
     `Last()` on display. Nowhere else does ±1 day arithmetic appear; keep it
     that way.
-- `src/gui/` — Presentation: wxWidgets panels and the GL canvas wrapper. Each panel owns its widgets and exposes signals matching its store's interface. `scene_tree_panel.hpp` is a read-only tree view of the scene graph (consumes `SceneNodeSnapshot`); `mouse_interaction.hpp` converts drag/wheel into pan/zoom on the MVP and unprojects pixels to page space for hit-testing.
+- `src/gui/` — Presentation: wxWidgets panels and the GL canvas wrapper. Each panel owns its widgets and exposes signals matching its store's interface. `scene_tree_panel.hpp` is a read-only tree view of the scene graph (consumes `SceneNodeSnapshot`); `mouse_interaction.hpp` converts drag/wheel into pan/zoom on the MVP and unprojects pixels to page space for hit-testing. Two shared helpers live here: `wx_owned.hpp` (`MakeOwned<T>`, the parent-owned-widget construction idiom) and `table_panel_base.hpp` (`TablePanelBase`, the table + Add/Delete scaffolding for the entries and groups panels).
 - `src/graphics/` — Infrastructure: OpenGL engine, shaders, `SceneNode` scene graph, `RectanglesShape` / `QuadrilateralShape` / `FontShape`, `RenderToTexture`, `RenderToPng`, FreeType wrapper. `pick_id.hpp` holds the dependency-free `PickId` / `PickBox` value types shared by the scene builder and the picking layer.
 - `src/physics/` — Infrastructure: `physics_world.hpp` (`PhysicsWorld`), a thin RAII wrapper around a Bullet `btCollisionWorld` used for 2D hit-testing. Pickable bars are registered as thin axis-aligned boxes; a ray through the cursor's page-space point reports the hit `PickId`. The collision world is the spatial structure a later dynamics world (dragging, real physics) will extend without changing the picking path.
 
@@ -282,14 +282,20 @@ These are the binding design guidelines for this codebase.
 - Domain-Driven Design (DDD)
 - Clean Architecture
 - Don't Repeat Yourself (DRY) — when the same multi-line shape recurs across
-  methods, lift it into one small (usually `private`) helper rather than copying
-  it. Established examples: `CalendarSceneBuilder::FillRectangles` /
-  `AddCenteredText` (scene-node construction), `GLCanvas::ReadBackBuffer`
-  (render + glReadPixels + row-flip), `ElementsSetupsPanel::EditSelectedConfiguration`
-  (the wx editing-callback selection/emit boilerplate). Prefer this over macros,
-  which hurt readability and debuggability — the explicit, per-field `save`/`load`
-  pairs in `services/value_serialization.hpp` are intentionally left expanded
-  because they document the on-disk format.
+  methods (or panels), lift it into one small helper — a `private` member, a
+  free function, or a shared base class — rather than copying it. Established
+  examples: `CalendarSceneBuilder::FillRectangles` / `AddCenteredText`
+  (scene-node construction), `GLCanvas::ReadBackBuffer` (render + glReadPixels +
+  row-flip), `ElementsSetupsPanel::EditSelectedConfiguration` (the wx
+  editing-callback selection/emit boilerplate), `MakeOwned<T>` in
+  `gui/wx_owned.hpp` (the `make_unique<T>(...).release()` parent-owned-widget
+  idiom), `TablePanelBase` in `gui/table_panel_base.hpp` (the table + Add/Delete
+  button scaffolding shared by the entries and groups panels), and
+  `serialization_detail::ColorToArray` / `ColorFromArray` (glm::vec4 <-> array
+  marshalling). Prefer this over macros, which hurt readability and
+  debuggability — the explicit, per-field `save`/`load` pairs in
+  `services/value_serialization.hpp` are intentionally left expanded because
+  they document the on-disk format.
 
 ### GRASP patterns
 
