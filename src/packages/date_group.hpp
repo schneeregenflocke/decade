@@ -2,6 +2,7 @@
 #define DATE_GROUP_HPP
 
 #include <algorithm>
+#include <iterator>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -66,12 +67,10 @@ class DateGroups {
   }
 
   [[nodiscard]] std::vector<std::string> GetDateGroupsNames() const {
-    std::vector<std::string> name_strings(date_groups_.size());
-    auto iterator = name_strings.begin();
-    for (const auto& date_group : date_groups_) {
-      *iterator = date_group.GetName();
-      ++iterator;
-    }
+    std::vector<std::string> name_strings;
+    name_strings.reserve(date_groups_.size());
+    std::ranges::transform(date_groups_, std::back_inserter(name_strings),
+                           &DateGroup::GetName);
     return name_strings;
   }
 
