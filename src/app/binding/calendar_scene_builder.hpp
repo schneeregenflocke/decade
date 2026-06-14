@@ -300,30 +300,30 @@ class CalendarSceneBuilder {
     }
   }
 
-  void SetupPrintAreaShape() {
-    auto config = shape_config_.GetShapeConfiguration("Page Margin");
-
-    auto shape = std::dynamic_pointer_cast<RectanglesShape>(
-        print_area_node_->GetShape());
+  // Fills the RectanglesShape carried by `node` with the given rectangle(s)
+  // (a single rectf or a vector of them — SetShape is overloaded) and the
+  // outline/fill colours of `config`. The cast cannot fail for the fixed
+  // skeleton nodes, which are all created with a RectanglesShape.
+  template <typename Shapes>
+  static void FillRectangles(const std::shared_ptr<SceneNode>& node,
+                             const Shapes& shapes,
+                             const ShapeConfiguration& config) {
+    auto shape = std::dynamic_pointer_cast<RectanglesShape>(node->GetShape());
     if (!shape) {
       return;
     }
-
-    shape->SetShape(print_area_, config.LineWidth());
+    shape->SetShape(shapes, config.LineWidth());
     shape->SetColor({config.OutlineColor(), config.FillColor()});
   }
 
+  void SetupPrintAreaShape() {
+    FillRectangles(print_area_node_, print_area_,
+                   shape_config_.GetShapeConfiguration("Page Margin"));
+  }
+
   void SetupTitleShape() {
-    auto config = shape_config_.GetShapeConfiguration("Title Frame");
-
-    auto shape = std::dynamic_pointer_cast<RectanglesShape>(
-        title_area_node_->GetShape());
-    if (!shape) {
-      return;
-    }
-
-    shape->SetShape(title_frame_, config.LineWidth());
-    shape->SetColor({config.OutlineColor(), config.FillColor()});
+    FillRectangles(title_area_node_, title_frame_,
+                   shape_config_.GetShapeConfiguration("Title Frame"));
 
     auto title_shape =
         std::dynamic_pointer_cast<FontShape>(title_font_node_->GetShape());
@@ -388,15 +388,8 @@ class CalendarSceneBuilder {
                                          labels_font_size_);
     }
 
-    auto config = shape_config_.GetShapeConfiguration("Calendar Labels");
-
-    auto column_shape = std::dynamic_pointer_cast<RectanglesShape>(
-        column_labels_node_->GetShape());
-    if (!column_shape) {
-      return;
-    }
-    column_shape->SetShape(x_label_frames, config.LineWidth());
-    column_shape->SetColor({config.OutlineColor(), config.FillColor()});
+    const auto config = shape_config_.GetShapeConfiguration("Calendar Labels");
+    FillRectangles(column_labels_node_, x_label_frames, config);
 
     auto& year_node = year_text_node_;
 
@@ -431,13 +424,7 @@ class CalendarSceneBuilder {
                                         labels_font_size_);
     }
 
-    auto row_shape = std::dynamic_pointer_cast<RectanglesShape>(
-        row_labels_node_->GetShape());
-    if (!row_shape) {
-      return;
-    }
-    row_shape->SetShape(y_labels_frames, config.LineWidth());
-    row_shape->SetColor({config.OutlineColor(), config.FillColor()});
+    FillRectangles(row_labels_node_, y_labels_frames, config);
   }
 
   void SetupYearsShapes() {
@@ -458,15 +445,8 @@ class CalendarSceneBuilder {
       years_cells.at(index) = year_cell;
     }
 
-    auto config = shape_config_.GetShapeConfiguration("Years Shapes");
-
-    auto shape = std::dynamic_pointer_cast<RectanglesShape>(
-        years_cells_node_->GetShape());
-    if (!shape) {
-      return;
-    }
-    shape->SetShape(years_cells, config.LineWidth());
-    shape->SetColor({config.OutlineColor(), config.FillColor()});
+    FillRectangles(years_cells_node_, years_cells,
+                   shape_config_.GetShapeConfiguration("Years Shapes"));
   }
 
   void SetupMonthsShapes() {
@@ -508,15 +488,8 @@ class CalendarSceneBuilder {
       }
     }
 
-    auto config = shape_config_.GetShapeConfiguration("Months Shapes");
-
-    auto shape = std::dynamic_pointer_cast<RectanglesShape>(
-        months_cells_node_->GetShape());
-    if (!shape) {
-      return;
-    }
-    shape->SetShape(months_cells, config.LineWidth());
-    shape->SetColor({config.OutlineColor(), config.FillColor()});
+    FillRectangles(months_cells_node_, months_cells,
+                   shape_config_.GetShapeConfiguration("Months Shapes"));
   }
 
   void SetupDaysShapes() {
@@ -571,24 +544,10 @@ class CalendarSceneBuilder {
       }
     }
 
-    auto config = shape_config_.GetShapeConfiguration("Day Shapes");
-    auto sunday_config = shape_config_.GetShapeConfiguration("Sunday Shapes");
-
-    auto shape0 = std::dynamic_pointer_cast<RectanglesShape>(
-        days_cells0_node_->GetShape());
-    if (!shape0) {
-      return;
-    }
-    shape0->SetShape(days_cells0, config.LineWidth());
-    shape0->SetColor({config.OutlineColor(), config.FillColor()});
-
-    auto shape1 = std::dynamic_pointer_cast<RectanglesShape>(
-        days_cells1_node_->GetShape());
-    if (!shape1) {
-      return;
-    }
-    shape1->SetShape(days_cells1, sunday_config.LineWidth());
-    shape1->SetColor({sunday_config.OutlineColor(), sunday_config.FillColor()});
+    FillRectangles(days_cells0_node_, days_cells0,
+                   shape_config_.GetShapeConfiguration("Day Shapes"));
+    FillRectangles(days_cells1_node_, days_cells1,
+                   shape_config_.GetShapeConfiguration("Sunday Shapes"));
   }
 
   void SetupBarsShape() {
@@ -756,16 +715,8 @@ class CalendarSceneBuilder {
       }
     }
 
-    auto config = shape_config_.GetShapeConfiguration("Years Totals");
-
-    auto shape =
-        std::dynamic_pointer_cast<RectanglesShape>(node_cells->GetShape());
-    if (!shape) {
-      return;
-    }
-
-    shape->SetShape(years_totals_cells, config.LineWidth());
-    shape->SetColor({config.OutlineColor(), config.FillColor()});
+    FillRectangles(node_cells, years_totals_cells,
+                   shape_config_.GetShapeConfiguration("Years Totals"));
   }
 
   void SetupLegend() {

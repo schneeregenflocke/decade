@@ -193,41 +193,14 @@ class GLCanvas : public wxGLCanvas {
   }
 
   // Dumps the current window framebuffer (what is actually on screen) to PNG.
-  // Uses glReadPixels on the back buffer; flips y because OpenGL origin is
-  // bottom-left while PNG is top-left.
   void SaveWindowPNG(const std::string& file_path) {
-    SetCurrent(*context_);
-    graphics_engine_->SetMVP(mvp_);
-    graphics_engine_->Render();
-    glFinish();
-
-    const wxSize logical_size = GetClientSize();
-    const double scale = GetContentScaleFactor();
-    const auto w =
-        static_cast<size_t>(std::lround(logical_size.GetWidth() * scale));
-    const auto h =
-        static_cast<size_t>(std::lround(logical_size.GetHeight() * scale));
-    if (w == 0 || h == 0) {
+    BackBuffer back = ReadBackBuffer(GL_RGBA, 4);
+    if (back.pixels.empty()) {
       return;
     }
-    constexpr size_t kBytesPerPixel = 4;
-    std::vector<unsigned char> buffer(w * h * kBytesPerPixel);
-
-    glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    glReadBuffer(GL_BACK);
-    glReadPixels(0, 0, static_cast<GLsizei>(w), static_cast<GLsizei>(h),
-                 GL_RGBA, GL_UNSIGNED_BYTE, buffer.data());
-
-    // flip vertically
-    std::vector<unsigned char> flipped(buffer.size());
-    const size_t row_bytes = w * kBytesPerPixel;
-    for (size_t y = 0; y < h; ++y) {
-      std::copy_n(buffer.data() + ((h - 1 - y) * row_bytes), row_bytes,
-                  flipped.data() + (y * row_bytes));
-    }
-
-    png_io::WriteRgbaPng(file_path.c_str(), flipped,
-                         png_io::PngImageSize{.width = w, .height = h});
+    png_io::WriteRgbaPng(
+        file_path.c_str(), back.pixels,
+        png_io::PngImageSize{.width = back.width, .height = back.height});
   }
 
   // Returns the current GL back buffer as a top-left-origin RGB wxImage so it
@@ -236,6 +209,27 @@ class GLCanvas : public wxGLCanvas {
   // top of the GL canvas region. Returns an invalid image when the canvas has
   // no area yet.
   wxImage CaptureBackBufferImage() {
+    const BackBuffer back = ReadBackBuffer(GL_RGB, 3);
+    if (back.pixels.empty()) {
+      return {};
+    }
+    wxImage image(static_cast<int>(back.width), static_cast<int>(back.height));
+    std::copy_n(back.pixels.data(), back.pixels.size(), image.GetData());
+    return image;
+  }
+
+ private:
+  struct BackBuffer {
+    std::vector<unsigned char> pixels;  // top-left-origin, already row-flipped
+    size_t width{0};
+    size_t height{0};
+  };
+
+  // Renders the scene to the back buffer and reads it back as a top-left-origin
+  // pixel buffer in the given GL format (GL_RGB/GL_RGBA, `bytes_per_pixel`
+  // matching). OpenGL's origin is bottom-left, so the rows are flipped. Returns
+  // an empty buffer when the canvas has no area yet.
+  BackBuffer ReadBackBuffer(GLenum format, size_t bytes_per_pixel) {
     SetCurrent(*context_);
     graphics_engine_->SetMVP(mvp_);
     graphics_engine_->Render();
@@ -243,33 +237,30 @@ class GLCanvas : public wxGLCanvas {
 
     const wxSize logical_size = GetClientSize();
     const double scale = GetContentScaleFactor();
-    const auto w =
+    const auto width =
         static_cast<size_t>(std::lround(logical_size.GetWidth() * scale));
-    const auto h =
+    const auto height =
         static_cast<size_t>(std::lround(logical_size.GetHeight() * scale));
-    if (w == 0 || h == 0) {
+    if (width == 0 || height == 0) {
       return {};
     }
-    constexpr size_t kBytesPerPixel = 3;
-    std::vector<unsigned char> buffer(w * h * kBytesPerPixel);
+    std::vector<unsigned char> buffer(width * height * bytes_per_pixel);
 
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
     glReadBuffer(GL_BACK);
-    glReadPixels(0, 0, static_cast<GLsizei>(w), static_cast<GLsizei>(h), GL_RGB,
-                 GL_UNSIGNED_BYTE, buffer.data());
+    glReadPixels(0, 0, static_cast<GLsizei>(width),
+                 static_cast<GLsizei>(height), format, GL_UNSIGNED_BYTE,
+                 buffer.data());
 
-    wxImage image(static_cast<int>(w), static_cast<int>(h));
-    unsigned char* destination = image.GetData();
-    const size_t row_bytes = w * kBytesPerPixel;
-    for (size_t y = 0; y < h; ++y) {
-      // OpenGL origin is bottom-left, wxImage is top-left, so flip rows.
-      std::copy_n(buffer.data() + ((h - 1 - y) * row_bytes), row_bytes,
-                  destination + (y * row_bytes));
+    std::vector<unsigned char> flipped(buffer.size());
+    const size_t row_bytes = width * bytes_per_pixel;
+    for (size_t y = 0; y < height; ++y) {
+      std::copy_n(buffer.data() + ((height - 1 - y) * row_bytes), row_bytes,
+                  flipped.data() + (y * row_bytes));
     }
-    return image;
+    return {.pixels = std::move(flipped), .width = width, .height = height};
   }
 
- private:
   static wxGLAttributes DisplayAttributes() {
     wxGLAttributes attributes;
     attributes.PlatformDefaults().Defaults().EndList();
