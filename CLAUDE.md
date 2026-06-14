@@ -5,7 +5,7 @@ agents when working with code in this repository.
 
 ## Project
 
-C++23 desktop calendar/timeline application. wxWidgets GUI, OpenGL (4.6 core) rendering via libepoxy, ICU for calendar arithmetic, locale date parsing/formatting and Unicode text handling, Boost.Serialization for XML project files, FreeType for text, csv2 for CSV import/export, sigslot for signal/slot wiring.
+C++23 desktop calendar/timeline application. wxWidgets GUI, OpenGL (4.6 core) rendering via libepoxy, ICU for calendar arithmetic, locale date parsing/formatting and Unicode text handling, Boost.Serialization for XML project files, FreeType for text, csv2 for CSV import/export, Bullet (collision world) for hit-testing/picking, sigslot for signal/slot wiring.
 
 ## Build & Run
 
@@ -64,6 +64,7 @@ need a clean high-DPI export of the page itself. All dumps are deferred via
 - `DECADE_EXIT_AFTER_MS=<ms>` — auto-close the main window after N ms.
 - `DECADE_SELECT_TAB=<label>` — pre-select a notebook tab by label (case-insensitive), e.g. for screenshotting a specific tab.
 - `DECADE_DEBUG_LOG=1` — enable OpenGL/runtime debug logging.
+- `DECADE_DEBUG_HOVER_BAR=<index>` — highlight the bar at the given index on startup as if hovered, for screenshotting/debugging the hover path without a live cursor.
 - `DECADE_DEFAULT_CSV=<path>` — opt-in startup file (CSV or XML) when no positional argument is given; the CLI argument takes precedence. No file is loaded if this is unset.
 
 Typical smoke test (pass the sample data explicitly):
@@ -158,7 +159,9 @@ Application/Infrastructure bridge; both are detailed in the directory map below.
   - `binding/event_bus.hpp` — typed signal hub for domain events (Application).
   - `binding/main_window_binder.hpp` — wires producers/consumers via the EventBus (Application).
   - `binding/calendar_page.hpp` — rendering adapter: owns the calendar-relevant domain state, exposes the `Receive*` slots, and drives the scene builder on updates (Application).
-  - `binding/calendar_scene_builder.hpp` — builds and fills the calendar scene graph from the (referenced) domain state; GL-canvas free, knows only `GraphicsEngine` and the scene graph (Application/Infrastructure bridge).
+  - `binding/calendar_scene_builder.hpp` — builds and fills the calendar scene graph from the (referenced) domain state; GL-canvas free, knows only `GraphicsEngine` and the scene graph (Application/Infrastructure bridge). Also emits the bars' page-space `PickBox`es for the picking layer and recolours the hovered bar in place.
+  - `binding/scene_snapshot.hpp` — `SceneNodeSnapshot`: a plain, GL-free read model of the render scene graph (name + has-shape + children). The builder produces it, the bus carries it, the scene-tree panel renders it — so the presentation layer never depends on the OpenGL `SceneNode` type (Application).
+  - `binding/interaction_controller.hpp` — turns canvas pointer moves into hover/pick events. Hit-tests via a pluggable pick source (so it stays unaware of `CalendarPage`/`PhysicsWorld`) and emits `hovered` only on change (Application).
 - `src/packages/` — Domain layer, split into **value objects** and **stores**. The
   conceptual split is also physical: each value object and its store live in
   **separate files** named after the primary class (e.g. `date_group.hpp` +
@@ -188,8 +191,9 @@ Application/Infrastructure bridge; both are detailed in the directory map below.
     date table panel and CSV I/O — via `PeriodFromInclusiveDates()` on input and
     `Last()` on display. Nowhere else does ±1 day arithmetic appear; keep it
     that way.
-- `src/gui/` — Presentation: wxWidgets panels and the GL canvas wrapper. Each panel owns its widgets and exposes signals matching its store's interface.
-- `src/graphics/` — Infrastructure: OpenGL engine, shaders, `SceneNode` scene graph, `RectanglesShape` / `QuadrilateralShape` / `FontShape`, `RenderToTexture`, `RenderToPng`, FreeType wrapper.
+- `src/gui/` — Presentation: wxWidgets panels and the GL canvas wrapper. Each panel owns its widgets and exposes signals matching its store's interface. `scene_tree_panel.hpp` is a read-only tree view of the scene graph (consumes `SceneNodeSnapshot`); `mouse_interaction.hpp` converts drag/wheel into pan/zoom on the MVP and unprojects pixels to page space for hit-testing.
+- `src/graphics/` — Infrastructure: OpenGL engine, shaders, `SceneNode` scene graph, `RectanglesShape` / `QuadrilateralShape` / `FontShape`, `RenderToTexture`, `RenderToPng`, FreeType wrapper. `pick_id.hpp` holds the dependency-free `PickId` / `PickBox` value types shared by the scene builder and the picking layer.
+- `src/physics/` — Infrastructure: `physics_world.hpp` (`PhysicsWorld`), a thin RAII wrapper around a Bullet `btCollisionWorld` used for 2D hit-testing. Pickable bars are registered as thin axis-aligned boxes; a ray through the cursor's page-space point reports the hit `PickId`. The collision world is the spatial structure a later dynamics world (dragging, real physics) will extend without changing the picking path.
 
 ### Layering rules
 
@@ -217,6 +221,19 @@ Store ──Send──▶ EventBus.<event> ──▶ Panel.Receive , CalendarPag
 
 The `TransformDateEntry` adapter sits between `date_entries`
 (input) and `transformed_date_entries` (output) on the bus.
+
+Two further topics run on the same bus. On every rebuild `CalendarPage` emits a
+`SceneNodeSnapshot` (`scene_snapshot` topic) that the scene-tree panel renders.
+For picking, the GL canvas reports pointer moves in page space to the
+`InteractionController`, which hit-tests them through `CalendarPage::Pick` (a
+Bullet raycast over the bars' `PickBox`es) and publishes the changed hover on
+the `hovered` topic; `CalendarPage::ReceiveHovered` recolours the bar in place.
+
+```
+GLCanvas ──pointer move──▶ InteractionController ──Pick──▶ CalendarPage/PhysicsWorld
+InteractionController ──Send──▶ EventBus.hovered ──▶ CalendarPage.ReceiveHovered
+CalendarPage ──Send──▶ EventBus.scene_snapshot ──▶ SceneTreePanel.Receive
+```
 
 When adding a new piece of state: create a Boost-free **value object** plus a
 `*Store` wrapping it in `packages/`, a panel in `gui/`, add a typed signal to
