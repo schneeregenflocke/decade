@@ -166,8 +166,14 @@ class ShapeConfigSet {
     return shape_configurations_.at(config_index);
   }
 
-  [[nodiscard]] size_t GetNumberPersistentConfigurations() const {
+  // Number of persistent (non-per-group) configurations at the front of the
+  // set. Used by the panel to know where the dynamic group entries start and by
+  // serialization to restore the split.
+  [[nodiscard]] size_t NumberPersistent() const {
     return number_persistent_configurations_;
+  }
+  void SetNumberPersistent(size_t value) {
+    number_persistent_configurations_ = value;
   }
 
   // Raw access for non-intrusive serialization in the infrastructure layer.
@@ -176,12 +182,6 @@ class ShapeConfigSet {
   }
   [[nodiscard]] std::vector<ShapeConfiguration>& MutableConfigurations() {
     return shape_configurations_;
-  }
-  [[nodiscard]] size_t NumberPersistent() const {
-    return number_persistent_configurations_;
-  }
-  void SetNumberPersistent(size_t value) {
-    number_persistent_configurations_ = value;
   }
 
  private:
