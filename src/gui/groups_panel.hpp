@@ -2,27 +2,23 @@
 #define GROUPS_PANEL_HPP
 
 #include <wx/dataview.h>
-#include <wx/weakref.h>
 #include <wx/wx.h>
 
 #include <limits>
-#include <memory>
 #include <sigslot/signal.hpp>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "../packages/date_group.hpp"
-#include "wx_owned.hpp"
+#include "table_panel_base.hpp"
 
-class DateGroupsTablePanel : public wxPanel {
+class DateGroupsTablePanel : public TablePanelBase {
  public:
   explicit DateGroupsTablePanel(wxWindow* parent)
-      : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                wxTAB_TRAVERSAL, wxPanelNameStr) {
-    data_table_ = MakeOwned<wxDataViewListCtrl>(
-        this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-        wxDV_SINGLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES, wxDefaultValidator);
+      : TablePanelBase(parent,
+                       wxDV_SINGLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES) {
+    BuildTableLayout();
 
     Bind(wxEVT_DATAVIEW_ITEM_ACTIVATED,
          &DateGroupsTablePanel::CallbackItemActivated, this);
@@ -30,36 +26,10 @@ class DateGroupsTablePanel : public wxPanel {
          &DateGroupsTablePanel::CallbackItemEditing, this);
     Bind(wxEVT_DATAVIEW_SELECTION_CHANGED,
          &DateGroupsTablePanel::CallbackSelectionChanged, this);
-
-    add_row_button_ = MakeOwned<wxButton>(this, wxID_ADD, "Add Row");
-    delete_row_button_ = MakeOwned<wxButton>(this, wxID_DELETE, "Delete Row");
-    delete_row_button_->Disable();
-
     Bind(wxEVT_BUTTON, &DateGroupsTablePanel::CallbackButtonClicked, this);
 
-    auto* buttons_sizer = MakeOwned<wxBoxSizer>(wxHORIZONTAL);
-    wxSizerFlags const buttons_flags =
-        wxSizerFlags().Proportion(0).Border(wxALL, 5);
-    buttons_sizer->Add(add_row_button_, buttons_flags);
-    buttons_sizer->Add(delete_row_button_, buttons_flags);
-
-    auto* table_sizer = MakeOwned<wxBoxSizer>(wxHORIZONTAL);
-    wxSizerFlags const data_table_flags =
-        wxSizerFlags().Proportion(1).Expand().Border(wxALL, 5);
-    table_sizer->Add(data_table_, data_table_flags);
-
-    auto* main_sizer = MakeOwned<wxBoxSizer>(wxVERTICAL);
-    wxSizerFlags const buttons_sizer_flags =
-        wxSizerFlags().Proportion(0).Expand().Border(wxALL, 0);
-    wxSizerFlags const table_sizer_flags =
-        wxSizerFlags().Proportion(1).Expand().Border(wxALL, 0);
-    main_sizer->Add(buttons_sizer, buttons_sizer_flags);
-    main_sizer->Add(table_sizer, table_sizer_flags);
-
-    SetSizer(main_sizer);
-
-    data_table_->AppendTextColumn(L"Group Number", wxDATAVIEW_CELL_INERT);
-    data_table_->AppendTextColumn(L"Group Name", wxDATAVIEW_CELL_EDITABLE);
+    table()->AppendTextColumn(L"Group Number", wxDATAVIEW_CELL_INERT);
+    table()->AppendTextColumn(L"Group Name", wxDATAVIEW_CELL_EDITABLE);
   }
 
   static std::wstring GetPanelName() { return {L"Date Group Table"}; }
@@ -70,29 +40,29 @@ class DateGroupsTablePanel : public wxPanel {
     int change_row_count = 0;
     if (date_groups_.size() <= std::numeric_limits<int>::max()) {
       change_row_count =
-          static_cast<int>(date_groups_.size()) - data_table_->GetItemCount();
+          static_cast<int>(date_groups_.size()) - table()->GetItemCount();
     } else {
       std::cerr << "too large unsigned int" << '\n';
     }
 
     if (change_row_count > 0) {
       for (int index = 0; index < change_row_count; ++index) {
-        InsertRow(static_cast<std::size_t>(data_table_->GetItemCount()));
+        InsertRow(static_cast<std::size_t>(table()->GetItemCount()));
       }
     }
 
     if (change_row_count < 0) {
       for (int index = 0; index > change_row_count; --index) {
-        RemoveRow(static_cast<std::size_t>(data_table_->GetItemCount()) - 1);
+        RemoveRow(static_cast<std::size_t>(table()->GetItemCount()) - 1);
       }
     }
 
-    for (size_t index = 0; std::cmp_less(index, data_table_->GetItemCount());
+    for (size_t index = 0; std::cmp_less(index, table()->GetItemCount());
          ++index) {
       const auto row = static_cast<unsigned int>(index);
-      data_table_->SetValue(std::to_wstring(date_groups_[index].GetNumber()),
-                            row, 0);
-      data_table_->SetValue(date_groups_[index].GetName(), row, 1);
+      table()->SetValue(std::to_wstring(date_groups_[index].GetNumber()), row,
+                        0);
+      table()->SetValue(date_groups_[index].GetName(), row, 1);
     }
   }
 
@@ -102,32 +72,32 @@ class DateGroupsTablePanel : public wxPanel {
 
  private:
   void UpdateButtons() {
-    if (data_table_->GetSelectedRow() == wxNOT_FOUND ||
-        data_table_->GetSelectedRow() < 1) {
-      delete_row_button_->Enable(false);
+    if (table()->GetSelectedRow() == wxNOT_FOUND ||
+        table()->GetSelectedRow() < 1) {
+      delete_button()->Enable(false);
     } else {
-      delete_row_button_->Enable(true);
+      delete_button()->Enable(true);
     }
   }
   void InsertRow(size_t row) {
-    if (std::cmp_less_equal(row, data_table_->GetItemCount())) {
+    if (std::cmp_less_equal(row, table()->GetItemCount())) {
       wxVector<wxVariant> empty_row;
-      empty_row.resize(data_table_->GetColumnCount());
-      data_table_->InsertItem(static_cast<unsigned int>(row), empty_row);
+      empty_row.resize(table()->GetColumnCount());
+      table()->InsertItem(static_cast<unsigned int>(row), empty_row);
     }
   }
   void RemoveRow(size_t row) {
-    if (std::cmp_less_equal(row, data_table_->GetItemCount())) {
-      data_table_->DeleteItem(static_cast<unsigned int>(row));
+    if (std::cmp_less_equal(row, table()->GetItemCount())) {
+      table()->DeleteItem(static_cast<unsigned int>(row));
     }
   }
 
   void CallbackButtonClicked(wxCommandEvent& event) {
-    auto selected_row = data_table_->GetSelectedRow();
+    auto selected_row = table()->GetSelectedRow();
 
     if (event.GetId() == wxID_ADD) {
       if (selected_row == wxNOT_FOUND) {
-        selected_row = data_table_->GetItemCount();
+        selected_row = table()->GetItemCount();
       } else if (selected_row < 1) {
         selected_row = 1;
       } else {
@@ -141,8 +111,8 @@ class DateGroupsTablePanel : public wxPanel {
 
       signal_table_date_groups_(date_groups_);
 
-      data_table_->SelectRow(unsigned_row);
-      data_table_->EnsureVisible(data_table_->RowToItem(selected_row));
+      table()->SelectRow(unsigned_row);
+      table()->EnsureVisible(table()->RowToItem(selected_row));
       UpdateButtons();
     }
 
@@ -155,11 +125,11 @@ class DateGroupsTablePanel : public wxPanel {
 
       signal_table_date_groups_(date_groups_);
 
-      if (data_table_->GetItemCount() > 0) {
-        if (data_table_->GetItemCount() == selected_row) {
-          data_table_->SelectRow(unsigned_row - 1);
+      if (table()->GetItemCount() > 0) {
+        if (table()->GetItemCount() == selected_row) {
+          table()->SelectRow(unsigned_row - 1);
         } else {
-          data_table_->SelectRow(unsigned_row);
+          table()->SelectRow(unsigned_row);
         }
       }
 
@@ -169,7 +139,7 @@ class DateGroupsTablePanel : public wxPanel {
 
   void CallbackItemActivated(wxDataViewEvent& event) {
     if (event.GetItem().IsOk() && (event.GetDataViewColumn() != nullptr)) {
-      data_table_->EditItem(event.GetItem(), event.GetDataViewColumn());
+      table()->EditItem(event.GetItem(), event.GetDataViewColumn());
     }
   }
   void CallbackItemEditing(wxDataViewEvent& event) {
@@ -180,9 +150,9 @@ class DateGroupsTablePanel : public wxPanel {
         if (event.GetColumn() == 1) {
           auto edited_string = event.GetValue().GetString().ToStdString();
           const auto selected_row =
-              static_cast<unsigned int>(data_table_->GetSelectedRow());
-          data_table_->SetValue(edited_string.c_str(), selected_row,
-                                static_cast<unsigned int>(event.GetColumn()));
+              static_cast<unsigned int>(table()->GetSelectedRow());
+          table()->SetValue(edited_string.c_str(), selected_row,
+                            static_cast<unsigned int>(event.GetColumn()));
 
           date_groups_[selected_row].SetName(edited_string);
 
@@ -193,10 +163,6 @@ class DateGroupsTablePanel : public wxPanel {
   }
 
   void CallbackSelectionChanged(wxDataViewEvent& /*event*/) { UpdateButtons(); }
-
-  wxWeakRef<wxDataViewListCtrl> data_table_;
-  wxWeakRef<wxButton> add_row_button_;
-  wxWeakRef<wxButton> delete_row_button_;
 
   std::vector<DateGroup> date_groups_;
   sigslot::signal<const std::vector<DateGroup>&> signal_table_date_groups_;
