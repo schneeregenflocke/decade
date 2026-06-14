@@ -29,9 +29,7 @@ class CalendarPropertyGrid : public wxPropertyGrid {
         auto_span_property_(MakeOwned<wxBoolProperty>("Auto Span", wxPG_LABEL)),
         first_year_property_(
             MakeOwned<wxIntProperty>("First Year", wxPG_LABEL)),
-        last_year_property_(MakeOwned<wxIntProperty>("Last Year", wxPG_LABEL)),
-        spacing_count_property_(
-            MakeOwned<wxIntProperty>("Number of Spacings", wxPG_LABEL)) {
+        last_year_property_(MakeOwned<wxIntProperty>("Last Year", wxPG_LABEL)) {
     auto* box_sizer = MakeOwned<wxBoxSizer>(wxHORIZONTAL);
     const auto sizer_flags = wxSizerFlags().Proportion(1).Expand();
     parent->GetSizer()->Add(box_sizer, sizer_flags);
@@ -40,7 +38,7 @@ class CalendarPropertyGrid : public wxPropertyGrid {
     SetVerticalSpacing(2);
 
     // The Append() order defines the grid's top-to-bottom layout; the dynamic
-    // spacing rows are added below by SyncSpacingRows().
+    // spacing rows are appended below the category by SyncSpacingRows().
     Append(MakeOwned<wxPropertyCategory>("Calendar Span (Years)", wxPG_LABEL));
     Append(auto_span_property_);
     Append(first_year_property_);
@@ -48,9 +46,6 @@ class CalendarPropertyGrid : public wxPropertyGrid {
 
     Append(
         MakeOwned<wxPropertyCategory>("Row Spacing Proportions", wxPG_LABEL));
-    Append(spacing_count_property_);
-    // Driven only by the config, never edited directly.
-    DisableProperty(spacing_count_property_);
 
     RefreshSpanLimitsState();
   }
@@ -59,10 +54,7 @@ class CalendarPropertyGrid : public wxPropertyGrid {
   void LoadConfig(const CalendarConfig& config) {
     const auto& proportions = config.GetSpacingProportions();
 
-    SetPropertyValue(spacing_count_property_,
-                     static_cast<int>(proportions.size()));
-    SyncSpacingRows();
-
+    SyncSpacingRows(proportions.size());
     for (std::size_t index = 0; index < proportions.size(); ++index) {
       SetPropertyValue(spacing_properties_[index],
                        static_cast<double>(proportions[index]));
@@ -75,10 +67,11 @@ class CalendarPropertyGrid : public wxPropertyGrid {
     RefreshSpanLimitsState();
   }
 
-  // Reads the grid's widgets back into a fresh config. Not const: it first
-  // reconciles the dynamic rows and the enabled state with the current values.
+  // Reads the grid's widgets back into a fresh config. The number of spacing
+  // rows is fixed by the last LoadConfig() — the user only edits values — so
+  // this just reads the current widgets back. Not const: it also reconciles the
+  // year-limit enabled state with the (possibly just toggled) Auto Span flag.
   [[nodiscard]] CalendarConfig ReadConfig() {
-    SyncSpacingRows();
     RefreshSpanLimitsState();
 
     CalendarConfig config;
@@ -123,11 +116,10 @@ class CalendarPropertyGrid : public wxPropertyGrid {
     }
   }
 
-  // Rebuilds the spacing rows whenever their count changes. Appending from the
-  // highest index down lays them out so the grid's top matches the page's top.
-  void SyncSpacingRows() {
-    const auto count = static_cast<std::size_t>(
-        GetPropertyValue(spacing_count_property_).GetInteger());
+  // Rebuilds the spacing rows when their count changes (only on LoadConfig).
+  // Appending from the highest index down lays them out so the grid's top
+  // matches the page's top.
+  void SyncSpacingRows(std::size_t count) {
     if (count == spacing_properties_.size()) {
       return;
     }
@@ -148,7 +140,6 @@ class CalendarPropertyGrid : public wxPropertyGrid {
   wxBoolProperty* auto_span_property_;
   wxIntProperty* first_year_property_;
   wxIntProperty* last_year_property_;
-  wxIntProperty* spacing_count_property_;
   // Indexed by proportion index (rising y-axis), independent of grid order.
   std::vector<wxFloatProperty*> spacing_properties_;
 };

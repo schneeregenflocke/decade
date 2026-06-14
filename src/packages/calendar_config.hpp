@@ -87,9 +87,6 @@ class CalendarConfig : public CalendarSpan {
   [[nodiscard]] const std::vector<float>& GetSpacingProportions() const {
     return spacing_proportions_;
   }
-  std::vector<float>& MutableSpacingProportions() {
-    return spacing_proportions_;
-  }
   void SetSpacingProportions(const std::vector<float>& proportions) {
     spacing_proportions_ = proportions;
   }

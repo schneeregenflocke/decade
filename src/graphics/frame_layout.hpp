@@ -22,8 +22,12 @@ class ProportionFrameLayout {
     }
   }
 
+  // The proportions alternate gap / subrow / … / gap, so a valid set has an
+  // odd length 2k+1 yielding k subrows. The guard keeps a degenerate (empty)
+  // set from underflowing the unsigned subtraction.
   void SetupSubFrames(const std::vector<float>& proportions) {
-    number_sub_frames_per_row_ = (proportions.size() - 1) / 2;
+    number_sub_frames_per_row_ =
+        proportions.empty() ? 0 : (proportions.size() - 1) / 2;
 
     sub_frames_.resize(row_frames_.size() * number_sub_frames_per_row_);
 
