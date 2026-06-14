@@ -20,6 +20,7 @@
 #include "../packages/date_group.hpp"
 #include "../packages/date_group_store.hpp"
 #include "../packages/date_period.hpp"
+#include "wx_owned.hpp"
 
 // The panel is the user-facing boundary for date intervals: the "To Date"
 // column shows and accepts the *inclusive* end date, while every DateEntry
@@ -34,39 +35,31 @@ class DateTablePanel : public wxPanel {
       : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                 wxTAB_TRAVERSAL, wxPanelNameStr),
         date_format_(date_format) {
-    table_widget_ = std::make_unique<wxDataViewListCtrl>(
-                        this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                        wxDV_MULTIPLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES,
-                        wxDefaultValidator)
-                        .release();
+    table_widget_ = MakeOwned<wxDataViewListCtrl>(
+        this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+        wxDV_MULTIPLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES, wxDefaultValidator);
 
-    add_row_button_ =
-        std::make_unique<wxButton>(this, wxID_ADD, "Add Row").release();
-    delete_row_button_ =
-        std::make_unique<wxButton>(this, wxID_DELETE, "Delete Row").release();
+    add_row_button_ = MakeOwned<wxButton>(this, wxID_ADD, "Add Row");
+    delete_row_button_ = MakeOwned<wxButton>(this, wxID_DELETE, "Delete Row");
     delete_row_button_->Disable();
 
-    select_group_control_ =
-        std::make_unique<wxComboBox>(
-            this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,
-            nullptr, 0L, wxDefaultValidator, wxChoiceNameStr)
-            .release();
+    select_group_control_ = MakeOwned<wxComboBox>(
+        this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,
+        nullptr, 0L, wxDefaultValidator, wxChoiceNameStr);
 
-    wxBoxSizer* buttons_sizer =
-        std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
+    auto* buttons_sizer = MakeOwned<wxBoxSizer>(wxHORIZONTAL);
     wxSizerFlags const buttons_flags =
         wxSizerFlags().Proportion(0).Border(wxALL, 5);
     buttons_sizer->Add(add_row_button_, buttons_flags);
     buttons_sizer->Add(delete_row_button_, buttons_flags);
     buttons_sizer->Add(select_group_control_, buttons_flags);
 
-    wxBoxSizer* table_sizer =
-        std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
+    auto* table_sizer = MakeOwned<wxBoxSizer>(wxHORIZONTAL);
     wxSizerFlags const data_table_flags =
         wxSizerFlags().Proportion(1).Expand().Border(wxALL, 5);
     table_sizer->Add(table_widget_, data_table_flags);
 
-    wxBoxSizer* main_sizer = std::make_unique<wxBoxSizer>(wxVERTICAL).release();
+    auto* main_sizer = MakeOwned<wxBoxSizer>(wxVERTICAL);
     wxSizerFlags const buttons_sizer_flags =
         wxSizerFlags().Proportion(0).Expand().Border(wxALL, 0);
     wxSizerFlags const table_sizer_flags =

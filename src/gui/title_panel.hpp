@@ -12,6 +12,7 @@
 
 #include "../packages/title_config.hpp"
 #include "casts.hpp"
+#include "wx_owned.hpp"
 
 class TitleSetupPanel : public wxPanel {
  public:
@@ -27,37 +28,33 @@ class TitleSetupPanel : public wxPanel {
         wxSizerFlags().Proportion(1).CenterVertical().Border(wxALL,
                                                              kSizerBorder);
 
-    auto* vertical_sizer = std::make_unique<wxBoxSizer>(wxVERTICAL).release();
+    auto* vertical_sizer = MakeOwned<wxBoxSizer>(wxVERTICAL);
     SetSizer(vertical_sizer);
 
-    frame_height_ctrl_ = std::make_unique<wxSpinCtrlDouble>(this).release();
+    frame_height_ctrl_ = MakeOwned<wxSpinCtrlDouble>(this);
     frame_height_ctrl_->SetDigits(2);
     AddLabelledRow(vertical_sizer, L"Frame Height", frame_height_ctrl_,
                    row_flags, label_flags, field_flags, kLabelWidth);
 
-    size_ratio_ctrl_ = std::make_unique<wxSpinCtrlDouble>(this).release();
+    size_ratio_ctrl_ = MakeOwned<wxSpinCtrlDouble>(this);
     size_ratio_ctrl_->SetDigits(2);
     size_ratio_ctrl_->SetIncrement(kSizeRatioIncrement);
     AddLabelledRow(vertical_sizer, L"Font Size Ratio", size_ratio_ctrl_,
                    row_flags, label_flags, field_flags, kLabelWidth);
 
-    title_text_edit_ = std::make_unique<wxTextCtrl>(this, wxID_ANY).release();
+    title_text_edit_ = MakeOwned<wxTextCtrl>(this, wxID_ANY);
     AddLabelledRow(vertical_sizer, L"Text", title_text_edit_, row_flags,
                    label_flags, field_flags, kLabelWidth);
 
     constexpr int kAlphaMax = 255;
-    text_color_picker_ =
-        std::make_unique<wxColourPickerCtrl>(
-            this, wxID_ANY, *wxStockGDI::GetColour(wxStockGDI::COLOUR_BLACK))
-            .release();
+    text_color_picker_ = MakeOwned<wxColourPickerCtrl>(
+        this, wxID_ANY, *wxStockGDI::GetColour(wxStockGDI::COLOUR_BLACK));
     AddLabelledRow(vertical_sizer, L"Color", text_color_picker_, row_flags,
                    label_flags, field_flags, kLabelWidth);
 
-    alpha_slider_ =
-        std::make_unique<wxSlider>(this, wxID_ANY, kAlphaMax, 0, kAlphaMax,
-                                   wxDefaultPosition, wxDefaultSize,
-                                   wxSL_HORIZONTAL | wxSL_LABELS)
-            .release();
+    alpha_slider_ = MakeOwned<wxSlider>(this, wxID_ANY, kAlphaMax, 0, kAlphaMax,
+                                        wxDefaultPosition, wxDefaultSize,
+                                        wxSL_HORIZONTAL | wxSL_LABELS);
     AddLabelledRow(vertical_sizer, L"Transparency", alpha_slider_, row_flags,
                    label_flags, field_flags, kLabelWidth);
 
@@ -92,9 +89,8 @@ class TitleSetupPanel : public wxPanel {
                       wxWindow* field, const wxSizerFlags& row_flags,
                       const wxSizerFlags& label_flags,
                       const wxSizerFlags& field_flags, int label_width) {
-    auto* row_sizer = std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
-    auto* label =
-        std::make_unique<wxStaticText>(this, wxID_ANY, text).release();
+    auto* row_sizer = MakeOwned<wxBoxSizer>(wxHORIZONTAL);
+    auto* label = MakeOwned<wxStaticText>(this, wxID_ANY, text);
     label->SetMinSize(wxSize(label_width, -1));
     row_sizer->Add(label, label_flags);
     row_sizer->Add(field, field_flags);

@@ -11,6 +11,7 @@
 #include "font_panel.hpp"
 #include "page_panel.hpp"
 #include "title_panel.hpp"
+#include "wx_owned.hpp"
 
 // Presentation: composite tab that groups the page-format, font and title
 // settings — all of which configure the overall rendered document — into a
@@ -24,12 +25,12 @@ class DocumentSetupPanel : public wxPanel {
     const wxSizerFlags group_flags =
         wxSizerFlags().Proportion(0).Expand().Border(wxALL, kSizerBorderPx);
 
-    auto* vertical_sizer = std::make_unique<wxBoxSizer>(wxVERTICAL).release();
+    auto* vertical_sizer = MakeOwned<wxBoxSizer>(wxVERTICAL);
     SetSizer(vertical_sizer);
 
-    page_setup_panel_ = std::make_unique<PageSetupPanel>(this).release();
-    font_panel_ = std::make_unique<FontPanel>(this).release();
-    title_setup_panel_ = std::make_unique<TitleSetupPanel>(this).release();
+    page_setup_panel_ = MakeOwned<PageSetupPanel>(this);
+    font_panel_ = MakeOwned<FontPanel>(this);
+    title_setup_panel_ = MakeOwned<TitleSetupPanel>(this);
 
     vertical_sizer->Add(WrapInGroup(L"Page", page_setup_panel_), group_flags);
     vertical_sizer->Add(WrapInGroup(L"Font", font_panel_), group_flags);
@@ -46,8 +47,7 @@ class DocumentSetupPanel : public wxPanel {
 
  private:
   wxSizer* WrapInGroup(const wxString& label, wxWindow* panel) {
-    auto* box_sizer =
-        std::make_unique<wxStaticBoxSizer>(wxVERTICAL, this, label).release();
+    auto* box_sizer = MakeOwned<wxStaticBoxSizer>(wxVERTICAL, this, label);
     box_sizer->Add(panel, wxSizerFlags().Proportion(1).Expand());
     return box_sizer;
   }

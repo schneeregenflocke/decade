@@ -11,40 +11,35 @@
 #include <vector>
 
 #include "../packages/calendar_config.hpp"
+#include "wx_owned.hpp"
 
 class PropertyGridPanel : public wxPropertyGrid {
  public:
   explicit PropertyGridPanel(wxWindow* parent)
       : wxPropertyGrid(parent, -1, wxDefaultPosition, wxDefaultSize,
                        wxPG_SPLITTER_AUTO_CENTER),
-        box_sizer_(std::make_unique<wxBoxSizer>(wxHORIZONTAL).release()) {
+        box_sizer_(MakeOwned<wxBoxSizer>(wxHORIZONTAL)) {
     auto sizer_flags = wxSizerFlags().Proportion(1).Expand();
     parent->GetSizer()->Add(box_sizer_, sizer_flags);
     box_sizer_->Add(this, sizer_flags);
 
     SetVerticalSpacing(2);
 
-    Append(std::make_unique<wxPropertyCategory>("Calendar Span", wxPG_LABEL)
-               .release());
+    Append(MakeOwned<wxPropertyCategory>("Calendar Span", wxPG_LABEL));
 
-    gui_auto_span_ =
-        std::make_unique<wxBoolProperty>("Auto", wxPG_LABEL, false).release();
-    gui_lower_limit_ =
-        std::make_unique<wxIntProperty>("Lower Limit", wxPG_LABEL, 0).release();
-    gui_upper_limit_ =
-        std::make_unique<wxIntProperty>("Upper Limit", wxPG_LABEL, 0).release();
+    gui_auto_span_ = MakeOwned<wxBoolProperty>("Auto", wxPG_LABEL, false);
+    gui_lower_limit_ = MakeOwned<wxIntProperty>("Lower Limit", wxPG_LABEL, 0);
+    gui_upper_limit_ = MakeOwned<wxIntProperty>("Upper Limit", wxPG_LABEL, 0);
 
     Append(gui_auto_span_);
     Append(gui_lower_limit_);
     Append(gui_upper_limit_);
 
-    Append(std::make_unique<wxPropertyCategory>("Row Spacing Proportions",
-                                                wxPG_LABEL)
-               .release());
+    Append(
+        MakeOwned<wxPropertyCategory>("Row Spacing Proportions", wxPG_LABEL));
 
     gui_number_spacings_ =
-        std::make_unique<wxIntProperty>("Number Spacings", wxPG_LABEL, 0)
-            .release();
+        MakeOwned<wxIntProperty>("Number Spacings", wxPG_LABEL, 0);
     Append(gui_number_spacings_);
     DisableProperty(gui_number_spacings_);
 
@@ -82,9 +77,8 @@ class PropertyGridPanel : public wxPropertyGrid {
         }
 
         constexpr double kDefaultSpacing = 10.0;
-        gui_spacings_array_.push_back(std::make_unique<wxFloatProperty>(
-                                          label, wxPG_LABEL, kDefaultSpacing)
-                                          .release());
+        gui_spacings_array_.push_back(
+            MakeOwned<wxFloatProperty>(label, wxPG_LABEL, kDefaultSpacing));
         Append(gui_spacings_array_[index]);
       }
     }
@@ -118,11 +112,10 @@ class CalendarSetupPanel : public wxPanel {
       : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                 wxTAB_TRAVERSAL, wxPanelNameStr),
         property_grid_(nullptr) {
-    wxBoxSizer* vertical_sizer =
-        std::make_unique<wxBoxSizer>(wxVERTICAL).release();
+    auto* vertical_sizer = MakeOwned<wxBoxSizer>(wxVERTICAL);
     SetSizer(vertical_sizer);
 
-    property_grid_ = std::make_unique<PropertyGridPanel>(this).release();
+    property_grid_ = MakeOwned<PropertyGridPanel>(this);
 
     Bind(wxEVT_PG_CHANGED, &CalendarSetupPanel::CallbackPropertyGridChanging,
          this);

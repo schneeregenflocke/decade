@@ -42,6 +42,7 @@
 #include "../gui/scene_tree_panel.hpp"
 #include "../gui/shape_panel.hpp"
 #include "../gui/title_panel.hpp"
+#include "../gui/wx_owned.hpp"
 #include "../packages/calendar_config_store.hpp"
 #include "../packages/date_entry_store.hpp"
 #include "../packages/date_format.hpp"
@@ -213,22 +214,16 @@ inline void MainWindow::CreateLayout(bool maximize_on_start) {
 
 inline void MainWindow::CreatePanels(wxNotebook* notebook) {
   impl_->data_table_panel =
-      std::make_unique<DateTablePanel>(notebook, impl_->locale_date_format)
-          .release();
-  impl_->date_groups_table_panel =
-      std::make_unique<DateGroupsTablePanel>(notebook).release();
-  impl_->calendar_setup_panel =
-      std::make_unique<CalendarSetupPanel>(notebook).release();
-  impl_->elements_setup_panel =
-      std::make_unique<ElementsSetupsPanel>(notebook).release();
-  impl_->scene_tree_panel =
-      std::make_unique<SceneTreePanel>(notebook).release();
+      MakeOwned<DateTablePanel>(notebook, impl_->locale_date_format);
+  impl_->date_groups_table_panel = MakeOwned<DateGroupsTablePanel>(notebook);
+  impl_->calendar_setup_panel = MakeOwned<CalendarSetupPanel>(notebook);
+  impl_->elements_setup_panel = MakeOwned<ElementsSetupsPanel>(notebook);
+  impl_->scene_tree_panel = MakeOwned<SceneTreePanel>(notebook);
 
   // Page, font and title settings are merged into a single "Document" tab; the
   // composite panel owns the three child panels, which the binder still wires
   // individually via the weak references below.
-  auto* document_setup_panel =
-      std::make_unique<DocumentSetupPanel>(notebook).release();
+  auto* document_setup_panel = MakeOwned<DocumentSetupPanel>(notebook);
   impl_->page_setup_panel = document_setup_panel->GetPageSetupPanel();
   impl_->font_panel = document_setup_panel->GetFontPanel();
   impl_->title_setup_panel = document_setup_panel->GetTitleSetupPanel();
@@ -362,7 +357,7 @@ inline void MainWindow::DumpFramePng(const std::string& path) {
   }
 
   if (wxImage::FindHandler(wxBITMAP_TYPE_PNG) == nullptr) {
-    wxImage::AddHandler(std::make_unique<wxPNGHandler>().release());
+    wxImage::AddHandler(MakeOwned<wxPNGHandler>());
   }
   if (!bitmap.ConvertToImage().SaveFile(path, wxBITMAP_TYPE_PNG)) {
     std::cerr << "DECADE_DUMP_FRAME_PNG: failed to write " << path << '\n';

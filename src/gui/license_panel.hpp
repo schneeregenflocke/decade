@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "Resource.h"
+#include "wx_owned.hpp"
 
 class LicenseInformationDialog : public wxDialog {
  public:
@@ -20,15 +21,12 @@ class LicenseInformationDialog : public wxDialog {
                  wxSize(kDefaultWidth, kDefaultHeight) /*wxDefaultSize*/,
                  wxCAPTION | wxRESIZE_BORDER | wxMAXIMIZE_BOX) {
     license_select_list_box_ =
-        std::make_unique<wxListBox>(this, wxID_ANY, wxDefaultPosition,
-                                    wxDefaultSize, 0, nullptr,
-                                    wxLB_SINGLE | wxLB_NEEDED_SB)
-            .release();
+        MakeOwned<wxListBox>(this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                             0, nullptr, wxLB_SINGLE | wxLB_NEEDED_SB);
 
-    text_view_ctrl_ = std::make_unique<wxTextCtrl>(
-                          this, wxID_ANY, wxEmptyString, wxDefaultPosition,
-                          wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY)
-                          .release();
+    text_view_ctrl_ =
+        MakeOwned<wxTextCtrl>(this, wxID_ANY, wxEmptyString, wxDefaultPosition,
+                              wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY);
 
     const wxSizerFlags flags0 = wxSizerFlags().Proportion(1).Expand();
     const wxSizerFlags flags1 =
@@ -38,19 +36,18 @@ class LicenseInformationDialog : public wxDialog {
     const wxSizerFlags flags3 =
         wxSizerFlags().Proportion(0).Border(wxALL, kBorderSize).Right();
 
-    auto* vertical_sizer = std::make_unique<wxBoxSizer>(wxVERTICAL).release();
+    auto* vertical_sizer = MakeOwned<wxBoxSizer>(wxVERTICAL);
     SetSizer(vertical_sizer);
 
-    auto* horizontal_sizer =
-        std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
+    auto* horizontal_sizer = MakeOwned<wxBoxSizer>(wxHORIZONTAL);
     vertical_sizer->Add(horizontal_sizer, flags0);
 
     horizontal_sizer->Add(license_select_list_box_, flags2);
     horizontal_sizer->Add(text_view_ctrl_, flags1);
 
-    auto* close_button = std::make_unique<wxButton>(this, wxID_CLOSE).release();
+    auto* close_button = MakeOwned<wxButton>(this, wxID_CLOSE);
 
-    auto* button_sizer = std::make_unique<wxStdDialogButtonSizer>().release();
+    auto* button_sizer = MakeOwned<wxStdDialogButtonSizer>();
     button_sizer->AddButton(close_button);
     button_sizer->Realize();
 

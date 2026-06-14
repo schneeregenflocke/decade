@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "../app/binding/scene_snapshot.hpp"
+#include "wx_owned.hpp"
 
 // Presentation: read-only view of the render scene graph as a collapsible
 // tree. It consumes a GL-free SceneNodeSnapshot (delivered via the EventBus on
@@ -19,13 +20,12 @@ class SceneTreePanel : public wxPanel {
   explicit SceneTreePanel(wxWindow* parent)
       : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                 wxTAB_TRAVERSAL, wxPanelNameStr) {
-    tree_ctrl_ = std::make_unique<wxTreeCtrl>(
-                     this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                     wxTR_DEFAULT_STYLE | wxTR_TWIST_BUTTONS)
-                     .release();
+    tree_ctrl_ =
+        MakeOwned<wxTreeCtrl>(this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                              wxTR_DEFAULT_STYLE | wxTR_TWIST_BUTTONS);
 
     constexpr int kSizerBorderPx = 5;
-    auto* vertical_sizer = std::make_unique<wxBoxSizer>(wxVERTICAL).release();
+    auto* vertical_sizer = MakeOwned<wxBoxSizer>(wxVERTICAL);
     vertical_sizer->Add(tree_ctrl_, 1, wxEXPAND | wxALL, kSizerBorderPx);
     SetSizer(vertical_sizer);
   }

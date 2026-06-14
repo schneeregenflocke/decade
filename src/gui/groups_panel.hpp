@@ -13,17 +13,16 @@
 #include <vector>
 
 #include "../packages/date_group.hpp"
+#include "wx_owned.hpp"
 
 class DateGroupsTablePanel : public wxPanel {
  public:
   explicit DateGroupsTablePanel(wxWindow* parent)
       : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                 wxTAB_TRAVERSAL, wxPanelNameStr) {
-    data_table_ = std::make_unique<wxDataViewListCtrl>(
-                      this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                      wxDV_SINGLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES,
-                      wxDefaultValidator)
-                      .release();
+    data_table_ = MakeOwned<wxDataViewListCtrl>(
+        this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+        wxDV_SINGLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES, wxDefaultValidator);
 
     Bind(wxEVT_DATAVIEW_ITEM_ACTIVATED,
          &DateGroupsTablePanel::CallbackItemActivated, this);
@@ -32,28 +31,24 @@ class DateGroupsTablePanel : public wxPanel {
     Bind(wxEVT_DATAVIEW_SELECTION_CHANGED,
          &DateGroupsTablePanel::CallbackSelectionChanged, this);
 
-    add_row_button_ =
-        std::make_unique<wxButton>(this, wxID_ADD, "Add Row").release();
-    delete_row_button_ =
-        std::make_unique<wxButton>(this, wxID_DELETE, "Delete Row").release();
+    add_row_button_ = MakeOwned<wxButton>(this, wxID_ADD, "Add Row");
+    delete_row_button_ = MakeOwned<wxButton>(this, wxID_DELETE, "Delete Row");
     delete_row_button_->Disable();
 
     Bind(wxEVT_BUTTON, &DateGroupsTablePanel::CallbackButtonClicked, this);
 
-    wxBoxSizer* buttons_sizer =
-        std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
+    auto* buttons_sizer = MakeOwned<wxBoxSizer>(wxHORIZONTAL);
     wxSizerFlags const buttons_flags =
         wxSizerFlags().Proportion(0).Border(wxALL, 5);
     buttons_sizer->Add(add_row_button_, buttons_flags);
     buttons_sizer->Add(delete_row_button_, buttons_flags);
 
-    wxBoxSizer* table_sizer =
-        std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
+    auto* table_sizer = MakeOwned<wxBoxSizer>(wxHORIZONTAL);
     wxSizerFlags const data_table_flags =
         wxSizerFlags().Proportion(1).Expand().Border(wxALL, 5);
     table_sizer->Add(data_table_, data_table_flags);
 
-    wxBoxSizer* main_sizer = std::make_unique<wxBoxSizer>(wxVERTICAL).release();
+    auto* main_sizer = MakeOwned<wxBoxSizer>(wxVERTICAL);
     wxSizerFlags const buttons_sizer_flags =
         wxSizerFlags().Proportion(0).Expand().Border(wxALL, 0);
     wxSizerFlags const table_sizer_flags =

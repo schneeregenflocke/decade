@@ -11,6 +11,7 @@
 #include <sigslot/signal.hpp>
 
 #include "../packages/page_setup_config.hpp"
+#include "wx_owned.hpp"
 
 class PageSetupPanel : public wxPanel {
  public:
@@ -34,43 +35,36 @@ class PageSetupPanel : public wxPanel {
     dialog_data_.SetMarginTopLeft(wxPoint(kPageMarginMm, kPageMarginMm));
     dialog_data_.SetMarginBottomRight(wxPoint(kPageMarginMm, kPageMarginMm));
 
-    wxBoxSizer* vertical_sizer =
-        std::make_unique<wxBoxSizer>(wxVERTICAL).release();
+    auto* vertical_sizer = MakeOwned<wxBoxSizer>(wxVERTICAL);
 
-    wxBoxSizer* horizontal_sizer0 =
-        std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
+    auto* horizontal_sizer0 = MakeOwned<wxBoxSizer>(wxHORIZONTAL);
 
-    wxButton* page_setup_dialog_button =
-        std::make_unique<wxButton>(this, wxID_ANY, L"Page Setup...").release();
+    auto* page_setup_dialog_button =
+        MakeOwned<wxButton>(this, wxID_ANY, L"Page Setup...");
 
-    wxStaticText* page_width_label =
-        std::make_unique<wxStaticText>(this, wxID_ANY, L"Width").release();
+    auto* page_width_label = MakeOwned<wxStaticText>(this, wxID_ANY, L"Width");
     page_width_label->SetMinSize(wxSize(kLabelMinWidthPx, -1));
 
-    wxStaticText* page_height_label =
-        std::make_unique<wxStaticText>(this, wxID_ANY, L"Height").release();
+    auto* page_height_label =
+        MakeOwned<wxStaticText>(this, wxID_ANY, L"Height");
     page_height_label->SetMinSize(wxSize(kLabelMinWidthPx, -1));
 
-    page_width_spinctrl_ =
-        std::make_unique<wxSpinCtrlDouble>(this, id_page_width_).release();
+    page_width_spinctrl_ = MakeOwned<wxSpinCtrlDouble>(this, id_page_width_);
     page_width_spinctrl_->SetRange(.0, kMaxPageSizeMm);
 
-    page_height_spinctrl_ =
-        std::make_unique<wxSpinCtrlDouble>(this, id_page_height_).release();
+    page_height_spinctrl_ = MakeOwned<wxSpinCtrlDouble>(this, id_page_height_);
     page_height_spinctrl_->SetRange(.0, kMaxPageSizeMm);
 
     horizontal_sizer0->Add(page_setup_dialog_button, 1, wxEXPAND | wxALL,
                            kSizerBorderPx);  //| wxALIGN_CENTER_VERTICAL
 
-    wxBoxSizer* horizontal_sizer1 =
-        std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
+    auto* horizontal_sizer1 = MakeOwned<wxBoxSizer>(wxHORIZONTAL);
     horizontal_sizer1->Add(page_width_label, 0, wxALL | wxALIGN_CENTER_VERTICAL,
                            kSizerBorderPx);
     horizontal_sizer1->Add(page_width_spinctrl_, 1,
                            wxALIGN_CENTER_VERTICAL | wxALL, kSizerBorderPx);
 
-    wxBoxSizer* horizontal_sizer2 =
-        std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
+    auto* horizontal_sizer2 = MakeOwned<wxBoxSizer>(wxHORIZONTAL);
     horizontal_sizer2->Add(page_height_label, 0,
                            wxALL | wxALIGN_CENTER_VERTICAL, kSizerBorderPx);
     horizontal_sizer2->Add(page_height_spinctrl_, 1,

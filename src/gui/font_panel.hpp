@@ -12,6 +12,7 @@
 #include <string>
 
 #include "../graphics/debug_log.hpp"
+#include "wx_owned.hpp"
 
 class FontPanel : public wxPanel {
  public:
@@ -21,18 +22,15 @@ class FontPanel : public wxPanel {
         fc_config_(FcInitLoadConfigAndFonts()) {
     wxFont const normal_font = *wxNORMAL_FONT;
 
-    wx_font_picker_ = std::make_unique<wxFontPickerCtrl>(
-                          this, wxID_ANY, normal_font, wxDefaultPosition,
-                          wxDefaultSize, wxFNTP_FONTDESC_AS_LABEL)
-                          .release();
+    wx_font_picker_ = MakeOwned<wxFontPickerCtrl>(
+        this, wxID_ANY, normal_font, wxDefaultPosition, wxDefaultSize,
+        wxFNTP_FONTDESC_AS_LABEL);
 
     constexpr int kSizerBorderPx = 5;
-    wxBoxSizer* horizontal_sizer =
-        std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
+    auto* horizontal_sizer = MakeOwned<wxBoxSizer>(wxHORIZONTAL);
     horizontal_sizer->Add(wx_font_picker_, 1, wxALL | wxALIGN_CENTER_VERTICAL,
                           kSizerBorderPx);
-    wxBoxSizer* vertical_sizer =
-        std::make_unique<wxBoxSizer>(wxVERTICAL).release();
+    auto* vertical_sizer = MakeOwned<wxBoxSizer>(wxVERTICAL);
     vertical_sizer->Add(horizontal_sizer, 0, wxEXPAND);
     SetSizer(vertical_sizer);
 
