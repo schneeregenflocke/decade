@@ -281,6 +281,15 @@ These are the binding design guidelines for this codebase.
 - Coupling and cohesion
 - Domain-Driven Design (DDD)
 - Clean Architecture
+- Don't Repeat Yourself (DRY) — when the same multi-line shape recurs across
+  methods, lift it into one small (usually `private`) helper rather than copying
+  it. Established examples: `CalendarSceneBuilder::FillRectangles` /
+  `AddCenteredText` (scene-node construction), `GLCanvas::ReadBackBuffer`
+  (render + glReadPixels + row-flip), `ElementsSetupsPanel::EditSelectedConfiguration`
+  (the wx editing-callback selection/emit boilerplate). Prefer this over macros,
+  which hurt readability and debuggability — the explicit, per-field `save`/`load`
+  pairs in `services/value_serialization.hpp` are intentionally left expanded
+  because they document the on-disk format.
 
 ### GRASP patterns
 
