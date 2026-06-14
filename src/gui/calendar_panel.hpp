@@ -5,185 +5,171 @@
 #include <wx/weakref.h>
 #include <wx/wx.h>
 
-#include <memory>
+#include <cstddef>
 #include <sigslot/signal.hpp>
-#include <utility>
 #include <vector>
 
 #include "../packages/calendar_config.hpp"
 #include "wx_owned.hpp"
 
-class PropertyGridPanel : public wxPropertyGrid {
+// Property grid that edits a CalendarConfig: the calendar's year span and the
+// per-row spacing proportions. It is a pure view — LoadConfig() pushes a config
+// into the widgets, ReadConfig() reads the widgets back into a config — so the
+// owning panel never reaches into the individual property handles.
+//
+// Row-spacing order: the rendered layout stacks the proportions along the
+// rising y-axis (index 0 is the bottom gap, the last index the top gap). The
+// grid therefore lists them top-to-bottom in reverse index order, so the entry
+// at the top of the grid is the one drawn at the top of the page.
+class CalendarPropertyGrid : public wxPropertyGrid {
  public:
-  explicit PropertyGridPanel(wxWindow* parent)
-      : wxPropertyGrid(parent, -1, wxDefaultPosition, wxDefaultSize,
+  explicit CalendarPropertyGrid(wxWindow* parent)
+      : wxPropertyGrid(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                        wxPG_SPLITTER_AUTO_CENTER),
-        box_sizer_(MakeOwned<wxBoxSizer>(wxHORIZONTAL)) {
-    auto sizer_flags = wxSizerFlags().Proportion(1).Expand();
-    parent->GetSizer()->Add(box_sizer_, sizer_flags);
-    box_sizer_->Add(this, sizer_flags);
+        auto_span_property_(MakeOwned<wxBoolProperty>("Auto Span", wxPG_LABEL)),
+        first_year_property_(
+            MakeOwned<wxIntProperty>("First Year", wxPG_LABEL)),
+        last_year_property_(MakeOwned<wxIntProperty>("Last Year", wxPG_LABEL)),
+        spacing_count_property_(
+            MakeOwned<wxIntProperty>("Number of Spacings", wxPG_LABEL)) {
+    auto* box_sizer = MakeOwned<wxBoxSizer>(wxHORIZONTAL);
+    const auto sizer_flags = wxSizerFlags().Proportion(1).Expand();
+    parent->GetSizer()->Add(box_sizer, sizer_flags);
+    box_sizer->Add(this, sizer_flags);
 
     SetVerticalSpacing(2);
 
-    Append(MakeOwned<wxPropertyCategory>("Calendar Span", wxPG_LABEL));
-
-    gui_auto_span_ = MakeOwned<wxBoolProperty>("Auto", wxPG_LABEL, false);
-    gui_lower_limit_ = MakeOwned<wxIntProperty>("Lower Limit", wxPG_LABEL, 0);
-    gui_upper_limit_ = MakeOwned<wxIntProperty>("Upper Limit", wxPG_LABEL, 0);
-
-    Append(gui_auto_span_);
-    Append(gui_lower_limit_);
-    Append(gui_upper_limit_);
+    // The Append() order defines the grid's top-to-bottom layout; the dynamic
+    // spacing rows are added below by SyncSpacingRows().
+    Append(MakeOwned<wxPropertyCategory>("Calendar Span (Years)", wxPG_LABEL));
+    Append(auto_span_property_);
+    Append(first_year_property_);
+    Append(last_year_property_);
 
     Append(
         MakeOwned<wxPropertyCategory>("Row Spacing Proportions", wxPG_LABEL));
+    Append(spacing_count_property_);
+    // Driven only by the config, never edited directly.
+    DisableProperty(spacing_count_property_);
 
-    gui_number_spacings_ =
-        MakeOwned<wxIntProperty>("Number Spacings", wxPG_LABEL, 0);
-    Append(gui_number_spacings_);
-    DisableProperty(gui_number_spacings_);
-
-    RefreshPropertyGrid();
+    RefreshSpanLimitsState();
   }
 
-  void RefreshPropertyGrid() {
-    bool const auto_span = GetPropertyValue(gui_auto_span_).GetBool();
+  // Mirrors a config into the grid's widgets.
+  void LoadConfig(const CalendarConfig& config) {
+    const auto& proportions = config.GetSpacingProportions();
 
-    if (auto_span) {
-      DisableProperty(gui_lower_limit_);
-      DisableProperty(gui_upper_limit_);
-    }
-    if (!auto_span) {
-      EnableProperty(gui_lower_limit_);
-      EnableProperty(gui_upper_limit_);
-    }
+    SetPropertyValue(spacing_count_property_,
+                     static_cast<int>(proportions.size()));
+    SyncSpacingRows();
 
-    const auto number_spacings = static_cast<size_t>(
-        GetPropertyValue(gui_number_spacings_).GetInteger());
-
-    if (number_spacings > gui_spacings_array_.size()) {
-      for (size_t index = gui_spacings_array_.size(); index < number_spacings;
-           ++index) {
-        const std::size_t index_parity = index % 2;
-        std::string const label_number_postfix =
-            std::to_string(((index - index_parity) / 2) + 1);
-        std::string label;
-
-        if (index_parity == 0) {
-          label = std::string("Gap ") + label_number_postfix;
-        }
-        if (index_parity == 1) {
-          label = std::string("Subrow ") + label_number_postfix;
-        }
-
-        constexpr double kDefaultSpacing = 10.0;
-        gui_spacings_array_.push_back(
-            MakeOwned<wxFloatProperty>(label, wxPG_LABEL, kDefaultSpacing));
-        Append(gui_spacings_array_[index]);
-      }
+    for (std::size_t index = 0; index < proportions.size(); ++index) {
+      SetPropertyValue(spacing_properties_[index],
+                       static_cast<double>(proportions[index]));
     }
 
-    if (number_spacings < gui_spacings_array_.size()) {
-      for (size_t const index = number_spacings;
-           index < gui_spacings_array_.size();) {
-        DeleteProperty(gui_spacings_array_[index]);
-        gui_spacings_array_.pop_back();
-      }
+    SetPropertyValue(auto_span_property_, config.IsAutoCalendarSpan());
+    SetPropertyValue(first_year_property_, config.GetSpanLimitsYears()[0]);
+    SetPropertyValue(last_year_property_, config.GetSpanLimitsYears()[1]);
+
+    RefreshSpanLimitsState();
+  }
+
+  // Reads the grid's widgets back into a fresh config. Not const: it first
+  // reconciles the dynamic rows and the enabled state with the current values.
+  [[nodiscard]] CalendarConfig ReadConfig() {
+    SyncSpacingRows();
+    RefreshSpanLimitsState();
+
+    CalendarConfig config;
+
+    std::vector<float> proportions(spacing_properties_.size());
+    for (std::size_t index = 0; index < proportions.size(); ++index) {
+      proportions[index] = static_cast<float>(
+          GetPropertyValue(spacing_properties_[index]).GetDouble());
     }
+    config.SetSpacingProportions(proportions);
+
+    config.SetAutoCalendarSpan(GetPropertyValue(auto_span_property_).GetBool());
+    config.SetSpan(CalendarSpan::YearSpan{
+        .first_year = static_cast<int>(
+            GetPropertyValue(first_year_property_).GetInteger()),
+        .last_year = static_cast<int>(
+            GetPropertyValue(last_year_property_).GetInteger())});
+
+    return config;
   }
 
  private:
-  // The setup panel drives this grid's widgets directly; granting friendship
-  // keeps the widget handles private without a verbose accessor per control.
-  friend class CalendarSetupPanel;
+  static constexpr double kDefaultSpacing = 10.0;
 
-  wxBoxSizer* box_sizer_;
+  // Spacings alternate gap / subrow / gap …, so even indices are gaps and odd
+  // indices subrows; the ordinal counts each kind from the bottom up.
+  [[nodiscard]] static wxString SpacingLabel(std::size_t index) {
+    const std::size_t ordinal = (index / 2) + 1;
+    const bool is_subrow = (index % 2) == 1;
+    return wxString::Format(is_subrow ? "Subrow %zu" : "Gap %zu", ordinal);
+  }
 
-  wxBoolProperty* gui_auto_span_;
-  wxIntProperty* gui_lower_limit_;
-  wxIntProperty* gui_upper_limit_;
-  wxIntProperty* gui_number_spacings_;
-  std::vector<wxFloatProperty*> gui_spacings_array_;
+  // Enables the explicit year limits only while the span is not automatic.
+  void RefreshSpanLimitsState() {
+    const bool auto_span = GetPropertyValue(auto_span_property_).GetBool();
+    if (auto_span) {
+      DisableProperty(first_year_property_);
+      DisableProperty(last_year_property_);
+    } else {
+      EnableProperty(first_year_property_);
+      EnableProperty(last_year_property_);
+    }
+  }
+
+  // Rebuilds the spacing rows whenever their count changes. Appending from the
+  // highest index down lays them out so the grid's top matches the page's top.
+  void SyncSpacingRows() {
+    const auto count = static_cast<std::size_t>(
+        GetPropertyValue(spacing_count_property_).GetInteger());
+    if (count == spacing_properties_.size()) {
+      return;
+    }
+
+    for (auto* property : spacing_properties_) {
+      DeleteProperty(property);
+    }
+    spacing_properties_.assign(count, nullptr);
+
+    for (std::size_t index = count; index-- > 0;) {
+      auto* property = MakeOwned<wxFloatProperty>(SpacingLabel(index),
+                                                  wxPG_LABEL, kDefaultSpacing);
+      Append(property);
+      spacing_properties_[index] = property;
+    }
+  }
+
+  wxBoolProperty* auto_span_property_;
+  wxIntProperty* first_year_property_;
+  wxIntProperty* last_year_property_;
+  wxIntProperty* spacing_count_property_;
+  // Indexed by proportion index (rising y-axis), independent of grid order.
+  std::vector<wxFloatProperty*> spacing_properties_;
 };
 
 class CalendarSetupPanel : public wxPanel {
  public:
   explicit CalendarSetupPanel(wxWindow* parent)
       : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                wxTAB_TRAVERSAL, wxPanelNameStr),
-        property_grid_(nullptr) {
-    auto* vertical_sizer = MakeOwned<wxBoxSizer>(wxVERTICAL);
-    SetSizer(vertical_sizer);
+                wxTAB_TRAVERSAL, wxPanelNameStr) {
+    SetSizer(MakeOwned<wxBoxSizer>(wxVERTICAL));
+    property_grid_ = MakeOwned<CalendarPropertyGrid>(this);
 
-    property_grid_ = MakeOwned<PropertyGridPanel>(this);
-
-    Bind(wxEVT_PG_CHANGED, &CalendarSetupPanel::CallbackPropertyGridChanging,
+    Bind(wxEVT_PG_CHANGED, &CalendarSetupPanel::CallbackPropertyGridChanged,
          this);
 
-    UpdatePropertyGrid();
+    property_grid_->LoadConfig(calendar_config_);
   }
 
   void ReceiveCalendarConfig(const CalendarConfig& incoming_calendar_config) {
     calendar_config_ = incoming_calendar_config;
-    UpdatePropertyGrid();
-  }
-
-  void CallbackPropertyGridChanging(wxPropertyGridEvent& /*event*/) {
-    property_grid_->RefreshPropertyGrid();
-
-    long const number_subrows =
-        property_grid_->GetPropertyValue(property_grid_->gui_number_spacings_)
-            .GetInteger();
-    auto& spacing_proportions = calendar_config_.MutableSpacingProportions();
-    spacing_proportions.resize(static_cast<size_t>(number_subrows));
-
-    for (size_t index = 0; std::cmp_less(index, number_subrows); ++index) {
-      spacing_proportions[index] = static_cast<float>(
-          property_grid_
-              ->GetPropertyValue(property_grid_->gui_spacings_array_[index])
-              .GetDouble());
-    }
-
-    calendar_config_.SetAutoCalendarSpan(
-        property_grid_->GetPropertyValue(property_grid_->gui_auto_span_)
-            .GetBool());
-
-    long const lower_limit =
-        property_grid_->GetPropertyValue(property_grid_->gui_lower_limit_)
-            .GetInteger();
-    long const upper_limit =
-        property_grid_->GetPropertyValue(property_grid_->gui_upper_limit_)
-            .GetInteger();
-
-    calendar_config_.SetSpan(
-        CalendarSpan::YearSpan{.first_year = static_cast<int>(lower_limit),
-                               .last_year = static_cast<int>(upper_limit)});
-
-    signal_calendar_config_(calendar_config_);
-  }
-
-  void UpdatePropertyGrid() {
-    property_grid_->SetPropertyValue(
-        property_grid_->gui_number_spacings_,
-        static_cast<int>(calendar_config_.GetSpacingProportions().size()));
-
-    property_grid_->RefreshPropertyGrid();
-
-    const auto& spacing_proportions = calendar_config_.GetSpacingProportions();
-    for (size_t index = 0; index < spacing_proportions.size(); ++index) {
-      property_grid_->SetPropertyValue(
-          property_grid_->gui_spacings_array_[index],
-          static_cast<double>(spacing_proportions[index]));
-    }
-
-    property_grid_->SetPropertyValue(property_grid_->gui_auto_span_,
-                                     calendar_config_.IsAutoCalendarSpan());
-    property_grid_->SetPropertyValue(property_grid_->gui_lower_limit_,
-                                     calendar_config_.GetSpanLimitsYears()[0]);
-    property_grid_->SetPropertyValue(property_grid_->gui_upper_limit_,
-                                     calendar_config_.GetSpanLimitsYears()[1]);
-
-    property_grid_->RefreshPropertyGrid();
+    property_grid_->LoadConfig(calendar_config_);
   }
 
   sigslot::signal<const CalendarConfig&>& SignalCalendarConfig() {
@@ -191,7 +177,12 @@ class CalendarSetupPanel : public wxPanel {
   }
 
  private:
-  wxWeakRef<PropertyGridPanel> property_grid_;
+  void CallbackPropertyGridChanged(wxPropertyGridEvent& /*event*/) {
+    calendar_config_ = property_grid_->ReadConfig();
+    signal_calendar_config_(calendar_config_);
+  }
+
+  wxWeakRef<CalendarPropertyGrid> property_grid_;
   CalendarConfig calendar_config_;
   sigslot::signal<const CalendarConfig&> signal_calendar_config_;
 };
