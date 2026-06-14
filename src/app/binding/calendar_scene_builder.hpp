@@ -27,6 +27,7 @@
 #include "../../packages/timeline_projection.hpp"
 #include "../../packages/title_config.hpp"
 #include "scene_snapshot.hpp"
+#include "scene_snapshot_builder.hpp"
 
 // Builds and fills the calendar scene graph from domain state. This is the
 // rendering/layout half of the former CalendarPage: it owns the scene graph and
@@ -248,7 +249,7 @@ class CalendarSceneBuilder {
   // presentation layer (the scene-tree widget). Rebuilt on demand from the
   // live graph after Build().
   [[nodiscard]] SceneNodeSnapshot SceneSnapshot() const {
-    return BuildSnapshot(*scene_graph_);
+    return BuildSceneSnapshot(*scene_graph_);
   }
 
   // Page-space rectangles of the pickable bars, produced by the last Build().
@@ -274,40 +275,6 @@ class CalendarSceneBuilder {
   }
 
  private:
-  // Iterative tree copy (matching the scene graph's own non-recursive
-  // traversal style): each stack frame pairs a source SceneNode with the
-  // snapshot node it fills. Child vectors are sized once and never reallocated
-  // afterwards, so the stored destination pointers stay valid.
-  static SceneNodeSnapshot BuildSnapshot(const SceneNode& root) {
-    SceneNodeSnapshot result;
-    result.name = root.GetNodeName();
-    result.has_shape = root.GetShape() != nullptr;
-
-    struct Frame {
-      const SceneNode* source;
-      SceneNodeSnapshot* destination;
-    };
-    std::vector<Frame> stack;
-    stack.push_back({.source = &root, .destination = &result});
-
-    while (!stack.empty()) {
-      const Frame frame = stack.back();
-      stack.pop_back();
-
-      const auto& children = frame.source->GetChildren();
-      frame.destination->children.resize(children.size());
-      for (std::size_t index = 0; index < children.size(); ++index) {
-        SceneNodeSnapshot& child = frame.destination->children[index];
-        child.name = children[index]->GetNodeName();
-        child.has_shape = children[index]->GetShape() != nullptr;
-        stack.push_back(
-            {.source = children[index].get(), .destination = &child});
-      }
-    }
-
-    return result;
-  }
-
   // Recolours one bar's shape: highlighted bars get a distinct outline, normal
   // bars are restored to their group's configured colours. Fill is left as
   // configured so the hover reads as an outline accent.
