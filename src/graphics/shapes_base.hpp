@@ -9,19 +9,11 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
-#include <iostream>
 #include <utility>
 #include <vector>
 
 #include "shaders.hpp"
 #include "shaders_info.hpp"
-
-inline void PrintError() {
-  const GLenum error = glGetError();
-  if (error != GL_NO_ERROR) {
-    std::cout << "OpenGL Error: " << std::hex << error << std::dec << '\n';
-  }
-}
 
 class VertexArrayObject {
  public:
@@ -44,13 +36,11 @@ class VertexArrayObject {
     return *this;
   }
 
-  [[nodiscard]] bool is_valid() const { return glIsVertexArray(vao_); }
-
-  void bind() const { glBindVertexArray(vao_); }
+  void Bind() const { glBindVertexArray(vao_); }
 
   static void Unbind() { glBindVertexArray(0); }
 
-  [[nodiscard]] GLuint get() const { return vao_; }
+  [[nodiscard]] GLuint Get() const { return vao_; }
 
  private:
   GLuint vao_{0};
@@ -77,11 +67,11 @@ class VertexBufferObject {
     return *this;
   }
 
-  void bind() const { glBindBuffer(GL_ARRAY_BUFFER, vbo_); }
+  void Bind() const { glBindBuffer(GL_ARRAY_BUFFER, vbo_); }
 
   static void Unbind() { glBindBuffer(GL_ARRAY_BUFFER, 0); }
 
-  [[nodiscard]] GLuint get() const { return vbo_; }
+  [[nodiscard]] GLuint Get() const { return vbo_; }
 
  private:
   GLuint vbo_{0};
@@ -93,7 +83,7 @@ class Shape {
     size_t value;
   };
 
-  explicit Shape(Shader* shader_ptr_in) { set_shader(shader_ptr_in); }
+  explicit Shape(Shader* shader_ptr_in) { SetShader(shader_ptr_in); }
   virtual ~Shape() = default;
 
   Shape(const Shape&) = delete;
@@ -101,7 +91,7 @@ class Shape {
   Shape(Shape&&) = delete;
   Shape& operator=(Shape&&) = delete;
 
-  void set_buffer(BufferIndex index, GLsizei vertex_count, const void* data) {
+  void SetBuffer(BufferIndex index, GLsizei vertex_count, const void* data) {
     number_vertices_ = vertex_count;
 
     const auto& attribute_info = attributes_infos_.at(index.value);
@@ -109,66 +99,57 @@ class Shape {
         static_cast<GLsizeiptr>(attribute_info.GetTypeSize());
     const auto buffer_size = static_cast<GLsizeiptr>(vertex_count) * type_size;
 
-    vao_.bind();
-    vbos_.at(index.value).bind();
+    vao_.Bind();
+    vbos_.at(index.value).Bind();
 
     glBufferData(GL_ARRAY_BUFFER, buffer_size, data, GL_DYNAMIC_DRAW);
-    // glNamedBufferData(vbos[index].get(), buffer_size, data, GL_DYNAMIC_DRAW);
 
     VertexBufferObject::Unbind();
     VertexArrayObject::Unbind();
   }
 
-  virtual void draw(const glm::mat4& model) const {
+  virtual void Draw(const glm::mat4& model) const {
     shader_ptr_->UseProgram();
     shader_ptr_->SetUniform("model", model);
-    vao_.bind();
+    vao_.Bind();
     glDrawArrays(GL_TRIANGLES, 0, number_vertices_);
     VertexArrayObject::Unbind();
   }
 
-  [[nodiscard]] Shader* get_shader() const { return shader_ptr_; }
-
  protected:
-  [[nodiscard]] GLsizei vertex_count() const { return number_vertices_; }
-  [[nodiscard]] Shader* shader() const { return shader_ptr_; }
-  [[nodiscard]] VertexArrayObject& vao_ref() { return vao_; }
-  [[nodiscard]] const VertexArrayObject& vao_ref() const { return vao_; }
+  [[nodiscard]] GLsizei VertexCount() const { return number_vertices_; }
+  [[nodiscard]] Shader* GetShader() const { return shader_ptr_; }
+  [[nodiscard]] VertexArrayObject& VaoRef() { return vao_; }
+  [[nodiscard]] const VertexArrayObject& VaoRef() const { return vao_; }
 
  private:
-  void set_shader(Shader* new_shader_ptr) {
+  void SetShader(Shader* new_shader_ptr) {
     shader_ptr_ = new_shader_ptr;
     attributes_infos_ = new_shader_ptr->GetShaderAttributesInfos();
 
-    vao_.bind();
+    vao_.Bind();
 
     vbos_.resize(attributes_infos_.size());
 
     for (size_t index = 0; index < attributes_infos_.size(); ++index) {
       const auto& attribute_info = attributes_infos_[index];
 
-      vbos_[index].bind();
+      vbos_[index].Bind();
 
       const auto attribute_location =
           static_cast<GLuint>(attribute_info.GetLocation());
 
-      // glVertexArrayAttribFormat(vao.get(), attribute_info.location,
-      // attribute_info.number, GL_FLOAT, GL_FALSE, 0);
       glVertexAttribFormat(attribute_location,
                            static_cast<GLint>(attribute_info.GetNumber()),
                            GL_FLOAT, GL_FALSE, 0);
 
       const auto binding_index = static_cast<GLuint>(index);
 
-      // glVertexArrayAttribBinding(vao.get(), attribute_info.location, index);
       glVertexAttribBinding(attribute_location, binding_index);
 
-      // glVertexArrayVertexBuffer(vao.get(), index, vbos[index].get(), 0,
-      // attribute_info.type_size);
-      glBindVertexBuffer(binding_index, vbos_[index].get(), 0,
+      glBindVertexBuffer(binding_index, vbos_[index].Get(), 0,
                          static_cast<GLsizei>(attribute_info.GetTypeSize()));
 
-      // glEnableVertexArrayAttrib(vao.get(), attribute_info.location);
       glEnableVertexAttribArray(attribute_location);
 
       VertexBufferObject::Unbind();
@@ -184,85 +165,4 @@ class Shape {
   std::vector<ShaderInfo> attributes_infos_;
 };
 
-/*template<typename T>
-class Shape : public ShapeBase
-{
-public:
-
-        using ShaderType = T;
-        using U = typename T::VertexType;
-
-        explicit Shape(const std::string shape_name) :
-                ShapeBase(shape_name),
-                buffer_size(0)
-        {
-                InitBuffer();
-        }
-
-protected:
-
-        void InitBuffer()
-        {
-                vao.bind();
-                U::EnableVertexAttribArrays();
-
-                vbo.bind();
-                U::SetAttribPointers(vbo.get());
-
-                glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_DYNAMIC_DRAW);
-
-                vao.unbind();
-                vbo.unbind();
-        }
-
-        void SetBufferSize(GLsizeiptr vertices_size)
-        {
-                this->vertices_size = vertices_size;
-                buffer_size = vertices_size * sizeof(U);
-
-                vertices.resize(vertices_size);
-
-                vbo.bind();
-                glNamedBufferData
-                glBufferData(GL_ARRAY_BUFFER, buffer_size, nullptr,
-GL_DYNAMIC_DRAW); vbo.unbind();
-        }
-
-        void UpdateBuffer()
-        {
-                vbo.bind();
-                glBufferSubData(GL_ARRAY_BUFFER, 0, buffer_size,
-vertices.data()); vbo.unbind();
-        }
-
-        U& GetVertexRef(size_t index)
-        {
-                return vertices[index];
-        }
-
-        size_t GetVerticesSize() const
-        {
-                return vertices.size();
-        }
-
-private:
-        GLsizeiptr buffer_size;
-        std::vector<U> vertices;
-};*/
-
-/*void Shape::CalcNormals()
-{
-        for (auto index = 0U; index < vertices.size(); index += 3)
-        {
-                vec3 subvector0 = vertices[index].point - vertices[index +
-1].point; vec3 subvector1 = vertices[index].point - vertices[index + 2].point;
-
-                vec3 cross = glm::cross(subvector0, subvector1);
-                vec3 normal = glm::normalize(cross);
-
-                vertices[index + 0].normal = normal;
-                vertices[index + 1].normal = normal;
-                vertices[index + 2].normal = normal;
-        }
-}*/
 #endif  // SHAPES_BASE_HPP

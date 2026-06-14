@@ -9,7 +9,7 @@
 TEST(ShapeConfigSetTest, DefaultsContainExpectedNames) {
   ShapeConfigSet set;
   ASSERT_GT(set.size(), 0U);
-  EXPECT_EQ(set.GetNumberPersistentConfigurations(), set.size());
+  EXPECT_EQ(set.NumberPersistent(), set.size());
 
   // A handful of named entries we expect from the default set.
   const ShapeConfiguration page_margin =
@@ -36,7 +36,7 @@ TEST(ShapeConfigSetTest, DynamicConfigurationNameMatchesFormat) {
 
 TEST(ShapeConfigSetTest, GetDynamicConfigurationAddressesByIndex) {
   ShapeConfigSet set;
-  const size_t persistent = set.GetNumberPersistentConfigurations();
+  const size_t persistent = set.NumberPersistent();
 
   // Append two dynamic configurations, mirroring how the panel grows the set
   // when date groups are added.

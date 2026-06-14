@@ -64,15 +64,11 @@ class TitleSetupPanel : public wxPanel {
 
     vertical_sizer->Layout();
 
-    ////////////////////////////////////////
-
     Bind(wxEVT_SPINCTRLDOUBLE, &TitleSetupPanel::CallbackSpinControl, this);
     Bind(wxEVT_TEXT, &TitleSetupPanel::CallbackTextControl, this);
     Bind(wxEVT_COLOURPICKER_CHANGED,
          &TitleSetupPanel::CallbackColorPickerControl, this);
     Bind(wxEVT_SLIDER, &TitleSetupPanel::CallbackSliderControl, this);
-
-    ////////////////////////////////////////
   }
 
   void SendDefaultValues() { SendTitleConfig(); }

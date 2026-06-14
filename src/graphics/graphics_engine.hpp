@@ -32,19 +32,17 @@ class GraphicsEngine {
       shader.SetUniform("view", mvp_.GetView());
     }
 
-    scene_graph_->draw();
+    scene_graph_->Draw();
   }
 
   void SetMVP(const MVP& new_mvp) { mvp_ = new_mvp; }
 
-  void set_scene_graph(const std::shared_ptr<SceneNode>& new_scene_graph) {
+  void SetSceneGraph(const std::shared_ptr<SceneNode>& new_scene_graph) {
     scene_graph_ = new_scene_graph;
   }
 
-  Shaders& GetShaders() { return shaders_; }
-
-  std::optional<Shader*> search_shader(const std::string& search_name) {
-    return shaders_.search_shader(search_name);
+  std::optional<Shader*> SearchShader(const std::string& search_name) {
+    return shaders_.SearchShader(search_name);
   }
 
  private:

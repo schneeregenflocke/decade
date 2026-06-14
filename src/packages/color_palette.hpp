@@ -4,7 +4,6 @@
 #include <cmath>
 #include <cstddef>
 #include <glm/vec3.hpp>
-#include <glm/vec4.hpp>
 #include <tinycolormap.hpp>
 
 // UI-agnostic mapping from a category index to a high-quality color, backed by
@@ -36,12 +35,6 @@ inline constexpr tinycolormap::ColormapType kCategoricalColormap =
 
   return {static_cast<float>(color.r()), static_cast<float>(color.g()),
           static_cast<float>(color.b())};
-}
-
-// Convenience overload returning the categorical color with an explicit alpha.
-[[nodiscard]] inline glm::vec4 CategoricalColor(std::size_t index,
-                                                float alpha) {
-  return {CategoricalColor(index), alpha};
 }
 
 }  // namespace palette

@@ -7,6 +7,8 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <glm/gtx/transform.hpp>
+#include <glm/vec3.hpp>
 #include <memory>
 #include <string>
 #include <utility>

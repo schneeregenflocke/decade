@@ -7,9 +7,9 @@ namespace {
 
 PageSetupConfig MakeConfig(float width, float height, int orientation) {
   PageSetupConfig config;
-  config.size = {width, height};
-  config.margins = {1.0F, 2.0F, 3.0F, 4.0F};
-  config.orientation = orientation;
+  config.SetSize({width, height});
+  config.SetMargins({1.0F, 2.0F, 3.0F, 4.0F});
+  config.SetOrientation(orientation);
   return config;
 }
 
@@ -28,10 +28,10 @@ TEST(PageSetupStoreTest, ReceiveStoresConfigAndEmitsSignal) {
   store.ReceivePageSetup(config);
 
   EXPECT_EQ(emissions, 1);
-  EXPECT_FLOAT_EQ(captured.size[0], 210.0F);
-  EXPECT_FLOAT_EQ(captured.size[1], 297.0F);
-  EXPECT_EQ(captured.orientation, 0);
-  EXPECT_FLOAT_EQ(store.GetPageSetup().margins[2], 3.0F);
+  EXPECT_FLOAT_EQ(captured.Size()[0], 210.0F);
+  EXPECT_FLOAT_EQ(captured.Size()[1], 297.0F);
+  EXPECT_EQ(captured.Orientation(), 0);
+  EXPECT_FLOAT_EQ(store.GetPageSetup().Margins()[2], 3.0F);
 }
 
 TEST(PageSetupStoreTest, SendPageSetupEmitsCurrentConfig) {
@@ -59,6 +59,6 @@ TEST(PageSetupStoreTest, ReentryGuardBlocksRecursiveReceive) {
   store.ReceivePageSetup(MakeConfig(210.0F, 297.0F, 0));
 
   EXPECT_EQ(emissions, 1);
-  EXPECT_FLOAT_EQ(store.GetPageSetup().size[0], 210.0F);
-  EXPECT_EQ(store.GetPageSetup().orientation, 0);
+  EXPECT_FLOAT_EQ(store.GetPageSetup().Size()[0], 210.0F);
+  EXPECT_EQ(store.GetPageSetup().Orientation(), 0);
 }

@@ -32,11 +32,6 @@ class DateGroupsTablePanel : public wxPanel {
     Bind(wxEVT_DATAVIEW_SELECTION_CHANGED,
          &DateGroupsTablePanel::CallbackSelectionChanged, this);
 
-    // Bind(wxEVT_DATAVIEW_ITEM_START_EDITING,
-    // &DateGroupsTablePanel::OnItemEditing, this);
-    // Bind(wxEVT_DATAVIEW_ITEM_EDITING_STARTED,
-    // &DateGroupsTablePanel::OnItemEditing, this);
-
     add_row_button_ =
         std::make_unique<wxButton>(this, wxID_ADD, "Add Row").release();
     delete_row_button_ =
@@ -44,8 +39,6 @@ class DateGroupsTablePanel : public wxPanel {
     delete_row_button_->Disable();
 
     Bind(wxEVT_BUTTON, &DateGroupsTablePanel::CallbackButtonClicked, this);
-
-    ////////////////////////////////////////////////////////////////////////////////
 
     wxBoxSizer* buttons_sizer =
         std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
@@ -69,9 +62,6 @@ class DateGroupsTablePanel : public wxPanel {
     main_sizer->Add(table_sizer, table_sizer_flags);
 
     SetSizer(main_sizer);
-    // Layout();
-
-    ////////////////////////////////////////////////////////////////////////////////
 
     data_table_->AppendTextColumn(L"Group Number", wxDATAVIEW_CELL_INERT);
     data_table_->AppendTextColumn(L"Group Name", wxDATAVIEW_CELL_EDITABLE);

@@ -2,7 +2,6 @@
 #define SHAPE_CONFIGURATION_HPP
 
 #include <algorithm>
-#include <array>
 #include <glm/vec4.hpp>
 #include <string>
 #include <utility>
@@ -29,10 +28,8 @@ class ShapeConfiguration {
         outline_visible_(outline_visible),
         fill_visible_(fill_visible),
         line_width_(line_width),
-        outline_color_({outline_color.value[0], outline_color.value[1],
-                        outline_color.value[2], outline_color.value[3]}),
-        fill_color_({fill_color.value[0], fill_color.value[1],
-                     fill_color.value[2], fill_color.value[3]}) {}
+        outline_color_(outline_color.value),
+        fill_color_(fill_color.value) {}
 
   [[nodiscard]] const std::string& Name() const { return name_; }
 
@@ -46,55 +43,30 @@ class ShapeConfiguration {
 
   void LineWidth(float value) { line_width_ = value; }
 
-  void OutlineColor(const glm::vec4& value) {
-    outline_color_ = {value[0], value[1], value[2], value[3]};
-  }
+  void OutlineColor(const glm::vec4& value) { outline_color_ = value; }
 
-  void FillColor(const glm::vec4& value) {
-    fill_color_ = {value[0], value[1], value[2], value[3]};
-  }
+  void FillColor(const glm::vec4& value) { fill_color_ = value; }
 
   [[nodiscard]] float LineWidth() const {
-    float return_value = 0.0F;
-
-    if (outline_visible_) {
-      return_value = line_width_;
-    }
-
-    return return_value;
+    return outline_visible_ ? line_width_ : 0.0F;
   }
 
   [[nodiscard]] glm::vec4 OutlineColor() const {
-    glm::vec4 value = glm::vec4{0.0F, 0.0F, 0.0F, 0.0F};
-
-    if (outline_visible_) {
-      value = {outline_color_[0], outline_color_[1], outline_color_[2],
-               outline_color_[3]};
-    }
-
-    return value;
+    return outline_visible_ ? outline_color_
+                            : glm::vec4{0.0F, 0.0F, 0.0F, 0.0F};
   }
 
   [[nodiscard]] glm::vec4 FillColor() const {
-    glm::vec4 value = glm::vec4{0.0F, 0.0F, 0.0F, 0.0F};
-
-    if (fill_visible_) {
-      value = {fill_color_[0], fill_color_[1], fill_color_[2], fill_color_[3]};
-    }
-
-    return value;
+    return fill_visible_ ? fill_color_ : glm::vec4{0.0F, 0.0F, 0.0F, 0.0F};
   }
 
   [[nodiscard]] float LineWidthDisabled() const { return line_width_; }
 
   [[nodiscard]] glm::vec4 OutlineColorDisabled() const {
-    return {outline_color_[0], outline_color_[1], outline_color_[2],
-            outline_color_[3]};
+    return outline_color_;
   }
 
-  [[nodiscard]] glm::vec4 FillColorDisabled() const {
-    return {fill_color_[0], fill_color_[1], fill_color_[2], fill_color_[3]};
-  }
+  [[nodiscard]] glm::vec4 FillColorDisabled() const { return fill_color_; }
 
   bool operator==(const std::string& compare) const {
     return Name() == compare;
@@ -105,8 +77,8 @@ class ShapeConfiguration {
   bool outline_visible_{true};
   bool fill_visible_{false};
   float line_width_{1.0F};
-  std::array<float, 4> outline_color_{0.0F, 0.0F, 0.0F, 1.0F};
-  std::array<float, 4> fill_color_{0.0F, 0.0F, 0.0F, 1.0F};
+  glm::vec4 outline_color_{0.0F, 0.0F, 0.0F, 1.0F};
+  glm::vec4 fill_color_{0.0F, 0.0F, 0.0F, 1.0F};
 };
 
 // Pure value object: the ordered set of shape configurations (persistent ones
@@ -166,8 +138,14 @@ class ShapeConfigSet {
     return shape_configurations_.at(config_index);
   }
 
-  [[nodiscard]] size_t GetNumberPersistentConfigurations() const {
+  // Number of persistent (non-per-group) configurations at the front of the
+  // set. Used by the panel to know where the dynamic group entries start and by
+  // serialization to restore the split.
+  [[nodiscard]] size_t NumberPersistent() const {
     return number_persistent_configurations_;
+  }
+  void SetNumberPersistent(size_t value) {
+    number_persistent_configurations_ = value;
   }
 
   // Raw access for non-intrusive serialization in the infrastructure layer.
@@ -176,12 +154,6 @@ class ShapeConfigSet {
   }
   [[nodiscard]] std::vector<ShapeConfiguration>& MutableConfigurations() {
     return shape_configurations_;
-  }
-  [[nodiscard]] size_t NumberPersistent() const {
-    return number_persistent_configurations_;
-  }
-  void SetNumberPersistent(size_t value) {
-    number_persistent_configurations_ = value;
   }
 
  private:

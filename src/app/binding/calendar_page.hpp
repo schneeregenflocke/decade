@@ -49,11 +49,11 @@ class CalendarPage {
 
   void ReceivePageSetup(const PageSetupConfig& page_setup_config) {
     this->page_size_ = rectf::from_dimension(
-        rectf::Dimension{.width = page_setup_config.size[0],
-                         .height = page_setup_config.size[1]});
+        rectf::Dimension{.width = page_setup_config.Size()[0],
+                         .height = page_setup_config.Size()[1]});
     this->page_margin_ =
-        rectf(page_setup_config.margins[0], page_setup_config.margins[1],
-              page_setup_config.margins[2], page_setup_config.margins[3]);
+        rectf(page_setup_config.Margins()[0], page_setup_config.Margins()[1],
+              page_setup_config.Margins()[2], page_setup_config.Margins()[3]);
     Update();
   }
 

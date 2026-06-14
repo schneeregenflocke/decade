@@ -5,7 +5,7 @@
 
 #include <glm/vec4.hpp>
 
-inline glm::vec4 to_glm_vec4(const wxColour& color) {
+inline glm::vec4 ToGlmVec4(const wxColour& color) {
   constexpr float kColorScale = 1.0F / 255.0F;
 
   const auto red = static_cast<float>(color.Red()) * kColorScale;

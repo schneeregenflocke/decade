@@ -20,7 +20,6 @@ class FontPanel : public wxPanel {
                 wxTAB_TRAVERSAL, wxPanelNameStr),
         fc_config_(FcInitLoadConfigAndFonts()) {
     wxFont const normal_font = *wxNORMAL_FONT;
-    // auto normal_font_name = normal_font.GetFaceName();
 
     wx_font_picker_ = std::make_unique<wxFontPickerCtrl>(
                           this, wxID_ANY, normal_font, wxDefaultPosition,
@@ -192,7 +191,6 @@ class FontPanel : public wxPanel {
       wx_font_ = event.GetFont();
       ProcessFontData();
       signal_font_filepath_(font_filepath_);
-      // font_data.clear();
     } catch (...) {
       std::cerr << "Loading Font failed" << '\n';
     }
@@ -200,7 +198,6 @@ class FontPanel : public wxPanel {
 
   wxWeakRef<wxFontPickerCtrl> wx_font_picker_;
   wxFont wx_font_;
-  // std::vector<unsigned char> font_data;
   std::string font_filepath_;
   std::map<int, int> font_weight_map_;
   std::map<int, int> font_style_map_;

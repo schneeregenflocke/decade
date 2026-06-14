@@ -43,8 +43,7 @@ class ElementsSetupsPanel : public wxPanel {
   // groups are added we synthesise fresh configurations from the color palette;
   // existing configurations are left untouched so user customisations survive.
   void ReceiveDateGroups(const std::vector<DateGroup>& date_groups) {
-    const size_t persistent_count =
-        shape_config_set_.GetNumberPersistentConfigurations();
+    const size_t persistent_count = shape_config_set_.NumberPersistent();
     const size_t desired_size = persistent_count + date_groups.size();
     const size_t previous_size = shape_config_set_.size();
 
@@ -114,8 +113,7 @@ class ElementsSetupsPanel : public wxPanel {
   // at the index right past the last group, so it is colored and styled exactly
   // like a bar group and stays consistent if the palette is ever changed.
   void RefreshAnnualSumConfiguration(size_t group_count) {
-    const size_t persistent_count =
-        shape_config_set_.GetNumberPersistentConfigurations();
+    const size_t persistent_count = shape_config_set_.NumberPersistent();
     for (size_t index = 0; index < persistent_count; ++index) {
       if (shape_config_set_[index] ==
           ShapeConfigSet::AnnualSumConfigurationName()) {
@@ -364,7 +362,7 @@ class ElementsSetupsPanel : public wxPanel {
   }
 
   void CallbackColorPicker(wxColourPickerEvent& event) {
-    auto color = to_glm_vec4(event.GetColour());
+    auto color = ToGlmVec4(event.GetColour());
     const int selection_index = shape_configuration_list_box_->GetSelection();
     if (selection_index == wxNOT_FOUND) {
       return;

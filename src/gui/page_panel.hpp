@@ -6,6 +6,7 @@
 #include <wx/weakref.h>
 #include <wx/wx.h>
 
+#include <array>
 #include <memory>
 #include <sigslot/signal.hpp>
 
@@ -81,8 +82,6 @@ class PageSetupPanel : public wxPanel {
 
     SetSizer(vertical_sizer);
 
-    //////////////////////////////////////////////////
-
     Bind(wxEVT_BUTTON, &PageSetupPanel::CallbackButtonClicked, this);
     Bind(wxEVT_SPINCTRLDOUBLE, &PageSetupPanel::CallbackSpinControl, this,
          id_page_width_);
@@ -100,24 +99,19 @@ class PageSetupPanel : public wxPanel {
 
     auto print_data = dialog_data_.GetPrintData();
     if (print_data.GetOrientation() == wxPORTRAIT) {
-      page_setup_config.orientation = wxPORTRAIT;
-      page_setup_config.size[0] = dialog_width;
-      page_setup_config.size[1] = dialog_height;
+      page_setup_config.SetOrientation(wxPORTRAIT);
+      page_setup_config.SetSize({dialog_width, dialog_height});
     }
     if (print_data.GetOrientation() == wxLANDSCAPE) {
-      page_setup_config.orientation = wxLANDSCAPE;
-      page_setup_config.size[0] = dialog_height;
-      page_setup_config.size[1] = dialog_width;
+      page_setup_config.SetOrientation(wxLANDSCAPE);
+      page_setup_config.SetSize({dialog_height, dialog_width});
     }
 
-    page_setup_config.margins[0] =
-        static_cast<float>(dialog_data_.GetMarginTopLeft().x);
-    page_setup_config.margins[1] =
-        static_cast<float>(dialog_data_.GetMarginBottomRight().y);
-    page_setup_config.margins[2] =
-        static_cast<float>(dialog_data_.GetMarginBottomRight().x);
-    page_setup_config.margins[3] =
-        static_cast<float>(dialog_data_.GetMarginTopLeft().y);
+    page_setup_config.SetMargins(
+        {static_cast<float>(dialog_data_.GetMarginTopLeft().x),
+         static_cast<float>(dialog_data_.GetMarginBottomRight().y),
+         static_cast<float>(dialog_data_.GetMarginBottomRight().x),
+         static_cast<float>(dialog_data_.GetMarginTopLeft().y)});
 
     signal_page_setup_config_(page_setup_config);
   }
@@ -125,28 +119,26 @@ class PageSetupPanel : public wxPanel {
   void ReceivePageSetup(const PageSetupConfig& page_setup_config) {
     wxPrintData print_data = dialog_data_.GetPrintData();
     print_data.SetOrientation(
-        static_cast<wxPrintOrientation>(page_setup_config.orientation));
+        static_cast<wxPrintOrientation>(page_setup_config.Orientation()));
     dialog_data_.SetPrintData(print_data);
 
+    const std::array<float, 2>& size = page_setup_config.Size();
     if (print_data.GetOrientation() == wxPORTRAIT) {
       dialog_data_.SetPaperSize(
-          wxSize(static_cast<int>(page_setup_config.size[0]),
-                 static_cast<int>(page_setup_config.size[1])));
+          wxSize(static_cast<int>(size[0]), static_cast<int>(size[1])));
     }
     if (print_data.GetOrientation() == wxLANDSCAPE) {
       dialog_data_.SetPaperSize(
-          wxSize(static_cast<int>(page_setup_config.size[1]),
-                 static_cast<int>(page_setup_config.size[0])));
+          wxSize(static_cast<int>(size[1]), static_cast<int>(size[0])));
     }
 
     dialog_data_.CalculateIdFromPaperSize();
 
+    const std::array<float, 4>& margins = page_setup_config.Margins();
     dialog_data_.SetMarginTopLeft(
-        wxPoint(static_cast<int>(page_setup_config.margins[0]),
-                static_cast<int>(page_setup_config.margins[3])));
+        wxPoint(static_cast<int>(margins[0]), static_cast<int>(margins[3])));
     dialog_data_.SetMarginBottomRight(
-        wxPoint(static_cast<int>(page_setup_config.margins[2]),
-                static_cast<int>(page_setup_config.margins[1])));
+        wxPoint(static_cast<int>(margins[2]), static_cast<int>(margins[1])));
 
     UpdateSpinControl();
   }

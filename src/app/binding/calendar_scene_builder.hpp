@@ -27,6 +27,7 @@
 #include "../../packages/timeline_projection.hpp"
 #include "../../packages/title_config.hpp"
 #include "scene_snapshot.hpp"
+#include "scene_snapshot_builder.hpp"
 
 // Builds and fills the calendar scene graph from domain state. This is the
 // rendering/layout half of the former CalendarPage: it owns the scene graph and
@@ -53,131 +54,131 @@ class CalendarSceneBuilder {
         shape_config_(shape_config_in),
         date_groups_(date_groups_in),
         data_store_(data_store_in) {
-    graphics_engine_->set_scene_graph(scene_graph_);
+    graphics_engine_->SetSceneGraph(scene_graph_);
     auto* simple_shader =
-        graphics_engine_->search_shader("Simple Shader").value_or(nullptr);
+        graphics_engine_->SearchShader("Simple Shader").value_or(nullptr);
     auto* rectangles_shader =
-        graphics_engine_->search_shader("Rectangles Shader").value_or(nullptr);
+        graphics_engine_->SearchShader("Rectangles Shader").value_or(nullptr);
     auto* font_shader =
-        graphics_engine_->search_shader("Font Shader").value_or(nullptr);
+        graphics_engine_->SearchShader("Font Shader").value_or(nullptr);
 
     // The scene skeleton is built once here; each named node is kept as a
     // member so Build()/Setup* can reach it directly.
     auto page_shape = std::make_shared<QuadrilateralShape>(simple_shader);
     page_node_ = std::make_shared<SceneNode>("page", page_shape);
-    scene_graph_->add_child(page_node_);
+    scene_graph_->AddChild(page_node_);
 
     auto print_area_shape =
         std::make_shared<RectanglesShape>(rectangles_shader);
     print_area_node_ =
         std::make_shared<SceneNode>("print area", print_area_shape);
-    page_node_->add_child(print_area_node_);
+    page_node_->AddChild(print_area_node_);
 
     auto title_area_shape =
         std::make_shared<RectanglesShape>(rectangles_shader);
     title_area_node_ =
         std::make_shared<SceneNode>("title area", title_area_shape);
-    print_area_node_->add_child(title_area_node_);
+    print_area_node_->AddChild(title_area_node_);
 
     auto row_labels_shape =
         std::make_shared<RectanglesShape>(rectangles_shader);
     row_labels_node_ =
         std::make_shared<SceneNode>("row label area", row_labels_shape);
-    print_area_node_->add_child(row_labels_node_);
+    print_area_node_->AddChild(row_labels_node_);
 
     auto column_labels_shape =
         std::make_shared<RectanglesShape>(rectangles_shader);
     column_labels_node_ =
         std::make_shared<SceneNode>("column label area", column_labels_shape);
-    print_area_node_->add_child(column_labels_node_);
+    print_area_node_->AddChild(column_labels_node_);
 
     auto years_cells_shape =
         std::make_shared<RectanglesShape>(rectangles_shader);
     years_cells_node_ =
         std::make_shared<SceneNode>("year cells", years_cells_shape);
-    print_area_node_->add_child(years_cells_node_);
+    print_area_node_->AddChild(years_cells_node_);
 
     auto months_cells_shape =
         std::make_shared<RectanglesShape>(rectangles_shader);
     months_cells_node_ =
         std::make_shared<SceneNode>("month cells", months_cells_shape);
-    print_area_node_->add_child(months_cells_node_);
+    print_area_node_->AddChild(months_cells_node_);
 
     auto days_cells0_shape =
         std::make_shared<RectanglesShape>(rectangles_shader);
     days_cells0_node_ =
         std::make_shared<SceneNode>("day cells 0", days_cells0_shape);
-    print_area_node_->add_child(days_cells0_node_);
+    print_area_node_->AddChild(days_cells0_node_);
 
     auto days_cells1_shape =
         std::make_shared<RectanglesShape>(rectangles_shader);
     days_cells1_node_ =
         std::make_shared<SceneNode>("day cells 1", days_cells1_shape);
-    print_area_node_->add_child(days_cells1_node_);
+    print_area_node_->AddChild(days_cells1_node_);
 
     bars_cells_node_ = std::make_shared<SceneNode>("bar cells");
-    print_area_node_->add_child(bars_cells_node_);
+    print_area_node_->AddChild(bars_cells_node_);
 
     auto years_totals_shape =
         std::make_shared<RectanglesShape>(rectangles_shader);
     years_totals_node_ =
         std::make_shared<SceneNode>("year total cells", years_totals_shape);
-    print_area_node_->add_child(years_totals_node_);
+    print_area_node_->AddChild(years_totals_node_);
 
     years_totals_text_node_ = std::make_shared<SceneNode>("year total text");
-    print_area_node_->add_child(years_totals_text_node_);
+    print_area_node_->AddChild(years_totals_text_node_);
 
     auto legend_shape = std::make_shared<RectanglesShape>(rectangles_shader);
     auto legend_shape_node =
         std::make_shared<SceneNode>("legend area", legend_shape);
-    print_area_node_->add_child(legend_shape_node);
+    print_area_node_->AddChild(legend_shape_node);
 
     legend_entries_node_ = std::make_shared<SceneNode>("legend entries");
-    print_area_node_->add_child(legend_entries_node_);
+    print_area_node_->AddChild(legend_entries_node_);
 
     legend_text_node_ = std::make_shared<SceneNode>("legend text");
-    print_area_node_->add_child(legend_text_node_);
+    print_area_node_->AddChild(legend_text_node_);
 
     auto title_font_shape = std::make_shared<FontShape>(font_shader);
-    title_font_shape->set_font(font_);
+    title_font_shape->SetFont(font_);
     title_font_node_ =
         std::make_shared<SceneNode>("title text", title_font_shape);
-    print_area_node_->add_child(title_font_node_);
+    print_area_node_->AddChild(title_font_node_);
 
     month_text_node_ = std::make_shared<SceneNode>("month text");
-    print_area_node_->add_child(month_text_node_);
+    print_area_node_->AddChild(month_text_node_);
 
     year_text_node_ = std::make_shared<SceneNode>("year text");
-    print_area_node_->add_child(year_text_node_);
+    print_area_node_->AddChild(year_text_node_);
 
     bar_labels_node_ = std::make_shared<SceneNode>("bar labels");
-    print_area_node_->add_child(bar_labels_node_);
+    print_area_node_->AddChild(bar_labels_node_);
 
     // Painter layers for the fixed shape-bearing nodes. Container nodes (bar
     // cells, the text groups, …) carry no shape; their dynamic children get
     // their layer where they are created in the Setup* methods.
-    page_node_->set_draw_layer(kLayerPage);
-    print_area_node_->set_draw_layer(kLayerFrame);
-    title_area_node_->set_draw_layer(kLayerFrame);
-    legend_shape_node->set_draw_layer(kLayerFrame);
-    row_labels_node_->set_draw_layer(kLayerGrid);
-    column_labels_node_->set_draw_layer(kLayerGrid);
-    years_cells_node_->set_draw_layer(kLayerGrid);
-    months_cells_node_->set_draw_layer(kLayerGrid);
-    days_cells0_node_->set_draw_layer(kLayerGrid);
-    days_cells1_node_->set_draw_layer(kLayerGrid);
-    years_totals_node_->set_draw_layer(kLayerBars);
-    title_font_node_->set_draw_layer(kLayerText);
+    page_node_->SetDrawLayer(kLayerPage);
+    print_area_node_->SetDrawLayer(kLayerFrame);
+    title_area_node_->SetDrawLayer(kLayerFrame);
+    legend_shape_node->SetDrawLayer(kLayerFrame);
+    row_labels_node_->SetDrawLayer(kLayerGrid);
+    column_labels_node_->SetDrawLayer(kLayerGrid);
+    years_cells_node_->SetDrawLayer(kLayerGrid);
+    months_cells_node_->SetDrawLayer(kLayerGrid);
+    days_cells0_node_->SetDrawLayer(kLayerGrid);
+    days_cells1_node_->SetDrawLayer(kLayerGrid);
+    years_totals_node_->SetDrawLayer(kLayerBars);
+    title_font_node_->SetDrawLayer(kLayerText);
   }
 
   void Build() {
     auto shape =
-        std::dynamic_pointer_cast<QuadrilateralShape>(page_node_->get_shape());
+        std::dynamic_pointer_cast<QuadrilateralShape>(page_node_->GetShape());
     if (!shape) {
       return;
     }
-    shape->set_shape(page_size_);
-    shape->set_color(glm::vec4(kOne, kOne, kOne, kOne));
+    shape->SetShape(page_size_);
+    shape->SetColor(glm::vec4(kOne, kOne, kOne, kOne));
 
     // Position the whole calendar relative to the print-area node: the node
     // carries the print area's offset within the page, and every descendant is
@@ -186,7 +187,7 @@ class CalendarSceneBuilder {
     // the untransformed page node above.
     print_area_ = page_size_.reduce(page_margin_);
     print_area_origin_ = print_area_.getLB();
-    print_area_node_->set_model_matrix(
+    print_area_node_->SetModelMatrix(
         glm::translate(glm::mat4(1.0F), print_area_origin_));
     print_area_ =
         print_area_.shift(-print_area_origin_.x, -print_area_origin_.y);
@@ -248,7 +249,7 @@ class CalendarSceneBuilder {
   // presentation layer (the scene-tree widget). Rebuilt on demand from the
   // live graph after Build().
   [[nodiscard]] SceneNodeSnapshot SceneSnapshot() const {
-    return BuildSnapshot(*scene_graph_);
+    return BuildSceneSnapshot(*scene_graph_);
   }
 
   // Page-space rectangles of the pickable bars, produced by the last Build().
@@ -274,40 +275,6 @@ class CalendarSceneBuilder {
   }
 
  private:
-  // Iterative tree copy (matching the scene graph's own non-recursive
-  // traversal style): each stack frame pairs a source SceneNode with the
-  // snapshot node it fills. Child vectors are sized once and never reallocated
-  // afterwards, so the stored destination pointers stay valid.
-  static SceneNodeSnapshot BuildSnapshot(const SceneNode& root) {
-    SceneNodeSnapshot result;
-    result.name = root.get_node_name();
-    result.has_shape = root.get_shape() != nullptr;
-
-    struct Frame {
-      const SceneNode* source;
-      SceneNodeSnapshot* destination;
-    };
-    std::vector<Frame> stack;
-    stack.push_back({.source = &root, .destination = &result});
-
-    while (!stack.empty()) {
-      const Frame frame = stack.back();
-      stack.pop_back();
-
-      const auto& children = frame.source->get_children();
-      frame.destination->children.resize(children.size());
-      for (std::size_t index = 0; index < children.size(); ++index) {
-        SceneNodeSnapshot& child = frame.destination->children[index];
-        child.name = children[index]->get_node_name();
-        child.has_shape = children[index]->get_shape() != nullptr;
-        stack.push_back(
-            {.source = children[index].get(), .destination = &child});
-      }
-    }
-
-    return result;
-  }
-
   // Recolours one bar's shape: highlighted bars get a distinct outline, normal
   // bars are restored to their group's configured colours. Fill is left as
   // configured so the hover reads as an outline accent.
@@ -318,7 +285,7 @@ class CalendarSceneBuilder {
       return;
     }
     auto shape = std::dynamic_pointer_cast<RectanglesShape>(
-        iterator->second->get_shape());
+        iterator->second->GetShape());
     if (!shape) {
       return;
     }
@@ -327,9 +294,9 @@ class CalendarSceneBuilder {
     const auto config = shape_config_.GetDynamicConfiguration(group);
     if (highlighted) {
       const glm::vec4 hover_outline(kOne, kHoverOutlineGreen, kZero, kOne);
-      shape->set_color({hover_outline, config.FillColor()});
+      shape->SetColor({hover_outline, config.FillColor()});
     } else {
-      shape->set_color({config.OutlineColor(), config.FillColor()});
+      shape->SetColor({config.OutlineColor(), config.FillColor()});
     }
   }
 
@@ -337,37 +304,37 @@ class CalendarSceneBuilder {
     auto config = shape_config_.GetShapeConfiguration("Page Margin");
 
     auto shape = std::dynamic_pointer_cast<RectanglesShape>(
-        print_area_node_->get_shape());
+        print_area_node_->GetShape());
     if (!shape) {
       return;
     }
 
-    shape->set_shape(print_area_, config.LineWidth());
-    shape->set_color({config.OutlineColor(), config.FillColor()});
+    shape->SetShape(print_area_, config.LineWidth());
+    shape->SetColor({config.OutlineColor(), config.FillColor()});
   }
 
   void SetupTitleShape() {
     auto config = shape_config_.GetShapeConfiguration("Title Frame");
 
     auto shape = std::dynamic_pointer_cast<RectanglesShape>(
-        title_area_node_->get_shape());
+        title_area_node_->GetShape());
     if (!shape) {
       return;
     }
 
-    shape->set_shape(title_frame_, config.LineWidth());
-    shape->set_color({config.OutlineColor(), config.FillColor()});
+    shape->SetShape(title_frame_, config.LineWidth());
+    shape->SetColor({config.OutlineColor(), config.FillColor()});
 
     auto title_shape =
-        std::dynamic_pointer_cast<FontShape>(title_font_node_->get_shape());
+        std::dynamic_pointer_cast<FontShape>(title_font_node_->GetShape());
     if (!title_shape) {
       return;
     }
-    title_shape->set_font(font_);
+    title_shape->SetFont(font_);
     const std::array<float, 4>& text_color = title_config_.TextColor();
-    title_shape->set_color(
+    title_shape->SetColor(
         glm::vec4(text_color[0], text_color[1], text_color[2], text_color[3]));
-    title_shape->set_shape_centered(
+    title_shape->SetShapeCentered(
         title_config_.TitleText(), title_frame_.getCenter(),
         title_frame_.height() * title_config_.FontSizeRatio());
   }
@@ -388,7 +355,7 @@ class CalendarSceneBuilder {
     }
 
     auto* font_shader =
-        graphics_engine_->search_shader("Font Shader").value_or(nullptr);
+        graphics_engine_->SearchShader("Font Shader").value_or(nullptr);
 
     std::vector<rectf> x_label_frames(number_months);
     labels_font_size_ =
@@ -400,14 +367,14 @@ class CalendarSceneBuilder {
 
     auto& month_node = month_text_node_;
 
-    month_node->remove_children();
+    month_node->RemoveChildren();
     for (size_t index = 0; index < number_months; ++index) {
       auto month_text_shape = std::make_shared<FontShape>(font_shader);
-      month_text_shape->set_font(font_);
+      month_text_shape->SetFont(font_);
       auto month_text_node =
           std::make_shared<SceneNode>(months_names.at(index), month_text_shape);
-      month_text_node->set_draw_layer(kLayerText);
-      month_node->add_child(month_text_node);
+      month_text_node->SetDrawLayer(kLayerText);
+      month_node->AddChild(month_text_node);
 
       const auto float_index = static_cast<float>(index);
       const auto left = x_labels_frame_.l() + (cell_width_ * float_index);
@@ -416,20 +383,20 @@ class CalendarSceneBuilder {
       x_label_frames.at(index).setB(x_labels_frame_.b());
       x_label_frames.at(index).setT(x_labels_frame_.t());
 
-      month_text_shape->set_shape_centered(months_names.at(index),
-                                           x_label_frames.at(index).getCenter(),
-                                           labels_font_size_);
+      month_text_shape->SetShapeCentered(months_names.at(index),
+                                         x_label_frames.at(index).getCenter(),
+                                         labels_font_size_);
     }
 
     auto config = shape_config_.GetShapeConfiguration("Calendar Labels");
 
     auto column_shape = std::dynamic_pointer_cast<RectanglesShape>(
-        column_labels_node_->get_shape());
+        column_labels_node_->GetShape());
     if (!column_shape) {
       return;
     }
-    column_shape->set_shape(x_label_frames, config.LineWidth());
-    column_shape->set_color({config.OutlineColor(), config.FillColor()});
+    column_shape->SetShape(x_label_frames, config.LineWidth());
+    column_shape->SetColor({config.OutlineColor(), config.FillColor()});
 
     auto& year_node = year_text_node_;
 
@@ -440,17 +407,17 @@ class CalendarSceneBuilder {
 
     const TimelineProjection projection(calendar_config_);
     std::vector<rectf> y_labels_frames(span_years);
-    year_node->remove_children();
+    year_node->RemoveChildren();
     for (std::size_t index = 0; index < span_years; ++index) {
       const std::string current_year_text =
           std::to_string(projection.YearForRow(index));
 
       auto year_text_shape = std::make_shared<FontShape>(font_shader);
-      year_text_shape->set_font(font_);
+      year_text_shape->SetFont(font_);
       auto year_text_node =
           std::make_shared<SceneNode>(current_year_text, year_text_shape);
-      year_text_node->set_draw_layer(kLayerText);
-      year_node->add_child(year_text_node);
+      year_text_node->SetDrawLayer(kLayerText);
+      year_node->AddChild(year_text_node);
 
       const auto float_index = static_cast<float>(index);
       const auto bottom = y_labels_frame_.b() + (row_height_ * float_index);
@@ -459,18 +426,18 @@ class CalendarSceneBuilder {
       y_labels_frames.at(index).setB(bottom);
       y_labels_frames.at(index).setT(bottom + row_height_);
 
-      year_text_shape->set_shape_centered(current_year_text,
-                                          y_labels_frames.at(index).getCenter(),
-                                          labels_font_size_);
+      year_text_shape->SetShapeCentered(current_year_text,
+                                        y_labels_frames.at(index).getCenter(),
+                                        labels_font_size_);
     }
 
     auto row_shape = std::dynamic_pointer_cast<RectanglesShape>(
-        row_labels_node_->get_shape());
+        row_labels_node_->GetShape());
     if (!row_shape) {
       return;
     }
-    row_shape->set_shape(y_labels_frames, config.LineWidth());
-    row_shape->set_color({config.OutlineColor(), config.FillColor()});
+    row_shape->SetShape(y_labels_frames, config.LineWidth());
+    row_shape->SetColor({config.OutlineColor(), config.FillColor()});
   }
 
   void SetupYearsShapes() {
@@ -494,12 +461,12 @@ class CalendarSceneBuilder {
     auto config = shape_config_.GetShapeConfiguration("Years Shapes");
 
     auto shape = std::dynamic_pointer_cast<RectanglesShape>(
-        years_cells_node_->get_shape());
+        years_cells_node_->GetShape());
     if (!shape) {
       return;
     }
-    shape->set_shape(years_cells, config.LineWidth());
-    shape->set_color({config.OutlineColor(), config.FillColor()});
+    shape->SetShape(years_cells, config.LineWidth());
+    shape->SetColor({config.OutlineColor(), config.FillColor()});
   }
 
   void SetupMonthsShapes() {
@@ -544,12 +511,12 @@ class CalendarSceneBuilder {
     auto config = shape_config_.GetShapeConfiguration("Months Shapes");
 
     auto shape = std::dynamic_pointer_cast<RectanglesShape>(
-        months_cells_node_->get_shape());
+        months_cells_node_->GetShape());
     if (!shape) {
       return;
     }
-    shape->set_shape(months_cells, config.LineWidth());
-    shape->set_color({config.OutlineColor(), config.FillColor()});
+    shape->SetShape(months_cells, config.LineWidth());
+    shape->SetColor({config.OutlineColor(), config.FillColor()});
   }
 
   void SetupDaysShapes() {
@@ -608,26 +575,25 @@ class CalendarSceneBuilder {
     auto sunday_config = shape_config_.GetShapeConfiguration("Sunday Shapes");
 
     auto shape0 = std::dynamic_pointer_cast<RectanglesShape>(
-        days_cells0_node_->get_shape());
+        days_cells0_node_->GetShape());
     if (!shape0) {
       return;
     }
-    shape0->set_shape(days_cells0, config.LineWidth());
-    shape0->set_color({config.OutlineColor(), config.FillColor()});
+    shape0->SetShape(days_cells0, config.LineWidth());
+    shape0->SetColor({config.OutlineColor(), config.FillColor()});
 
     auto shape1 = std::dynamic_pointer_cast<RectanglesShape>(
-        days_cells1_node_->get_shape());
+        days_cells1_node_->GetShape());
     if (!shape1) {
       return;
     }
-    shape1->set_shape(days_cells1, sunday_config.LineWidth());
-    shape1->set_color(
-        {sunday_config.OutlineColor(), sunday_config.FillColor()});
+    shape1->SetShape(days_cells1, sunday_config.LineWidth());
+    shape1->SetColor({sunday_config.OutlineColor(), sunday_config.FillColor()});
   }
 
   void SetupBarsShape() {
     auto& node = bars_cells_node_;
-    node->remove_children();
+    node->RemoveChildren();
 
     const auto number_groups = date_groups_.Items().size();
     std::vector<std::shared_ptr<SceneNode>> group_nodes;
@@ -635,20 +601,20 @@ class CalendarSceneBuilder {
     for (size_t index = 0; index < number_groups; ++index) {
       auto group_node = std::make_shared<SceneNode>(std::string("group node ") +
                                                     std::to_string(index));
-      node->add_child(group_node);
+      node->AddChild(group_node);
       group_nodes.push_back(group_node);
     }
 
     auto& node_labels = bar_labels_node_;
-    node_labels->remove_children();
+    node_labels->RemoveChildren();
 
     bar_pick_boxes_.clear();
     bar_nodes_.clear();
 
     auto* font_shader =
-        graphics_engine_->search_shader("Font Shader").value_or(nullptr);
+        graphics_engine_->SearchShader("Font Shader").value_or(nullptr);
     auto* rectangles_shader =
-        graphics_engine_->search_shader("Rectangles Shader").value_or(nullptr);
+        graphics_engine_->SearchShader("Rectangles Shader").value_or(nullptr);
 
     const TimelineProjection projection(calendar_config_);
     const auto number_bars = data_store_.GetNumberBars();
@@ -677,14 +643,13 @@ class CalendarSceneBuilder {
       // matrix would distort. The bar's world rect is therefore unchanged.
       auto bar_node = std::make_shared<SceneNode>(std::string("bar ") +
                                                   std::to_string(index));
-      bar_node->set_model_matrix(glm::translate(
+      bar_node->SetModelMatrix(glm::translate(
           glm::mat4(1.0F), glm::vec3(bar_left, current_sub_cell.b(), kZero)));
 
-      // Pick identity on the node + a page-space box for hit-testing. The
-      // node's world position is print_area_origin_ + (bar_left, sub_cell.b()),
-      // so the page-space rect is the local bar rect shifted by that origin.
+      // Page-space box for hit-testing. The node's world position is
+      // print_area_origin_ + (bar_left, sub_cell.b()), so the page-space rect
+      // is the local bar rect shifted by that origin.
       const PickId pick_id{.kind = PickId::Kind::kBar, .index = index};
-      bar_node->set_pick_id(pick_id);
       bar_pick_boxes_.push_back(PickBox{
           .id = pick_id,
           .rect =
@@ -694,32 +659,32 @@ class CalendarSceneBuilder {
                     current_sub_cell.b() + bar_height + print_area_origin_.y)});
 
       auto bar_shape = std::make_shared<RectanglesShape>(rectangles_shader);
-      bar_shape->set_shape(rectf(kZero, bar_width, kZero, bar_height),
-                           current_shape_config.LineWidth());
-      bar_shape->set_color({current_shape_config.OutlineColor(),
-                            current_shape_config.FillColor()});
-      bar_node->set_shape(bar_shape);
-      bar_node->set_draw_layer(kLayerBars);
-      group_nodes.at(current_group)->add_child(bar_node);
+      bar_shape->SetShape(rectf(kZero, bar_width, kZero, bar_height),
+                          current_shape_config.LineWidth());
+      bar_shape->SetColor({current_shape_config.OutlineColor(),
+                           current_shape_config.FillColor()});
+      bar_node->SetShape(bar_shape);
+      bar_node->SetDrawLayer(kLayerBars);
+      group_nodes.at(current_group)->AddChild(bar_node);
       bar_nodes_.emplace(index, bar_node);
 
       const std::string label_text = bar.GetText();
 
       auto child_node = std::make_shared<SceneNode>(std::string("label node ") +
                                                     std::to_string(index));
-      child_node->set_draw_layer(kLayerText);
-      node_labels->add_child(child_node);
+      child_node->SetDrawLayer(kLayerText);
+      node_labels->AddChild(child_node);
 
       auto text_shape = std::make_shared<FontShape>(font_shader);
-      text_shape->set_font(font_);
-      child_node->set_shape(text_shape);
+      text_shape->SetFont(font_);
+      child_node->SetShape(text_shape);
 
       auto current_text_cell = proportion_frame_layout_.GetSubFrame(row, 2);
       current_text_cell.setL(bar_left);
       current_text_cell.setR(bar_left + bar_width);
 
-      text_shape->set_shape_centered(label_text, current_text_cell.getCenter(),
-                                     current_text_cell.height());
+      text_shape->SetShapeCentered(label_text, current_text_cell.getCenter(),
+                                   current_text_cell.height());
     }
 
     // Re-apply the hover highlight to the freshly built node, if still hovered.
@@ -730,11 +695,11 @@ class CalendarSceneBuilder {
 
   void SetupYearsTotals() {
     auto* font_shader =
-        graphics_engine_->search_shader("Font Shader").value_or(nullptr);
+        graphics_engine_->SearchShader("Font Shader").value_or(nullptr);
 
     auto& node_cells = years_totals_node_;
     auto& node_text = years_totals_text_node_;
-    node_text->remove_children();
+    node_text->RemoveChildren();
 
     const std::size_t span_years = data_store_.GetSpan();
     if (span_years == 0) {
@@ -778,42 +743,42 @@ class CalendarSceneBuilder {
         year_total_text_cell.setT(year_total_cell.t());
 
         auto text_shape = std::make_shared<FontShape>(font_shader);
-        text_shape->set_font(font_);
-        text_shape->set_shape_centered(year_total_text,
-                                       year_total_text_cell.getCenter(),
-                                       year_total_text_cell.height());
+        text_shape->SetFont(font_);
+        text_shape->SetShapeCentered(year_total_text,
+                                     year_total_text_cell.getCenter(),
+                                     year_total_text_cell.height());
 
         auto node_child = std::make_shared<SceneNode>(
             std::string("year total label ") + std::to_string(index));
-        node_child->set_shape(text_shape);
-        node_child->set_draw_layer(kLayerText);
-        node_text->add_child(node_child);
+        node_child->SetShape(text_shape);
+        node_child->SetDrawLayer(kLayerText);
+        node_text->AddChild(node_child);
       }
     }
 
     auto config = shape_config_.GetShapeConfiguration("Years Totals");
 
     auto shape =
-        std::dynamic_pointer_cast<RectanglesShape>(node_cells->get_shape());
+        std::dynamic_pointer_cast<RectanglesShape>(node_cells->GetShape());
     if (!shape) {
       return;
     }
 
-    shape->set_shape(years_totals_cells, config.LineWidth());
-    shape->set_color({config.OutlineColor(), config.FillColor()});
+    shape->SetShape(years_totals_cells, config.LineWidth());
+    shape->SetColor({config.OutlineColor(), config.FillColor()});
   }
 
   void SetupLegend() {
     auto* font_shader =
-        graphics_engine_->search_shader("Font Shader").value_or(nullptr);
+        graphics_engine_->SearchShader("Font Shader").value_or(nullptr);
     auto* rectangles_shader =
-        graphics_engine_->search_shader("Rectangles Shader").value_or(nullptr);
+        graphics_engine_->SearchShader("Rectangles Shader").value_or(nullptr);
 
     auto& node_entries = legend_entries_node_;
-    node_entries->remove_children();
+    node_entries->RemoveChildren();
 
     auto& node_text = legend_text_node_;
-    node_text->remove_children();
+    node_text->RemoveChildren();
 
     const size_t number_entry_frames = (date_groups_.Items().size() + 1) * 2;
     std::vector<rectf> legend_entries_frames(number_entry_frames);
@@ -850,13 +815,13 @@ class CalendarSceneBuilder {
       const auto label_index = index * 2;
       auto node_text_child = std::make_shared<SceneNode>(
           std::string("legend label ") + std::to_string(index));
-      node_text_child->set_draw_layer(kLayerText);
-      node_text->add_child(node_text_child);
+      node_text_child->SetDrawLayer(kLayerText);
+      node_text->AddChild(node_text_child);
 
       auto shape_text = std::make_shared<FontShape>(font_shader);
-      node_text_child->set_shape(shape_text);
-      shape_text->set_font(font_);
-      shape_text->set_shape_centered(
+      node_text_child->SetShape(shape_text);
+      shape_text->SetFont(font_);
+      shape_text->SetShapeCentered(
           date_groups_.Items().at(index).GetName(),
           legend_entries_frames.at(label_index).getCenter(), legend_font_size);
 
@@ -874,28 +839,28 @@ class CalendarSceneBuilder {
 
         auto node_entry = std::make_shared<SceneNode>(
             std::string("legend bar ") + std::to_string(index));
-        node_entry->set_draw_layer(kLayerBars);
-        node_entries->add_child(node_entry);
+        node_entry->SetDrawLayer(kLayerBars);
+        node_entries->AddChild(node_entry);
 
         auto entry_shape = std::make_shared<RectanglesShape>(rectangles_shader);
-        node_entry->set_shape(entry_shape);
+        node_entry->SetShape(entry_shape);
 
-        entry_shape->set_shape(current_cell, current_shape_config.LineWidth());
-        entry_shape->set_color({current_shape_config.OutlineColor(),
-                                current_shape_config.FillColor()});
+        entry_shape->SetShape(current_cell, current_shape_config.LineWidth());
+        entry_shape->SetColor({current_shape_config.OutlineColor(),
+                               current_shape_config.FillColor()});
       }
     }
 
     {
       auto node_text_child =
           std::make_shared<SceneNode>(std::string("legend label year total"));
-      node_text_child->set_draw_layer(kLayerText);
-      node_text->add_child(node_text_child);
+      node_text_child->SetDrawLayer(kLayerText);
+      node_text->AddChild(node_text_child);
 
       auto shape_text = std::make_shared<FontShape>(font_shader);
-      node_text_child->set_shape(shape_text);
-      shape_text->set_font(font_);
-      shape_text->set_shape_centered(
+      node_text_child->SetShape(shape_text);
+      shape_text->SetFont(font_);
+      shape_text->SetShapeCentered(
           "Annual sum",
           legend_entries_frames.at(legend_entries_frames.size() - 2)
               .getCenter(),
@@ -916,15 +881,15 @@ class CalendarSceneBuilder {
 
         auto node_entry =
             std::make_shared<SceneNode>(std::string("legend bar annual sum"));
-        node_entry->set_draw_layer(kLayerBars);
-        node_entries->add_child(node_entry);
+        node_entry->SetDrawLayer(kLayerBars);
+        node_entries->AddChild(node_entry);
 
         auto entry_shape = std::make_shared<RectanglesShape>(rectangles_shader);
-        node_entry->set_shape(entry_shape);
+        node_entry->SetShape(entry_shape);
 
-        entry_shape->set_shape(current_cell, current_shape_config.LineWidth());
-        entry_shape->set_color({current_shape_config.OutlineColor(),
-                                current_shape_config.FillColor()});
+        entry_shape->SetShape(current_cell, current_shape_config.LineWidth());
+        entry_shape->SetColor({current_shape_config.OutlineColor(),
+                               current_shape_config.FillColor()});
       }
     }
   }
