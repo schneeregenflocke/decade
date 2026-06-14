@@ -57,10 +57,12 @@ class CalendarSceneBuilder {
     graphics_engine_->SetSceneGraph(scene_graph_);
     auto* simple_shader =
         graphics_engine_->SearchShader("Simple Shader").value_or(nullptr);
-    auto* rectangles_shader =
+    rectangles_shader_ =
         graphics_engine_->SearchShader("Rectangles Shader").value_or(nullptr);
-    auto* font_shader =
+    font_shader_ =
         graphics_engine_->SearchShader("Font Shader").value_or(nullptr);
+    auto* rectangles_shader = rectangles_shader_;
+    auto* font_shader = font_shader_;
 
     // The scene skeleton is built once here; each named node is kept as a
     // member so Build()/Setup* can reach it directly.
@@ -316,6 +318,21 @@ class CalendarSceneBuilder {
     shape->SetColor({config.OutlineColor(), config.FillColor()});
   }
 
+  // Creates a centered text node named `name` under `parent`: a FontShape on
+  // the text layer rendering `text` centered at `center` with font height
+  // `size`. Concentrates the repeated "make FontShape, SetFont, centre, attach
+  // on the text layer" sequence used by every label group.
+  void AddCenteredText(const std::shared_ptr<SceneNode>& parent,
+                       const std::string& name, const std::string& text,
+                       const glm::vec3& center, float size) {
+    auto shape = std::make_shared<FontShape>(font_shader_);
+    shape->SetFont(font_);
+    shape->SetShapeCentered(text, center, size);
+    auto node = std::make_shared<SceneNode>(name, shape);
+    node->SetDrawLayer(kLayerText);
+    parent->AddChild(node);
+  }
+
   void SetupPrintAreaShape() {
     FillRectangles(print_area_node_, print_area_,
                    shape_config_.GetShapeConfiguration("Page Margin"));
@@ -354,9 +371,6 @@ class CalendarSceneBuilder {
       }
     }
 
-    auto* font_shader =
-        graphics_engine_->SearchShader("Font Shader").value_or(nullptr);
-
     std::vector<rectf> x_label_frames(number_months);
     labels_font_size_ =
         font_->AdjustTextSize(rectf::from_dimension(rectf::Dimension{
@@ -369,13 +383,6 @@ class CalendarSceneBuilder {
 
     month_node->RemoveChildren();
     for (size_t index = 0; index < number_months; ++index) {
-      auto month_text_shape = std::make_shared<FontShape>(font_shader);
-      month_text_shape->SetFont(font_);
-      auto month_text_node =
-          std::make_shared<SceneNode>(months_names.at(index), month_text_shape);
-      month_text_node->SetDrawLayer(kLayerText);
-      month_node->AddChild(month_text_node);
-
       const auto float_index = static_cast<float>(index);
       const auto left = x_labels_frame_.l() + (cell_width_ * float_index);
       x_label_frames.at(index).setL(left);
@@ -383,9 +390,9 @@ class CalendarSceneBuilder {
       x_label_frames.at(index).setB(x_labels_frame_.b());
       x_label_frames.at(index).setT(x_labels_frame_.t());
 
-      month_text_shape->SetShapeCentered(months_names.at(index),
-                                         x_label_frames.at(index).getCenter(),
-                                         labels_font_size_);
+      AddCenteredText(month_node, months_names.at(index),
+                      months_names.at(index),
+                      x_label_frames.at(index).getCenter(), labels_font_size_);
     }
 
     const auto config = shape_config_.GetShapeConfiguration("Calendar Labels");
@@ -405,13 +412,6 @@ class CalendarSceneBuilder {
       const std::string current_year_text =
           std::to_string(projection.YearForRow(index));
 
-      auto year_text_shape = std::make_shared<FontShape>(font_shader);
-      year_text_shape->SetFont(font_);
-      auto year_text_node =
-          std::make_shared<SceneNode>(current_year_text, year_text_shape);
-      year_text_node->SetDrawLayer(kLayerText);
-      year_node->AddChild(year_text_node);
-
       const auto float_index = static_cast<float>(index);
       const auto bottom = y_labels_frame_.b() + (row_height_ * float_index);
       y_labels_frames.at(index).setL(y_labels_frame_.l());
@@ -419,9 +419,8 @@ class CalendarSceneBuilder {
       y_labels_frames.at(index).setB(bottom);
       y_labels_frames.at(index).setT(bottom + row_height_);
 
-      year_text_shape->SetShapeCentered(current_year_text,
-                                        y_labels_frames.at(index).getCenter(),
-                                        labels_font_size_);
+      AddCenteredText(year_node, current_year_text, current_year_text,
+                      y_labels_frames.at(index).getCenter(), labels_font_size_);
     }
 
     FillRectangles(row_labels_node_, y_labels_frames, config);
@@ -570,11 +569,6 @@ class CalendarSceneBuilder {
     bar_pick_boxes_.clear();
     bar_nodes_.clear();
 
-    auto* font_shader =
-        graphics_engine_->SearchShader("Font Shader").value_or(nullptr);
-    auto* rectangles_shader =
-        graphics_engine_->SearchShader("Rectangles Shader").value_or(nullptr);
-
     const TimelineProjection projection(calendar_config_);
     const auto number_bars = data_store_.GetNumberBars();
     for (size_t index = 0; index < number_bars; ++index) {
@@ -617,7 +611,7 @@ class CalendarSceneBuilder {
                     current_sub_cell.b() + print_area_origin_.y,
                     current_sub_cell.b() + bar_height + print_area_origin_.y)});
 
-      auto bar_shape = std::make_shared<RectanglesShape>(rectangles_shader);
+      auto bar_shape = std::make_shared<RectanglesShape>(rectangles_shader_);
       bar_shape->SetShape(rectf(kZero, bar_width, kZero, bar_height),
                           current_shape_config.LineWidth());
       bar_shape->SetColor({current_shape_config.OutlineColor(),
@@ -627,23 +621,14 @@ class CalendarSceneBuilder {
       group_nodes.at(current_group)->AddChild(bar_node);
       bar_nodes_.emplace(index, bar_node);
 
-      const std::string label_text = bar.GetText();
-
-      auto child_node = std::make_shared<SceneNode>(std::string("label node ") +
-                                                    std::to_string(index));
-      child_node->SetDrawLayer(kLayerText);
-      node_labels->AddChild(child_node);
-
-      auto text_shape = std::make_shared<FontShape>(font_shader);
-      text_shape->SetFont(font_);
-      child_node->SetShape(text_shape);
-
       auto current_text_cell = proportion_frame_layout_.GetSubFrame(row, 2);
       current_text_cell.setL(bar_left);
       current_text_cell.setR(bar_left + bar_width);
 
-      text_shape->SetShapeCentered(label_text, current_text_cell.getCenter(),
-                                   current_text_cell.height());
+      AddCenteredText(node_labels,
+                      std::string("label node ") + std::to_string(index),
+                      bar.GetText(), current_text_cell.getCenter(),
+                      current_text_cell.height());
     }
 
     // Re-apply the hover highlight to the freshly built node, if still hovered.
@@ -653,9 +638,6 @@ class CalendarSceneBuilder {
   }
 
   void SetupYearsTotals() {
-    auto* font_shader =
-        graphics_engine_->SearchShader("Font Shader").value_or(nullptr);
-
     auto& node_cells = years_totals_node_;
     auto& node_text = years_totals_text_node_;
     node_text->RemoveChildren();
@@ -701,17 +683,10 @@ class CalendarSceneBuilder {
         year_total_text_cell.setB(year_total_cell.b());
         year_total_text_cell.setT(year_total_cell.t());
 
-        auto text_shape = std::make_shared<FontShape>(font_shader);
-        text_shape->SetFont(font_);
-        text_shape->SetShapeCentered(year_total_text,
-                                     year_total_text_cell.getCenter(),
-                                     year_total_text_cell.height());
-
-        auto node_child = std::make_shared<SceneNode>(
-            std::string("year total label ") + std::to_string(index));
-        node_child->SetShape(text_shape);
-        node_child->SetDrawLayer(kLayerText);
-        node_text->AddChild(node_child);
+        AddCenteredText(
+            node_text, std::string("year total label ") + std::to_string(index),
+            year_total_text, year_total_text_cell.getCenter(),
+            year_total_text_cell.height());
       }
     }
 
@@ -720,11 +695,6 @@ class CalendarSceneBuilder {
   }
 
   void SetupLegend() {
-    auto* font_shader =
-        graphics_engine_->SearchShader("Font Shader").value_or(nullptr);
-    auto* rectangles_shader =
-        graphics_engine_->SearchShader("Rectangles Shader").value_or(nullptr);
-
     auto& node_entries = legend_entries_node_;
     node_entries->RemoveChildren();
 
@@ -764,15 +734,8 @@ class CalendarSceneBuilder {
     const std::size_t span_years = calendar_config_.GetSpanLengthYears();
     for (size_t index = 0; index < date_groups_.Items().size(); ++index) {
       const auto label_index = index * 2;
-      auto node_text_child = std::make_shared<SceneNode>(
-          std::string("legend label ") + std::to_string(index));
-      node_text_child->SetDrawLayer(kLayerText);
-      node_text->AddChild(node_text_child);
-
-      auto shape_text = std::make_shared<FontShape>(font_shader);
-      node_text_child->SetShape(shape_text);
-      shape_text->SetFont(font_);
-      shape_text->SetShapeCentered(
+      AddCenteredText(
+          node_text, std::string("legend label ") + std::to_string(index),
           date_groups_.Items().at(index).GetName(),
           legend_entries_frames.at(label_index).getCenter(), legend_font_size);
 
@@ -793,7 +756,8 @@ class CalendarSceneBuilder {
         node_entry->SetDrawLayer(kLayerBars);
         node_entries->AddChild(node_entry);
 
-        auto entry_shape = std::make_shared<RectanglesShape>(rectangles_shader);
+        auto entry_shape =
+            std::make_shared<RectanglesShape>(rectangles_shader_);
         node_entry->SetShape(entry_shape);
 
         entry_shape->SetShape(current_cell, current_shape_config.LineWidth());
@@ -803,19 +767,11 @@ class CalendarSceneBuilder {
     }
 
     {
-      auto node_text_child =
-          std::make_shared<SceneNode>(std::string("legend label year total"));
-      node_text_child->SetDrawLayer(kLayerText);
-      node_text->AddChild(node_text_child);
-
-      auto shape_text = std::make_shared<FontShape>(font_shader);
-      node_text_child->SetShape(shape_text);
-      shape_text->SetFont(font_);
-      shape_text->SetShapeCentered(
-          "Annual sum",
-          legend_entries_frames.at(legend_entries_frames.size() - 2)
-              .getCenter(),
-          legend_font_size);
+      AddCenteredText(node_text, std::string("legend label year total"),
+                      "Annual sum",
+                      legend_entries_frames.at(legend_entries_frames.size() - 2)
+                          .getCenter(),
+                      legend_font_size);
 
       if (span_years > 0U) {
         const auto current_height =
@@ -835,7 +791,8 @@ class CalendarSceneBuilder {
         node_entry->SetDrawLayer(kLayerBars);
         node_entries->AddChild(node_entry);
 
-        auto entry_shape = std::make_shared<RectanglesShape>(rectangles_shader);
+        auto entry_shape =
+            std::make_shared<RectanglesShape>(rectangles_shader_);
         node_entry->SetShape(entry_shape);
 
         entry_shape->SetShape(current_cell, current_shape_config.LineWidth());
@@ -869,6 +826,12 @@ class CalendarSceneBuilder {
 
   std::shared_ptr<SceneNode> scene_graph_;
   GraphicsEngine* graphics_engine_{nullptr};
+
+  // Cached shader handles, looked up once in the constructor. The shaders live
+  // in the GraphicsEngine for the builder's whole lifetime, so the Setup*
+  // methods reach for these instead of repeating the name lookup.
+  Shader* rectangles_shader_{nullptr};
+  Shader* font_shader_{nullptr};
 
   // Stable handles to the fixed scene-skeleton nodes, created once in the
   // constructor and reached directly by Build() and the Setup* methods.
