@@ -37,8 +37,6 @@ class PropertyGridPanel : public wxPropertyGrid {
     Append(gui_auto_span_);
     Append(gui_lower_limit_);
     Append(gui_upper_limit_);
-    // DisableProperty(gui_lower_limit);
-    // DisableProperty(gui_upper_limit);
 
     Append(std::make_unique<wxPropertyCategory>("Row Spacing Proportions",
                                                 wxPG_LABEL)

@@ -41,8 +41,6 @@ class GraphicsEngine {
     scene_graph_ = new_scene_graph;
   }
 
-  Shaders& GetShaders() { return shaders_; }
-
   std::optional<Shader*> search_shader(const std::string& search_name) {
     return shaders_.search_shader(search_name);
   }

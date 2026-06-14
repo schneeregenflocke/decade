@@ -52,8 +52,6 @@ class DateTablePanel : public wxPanel {
             nullptr, 0L, wxDefaultValidator, wxChoiceNameStr)
             .release();
 
-    ////////////////////////////////////////////////////////////////////////////////
-
     wxBoxSizer* buttons_sizer =
         std::make_unique<wxBoxSizer>(wxHORIZONTAL).release();
     wxSizerFlags const buttons_flags =
@@ -188,8 +186,6 @@ class DateTablePanel : public wxPanel {
 
  private:
   void InitColumns() {
-    // table_widget->ClearColumns();
-
     table_widget_->AppendTextColumn(L"From Date", wxDATAVIEW_CELL_EDITABLE);
     table_widget_->AppendTextColumn(L"To Date", wxDATAVIEW_CELL_EDITABLE);
     table_widget_->AppendTextColumn(L"Number", wxDATAVIEW_CELL_INERT);

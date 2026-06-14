@@ -680,11 +680,10 @@ class CalendarSceneBuilder {
       bar_node->set_model_matrix(glm::translate(
           glm::mat4(1.0F), glm::vec3(bar_left, current_sub_cell.b(), kZero)));
 
-      // Pick identity on the node + a page-space box for hit-testing. The
-      // node's world position is print_area_origin_ + (bar_left, sub_cell.b()),
-      // so the page-space rect is the local bar rect shifted by that origin.
+      // Page-space box for hit-testing. The node's world position is
+      // print_area_origin_ + (bar_left, sub_cell.b()), so the page-space rect
+      // is the local bar rect shifted by that origin.
       const PickId pick_id{.kind = PickId::Kind::kBar, .index = index};
-      bar_node->set_pick_id(pick_id);
       bar_pick_boxes_.push_back(PickBox{
           .id = pick_id,
           .rect =

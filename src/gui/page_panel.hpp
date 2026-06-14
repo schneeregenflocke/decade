@@ -81,8 +81,6 @@ class PageSetupPanel : public wxPanel {
 
     SetSizer(vertical_sizer);
 
-    //////////////////////////////////////////////////
-
     Bind(wxEVT_BUTTON, &PageSetupPanel::CallbackButtonClicked, this);
     Bind(wxEVT_SPINCTRLDOUBLE, &PageSetupPanel::CallbackSpinControl, this,
          id_page_width_);

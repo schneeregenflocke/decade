@@ -4,14 +4,13 @@
 #include <algorithm>
 #include <glm/mat4x4.hpp>
 #include <memory>
-#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "pick_id.hpp"
 #include "shapes.hpp"
-class SceneNode : public std::enable_shared_from_this<SceneNode> {
+
+class SceneNode {
  public:
   SceneNode() : model_matrix_(1.0F) {}
 
@@ -28,12 +27,6 @@ class SceneNode : public std::enable_shared_from_this<SceneNode> {
     children_.push_back(child);
   }
 
-  auto add_child() {
-    auto child = std::make_shared<SceneNode>();
-    children_.push_back(child);
-    return child;
-  }
-
   [[nodiscard]] const std::vector<std::shared_ptr<SceneNode>>& get_children()
       const {
     return children_;
@@ -45,7 +38,7 @@ class SceneNode : public std::enable_shared_from_this<SceneNode> {
     shape_ = std::move(shape_ptr);
   }
 
-  std::shared_ptr<Shape> get_shape() const { return shape_; }
+  [[nodiscard]] std::shared_ptr<Shape> get_shape() const { return shape_; }
 
   [[nodiscard]] const std::string& get_node_name() const { return node_name_; }
 
@@ -66,33 +59,6 @@ class SceneNode : public std::enable_shared_from_this<SceneNode> {
   void set_draw_layer(int layer) { draw_layer_ = layer; }
 
   [[nodiscard]] int get_draw_layer() const { return draw_layer_; }
-
-  // Optional pick identity: set on nodes that hit-testing can return (e.g. each
-  // bar). Carried here so a picked element maps straight back to its node.
-  void set_pick_id(const PickId& pick_id) { pick_id_ = pick_id; }
-
-  [[nodiscard]] const std::optional<PickId>& get_pick_id() const {
-    return pick_id_;
-  }
-
-  std::optional<std::shared_ptr<SceneNode>> search_node(
-      const std::string& search_name) {
-    std::vector<std::shared_ptr<SceneNode>> stack;
-    stack.push_back(shared_from_this());
-
-    while (!stack.empty()) {
-      auto current = stack.back();
-      stack.pop_back();
-      if (current->node_name_ == search_name) {
-        return {current};
-      }
-      for (const auto& child : current->children_) {
-        stack.push_back(child);
-      }
-    }
-
-    return std::nullopt;
-  }
 
   // Draws the subtree in two phases. First, a depth-first walk accumulates each
   // node's world transform (parent_world * local model matrix) and collects its
@@ -146,6 +112,5 @@ class SceneNode : public std::enable_shared_from_this<SceneNode> {
   glm::mat4 model_matrix_;
   std::shared_ptr<Shape> shape_;
   int draw_layer_{0};
-  std::optional<PickId> pick_id_;
 };
 #endif  // SCENE_GRAPH_HPP

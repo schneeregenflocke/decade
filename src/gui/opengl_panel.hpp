@@ -26,74 +26,6 @@
 #include "../packages/page_setup_config.hpp"
 #include "mouse_interaction.hpp"
 
-// Funktion zur Umwandlung der OpenGL-Enums in menschenlesbare Strings
-inline const char* GetSourceString(GLenum source) {
-  switch (source) {
-    case GL_DEBUG_SOURCE_API:
-      return "API";
-    case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
-      return "Window System";
-    case GL_DEBUG_SOURCE_SHADER_COMPILER:
-      return "Shader Compiler";
-    case GL_DEBUG_SOURCE_THIRD_PARTY:
-      return "Third Party";
-    case GL_DEBUG_SOURCE_APPLICATION:
-      return "Application";
-    case GL_DEBUG_SOURCE_OTHER:
-      return "Other";
-    default:
-      return "Unknown";
-  }
-}
-
-inline const char* GetTypeString(GLenum type) {
-  switch (type) {
-    case GL_DEBUG_TYPE_ERROR:
-      return "Error";
-    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-      return "Deprecated Behavior";
-    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
-      return "Undefined Behavior";
-    case GL_DEBUG_TYPE_PORTABILITY:
-      return "Portability";
-    case GL_DEBUG_TYPE_PERFORMANCE:
-      return "Performance";
-    case GL_DEBUG_TYPE_OTHER:
-      return "Other";
-    default:
-      return "Unknown";
-  }
-}
-
-inline const char* GetSeverityString(GLenum severity) {
-  switch (severity) {
-    case GL_DEBUG_SEVERITY_HIGH:
-      return "High";
-    case GL_DEBUG_SEVERITY_MEDIUM:
-      return "Medium";
-    case GL_DEBUG_SEVERITY_LOW:
-      return "Low";
-    case GL_DEBUG_SEVERITY_NOTIFICATION:
-      return "Notification";
-    default:
-      return "Unknown";
-  }
-}
-
-// Debug Callback-Funktion
-inline void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id,
-                                   GLenum severity, GLsizei /*length*/,
-                                   const GLchar* message,
-                                   const void* /*userParam*/) {
-  std::cout << "OpenGL Debug Message:";
-  std::cout << "  Source: " << GetSourceString(source);
-  std::cout << ", Type: " << GetTypeString(type);
-  std::cout << ", ID: " << std::hex << id << std::dec;
-  std::cout << ", Severity: " << GetSeverityString(severity);
-  std::cout << ", Message: " << message;
-  std::cout << '\n';
-}
-
 class GLCanvas : public wxGLCanvas {
  public:
   // Resolution and multisampling used by the PNG export (SavePNG). Kept public
@@ -152,24 +84,12 @@ class GLCanvas : public wxGLCanvas {
       std::cout << "OpenGL ready: " << gl_loaded_
                 << " version: " << GetGLVersionString() << '\n';
 
-      // glEnable(GL_DEBUG_OUTPUT);
-      // glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-
-      // glDisable(GL_DEBUG_OUTPUT);
-      // glDisable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-
-      // glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0,
-      // nullptr, GL_TRUE);
-
-      // glDebugMessageCallback(DebugCallback, nullptr);
-
       glEnable(GL_CULL_FACE);
       glEnable(GL_DEPTH_TEST);
       glDepthFunc(GL_LEQUAL);
       glEnable(GL_BLEND);
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
       glEnable(GL_MULTISAMPLE);
-      // glEnable(GL_FRAMEBUFFER_SRGB);
 
       GLint sample_buffers = 0;
       glGetIntegerv(GL_SAMPLES, &sample_buffers);
