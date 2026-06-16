@@ -87,9 +87,13 @@ inline void BindDateEntries(EventBus& bus, MainWindowComponents& components) {
   bus.date_entries().connect(&TransformDateEntry::ReceiveDateEntries,
                              &components.transform_date_entry);
 
-  // Transform adapter -> Bus (transformed topic)
-  components.transform_date_entry.SetTransform(
-      {.begin_days = 0, .end_days = 1});
+  // Transform adapter -> Bus (transformed topic). No shift: DatePeriod is
+  // uniformly half-open [begin, end), so the interval is already exclusive at
+  // the end. The previous {end_days = 1} was an inclusive->exclusive fixup left
+  // over from the old inclusive-date model; with the half-open model it widened
+  // every bar by one day (a 2-day stay rendered as 3 days). The
+  // inclusive<->half-open conversion now happens only at the user-facing
+  // boundaries (date table, CSV) via PeriodFromInclusiveDates()/Last().
   components.transform_date_entry.SignalTransformDateEntries().connect(
       [&bus](const std::vector<DateEntry>& value) {
         bus.transformed_date_entries()(value);
