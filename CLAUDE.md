@@ -63,8 +63,9 @@ need a clean high-DPI export of the page itself. All dumps are deferred via
 - `DECADE_DUMP_PNG_DPI=<dpi>` — export DPI for `DECADE_DUMP_PNG`; defaults to `GLCanvas::kExportPngDpi` (200) when unset. Used e.g. for high-resolution README renders.
 - `DECADE_EXIT_AFTER_MS=<ms>` — auto-close the main window after N ms.
 - `DECADE_SELECT_TAB=<label>` — pre-select a notebook tab by label (case-insensitive), e.g. for screenshotting a specific tab.
-- `DECADE_DEBUG_LOG=1` — enable OpenGL/runtime debug logging.
+- `DECADE_DEBUG_LOG=1` — enable OpenGL/runtime debug logging. Also routes wx **assertion failures to stderr and continues** instead of popping a modal dialog, so headless/screenshot runs surface (rather than silently block on) a failing `wxASSERT` — see `DecadeApp::OnAssertFailure`.
 - `DECADE_DEBUG_HOVER_BAR=<index>` — highlight the bar at the given index on startup as if hovered, for screenshotting/debugging the hover path without a live cursor.
+- `DECADE_DEBUG_SELECT_NODE=<path>` — select the scene-tree node at `path` (`root/.../name`) on startup, driving the real selection path (Scene-tab detail grid + the calendar selection highlight of the node and its subtree) without a pointer device.
 - `DECADE_DEFAULT_CSV=<path>` — opt-in startup file (CSV or XML) when no positional argument is given; the CLI argument takes precedence. No file is loaded if this is unset.
 
 Typical smoke test (pass the sample data explicitly):

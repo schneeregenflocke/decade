@@ -17,6 +17,7 @@
 #include "../../graphics/frame_layout.hpp"
 #include "../../graphics/graphics_engine.hpp"
 #include "../../graphics/pick_id.hpp"
+#include "../../graphics/scene.hpp"
 #include "../../graphics/scene_graph.hpp"
 #include "../../graphics/shapes.hpp"
 #include "../../packages/calendar_config.hpp"
@@ -36,7 +37,7 @@
 // the state and drives Build() in reaction to store updates.
 class CalendarSceneBuilder {
  public:
-  CalendarSceneBuilder(GraphicsEngine* graphics_engine_in,
+  CalendarSceneBuilder(GraphicsEngine* graphics_engine_in, Scene& scene_in,
                        const std::shared_ptr<Font>& font_in,
                        const rectf& page_size_in, const rectf& page_margin_in,
                        const TitleConfig& title_config_in,
@@ -44,7 +45,7 @@ class CalendarSceneBuilder {
                        const ShapeConfigSet& shape_config_in,
                        const DateGroups& date_groups_in,
                        const DateEntryBarStore& data_store_in)
-      : scene_graph_(std::make_shared<SceneNode>("root")),
+      : scene_(scene_in),
         graphics_engine_(graphics_engine_in),
         font_(font_in),
         page_size_(page_size_in),
@@ -54,7 +55,7 @@ class CalendarSceneBuilder {
         shape_config_(shape_config_in),
         date_groups_(date_groups_in),
         data_store_(data_store_in) {
-    graphics_engine_->SetSceneGraph(scene_graph_);
+    graphics_engine_->SetScene(scene_);
     auto* simple_shader =
         graphics_engine_->SearchShader("Simple Shader").value_or(nullptr);
     rectangles_shader_ =
@@ -68,7 +69,7 @@ class CalendarSceneBuilder {
     // member so Build()/Setup* can reach it directly.
     auto page_shape = std::make_shared<QuadrilateralShape>(simple_shader);
     page_node_ = std::make_shared<SceneNode>("page", page_shape);
-    scene_graph_->AddChild(page_node_);
+    scene_.Root().AddChild(page_node_);
 
     // Selection-highlight overlay: a single translucent quad drawn on top of
     // everything, covering the scene-tree-selected node and its subtree. It is
@@ -78,7 +79,7 @@ class CalendarSceneBuilder {
     selection_overlay_node_ =
         std::make_shared<SceneNode>("selection overlay", selection_shape);
     selection_overlay_node_->SetSnapshotHidden(true);
-    scene_graph_->AddChild(selection_overlay_node_);
+    scene_.Root().AddChild(selection_overlay_node_);
 
     auto print_area_shape =
         std::make_shared<RectanglesShape>(rectangles_shader);
@@ -266,7 +267,7 @@ class CalendarSceneBuilder {
   // presentation layer (the scene-tree widget). Rebuilt on demand from the
   // live graph after Build().
   [[nodiscard]] SceneNodeSnapshot SceneSnapshot() const {
-    return BuildSceneSnapshot(*scene_graph_);
+    return BuildSceneSnapshot(scene_.Root());
   }
 
   // Page-space rectangles of the pickable bars, produced by the last Build().
@@ -337,11 +338,11 @@ class CalendarSceneBuilder {
       }
       start = slash + 1;
     }
-    if (segments.empty() || scene_graph_->GetNodeName() != segments.front()) {
+    if (segments.empty() || scene_.Root().GetNodeName() != segments.front()) {
       return std::nullopt;
     }
 
-    const SceneNode* node = scene_graph_.get();
+    const SceneNode* node = &scene_.Root();
     glm::mat4 parent_world(1.0F);
     for (std::size_t index = 1; index < segments.size(); ++index) {
       parent_world = parent_world * node->GetModelMatrix();
@@ -918,7 +919,9 @@ class CalendarSceneBuilder {
   static constexpr int kLayerText = 40;
   static constexpr int kLayerOverlay = 50;
 
-  std::shared_ptr<SceneNode> scene_graph_;
+  // The scene graph's owner is the Scene (held by CalendarPage); the builder
+  // borrows it to mutate the graph. It is not owned here.
+  Scene& scene_;
   GraphicsEngine* graphics_engine_{nullptr};
 
   // Cached shader handles, looked up once in the constructor. The shaders live

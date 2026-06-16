@@ -11,6 +11,7 @@
 #include "../../graphics/font.hpp"
 #include "../../graphics/pick_id.hpp"
 #include "../../graphics/rect.hpp"
+#include "../../graphics/scene.hpp"
 #include "../../gui/opengl_panel.hpp"
 #include "../../packages/calendar_config.hpp"
 #include "../../packages/date_entry.hpp"
@@ -32,9 +33,10 @@ class CalendarPage {
   CalendarPage(GLCanvas* gl_canvas_in, const std::string& font_filepath)
       : gl_canvas_(gl_canvas_in),
         font_(std::make_shared<Font>(font_filepath)),
-        scene_builder_(gl_canvas_in->GraphicsEnginePtr(), font_, page_size_,
-                       page_margin_, title_config_, calendar_config_,
-                       shape_config_, date_groups_, data_store_) {}
+        scene_builder_(gl_canvas_in->GraphicsEnginePtr(), scene_, font_,
+                       page_size_, page_margin_, title_config_,
+                       calendar_config_, shape_config_, date_groups_,
+                       data_store_) {}
 
   void ReceiveDateGroups(const std::vector<DateGroup>& date_groups_in) {
     date_groups_.Assign(date_groups_in);
@@ -119,6 +121,10 @@ class CalendarPage {
   CalendarConfig calendar_config_;
   ShapeConfigSet shape_config_;
   TitleConfig title_config_;
+
+  // The single owner (SSOT) of the render scene graph. Declared before the
+  // builder, which borrows it; both outlive the GraphicsEngine's use of it.
+  Scene scene_;
 
   // Declared last: binds references to the value members above, which must
   // already be constructed when the builder is initialised.

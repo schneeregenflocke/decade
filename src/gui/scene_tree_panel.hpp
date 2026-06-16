@@ -12,6 +12,7 @@
 #include <optional>
 #include <sigslot/signal.hpp>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "../app/binding/scene_snapshot.hpp"
@@ -69,8 +70,10 @@ class SceneTreePanel : public wxPanel {
     rebuilding_ = true;
     tree_ctrl_->Freeze();
     tree_ctrl_->DeleteAllItems();
+    path_to_item_.clear();
     const wxTreeItemId root = tree_ctrl_->AddRoot(MakeLabel(snapshot), -1, -1,
                                                   MakeItemData(snapshot, ""));
+    path_to_item_.emplace(snapshot.name, root);
 
     // Iterative descent (no recursion): each frame pairs an already-created
     // tree item with the snapshot node whose children still need appending,
@@ -91,6 +94,7 @@ class SceneTreePanel : public wxPanel {
         const wxTreeItemId child_item =
             tree_ctrl_->AppendItem(frame.item, MakeLabel(child), -1, -1,
                                    MakeItemData(child, child_path));
+        path_to_item_.emplace(child_path, child_item);
         stack.push_back(
             {.item = child_item, .node = &child, .path = child_path});
       }
@@ -125,6 +129,19 @@ class SceneTreePanel : public wxPanel {
   // survive the next scene rebuild.
   [[nodiscard]] auto& SignalShapeConfigSet() {
     return signal_shape_config_set_;
+  }
+
+  // Selects the tree item at `path`, driving the normal selection path
+  // (detail grid + highlight emit). A debug/screenshot aid for exercising the
+  // panel without a pointer device; a no-op when the path is unknown.
+  void SelectNodeByPath(const std::string& path) {
+    if (tree_ctrl_ == nullptr) {
+      return;
+    }
+    const auto iterator = path_to_item_.find(path);
+    if (iterator != path_to_item_.end()) {
+      tree_ctrl_->SelectItem(iterator->second);
+    }
   }
 
  private:
@@ -254,7 +271,7 @@ class SceneTreePanel : public wxPanel {
     AppendReadOnly(MakeOwned<wxIntProperty>(
         "Children", wxPG_LABEL, static_cast<int>(data->ChildCount())));
     AppendReadOnly(MakeOwned<wxStringProperty>(
-        "Style", wxPG_LABEL, wxString::FromUTF8(data->StyleId())));
+        "Style ID", wxPG_LABEL, wxString::FromUTF8(data->StyleId())));
 
     AppendStyleCategory(data->StyleId());
   }
@@ -340,6 +357,7 @@ class SceneTreePanel : public wxPanel {
 
   wxWeakRef<wxTreeCtrl> tree_ctrl_;
   wxWeakRef<wxPropertyGrid> property_grid_;
+  std::unordered_map<std::string, wxTreeItemId> path_to_item_;
   ShapeConfigSet shape_config_set_;
   sigslot::signal<const std::optional<std::string>&> signal_selected_node_;
   sigslot::signal<const ShapeConfigSet&> signal_shape_config_set_;

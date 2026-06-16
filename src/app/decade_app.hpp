@@ -5,7 +5,9 @@
 #include <wx/cmdline.h>
 #include <wx/intl.h>
 #include <wx/string.h>
+#include <wx/utils.h>
 
+#include <iostream>
 #include <locale>
 #include <memory>
 #include <optional>
@@ -35,12 +37,38 @@ class DecadeApp : public wxApp {
     return true;
   }
 
+  // Runtime-debugging aid: when DECADE_DEBUG_LOG=1, route wx assertion failures
+  // to stderr and continue instead of popping a modal dialog. The dialog blocks
+  // headless/screenshot runs (and CI), so a real assertion would otherwise time
+  // out silently rather than being reported. With this, smoke runs surface the
+  // assertion text on stderr and keep going.
+  void OnAssertFailure(const wxChar* file, int line, const wxChar* func,
+                       const wxChar* cond, const wxChar* msg) override {
+    if (!log_asserts_to_stderr_) {
+      wxApp::OnAssertFailure(file, line, func, cond, msg);
+      return;
+    }
+    std::cerr << "wx assert failed: " << wxString(file).ToStdString() << ':'
+              << line << " ("
+              << (func != nullptr ? wxString(func).ToStdString()
+                                  : std::string{})
+              << ") " << wxString(cond).ToStdString();
+    if (msg != nullptr) {
+      std::cerr << " : " << wxString(msg).ToStdString();
+    }
+    std::cerr << '\n';
+  }
+
   bool OnInit() override {
     // Calling the base OnInit triggers command-line parsing, i.e. our
     // OnInitCmdLine / OnCmdLineParsed overrides above.
     if (!wxApp::OnInit()) {
       return false;
     }
+
+    wxString debug_log_value;
+    log_asserts_to_stderr_ = wxGetEnv("DECADE_DEBUG_LOG", &debug_log_value) &&
+                             debug_log_value == "1";
 
     locale_.Init();
     std::locale::global(std::locale(""));
@@ -63,6 +91,7 @@ class DecadeApp : public wxApp {
  private:
   wxLocale locale_;
   std::optional<std::string> cli_startup_file_;
+  bool log_asserts_to_stderr_{false};
 };
 
 #endif  // DECADE_APP_HPP

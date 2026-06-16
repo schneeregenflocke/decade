@@ -1,13 +1,12 @@
 #ifndef GRAPHICS_ENGINE_HPP
 #define GRAPHICS_ENGINE_HPP
 
-#include <memory>
 #include <optional>
 #include <string>
 #include <tinycolormap.hpp>
 
 #include "mvp_matrices.hpp"
-#include "scene_graph.hpp"
+#include "scene.hpp"
 #include "shaders.hpp"
 
 class GraphicsEngine {
@@ -32,14 +31,17 @@ class GraphicsEngine {
       shader.SetUniform("view", mvp_.GetView());
     }
 
-    scene_graph_->Draw();
+    if (scene_ != nullptr) {
+      scene_->Draw();
+    }
   }
 
   void SetMVP(const MVP& new_mvp) { mvp_ = new_mvp; }
 
-  void SetSceneGraph(const std::shared_ptr<SceneNode>& new_scene_graph) {
-    scene_graph_ = new_scene_graph;
-  }
+  // Borrows the Scene (non-owning): the Scene's owner outlives the engine's use
+  // of it. The engine never owns the graph, so there is a single source of
+  // truth for the scene's lifetime.
+  void SetScene(Scene& scene) { scene_ = &scene; }
 
   std::optional<Shader*> SearchShader(const std::string& search_name) {
     return shaders_.SearchShader(search_name);
@@ -48,6 +50,6 @@ class GraphicsEngine {
  private:
   MVP mvp_;
   Shaders shaders_;
-  std::shared_ptr<SceneNode> scene_graph_;
+  Scene* scene_{nullptr};
 };
 #endif  // GRAPHICS_ENGINE_HPP

@@ -269,8 +269,10 @@ inline void MainWindow::InitializeOpenGL() {
                  .index = *runtime_options_.debug_hover_bar});
     }
     if (runtime_options_.debug_select_node) {
-      impl_->calendar_page->ReceiveSelectedNode(
-          runtime_options_.debug_select_node);
+      // Drive the real selection path (tree -> detail grid -> bus -> highlight)
+      // so this exercises the panel exactly as a click would.
+      impl_->scene_tree_panel->SelectNodeByPath(
+          *runtime_options_.debug_select_node);
     }
     DumpPngIfRequested();
   });
