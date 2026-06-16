@@ -14,7 +14,6 @@
 #include <vector>
 
 #include "../../graphics/font.hpp"
-#include "../../graphics/frame_layout.hpp"
 #include "../../graphics/graphics_engine.hpp"
 #include "../../graphics/pick_id.hpp"
 #include "../../graphics/scene.hpp"
@@ -27,6 +26,7 @@
 #include "../../packages/shape_configuration.hpp"
 #include "../../packages/timeline_projection.hpp"
 #include "../../packages/title_config.hpp"
+#include "calendar_layout.hpp"
 #include "scene_snapshot.hpp"
 #include "scene_snapshot_builder.hpp"
 
@@ -194,59 +194,25 @@ class CalendarSceneBuilder {
     shape->SetShape(page_size_);
     shape->SetColor(glm::vec4(kOne, kOne, kOne, kOne));
 
-    // Position the whole calendar relative to the print-area node: the node
-    // carries the print area's offset within the page, and every descendant is
-    // computed in print-area-local coordinates (origin at the print area's
-    // bottom-left). The page rectangle itself stays in absolute page space on
-    // the untransformed page node above.
-    print_area_ = page_size_.reduce(page_margin_);
-    print_area_origin_ = print_area_.getLB();
-    print_area_node_->SetModelMatrix(
-        glm::translate(glm::mat4(1.0F), print_area_origin_));
-    print_area_ =
-        print_area_.shift(-print_area_origin_.x, -print_area_origin_.y);
-
-    title_frame_ = print_area_;
-    title_frame_.setB(title_frame_.t() - title_config_.FrameHeight());
-
-    page_margin_frame_ = print_area_;
-    page_margin_frame_.setT(title_frame_.b());
-
-    calendar_frame_ = page_margin_frame_;
-    const rectf calendar_frame_margin =
-        rectf(kZero, kDefaultMargin, kZero, kZero);
-    calendar_frame_ = calendar_frame_.reduce(calendar_frame_margin);
-
+    // The auto span derives the calendar's year range from the data; it must
+    // run before the layout, which sizes the rows from the span length.
     if (calendar_config_.IsAutoCalendarSpan() && !data_store_.is_empty()) {
       calendar_config_.SetSpan(
           CalendarSpan::YearSpan{.first_year = data_store_.GetFirstYear(),
                                  .last_year = data_store_.GetLastYear()});
     }
 
-    const size_t additional_rows = 2;
-    const size_t number_rows =
-        additional_rows + calendar_config_.GetSpanLengthYears();
+    layout_ =
+        CalendarLayout(page_size_, page_margin_, title_config_.FrameHeight(),
+                       calendar_config_.GetSpanLengthYears(),
+                       calendar_config_.GetSpacingProportions());
 
-    cell_width_ = calendar_frame_.width() / kCalendarColumns;
-    row_height_ = calendar_frame_.height() / static_cast<float>(number_rows);
-
-    const rectf cells_frame_margin(cell_width_, kZero,
-                                   row_height_ * kRowHeaderScale, kZero);
-    cells_frame_ = calendar_frame_.reduce(cells_frame_margin);
-
-    proportion_frame_layout_.SetupRowFrames(
-        cells_frame_, calendar_config_.GetSpanLengthYears());
-    proportion_frame_layout_.SetupSubFrames(
-        calendar_config_.GetSpacingProportions());
-
-    day_width_ = cells_frame_.width() / kDaysPerYear;
-
-    x_labels_frame_ = calendar_frame_.reduce(
-        rectf(cell_width_, kZero, row_height_, cells_frame_.height()));
-    y_labels_frame_ = calendar_frame_.reduce(rectf(
-        kZero, cells_frame_.width(), row_height_ * kRowHeaderScale, kZero));
-    legend_frame_ = calendar_frame_.reduce(
-        rectf(cell_width_, kZero, kZero, cells_frame_.height() + row_height_));
+    // The print-area node carries the print area's offset within the page;
+    // every descendant is computed in print-area-local coordinates (origin at
+    // the print area's bottom-left). The page rectangle itself stays in
+    // absolute page space on the untransformed page node above.
+    print_area_node_->SetModelMatrix(
+        glm::translate(glm::mat4(1.0F), layout_.PrintAreaOrigin()));
 
     SetupPrintAreaShape();
     SetupTitleShape();
@@ -421,12 +387,12 @@ class CalendarSceneBuilder {
   }
 
   void SetupPrintAreaShape() {
-    FillRectangles(print_area_node_, print_area_,
+    FillRectangles(print_area_node_, layout_.PrintArea(),
                    shape_config_.GetShapeConfiguration("Page Margin"));
   }
 
   void SetupTitleShape() {
-    FillRectangles(title_area_node_, title_frame_,
+    FillRectangles(title_area_node_, layout_.TitleFrame(),
                    shape_config_.GetShapeConfiguration("Title Frame"));
 
     auto title_shape =
@@ -437,8 +403,8 @@ class CalendarSceneBuilder {
     title_shape->SetFont(font_);
     title_shape->SetColor(title_config_.TextColor());
     title_shape->SetShapeCentered(
-        title_config_.TitleText(), title_frame_.getCenter(),
-        title_frame_.height() * title_config_.FontSizeRatio());
+        title_config_.TitleText(), layout_.TitleFrame().getCenter(),
+        layout_.TitleFrame().height() * title_config_.FontSizeRatio());
   }
 
   void SetupCalendarLabelsShape() {
@@ -457,23 +423,24 @@ class CalendarSceneBuilder {
     }
 
     std::vector<rectf> x_label_frames(number_months);
-    labels_font_size_ =
-        font_->AdjustTextSize(rectf::from_dimension(rectf::Dimension{
-                                  .width = cell_width_, .height = row_height_}),
-                              "00000",
-                              Font::TextScale{.height_ratio = kFontScaleMin,
-                                              .width_ratio = kFontScaleMax});
+    labels_font_size_ = font_->AdjustTextSize(
+        rectf::from_dimension(rectf::Dimension{.width = layout_.CellWidth(),
+                                               .height = layout_.RowHeight()}),
+        "00000",
+        Font::TextScale{.height_ratio = kFontScaleMin,
+                        .width_ratio = kFontScaleMax});
 
     auto& month_node = month_text_node_;
 
     month_node->RemoveChildren();
     for (size_t index = 0; index < number_months; ++index) {
       const auto float_index = static_cast<float>(index);
-      const auto left = x_labels_frame_.l() + (cell_width_ * float_index);
+      const auto left =
+          layout_.XLabelsFrame().l() + (layout_.CellWidth() * float_index);
       x_label_frames.at(index).setL(left);
-      x_label_frames.at(index).setR(left + cell_width_);
-      x_label_frames.at(index).setB(x_labels_frame_.b());
-      x_label_frames.at(index).setT(x_labels_frame_.t());
+      x_label_frames.at(index).setR(left + layout_.CellWidth());
+      x_label_frames.at(index).setB(layout_.XLabelsFrame().b());
+      x_label_frames.at(index).setT(layout_.XLabelsFrame().t());
 
       AddCenteredText(month_node, months_names.at(index),
                       months_names.at(index),
@@ -498,11 +465,12 @@ class CalendarSceneBuilder {
           std::to_string(projection.YearForRow(index));
 
       const auto float_index = static_cast<float>(index);
-      const auto bottom = y_labels_frame_.b() + (row_height_ * float_index);
-      y_labels_frames.at(index).setL(y_labels_frame_.l());
-      y_labels_frames.at(index).setR(y_labels_frame_.r());
+      const auto bottom =
+          layout_.YLabelsFrame().b() + (layout_.RowHeight() * float_index);
+      y_labels_frames.at(index).setL(layout_.YLabelsFrame().l());
+      y_labels_frames.at(index).setR(layout_.YLabelsFrame().r());
       y_labels_frames.at(index).setB(bottom);
-      y_labels_frames.at(index).setT(bottom + row_height_);
+      y_labels_frames.at(index).setT(bottom + layout_.RowHeight());
 
       AddCenteredText(year_node, current_year_text, current_year_text,
                       y_labels_frames.at(index).getCenter(), labels_font_size_);
@@ -523,8 +491,9 @@ class CalendarSceneBuilder {
     for (std::size_t index = 0; index < span_years; ++index) {
       const int current_year = projection.YearForRow(index);
       const auto number_days = DaysInYear(current_year);
-      const float year_length = static_cast<float>(number_days) * day_width_;
-      rectf year_cell = proportion_frame_layout_.GetSubFrame(index, 1);
+      const float year_length =
+          static_cast<float>(number_days) * layout_.DayWidth();
+      rectf year_cell = layout_.GetSubFrame(index, 1);
       year_cell.setR(year_cell.l() + year_length);
       years_cells.at(index) = year_cell;
     }
@@ -549,19 +518,18 @@ class CalendarSceneBuilder {
       const Date first_day_of_year = Date::FromYmd(current_year, 1, 1);
 
       for (size_t subindex = 0; subindex < number_months; ++subindex) {
-        const auto current_cell =
-            proportion_frame_layout_.GetSubFrame(index, 1);
+        const auto current_cell = layout_.GetSubFrame(index, 1);
         const int month_index = static_cast<int>(subindex);
         rectf month_cell;
         const auto start_offset =
             static_cast<float>(Date::DaysBetween(
                 first_day_of_year, first_day_of_year.AddMonths(month_index))) *
-            day_width_;
+            layout_.DayWidth();
         const auto end_offset =
             static_cast<float>(Date::DaysBetween(
                 first_day_of_year,
                 first_day_of_year.AddMonths(month_index + 1))) *
-            day_width_;
+            layout_.DayWidth();
         month_cell.setL(current_cell.l() + start_offset);
         month_cell.setR(current_cell.l() + end_offset);
         month_cell.setB(current_cell.b());
@@ -602,8 +570,7 @@ class CalendarSceneBuilder {
 
       for (std::int64_t subindex = 0; subindex < number_days; ++subindex) {
         const auto float_subindex = static_cast<float>(subindex);
-        const auto current_cell =
-            proportion_frame_layout_.GetSubFrame(index, 1);
+        const auto current_cell = layout_.GetSubFrame(index, 1);
 
         const Date current_date =
             calendar_config_.GetSpanLimitsDate().at(0).AddDays(
@@ -611,15 +578,17 @@ class CalendarSceneBuilder {
 
         if (current_date.DayOfWeek() == Weekday::kSunday) {
           rectf day_cell;
-          day_cell.setL(current_cell.l() + (float_subindex * day_width_));
-          day_cell.setR(day_cell.l() + day_width_);
+          day_cell.setL(current_cell.l() +
+                        (float_subindex * layout_.DayWidth()));
+          day_cell.setR(day_cell.l() + layout_.DayWidth());
           day_cell.setB(current_cell.b());
           day_cell.setT(current_cell.t());
           days_cells1[static_cast<size_t>(days_index)] = day_cell;
         } else {
           rectf day_cell;
-          day_cell.setL(current_cell.l() + (float_subindex * day_width_));
-          day_cell.setR(day_cell.l() + day_width_);
+          day_cell.setL(current_cell.l() +
+                        (float_subindex * layout_.DayWidth()));
+          day_cell.setR(day_cell.l() + layout_.DayWidth());
           day_cell.setB(current_cell.b());
           day_cell.setT(current_cell.t());
           days_cells0[static_cast<size_t>(days_index)] = day_cell;
@@ -666,13 +635,12 @@ class CalendarSceneBuilder {
           shape_config_.GetDynamicConfiguration(current_group);
 
       const auto row = projection.RowForYear(bar.GetYear());
-      const auto current_sub_cell =
-          proportion_frame_layout_.GetSubFrame(row, 1);
+      const auto current_sub_cell = layout_.GetSubFrame(row, 1);
 
       const auto bar_left =
-          current_sub_cell.l() + (bar.GetFirstDay() * day_width_);
+          current_sub_cell.l() + (bar.GetFirstDay() * layout_.DayWidth());
       const auto bar_width =
-          (bar.GetLastDay() - bar.GetFirstDay()) * day_width_;
+          (bar.GetLastDay() - bar.GetFirstDay()) * layout_.DayWidth();
       const auto bar_height = current_sub_cell.height();
 
       // Each bar is its own node: the position lives in the node transform
@@ -686,16 +654,16 @@ class CalendarSceneBuilder {
       bar_node->SetStyleId(current_shape_config.Name());
 
       // Page-space box for hit-testing. The node's world position is
-      // print_area_origin_ + (bar_left, sub_cell.b()), so the page-space rect
-      // is the local bar rect shifted by that origin.
+      // layout_.PrintAreaOrigin() + (bar_left, sub_cell.b()), so the page-space
+      // rect is the local bar rect shifted by that origin.
       const PickId pick_id{.kind = PickId::Kind::kBar, .index = index};
       bar_pick_boxes_.push_back(PickBox{
           .id = pick_id,
-          .rect =
-              rectf(bar_left + print_area_origin_.x,
-                    bar_left + bar_width + print_area_origin_.x,
-                    current_sub_cell.b() + print_area_origin_.y,
-                    current_sub_cell.b() + bar_height + print_area_origin_.y)});
+          .rect = rectf(bar_left + layout_.PrintAreaOrigin().x,
+                        bar_left + bar_width + layout_.PrintAreaOrigin().x,
+                        current_sub_cell.b() + layout_.PrintAreaOrigin().y,
+                        current_sub_cell.b() + bar_height +
+                            layout_.PrintAreaOrigin().y)});
 
       auto bar_shape = std::make_shared<RectanglesShape>(rectangles_shader_);
       bar_shape->SetShape(rectf(kZero, bar_width, kZero, bar_height),
@@ -707,7 +675,7 @@ class CalendarSceneBuilder {
       group_nodes.at(current_group)->AddChild(bar_node);
       bar_nodes_.emplace(index, bar_node);
 
-      auto current_text_cell = proportion_frame_layout_.GetSubFrame(row, 2);
+      auto current_text_cell = layout_.GetSubFrame(row, 2);
       current_text_cell.setL(bar_left);
       current_text_cell.setR(bar_left + bar_width);
 
@@ -741,11 +709,12 @@ class CalendarSceneBuilder {
           data_store_.GetFirstYear() + static_cast<int>(index);
       if (calendar_config_.IsInSpan(current_year)) {
         const auto row = projection.RowForYear(current_year);
-        const auto current_cell = proportion_frame_layout_.GetSubFrame(row, 0);
+        const auto current_cell = layout_.GetSubFrame(row, 0);
 
         rectf year_total_cell = current_cell;
         const auto year_total_width =
-            static_cast<float>(data_store_.GetAnnualTotal(index)) * day_width_;
+            static_cast<float>(data_store_.GetAnnualTotal(index)) *
+            layout_.DayWidth();
         year_total_cell.setR(current_cell.l() + year_total_width);
         years_totals_cells.at(index) = year_total_cell;
 
@@ -790,12 +759,13 @@ class CalendarSceneBuilder {
     const size_t number_entry_frames = (date_groups_.Items().size() + 1) * 2;
     std::vector<rectf> legend_entries_frames(number_entry_frames);
     const auto entries_width =
-        legend_frame_.width() / static_cast<float>(number_entry_frames);
+        layout_.LegendFrame().width() / static_cast<float>(number_entry_frames);
 
     for (size_t index = 0; index < number_entry_frames; ++index) {
       const auto float_index = static_cast<float>(index);
-      const auto left = legend_frame_.l() + (entries_width * float_index);
-      legend_entries_frames.at(index) = legend_frame_;
+      const auto left =
+          layout_.LegendFrame().l() + (entries_width * float_index);
+      legend_entries_frames.at(index) = layout_.LegendFrame();
       legend_entries_frames.at(index).setL(left);
       legend_entries_frames.at(index).setR(left + entries_width);
     }
@@ -826,8 +796,7 @@ class CalendarSceneBuilder {
           legend_entries_frames.at(label_index).getCenter(), legend_font_size);
 
       if (span_years > 0U) {
-        const auto current_height =
-            proportion_frame_layout_.GetSubFrame(0, 1).height();
+        const auto current_height = layout_.GetSubFrame(0, 1).height();
         auto current_cell = legend_entries_frames.at(label_index + 1);
         const auto current_vertical_center = current_cell.getCenter()[1];
         current_cell.setB(current_vertical_center - (current_height * kHalf));
@@ -861,8 +830,7 @@ class CalendarSceneBuilder {
                       legend_font_size);
 
       if (span_years > 0U) {
-        const auto current_height =
-            proportion_frame_layout_.GetSubFrame(0, 0).height();
+        const auto current_height = layout_.GetSubFrame(0, 0).height();
         auto current_cell =
             legend_entries_frames.at(legend_entries_frames.size() - 1);
         const auto current_vertical_center = current_cell.getCenter()[1];
@@ -893,10 +861,6 @@ class CalendarSceneBuilder {
   static constexpr float kZero = 0.0F;
   static constexpr float kOne = 1.0F;
   static constexpr float kHalf = 0.5F;
-  static constexpr float kDefaultMargin = 5.0F;
-  static constexpr float kCalendarColumns = 13.0F;
-  static constexpr float kRowHeaderScale = 2.0F;
-  static constexpr float kDaysPerYear = 366.0F;
   static constexpr float kFontScaleMin = 0.5F;
   static constexpr float kFontScaleMax = 0.75F;
   static constexpr float kPercentScale = 100.0F;
@@ -973,21 +937,10 @@ class CalendarSceneBuilder {
   // and persists across rebuilds so the highlight is re-applied to fresh nodes.
   std::optional<std::string> selected_path_;
 
-  // Transient layout state, recomputed on every Build().
-  ProportionFrameLayout proportion_frame_layout_;
-  glm::vec3 print_area_origin_{0.0F};
+  // Transient render state, recomputed on every Build(). The page geometry now
+  // lives in CalendarLayout; the builder only keeps what the sections produce.
+  CalendarLayout layout_;
   std::vector<PickBox> bar_pick_boxes_;
-  rectf print_area_;
-  rectf title_frame_;
-  rectf page_margin_frame_;
-  rectf calendar_frame_;
-  rectf cells_frame_;
-  rectf x_labels_frame_;
-  rectf y_labels_frame_;
-  rectf legend_frame_;
-  float cell_width_{0.0F};
-  float row_height_{0.0F};
-  float day_width_{0.0F};
   float labels_font_size_{0.0F};
 };
 #endif  // CALENDAR_SCENE_BUILDER_HPP

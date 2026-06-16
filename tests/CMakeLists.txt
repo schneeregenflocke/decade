@@ -16,6 +16,7 @@ add_executable(decade_tests
 	services/test_csv_io.cpp
 	services/test_value_serialization.cpp
 	physics/test_physics_world.cpp
+	app/test_calendar_layout.cpp
 )
 
 target_compile_features(decade_tests PRIVATE cxx_std_23)
