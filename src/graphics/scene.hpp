@@ -21,7 +21,7 @@
 // surface over the scene graph.
 class Scene {
  public:
-  Scene() : root_(std::make_shared<SceneNode>(kRootName)) {}
+  Scene() : root_(std::make_unique<SceneNode>(kRootName)) {}
 
   [[nodiscard]] SceneNode& Root() { return *root_; }
   [[nodiscard]] const SceneNode& Root() const { return *root_; }
@@ -34,7 +34,10 @@ class Scene {
 
  private:
   static constexpr const char* kRootName = "root";
-  std::shared_ptr<SceneNode> root_;
+  // Sole ownership: the children below the root remain shared_ptr (co-owned by
+  // their parent and the builder's named-node members), but the root itself has
+  // exactly one owner — this Scene.
+  std::unique_ptr<SceneNode> root_;
 };
 
 #endif  // SCENE_HPP
