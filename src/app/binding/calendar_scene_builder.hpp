@@ -18,6 +18,7 @@
 #include "../../graphics/pick_id.hpp"
 #include "../../graphics/scene.hpp"
 #include "../../graphics/scene_graph.hpp"
+#include "../../graphics/scene_shape_filler.hpp"
 #include "../../graphics/shapes.hpp"
 #include "../../packages/calendar_config.hpp"
 #include "../../packages/date.hpp"
@@ -352,38 +353,27 @@ class CalendarSceneBuilder {
     }
   }
 
-  // Fills the RectanglesShape carried by `node` with the given rectangle(s)
-  // (a single rectf or a vector of them — SetShape is overloaded) and the
-  // outline/fill colours of `config`. The cast cannot fail for the fixed
-  // skeleton nodes, which are all created with a RectanglesShape.
+  // Calendar-specific adapter over scene_shapes::FillRectangles: maps a domain
+  // ShapeConfiguration to the generic primitives and records the style id so
+  // the scene tree can route an edit back to that configuration (the rebuild
+  // reproduces the styling from there). The cast inside cannot fail for the
+  // fixed skeleton nodes, which are all created with a RectanglesShape.
   template <typename Shapes>
   static void FillRectangles(const std::shared_ptr<SceneNode>& node,
                              const Shapes& shapes,
                              const ShapeConfiguration& config) {
-    auto shape = std::dynamic_pointer_cast<RectanglesShape>(node->GetShape());
-    if (!shape) {
-      return;
-    }
-    shape->SetShape(shapes, config.LineWidth());
-    shape->SetColor({config.OutlineColor(), config.FillColor()});
-    // Record which domain configuration styled this node so the scene tree can
-    // route an edit back to it; the rebuild reproduces the styling from there.
+    scene_shapes::FillRectangles(node, shapes, config.OutlineColor(),
+                                 config.FillColor(), config.LineWidth());
     node->SetStyleId(config.Name());
   }
 
-  // Creates a centered text node named `name` under `parent`: a FontShape on
-  // the text layer rendering `text` centered at `center` with font height
-  // `size`. Concentrates the repeated "make FontShape, SetFont, centre, attach
-  // on the text layer" sequence used by every label group.
+  // Adapter over scene_shapes::AddCenteredText supplying this builder's font
+  // shader, current font and the text draw layer.
   void AddCenteredText(const std::shared_ptr<SceneNode>& parent,
                        const std::string& name, const std::string& text,
                        const glm::vec3& center, float size) {
-    auto shape = std::make_shared<FontShape>(font_shader_);
-    shape->SetFont(font_);
-    shape->SetShapeCentered(text, center, size);
-    auto node = std::make_shared<SceneNode>(name, shape);
-    node->SetDrawLayer(kLayerText);
-    parent->AddChild(node);
+    scene_shapes::AddCenteredText(parent, name, text, center, size,
+                                  font_shader_, font_, kLayerText);
   }
 
   void SetupPrintAreaShape() {
