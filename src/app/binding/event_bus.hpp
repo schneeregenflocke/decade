@@ -44,6 +44,7 @@ class EventBus {
   [[nodiscard]] auto& calendar_config() { return calendar_config_; }
   [[nodiscard]] auto& scene_snapshot() { return scene_snapshot_; }
   [[nodiscard]] auto& hovered() { return hovered_; }
+  [[nodiscard]] auto& selected_node() { return selected_node_; }
 
  private:
   sigslot::signal<const std::vector<DateEntry>&> date_entries_;
@@ -56,6 +57,7 @@ class EventBus {
   sigslot::signal<const CalendarConfig&> calendar_config_;
   sigslot::signal<const SceneNodeSnapshot&> scene_snapshot_;
   sigslot::signal<const std::optional<PickId>&> hovered_;
+  sigslot::signal<const std::optional<std::string>&> selected_node_;
 };
 
 #endif  // EVENT_BUS_HPP

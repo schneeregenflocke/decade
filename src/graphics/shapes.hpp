@@ -1,6 +1,7 @@
 #ifndef SHAPES_HPP
 #define SHAPES_HPP
 
+#include <algorithm>
 #include <cstddef>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
@@ -29,6 +30,7 @@ class QuadrilateralShape : public Shape {
 
     SetBuffer(BufferIndex{0}, static_cast<GLsizei>(vertices.size()),
               vertices.data());
+    SetLocalBounds(rectangle);
   }
 
   void SetColor(const glm::vec4& new_color) { color_ = new_color; }
@@ -65,6 +67,7 @@ class RectanglesShape : public Shape {
 
     SetBuffer(BufferIndex{0}, static_cast<GLsizei>(vertices_.size()),
               vertices_.data());
+    SetLocalBounds(UnionBounds(rectangles, line_width));
   }
 
   void SetShape(const rectf& rectangle, float line_width) {
@@ -78,6 +81,7 @@ class RectanglesShape : public Shape {
 
     SetBuffer(BufferIndex{0}, static_cast<GLsizei>(vertices_.size()),
               vertices_.data());
+    SetLocalBounds(UnionBounds({rectangle}, line_width));
   }
 
   void SetColor(const std::vector<glm::vec4>& new_colors) {
@@ -99,6 +103,28 @@ class RectanglesShape : public Shape {
   }
 
  private:
+  // Axis-aligned union of the rectangles, grown by half the line width so the
+  // box covers the drawn outline (which straddles each edge).
+  static rectf UnionBounds(const std::vector<rectf>& rectangles,
+                           float line_width) {
+    if (rectangles.empty()) {
+      return {};
+    }
+    const float half_line = line_width * 0.5F;
+    float left = rectangles[0].l();
+    float right = rectangles[0].r();
+    float bottom = rectangles[0].b();
+    float top = rectangles[0].t();
+    for (const auto& rectangle : rectangles) {
+      left = std::min(left, rectangle.l());
+      right = std::max(right, rectangle.r());
+      bottom = std::min(bottom, rectangle.b());
+      top = std::max(top, rectangle.t());
+    }
+    return {left - half_line, right + half_line, bottom - half_line,
+            top + half_line};
+  }
+
   void SetRectangleShape(size_t index, const rectf& rectangle,
                          float line_width) {
     constexpr size_t kVerticesPerQuad = 6;

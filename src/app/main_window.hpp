@@ -268,6 +268,10 @@ inline void MainWindow::InitializeOpenGL() {
           PickId{.kind = PickId::Kind::kBar,
                  .index = *runtime_options_.debug_hover_bar});
     }
+    if (runtime_options_.debug_select_node) {
+      impl_->calendar_page->ReceiveSelectedNode(
+          runtime_options_.debug_select_node);
+    }
     DumpPngIfRequested();
   });
 }

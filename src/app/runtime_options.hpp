@@ -41,6 +41,9 @@ namespace app {
 //   DECADE_EXIT_AFTER_MS=<ms>     auto-close the main window after N ms.
 //   DECADE_DEBUG_HOVER_BAR=<n>    force the hover highlight on bar N after load
 //                                 (debug/screenshot aid for picking, no mouse).
+//   DECADE_DEBUG_SELECT_NODE=<p>  force the scene-tree selection highlight on
+//                                 the node at path `p` ("root/.../name") after
+//                                 load (debug/screenshot aid, no mouse).
 //
 // (DECADE_DEBUG_LOG is read by the Infrastructure layer in
 // `src/graphics/debug_log.hpp`, which must not depend on this Application
@@ -58,6 +61,9 @@ struct RuntimeOptions {
   // Debug/screenshot aid: force the hover highlight on this bar index at
   // startup, so the picking highlight can be verified without a pointer device.
   std::optional<std::size_t> debug_hover_bar;
+  // Debug/screenshot aid: force the scene-tree selection highlight on this node
+  // path at startup, so the selection overlay can be verified without a mouse.
+  std::optional<std::string> debug_select_node;
 };
 
 namespace runtime_options_detail {
@@ -116,6 +122,11 @@ inline RuntimeOptions RuntimeOptionsFromEnv() {
     } catch (const std::exception& ex) {
       std::cerr << "Invalid DECADE_DEBUG_HOVER_BAR: " << ex.what() << '\n';
     }
+  }
+
+  if (std::optional<std::string> debug_select_node =
+          GetEnvString("DECADE_DEBUG_SELECT_NODE")) {
+    options.debug_select_node = std::move(*debug_select_node);
   }
 
   return options;

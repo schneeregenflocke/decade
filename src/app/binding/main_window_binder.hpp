@@ -169,6 +169,11 @@ inline void BindShapeConfiguration(EventBus& bus,
       &ShapeConfigurationStore::ReceiveShapeConfigSet,
       &components.shape_configuration_store);
 
+  // The scene tree edits the same configurations from its detail grid.
+  components.scene_tree_panel.SignalShapeConfigSet().connect(
+      &ShapeConfigurationStore::ReceiveShapeConfigSet,
+      &components.shape_configuration_store);
+
   components.shape_configuration_store.SignalShapeConfigSet().connect(
       [&bus](const ShapeConfigSet& value) { bus.shape_config_set()(value); });
 
@@ -176,6 +181,8 @@ inline void BindShapeConfiguration(EventBus& bus,
                                  &components.elements_setup_panel);
   bus.shape_config_set().connect(&CalendarPage::ReceiveShapeConfigSet,
                                  &components.calendar_page);
+  bus.shape_config_set().connect(&SceneTreePanel::ReceiveShapeConfigSet,
+                                 &components.scene_tree_panel);
 }
 
 inline void BindCalendarConfig(EventBus& bus,
@@ -202,6 +209,14 @@ inline void BindSceneSnapshot(EventBus& bus, MainWindowComponents& components) {
 
   bus.scene_snapshot().connect(&SceneTreePanel::ReceiveSceneSnapshot,
                                &components.scene_tree_panel);
+
+  // Scene-tree selection -> Bus -> renderer highlight of the node + subtree.
+  components.scene_tree_panel.SignalSelectedNode().connect(
+      [&bus](const std::optional<std::string>& path) {
+        bus.selected_node()(path);
+      });
+  bus.selected_node().connect(&CalendarPage::ReceiveSelectedNode,
+                              &components.calendar_page);
 }
 
 // Picking: the canvas reports pointer moves in page space, the controller

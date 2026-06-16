@@ -97,6 +97,13 @@ class CalendarPage {
     gl_canvas_->RefreshMVP();
   }
 
+  // Highlights the scene-tree-selected node (and its subtree) in place and
+  // repaints. The path identifies the node within the scene graph.
+  void ReceiveSelectedNode(const std::optional<std::string>& path) {
+    scene_builder_.SetSelectedNode(path);
+    gl_canvas_->RefreshMVP();
+  }
+
  private:
   sigslot::signal<const SceneNodeSnapshot&> signal_scene_snapshot_;
   PhysicsWorld physics_world_;

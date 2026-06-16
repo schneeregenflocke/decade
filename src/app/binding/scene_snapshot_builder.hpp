@@ -2,10 +2,42 @@
 #define SCENE_SNAPSHOT_BUILDER_HPP
 
 #include <cstddef>
+#include <memory>
 #include <vector>
 
+#include "../../graphics/font.hpp"
 #include "../../graphics/scene_graph.hpp"
+#include "../../graphics/shapes.hpp"
 #include "scene_snapshot.hpp"
+
+// Classifies the shape carried by a node into the GL-free SnapshotShapeKind, so
+// the read model can describe it without exposing the OpenGL shape types.
+[[nodiscard]] inline SnapshotShapeKind ClassifyShape(
+    const std::shared_ptr<Shape>& shape) {
+  if (shape == nullptr) {
+    return SnapshotShapeKind::kNone;
+  }
+  if (std::dynamic_pointer_cast<QuadrilateralShape>(shape) != nullptr) {
+    return SnapshotShapeKind::kQuadrilateral;
+  }
+  if (std::dynamic_pointer_cast<RectanglesShape>(shape) != nullptr) {
+    return SnapshotShapeKind::kRectangles;
+  }
+  if (std::dynamic_pointer_cast<FontShape>(shape) != nullptr) {
+    return SnapshotShapeKind::kFont;
+  }
+  return SnapshotShapeKind::kNone;
+}
+
+// Fills the scalar (non-children) fields of a snapshot node from a scene node.
+inline void FillSnapshotFields(SceneNodeSnapshot& destination,
+                               const SceneNode& source) {
+  destination.name = source.GetNodeName();
+  destination.style_id = source.GetStyleId();
+  destination.has_shape = source.GetShape() != nullptr;
+  destination.shape_kind = ClassifyShape(source.GetShape());
+  destination.draw_layer = source.GetDrawLayer();
+}
 
 // Application/Infrastructure bridge: turns the live OpenGL `SceneNode` graph
 // into the GL-free `SceneNodeSnapshot` read model consumed by the presentation
@@ -20,8 +52,7 @@
 [[nodiscard]] inline SceneNodeSnapshot BuildSceneSnapshot(
     const SceneNode& root) {
   SceneNodeSnapshot result;
-  result.name = root.GetNodeName();
-  result.has_shape = root.GetShape() != nullptr;
+  FillSnapshotFields(result, root);
 
   struct Frame {
     const SceneNode* source;
@@ -34,13 +65,19 @@
     const Frame frame = stack.back();
     stack.pop_back();
 
-    const auto& children = frame.source->GetChildren();
-    frame.destination->children.resize(children.size());
-    for (std::size_t index = 0; index < children.size(); ++index) {
+    // Internal rendering aids (e.g. the selection overlay) are excluded so the
+    // user-facing tree mirrors only the real scene.
+    std::vector<const SceneNode*> visible;
+    for (const auto& child : frame.source->GetChildren()) {
+      if (!child->IsSnapshotHidden()) {
+        visible.push_back(child.get());
+      }
+    }
+    frame.destination->children.resize(visible.size());
+    for (std::size_t index = 0; index < visible.size(); ++index) {
       SceneNodeSnapshot& child = frame.destination->children[index];
-      child.name = children[index]->GetNodeName();
-      child.has_shape = children[index]->GetShape() != nullptr;
-      stack.push_back({.source = children[index].get(), .destination = &child});
+      FillSnapshotFields(child, *visible[index]);
+      stack.push_back({.source = visible[index], .destination = &child});
     }
   }
 

@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+#include "rect.hpp"
 #include "shaders.hpp"
 #include "shaders_info.hpp"
 
@@ -116,11 +117,18 @@ class Shape {
     VertexArrayObject::Unbind();
   }
 
+  // Axis-aligned bounding box of the shape's geometry in its own local space.
+  // Each concrete shape records it when its geometry is set; a shape with no
+  // geometry reports a zero-extent box. Used for spatial queries (e.g. the
+  // scene-tree selection highlight) without exposing the vertex buffers.
+  [[nodiscard]] const rectf& LocalBounds() const { return local_bounds_; }
+
  protected:
   [[nodiscard]] GLsizei VertexCount() const { return number_vertices_; }
   [[nodiscard]] Shader* GetShader() const { return shader_ptr_; }
   [[nodiscard]] VertexArrayObject& VaoRef() { return vao_; }
   [[nodiscard]] const VertexArrayObject& VaoRef() const { return vao_; }
+  void SetLocalBounds(const rectf& bounds) { local_bounds_ = bounds; }
 
  private:
   void SetShader(Shader* new_shader_ptr) {
@@ -163,6 +171,7 @@ class Shape {
   Shader* shader_ptr_{nullptr};
   std::vector<VertexBufferObject> vbos_;
   std::vector<ShaderInfo> attributes_infos_;
+  rectf local_bounds_;
 };
 
 #endif  // SHAPES_BASE_HPP

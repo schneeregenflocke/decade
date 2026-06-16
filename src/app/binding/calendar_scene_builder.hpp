@@ -70,6 +70,16 @@ class CalendarSceneBuilder {
     page_node_ = std::make_shared<SceneNode>("page", page_shape);
     scene_graph_->AddChild(page_node_);
 
+    // Selection-highlight overlay: a single translucent quad drawn on top of
+    // everything, covering the scene-tree-selected node and its subtree. It is
+    // a rendering aid, not part of the user's scene, so it is hidden from the
+    // snapshot. Updated in place (no rebuild) when the selection changes.
+    auto selection_shape = std::make_shared<QuadrilateralShape>(simple_shader);
+    selection_overlay_node_ =
+        std::make_shared<SceneNode>("selection overlay", selection_shape);
+    selection_overlay_node_->SetSnapshotHidden(true);
+    scene_graph_->AddChild(selection_overlay_node_);
+
     auto print_area_shape =
         std::make_shared<RectanglesShape>(rectangles_shader);
     print_area_node_ =
@@ -171,6 +181,7 @@ class CalendarSceneBuilder {
     days_cells1_node_->SetDrawLayer(kLayerGrid);
     years_totals_node_->SetDrawLayer(kLayerBars);
     title_font_node_->SetDrawLayer(kLayerText);
+    selection_overlay_node_->SetDrawLayer(kLayerOverlay);
   }
 
   void Build() {
@@ -245,6 +256,10 @@ class CalendarSceneBuilder {
     SetupBarsShape();
     SetupYearsTotals();
     SetupLegend();
+
+    // The selected node's geometry may have moved; recompute the overlay so the
+    // highlight survives the rebuild (like the hover highlight on the bars).
+    ApplySelectionHighlight();
   }
 
   // Plain, GL-free mirror of the current scene-graph hierarchy for the
@@ -276,7 +291,75 @@ class CalendarSceneBuilder {
     }
   }
 
+  // Highlights the scene node identified by `path` (and its subtree) with a
+  // translucent overlay — no rebuild. A null/unknown path clears the overlay.
+  void SetSelectedNode(const std::optional<std::string>& path) {
+    selected_path_ = path;
+    ApplySelectionHighlight();
+  }
+
  private:
+  // Positions the selection overlay over the currently selected node's world
+  // bounds, or hides it (zero-area quad) when there is no resolvable selection.
+  void ApplySelectionHighlight() {
+    auto shape = std::dynamic_pointer_cast<QuadrilateralShape>(
+        selection_overlay_node_->GetShape());
+    if (!shape) {
+      return;
+    }
+    std::optional<rectf> bounds;
+    if (selected_path_.has_value()) {
+      bounds = NodeWorldBounds(*selected_path_);
+    }
+    if (bounds.has_value()) {
+      shape->SetShape(*bounds);
+      shape->SetColor(glm::vec4(kSelectionRed, kSelectionGreen, kSelectionBlue,
+                                kSelectionAlpha));
+    } else {
+      shape->SetShape(rectf(kZero, kZero, kZero, kZero));
+    }
+  }
+
+  // Resolves a "root/.../name" path to the world-space bounds of that node's
+  // subtree (page space, matching the bars' pick boxes). Returns nullopt when
+  // any path segment does not resolve or the subtree carries no geometry.
+  [[nodiscard]] std::optional<rectf> NodeWorldBounds(
+      const std::string& path) const {
+    std::vector<std::string> segments;
+    std::size_t start = 0;
+    while (start <= path.size()) {
+      const std::size_t slash = path.find('/', start);
+      const std::size_t end =
+          (slash == std::string::npos) ? path.size() : slash;
+      segments.push_back(path.substr(start, end - start));
+      if (slash == std::string::npos) {
+        break;
+      }
+      start = slash + 1;
+    }
+    if (segments.empty() || scene_graph_->GetNodeName() != segments.front()) {
+      return std::nullopt;
+    }
+
+    const SceneNode* node = scene_graph_.get();
+    glm::mat4 parent_world(1.0F);
+    for (std::size_t index = 1; index < segments.size(); ++index) {
+      parent_world = parent_world * node->GetModelMatrix();
+      const SceneNode* next = nullptr;
+      for (const auto& child : node->GetChildren()) {
+        if (child->GetNodeName() == segments[index]) {
+          next = child.get();
+          break;
+        }
+      }
+      if (next == nullptr) {
+        return std::nullopt;
+      }
+      node = next;
+    }
+    return node->WorldBounds(parent_world);
+  }
+
   // Recolours one bar's shape: highlighted bars get a distinct outline, normal
   // bars are restored to their group's configured colours. Fill is left as
   // configured so the hover reads as an outline accent.
@@ -316,6 +399,9 @@ class CalendarSceneBuilder {
     }
     shape->SetShape(shapes, config.LineWidth());
     shape->SetColor({config.OutlineColor(), config.FillColor()});
+    // Record which domain configuration styled this node so the scene tree can
+    // route an edit back to it; the rebuild reproduces the styling from there.
+    node->SetStyleId(config.Name());
   }
 
   // Creates a centered text node named `name` under `parent`: a FontShape on
@@ -596,6 +682,7 @@ class CalendarSceneBuilder {
                                                   std::to_string(index));
       bar_node->SetModelMatrix(glm::translate(
           glm::mat4(1.0F), glm::vec3(bar_left, current_sub_cell.b(), kZero)));
+      bar_node->SetStyleId(current_shape_config.Name());
 
       // Page-space box for hit-testing. The node's world position is
       // print_area_origin_ + (bar_left, sub_cell.b()), so the page-space rect
@@ -752,6 +839,7 @@ class CalendarSceneBuilder {
         auto node_entry = std::make_shared<SceneNode>(
             std::string("legend bar ") + std::to_string(index));
         node_entry->SetDrawLayer(kLayerBars);
+        node_entry->SetStyleId(current_shape_config.Name());
         node_entries->AddChild(node_entry);
 
         auto entry_shape =
@@ -787,6 +875,7 @@ class CalendarSceneBuilder {
         auto node_entry =
             std::make_shared<SceneNode>(std::string("legend bar annual sum"));
         node_entry->SetDrawLayer(kLayerBars);
+        node_entry->SetStyleId(current_shape_config.Name());
         node_entries->AddChild(node_entry);
 
         auto entry_shape =
@@ -813,6 +902,12 @@ class CalendarSceneBuilder {
   static constexpr size_t kMonthNameBufferSize = 100;
   static constexpr float kHoverOutlineGreen = 0.55F;
 
+  // Translucent accent for the scene-tree selection overlay.
+  static constexpr float kSelectionRed = 1.0F;
+  static constexpr float kSelectionGreen = 0.6F;
+  static constexpr float kSelectionBlue = 0.0F;
+  static constexpr float kSelectionAlpha = 0.35F;
+
   // Painter draw layers (lower = further back). The bars sit above the grid
   // background so the day/sunday/month cells no longer cover them; text sits on
   // top of everything.
@@ -821,6 +916,7 @@ class CalendarSceneBuilder {
   static constexpr int kLayerGrid = 20;
   static constexpr int kLayerBars = 30;
   static constexpr int kLayerText = 40;
+  static constexpr int kLayerOverlay = 50;
 
   std::shared_ptr<SceneNode> scene_graph_;
   GraphicsEngine* graphics_engine_{nullptr};
@@ -851,6 +947,7 @@ class CalendarSceneBuilder {
   std::shared_ptr<SceneNode> month_text_node_;
   std::shared_ptr<SceneNode> year_text_node_;
   std::shared_ptr<SceneNode> bar_labels_node_;
+  std::shared_ptr<SceneNode> selection_overlay_node_;
 
   // State owned by CalendarPage, referenced here. The referenced objects stay
   // alive and stable for the builder's lifetime; only their contents change.
@@ -868,6 +965,10 @@ class CalendarSceneBuilder {
   // re-applied to the fresh node.
   std::unordered_map<std::size_t, std::shared_ptr<SceneNode>> bar_nodes_;
   std::optional<PickId> hovered_bar_;
+
+  // Path of the scene-tree-selected node ("root/.../name"); drives the overlay
+  // and persists across rebuilds so the highlight is re-applied to fresh nodes.
+  std::optional<std::string> selected_path_;
 
   // Transient layout state, recomputed on every Build().
   ProportionFrameLayout proportion_frame_layout_;

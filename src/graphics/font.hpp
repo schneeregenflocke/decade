@@ -351,6 +351,22 @@ class FontShape : public Shape {
               positions_.data());
     SetBuffer(BufferIndex{1}, static_cast<GLsizei>(texture_positions_.size()),
               texture_positions_.data());
+
+    if (positions_.empty()) {
+      SetLocalBounds({});
+    } else {
+      float left = positions_[0].x;
+      float right = positions_[0].x;
+      float bottom = positions_[0].y;
+      float top = positions_[0].y;
+      for (const auto& vertex : positions_) {
+        left = std::min(left, vertex.x);
+        right = std::max(right, vertex.x);
+        bottom = std::min(bottom, vertex.y);
+        top = std::max(top, vertex.y);
+      }
+      SetLocalBounds(rectf(left, right, bottom, top));
+    }
   }
 
   void SetShapeCentered(const std::string& text, const glm::vec3& position,
