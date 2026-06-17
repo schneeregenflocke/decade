@@ -47,11 +47,11 @@ tests.
 **Image capture** — three variables capture three different things; they are not
 redundant:
 
-| Variable | Captures | Resolution / look | Needs |
-| --- | --- | --- | --- |
-| `DECADE_DUMP_PNG=<path>` | the calendar **page artwork** only, via an off-screen FBO | export DPI, white background, no app chrome | OpenGL only |
-| `DECADE_DUMP_WINDOW_PNG=<path>` | the **GL canvas pane** exactly as on screen (`glReadPixels` on the back buffer) | screen resolution, dark margins around the page | OpenGL only — works on Wayland |
-| `DECADE_DUMP_FRAME_PNG=<path>` | the **whole frame**: tabs + panels (`wxClientDC` blit) with the GL back buffer composited on top | screen resolution | widget read-back needs X11/Xvfb (blank under Wayland) |
+| Variable                        | Captures                                                                                         | Resolution / look                               | Needs                                                 |
+| ------------------------------- | ------------------------------------------------------------------------------------------------ | ----------------------------------------------- | ----------------------------------------------------- |
+| `DECADE_DUMP_PNG=<path>`        | the calendar **page artwork** only, via an off-screen FBO                                        | export DPI, white background, no app chrome     | OpenGL only                                           |
+| `DECADE_DUMP_WINDOW_PNG=<path>` | the **GL canvas pane** exactly as on screen (`glReadPixels` on the back buffer)                  | screen resolution, dark margins around the page | OpenGL only — works on Wayland                        |
+| `DECADE_DUMP_FRAME_PNG=<path>`  | the **whole frame**: tabs + panels (`wxClientDC` blit) with the GL back buffer composited on top | screen resolution                               | widget read-back needs X11/Xvfb (blank under Wayland) |
 
 `DUMP_WINDOW_PNG` is the canvas-only subset of `DUMP_FRAME_PNG`; prefer it when
 you only need the rendered canvas (and to avoid Xvfb), and `DUMP_PNG` when you
@@ -129,6 +129,7 @@ The codebase is **header-only by design** (`main.cpp` is the only translation un
 - Keep the startup path small and testable.
 - Isolate UI wiring from app bootstrap.
 - Keep data flow explicit between stores, panels, and renderer.
+- purpose-driven variable naming and clear layering to make the code navigable and self-documenting.
 
 ### Layered architecture
 
