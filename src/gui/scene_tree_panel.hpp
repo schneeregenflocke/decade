@@ -267,16 +267,10 @@ class SceneTreePanel : public wxPanel {
       return;
     }
     property_grid_->Clear();
-    // The editable style handles are recreated below (or left null when the
-    // selected node has no configuration).
+    // The grid owns the recreated properties; we keep no pointers to them and
+    // look the changed one up from the event instead. style_id_ names the
+    // configuration the Style rows edit (empty when the node has no style).
     style_id_.clear();
-    outline_visible_property_ = nullptr;
-    outline_color_property_ = nullptr;
-    outline_color_rgb_property_ = nullptr;
-    fill_visible_property_ = nullptr;
-    fill_color_property_ = nullptr;
-    fill_color_rgb_property_ = nullptr;
-    line_width_property_ = nullptr;
 
     const wxTreeItemId selected = tree_ctrl_->GetSelection();
     if (!selected.IsOk()) {
@@ -321,31 +315,28 @@ class SceneTreePanel : public wxPanel {
     // RgbaColourProperty (custom, edits the alpha channel too) and the stock
     // wxColourProperty (RGB only). Editing either commits; CallbackProperty
     // Changed dispatches on the changed property so they do not clobber each
-    // other, and the next rebuild re-syncs both from the configuration.
+    // other, and the next rebuild re-syncs both from the configuration. Each
+    // property is created with a stable name (used for lookup in the callback)
+    // and is owned by the grid -- we deliberately keep no pointers to them.
     property_grid_->Append(MakeOwned<wxPropertyCategory>("Style", wxPG_LABEL));
-    outline_visible_property_ = MakeOwned<wxBoolProperty>(
-        "Outline Visible", wxPG_LABEL, config.OutlineVisible());
-    property_grid_->Append(outline_visible_property_);
-    outline_color_property_ =
-        MakeOwned<RgbaColourProperty>("Outline Color (RGBA)", wxPG_LABEL,
-                                      ToWxColor(config.OutlineColorDisabled()));
-    property_grid_->Append(outline_color_property_);
-    outline_color_rgb_property_ =
-        MakeOwned<wxColourProperty>("Outline Color (RGB)", wxPG_LABEL,
-                                    ToWxColor(config.OutlineColorDisabled()));
-    property_grid_->Append(outline_color_rgb_property_);
-    fill_visible_property_ = MakeOwned<wxBoolProperty>(
-        "Fill Visible", wxPG_LABEL, config.FillVisible());
-    property_grid_->Append(fill_visible_property_);
-    fill_color_property_ = MakeOwned<RgbaColourProperty>(
-        "Fill Color (RGBA)", wxPG_LABEL, ToWxColor(config.FillColorDisabled()));
-    property_grid_->Append(fill_color_property_);
-    fill_color_rgb_property_ = MakeOwned<wxColourProperty>(
-        "Fill Color (RGB)", wxPG_LABEL, ToWxColor(config.FillColorDisabled()));
-    property_grid_->Append(fill_color_rgb_property_);
-    line_width_property_ = MakeOwned<wxFloatProperty>(
-        "Line Width", wxPG_LABEL, config.LineWidthDisabled());
-    property_grid_->Append(line_width_property_);
+    property_grid_->Append(MakeOwned<wxBoolProperty>(
+        "Outline Visible", kOutlineVisibleName, config.OutlineVisible()));
+    property_grid_->Append(MakeOwned<RgbaColourProperty>(
+        "Outline Color (RGBA)", kOutlineColorRgbaName,
+        ToWxColor(config.OutlineColorDisabled())));
+    property_grid_->Append(
+        MakeOwned<wxColourProperty>("Outline Color (RGB)", kOutlineColorRgbName,
+                                    ToWxColor(config.OutlineColorDisabled())));
+    property_grid_->Append(MakeOwned<wxBoolProperty>(
+        "Fill Visible", kFillVisibleName, config.FillVisible()));
+    property_grid_->Append(
+        MakeOwned<RgbaColourProperty>("Fill Color (RGBA)", kFillColorRgbaName,
+                                      ToWxColor(config.FillColorDisabled())));
+    property_grid_->Append(
+        MakeOwned<wxColourProperty>("Fill Color (RGB)", kFillColorRgbName,
+                                    ToWxColor(config.FillColorDisabled())));
+    property_grid_->Append(MakeOwned<wxFloatProperty>(
+        "Line Width", kLineWidthName, config.LineWidthDisabled()));
   }
 
   void AppendReadOnly(wxPGProperty* property) {
@@ -354,30 +345,25 @@ class SceneTreePanel : public wxPanel {
   }
 
   // Commits a Style-property edit into the configuration set and publishes it.
-  // The colour is taken from whichever of the two redundant colour widgets the
-  // user changed: the RGBA property applies the full colour, the RGB property
-  // applies red/green/blue while keeping the configured alpha.
+  // Only the property the user changed (carried by the event) is applied, so no
+  // cached property handles are needed; the changed row is identified by its
+  // stable name.
   void CallbackPropertyChanged(wxPropertyGridEvent& event) {
-    if (style_id_.empty() || outline_color_property_ == nullptr) {
+    if (style_id_.empty()) {
       return;
     }
-    const wxPGProperty* changed = event.GetProperty();
+    wxPGProperty* changed = event.GetProperty();
+    if (changed == nullptr) {
+      return;
+    }
     ShapeConfigSet updated = shape_config_set_;
     ShapeConfiguration config = updated.GetShapeConfiguration(style_id_);
     if (config.Name() != style_id_) {
       return;  // configuration no longer present
     }
-
-    config.OutlineVisible(outline_visible_property_->GetValue().GetBool());
-    config.FillVisible(fill_visible_property_->GetValue().GetBool());
-    config.LineWidth(
-        static_cast<float>(line_width_property_->GetValue().GetDouble()));
-    config.OutlineColor(EditedColor(changed, outline_color_property_,
-                                    outline_color_rgb_property_,
-                                    config.OutlineColorDisabled()));
-    config.FillColor(EditedColor(changed, fill_color_property_,
-                                 fill_color_rgb_property_,
-                                 config.FillColorDisabled()));
+    if (!ApplyChange(changed, config)) {
+      return;  // a non-Style (read-only Node) row, nothing to commit
+    }
     updated.UpdateConfiguration(config);
 
     shape_config_set_ = updated;
@@ -386,26 +372,65 @@ class SceneTreePanel : public wxPanel {
     emitting_ = false;
   }
 
-  // The colour to commit for one colour slot, given the property the user just
-  // changed. Editing the RGBA widget takes its full value; editing the RGB
-  // widget keeps the previous alpha; any other change leaves the colour as is.
-  static glm::vec4 EditedColor(const wxPGProperty* changed,
-                               const RgbaColourProperty* rgba_property,
-                               const wxColourProperty* rgb_property,
-                               const glm::vec4& previous) {
-    if (changed == rgba_property) {
-      return ToGlmVec4(rgba_property->GetColour());
+  // Applies the single changed Style row to `config`, identified by the
+  // property's stable name. The RGBA colour row applies the full colour; the
+  // RGB row applies red/green/blue while keeping the configured alpha. Returns
+  // false when the changed property is not one of the editable Style rows.
+  static bool ApplyChange(wxPGProperty* changed, ShapeConfiguration& config) {
+    const wxString name = changed->GetName();
+    if (name == kOutlineVisibleName) {
+      config.OutlineVisible(changed->GetValue().GetBool());
+    } else if (name == kFillVisibleName) {
+      config.FillVisible(changed->GetValue().GetBool());
+    } else if (name == kLineWidthName) {
+      config.LineWidth(static_cast<float>(changed->GetValue().GetDouble()));
+    } else if (name == kOutlineColorRgbaName) {
+      config.OutlineColor(RgbaColorOf(changed));
+    } else if (name == kFillColorRgbaName) {
+      config.FillColor(RgbaColorOf(changed));
+    } else if (name == kOutlineColorRgbName) {
+      config.OutlineColor(
+          RgbColorKeepingAlpha(changed, config.OutlineColorDisabled()));
+    } else if (name == kFillColorRgbName) {
+      config.FillColor(
+          RgbColorKeepingAlpha(changed, config.FillColorDisabled()));
+    } else {
+      return false;
     }
-    if (changed == rgb_property) {
-      glm::vec4 color = ToGlmVec4(rgb_property->GetVal().m_colour);
-      color.a = previous.a;
-      return color;
+    return true;
+  }
+
+  // Full RGBA from the custom colour property (blank when the cast fails).
+  static glm::vec4 RgbaColorOf(wxPGProperty* property) {
+    const auto* rgba = dynamic_cast<RgbaColourProperty*>(property);
+    return rgba != nullptr ? ToGlmVec4(rgba->GetColour()) : glm::vec4{};
+  }
+
+  // RGB from the stock colour property, keeping `previous`' alpha.
+  static glm::vec4 RgbColorKeepingAlpha(wxPGProperty* property,
+                                        const glm::vec4& previous) {
+    const auto* rgb = dynamic_cast<wxColourProperty*>(property);
+    if (rgb == nullptr) {
+      return previous;
     }
-    return previous;
+    glm::vec4 color = ToGlmVec4(rgb->GetVal().m_colour);
+    color.a = previous.a;
+    return color;
   }
 
   static constexpr int kSashPositionPx = 220;
   static constexpr int kMinPanePx = 80;
+
+  // Stable property names for the editable Style rows, shared between creation
+  // (AppendStyleCategory) and the change dispatch (ApplyChange). They are the
+  // grid's lookup keys, so no property pointers need to be cached.
+  static constexpr const char* kOutlineVisibleName = "outline_visible";
+  static constexpr const char* kOutlineColorRgbaName = "outline_color_rgba";
+  static constexpr const char* kOutlineColorRgbName = "outline_color_rgb";
+  static constexpr const char* kFillVisibleName = "fill_visible";
+  static constexpr const char* kFillColorRgbaName = "fill_color_rgba";
+  static constexpr const char* kFillColorRgbName = "fill_color_rgb";
+  static constexpr const char* kLineWidthName = "line_width";
 
   wxWeakRef<wxTreeCtrl> tree_ctrl_;
   wxWeakRef<wxPropertyGrid> property_grid_;
@@ -414,17 +439,10 @@ class SceneTreePanel : public wxPanel {
   sigslot::signal<const std::optional<std::string>&> signal_selected_node_;
   sigslot::signal<const ShapeConfigSet&> signal_shape_config_set_;
 
-  // Editable Style-category handles for the currently selected node, owned by
-  // the property grid and recreated on every RefreshDetail(). style_id_ names
-  // the configuration they edit (empty when the selection has no style).
+  // Names the configuration the Style rows edit (empty when the selected node
+  // has no style). The Style properties themselves are owned by the grid and
+  // looked up by name, so they are not held here.
   std::string style_id_;
-  wxBoolProperty* outline_visible_property_{nullptr};
-  RgbaColourProperty* outline_color_property_{nullptr};
-  wxColourProperty* outline_color_rgb_property_{nullptr};
-  wxBoolProperty* fill_visible_property_{nullptr};
-  RgbaColourProperty* fill_color_property_{nullptr};
-  wxColourProperty* fill_color_rgb_property_{nullptr};
-  wxFloatProperty* line_width_property_{nullptr};
 
   bool rebuilding_{false};
   // True while emitting our own edit, to suppress the echo-driven grid rebuild.

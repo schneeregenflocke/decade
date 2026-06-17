@@ -340,7 +340,25 @@ to and obey that layer's dependency constraints.
     danach grün halten (Compile + `ctest` + clang-tidy-Gate).
 - Rule-of-five: classes with explicit destructors should also delete or default copy/move (see `MainWindow`, `DateEntryStore`).
 - Never use raw `new`/`delete`. Always express ownership through smart pointers (`std::unique_ptr` for unique ownership, `std::shared_ptr` for shared ownership) so lifetime is encoded in the type system, exceptions cannot leak resources, and ownership transfer is explicit at call sites. wx widgets are typically transferred via `.release()` to wx-owned parents (wx then owns the lifetime).
-- For non-owning references to objects whose lifetime is managed by wxWidgets (wx-owned parents/children, or any class derived from `wxTrackable` — which includes `wxWindow`, `wxEvtHandler`, and most wx classes), prefer `wxWeakRef<T>` over raw pointers. It auto-nulls when the referenced object is destroyed, eliminating dangling-pointer bugs. See [wxWeakRef](https://docs.wxwidgets.org/3.2/classwx_weak_ref_3_01_t_01_4.html) and [wxTrackable](https://docs.wxwidgets.org/3.2/classwx_trackable.html).
+- **Raw pointer data members are forbidden** — including non-owning ones. A
+  raw `T*` member encodes neither ownership nor lifetime and is the classic
+  dangling-pointer trap. Express the relationship in the type system instead:
+  - **Non-owning reference to a `wxTrackable`-derived object** (wx-owned
+    parents/children — `wxWindow`, `wxEvtHandler`, and most wx classes): use
+    `wxWeakRef<T>`. It auto-nulls when the referenced object is destroyed. See
+    [wxWeakRef](https://docs.wxwidgets.org/3.2/classwx_weak_ref_3_01_t_01_4.html)
+    and [wxTrackable](https://docs.wxwidgets.org/3.2/classwx_trackable.html).
+  - **Non-owning reference to a wx-owned object that is *not* `wxTrackable`**
+    (e.g. `wxPGProperty` and its subclasses derive from `wxObject`, so
+    `wxWeakRef` will not compile): **do not cache a pointer at all**. Obtain the
+    object from its owner on demand — from the event that carries it
+    (`wxPropertyGridEvent::GetProperty()`) or by a name lookup on the owner
+    (`wxPropertyGrid::GetPropertyByName()`) — using a stable name constant
+    shared between creation and lookup. The transient `T*` a wx API hands back
+    at the call site is fine; storing it as a member is not.
+  - **Owning** a heap object: a smart pointer (`std::unique_ptr` /
+    `std::shared_ptr`), or `MakeOwned<T>` when transferring a wx widget to its
+    wx-owned parent.
 
 ## Tooling
 
