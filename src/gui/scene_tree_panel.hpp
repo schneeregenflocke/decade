@@ -272,8 +272,10 @@ class SceneTreePanel : public wxPanel {
     style_id_.clear();
     outline_visible_property_ = nullptr;
     outline_color_property_ = nullptr;
+    outline_color_rgb_property_ = nullptr;
     fill_visible_property_ = nullptr;
     fill_color_property_ = nullptr;
+    fill_color_rgb_property_ = nullptr;
     line_width_property_ = nullptr;
 
     const wxTreeItemId selected = tree_ctrl_->GetSelection();
@@ -315,19 +317,32 @@ class SceneTreePanel : public wxPanel {
     }
     style_id_ = style_id;
 
+    // Two colour widgets are shown side by side per colour, on purpose: the
+    // RgbaColourProperty (custom, edits the alpha channel too) and the stock
+    // wxColourProperty (RGB only). Editing either commits; CallbackProperty
+    // Changed dispatches on the changed property so they do not clobber each
+    // other, and the next rebuild re-syncs both from the configuration.
     property_grid_->Append(MakeOwned<wxPropertyCategory>("Style", wxPG_LABEL));
     outline_visible_property_ = MakeOwned<wxBoolProperty>(
         "Outline Visible", wxPG_LABEL, config.OutlineVisible());
     property_grid_->Append(outline_visible_property_);
-    outline_color_property_ = MakeOwned<RgbaColourProperty>(
-        "Outline Color", wxPG_LABEL, ToWxColor(config.OutlineColorDisabled()));
+    outline_color_property_ =
+        MakeOwned<RgbaColourProperty>("Outline Color (RGBA)", wxPG_LABEL,
+                                      ToWxColor(config.OutlineColorDisabled()));
     property_grid_->Append(outline_color_property_);
+    outline_color_rgb_property_ =
+        MakeOwned<wxColourProperty>("Outline Color (RGB)", wxPG_LABEL,
+                                    ToWxColor(config.OutlineColorDisabled()));
+    property_grid_->Append(outline_color_rgb_property_);
     fill_visible_property_ = MakeOwned<wxBoolProperty>(
         "Fill Visible", wxPG_LABEL, config.FillVisible());
     property_grid_->Append(fill_visible_property_);
     fill_color_property_ = MakeOwned<RgbaColourProperty>(
-        "Fill Color", wxPG_LABEL, ToWxColor(config.FillColorDisabled()));
+        "Fill Color (RGBA)", wxPG_LABEL, ToWxColor(config.FillColorDisabled()));
     property_grid_->Append(fill_color_property_);
+    fill_color_rgb_property_ = MakeOwned<wxColourProperty>(
+        "Fill Color (RGB)", wxPG_LABEL, ToWxColor(config.FillColorDisabled()));
+    property_grid_->Append(fill_color_rgb_property_);
     line_width_property_ = MakeOwned<wxFloatProperty>(
         "Line Width", wxPG_LABEL, config.LineWidthDisabled());
     property_grid_->Append(line_width_property_);
@@ -339,32 +354,54 @@ class SceneTreePanel : public wxPanel {
   }
 
   // Commits a Style-property edit into the configuration set and publishes it.
-  // The colour properties carry the full RGBA (including alpha), so the edited
-  // colours are applied directly.
-  void CallbackPropertyChanged(wxPropertyGridEvent& /*event*/) {
+  // The colour is taken from whichever of the two redundant colour widgets the
+  // user changed: the RGBA property applies the full colour, the RGB property
+  // applies red/green/blue while keeping the configured alpha.
+  void CallbackPropertyChanged(wxPropertyGridEvent& event) {
     if (style_id_.empty() || outline_color_property_ == nullptr) {
       return;
     }
+    const wxPGProperty* changed = event.GetProperty();
     ShapeConfigSet updated = shape_config_set_;
-    for (std::size_t index = 0; index < updated.size(); ++index) {
-      if (updated[index].Name() != style_id_) {
-        continue;
-      }
-      ShapeConfiguration& config = updated[index];
-
-      config.OutlineVisible(outline_visible_property_->GetValue().GetBool());
-      config.FillVisible(fill_visible_property_->GetValue().GetBool());
-      config.LineWidth(
-          static_cast<float>(line_width_property_->GetValue().GetDouble()));
-      config.OutlineColor(ToGlmVec4(outline_color_property_->GetColour()));
-      config.FillColor(ToGlmVec4(fill_color_property_->GetColour()));
-      break;
+    ShapeConfiguration config = updated.GetShapeConfiguration(style_id_);
+    if (config.Name() != style_id_) {
+      return;  // configuration no longer present
     }
+
+    config.OutlineVisible(outline_visible_property_->GetValue().GetBool());
+    config.FillVisible(fill_visible_property_->GetValue().GetBool());
+    config.LineWidth(
+        static_cast<float>(line_width_property_->GetValue().GetDouble()));
+    config.OutlineColor(EditedColor(changed, outline_color_property_,
+                                    outline_color_rgb_property_,
+                                    config.OutlineColorDisabled()));
+    config.FillColor(EditedColor(changed, fill_color_property_,
+                                 fill_color_rgb_property_,
+                                 config.FillColorDisabled()));
+    updated.UpdateConfiguration(config);
 
     shape_config_set_ = updated;
     emitting_ = true;
     signal_shape_config_set_(updated);
     emitting_ = false;
+  }
+
+  // The colour to commit for one colour slot, given the property the user just
+  // changed. Editing the RGBA widget takes its full value; editing the RGB
+  // widget keeps the previous alpha; any other change leaves the colour as is.
+  static glm::vec4 EditedColor(const wxPGProperty* changed,
+                               const RgbaColourProperty* rgba_property,
+                               const wxColourProperty* rgb_property,
+                               const glm::vec4& previous) {
+    if (changed == rgba_property) {
+      return ToGlmVec4(rgba_property->GetColour());
+    }
+    if (changed == rgb_property) {
+      glm::vec4 color = ToGlmVec4(rgb_property->GetVal().m_colour);
+      color.a = previous.a;
+      return color;
+    }
+    return previous;
   }
 
   static constexpr int kSashPositionPx = 220;
@@ -383,8 +420,10 @@ class SceneTreePanel : public wxPanel {
   std::string style_id_;
   wxBoolProperty* outline_visible_property_{nullptr};
   RgbaColourProperty* outline_color_property_{nullptr};
+  wxColourProperty* outline_color_rgb_property_{nullptr};
   wxBoolProperty* fill_visible_property_{nullptr};
   RgbaColourProperty* fill_color_property_{nullptr};
+  wxColourProperty* fill_color_rgb_property_{nullptr};
   wxFloatProperty* line_width_property_{nullptr};
 
   bool rebuilding_{false};

@@ -5,7 +5,6 @@
 #include <glm/vec4.hpp>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -85,109 +84,126 @@ class ShapeConfiguration {
   glm::vec4 fill_color_{0.0F, 0.0F, 0.0F, 1.0F};
 };
 
-// Pure value object: the ordered set of shape configurations (the fixed ones
-// followed by per-date-group dynamic ones) plus the lookups over them. Dynamic
-// configurations are identified by their name (the "Bar Group N" pattern), so
-// the set needs no boundary index. No signal -> Rule of Zero, copyable.
+// Pure value object: the shape configurations, split into the fixed ones (page
+// margin, labels, the per-year "Annual Sum", …) and the per-date-group ones.
+// The two live in separate containers, so a group configuration is identified
+// structurally (its position in the group list), not by parsing its name. No
+// signal -> Rule of Zero, copyable.
 class ShapeConfigSet {
  public:
-  ShapeConfigSet() : shape_configurations_(BuildDefaults()) {}
+  ShapeConfigSet() : fixed_configurations_(BuildDefaults()) {}
 
-  [[nodiscard]] size_t size() const { return shape_configurations_.size(); }
-
-  ShapeConfiguration& operator[](size_t index) {
-    return shape_configurations_.at(index);
-  }
-  const ShapeConfiguration& operator[](size_t index) const {
-    return shape_configurations_.at(index);
-  }
-
+  // The configuration with the given name, searched across the fixed and the
+  // group configurations (a default-constructed value when absent). The name
+  // remains a stable per-configuration label (and a node's style id); it is
+  // just no longer what decides whether a configuration is a group entry.
   [[nodiscard]] ShapeConfiguration GetShapeConfiguration(
       const std::string& name) const {
-    auto found = std::ranges::find_if(
-        shape_configurations_,
-        [&](const ShapeConfiguration& config) { return config == name; });
-
-    if (found == shape_configurations_.end()) {
-      return {};
-    }
-    return *found;
+    const ShapeConfiguration* found = Find(name);
+    return found != nullptr ? *found : ShapeConfiguration{};
   }
 
-  // Display name of the dynamic (per date group) configuration at the given
-  // zero-based group index. Kept here so producers and consumers share one
-  // definition instead of reconstructing the string in several places.
+  // Replaces the configuration that shares `config`'s name, in whichever
+  // container holds it. Returns false when no such configuration exists.
+  bool UpdateConfiguration(const ShapeConfiguration& config) {
+    ShapeConfiguration* found = FindMutable(config.Name());
+    if (found == nullptr) {
+      return false;
+    }
+    *found = config;
+    return true;
+  }
+
+  // Display name of the per-date-group configuration at the given zero-based
+  // index. Still used to label the group configurations (and as the matching
+  // node style id); group membership no longer depends on it.
   [[nodiscard]] static std::string DynamicConfigurationName(
       size_t group_index) {
     return std::string(kDynamicNamePrefix) + std::to_string(group_index);
   }
 
-  // Whether `name` denotes a dynamic per-date-group configuration. This is the
-  // single criterion that separates the fixed configurations from the
-  // group-driven ones, replacing the former persistent-count boundary index.
-  [[nodiscard]] static bool IsDynamicConfigurationName(
-      const std::string& name) {
-    return name.starts_with(kDynamicNamePrefix);
-  }
-
-  // Name of the persistent "Annual Sum" (per-year total) configuration. Shared
-  // by the panel and the renderer so the string lives in exactly one place.
+  // Name of the "Annual Sum" (per-year total) configuration, one of the fixed
+  // configurations. Shared by the renderer so the string lives in one place.
   [[nodiscard]] static std::string AnnualSumConfigurationName() {
     return "Years Totals";
   }
 
-  // The configuration for the dynamic bar group at the given zero-based index,
-  // resolved by name (a default-constructed value when absent).
+  // The configuration for the date group at the given zero-based index (a
+  // default-constructed value when out of range).
   [[nodiscard]] ShapeConfiguration GetDynamicConfiguration(
       size_t group_index) const {
-    return GetShapeConfiguration(DynamicConfigurationName(group_index));
+    if (group_index >= group_configurations_.size()) {
+      return {};
+    }
+    return group_configurations_.at(group_index);
   }
 
-  // Reconciles the dynamic per-group configurations with the current date
-  // groups: keeps the fixed configurations and any existing group entry (so
-  // user customisations survive), drops stale group entries and synthesises
-  // fresh ones from the palette for newly added groups. The "Annual Sum" entry
-  // is re-derived from the palette only when the group count actually changed,
-  // so a rename of a group keeps its customised colour.
+  // Reconciles the group configurations with the current date groups: keeps the
+  // existing entries (so user customisations survive), drops the entries past
+  // `group_count` and synthesises fresh ones from the palette for newly added
+  // groups. The "Annual Sum" entry is re-derived from the palette only when the
+  // group count actually changed, so a rename of a group keeps its colour.
   void SyncToDateGroups(size_t group_count) {
-    std::unordered_map<std::string, ShapeConfiguration> existing_dynamic;
-    std::vector<ShapeConfiguration> fixed;
-    fixed.reserve(shape_configurations_.size());
-    for (const ShapeConfiguration& config : shape_configurations_) {
-      if (IsDynamicConfigurationName(config.Name())) {
-        existing_dynamic.emplace(config.Name(), config);
-      } else {
-        fixed.push_back(config);
+    const size_t previous_group_count = group_configurations_.size();
+    if (group_count < previous_group_count) {
+      group_configurations_.resize(group_count);
+    } else {
+      for (size_t index = previous_group_count; index < group_count; ++index) {
+        group_configurations_.push_back(MakeBarGroupConfiguration(index));
       }
     }
-    const size_t previous_group_count = existing_dynamic.size();
-
-    shape_configurations_ = std::move(fixed);
-    for (size_t index = 0; index < group_count; ++index) {
-      const std::string name = DynamicConfigurationName(index);
-      const auto found = existing_dynamic.find(name);
-      shape_configurations_.push_back(found != existing_dynamic.end()
-                                          ? found->second
-                                          : MakeBarGroupConfiguration(index));
-    }
-
     if (group_count != previous_group_count) {
       RefreshAnnualSumConfiguration(group_count);
     }
   }
 
   // Raw access for non-intrusive serialization in the infrastructure layer.
-  [[nodiscard]] const std::vector<ShapeConfiguration>& Configurations() const {
-    return shape_configurations_;
+  [[nodiscard]] const std::vector<ShapeConfiguration>& FixedConfigurations()
+      const {
+    return fixed_configurations_;
   }
-  [[nodiscard]] std::vector<ShapeConfiguration>& MutableConfigurations() {
-    return shape_configurations_;
+  [[nodiscard]] std::vector<ShapeConfiguration>& MutableFixedConfigurations() {
+    return fixed_configurations_;
+  }
+  [[nodiscard]] const std::vector<ShapeConfiguration>& GroupConfigurations()
+      const {
+    return group_configurations_;
+  }
+  [[nodiscard]] std::vector<ShapeConfiguration>& MutableGroupConfigurations() {
+    return group_configurations_;
   }
 
  private:
-  // Name prefix shared by every dynamic per-date-group configuration; the sole
-  // marker distinguishing group entries from the fixed ones.
+  // Name prefix shared by every per-date-group configuration; used only to
+  // label them, no longer to decide group membership.
   static constexpr std::string_view kDynamicNamePrefix = "Bar Group ";
+
+  // Locates the configuration with the given name across both containers
+  // (fixed first, then group), or nullptr when absent.
+  [[nodiscard]] const ShapeConfiguration* Find(const std::string& name) const {
+    for (const std::vector<ShapeConfiguration>* container :
+         {&fixed_configurations_, &group_configurations_}) {
+      const auto found = std::ranges::find_if(
+          *container,
+          [&](const ShapeConfiguration& config) { return config == name; });
+      if (found != container->end()) {
+        return &*found;
+      }
+    }
+    return nullptr;
+  }
+  ShapeConfiguration* FindMutable(const std::string& name) {
+    for (std::vector<ShapeConfiguration>* container :
+         {&fixed_configurations_, &group_configurations_}) {
+      const auto found = std::ranges::find_if(
+          *container,
+          [&](const ShapeConfiguration& config) { return config == name; });
+      if (found != container->end()) {
+        return &*found;
+      }
+    }
+    return nullptr;
+  }
 
   // Builds a categorical shape configuration: the colour comes from the shared
   // palette at the given index, with a stronger outline than fill so the box
@@ -222,12 +238,10 @@ class ShapeConfigSet {
   // right past the last group, so it is coloured and styled exactly like a bar
   // group and stays consistent if the palette is ever changed.
   void RefreshAnnualSumConfiguration(size_t group_count) {
-    for (ShapeConfiguration& config : shape_configurations_) {
-      if (config == AnnualSumConfigurationName()) {
-        config = MakeCategoricalConfiguration(AnnualSumConfigurationName(),
-                                              group_count);
-        break;
-      }
+    ShapeConfiguration* found = FindMutable(AnnualSumConfigurationName());
+    if (found != nullptr) {
+      *found = MakeCategoricalConfiguration(AnnualSumConfigurationName(),
+                                            group_count);
     }
   }
 
@@ -298,6 +312,7 @@ class ShapeConfigSet {
     };
   }
 
-  std::vector<ShapeConfiguration> shape_configurations_;
+  std::vector<ShapeConfiguration> fixed_configurations_;
+  std::vector<ShapeConfiguration> group_configurations_;
 };
 #endif  // SHAPE_CONFIGURATION_HPP

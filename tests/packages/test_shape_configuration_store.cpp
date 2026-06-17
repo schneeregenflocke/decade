@@ -8,8 +8,9 @@
 
 TEST(ShapeConfigSetTest, DefaultsContainExpectedNames) {
   ShapeConfigSet set;
-  ASSERT_GT(set.size(), 0U);
-  // The default set is all fixed configurations: no dynamic group entries yet.
+  ASSERT_FALSE(set.FixedConfigurations().empty());
+  // The defaults are all fixed configurations: no group entries yet.
+  EXPECT_TRUE(set.GroupConfigurations().empty());
   EXPECT_TRUE(set.GetDynamicConfiguration(0).Name().empty());
 
   // A handful of named entries we expect from the default set.
@@ -54,13 +55,10 @@ TEST(ShapeConfigSetTest, SyncToDateGroupsPreservesCustomisationAndDropsStale) {
   set.SyncToDateGroups(3);
 
   // Customise the colour of the second group's configuration.
-  const ShapeConfiguration name_match = set.GetDynamicConfiguration(1);
-  ASSERT_EQ(name_match.Name(), "Bar Group 1");
-  for (size_t index = 0; index < set.size(); ++index) {
-    if (set[index] == ShapeConfigSet::DynamicConfigurationName(1)) {
-      set[index].OutlineColor(glm::vec4{0.1F, 0.2F, 0.3F, 1.0F});
-    }
-  }
+  ShapeConfiguration customised = set.GetDynamicConfiguration(1);
+  ASSERT_EQ(customised.Name(), "Bar Group 1");
+  customised.OutlineColor(glm::vec4{0.1F, 0.2F, 0.3F, 1.0F});
+  ASSERT_TRUE(set.UpdateConfiguration(customised));
 
   // Shrinking then re-growing must keep the surviving group's customisation
   // and drop the entries past the new count.
@@ -105,7 +103,8 @@ TEST(ShapeConfigurationStoreTest, ReceiveEmitsAndCopiesContents) {
   target.ReceiveShapeConfigSet(source);
 
   EXPECT_EQ(emissions, 1);
-  EXPECT_EQ(target.GetShapeConfigSet().size(), source.size());
+  EXPECT_EQ(target.GetShapeConfigSet().FixedConfigurations().size(),
+            source.FixedConfigurations().size());
 }
 
 TEST(ShapeConfigurationStoreTest, ReentryGuardBlocksRecursiveReceive) {

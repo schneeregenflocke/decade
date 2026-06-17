@@ -288,8 +288,7 @@ These are the binding design guidelines for this codebase.
   free function, or a shared base class — rather than copying it. Established
   examples: `CalendarSceneBuilder::FillRectangles` / `AddCenteredText`
   (scene-node construction), `GLCanvas::ReadBackBuffer` (render + glReadPixels +
-  row-flip), `ElementsSetupsPanel::EditSelectedConfiguration` (the wx
-  editing-callback selection/emit boilerplate), `MakeOwned<T>` in
+  row-flip), `MakeOwned<T>` in
   `gui/wx_owned.hpp` (the `make_unique<T>(...).release()` parent-owned-widget
   idiom), `TablePanelBase` in `gui/table_panel_base.hpp` (the table + Add/Delete
   button scaffolding shared by the entries and groups panels), and

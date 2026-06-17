@@ -40,7 +40,6 @@
 #include "../gui/opengl_panel.hpp"
 #include "../gui/page_panel.hpp"
 #include "../gui/scene_tree_panel.hpp"
-#include "../gui/shape_panel.hpp"
 #include "../gui/title_panel.hpp"
 #include "../gui/wx_owned.hpp"
 #include "../packages/calendar_config_store.hpp"
@@ -121,7 +120,6 @@ struct MainWindow::Impl {
   wxWeakRef<wxNotebook> notebook;
 
   wxWeakRef<DateGroupsTablePanel> date_groups_table_panel;
-  wxWeakRef<ElementsSetupsPanel> elements_setup_panel;
   wxWeakRef<PageSetupPanel> page_setup_panel;
   wxWeakRef<TitleSetupPanel> title_setup_panel;
   wxWeakRef<CalendarSetupPanel> calendar_setup_panel;
@@ -217,7 +215,6 @@ inline void MainWindow::CreatePanels(wxNotebook* notebook) {
       MakeOwned<DateTablePanel>(notebook, impl_->locale_date_format);
   impl_->date_groups_table_panel = MakeOwned<DateGroupsTablePanel>(notebook);
   impl_->calendar_setup_panel = MakeOwned<CalendarSetupPanel>(notebook);
-  impl_->elements_setup_panel = MakeOwned<ElementsSetupsPanel>(notebook);
   impl_->scene_tree_panel = MakeOwned<SceneTreePanel>(notebook);
 
   // Page, font and title settings are merged into a single "Document" tab; the
@@ -232,7 +229,6 @@ inline void MainWindow::CreatePanels(wxNotebook* notebook) {
   notebook->AddPage(impl_->data_table_panel, "Entries");
   notebook->AddPage(document_setup_panel, "Document");
   notebook->AddPage(impl_->calendar_setup_panel, "Timeframe");
-  notebook->AddPage(impl_->elements_setup_panel, "Layout");
   notebook->AddPage(impl_->scene_tree_panel, "Scene");
 }
 
@@ -381,7 +377,6 @@ inline void MainWindow::EstablishConnections() {
       .calendar_configuration_store = impl_->calendar_configuration_store,
       .data_table_panel = *impl_->data_table_panel,
       .date_groups_table_panel = *impl_->date_groups_table_panel,
-      .elements_setup_panel = *impl_->elements_setup_panel,
       .page_setup_panel = *impl_->page_setup_panel,
       .title_setup_panel = *impl_->title_setup_panel,
       .calendar_setup_panel = *impl_->calendar_setup_panel,

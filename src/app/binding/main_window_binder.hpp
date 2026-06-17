@@ -13,7 +13,6 @@
 #include "../../gui/opengl_panel.hpp"
 #include "../../gui/page_panel.hpp"
 #include "../../gui/scene_tree_panel.hpp"
-#include "../../gui/shape_panel.hpp"
 #include "../../gui/title_panel.hpp"
 #include "../../packages/calendar_config.hpp"
 #include "../../packages/calendar_config_store.hpp"
@@ -54,7 +53,6 @@ struct MainWindowComponents {
 
   DateTablePanel& data_table_panel;
   DateGroupsTablePanel& date_groups_table_panel;
-  ElementsSetupsPanel& elements_setup_panel;
   PageSetupPanel& page_setup_panel;
   TitleSetupPanel& title_setup_panel;
   CalendarSetupPanel& calendar_setup_panel;
@@ -168,11 +166,7 @@ inline void BindTitleConfig(EventBus& bus, MainWindowComponents& components) {
 
 inline void BindShapeConfiguration(EventBus& bus,
                                    MainWindowComponents& components) {
-  components.elements_setup_panel.SignalShapeConfigSet().connect(
-      &ShapeConfigurationStore::ReceiveShapeConfigSet,
-      &components.shape_configuration_store);
-
-  // The scene tree edits the same configurations from its detail grid.
+  // The scene tree edits the shape configurations from its detail grid.
   components.scene_tree_panel.SignalShapeConfigSet().connect(
       &ShapeConfigurationStore::ReceiveShapeConfigSet,
       &components.shape_configuration_store);
@@ -180,8 +174,6 @@ inline void BindShapeConfiguration(EventBus& bus,
   components.shape_configuration_store.SignalShapeConfigSet().connect(
       [&bus](const ShapeConfigSet& value) { bus.shape_config_set()(value); });
 
-  bus.shape_config_set().connect(&ElementsSetupsPanel::ReceiveShapeConfigSet,
-                                 &components.elements_setup_panel);
   bus.shape_config_set().connect(&CalendarPage::ReceiveShapeConfigSet,
                                  &components.calendar_page);
   bus.shape_config_set().connect(&SceneTreePanel::ReceiveShapeConfigSet,

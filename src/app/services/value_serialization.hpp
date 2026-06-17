@@ -233,14 +233,19 @@ void load(Archive& ar, ShapeConfiguration& config, const unsigned int /*v*/) {
 // --- ShapeConfigSet ---
 template <class Archive>
 void save(Archive& ar, const ShapeConfigSet& set, const unsigned int /*v*/) {
-  const std::vector<ShapeConfiguration>& configurations = set.Configurations();
-  ar& make_nvp("configurations", configurations);
+  const std::vector<ShapeConfiguration>& fixed = set.FixedConfigurations();
+  const std::vector<ShapeConfiguration>& groups = set.GroupConfigurations();
+  ar& make_nvp("fixed_configurations", fixed);
+  ar& make_nvp("group_configurations", groups);
 }
 template <class Archive>
 void load(Archive& ar, ShapeConfigSet& set, const unsigned int /*v*/) {
-  std::vector<ShapeConfiguration> configurations;
-  ar& make_nvp("configurations", configurations);
-  set.MutableConfigurations() = std::move(configurations);
+  std::vector<ShapeConfiguration> fixed;
+  std::vector<ShapeConfiguration> groups;
+  ar& make_nvp("fixed_configurations", fixed);
+  ar& make_nvp("group_configurations", groups);
+  set.MutableFixedConfigurations() = std::move(fixed);
+  set.MutableGroupConfigurations() = std::move(groups);
 }
 
 // --- CalendarConfig (incl. CalendarSpan year range) ---
