@@ -234,18 +234,13 @@ void load(Archive& ar, ShapeConfiguration& config, const unsigned int /*v*/) {
 template <class Archive>
 void save(Archive& ar, const ShapeConfigSet& set, const unsigned int /*v*/) {
   const std::vector<ShapeConfiguration>& configurations = set.Configurations();
-  const std::size_t number_persistent = set.NumberPersistent();
   ar& make_nvp("configurations", configurations);
-  ar& make_nvp("number_persistent", number_persistent);
 }
 template <class Archive>
 void load(Archive& ar, ShapeConfigSet& set, const unsigned int /*v*/) {
   std::vector<ShapeConfiguration> configurations;
-  std::size_t number_persistent = 0;
   ar& make_nvp("configurations", configurations);
-  ar& make_nvp("number_persistent", number_persistent);
   set.MutableConfigurations() = std::move(configurations);
-  set.SetNumberPersistent(number_persistent);
 }
 
 // --- CalendarConfig (incl. CalendarSpan year range) ---

@@ -12,8 +12,6 @@
 #include <string>
 #include <vector>
 
-#include "../packages/color_palette.hpp"
-#include "../packages/date_group.hpp"
 #include "../packages/shape_configuration.hpp"
 #include "casts.hpp"
 #include "wx_owned.hpp"
@@ -40,90 +38,12 @@ class ElementsSetupsPanel : public wxPanel {
     UpdateConfigurationList();
   }
 
-  // One dynamic "Bar Group" shape configuration mirrors each date group. When
-  // groups are added we synthesise fresh configurations from the color palette;
-  // existing configurations are left untouched so user customisations survive.
-  void ReceiveDateGroups(const std::vector<DateGroup>& date_groups) {
-    const size_t persistent_count = shape_config_set_.NumberPersistent();
-    const size_t desired_size = persistent_count + date_groups.size();
-    const size_t previous_size = shape_config_set_.size();
-
-    shape_config_set_.resize(desired_size);
-
-    // Only the newly appended entries need defaults; entries that already
-    // existed keep whatever the user (or a loaded project) configured.
-    for (size_t index = std::max(previous_size, persistent_count);
-         index < desired_size; ++index) {
-      const size_t group_index = index - persistent_count;
-      shape_config_set_[index] = MakeBarGroupConfiguration(group_index);
-    }
-
-    // "Annual Sum" is the next entry in the same categorical sequence, so it
-    // takes the palette color just past the last group. Its palette index moves
-    // with the group count, so refresh it only when the count actually changed
-    // (a rename keeps the user's customizations intact, like the groups above).
-    const size_t previous_group_count = (previous_size > persistent_count)
-                                            ? previous_size - persistent_count
-                                            : 0;
-    if (date_groups.size() != previous_group_count) {
-      RefreshAnnualSumConfiguration(date_groups.size());
-    }
-
-    UpdateConfigurationList();
-
-    signal_shape_config_set_(shape_config_set_);
-  }
-
   sigslot::signal<const ShapeConfigSet&>& SignalShapeConfigSet() {
     return signal_shape_config_set_;
   }
 
  private:
   sigslot::signal<const ShapeConfigSet&> signal_shape_config_set_;
-
-  // Builds a categorical shape configuration: the color is taken from the
-  // shared palette at the given index, with a stronger outline than fill so the
-  // box has a visible border while the fill stays pastel. The single source of
-  // the alpha recipe for every palette-driven entry (bar groups and the annual
-  // sum).
-  static ShapeConfiguration MakeCategoricalConfiguration(std::string name,
-                                                         size_t palette_index) {
-    constexpr float kDynamicLineWidth = 0.5F;
-    constexpr float kOutlineAlpha = 0.75F;
-    constexpr float kFillAlpha = 0.35F;
-
-    const glm::vec3 color = palette::CategoricalColor(palette_index);
-
-    return ShapeConfiguration{
-        std::move(name),
-        true,
-        true,
-        kDynamicLineWidth,
-        ShapeConfiguration::OutlineColorValue{glm::vec4(color, kOutlineAlpha)},
-        ShapeConfiguration::FillColorValue{glm::vec4(color, kFillAlpha)}};
-  }
-
-  // Default configuration for the dynamic bar group at the given zero-based
-  // index, reproducible across sessions because the palette is index-stable.
-  static ShapeConfiguration MakeBarGroupConfiguration(size_t group_index) {
-    return MakeCategoricalConfiguration(
-        ShapeConfigSet::DynamicConfigurationName(group_index), group_index);
-  }
-
-  // Re-derives the "Annual Sum" (Years Totals) configuration from the palette
-  // at the index right past the last group, so it is colored and styled exactly
-  // like a bar group and stays consistent if the palette is ever changed.
-  void RefreshAnnualSumConfiguration(size_t group_count) {
-    const size_t persistent_count = shape_config_set_.NumberPersistent();
-    for (size_t index = 0; index < persistent_count; ++index) {
-      if (shape_config_set_[index] ==
-          ShapeConfigSet::AnnualSumConfigurationName()) {
-        shape_config_set_[index] = MakeCategoricalConfiguration(
-            ShapeConfigSet::AnnualSumConfigurationName(), group_count);
-        break;
-      }
-    }
-  }
 
   void InitWidgets() {
     constexpr int kAlphaMax = 100;

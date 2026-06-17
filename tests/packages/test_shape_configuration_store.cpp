@@ -9,7 +9,8 @@
 TEST(ShapeConfigSetTest, DefaultsContainExpectedNames) {
   ShapeConfigSet set;
   ASSERT_GT(set.size(), 0U);
-  EXPECT_EQ(set.NumberPersistent(), set.size());
+  // The default set is all fixed configurations: no dynamic group entries yet.
+  EXPECT_TRUE(set.GetDynamicConfiguration(0).Name().empty());
 
   // A handful of named entries we expect from the default set.
   const ShapeConfiguration page_margin =
@@ -34,28 +35,40 @@ TEST(ShapeConfigSetTest, DynamicConfigurationNameMatchesFormat) {
   EXPECT_EQ(ShapeConfigSet::DynamicConfigurationName(7), "Bar Group 7");
 }
 
-TEST(ShapeConfigSetTest, GetDynamicConfigurationAddressesByIndex) {
+TEST(ShapeConfigSetTest, SyncToDateGroupsAddressesByIndex) {
   ShapeConfigSet set;
-  const size_t persistent = set.NumberPersistent();
 
-  // Append two dynamic configurations, mirroring how the panel grows the set
-  // when date groups are added.
-  set.resize(persistent + 2);
-  set[persistent + 1] = ShapeConfiguration{
-      ShapeConfigSet::DynamicConfigurationName(1),
-      /*outline_visible=*/true,
-      /*fill_visible=*/true,
-      0.5F,
-      ShapeConfiguration::OutlineColorValue{glm::vec4{0.1F, 0.2F, 0.3F, 1.0F}},
-      ShapeConfiguration::FillColorValue{glm::vec4{0.1F, 0.2F, 0.3F, 0.5F}}};
+  // Grow the set to three groups, mirroring how the store reacts to date
+  // groups being added.
+  set.SyncToDateGroups(3);
 
   const ShapeConfiguration second = set.GetDynamicConfiguration(1);
   EXPECT_EQ(second.Name(), "Bar Group 1");
-  EXPECT_FLOAT_EQ(second.OutlineColorDisabled()[0], 0.1F);
 
-  // Out-of-range indices return a blank configuration instead of throwing.
-  const ShapeConfiguration missing = set.GetDynamicConfiguration(99);
-  EXPECT_TRUE(missing.Name().empty());
+  // Out-of-range / absent indices return a blank configuration.
+  EXPECT_TRUE(set.GetDynamicConfiguration(3).Name().empty());
+}
+
+TEST(ShapeConfigSetTest, SyncToDateGroupsPreservesCustomisationAndDropsStale) {
+  ShapeConfigSet set;
+  set.SyncToDateGroups(3);
+
+  // Customise the colour of the second group's configuration.
+  const ShapeConfiguration name_match = set.GetDynamicConfiguration(1);
+  ASSERT_EQ(name_match.Name(), "Bar Group 1");
+  for (size_t index = 0; index < set.size(); ++index) {
+    if (set[index] == ShapeConfigSet::DynamicConfigurationName(1)) {
+      set[index].OutlineColor(glm::vec4{0.1F, 0.2F, 0.3F, 1.0F});
+    }
+  }
+
+  // Shrinking then re-growing must keep the surviving group's customisation
+  // and drop the entries past the new count.
+  set.SyncToDateGroups(2);
+  EXPECT_TRUE(set.GetDynamicConfiguration(2).Name().empty());
+  const ShapeConfiguration kept = set.GetDynamicConfiguration(1);
+  EXPECT_EQ(kept.Name(), "Bar Group 1");
+  EXPECT_FLOAT_EQ(kept.OutlineColorDisabled()[0], 0.1F);
 }
 
 TEST(ShapeConfigurationTest, OutlineColorReturnsZeroWhenInvisible) {

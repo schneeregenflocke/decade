@@ -119,8 +119,11 @@ inline void BindDateGroups(EventBus& bus, MainWindowComponents& components) {
                             &components.date_entry_store);
   bus.date_groups().connect(&DateTablePanel::ReceiveDateGroups,
                             &components.data_table_panel);
-  bus.date_groups().connect(&ElementsSetupsPanel::ReceiveDateGroups,
-                            &components.elements_setup_panel);
+  // The store synthesises the per-group shape configurations from the palette
+  // and republishes the set, so this must run before CalendarPage rebuilds the
+  // scene below (which reads the updated configurations off the bus).
+  bus.date_groups().connect(&ShapeConfigurationStore::ReceiveDateGroups,
+                            &components.shape_configuration_store);
   bus.date_groups().connect(&CalendarPage::ReceiveDateGroups,
                             &components.calendar_page);
 }

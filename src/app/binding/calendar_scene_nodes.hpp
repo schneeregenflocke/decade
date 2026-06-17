@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 
 #include "../../graphics/font.hpp"
 #include "../../graphics/scene.hpp"
@@ -25,28 +26,75 @@ inline constexpr int kOverlay = 50;
 }  // namespace calendar_layers
 
 // Stable handles to the fixed scene-skeleton nodes, created once and reached
-// directly by the section builders. Container nodes (bar cells, the text
+// directly by the section builders. Container nodes (the date bars, the text
 // groups, …) carry no shape; their dynamic children are (re)built each frame.
+//
+// Each node's display name lives here as a `k…Name` constant right next to its
+// handle, so the name and the variable are defined together in one place (the
+// single source of truth). The factory below wires both; these names are what
+// the scene-tree panel shows, so they are written for humans (Title Case,
+// describing the node's purpose).
 struct CalendarSceneNodes {
+  static constexpr std::string_view kPageName = "Page";
   std::shared_ptr<SceneNode> page;
+
+  static constexpr std::string_view kSelectionOverlayName = "Selection Overlay";
   std::shared_ptr<SceneNode> selection_overlay;
+
+  static constexpr std::string_view kPrintAreaName = "Print Area";
   std::shared_ptr<SceneNode> print_area;
-  std::shared_ptr<SceneNode> title_area;
-  std::shared_ptr<SceneNode> title_font;
+
+  static constexpr std::string_view kTitleFrameName = "Title Frame";
+  std::shared_ptr<SceneNode> title_frame;
+
+  static constexpr std::string_view kTitleTextName = "Title Text";
+  std::shared_ptr<SceneNode> title_text;
+
+  static constexpr std::string_view kRowLabelsName = "Row Labels";
   std::shared_ptr<SceneNode> row_labels;
+
+  static constexpr std::string_view kColumnLabelsName = "Column Labels";
   std::shared_ptr<SceneNode> column_labels;
-  std::shared_ptr<SceneNode> years_cells;
-  std::shared_ptr<SceneNode> months_cells;
-  std::shared_ptr<SceneNode> days_cells0;
-  std::shared_ptr<SceneNode> days_cells1;
-  std::shared_ptr<SceneNode> bars_cells;
-  std::shared_ptr<SceneNode> years_totals;
-  std::shared_ptr<SceneNode> years_totals_text;
+
+  static constexpr std::string_view kYearCellsName = "Year Cells";
+  std::shared_ptr<SceneNode> year_cells;
+
+  static constexpr std::string_view kMonthCellsName = "Month Cells";
+  std::shared_ptr<SceneNode> month_cells;
+
+  static constexpr std::string_view kDayCellsName = "Day Cells";
+  std::shared_ptr<SceneNode> day_cells;
+
+  static constexpr std::string_view kSundayCellsName = "Sunday Cells";
+  std::shared_ptr<SceneNode> sunday_cells;
+
+  static constexpr std::string_view kDateBarsName = "Date Bars";
+  std::shared_ptr<SceneNode> date_bars;
+
+  static constexpr std::string_view kYearTotalsName = "Year Totals";
+  std::shared_ptr<SceneNode> year_totals;
+
+  static constexpr std::string_view kYearTotalLabelsName = "Year Total Labels";
+  std::shared_ptr<SceneNode> year_total_labels;
+
+  static constexpr std::string_view kLegendFrameName = "Legend Frame";
+  // The legend frame is a leaf with no later updates, so it has no handle here;
+  // its name constant lives with the others to keep them all in one place.
+
+  static constexpr std::string_view kLegendEntriesName = "Legend Entries";
   std::shared_ptr<SceneNode> legend_entries;
-  std::shared_ptr<SceneNode> legend_text;
-  std::shared_ptr<SceneNode> month_text;
-  std::shared_ptr<SceneNode> year_text;
-  std::shared_ptr<SceneNode> bar_labels;
+
+  static constexpr std::string_view kLegendLabelsName = "Legend Labels";
+  std::shared_ptr<SceneNode> legend_labels;
+
+  static constexpr std::string_view kMonthLabelsName = "Month Labels";
+  std::shared_ptr<SceneNode> month_labels;
+
+  static constexpr std::string_view kYearLabelsName = "Year Labels";
+  std::shared_ptr<SceneNode> year_labels;
+
+  static constexpr std::string_view kDateBarLabelsName = "Date Bar Labels";
+  std::shared_ptr<SceneNode> date_bar_labels;
 };
 
 // Builds the fixed scene skeleton under the scene's root once: every named node
@@ -59,7 +107,8 @@ struct CalendarSceneNodes {
   CalendarSceneNodes nodes;
 
   auto page_shape = std::make_shared<QuadrilateralShape>(simple_shader);
-  nodes.page = std::make_shared<SceneNode>("page", page_shape);
+  nodes.page = std::make_shared<SceneNode>(
+      std::string(CalendarSceneNodes::kPageName), page_shape);
   scene.Root().AddChild(nodes.page);
 
   // Selection-highlight overlay: a single translucent quad drawn on top of
@@ -67,102 +116,110 @@ struct CalendarSceneNodes {
   // rendering aid, not part of the user's scene, so it is hidden from the
   // snapshot. Updated in place (no rebuild) when the selection changes.
   auto selection_shape = std::make_shared<QuadrilateralShape>(simple_shader);
-  nodes.selection_overlay =
-      std::make_shared<SceneNode>("selection overlay", selection_shape);
+  nodes.selection_overlay = std::make_shared<SceneNode>(
+      std::string(CalendarSceneNodes::kSelectionOverlayName), selection_shape);
   nodes.selection_overlay->SetSnapshotHidden(true);
   scene.Root().AddChild(nodes.selection_overlay);
 
   auto print_area_shape = std::make_shared<RectanglesShape>(rectangles_shader);
-  nodes.print_area =
-      std::make_shared<SceneNode>("print area", print_area_shape);
+  nodes.print_area = std::make_shared<SceneNode>(
+      std::string(CalendarSceneNodes::kPrintAreaName), print_area_shape);
   nodes.page->AddChild(nodes.print_area);
 
-  auto title_area_shape = std::make_shared<RectanglesShape>(rectangles_shader);
-  nodes.title_area =
-      std::make_shared<SceneNode>("title area", title_area_shape);
-  nodes.print_area->AddChild(nodes.title_area);
+  auto title_frame_shape = std::make_shared<RectanglesShape>(rectangles_shader);
+  nodes.title_frame = std::make_shared<SceneNode>(
+      std::string(CalendarSceneNodes::kTitleFrameName), title_frame_shape);
+  nodes.print_area->AddChild(nodes.title_frame);
 
   auto row_labels_shape = std::make_shared<RectanglesShape>(rectangles_shader);
-  nodes.row_labels =
-      std::make_shared<SceneNode>("row label area", row_labels_shape);
+  nodes.row_labels = std::make_shared<SceneNode>(
+      std::string(CalendarSceneNodes::kRowLabelsName), row_labels_shape);
   nodes.print_area->AddChild(nodes.row_labels);
 
   auto column_labels_shape =
       std::make_shared<RectanglesShape>(rectangles_shader);
-  nodes.column_labels =
-      std::make_shared<SceneNode>("column label area", column_labels_shape);
+  nodes.column_labels = std::make_shared<SceneNode>(
+      std::string(CalendarSceneNodes::kColumnLabelsName), column_labels_shape);
   nodes.print_area->AddChild(nodes.column_labels);
 
-  auto years_cells_shape = std::make_shared<RectanglesShape>(rectangles_shader);
-  nodes.years_cells =
-      std::make_shared<SceneNode>("year cells", years_cells_shape);
-  nodes.print_area->AddChild(nodes.years_cells);
+  auto year_cells_shape = std::make_shared<RectanglesShape>(rectangles_shader);
+  nodes.year_cells = std::make_shared<SceneNode>(
+      std::string(CalendarSceneNodes::kYearCellsName), year_cells_shape);
+  nodes.print_area->AddChild(nodes.year_cells);
 
-  auto months_cells_shape =
+  auto month_cells_shape = std::make_shared<RectanglesShape>(rectangles_shader);
+  nodes.month_cells = std::make_shared<SceneNode>(
+      std::string(CalendarSceneNodes::kMonthCellsName), month_cells_shape);
+  nodes.print_area->AddChild(nodes.month_cells);
+
+  auto day_cells_shape = std::make_shared<RectanglesShape>(rectangles_shader);
+  nodes.day_cells = std::make_shared<SceneNode>(
+      std::string(CalendarSceneNodes::kDayCellsName), day_cells_shape);
+  nodes.print_area->AddChild(nodes.day_cells);
+
+  auto sunday_cells_shape =
       std::make_shared<RectanglesShape>(rectangles_shader);
-  nodes.months_cells =
-      std::make_shared<SceneNode>("month cells", months_cells_shape);
-  nodes.print_area->AddChild(nodes.months_cells);
+  nodes.sunday_cells = std::make_shared<SceneNode>(
+      std::string(CalendarSceneNodes::kSundayCellsName), sunday_cells_shape);
+  nodes.print_area->AddChild(nodes.sunday_cells);
 
-  auto days_cells0_shape = std::make_shared<RectanglesShape>(rectangles_shader);
-  nodes.days_cells0 =
-      std::make_shared<SceneNode>("day cells 0", days_cells0_shape);
-  nodes.print_area->AddChild(nodes.days_cells0);
+  nodes.date_bars = std::make_shared<SceneNode>(
+      std::string(CalendarSceneNodes::kDateBarsName));
+  nodes.print_area->AddChild(nodes.date_bars);
 
-  auto days_cells1_shape = std::make_shared<RectanglesShape>(rectangles_shader);
-  nodes.days_cells1 =
-      std::make_shared<SceneNode>("day cells 1", days_cells1_shape);
-  nodes.print_area->AddChild(nodes.days_cells1);
+  auto year_totals_shape = std::make_shared<RectanglesShape>(rectangles_shader);
+  nodes.year_totals = std::make_shared<SceneNode>(
+      std::string(CalendarSceneNodes::kYearTotalsName), year_totals_shape);
+  nodes.print_area->AddChild(nodes.year_totals);
 
-  nodes.bars_cells = std::make_shared<SceneNode>("bar cells");
-  nodes.print_area->AddChild(nodes.bars_cells);
+  nodes.year_total_labels = std::make_shared<SceneNode>(
+      std::string(CalendarSceneNodes::kYearTotalLabelsName));
+  nodes.print_area->AddChild(nodes.year_total_labels);
 
-  auto years_totals_shape =
+  auto legend_frame_shape =
       std::make_shared<RectanglesShape>(rectangles_shader);
-  nodes.years_totals =
-      std::make_shared<SceneNode>("year total cells", years_totals_shape);
-  nodes.print_area->AddChild(nodes.years_totals);
+  auto legend_frame = std::make_shared<SceneNode>(
+      std::string(CalendarSceneNodes::kLegendFrameName), legend_frame_shape);
+  nodes.print_area->AddChild(legend_frame);
 
-  nodes.years_totals_text = std::make_shared<SceneNode>("year total text");
-  nodes.print_area->AddChild(nodes.years_totals_text);
-
-  auto legend_shape = std::make_shared<RectanglesShape>(rectangles_shader);
-  auto legend_area = std::make_shared<SceneNode>("legend area", legend_shape);
-  nodes.print_area->AddChild(legend_area);
-
-  nodes.legend_entries = std::make_shared<SceneNode>("legend entries");
+  nodes.legend_entries = std::make_shared<SceneNode>(
+      std::string(CalendarSceneNodes::kLegendEntriesName));
   nodes.print_area->AddChild(nodes.legend_entries);
 
-  nodes.legend_text = std::make_shared<SceneNode>("legend text");
-  nodes.print_area->AddChild(nodes.legend_text);
+  nodes.legend_labels = std::make_shared<SceneNode>(
+      std::string(CalendarSceneNodes::kLegendLabelsName));
+  nodes.print_area->AddChild(nodes.legend_labels);
 
-  auto title_font_shape = std::make_shared<FontShape>(font_shader);
-  title_font_shape->SetFont(font);
-  nodes.title_font =
-      std::make_shared<SceneNode>("title text", title_font_shape);
-  nodes.print_area->AddChild(nodes.title_font);
+  auto title_text_shape = std::make_shared<FontShape>(font_shader);
+  title_text_shape->SetFont(font);
+  nodes.title_text = std::make_shared<SceneNode>(
+      std::string(CalendarSceneNodes::kTitleTextName), title_text_shape);
+  nodes.print_area->AddChild(nodes.title_text);
 
-  nodes.month_text = std::make_shared<SceneNode>("month text");
-  nodes.print_area->AddChild(nodes.month_text);
+  nodes.month_labels = std::make_shared<SceneNode>(
+      std::string(CalendarSceneNodes::kMonthLabelsName));
+  nodes.print_area->AddChild(nodes.month_labels);
 
-  nodes.year_text = std::make_shared<SceneNode>("year text");
-  nodes.print_area->AddChild(nodes.year_text);
+  nodes.year_labels = std::make_shared<SceneNode>(
+      std::string(CalendarSceneNodes::kYearLabelsName));
+  nodes.print_area->AddChild(nodes.year_labels);
 
-  nodes.bar_labels = std::make_shared<SceneNode>("bar labels");
-  nodes.print_area->AddChild(nodes.bar_labels);
+  nodes.date_bar_labels = std::make_shared<SceneNode>(
+      std::string(CalendarSceneNodes::kDateBarLabelsName));
+  nodes.print_area->AddChild(nodes.date_bar_labels);
 
   nodes.page->SetDrawLayer(calendar_layers::kPage);
   nodes.print_area->SetDrawLayer(calendar_layers::kFrame);
-  nodes.title_area->SetDrawLayer(calendar_layers::kFrame);
-  legend_area->SetDrawLayer(calendar_layers::kFrame);
+  nodes.title_frame->SetDrawLayer(calendar_layers::kFrame);
+  legend_frame->SetDrawLayer(calendar_layers::kFrame);
   nodes.row_labels->SetDrawLayer(calendar_layers::kGrid);
   nodes.column_labels->SetDrawLayer(calendar_layers::kGrid);
-  nodes.years_cells->SetDrawLayer(calendar_layers::kGrid);
-  nodes.months_cells->SetDrawLayer(calendar_layers::kGrid);
-  nodes.days_cells0->SetDrawLayer(calendar_layers::kGrid);
-  nodes.days_cells1->SetDrawLayer(calendar_layers::kGrid);
-  nodes.years_totals->SetDrawLayer(calendar_layers::kBars);
-  nodes.title_font->SetDrawLayer(calendar_layers::kText);
+  nodes.year_cells->SetDrawLayer(calendar_layers::kGrid);
+  nodes.month_cells->SetDrawLayer(calendar_layers::kGrid);
+  nodes.day_cells->SetDrawLayer(calendar_layers::kGrid);
+  nodes.sunday_cells->SetDrawLayer(calendar_layers::kGrid);
+  nodes.year_totals->SetDrawLayer(calendar_layers::kBars);
+  nodes.title_text->SetDrawLayer(calendar_layers::kText);
   nodes.selection_overlay->SetDrawLayer(calendar_layers::kOverlay);
 
   return nodes;

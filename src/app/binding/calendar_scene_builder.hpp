@@ -268,11 +268,11 @@ class CalendarSceneBuilder {
   }
 
   void SetupTitleShape() {
-    FillRectangles(nodes_.title_area, layout_.TitleFrame(),
+    FillRectangles(nodes_.title_frame, layout_.TitleFrame(),
                    shape_config_.GetShapeConfiguration("Title Frame"));
 
     auto title_shape =
-        std::dynamic_pointer_cast<FontShape>(nodes_.title_font->GetShape());
+        std::dynamic_pointer_cast<FontShape>(nodes_.title_text->GetShape());
     if (!title_shape) {
       return;
     }
@@ -306,7 +306,7 @@ class CalendarSceneBuilder {
         Font::TextScale{.height_ratio = kFontScaleMin,
                         .width_ratio = kFontScaleMax});
 
-    auto& month_node = nodes_.month_text;
+    auto& month_node = nodes_.month_labels;
 
     month_node->RemoveChildren();
     for (size_t index = 0; index < number_months; ++index) {
@@ -326,7 +326,7 @@ class CalendarSceneBuilder {
     const auto config = shape_config_.GetShapeConfiguration("Calendar Labels");
     FillRectangles(nodes_.column_labels, x_label_frames, config);
 
-    auto& year_node = nodes_.year_text;
+    auto& year_node = nodes_.year_labels;
 
     const std::size_t span_years = calendar_config_.GetSpanLengthYears();
     if (span_years == 0) {
@@ -374,7 +374,7 @@ class CalendarSceneBuilder {
       years_cells.at(index) = year_cell;
     }
 
-    FillRectangles(nodes_.years_cells, years_cells,
+    FillRectangles(nodes_.year_cells, years_cells,
                    shape_config_.GetShapeConfiguration("Years Shapes"));
   }
 
@@ -416,7 +416,7 @@ class CalendarSceneBuilder {
       }
     }
 
-    FillRectangles(nodes_.months_cells, months_cells,
+    FillRectangles(nodes_.month_cells, months_cells,
                    shape_config_.GetShapeConfiguration("Months Shapes"));
   }
 
@@ -473,14 +473,14 @@ class CalendarSceneBuilder {
       }
     }
 
-    FillRectangles(nodes_.days_cells0, days_cells0,
+    FillRectangles(nodes_.day_cells, days_cells0,
                    shape_config_.GetShapeConfiguration("Day Shapes"));
-    FillRectangles(nodes_.days_cells1, days_cells1,
+    FillRectangles(nodes_.sunday_cells, days_cells1,
                    shape_config_.GetShapeConfiguration("Sunday Shapes"));
   }
 
   void SetupBarsShape() {
-    auto& node = nodes_.bars_cells;
+    auto& node = nodes_.date_bars;
     node->RemoveChildren();
 
     const auto number_groups = date_groups_.Items().size();
@@ -493,7 +493,7 @@ class CalendarSceneBuilder {
       group_nodes.push_back(group_node);
     }
 
-    auto& node_labels = nodes_.bar_labels;
+    auto& node_labels = nodes_.date_bar_labels;
     node_labels->RemoveChildren();
 
     bar_pick_boxes_.clear();
@@ -568,8 +568,8 @@ class CalendarSceneBuilder {
   }
 
   void SetupYearsTotals() {
-    auto& node_cells = nodes_.years_totals;
-    auto& node_text = nodes_.years_totals_text;
+    auto& node_cells = nodes_.year_totals;
+    auto& node_text = nodes_.year_total_labels;
     node_text->RemoveChildren();
 
     const std::size_t span_years = data_store_.GetSpan();
@@ -629,7 +629,7 @@ class CalendarSceneBuilder {
     auto& node_entries = nodes_.legend_entries;
     node_entries->RemoveChildren();
 
-    auto& node_text = nodes_.legend_text;
+    auto& node_text = nodes_.legend_labels;
     node_text->RemoveChildren();
 
     const size_t number_entry_frames = (date_groups_.Items().size() + 1) * 2;

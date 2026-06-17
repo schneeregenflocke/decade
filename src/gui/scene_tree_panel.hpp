@@ -18,6 +18,7 @@
 #include "../app/binding/scene_snapshot.hpp"
 #include "../packages/shape_configuration.hpp"
 #include "casts.hpp"
+#include "rgba_colour_property.hpp"
 #include "wx_owned.hpp"
 
 // Presentation: master/detail view of the render scene graph. A collapsible
@@ -68,6 +69,11 @@ class SceneTreePanel : public wxPanel {
     // keeps highlighting the last selected path across rebuilds, so a spurious
     // "nothing selected" event here would wrongly clear it.
     rebuilding_ = true;
+    // Remember the selected node's stable path so the rebuild can restore it.
+    // Without this the selection collapses to the root on every rebuild, which
+    // happens after each property edit (edit -> scene rebuild -> snapshot) and
+    // would force the user to re-select the node after every change.
+    const std::string previously_selected = SelectedPath();
     tree_ctrl_->Freeze();
     tree_ctrl_->DeleteAllItems();
     path_to_item_.clear();
@@ -101,6 +107,17 @@ class SceneTreePanel : public wxPanel {
     }
 
     tree_ctrl_->ExpandAll();
+
+    // Restore the previous selection by path. Still under the rebuilding_ guard
+    // so SelectItem does not re-emit the selection (which the renderer already
+    // tracks); the detail grid is refreshed explicitly below.
+    if (!previously_selected.empty()) {
+      const auto iterator = path_to_item_.find(previously_selected);
+      if (iterator != path_to_item_.end()) {
+        tree_ctrl_->SelectItem(iterator->second);
+      }
+    }
+
     tree_ctrl_->Thaw();
     rebuilding_ = false;
     RefreshDetail();
@@ -217,22 +234,30 @@ class SceneTreePanel : public wxPanel {
     EmitSelection();
   }
 
+  // The stable path of the currently selected node, or empty when nothing
+  // (valid) is selected. The single place that reads the selection's payload.
+  [[nodiscard]] std::string SelectedPath() const {
+    if (tree_ctrl_ == nullptr) {
+      return {};
+    }
+    const wxTreeItemId selected = tree_ctrl_->GetSelection();
+    if (!selected.IsOk()) {
+      return {};
+    }
+    const auto* data =
+        dynamic_cast<NodeData*>(tree_ctrl_->GetItemData(selected));
+    return data != nullptr ? data->Path() : std::string{};
+  }
+
   // Publishes the selected node's stable path (or nullopt when the selection is
   // empty/invalid) on the selection signal.
   void EmitSelection() {
-    if (tree_ctrl_ == nullptr) {
-      return;
+    const std::string path = SelectedPath();
+    if (path.empty()) {
+      signal_selected_node_(std::nullopt);
+    } else {
+      signal_selected_node_(std::optional<std::string>(path));
     }
-    const wxTreeItemId selected = tree_ctrl_->GetSelection();
-    if (selected.IsOk()) {
-      const auto* data =
-          dynamic_cast<NodeData*>(tree_ctrl_->GetItemData(selected));
-      if (data != nullptr) {
-        signal_selected_node_(std::optional<std::string>(data->Path()));
-        return;
-      }
-    }
-    signal_selected_node_(std::nullopt);
   }
 
   // Rebuilds the detail grid from the current tree selection. Rebuilding
@@ -294,13 +319,13 @@ class SceneTreePanel : public wxPanel {
     outline_visible_property_ = MakeOwned<wxBoolProperty>(
         "Outline Visible", wxPG_LABEL, config.OutlineVisible());
     property_grid_->Append(outline_visible_property_);
-    outline_color_property_ = MakeOwned<wxColourProperty>(
+    outline_color_property_ = MakeOwned<RgbaColourProperty>(
         "Outline Color", wxPG_LABEL, ToWxColor(config.OutlineColorDisabled()));
     property_grid_->Append(outline_color_property_);
     fill_visible_property_ = MakeOwned<wxBoolProperty>(
         "Fill Visible", wxPG_LABEL, config.FillVisible());
     property_grid_->Append(fill_visible_property_);
-    fill_color_property_ = MakeOwned<wxColourProperty>(
+    fill_color_property_ = MakeOwned<RgbaColourProperty>(
         "Fill Color", wxPG_LABEL, ToWxColor(config.FillColorDisabled()));
     property_grid_->Append(fill_color_property_);
     line_width_property_ = MakeOwned<wxFloatProperty>(
@@ -314,8 +339,8 @@ class SceneTreePanel : public wxPanel {
   }
 
   // Commits a Style-property edit into the configuration set and publishes it.
-  // The RGB of the colour pickers is applied while the configured alpha is
-  // preserved (the picker does not edit alpha), so transparency is not lost.
+  // The colour properties carry the full RGBA (including alpha), so the edited
+  // colours are applied directly.
   void CallbackPropertyChanged(wxPropertyGridEvent& /*event*/) {
     if (style_id_.empty() || outline_color_property_ == nullptr) {
       return;
@@ -331,10 +356,8 @@ class SceneTreePanel : public wxPanel {
       config.FillVisible(fill_visible_property_->GetValue().GetBool());
       config.LineWidth(
           static_cast<float>(line_width_property_->GetValue().GetDouble()));
-      config.OutlineColor(ColorPreservingAlpha(outline_color_property_,
-                                               config.OutlineColorDisabled()));
-      config.FillColor(ColorPreservingAlpha(fill_color_property_,
-                                            config.FillColorDisabled()));
+      config.OutlineColor(ToGlmVec4(outline_color_property_->GetColour()));
+      config.FillColor(ToGlmVec4(fill_color_property_->GetColour()));
       break;
     }
 
@@ -342,14 +365,6 @@ class SceneTreePanel : public wxPanel {
     emitting_ = true;
     signal_shape_config_set_(updated);
     emitting_ = false;
-  }
-
-  // RGB from the colour picker, alpha kept from the previous value.
-  static glm::vec4 ColorPreservingAlpha(wxColourProperty* property,
-                                        const glm::vec4& previous) {
-    glm::vec4 color = ToGlmVec4(property->GetVal().m_colour);
-    color.a = previous.a;
-    return color;
   }
 
   static constexpr int kSashPositionPx = 220;
@@ -367,9 +382,9 @@ class SceneTreePanel : public wxPanel {
   // the configuration they edit (empty when the selection has no style).
   std::string style_id_;
   wxBoolProperty* outline_visible_property_{nullptr};
-  wxColourProperty* outline_color_property_{nullptr};
+  RgbaColourProperty* outline_color_property_{nullptr};
   wxBoolProperty* fill_visible_property_{nullptr};
-  wxColourProperty* fill_color_property_{nullptr};
+  RgbaColourProperty* fill_color_property_{nullptr};
   wxFloatProperty* line_width_property_{nullptr};
 
   bool rebuilding_{false};

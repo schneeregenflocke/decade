@@ -26,13 +26,15 @@ target_include_directories(decade_tests PRIVATE
 	${CMAKE_SOURCE_DIR}/external/sigslot/include
 )
 
-# The packages under test are Boost-free; their only third-party dependency is
-# the ICU date backend. The services tests additionally exercise CSV I/O
-# (csv2, header-only) and the Boost.Serialization XML round trip. All variables
-# and imported targets come from the parent scope.
+# The packages under test are Boost-free. Third-party dependencies: the ICU
+# date backend, tinycolormap (the categorical palette behind the shape-config
+# group synthesis) and Bullet (physics). The services tests additionally
+# exercise CSV I/O (csv2, header-only) and the Boost.Serialization XML round
+# trip. All variables and imported targets come from the parent scope.
 target_include_directories(decade_tests SYSTEM PRIVATE
 	${ICU_INCLUDE_DIRS}
 	${CSV2_INCLUDE_DIR}
+	${TINYCOLORMAP_INCLUDE_DIR}
 	${CMAKE_SOURCE_DIR}/external/bullet3/src
 )
 

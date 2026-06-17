@@ -4,8 +4,12 @@
 #include <algorithm>
 #include <glm/vec4.hpp>
 #include <string>
+#include <string_view>
+#include <unordered_map>
 #include <utility>
 #include <vector>
+
+#include "color_palette.hpp"
 
 // Pure domain value: the visual configuration of one shape kind. No
 // serialization, no signal -> Rule of Zero, copyable.
@@ -81,18 +85,15 @@ class ShapeConfiguration {
   glm::vec4 fill_color_{0.0F, 0.0F, 0.0F, 1.0F};
 };
 
-// Pure value object: the ordered set of shape configurations (persistent ones
-// followed by per-date-group dynamic ones) plus the lookups over them. No
-// signal -> Rule of Zero, copyable.
+// Pure value object: the ordered set of shape configurations (the fixed ones
+// followed by per-date-group dynamic ones) plus the lookups over them. Dynamic
+// configurations are identified by their name (the "Bar Group N" pattern), so
+// the set needs no boundary index. No signal -> Rule of Zero, copyable.
 class ShapeConfigSet {
  public:
-  ShapeConfigSet()
-      : shape_configurations_(BuildDefaults()),
-        number_persistent_configurations_(shape_configurations_.size()) {}
+  ShapeConfigSet() : shape_configurations_(BuildDefaults()) {}
 
   [[nodiscard]] size_t size() const { return shape_configurations_.size(); }
-
-  void resize(size_t size) { shape_configurations_.resize(size); }
 
   ShapeConfiguration& operator[](size_t index) {
     return shape_configurations_.at(index);
@@ -118,7 +119,15 @@ class ShapeConfigSet {
   // definition instead of reconstructing the string in several places.
   [[nodiscard]] static std::string DynamicConfigurationName(
       size_t group_index) {
-    return "Bar Group " + std::to_string(group_index);
+    return std::string(kDynamicNamePrefix) + std::to_string(group_index);
+  }
+
+  // Whether `name` denotes a dynamic per-date-group configuration. This is the
+  // single criterion that separates the fixed configurations from the
+  // group-driven ones, replacing the former persistent-count boundary index.
+  [[nodiscard]] static bool IsDynamicConfigurationName(
+      const std::string& name) {
+    return name.starts_with(kDynamicNamePrefix);
   }
 
   // Name of the persistent "Annual Sum" (per-year total) configuration. Shared
@@ -127,25 +136,44 @@ class ShapeConfigSet {
     return "Years Totals";
   }
 
-  // Dynamic configurations are stored immediately after the persistent ones, so
-  // a group's configuration can be addressed by its index directly.
+  // The configuration for the dynamic bar group at the given zero-based index,
+  // resolved by name (a default-constructed value when absent).
   [[nodiscard]] ShapeConfiguration GetDynamicConfiguration(
       size_t group_index) const {
-    const size_t config_index = number_persistent_configurations_ + group_index;
-    if (config_index >= shape_configurations_.size()) {
-      return {};
-    }
-    return shape_configurations_.at(config_index);
+    return GetShapeConfiguration(DynamicConfigurationName(group_index));
   }
 
-  // Number of persistent (non-per-group) configurations at the front of the
-  // set. Used by the panel to know where the dynamic group entries start and by
-  // serialization to restore the split.
-  [[nodiscard]] size_t NumberPersistent() const {
-    return number_persistent_configurations_;
-  }
-  void SetNumberPersistent(size_t value) {
-    number_persistent_configurations_ = value;
+  // Reconciles the dynamic per-group configurations with the current date
+  // groups: keeps the fixed configurations and any existing group entry (so
+  // user customisations survive), drops stale group entries and synthesises
+  // fresh ones from the palette for newly added groups. The "Annual Sum" entry
+  // is re-derived from the palette only when the group count actually changed,
+  // so a rename of a group keeps its customised colour.
+  void SyncToDateGroups(size_t group_count) {
+    std::unordered_map<std::string, ShapeConfiguration> existing_dynamic;
+    std::vector<ShapeConfiguration> fixed;
+    fixed.reserve(shape_configurations_.size());
+    for (const ShapeConfiguration& config : shape_configurations_) {
+      if (IsDynamicConfigurationName(config.Name())) {
+        existing_dynamic.emplace(config.Name(), config);
+      } else {
+        fixed.push_back(config);
+      }
+    }
+    const size_t previous_group_count = existing_dynamic.size();
+
+    shape_configurations_ = std::move(fixed);
+    for (size_t index = 0; index < group_count; ++index) {
+      const std::string name = DynamicConfigurationName(index);
+      const auto found = existing_dynamic.find(name);
+      shape_configurations_.push_back(found != existing_dynamic.end()
+                                          ? found->second
+                                          : MakeBarGroupConfiguration(index));
+    }
+
+    if (group_count != previous_group_count) {
+      RefreshAnnualSumConfiguration(group_count);
+    }
   }
 
   // Raw access for non-intrusive serialization in the infrastructure layer.
@@ -157,6 +185,52 @@ class ShapeConfigSet {
   }
 
  private:
+  // Name prefix shared by every dynamic per-date-group configuration; the sole
+  // marker distinguishing group entries from the fixed ones.
+  static constexpr std::string_view kDynamicNamePrefix = "Bar Group ";
+
+  // Builds a categorical shape configuration: the colour comes from the shared
+  // palette at the given index, with a stronger outline than fill so the box
+  // has a visible border while the fill stays pastel. The single source of the
+  // alpha recipe for every palette-driven entry (bar groups and the annual
+  // sum).
+  static ShapeConfiguration MakeCategoricalConfiguration(std::string name,
+                                                         size_t palette_index) {
+    constexpr float kDynamicLineWidth = 0.5F;
+    constexpr float kOutlineAlpha = 0.75F;
+    constexpr float kFillAlpha = 0.35F;
+
+    const glm::vec3 color = palette::CategoricalColor(palette_index);
+
+    return ShapeConfiguration{
+        std::move(name),
+        true,
+        true,
+        kDynamicLineWidth,
+        ShapeConfiguration::OutlineColorValue{glm::vec4(color, kOutlineAlpha)},
+        ShapeConfiguration::FillColorValue{glm::vec4(color, kFillAlpha)}};
+  }
+
+  // Default configuration for the dynamic bar group at the given zero-based
+  // index, reproducible across sessions because the palette is index-stable.
+  static ShapeConfiguration MakeBarGroupConfiguration(size_t group_index) {
+    return MakeCategoricalConfiguration(DynamicConfigurationName(group_index),
+                                        group_index);
+  }
+
+  // Re-derives the "Annual Sum" configuration from the palette at the index
+  // right past the last group, so it is coloured and styled exactly like a bar
+  // group and stays consistent if the palette is ever changed.
+  void RefreshAnnualSumConfiguration(size_t group_count) {
+    for (ShapeConfiguration& config : shape_configurations_) {
+      if (config == AnnualSumConfigurationName()) {
+        config = MakeCategoricalConfiguration(AnnualSumConfigurationName(),
+                                              group_count);
+        break;
+      }
+    }
+  }
+
   static std::vector<ShapeConfiguration> BuildDefaults() {
     constexpr float kZero = 0.0F;
     constexpr float kOne = 1.0F;
@@ -225,6 +299,5 @@ class ShapeConfigSet {
   }
 
   std::vector<ShapeConfiguration> shape_configurations_;
-  size_t number_persistent_configurations_{0};
 };
 #endif  // SHAPE_CONFIGURATION_HPP
