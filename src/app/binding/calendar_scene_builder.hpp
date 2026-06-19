@@ -29,6 +29,7 @@
 #include "../../packages/title_config.hpp"
 #include "calendar_layout.hpp"
 #include "calendar_scene_nodes.hpp"
+#include "calendar_section_builders.hpp"
 #include "scene_snapshot.hpp"
 #include "scene_snapshot_builder.hpp"
 
@@ -101,19 +102,41 @@ class CalendarSceneBuilder {
     nodes_.print_area->SetModelMatrix(
         glm::translate(glm::mat4(1.0F), layout_.PrintAreaOrigin()));
 
-    SetupPrintAreaShape();
-    SetupTitleShape();
-    SetupCalendarLabelsShape();
-    SetupDaysShapes();
-    SetupMonthsShapes();
-    SetupYearsShapes();
-    SetupBarsShape();
-    SetupYearsTotals();
-    SetupLegend();
+    const calendar_sections::SectionContext ctx = MakeContext();
+    calendar_sections::BuildPrintArea(ctx);
+    calendar_sections::BuildTitle(ctx);
+    calendar_sections::BuildCalendarLabels(ctx);
+    calendar_sections::BuildDays(ctx);
+    calendar_sections::BuildMonths(ctx);
+    calendar_sections::BuildYears(ctx);
+    calendar_sections::BarSceneResult bars = calendar_sections::BuildBars(ctx);
+    bar_pick_boxes_ = std::move(bars.pick_boxes);
+    bar_nodes_ = std::move(bars.bar_nodes);
+    calendar_sections::BuildYearTotals(ctx);
+    calendar_sections::BuildLegend(ctx);
 
-    // The selected node's geometry may have moved; recompute the overlay so the
-    // highlight survives the rebuild (like the hover highlight on the bars).
+    // Re-apply the hover highlight to the freshly built bar nodes, if still
+    // hovered, and the selection overlay whose target may have moved.
+    if (hovered_bar_.has_value()) {
+      ApplyBarColor(hovered_bar_->index, /*highlighted=*/true);
+    }
     ApplySelectionHighlight();
+  }
+
+  // Bundles the references the section builders need into a context, built
+  // fresh per Build() (never stored).
+  [[nodiscard]] calendar_sections::SectionContext MakeContext() const {
+    return calendar_sections::SectionContext{
+        .nodes = nodes_,
+        .layout = layout_,
+        .shape_config = shape_config_,
+        .calendar_config = calendar_config_,
+        .title_config = title_config_,
+        .date_groups = date_groups_,
+        .data_store = data_store_,
+        .font = font_,
+        .rectangles_shader = rectangles_shader_,
+        .font_shader = font_shader_};
   }
 
   // Plain, GL-free mirror of the current scene-graph hierarchy for the
@@ -239,508 +262,8 @@ class CalendarSceneBuilder {
     }
   }
 
-  // Calendar-specific adapter over scene_shapes::FillRectangles: maps a domain
-  // ShapeConfiguration to the generic primitives and records the style id so
-  // the scene tree can route an edit back to that configuration (the rebuild
-  // reproduces the styling from there). The cast inside cannot fail for the
-  // fixed skeleton nodes, which are all created with a RectanglesShape.
-  template <typename Shapes>
-  static void FillRectangles(const std::shared_ptr<SceneNode>& node,
-                             const Shapes& shapes,
-                             const ShapeConfiguration& config) {
-    scene_shapes::FillRectangles(node, shapes, config.OutlineColor(),
-                                 config.FillColor(), config.LineWidth());
-    node->SetStyleId(config.Name());
-  }
-
-  // Adapter over scene_shapes::AddCenteredText supplying this builder's font
-  // shader, current font and the text draw layer.
-  void AddCenteredText(const std::shared_ptr<SceneNode>& parent,
-                       const std::string& name, const std::string& text,
-                       const glm::vec3& center, float size) {
-    scene_shapes::AddCenteredText(parent, name, text, center, size,
-                                  font_shader_, font_, calendar_layers::kText);
-  }
-
-  void SetupPrintAreaShape() {
-    FillRectangles(nodes_.print_area, layout_.PrintArea(),
-                   shape_config_.GetShapeConfiguration("Page Margin"));
-  }
-
-  void SetupTitleShape() {
-    FillRectangles(nodes_.title_frame, layout_.TitleFrame(),
-                   shape_config_.GetShapeConfiguration("Title Frame"));
-
-    auto title_shape =
-        std::dynamic_pointer_cast<FontShape>(nodes_.title_text->GetShape());
-    if (!title_shape) {
-      return;
-    }
-    title_shape->SetFont(font_);
-    title_shape->SetColor(title_config_.TextColor());
-    title_shape->SetShapeCentered(
-        title_config_.TitleText(), layout_.TitleFrame().getCenter(),
-        layout_.TitleFrame().height() * title_config_.FontSizeRatio());
-  }
-
-  void SetupCalendarLabelsShape() {
-    constexpr size_t number_months = 12;
-    std::array<char, kMonthNameBufferSize> buf{};
-    constexpr const char* format = "%b";
-    std::array<std::string, number_months> months_names;
-
-    for (size_t index = 0; index < months_names.size(); ++index) {
-      std::tm month_tm = {};
-      month_tm.tm_mon = static_cast<int>(index);
-
-      if (std::strftime(buf.data(), std::size(buf), format, &month_tm) != 0) {
-        months_names.at(index) = buf.data();
-      }
-    }
-
-    std::vector<rectf> x_label_frames(number_months);
-    labels_font_size_ = font_->AdjustTextSize(
-        rectf::from_dimension(rectf::Dimension{.width = layout_.CellWidth(),
-                                               .height = layout_.RowHeight()}),
-        "00000",
-        Font::TextScale{.height_ratio = kFontScaleMin,
-                        .width_ratio = kFontScaleMax});
-
-    auto& month_node = nodes_.month_labels;
-
-    month_node->RemoveChildren();
-    for (size_t index = 0; index < number_months; ++index) {
-      const auto float_index = static_cast<float>(index);
-      const auto left =
-          layout_.XLabelsFrame().l() + (layout_.CellWidth() * float_index);
-      x_label_frames.at(index).setL(left);
-      x_label_frames.at(index).setR(left + layout_.CellWidth());
-      x_label_frames.at(index).setB(layout_.XLabelsFrame().b());
-      x_label_frames.at(index).setT(layout_.XLabelsFrame().t());
-
-      AddCenteredText(month_node, months_names.at(index),
-                      months_names.at(index),
-                      x_label_frames.at(index).getCenter(), labels_font_size_);
-    }
-
-    const auto config = shape_config_.GetShapeConfiguration("Calendar Labels");
-    FillRectangles(nodes_.column_labels, x_label_frames, config);
-
-    auto& year_node = nodes_.year_labels;
-
-    const std::size_t span_years = calendar_config_.GetSpanLengthYears();
-    if (span_years == 0) {
-      return;
-    }
-
-    const TimelineProjection projection(calendar_config_);
-    std::vector<rectf> y_labels_frames(span_years);
-    year_node->RemoveChildren();
-    for (std::size_t index = 0; index < span_years; ++index) {
-      const std::string current_year_text =
-          std::to_string(projection.YearForRow(index));
-
-      const auto float_index = static_cast<float>(index);
-      const auto bottom =
-          layout_.YLabelsFrame().b() + (layout_.RowHeight() * float_index);
-      y_labels_frames.at(index).setL(layout_.YLabelsFrame().l());
-      y_labels_frames.at(index).setR(layout_.YLabelsFrame().r());
-      y_labels_frames.at(index).setB(bottom);
-      y_labels_frames.at(index).setT(bottom + layout_.RowHeight());
-
-      AddCenteredText(year_node, current_year_text, current_year_text,
-                      y_labels_frames.at(index).getCenter(), labels_font_size_);
-    }
-
-    FillRectangles(nodes_.row_labels, y_labels_frames, config);
-  }
-
-  void SetupYearsShapes() {
-    const std::size_t span_years = calendar_config_.GetSpanLengthYears();
-    if (span_years == 0) {
-      return;
-    }
-
-    const TimelineProjection projection(calendar_config_);
-    std::vector<rectf> years_cells(span_years);
-
-    for (std::size_t index = 0; index < span_years; ++index) {
-      const int current_year = projection.YearForRow(index);
-      const auto number_days = DaysInYear(current_year);
-      const float year_length =
-          static_cast<float>(number_days) * layout_.DayWidth();
-      rectf year_cell = layout_.GetSubFrame(index, 1);
-      year_cell.setR(year_cell.l() + year_length);
-      years_cells.at(index) = year_cell;
-    }
-
-    FillRectangles(nodes_.year_cells, years_cells,
-                   shape_config_.GetShapeConfiguration("Years Shapes"));
-  }
-
-  void SetupMonthsShapes() {
-    constexpr size_t number_months = 12;
-    const std::size_t span_years = calendar_config_.GetSpanLengthYears();
-    if (span_years == 0) {
-      return;
-    }
-
-    const auto store_size = number_months * span_years;
-    const TimelineProjection projection(calendar_config_);
-    std::vector<rectf> months_cells(store_size);
-
-    for (std::size_t index = 0; index < span_years; ++index) {
-      const int current_year = projection.YearForRow(index);
-      const Date first_day_of_year = Date::FromYmd(current_year, 1, 1);
-
-      for (size_t subindex = 0; subindex < number_months; ++subindex) {
-        const auto current_cell = layout_.GetSubFrame(index, 1);
-        const int month_index = static_cast<int>(subindex);
-        rectf month_cell;
-        const auto start_offset =
-            static_cast<float>(Date::DaysBetween(
-                first_day_of_year, first_day_of_year.AddMonths(month_index))) *
-            layout_.DayWidth();
-        const auto end_offset =
-            static_cast<float>(Date::DaysBetween(
-                first_day_of_year,
-                first_day_of_year.AddMonths(month_index + 1))) *
-            layout_.DayWidth();
-        month_cell.setL(current_cell.l() + start_offset);
-        month_cell.setR(current_cell.l() + end_offset);
-        month_cell.setB(current_cell.b());
-        month_cell.setT(current_cell.t());
-
-        const auto store_index = (index * number_months) + subindex;
-        months_cells.at(store_index) = month_cell;
-      }
-    }
-
-    FillRectangles(nodes_.month_cells, months_cells,
-                   shape_config_.GetShapeConfiguration("Months Shapes"));
-  }
-
-  void SetupDaysShapes() {
-    if (!calendar_config_.IsValidSpan()) {
-      return;
-    }
-
-    const auto span_days = calendar_config_.GetSpanLengthDays();
-    if (span_days <= 0) {
-      return;
-    }
-
-    std::int64_t days_index = 0;
-    const auto number_days_cells = static_cast<size_t>(span_days);
-
-    std::vector<rectf> days_cells0;
-    std::vector<rectf> days_cells1;
-    days_cells0.resize(number_days_cells);
-    days_cells1.resize(number_days_cells);
-
-    const std::size_t span_years = calendar_config_.GetSpanLengthYears();
-    const TimelineProjection projection(calendar_config_);
-    for (std::size_t index = 0; index < span_years; ++index) {
-      const int current_year = projection.YearForRow(index);
-      const std::int64_t number_days = DaysInYear(current_year);
-
-      for (std::int64_t subindex = 0; subindex < number_days; ++subindex) {
-        const auto float_subindex = static_cast<float>(subindex);
-        const auto current_cell = layout_.GetSubFrame(index, 1);
-
-        const Date current_date =
-            calendar_config_.GetSpanLimitsDate().at(0).AddDays(
-                static_cast<int>(days_index));
-
-        if (current_date.DayOfWeek() == Weekday::kSunday) {
-          rectf day_cell;
-          day_cell.setL(current_cell.l() +
-                        (float_subindex * layout_.DayWidth()));
-          day_cell.setR(day_cell.l() + layout_.DayWidth());
-          day_cell.setB(current_cell.b());
-          day_cell.setT(current_cell.t());
-          days_cells1[static_cast<size_t>(days_index)] = day_cell;
-        } else {
-          rectf day_cell;
-          day_cell.setL(current_cell.l() +
-                        (float_subindex * layout_.DayWidth()));
-          day_cell.setR(day_cell.l() + layout_.DayWidth());
-          day_cell.setB(current_cell.b());
-          day_cell.setT(current_cell.t());
-          days_cells0[static_cast<size_t>(days_index)] = day_cell;
-        }
-        ++days_index;
-      }
-    }
-
-    FillRectangles(nodes_.day_cells, days_cells0,
-                   shape_config_.GetShapeConfiguration("Day Shapes"));
-    FillRectangles(nodes_.sunday_cells, days_cells1,
-                   shape_config_.GetShapeConfiguration("Sunday Shapes"));
-  }
-
-  void SetupBarsShape() {
-    auto& node = nodes_.date_bars;
-    node->RemoveChildren();
-
-    const auto number_groups = date_groups_.Items().size();
-    std::vector<std::shared_ptr<SceneNode>> group_nodes;
-    group_nodes.reserve(number_groups);
-    for (size_t index = 0; index < number_groups; ++index) {
-      auto group_node = std::make_shared<SceneNode>(std::string("group node ") +
-                                                    std::to_string(index));
-      node->AddChild(group_node);
-      group_nodes.push_back(group_node);
-    }
-
-    auto& node_labels = nodes_.date_bar_labels;
-    node_labels->RemoveChildren();
-
-    bar_pick_boxes_.clear();
-    bar_nodes_.clear();
-
-    const TimelineProjection projection(calendar_config_);
-    const auto number_bars = data_store_.GetNumberBars();
-    for (size_t index = 0; index < number_bars; ++index) {
-      const auto& bar = data_store_.GetBar(index);
-      if (!calendar_config_.IsInSpan(bar.GetYear())) {
-        continue;
-      }
-      const auto current_group = static_cast<size_t>(bar.GetGroup());
-      auto current_shape_config =
-          shape_config_.GetDynamicConfiguration(current_group);
-
-      const auto row = projection.RowForYear(bar.GetYear());
-      const auto current_sub_cell = layout_.GetSubFrame(row, 1);
-
-      const auto bar_left =
-          current_sub_cell.l() + (bar.GetFirstDay() * layout_.DayWidth());
-      const auto bar_width =
-          (bar.GetLastDay() - bar.GetFirstDay()) * layout_.DayWidth();
-      const auto bar_height = current_sub_cell.height();
-
-      // Each bar is its own node: the position lives in the node transform
-      // (ready for dragging/animating), the size lives in the shape geometry.
-      // A pure translation keeps the outline width constant, which a scale
-      // matrix would distort. The bar's world rect is therefore unchanged.
-      auto bar_node = std::make_shared<SceneNode>(std::string("bar ") +
-                                                  std::to_string(index));
-      bar_node->SetModelMatrix(glm::translate(
-          glm::mat4(1.0F), glm::vec3(bar_left, current_sub_cell.b(), kZero)));
-      bar_node->SetStyleId(current_shape_config.Name());
-
-      // Page-space box for hit-testing. The node's world position is
-      // layout_.PrintAreaOrigin() + (bar_left, sub_cell.b()), so the page-space
-      // rect is the local bar rect shifted by that origin.
-      const PickId pick_id{.kind = PickId::Kind::kBar, .index = index};
-      bar_pick_boxes_.push_back(PickBox{
-          .id = pick_id,
-          .rect = rectf(bar_left + layout_.PrintAreaOrigin().x,
-                        bar_left + bar_width + layout_.PrintAreaOrigin().x,
-                        current_sub_cell.b() + layout_.PrintAreaOrigin().y,
-                        current_sub_cell.b() + bar_height +
-                            layout_.PrintAreaOrigin().y)});
-
-      auto bar_shape = std::make_shared<RectanglesShape>(rectangles_shader_);
-      bar_shape->SetShape(rectf(kZero, bar_width, kZero, bar_height),
-                          current_shape_config.LineWidth());
-      bar_shape->SetColor({current_shape_config.OutlineColor(),
-                           current_shape_config.FillColor()});
-      bar_node->SetShape(bar_shape);
-      bar_node->SetDrawLayer(calendar_layers::kBars);
-      group_nodes.at(current_group)->AddChild(bar_node);
-      bar_nodes_.emplace(index, bar_node);
-
-      auto current_text_cell = layout_.GetSubFrame(row, 2);
-      current_text_cell.setL(bar_left);
-      current_text_cell.setR(bar_left + bar_width);
-
-      AddCenteredText(node_labels,
-                      std::string("label node ") + std::to_string(index),
-                      bar.GetText(), current_text_cell.getCenter(),
-                      current_text_cell.height());
-    }
-
-    // Re-apply the hover highlight to the freshly built node, if still hovered.
-    if (hovered_bar_.has_value()) {
-      ApplyBarColor(hovered_bar_->index, /*highlighted=*/true);
-    }
-  }
-
-  void SetupYearsTotals() {
-    auto& node_cells = nodes_.year_totals;
-    auto& node_text = nodes_.year_total_labels;
-    node_text->RemoveChildren();
-
-    const std::size_t span_years = data_store_.GetSpan();
-    if (span_years == 0) {
-      return;
-    }
-
-    const TimelineProjection projection(calendar_config_);
-    std::vector<rectf> years_totals_cells(span_years);
-
-    for (std::size_t index = 0; index < span_years; ++index) {
-      const int current_year =
-          data_store_.GetFirstYear() + static_cast<int>(index);
-      if (calendar_config_.IsInSpan(current_year)) {
-        const auto row = projection.RowForYear(current_year);
-        const auto current_cell = layout_.GetSubFrame(row, 0);
-
-        rectf year_total_cell = current_cell;
-        const auto year_total_width =
-            static_cast<float>(data_store_.GetAnnualTotal(index)) *
-            layout_.DayWidth();
-        year_total_cell.setR(current_cell.l() + year_total_width);
-        years_totals_cells.at(index) = year_total_cell;
-
-        const auto number_days = DaysInYear(current_year);
-
-        const float percent =
-            static_cast<float>(data_store_.GetAnnualTotal(index)) /
-            static_cast<float>(number_days);
-
-        std::ostringstream year_total_stream;
-        year_total_stream << std::fixed << std::setprecision(1)
-                          << percent * kPercentScale << " %";
-        const auto year_total_text = year_total_stream.str();
-        const auto year_total_text_width =
-            font_->TextWidth(year_total_text, year_total_cell.height());
-
-        rectf year_total_text_cell;
-        year_total_text_cell.setL(year_total_cell.r() + current_cell.height());
-        year_total_text_cell.setR(year_total_text_cell.l() +
-                                  year_total_text_width);
-        year_total_text_cell.setB(year_total_cell.b());
-        year_total_text_cell.setT(year_total_cell.t());
-
-        AddCenteredText(
-            node_text, std::string("year total label ") + std::to_string(index),
-            year_total_text, year_total_text_cell.getCenter(),
-            year_total_text_cell.height());
-      }
-    }
-
-    FillRectangles(node_cells, years_totals_cells,
-                   shape_config_.GetShapeConfiguration("Years Totals"));
-  }
-
-  void SetupLegend() {
-    auto& node_entries = nodes_.legend_entries;
-    node_entries->RemoveChildren();
-
-    auto& node_text = nodes_.legend_labels;
-    node_text->RemoveChildren();
-
-    const size_t number_entry_frames = (date_groups_.Items().size() + 1) * 2;
-    std::vector<rectf> legend_entries_frames(number_entry_frames);
-    const auto entries_width =
-        layout_.LegendFrame().width() / static_cast<float>(number_entry_frames);
-
-    for (size_t index = 0; index < number_entry_frames; ++index) {
-      const auto float_index = static_cast<float>(index);
-      const auto left =
-          layout_.LegendFrame().l() + (entries_width * float_index);
-      legend_entries_frames.at(index) = layout_.LegendFrame();
-      legend_entries_frames.at(index).setL(left);
-      legend_entries_frames.at(index).setR(left + entries_width);
-    }
-
-    std::vector<rectf> bars_cells;
-
-    auto print_strings = date_groups_.GetDateGroupsNames();
-    print_strings.emplace_back("Annual Sums");
-
-    std::string string_max_length;
-    for (const auto& current_string : print_strings) {
-      if (current_string.length() > string_max_length.length()) {
-        string_max_length = current_string;
-      }
-    }
-
-    const auto legend_font_size =
-        font_->AdjustTextSize(legend_entries_frames.at(0), string_max_length,
-                              Font::TextScale{.height_ratio = kFontScaleMin,
-                                              .width_ratio = kFontScaleMax});
-
-    const std::size_t span_years = calendar_config_.GetSpanLengthYears();
-    for (size_t index = 0; index < date_groups_.Items().size(); ++index) {
-      const auto label_index = index * 2;
-      AddCenteredText(
-          node_text, std::string("legend label ") + std::to_string(index),
-          date_groups_.Items().at(index).GetName(),
-          legend_entries_frames.at(label_index).getCenter(), legend_font_size);
-
-      if (span_years > 0U) {
-        const auto current_height = layout_.GetSubFrame(0, 1).height();
-        auto current_cell = legend_entries_frames.at(label_index + 1);
-        const auto current_vertical_center = current_cell.getCenter()[1];
-        current_cell.setB(current_vertical_center - (current_height * kHalf));
-        current_cell.setT(current_vertical_center + (current_height * kHalf));
-        bars_cells.emplace_back(current_cell);
-
-        auto current_shape_config =
-            shape_config_.GetDynamicConfiguration(index);
-
-        auto node_entry = std::make_shared<SceneNode>(
-            std::string("legend bar ") + std::to_string(index));
-        node_entry->SetDrawLayer(calendar_layers::kBars);
-        node_entry->SetStyleId(current_shape_config.Name());
-        node_entries->AddChild(node_entry);
-
-        auto entry_shape =
-            std::make_shared<RectanglesShape>(rectangles_shader_);
-        node_entry->SetShape(entry_shape);
-
-        entry_shape->SetShape(current_cell, current_shape_config.LineWidth());
-        entry_shape->SetColor({current_shape_config.OutlineColor(),
-                               current_shape_config.FillColor()});
-      }
-    }
-
-    {
-      AddCenteredText(node_text, std::string("legend label year total"),
-                      "Annual sum",
-                      legend_entries_frames.at(legend_entries_frames.size() - 2)
-                          .getCenter(),
-                      legend_font_size);
-
-      if (span_years > 0U) {
-        const auto current_height = layout_.GetSubFrame(0, 0).height();
-        auto current_cell =
-            legend_entries_frames.at(legend_entries_frames.size() - 1);
-        const auto current_vertical_center = current_cell.getCenter()[1];
-        current_cell.setB(current_vertical_center - (current_height * kHalf));
-        current_cell.setT(current_vertical_center + (current_height * kHalf));
-        bars_cells.emplace_back(current_cell);
-
-        auto current_shape_config = shape_config_.GetShapeConfiguration(
-            ShapeConfigSet::AnnualSumConfigurationName());
-
-        auto node_entry =
-            std::make_shared<SceneNode>(std::string("legend bar annual sum"));
-        node_entry->SetDrawLayer(calendar_layers::kBars);
-        node_entry->SetStyleId(current_shape_config.Name());
-        node_entries->AddChild(node_entry);
-
-        auto entry_shape =
-            std::make_shared<RectanglesShape>(rectangles_shader_);
-        node_entry->SetShape(entry_shape);
-
-        entry_shape->SetShape(current_cell, current_shape_config.LineWidth());
-        entry_shape->SetColor({current_shape_config.OutlineColor(),
-                               current_shape_config.FillColor()});
-      }
-    }
-  }
-
   static constexpr float kZero = 0.0F;
   static constexpr float kOne = 1.0F;
-  static constexpr float kHalf = 0.5F;
-  static constexpr float kFontScaleMin = 0.5F;
-  static constexpr float kFontScaleMax = 0.75F;
-  static constexpr float kPercentScale = 100.0F;
-  static constexpr size_t kMonthNameBufferSize = 100;
   static constexpr float kHoverOutlineGreen = 0.55F;
 
   // Translucent accent for the scene-tree selection overlay.
@@ -755,13 +278,13 @@ class CalendarSceneBuilder {
   GraphicsEngine* graphics_engine_{nullptr};
 
   // Cached shader handles, looked up once in the constructor. The shaders live
-  // in the GraphicsEngine for the builder's whole lifetime, so the Setup*
-  // methods reach for these instead of repeating the name lookup.
+  // in the GraphicsEngine for the builder's whole lifetime; they are forwarded
+  // to the section builders via the SectionContext.
   Shader* rectangles_shader_{nullptr};
   Shader* font_shader_{nullptr};
 
   // Stable handles to the fixed scene-skeleton nodes, built once by
-  // BuildCalendarSceneNodes and reached directly by the Setup* methods.
+  // BuildCalendarSceneNodes and forwarded to the section builders.
   CalendarSceneNodes nodes_;
 
   // State owned by CalendarPage, referenced here. The referenced objects stay
@@ -789,6 +312,5 @@ class CalendarSceneBuilder {
   // lives in CalendarLayout; the builder only keeps what the sections produce.
   CalendarLayout layout_;
   std::vector<PickBox> bar_pick_boxes_;
-  float labels_font_size_{0.0F};
 };
 #endif  // CALENDAR_SCENE_BUILDER_HPP
