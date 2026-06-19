@@ -1,35 +1,26 @@
 #ifndef CALENDAR_SCENE_BUILDER_HPP
 #define CALENDAR_SCENE_BUILDER_HPP
 
-#include <array>
-#include <cstdint>
-#include <ctime>
 #include <glm/gtc/matrix_transform.hpp>
-#include <iomanip>
 #include <memory>
 #include <optional>
-#include <sstream>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "../../graphics/font.hpp"
 #include "../../graphics/graphics_engine.hpp"
 #include "../../graphics/pick_id.hpp"
 #include "../../graphics/scene.hpp"
-#include "../../graphics/scene_graph.hpp"
-#include "../../graphics/scene_shape_filler.hpp"
 #include "../../graphics/shapes.hpp"
 #include "../../packages/calendar_config.hpp"
-#include "../../packages/date.hpp"
 #include "../../packages/date_entry_bar_store.hpp"
 #include "../../packages/date_group.hpp"
 #include "../../packages/shape_configuration.hpp"
-#include "../../packages/timeline_projection.hpp"
 #include "../../packages/title_config.hpp"
 #include "calendar_layout.hpp"
 #include "calendar_scene_nodes.hpp"
 #include "calendar_section_builders.hpp"
+#include "scene_highlighter.hpp"
 #include "scene_snapshot.hpp"
 #include "scene_snapshot_builder.hpp"
 
@@ -111,16 +102,12 @@ class CalendarSceneBuilder {
     calendar_sections::BuildYears(ctx);
     calendar_sections::BarSceneResult bars = calendar_sections::BuildBars(ctx);
     bar_pick_boxes_ = std::move(bars.pick_boxes);
-    bar_nodes_ = std::move(bars.bar_nodes);
     calendar_sections::BuildYearTotals(ctx);
     calendar_sections::BuildLegend(ctx);
 
-    // Re-apply the hover highlight to the freshly built bar nodes, if still
-    // hovered, and the selection overlay whose target may have moved.
-    if (hovered_bar_.has_value()) {
-      ApplyBarColor(hovered_bar_->index, /*highlighted=*/true);
-    }
-    ApplySelectionHighlight();
+    // Hand the fresh bar nodes to the highlighter, which re-applies the
+    // persisted hover and selection highlights to the new geometry.
+    highlighter_.Refresh(std::move(bars.bar_nodes));
   }
 
   // Bundles the references the section builders need into a context, built
@@ -152,125 +139,18 @@ class CalendarSceneBuilder {
     return bar_pick_boxes_;
   }
 
-  // Highlights the hovered bar (and restores the previously hovered one) by
-  // recolouring its shape in place — no scene rebuild. A null value clears the
-  // highlight.
+  // Hover and scene-tree selection highlighting are delegated to the
+  // SceneHighlighter; the builder just forwards.
   void SetHoveredBar(const std::optional<PickId>& hovered) {
-    if (hovered == hovered_bar_) {
-      return;
-    }
-    if (hovered_bar_.has_value()) {
-      ApplyBarColor(hovered_bar_->index, /*highlighted=*/false);
-    }
-    hovered_bar_ = hovered;
-    if (hovered_bar_.has_value()) {
-      ApplyBarColor(hovered_bar_->index, /*highlighted=*/true);
-    }
+    highlighter_.SetHoveredBar(hovered);
   }
 
-  // Highlights the scene node identified by `path` (and its subtree) with a
-  // translucent overlay — no rebuild. A null/unknown path clears the overlay.
   void SetSelectedNode(const std::optional<std::string>& path) {
-    selected_path_ = path;
-    ApplySelectionHighlight();
+    highlighter_.SetSelectedNode(path);
   }
 
  private:
-  // Positions the selection overlay over the currently selected node's world
-  // bounds, or hides it (zero-area quad) when there is no resolvable selection.
-  void ApplySelectionHighlight() {
-    auto shape = std::dynamic_pointer_cast<QuadrilateralShape>(
-        nodes_.selection_overlay->GetShape());
-    if (!shape) {
-      return;
-    }
-    std::optional<rectf> bounds;
-    if (selected_path_.has_value()) {
-      bounds = NodeWorldBounds(*selected_path_);
-    }
-    if (bounds.has_value()) {
-      shape->SetShape(*bounds);
-      shape->SetColor(glm::vec4(kSelectionRed, kSelectionGreen, kSelectionBlue,
-                                kSelectionAlpha));
-    } else {
-      shape->SetShape(rectf(kZero, kZero, kZero, kZero));
-    }
-  }
-
-  // Resolves a "root/.../name" path to the world-space bounds of that node's
-  // subtree (page space, matching the bars' pick boxes). Returns nullopt when
-  // any path segment does not resolve or the subtree carries no geometry.
-  [[nodiscard]] std::optional<rectf> NodeWorldBounds(
-      const std::string& path) const {
-    std::vector<std::string> segments;
-    std::size_t start = 0;
-    while (start <= path.size()) {
-      const std::size_t slash = path.find('/', start);
-      const std::size_t end =
-          (slash == std::string::npos) ? path.size() : slash;
-      segments.push_back(path.substr(start, end - start));
-      if (slash == std::string::npos) {
-        break;
-      }
-      start = slash + 1;
-    }
-    if (segments.empty() || scene_.Root().GetNodeName() != segments.front()) {
-      return std::nullopt;
-    }
-
-    const SceneNode* node = &scene_.Root();
-    glm::mat4 parent_world(1.0F);
-    for (std::size_t index = 1; index < segments.size(); ++index) {
-      parent_world = parent_world * node->GetModelMatrix();
-      const SceneNode* next = nullptr;
-      for (const auto& child : node->GetChildren()) {
-        if (child->GetNodeName() == segments[index]) {
-          next = child.get();
-          break;
-        }
-      }
-      if (next == nullptr) {
-        return std::nullopt;
-      }
-      node = next;
-    }
-    return node->WorldBounds(parent_world);
-  }
-
-  // Recolours one bar's shape: highlighted bars get a distinct outline, normal
-  // bars are restored to their group's configured colours. Fill is left as
-  // configured so the hover reads as an outline accent.
-  void ApplyBarColor(std::size_t bar_index, bool highlighted) {
-    const auto iterator = bar_nodes_.find(bar_index);
-    if (iterator == bar_nodes_.end() ||
-        bar_index >= data_store_.GetNumberBars()) {
-      return;
-    }
-    auto shape = std::dynamic_pointer_cast<RectanglesShape>(
-        iterator->second->GetShape());
-    if (!shape) {
-      return;
-    }
-    const auto group =
-        static_cast<std::size_t>(data_store_.GetBar(bar_index).GetGroup());
-    const auto config = shape_config_.GetDynamicConfiguration(group);
-    if (highlighted) {
-      const glm::vec4 hover_outline(kOne, kHoverOutlineGreen, kZero, kOne);
-      shape->SetColor({hover_outline, config.FillColor()});
-    } else {
-      shape->SetColor({config.OutlineColor(), config.FillColor()});
-    }
-  }
-
-  static constexpr float kZero = 0.0F;
   static constexpr float kOne = 1.0F;
-  static constexpr float kHoverOutlineGreen = 0.55F;
-
-  // Translucent accent for the scene-tree selection overlay.
-  static constexpr float kSelectionRed = 1.0F;
-  static constexpr float kSelectionGreen = 0.6F;
-  static constexpr float kSelectionBlue = 0.0F;
-  static constexpr float kSelectionAlpha = 0.35F;
 
   // The scene graph's owner is the Scene (held by CalendarPage); the builder
   // borrows it to mutate the graph. It is not owned here.
@@ -298,19 +178,16 @@ class CalendarSceneBuilder {
   const DateGroups& date_groups_;
   const DateEntryBarStore& data_store_;
 
-  // Bar nodes by bar index, rebuilt each Build() — used to recolour a bar on
-  // hover. The hovered bar persists across rebuilds so the highlight is
-  // re-applied to the fresh node.
-  std::unordered_map<std::size_t, std::shared_ptr<SceneNode>> bar_nodes_;
-  std::optional<PickId> hovered_bar_;
-
-  // Path of the scene-tree-selected node ("root/.../name"); drives the overlay
-  // and persists across rebuilds so the highlight is re-applied to fresh nodes.
-  std::optional<std::string> selected_path_;
-
   // Transient render state, recomputed on every Build(). The page geometry now
   // lives in CalendarLayout; the builder only keeps what the sections produce.
   CalendarLayout layout_;
   std::vector<PickBox> bar_pick_boxes_;
+
+  // Interactive hover/selection highlighting. Declared last so its borrowed
+  // references (scene_, the overlay node, shape_config_, data_store_) are all
+  // initialised first; fed the fresh bar nodes via Refresh() after each
+  // Build().
+  SceneHighlighter highlighter_{scene_, nodes_.selection_overlay, shape_config_,
+                                data_store_};
 };
 #endif  // CALENDAR_SCENE_BUILDER_HPP
