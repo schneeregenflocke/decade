@@ -9,7 +9,7 @@
 // Infrastructure: the single owner (SSOT) of the render scene graph's root.
 //
 // Previously the root `SceneNode` was co-owned by two `shared_ptr`s — one in
-// the CalendarSceneBuilder, one in the GraphicsEngine — which left ownership
+// the CalendarSceneComposer, one in the GraphicsEngine — which left ownership
 // ambiguous. `Scene` makes it unambiguous: it owns the root, and every other
 // component *borrows* the Scene (by reference or non-owning pointer) rather
 // than owning the graph. The builder mutates the graph through `Root()`, the

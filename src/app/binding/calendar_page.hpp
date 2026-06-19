@@ -21,11 +21,11 @@
 #include "../../packages/shape_configuration.hpp"
 #include "../../packages/title_config.hpp"
 #include "../../physics/physics_world.hpp"
-#include "calendar_scene_builder.hpp"
+#include "calendar_scene_composer.hpp"
 #include "scene_snapshot.hpp"
 
 // Rendering adapter: owns the domain state relevant to the calendar drawing,
-// receives updates via the Receive* slots, and drives the CalendarSceneBuilder
+// receives updates via the Receive* slots, and drives the CalendarSceneComposer
 // to (re)build the scene graph. All state is held as plain value objects
 // (copyable); every incoming signal carries a value, so the slots just assign.
 class CalendarPage {
@@ -33,19 +33,19 @@ class CalendarPage {
   CalendarPage(GLCanvas* gl_canvas_in, const std::string& font_filepath)
       : gl_canvas_(gl_canvas_in),
         font_(std::make_shared<Font>(font_filepath)),
-        scene_builder_(gl_canvas_in->GraphicsEnginePtr(), scene_, font_,
-                       page_size_, page_margin_, title_config_,
-                       calendar_config_, shape_config_, date_groups_,
-                       data_store_) {}
+        scene_composer_(gl_canvas_in->GraphicsEnginePtr(), scene_, font_,
+                        page_size_, page_margin_, title_config_,
+                        calendar_config_, shape_config_, date_groups_,
+                        bar_store_) {}
 
   void ReceiveDateGroups(const std::vector<DateGroup>& date_groups_in) {
     date_groups_.Assign(date_groups_in);
-    data_store_.ReceiveDateGroups(date_groups_in);
+    bar_store_.ReceiveDateGroups(date_groups_in);
     Update();
   }
 
   void ReceiveDateEntries(const std::vector<DateEntry>& date_entries) {
-    data_store_.ReceiveDateEntries(date_entries);
+    bar_store_.ReceiveDateEntries(date_entries);
     Update();
   }
 
@@ -80,10 +80,10 @@ class CalendarPage {
   }
 
   void Update() {
-    scene_builder_.Build();
-    physics_world_.Rebuild(scene_builder_.BarPickBoxes());
+    scene_composer_.Build();
+    physics_world_.Rebuild(scene_composer_.BarPickBoxes());
     gl_canvas_->RefreshMVP();
-    signal_scene_snapshot_(scene_builder_.SceneSnapshot());
+    signal_scene_snapshot_(scene_composer_.SceneSnapshot());
   }
 
   [[nodiscard]] auto& SignalSceneSnapshot() { return signal_scene_snapshot_; }
@@ -95,14 +95,14 @@ class CalendarPage {
 
   // Highlights the hovered bar in place (no rebuild) and repaints.
   void ReceiveHovered(const std::optional<PickId>& hovered) {
-    scene_builder_.SetHoveredBar(hovered);
+    scene_composer_.SetHoveredBar(hovered);
     gl_canvas_->RefreshMVP();
   }
 
   // Highlights the scene-tree-selected node (and its subtree) in place and
   // repaints. The path identifies the node within the scene graph.
   void ReceiveSelectedNode(const std::optional<std::string>& path) {
-    scene_builder_.SetSelectedNode(path);
+    scene_composer_.SetSelectedNode(path);
     gl_canvas_->RefreshMVP();
   }
 
@@ -116,7 +116,7 @@ class CalendarPage {
   rectf page_size_;
   rectf page_margin_;
 
-  DateEntryBarStore data_store_;
+  DateEntryBarStore bar_store_;
   DateGroups date_groups_;
   CalendarConfig calendar_config_;
   ShapeConfigSet shape_config_;
@@ -127,7 +127,7 @@ class CalendarPage {
   Scene scene_;
 
   // Declared last: binds references to the value members above, which must
-  // already be constructed when the builder is initialised.
-  CalendarSceneBuilder scene_builder_;
+  // already be constructed when the composer is initialised.
+  CalendarSceneComposer scene_composer_;
 };
 #endif  // CALENDAR_PAGE_HPP

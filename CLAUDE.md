@@ -143,7 +143,7 @@ the Domain types it serialises.
 - **Domain:** `src/packages/` — value objects, stores, transformation logic, sigslot signals — UI-agnostic **and Boost-free** (no `friend boost::serialization::access`, no `serialize` members).
 - **Infrastructure:** `src/graphics/`, `src/app/services/` — OpenGL pipeline, FreeType, XML/CSV/PNG I/O, **non-intrusive serialization**.
 
-The rendering adapter (`calendar_page.hpp` + `calendar_scene_builder.hpp`) is the
+The rendering adapter (`calendar_page.hpp` + `calendar_scene_composer.hpp`) is the
 Application/Infrastructure bridge; both are detailed in the directory map below.
 
 ### Directory map
@@ -161,7 +161,7 @@ Application/Infrastructure bridge; both are detailed in the directory map below.
   - `binding/event_bus.hpp` — typed signal hub for domain events (Application).
   - `binding/main_window_binder.hpp` — wires producers/consumers via the EventBus (Application).
   - `binding/calendar_page.hpp` — rendering adapter: owns the calendar-relevant domain state, exposes the `Receive*` slots, and drives the scene builder on updates (Application).
-  - `binding/calendar_scene_builder.hpp` — builds and fills the calendar scene graph from the (referenced) domain state; GL-canvas free, knows only `GraphicsEngine` and the scene graph (Application/Infrastructure bridge). Also emits the bars' page-space `PickBox`es for the picking layer and recolours the hovered bar in place.
+  - `binding/calendar_scene_composer.hpp` — coordinates building the calendar scene graph from the (referenced) domain state; GL-canvas free, knows only `GraphicsEngine` and the `Scene` (Application/Infrastructure bridge). It is a thin coordinator that delegates to: `calendar_layout.hpp` (`CalendarLayout`, the GL-free page geometry, unit-tested), `calendar_scene_nodes.hpp` (`CalendarSceneNodes` handle struct + `BuildCalendarSceneNodes` skeleton factory + the `calendar_layers` painter layers), `calendar_section_builders.hpp` (one free `calendar_sections::Build*` per calendar element, taking a `SectionContext`; `BuildBars` also emits the bars' page-space `PickBox`es), and `scene_highlighter.hpp` (`SceneHighlighter`: hover recolour + scene-tree selection overlay + `NodeWorldBounds`). The generic, domain-free node-fill helpers live in `graphics/scene_shape_filler.hpp` (`scene_shapes::FillRectangles` / `AddCenteredText`).
   - `binding/scene_snapshot.hpp` — `SceneNodeSnapshot`: a plain, GL-free read model of the render scene graph (name + has-shape + children). The bus carries it, the scene-tree panel renders it — so the presentation layer never depends on the OpenGL `SceneNode` type (Application).
   - `binding/scene_snapshot_builder.hpp` — `BuildSceneSnapshot(const SceneNode&)`: the Application/Infrastructure bridge that mirrors the live `SceneNode` graph into a `SceneNodeSnapshot`. Kept apart from `scene_snapshot.hpp` (which stays GL-free) and from the scene builder (whose job is building the graph, not mirroring it).
   - `binding/interaction_controller.hpp` — turns canvas pointer moves into hover/pick events. Hit-tests via a pluggable pick source (so it stays unaware of `CalendarPage`/`PhysicsWorld`) and emits `hovered` only on change (Application).
@@ -286,7 +286,7 @@ These are the binding design guidelines for this codebase.
 - Don't Repeat Yourself (DRY) — when the same multi-line shape recurs across
   methods (or panels), lift it into one small helper — a `private` member, a
   free function, or a shared base class — rather than copying it. Established
-  examples: `CalendarSceneBuilder::FillRectangles` / `AddCenteredText`
+  examples: `scene_shapes::FillRectangles` / `AddCenteredText`
   (scene-node construction), `GLCanvas::ReadBackBuffer` (render + glReadPixels +
   row-flip), `MakeOwned<T>` in
   `gui/wx_owned.hpp` (the `make_unique<T>(...).release()` parent-owned-widget

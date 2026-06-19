@@ -64,12 +64,17 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/services/project_io.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/services/runtime_info.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/services/value_serialization.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/calendar_layout.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/calendar_page.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/calendar_scene_builder.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/calendar_scene_composer.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/calendar_scene_nodes.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/calendar_section_builders.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/event_bus.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/interaction_controller.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/main_window_binder.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/scene_highlighter.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/scene_snapshot.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/scene_snapshot_builder.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/bar.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/calendar_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/calendar_config_store.hpp
@@ -119,7 +124,9 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/shapes_base.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/texture_object.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/mvp_matrices.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/scene.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/scene_graph.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/scene_shape_filler.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/pick_id.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/physics/physics_world.hpp
 )

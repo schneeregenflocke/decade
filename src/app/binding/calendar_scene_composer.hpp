@@ -1,5 +1,5 @@
-#ifndef CALENDAR_SCENE_BUILDER_HPP
-#define CALENDAR_SCENE_BUILDER_HPP
+#ifndef CALENDAR_SCENE_COMPOSER_HPP
+#define CALENDAR_SCENE_COMPOSER_HPP
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <memory>
@@ -30,16 +30,16 @@
 // (referenced) domain state into shapes. It is GL-canvas free — it only knows
 // the GraphicsEngine and the Scene. CalendarPage owns the state and the Scene,
 // and drives Build() in reaction to store updates.
-class CalendarSceneBuilder {
+class CalendarSceneComposer {
  public:
-  CalendarSceneBuilder(GraphicsEngine* graphics_engine_in, Scene& scene_in,
-                       const std::shared_ptr<Font>& font_in,
-                       const rectf& page_size_in, const rectf& page_margin_in,
-                       const TitleConfig& title_config_in,
-                       CalendarConfig& calendar_config_in,
-                       const ShapeConfigSet& shape_config_in,
-                       const DateGroups& date_groups_in,
-                       const DateEntryBarStore& data_store_in)
+  CalendarSceneComposer(GraphicsEngine* graphics_engine_in, Scene& scene_in,
+                        const std::shared_ptr<Font>& font_in,
+                        const rectf& page_size_in, const rectf& page_margin_in,
+                        const TitleConfig& title_config_in,
+                        CalendarConfig& calendar_config_in,
+                        const ShapeConfigSet& shape_config_in,
+                        const DateGroups& date_groups_in,
+                        const DateEntryBarStore& bar_store_in)
       : scene_(scene_in),
         graphics_engine_(graphics_engine_in),
         font_(font_in),
@@ -49,7 +49,7 @@ class CalendarSceneBuilder {
         calendar_config_(calendar_config_in),
         shape_config_(shape_config_in),
         date_groups_(date_groups_in),
-        data_store_(data_store_in) {
+        bar_store_(bar_store_in) {
     graphics_engine_->SetScene(scene_);
     auto* simple_shader =
         graphics_engine_->SearchShader("Simple Shader").value_or(nullptr);
@@ -59,7 +59,7 @@ class CalendarSceneBuilder {
         graphics_engine_->SearchShader("Font Shader").value_or(nullptr);
 
     // The fixed scene skeleton (named nodes, their painter layers and parent
-    // attachments) is built once here; the handles drive the Setup* methods.
+    // attachments) is built once here; the handles drive the section builders.
     nodes_ = BuildCalendarSceneNodes(scene_, simple_shader, rectangles_shader_,
                                      font_shader_, font_);
   }
@@ -75,10 +75,10 @@ class CalendarSceneBuilder {
 
     // The auto span derives the calendar's year range from the data; it must
     // run before the layout, which sizes the rows from the span length.
-    if (calendar_config_.IsAutoCalendarSpan() && !data_store_.is_empty()) {
+    if (calendar_config_.IsAutoCalendarSpan() && !bar_store_.is_empty()) {
       calendar_config_.SetSpan(
-          CalendarSpan::YearSpan{.first_year = data_store_.GetFirstYear(),
-                                 .last_year = data_store_.GetLastYear()});
+          CalendarSpan::YearSpan{.first_year = bar_store_.GetFirstYear(),
+                                 .last_year = bar_store_.GetLastYear()});
     }
 
     layout_ =
@@ -120,7 +120,7 @@ class CalendarSceneBuilder {
         .calendar_config = calendar_config_,
         .title_config = title_config_,
         .date_groups = date_groups_,
-        .data_store = data_store_,
+        .bar_store = bar_store_,
         .font = font_,
         .rectangles_shader = rectangles_shader_,
         .font_shader = font_shader_};
@@ -176,7 +176,7 @@ class CalendarSceneBuilder {
   CalendarConfig& calendar_config_;
   const ShapeConfigSet& shape_config_;
   const DateGroups& date_groups_;
-  const DateEntryBarStore& data_store_;
+  const DateEntryBarStore& bar_store_;
 
   // Transient render state, recomputed on every Build(). The page geometry now
   // lives in CalendarLayout; the builder only keeps what the sections produce.
@@ -184,10 +184,10 @@ class CalendarSceneBuilder {
   std::vector<PickBox> bar_pick_boxes_;
 
   // Interactive hover/selection highlighting. Declared last so its borrowed
-  // references (scene_, the overlay node, shape_config_, data_store_) are all
+  // references (scene_, the overlay node, shape_config_, bar_store_) are all
   // initialised first; fed the fresh bar nodes via Refresh() after each
   // Build().
   SceneHighlighter highlighter_{scene_, nodes_.selection_overlay, shape_config_,
-                                data_store_};
+                                bar_store_};
 };
-#endif  // CALENDAR_SCENE_BUILDER_HPP
+#endif  // CALENDAR_SCENE_COMPOSER_HPP

@@ -12,7 +12,7 @@
 // once per rebuild from the page size, margins, title height and calendar span.
 // It is pure (GL-free, wx-free) and depends only on primitives, so the whole
 // layout is unit-testable without a GL context — which the previous inline
-// computation inside CalendarSceneBuilder::Build() was not.
+// computation inside CalendarSceneComposer::Build() was not.
 //
 // The frames are deliberately interdependent and therefore computed in one
 // pass: print area -> title -> calendar -> cells -> row/sub proportions ->

@@ -20,7 +20,7 @@
 
 // Application/Infrastructure bridge: the interactive highlighting of the
 // calendar scene, kept apart from the construction concern
-// (CalendarSceneBuilder / section builders). It owns the two transient
+// (CalendarSceneComposer / section builders). It owns the two transient
 // highlights:
 //
 //   * the hovered bar, recoloured in place via its shape; and
@@ -35,11 +35,11 @@ class SceneHighlighter {
   SceneHighlighter(const Scene& scene,
                    const std::shared_ptr<SceneNode>& overlay_node,
                    const ShapeConfigSet& shape_config,
-                   const DateEntryBarStore& data_store)
+                   const DateEntryBarStore& bar_store)
       : scene_(scene),
         overlay_node_(overlay_node),
         shape_config_(shape_config),
-        data_store_(data_store) {}
+        bar_store_(bar_store) {}
 
   // Adopts the bar nodes from the latest rebuild and re-applies the persisted
   // hover and selection highlights to the fresh geometry.
@@ -142,7 +142,7 @@ class SceneHighlighter {
   void ApplyBarColor(std::size_t bar_index, bool highlighted) {
     const auto iterator = bar_nodes_.find(bar_index);
     if (iterator == bar_nodes_.end() ||
-        bar_index >= data_store_.GetNumberBars()) {
+        bar_index >= bar_store_.GetNumberBars()) {
       return;
     }
     auto shape = std::dynamic_pointer_cast<RectanglesShape>(
@@ -151,7 +151,7 @@ class SceneHighlighter {
       return;
     }
     const auto group =
-        static_cast<std::size_t>(data_store_.GetBar(bar_index).GetGroup());
+        static_cast<std::size_t>(bar_store_.GetBar(bar_index).GetGroup());
     const auto config = shape_config_.GetDynamicConfiguration(group);
     if (highlighted) {
       const glm::vec4 hover_outline(kOne, kHoverOutlineGreen, kZero, kOne);
@@ -175,7 +175,7 @@ class SceneHighlighter {
   const Scene& scene_;
   const std::shared_ptr<SceneNode>& overlay_node_;
   const ShapeConfigSet& shape_config_;
-  const DateEntryBarStore& data_store_;
+  const DateEntryBarStore& bar_store_;
 
   // Bar nodes by index from the latest rebuild, for the in-place hover
   // recolour.
