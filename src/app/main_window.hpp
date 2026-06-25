@@ -94,8 +94,38 @@ class MainWindow : public wxFrame {
   void LoadXML(const std::string& filepath);
   void SaveXML(const std::string& filepath);
 
-  struct Impl;
-  std::unique_ptr<Impl> impl_;
+  // Declared first so it is destroyed *last* — every producer (stores,
+  // panels, the GL canvas) emits via `event_bus_`, and some emissions can run
+  // during teardown. Keeping the bus alive longer than its capturing lambdas
+  // avoids dangling references in slot callbacks.
+  EventBus event_bus_;
+
+  wxWeakRef<wxSplitterWindow> main_splitter_;
+  wxWeakRef<wxNotebook> notebook_;
+
+  wxWeakRef<DateGroupsTablePanel> date_groups_table_panel_;
+  wxWeakRef<PageSetupPanel> page_setup_panel_;
+  wxWeakRef<TitleSetupPanel> title_setup_panel_;
+  wxWeakRef<CalendarSetupPanel> calendar_setup_panel_;
+  wxWeakRef<GLCanvas> gl_canvas_;
+  wxWeakRef<FontPanel> font_panel_;
+  wxWeakRef<DateTablePanel> data_table_panel_;
+  wxWeakRef<SceneTreePanel> scene_tree_panel_;
+
+  // Application-wide locale date formatter: constructed once here and handed
+  // by reference to every consumer (date table panel, CSV import/export) so
+  // the locale configuration lives in exactly one place.
+  LocaleDateFormatter locale_date_format_;
+
+  DateGroupStore date_groups_store_;
+  DateEntryStore date_entry_store_;
+  TransformDateEntry transform_date_entry_;
+  PageSetupStore page_setup_store_;
+  TitleConfigStore title_config_store_;
+  ShapeConfigurationStore shape_configuration_store_;
+  CalendarConfigStore calendar_configuration_store_;
+  std::unique_ptr<CalendarPage> calendar_page_;
+  InteractionController interaction_controller_;
 
   std::string xml_file_path_;
   wxTimer exit_timer_;
@@ -109,47 +139,11 @@ constexpr int kOpenGLMajor = 4;
 constexpr int kOpenGLMinor = 6;
 }  // namespace main_window_detail
 
-struct MainWindow::Impl {
-  // Declared first so it is destroyed *last* — every producer (stores,
-  // panels, the GL canvas) emits via `event_bus`, and some emissions can run
-  // during teardown. Keeping the bus alive longer than its capturing lambdas
-  // avoids dangling references in slot callbacks.
-  EventBus event_bus;
-
-  wxWeakRef<wxSplitterWindow> main_splitter;
-  wxWeakRef<wxNotebook> notebook;
-
-  wxWeakRef<DateGroupsTablePanel> date_groups_table_panel;
-  wxWeakRef<PageSetupPanel> page_setup_panel;
-  wxWeakRef<TitleSetupPanel> title_setup_panel;
-  wxWeakRef<CalendarSetupPanel> calendar_setup_panel;
-  wxWeakRef<GLCanvas> gl_canvas;
-  wxWeakRef<FontPanel> font_panel;
-  wxWeakRef<DateTablePanel> data_table_panel;
-  wxWeakRef<SceneTreePanel> scene_tree_panel;
-
-  // Application-wide locale date formatter: constructed once here and handed
-  // by reference to every consumer (date table panel, CSV import/export) so
-  // the locale configuration lives in exactly one place.
-  LocaleDateFormatter locale_date_format;
-
-  DateGroupStore date_groups_store;
-  DateEntryStore date_entry_store;
-  TransformDateEntry transform_date_entry;
-  PageSetupStore page_setup_store;
-  TitleConfigStore title_config_store;
-  ShapeConfigurationStore shape_configuration_store;
-  CalendarConfigStore calendar_configuration_store;
-  std::unique_ptr<CalendarPage> calendar_page;
-  InteractionController interaction_controller;
-};
-
 inline MainWindow::MainWindow(wxWindow* parent, const wxString& title,
                               const wxPoint& pos, const wxSize& size,
                               bool maximize_on_start,
                               app::RuntimeOptions runtime_options)
     : wxFrame(parent, wxID_ANY, title, pos, size),
-      impl_(std::make_unique<Impl>()),
       exit_timer_(this),
       menu_(GLCanvas::kExportPngDpi),
       runtime_options_(std::move(runtime_options)) {
@@ -169,7 +163,7 @@ inline void MainWindow::CreateLayout(bool maximize_on_start) {
   auto main_splitter = std::make_unique<wxSplitterWindow>(
       this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
       wxSP_3D | wxSP_LIVE_UPDATE);
-  impl_->main_splitter = main_splitter.get();
+  main_splitter_ = main_splitter.get();
   auto* main_splitter_ptr = main_splitter.release();
 
   constexpr int minimum_pane_size = 5;
@@ -189,7 +183,7 @@ inline void MainWindow::CreateLayout(bool maximize_on_start) {
 
   auto notebook = std::make_unique<wxNotebook>(
       notebook_panel_ptr, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP);
-  impl_->notebook = notebook.get();
+  notebook_ = notebook.get();
   auto* notebook_ptr = notebook.release();
   notebook_panel_sizer_ptr->Add(notebook_ptr, sizer_flags);
 
@@ -200,7 +194,7 @@ inline void MainWindow::CreateLayout(bool maximize_on_start) {
   auto gl_canvas_panel = std::make_unique<wxPanel>(main_splitter_ptr, wxID_ANY);
   auto* gl_canvas_panel_ptr = gl_canvas_panel.release();
   auto gl_canvas = std::make_unique<GLCanvas>(gl_canvas_panel_ptr);
-  impl_->gl_canvas = gl_canvas.get();
+  gl_canvas_ = gl_canvas.get();
   auto* gl_canvas_ptr = gl_canvas.release();
   auto gl_canvas_panel_sizer = std::make_unique<wxBoxSizer>(wxVERTICAL);
   auto* gl_canvas_panel_sizer_ptr = gl_canvas_panel_sizer.release();
@@ -211,35 +205,34 @@ inline void MainWindow::CreateLayout(bool maximize_on_start) {
 }
 
 inline void MainWindow::CreatePanels(wxNotebook* notebook) {
-  impl_->data_table_panel =
-      MakeOwned<DateTablePanel>(notebook, impl_->locale_date_format);
-  impl_->date_groups_table_panel = MakeOwned<DateGroupsTablePanel>(notebook);
-  impl_->calendar_setup_panel = MakeOwned<CalendarSetupPanel>(notebook);
-  impl_->scene_tree_panel = MakeOwned<SceneTreePanel>(notebook);
+  data_table_panel_ = MakeOwned<DateTablePanel>(notebook, locale_date_format_);
+  date_groups_table_panel_ = MakeOwned<DateGroupsTablePanel>(notebook);
+  calendar_setup_panel_ = MakeOwned<CalendarSetupPanel>(notebook);
+  scene_tree_panel_ = MakeOwned<SceneTreePanel>(notebook);
 
   // Page, font and title settings are merged into a single "Document" tab; the
   // composite panel owns the three child panels, which the binder still wires
   // individually via the weak references below.
   auto* document_setup_panel = MakeOwned<DocumentSetupPanel>(notebook);
-  impl_->page_setup_panel = document_setup_panel->GetPageSetupPanel();
-  impl_->font_panel = document_setup_panel->GetFontPanel();
-  impl_->title_setup_panel = document_setup_panel->GetTitleSetupPanel();
+  page_setup_panel_ = document_setup_panel->GetPageSetupPanel();
+  font_panel_ = document_setup_panel->GetFontPanel();
+  title_setup_panel_ = document_setup_panel->GetTitleSetupPanel();
 
-  notebook->AddPage(impl_->date_groups_table_panel, "Categories");
-  notebook->AddPage(impl_->data_table_panel, "Entries");
+  notebook->AddPage(date_groups_table_panel_, "Categories");
+  notebook->AddPage(data_table_panel_, "Entries");
   notebook->AddPage(document_setup_panel, "Document");
-  notebook->AddPage(impl_->calendar_setup_panel, "Timeframe");
-  notebook->AddPage(impl_->scene_tree_panel, "Scene");
+  notebook->AddPage(calendar_setup_panel_, "Timeframe");
+  notebook->AddPage(scene_tree_panel_, "Scene");
 }
 
 inline void MainWindow::SelectStartupTab() {
-  if (!runtime_options_.select_tab || impl_->notebook == nullptr) {
+  if (!runtime_options_.select_tab || notebook_ == nullptr) {
     return;
   }
   const wxString wanted = wxString::FromUTF8(*runtime_options_.select_tab);
-  for (size_t index = 0; index < impl_->notebook->GetPageCount(); ++index) {
-    if (impl_->notebook->GetPageText(index).IsSameAs(wanted, false)) {
-      impl_->notebook->SetSelection(index);
+  for (size_t index = 0; index < notebook_->GetPageCount(); ++index) {
+    if (notebook_->GetPageText(index).IsSameAs(wanted, false)) {
+      notebook_->SetSelection(index);
       return;
     }
   }
@@ -254,21 +247,20 @@ inline void MainWindow::InitializeOpenGL() {
 
   const std::array<int, 2> gl_version{main_window_detail::kOpenGLMajor,
                                       main_window_detail::kOpenGLMinor};
-  impl_->gl_canvas->InitOpenGL(gl_version, [this]() {
-    impl_->calendar_page = std::make_unique<CalendarPage>(
-        impl_->gl_canvas.get(), impl_->font_panel->GetFontFilePath());
+  gl_canvas_->InitOpenGL(gl_version, [this]() {
+    calendar_page_ = std::make_unique<CalendarPage>(
+        gl_canvas_.get(), font_panel_->GetFontFilePath());
     EstablishConnections();
     LoadStartupFile();
     if (runtime_options_.debug_hover_bar) {
-      impl_->calendar_page->ReceiveHovered(
+      calendar_page_->ReceiveHovered(
           PickId{.kind = PickId::Kind::kBar,
                  .index = *runtime_options_.debug_hover_bar});
     }
     if (runtime_options_.debug_select_node) {
       // Drive the real selection path (tree -> detail grid -> bus -> highlight)
       // so this exercises the panel exactly as a click would.
-      impl_->scene_tree_panel->SelectNodeByPath(
-          *runtime_options_.debug_select_node);
+      scene_tree_panel_->SelectNodeByPath(*runtime_options_.debug_select_node);
     }
     DumpPngIfRequested();
   });
@@ -294,8 +286,8 @@ inline void MainWindow::LoadStartupFile() {
     LoadXML(path);
     xml_file_path_ = path;
   } else {
-    impl_->date_entry_store.ReceiveDateEntries(
-        app::io::ReadDateEntriesFromCsv(path, impl_->locale_date_format));
+    date_entry_store_.ReceiveDateEntries(
+        app::io::ReadDateEntriesFromCsv(path, locale_date_format_));
   }
 }
 
@@ -306,14 +298,14 @@ inline void MainWindow::DumpPngIfRequested() {
         runtime_options_.dump_png_dpi.value_or(GLCanvas::kExportPngDpi);
     std::cout << "DECADE_DUMP_PNG: writing " << path << " at " << dpi
               << " dpi\n";
-    impl_->gl_canvas->SavePNG(path, dpi);
+    gl_canvas_->SavePNG(path, dpi);
   }
   if (runtime_options_.dump_window_png_path) {
     const std::string path = *runtime_options_.dump_window_png_path;
     // Defer until after the first real paint so the back buffer is populated.
     CallAfter([this, path]() {
       std::cout << "DECADE_DUMP_WINDOW_PNG: writing " << path << '\n';
-      impl_->gl_canvas->SaveWindowPNG(path);
+      gl_canvas_->SaveWindowPNG(path);
     });
   }
   if (runtime_options_.dump_frame_png_path) {
@@ -342,12 +334,11 @@ inline void MainWindow::DumpFramePng(const std::string& path) {
 
   // The OpenGL canvas is invisible to a wxDC, so paste its back buffer on top
   // at the canvas's position within the frame.
-  if (impl_->gl_canvas.get() != nullptr) {
-    const wxImage gl_image = impl_->gl_canvas->CaptureBackBufferImage();
+  if (gl_canvas_.get() != nullptr) {
+    const wxImage gl_image = gl_canvas_->CaptureBackBufferImage();
     if (gl_image.IsOk()) {
-      const wxPoint origin =
-          ScreenToClient(impl_->gl_canvas->GetScreenPosition());
-      const wxSize canvas_size = impl_->gl_canvas->GetSize();
+      const wxPoint origin = ScreenToClient(gl_canvas_->GetScreenPosition());
+      const wxSize canvas_size = gl_canvas_->GetSize();
       const wxImage fitted =
           (gl_image.GetWidth() == canvas_size.GetWidth() &&
            gl_image.GetHeight() == canvas_size.GetHeight())
@@ -368,26 +359,26 @@ inline void MainWindow::DumpFramePng(const std::string& path) {
 
 inline void MainWindow::EstablishConnections() {
   MainWindowComponents components{
-      .date_groups_store = impl_->date_groups_store,
-      .date_entry_store = impl_->date_entry_store,
-      .transform_date_entry = impl_->transform_date_entry,
-      .page_setup_store = impl_->page_setup_store,
-      .title_config_store = impl_->title_config_store,
-      .shape_configuration_store = impl_->shape_configuration_store,
-      .calendar_configuration_store = impl_->calendar_configuration_store,
-      .data_table_panel = *impl_->data_table_panel,
-      .date_groups_table_panel = *impl_->date_groups_table_panel,
-      .page_setup_panel = *impl_->page_setup_panel,
-      .title_setup_panel = *impl_->title_setup_panel,
-      .calendar_setup_panel = *impl_->calendar_setup_panel,
-      .font_panel = *impl_->font_panel,
-      .scene_tree_panel = *impl_->scene_tree_panel,
-      .calendar_page = *impl_->calendar_page,
-      .gl_canvas = *impl_->gl_canvas,
-      .interaction_controller = impl_->interaction_controller,
+      .date_groups_store = date_groups_store_,
+      .date_entry_store = date_entry_store_,
+      .transform_date_entry = transform_date_entry_,
+      .page_setup_store = page_setup_store_,
+      .title_config_store = title_config_store_,
+      .shape_configuration_store = shape_configuration_store_,
+      .calendar_configuration_store = calendar_configuration_store_,
+      .data_table_panel = *data_table_panel_,
+      .date_groups_table_panel = *date_groups_table_panel_,
+      .page_setup_panel = *page_setup_panel_,
+      .title_setup_panel = *title_setup_panel_,
+      .calendar_setup_panel = *calendar_setup_panel_,
+      .font_panel = *font_panel_,
+      .scene_tree_panel = *scene_tree_panel_,
+      .calendar_page = *calendar_page_,
+      .gl_canvas = *gl_canvas_,
+      .interaction_controller = interaction_controller_,
   };
 
-  main_window_binder::Bind(impl_->event_bus, components);
+  main_window_binder::Bind(event_bus_, components);
   main_window_binder::SendInitialValues(components);
 }
 
@@ -456,17 +447,17 @@ inline void MainWindow::CallbackSaveXML(wxCommandEvent& event) {
 }
 
 inline void MainWindow::LoadXML(const std::string& filepath) {
-  app::io::LoadProjectXml(
-      filepath, impl_->date_groups_store, impl_->date_entry_store,
-      impl_->page_setup_store, impl_->title_config_store,
-      impl_->shape_configuration_store, impl_->calendar_configuration_store);
+  app::io::LoadProjectXml(filepath, date_groups_store_, date_entry_store_,
+                          page_setup_store_, title_config_store_,
+                          shape_configuration_store_,
+                          calendar_configuration_store_);
 }
 
 inline void MainWindow::SaveXML(const std::string& filepath) {
-  app::io::SaveProjectXml(
-      filepath, impl_->date_groups_store, impl_->date_entry_store,
-      impl_->page_setup_store, impl_->title_config_store,
-      impl_->shape_configuration_store, impl_->calendar_configuration_store);
+  app::io::SaveProjectXml(filepath, date_groups_store_, date_entry_store_,
+                          page_setup_store_, title_config_store_,
+                          shape_configuration_store_,
+                          calendar_configuration_store_);
 }
 
 inline void MainWindow::CallbackImportCSV(wxCommandEvent& event) {
@@ -480,8 +471,8 @@ inline void MainWindow::CallbackImportCSV(wxCommandEvent& event) {
   }
 
   const std::string file_path = open_file_dialog.GetPath().ToStdString();
-  impl_->date_entry_store.ReceiveDateEntries(
-      app::io::ReadDateEntriesFromCsv(file_path, impl_->locale_date_format));
+  date_entry_store_.ReceiveDateEntries(
+      app::io::ReadDateEntriesFromCsv(file_path, locale_date_format_));
 }
 
 inline void MainWindow::CallbackExportCSV(wxCommandEvent& event) {
@@ -495,9 +486,8 @@ inline void MainWindow::CallbackExportCSV(wxCommandEvent& event) {
   }
 
   const std::string file_path = save_file_dialog.GetPath().ToStdString();
-  app::io::WriteDateEntriesToCsv(file_path,
-                                 impl_->date_entry_store.GetDateEntries(),
-                                 impl_->locale_date_format);
+  app::io::WriteDateEntriesToCsv(file_path, date_entry_store_.GetDateEntries(),
+                                 locale_date_format_);
 }
 
 inline void MainWindow::CallbackExportPNG(wxCommandEvent& event) {
@@ -510,7 +500,7 @@ inline void MainWindow::CallbackExportPNG(wxCommandEvent& event) {
   }
 
   const std::string file_path = file_dialog.GetPath().ToStdString();
-  impl_->gl_canvas->SavePNG(file_path);
+  gl_canvas_->SavePNG(file_path);
 }
 
 inline void MainWindow::CallbackExit(wxCommandEvent& event) {
