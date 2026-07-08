@@ -7,6 +7,12 @@ agents when working with code in this repository.
 
 C++23 desktop calendar/timeline application. wxWidgets GUI, OpenGL (4.6 core) rendering via libepoxy, ICU for calendar arithmetic, locale date parsing/formatting and Unicode text handling, Boost.Serialization for XML project files, FreeType for text, csv2 for CSV import/export, Bullet (collision world) for hit-testing/picking, sigslot for signal/slot wiring.
 
+## Style
+
+- Comments and docs: brief, active German (Wolf Schneider). Use as few lines as possible; only comment on non-obvious things.
+- Write real umlauts (ä/ö/ü), never ae/oe/ue. Swiss spelling: ss instead of ß.
+- Use no tables in Markdown files; prefer multi-line lists instead. They are easier to read, easier to write, and often shorter.
+
 ## Build & Run
 
 The CMake build directory is `build/` (Ninja generator, with `compile_commands.json` exported for clangd/clang-tidy).
@@ -24,19 +30,12 @@ ninja -C build
 
 ### Startup file
 
-A project/data file can be opened at startup via a positional argument — the
-idiomatic "open with file" entry point. The path is resolved against the current
-working directory, so it works regardless of where the binary lives:
+A CSV data file can be imported (opt-in) at startup via CLI argument.
 
 ```bash
-./build/decade test-files/test_dates_1.csv   # CSV import
-./build/decade myproject.xml                  # XML project (dispatched by extension)
+# CSV import
+./build/decade test-files/test_dates_1.csv   
 ```
-
-Loading is **opt-in**: with no argument and no `DECADE_DEFAULT_CSV` set, the app
-starts with an empty project. The startup-file resolution (CLI argument and the
-env-var fallback) is centralised in `src/app/runtime_options.hpp`
-(`app::RuntimeOptions`).
 
 ### Headless / scripted runs
 
@@ -47,11 +46,9 @@ tests.
 **Image capture** — three variables capture three different things; they are not
 redundant:
 
-| Variable                        | Captures                                                                                         | Resolution / look                               | Needs                                                 |
-| ------------------------------- | ------------------------------------------------------------------------------------------------ | ----------------------------------------------- | ----------------------------------------------------- |
-| `DECADE_DUMP_PNG=<path>`        | the calendar **page artwork** only, via an off-screen FBO                                        | export DPI, white background, no app chrome     | OpenGL only                                           |
-| `DECADE_DUMP_WINDOW_PNG=<path>` | the **GL canvas pane** exactly as on screen (`glReadPixels` on the back buffer)                  | screen resolution, dark margins around the page | OpenGL only — works on Wayland                        |
-| `DECADE_DUMP_FRAME_PNG=<path>`  | the **whole frame**: tabs + panels (`wxClientDC` blit) with the GL back buffer composited on top | screen resolution                               | widget read-back needs X11/Xvfb (blank under Wayland) |
+- `DECADE_DUMP_PNG=<path>` — the calendar **page artwork** only, via an off-screen FBO. Resolution: export DPI, white background, no app chrome. Needs: OpenGL only.
+- `DECADE_DUMP_WINDOW_PNG=<path>` — the **GL canvas pane** exactly as on screen (`glReadPixels` on the back buffer). Resolution: screen resolution, dark margins around the page. Needs: OpenGL only, works on Wayland.
+- `DECADE_DUMP_FRAME_PNG=<path>` — the **whole frame**: tabs + panels (`wxClientDC` blit) with the GL back buffer composited on top. Resolution: screen resolution. Needs: widget read-back needs X11/Xvfb, blank under Wayland.
 
 `DUMP_WINDOW_PNG` is the canvas-only subset of `DUMP_FRAME_PNG`; prefer it when
 you only need the rendered canvas (and to avoid Xvfb), and `DUMP_PNG` when you
@@ -114,6 +111,34 @@ xvfb-run -a -s "-screen 0 1600x1000x24" \
 - `.clang-format` is the source of truth for formatting.
 - CI workflow is currently disabled (`.github/workflows/cmake.yml.disable`).
 
+## Refactoring
+
+- Sicherheit vor Struktur. Before a structural change to a god class or a tangled path, add a black-box shield first: a characterization test with input and the current output frozen as expectation.
+- Verhalten nicht ändern, while cleaning up. Formatting, renaming, warning cleanup, and behavior changes are separate steps or commits.
+- Kleine, umkehrbare Schritte. One commit, one intent. Keep diffs small enough to reverse cleanly.
+- Refactoring is evolutionary, not a rewrite. Reduce risk first, then cut along the owning abstraction.
+- TODO.txt stays for now. Keep the live backlog there; CLAUDE.md should keep the rules, boundaries, and working agreements short and stable.
+- If something cannot be changed immediately, note it in the relevant section so it is not lost.
+- Design criteria to keep in mind:
+  - Intention-revealing names: names should state purpose, not mechanism.
+  - Principle of Least Astonishment: behavior should match the signal from the name and signature.
+  - SRP, SoC, low coupling, high cohesion.
+  - Explicit ownership and explicit lifetimes.
+  - DRY as knowledge DRY, not mechanical code merging.
+  - Encapsulate messy constructs rather than spreading them.
+  - Prefer direct expression in code over commentary when code can say it clearly.
+- Open follow-up questions:
+  - Which 2 to 3 hot spots should be characterized first?
+  - How far should header-only stay a hard constraint?
+  - How much API hardening with non-null/span should be done now?
+  - How much include rewriting should be automated per sprint?
+  - How far should EventBus centralization go before a pragmatic hybrid is kept?
+- Stepwise flow for refactoring work:
+  - Stabilize first: characterization tests, smoke paths, baseline output.
+  - Split next: extract small seams, keep behavior unchanged.
+  - Rename after that: make intent visible without changing semantics.
+  - Detach last: remove coupling only when the shape is already safe.
+
 ## Submodules
 
 `external/embed-resource`, `external/sigslot`, `external/csv2` are git submodules — initialize with `git submodule update --init --recursive` after clone. Shaders and licenses are embedded into the binary via `embed_resources()` in `CMakeLists.txt`.
@@ -121,6 +146,13 @@ xvfb-run -a -s "-screen 0 1600x1000x24" \
 ## Header-only by design
 
 The codebase is **header-only by design** (`main.cpp` is the only translation unit). When adding code, prefer extending headers in place over splitting into `.cpp`. Keep this convention even during refactors. Definitions that live in a header must be `inline` (free functions and out-of-class member definitions), so the single-TU rule does not silently mask ODR violations if a header is ever included from elsewhere (e.g. tests).
+
+## Working notes
+
+- Keep `TODO.txt` as the backlog of open items.
+- Use this file for stable guidance, refactoring criteria, and architecture boundaries.
+- Keep new ideas short and place them next to the rule they affect.
+- Markdown in this repo should avoid tables; use lists with explicit bullets and short clauses instead.
 
 ## Architecture
 
@@ -254,7 +286,19 @@ this callback fires.
 
 ### Follow-up refactor targets
 
-1. Promote stores to publish directly into `EventBus` (removing their internal signals) once all consumers are bus-only.
+1. Promote stores to publish directly into `EventBus` once all consumers are bus-only.
+2. Keep refactor notes local to this file until a decision is stable enough for a dedicated document.
+3. Preserve the current behavior while reducing the number of places that need to know about a piece of state.
+
+### Design criteria
+
+- Intention-revealing names: prefer names that describe the purpose, not the mechanism.
+- Principle of Least Astonishment: keep names, signatures, and behavior aligned.
+- Keep the smallest useful abstraction.
+- Prefer explicit data flow over hidden coupling.
+- Separate stable rules from unstable backlog items.
+- Keep comments for why, not what.
+- Reduce duplication of knowledge, not every similar-looking line.
 
 **Erledigt** (zur Nachvollziehbarkeit, nicht mehr offen):
 

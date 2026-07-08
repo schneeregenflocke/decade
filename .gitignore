@@ -10,7 +10,6 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 
-
 CMakeSettings.json
 
 .vs/
@@ -24,7 +23,9 @@ compile_commands.json
 
 CMakePresets.json
 
-
 /gh_act_token.txt
 
 .claude/settings.json
+
+TODO.txt
+TODO.md
