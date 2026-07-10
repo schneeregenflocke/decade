@@ -13,7 +13,7 @@
 #include "../../domain/page_setup_config.hpp"
 #include "../../domain/shape_configuration.hpp"
 #include "../../domain/title_config.hpp"
-#include "scene_snapshot.hpp"
+#include "../../domain/scene_snapshot.hpp"
 
 // Central typed event bus for cross-component communication.
 //

@@ -30,7 +30,7 @@
 #include "calendar_page.hpp"
 #include "event_bus.hpp"
 #include "interaction_controller.hpp"
-#include "scene_snapshot.hpp"
+#include "../../domain/scene_snapshot.hpp"
 
 // Centralised wiring between domain stores, presentation panels, the
 // rendering adapter, and the GL canvas — all routed through `EventBus`.

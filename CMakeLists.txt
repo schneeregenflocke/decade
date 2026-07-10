@@ -73,7 +73,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/interaction_controller.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/main_window_binder.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/scene_highlighter.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/scene_snapshot.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/scene_snapshot.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/scene_snapshot_builder.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/bar.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/calendar_config.hpp

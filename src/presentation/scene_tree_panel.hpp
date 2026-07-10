@@ -15,7 +15,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../app/binding/scene_snapshot.hpp"
+#include "../domain/scene_snapshot.hpp"
 #include "../domain/shape_configuration.hpp"
 #include "casts.hpp"
 #include "rgba_colour_property.hpp"

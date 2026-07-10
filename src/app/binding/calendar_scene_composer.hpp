@@ -21,7 +21,7 @@
 #include "calendar_scene_nodes.hpp"
 #include "calendar_section_builders.hpp"
 #include "scene_highlighter.hpp"
-#include "scene_snapshot.hpp"
+#include "../../domain/scene_snapshot.hpp"
 #include "scene_snapshot_builder.hpp"
 
 // Builds and fills the calendar scene graph from domain state. This is the

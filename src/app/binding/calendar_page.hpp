@@ -22,7 +22,7 @@
 #include "../../domain/title_config.hpp"
 #include "../../infrastructure/physics/physics_world.hpp"
 #include "calendar_scene_composer.hpp"
-#include "scene_snapshot.hpp"
+#include "../../domain/scene_snapshot.hpp"
 
 // Rendering adapter: owns the domain state relevant to the calendar drawing,
 // receives updates via the Receive* slots, and drives the CalendarSceneComposer
