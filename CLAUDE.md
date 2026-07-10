@@ -324,8 +324,8 @@ Warum die Extra-Args:
 ```bash
 find . -regex '.*\.\(cpp\|cxx\|hpp\|cc\|h\)' -not -path './build/*' -not -path './external/*' -exec clang-format -style=file -i {} +
 ```
-
-# CLAUDE.md — decade
+# TODO.txt
+### CLAUDE.md — decade
 
 ## Projekt
 decade ist ein C++23-Projekt (CMake, wxWidgets, Boost, OpenGL). Es ist aus
