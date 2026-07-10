@@ -1,8 +1,9 @@
 # CI auf git.blem.ch (Mirror github-mirror/decade): Build + ctest + clang-tidy-Gate.
-# Läuft auf dem CI-Runner mit Label `ubuntu` (docker-stacks/forgejo-runner,
-# docker-compose.ci.yml — aktuell auf laptop-omen, NICHT auf homelab: der
-# C++-Build würde den RPi überlasten). Getriggert vom Mirror-Sync, den ein
-# GitHub-Webhook bei jedem Push sofort anstösst.
+# `ubuntu-ci` tragen beide Runner (laptop-omen und homelab) — der erste freie
+# nimmt den Job. Normalfall laptop-omen; landet er auf homelab (RPi4),
+# scheitert der Build voraussichtlich am 1200-MB-Limit des dortigen Runners —
+# bewusste Abwägung, damit CI nicht hängt, wenn der Laptop aus ist. Getriggert
+# vom Mirror-Sync, den ein GitHub-Webhook bei jedem Push sofort anstösst.
 name: build
 on:
   push:
@@ -10,7 +11,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu
+    runs-on: ubuntu-ci
     container:
       image: ubuntu:26.04
     steps:
