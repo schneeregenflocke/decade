@@ -11,7 +11,7 @@
 #include <ostream>
 #include <string>
 
-namespace app::io {
+namespace application {
 
 inline void PrintRuntimeInfo(std::ostream& out) {
   out << std::string("__cplusplus ") + std::to_string(__cplusplus) << '\n';
@@ -29,6 +29,6 @@ inline void PrintRuntimeInfo(std::ostream& out) {
       << '\n';
 }
 
-}  // namespace app::io
+}  // namespace application
 
 #endif  // RUNTIME_INFO_HPP

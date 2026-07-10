@@ -33,7 +33,7 @@ TEST(CsvIoTest, ReadsInclusiveDatesAsHalfOpenPeriods) {
             "01.01.2022,01.01.2022\n");
 
   auto formatter = MakeFormatter();
-  const auto entries = app::io::ReadDateEntriesFromCsv(path, formatter);
+  const auto entries = persistence::ReadDateEntriesFromCsv(path, formatter);
 
   ASSERT_EQ(entries.size(), 2U);
   EXPECT_EQ(entries[0].GetDateInterval().Begin(), Date::FromYmd(1998, 9, 23));
@@ -52,7 +52,7 @@ TEST(CsvIoTest, UnparseableRowsYieldNullPeriods) {
             "23.09.1998,24.11.1998\n");
 
   auto formatter = MakeFormatter();
-  const auto entries = app::io::ReadDateEntriesFromCsv(path, formatter);
+  const auto entries = persistence::ReadDateEntriesFromCsv(path, formatter);
 
   // The reader keeps row count; the store filters null periods later.
   ASSERT_EQ(entries.size(), 2U);
@@ -73,7 +73,7 @@ TEST(CsvIoTest, BlankLinesAreSkipped) {
             "01.03.1996,05.08.1997\n");
 
   auto formatter = MakeFormatter();
-  const auto entries = app::io::ReadDateEntriesFromCsv(path, formatter);
+  const auto entries = persistence::ReadDateEntriesFromCsv(path, formatter);
 
   ASSERT_EQ(entries.size(), 3U);
   for (const auto& entry : entries) {
@@ -89,7 +89,7 @@ TEST(CsvIoTest, SingleColumnRowsYieldSingleDayPeriods) {
             "text\n");
 
   auto formatter = MakeFormatter();
-  const auto entries = app::io::ReadDateEntriesFromCsv(path, formatter);
+  const auto entries = persistence::ReadDateEntriesFromCsv(path, formatter);
 
   ASSERT_EQ(entries.size(), 3U);
   // A missing to-date means "same as from-date": a single-day period.
@@ -103,7 +103,7 @@ TEST(CsvIoTest, SingleColumnRowsYieldSingleDayPeriods) {
 TEST(CsvIoTest, MissingFileYieldsNoEntries) {
   auto formatter = MakeFormatter();
   EXPECT_TRUE(
-      app::io::ReadDateEntriesFromCsv("/nonexistent/decade.csv", formatter)
+      persistence::ReadDateEntriesFromCsv("/nonexistent/decade.csv", formatter)
           .empty());
 }
 
@@ -117,8 +117,8 @@ TEST(CsvIoTest, WriteReadRoundTripPreservesPeriods) {
       DatePeriod(Date::FromYmd(2022, 1, 1), Date::FromYmd(2022, 1, 2)));
 
   auto formatter = MakeFormatter();
-  app::io::WriteDateEntriesToCsv(path, entries, formatter);
-  const auto loaded = app::io::ReadDateEntriesFromCsv(path, formatter);
+  persistence::WriteDateEntriesToCsv(path, entries, formatter);
+  const auto loaded = persistence::ReadDateEntriesFromCsv(path, formatter);
 
   ASSERT_EQ(loaded.size(), entries.size());
   for (size_t index = 0; index < entries.size(); ++index) {

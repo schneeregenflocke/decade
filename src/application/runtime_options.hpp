@@ -10,7 +10,7 @@
 #include <optional>
 #include <string>
 
-namespace app {
+namespace application {
 
 // Bündelt die Laufzeit-Optionen, die die Anwendung beim Start liest. Sie
 // steuern die nicht-interaktive Nutzung (CI, Screenshots, Smoke-Tests) plus
@@ -148,6 +148,6 @@ inline RuntimeOptions RuntimeOptionsFromParser(const wxCmdLineParser& parser) {
   return options;
 }
 
-}  // namespace app
+}  // namespace application
 
 #endif  // RUNTIME_OPTIONS_HPP

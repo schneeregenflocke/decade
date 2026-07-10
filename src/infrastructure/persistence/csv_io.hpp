@@ -22,7 +22,7 @@
 #include "../../domain/date_format.hpp"
 #include "../../domain/date_period.hpp"
 
-namespace app::io {
+namespace persistence {
 
 using CsvReader = csv2::Reader<csv2::delimiter<','>, csv2::quote_character<'"'>,
                                csv2::first_row_is_header<false>,
@@ -93,6 +93,6 @@ inline void WriteDateEntriesToCsv(const std::string& file_path,
   }
 }
 
-}  // namespace app::io
+}  // namespace persistence
 
 #endif  // CSV_IO_HPP

@@ -5,7 +5,7 @@
 
 #include <string>
 
-namespace app {
+namespace application {
 struct MainWindowConfig {
   std::string title;
   wxPoint position;
@@ -24,6 +24,6 @@ inline MainWindowConfig DefaultMainWindowConfig() {
           .size = wxSize(kMainWindowWidth, kMainWindowHeight),
           .maximize_on_start = false};
 }
-}  // namespace app
+}  // namespace application
 
 #endif  // APP_CONFIG_HPP

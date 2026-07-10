@@ -32,7 +32,7 @@
 #include "../../domain/shape_configuration.hpp"
 #include "../../domain/title_config.hpp"
 
-namespace app::serialization_detail {
+namespace persistence::serialization_detail {
 
 // Dates travel through the archive as ISO-8601 strings ("YYYY-MM-DD"); the
 // invalid date is the empty string. This replaces the previous
@@ -83,7 +83,7 @@ inline glm::vec4 ColorFromArray(const std::array<float, 4>& array) {
   return {array[0], array[1], array[2], array[3]};
 }
 
-}  // namespace app::serialization_detail
+}  // namespace persistence::serialization_detail
 
 namespace boost::serialization {
 
@@ -112,10 +112,10 @@ void load(Archive& ar, DateGroup& group, const unsigned int /*v*/) {
 // loaded entries are pushed back into the store.
 template <class Archive>
 void save(Archive& ar, const DateEntry& entry, const unsigned int /*v*/) {
-  const std::string interval_begin = app::serialization_detail::DateToIsoString(
+  const std::string interval_begin = persistence::serialization_detail::DateToIsoString(
       entry.GetDateInterval().Begin());
   const std::string interval_end =
-      app::serialization_detail::DateToIsoString(entry.GetDateInterval().End());
+      persistence::serialization_detail::DateToIsoString(entry.GetDateInterval().End());
   const int group = entry.GetGroup();
   ar& make_nvp("interval_begin", interval_begin);
   ar& make_nvp("interval_end", interval_end);
@@ -130,8 +130,8 @@ void load(Archive& ar, DateEntry& entry, const unsigned int /*v*/) {
   ar& make_nvp("interval_end", interval_end);
   ar& make_nvp("group", group);
   entry.SetDateInterval(
-      DatePeriod(app::serialization_detail::DateFromIsoString(interval_begin),
-                 app::serialization_detail::DateFromIsoString(interval_end)));
+      DatePeriod(persistence::serialization_detail::DateFromIsoString(interval_begin),
+                 persistence::serialization_detail::DateFromIsoString(interval_end)));
   entry.SetGroup(group);
 }
 
@@ -167,7 +167,7 @@ void save(Archive& ar, const TitleConfig& config, const unsigned int /*v*/) {
   const float font_size_ratio = config.FontSizeRatio();
   const std::string& title_text = config.TitleText();
   const std::array<float, 4> text_color =
-      app::serialization_detail::ColorToArray(config.TextColor());
+      persistence::serialization_detail::ColorToArray(config.TextColor());
   ar& make_nvp("frame_height", frame_height);
   ar& make_nvp("font_size_ratio", font_size_ratio);
   ar& make_nvp("title_text", title_text);
@@ -186,7 +186,7 @@ void load(Archive& ar, TitleConfig& config, const unsigned int /*v*/) {
   config.SetFrameHeight(frame_height);
   config.SetFontSizeRatio(font_size_ratio);
   config.SetTitleText(std::move(title_text));
-  config.SetTextColor(app::serialization_detail::ColorFromArray(text_color));
+  config.SetTextColor(persistence::serialization_detail::ColorFromArray(text_color));
 }
 
 // --- ShapeConfiguration ---
@@ -198,9 +198,9 @@ void save(Archive& ar, const ShapeConfiguration& config,
   const bool fill_visible = config.FillVisible();
   const float line_width = config.LineWidthDisabled();
   const std::array<float, 4> outline_color =
-      app::serialization_detail::ColorToArray(config.OutlineColorDisabled());
+      persistence::serialization_detail::ColorToArray(config.OutlineColorDisabled());
   const std::array<float, 4> fill_color =
-      app::serialization_detail::ColorToArray(config.FillColorDisabled());
+      persistence::serialization_detail::ColorToArray(config.FillColorDisabled());
   ar& make_nvp("name", name);
   ar& make_nvp("outline_visible", outline_visible);
   ar& make_nvp("fill_visible", fill_visible);
@@ -225,9 +225,9 @@ void load(Archive& ar, ShapeConfiguration& config, const unsigned int /*v*/) {
   config = ShapeConfiguration(
       std::move(name), outline_visible, fill_visible, line_width,
       ShapeConfiguration::OutlineColorValue{
-          app::serialization_detail::ColorFromArray(outline_color)},
+          persistence::serialization_detail::ColorFromArray(outline_color)},
       ShapeConfiguration::FillColorValue{
-          app::serialization_detail::ColorFromArray(fill_color)});
+          persistence::serialization_detail::ColorFromArray(fill_color)});
 }
 
 // --- ShapeConfigSet ---

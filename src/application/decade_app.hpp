@@ -20,14 +20,14 @@ class DecadeApp : public wxApp {
  public:
   void OnInitCmdLine(wxCmdLineParser& parser) override {
     wxApp::OnInitCmdLine(parser);
-    app::AddRuntimeOptions(parser);
+    application::AddRuntimeOptions(parser);
   }
 
   bool OnCmdLineParsed(wxCmdLineParser& parser) override {
     if (!wxApp::OnCmdLineParsed(parser)) {
       return false;
     }
-    runtime_options_ = app::RuntimeOptionsFromParser(parser);
+    runtime_options_ = application::RuntimeOptionsFromParser(parser);
     return true;
   }
 
@@ -65,7 +65,7 @@ class DecadeApp : public wxApp {
     locale_.Init();
     std::locale::global(std::locale(""));
 
-    const app::MainWindowConfig window_config = app::DefaultMainWindowConfig();
+    const application::MainWindowConfig window_config = application::DefaultMainWindowConfig();
     auto* main_window = std::make_unique<MainWindow>(
                             nullptr, window_config.title,
                             window_config.position, window_config.size,
@@ -77,7 +77,7 @@ class DecadeApp : public wxApp {
 
  private:
   wxLocale locale_;
-  app::RuntimeOptions runtime_options_;
+  application::RuntimeOptions runtime_options_;
 };
 
 #endif  // DECADE_APP_HPP

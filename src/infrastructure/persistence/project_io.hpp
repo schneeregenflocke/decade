@@ -25,7 +25,7 @@
 #include "../../domain/title_config_store.hpp"
 #include "value_serialization.hpp"
 
-namespace app::io {
+namespace persistence {
 
 inline void LoadProjectXml(const std::string& file_path,
                            DateGroupStore& date_groups_store,
@@ -93,6 +93,6 @@ inline void SaveProjectXml(
       "calendar_config", calendar_configuration_store.GetCalendarConfig());
 }
 
-}  // namespace app::io
+}  // namespace persistence
 
 #endif  // PROJECT_IO_HPP

@@ -63,7 +63,7 @@ class MainWindow : public wxFrame {
  public:
   MainWindow(wxWindow* parent, const wxString& title, const wxPoint& pos,
              const wxSize& size, bool maximize_on_start = true,
-             app::RuntimeOptions runtime_options = {});
+             application::RuntimeOptions runtime_options = {});
   ~MainWindow() override;
   MainWindow(const MainWindow&) = delete;
   MainWindow& operator=(const MainWindow&) = delete;
@@ -131,7 +131,7 @@ class MainWindow : public wxFrame {
   wxTimer exit_timer_;
 
   MainMenu menu_;
-  app::RuntimeOptions runtime_options_;
+  application::RuntimeOptions runtime_options_;
 };
 
 namespace main_window_detail {
@@ -142,7 +142,7 @@ constexpr int kOpenGLMinor = 6;
 inline MainWindow::MainWindow(wxWindow* parent, const wxString& title,
                               const wxPoint& pos, const wxSize& size,
                               bool maximize_on_start,
-                              app::RuntimeOptions runtime_options)
+                              application::RuntimeOptions runtime_options)
     : wxFrame(parent, wxID_ANY, title, pos, size),
       exit_timer_(this),
       menu_(GLCanvas::kExportPngDpi),
@@ -189,7 +189,7 @@ inline void MainWindow::CreateLayout(bool maximize_on_start) {
 
   CreatePanels(notebook_ptr);
   SelectStartupTab();
-  app::io::PrintRuntimeInfo(std::cout);
+  application::PrintRuntimeInfo(std::cout);
 
   auto gl_canvas_panel = std::make_unique<wxPanel>(main_splitter_ptr, wxID_ANY);
   auto* gl_canvas_panel_ptr = gl_canvas_panel.release();
@@ -287,7 +287,7 @@ inline void MainWindow::LoadStartupFile() {
     xml_file_path_ = path;
   } else {
     date_entry_store_.ReceiveDateEntries(
-        app::io::ReadDateEntriesFromCsv(path, locale_date_format_));
+        persistence::ReadDateEntriesFromCsv(path, locale_date_format_));
   }
 }
 
@@ -446,14 +446,14 @@ inline void MainWindow::CallbackSaveXML(wxCommandEvent& event) {
 }
 
 inline void MainWindow::LoadXML(const std::string& filepath) {
-  app::io::LoadProjectXml(filepath, date_groups_store_, date_entry_store_,
+  persistence::LoadProjectXml(filepath, date_groups_store_, date_entry_store_,
                           page_setup_store_, title_config_store_,
                           shape_configuration_store_,
                           calendar_configuration_store_);
 }
 
 inline void MainWindow::SaveXML(const std::string& filepath) {
-  app::io::SaveProjectXml(filepath, date_groups_store_, date_entry_store_,
+  persistence::SaveProjectXml(filepath, date_groups_store_, date_entry_store_,
                           page_setup_store_, title_config_store_,
                           shape_configuration_store_,
                           calendar_configuration_store_);
@@ -471,7 +471,7 @@ inline void MainWindow::CallbackImportCSV(wxCommandEvent& event) {
 
   const std::string file_path = open_file_dialog.GetPath().ToStdString();
   date_entry_store_.ReceiveDateEntries(
-      app::io::ReadDateEntriesFromCsv(file_path, locale_date_format_));
+      persistence::ReadDateEntriesFromCsv(file_path, locale_date_format_));
 }
 
 inline void MainWindow::CallbackExportCSV(wxCommandEvent& event) {
@@ -485,7 +485,7 @@ inline void MainWindow::CallbackExportCSV(wxCommandEvent& event) {
   }
 
   const std::string file_path = save_file_dialog.GetPath().ToStdString();
-  app::io::WriteDateEntriesToCsv(file_path, date_entry_store_.GetDateEntries(),
+  persistence::WriteDateEntriesToCsv(file_path, date_entry_store_.GetDateEntries(),
                                  locale_date_format_);
 }
 

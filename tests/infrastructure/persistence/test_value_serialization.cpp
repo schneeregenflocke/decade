@@ -37,17 +37,17 @@ Value XmlRoundTrip(const Value& value) {
 
 TEST(ValueSerializationTest, DateIsoStringRoundTrip) {
   const Date date = Date::FromYmd(1998, 9, 23);
-  EXPECT_EQ(app::serialization_detail::DateToIsoString(date), "1998-09-23");
-  EXPECT_EQ(app::serialization_detail::DateFromIsoString("1998-09-23"), date);
+  EXPECT_EQ(persistence::serialization_detail::DateToIsoString(date), "1998-09-23");
+  EXPECT_EQ(persistence::serialization_detail::DateFromIsoString("1998-09-23"), date);
 }
 
 TEST(ValueSerializationTest, InvalidDateIsEmptyString) {
-  EXPECT_EQ(app::serialization_detail::DateToIsoString(Date()), "");
-  EXPECT_FALSE(app::serialization_detail::DateFromIsoString("").IsValid());
+  EXPECT_EQ(persistence::serialization_detail::DateToIsoString(Date()), "");
+  EXPECT_FALSE(persistence::serialization_detail::DateFromIsoString("").IsValid());
   EXPECT_FALSE(
-      app::serialization_detail::DateFromIsoString("garbage").IsValid());
+      persistence::serialization_detail::DateFromIsoString("garbage").IsValid());
   EXPECT_FALSE(
-      app::serialization_detail::DateFromIsoString("1998/09/23").IsValid());
+      persistence::serialization_detail::DateFromIsoString("1998/09/23").IsValid());
 }
 
 TEST(ValueSerializationTest, DateEntriesRoundTrip) {
