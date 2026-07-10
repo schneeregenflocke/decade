@@ -1,5 +1,5 @@
-#ifndef OPENGL_PANEL_HPP
-#define OPENGL_PANEL_HPP
+#ifndef GL_CANVAS_HPP
+#define GL_CANVAS_HPP
 
 #include <epoxy/gl.h>
 #include <wx/glcanvas.h>
@@ -362,4 +362,4 @@ class GLCanvas : public wxGLCanvas {
   std::function<void()> on_gl_ready_;
   std::function<void(glm::vec2)> on_pointer_move_;
 };
-#endif  // OPENGL_PANEL_HPP
+#endif  // GL_CANVAS_HPP

@@ -104,7 +104,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/groups_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/license_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/mouse_interaction.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/opengl_panel.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/gl_canvas.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/page_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/scene_tree_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/title_panel.hpp

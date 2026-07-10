@@ -37,7 +37,7 @@
 #include "../presentation/groups_panel.hpp"
 #include "../presentation/license_panel.hpp"
 #include "../presentation/main_menu.hpp"
-#include "../presentation/opengl_panel.hpp"
+#include "../presentation/gl_canvas.hpp"
 #include "../presentation/page_panel.hpp"
 #include "../presentation/scene_tree_panel.hpp"
 #include "../presentation/title_panel.hpp"

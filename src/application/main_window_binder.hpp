@@ -10,7 +10,7 @@
 #include "../presentation/date_panel.hpp"
 #include "../presentation/font_panel.hpp"
 #include "../presentation/groups_panel.hpp"
-#include "../presentation/opengl_panel.hpp"
+#include "../presentation/gl_canvas.hpp"
 #include "../presentation/page_panel.hpp"
 #include "../presentation/scene_tree_panel.hpp"
 #include "../presentation/title_panel.hpp"
