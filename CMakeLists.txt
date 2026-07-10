@@ -147,7 +147,18 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${EPOXY_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${EPOXY_LIBRARIES})
 target_compile_options(${PROJECT_NAME} PRIVATE ${EPOXY_CFLAGS_OTHER})
 
-find_package(wxWidgets CONFIG REQUIRED COMPONENTS propgrid gl core base)
+find_package(wxWidgets CONFIG COMPONENTS propgrid gl core base)
+if(NOT wxWidgets_FOUND)
+	# Debian/Ubuntu bauen wx mit autotools und liefern keine CMake-Config:
+	# Module-Mode via wx-config. Includes als SYSTEM, damit die wx-Header aus
+	# -Werror und dem clang-tidy-Gate bleiben (im CONFIG-Mode erledigen das
+	# die imported Targets).
+	find_package(wxWidgets REQUIRED COMPONENTS propgrid gl core base)
+	target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${wxWidgets_INCLUDE_DIRS})
+	target_compile_definitions(${PROJECT_NAME} PRIVATE ${wxWidgets_DEFINITIONS})
+	separate_arguments(wxWidgets_cxx_flags UNIX_COMMAND "${wxWidgets_CXX_FLAGS}")
+	target_compile_options(${PROJECT_NAME} PRIVATE ${wxWidgets_cxx_flags})
+endif()
 target_link_libraries(${PROJECT_NAME} PRIVATE ${wxWidgets_LIBRARIES})
 cmake_print_variables(wxWidgets_FOUND wxWidgets_INCLUDE_DIRS wxWidgets_LIBRARIES wxWidgets_LIBRARY_DIRS wxWidgets_DEFINITIONS wxWidgets_DEFINITIONS_DEBUG wxWidgets_CXX_FLAGS wxWidgets_USE_FILE)
 
