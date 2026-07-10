@@ -14,12 +14,13 @@ jobs:
     container:
       image: ubuntu:26.04
     steps:
-      # Vor dem Checkout: actions/checkout braucht git im Job-Container.
+      # Vor dem Checkout: actions/checkout ist eine JS-Action und braucht
+      # node UND git im Job-Container (das nackte Ubuntu-Image hat beides nicht).
       - name: Toolchain & Abhängigkeiten
         run: |
           apt-get update -qq
           DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
-            git cmake ninja-build pkg-config g++ clang-tidy \
+            nodejs git cmake ninja-build pkg-config g++ clang-tidy \
             libboost-serialization-dev libepoxy-dev libwxgtk3.2-dev \
             zlib1g-dev libpng-dev libfontconfig-dev libfreetype-dev \
             libicu-dev libglm-dev libmsgsl-dev libgtest-dev libgl1-mesa-dev
