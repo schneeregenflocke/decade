@@ -148,7 +148,11 @@ find . -regex '.*\.\(cpp\|cxx\|hpp\|cc\|h\)' -not -path './build/*' -not -path '
 
 ### CI
 
-Die CI-Workflow-Datei ist derzeit deaktiviert (`.github/workflows/cmake.yml.disable`); siehe das Forgejo-CI-TODO im [Backlog](#arbeitsnotizen--backlog).
+CI läuft auf der eigenen Forgejo-Instanz (https://git.blem.ch/), nicht auf GitHub Actions (die alte Workflow-Datei liegt deaktiviert unter `.github/workflows/cmake.yml.disable`). Die Kette, analog zu `blem-website`:
+
+- `git push origin main` (GitHub) → GitHub-Webhook ruft die `mirror-sync`-API → Pull-Mirror `github-mirror/decade` synct sofort → der Sync feuert das push-Event für `.forgejo/workflows/build.yml`.
+- Der Workflow (`runs-on: ubuntu`) läuft auf dem **CI-Runner auf `laptop-omen`** (Label `ubuntu`, Jobs im `ubuntu:26.04`-Container) — bewusst nicht auf dem homelab-Server, den der C++-Build überlasten würde. Runner-Stack: `docker-stacks/forgejo-runner/docker-compose.ci.yml`, deployt über Komodo (Stack `forgejo-runner-laptop-omen`).
+- Schritte: apt-Abhängigkeiten → Checkout mit Submodulen → `cmake`/`ninja` (mit `-Werror`) → `ctest` → clang-tidy-Gate. Ist der Laptop aus, bleibt der Job in der Queue, bis der Runner wieder pollt.
 
 ## Architektur
 
@@ -311,7 +315,6 @@ Diese Datei hält die stabilen Leitplanken; offene Punkte, Fragen und Historik l
 
 ### Offene TODOs
 
-- **CI via Forgejo-Runner (notiert 2026-07-10):** Für dieses Repo einen Build-/Test-Workflow auf https://git.blem.ch/ einrichten, analog zur bestehenden Kette bei `github-mirror/blem-website`. Abweichung: Der C++-Build würde den homelab-Server überlasten — darum vorher abklären, ob Forgejo den Runner-Job auf den Host `laptop-omen` auslagern kann (eigener Runner auf dem Laptop, Job-Zuordnung per Runner-Label). Erst planen, dann umsetzen.
 - **wxWidgets-3.4-Upgrade, sobald in Arch `extra` (abgeklärt 2026-07-10):** Jetzt **nicht** upgraden — abwarten. Die 3.3-Serie bleibt offiziell der Development-Zweig; die erste stabile Serie mit den 3.3-Features wird **3.4.0** (https://wxwidgets.org/blog/2025/12/planning-ahead/). Arch `extra` führt weiterhin nur 3.2.11; 3.3 gibt es nur im AUR (`wxwidgets-gtk3-unstable`, `-git`). Beim Upgrade dann:
   - Prüfen, ob das Paket mit GLX **und** EGL gebaut ist — die Laufzeitwahl (seit 3.3.2, `wxGLCanvas::PreferGLX()` bzw. Env `wx_opengl_egl=0`, https://github.com/wxWidgets/wxWidgets/pull/26023) nützt nur dann. Das heutige Arch-3.2.11 ist EGL-only gelinkt (kein GLX) — deshalb bricht `GDK_BACKEND=x11` die EGL-Surface. Mit GLX-Fallback die Screenshot-Anleitung unter [Kopflose / skriptgesteuerte Läufe](#kopflose--skriptgesteuerte-läufe) neu prüfen (Xvfb evtl. verzichtbar).
   - Relevante inkompatible Änderungen der 3.3-Linie (docs/changes.txt, *INCOMPATIBLE CHANGES*): `wxGLCanvas` nutzt kein Multi-Sampling mehr per Default; `CreateSurface()` entfällt bei EGL-Builds; `wxBitmap::Create(size, dc)` skaliert nicht mehr mit dem Content-Scale-Faktor; `wxImageList`-Grössen in physischen Pixeln. Upstream stuft 3.3 als «almost fully compatible» mit 3.2 ein.
@@ -336,6 +339,7 @@ Diese Datei hält die stabilen Leitplanken; offene Punkte, Fragen und Historik l
 
 ### Erledigt (Historik)
 
+- ~~CI via Forgejo-Runner~~ (2026-07-10) — Build-/Test-Workflow auf https://git.blem.ch/ eingerichtet und end-to-end verifiziert; Beschreibung der Kette im Abschnitt [CI](#ci). Die Abklärung ergab: ja, Forgejo ordnet Jobs per Runner-Label zu — der CI-Runner läuft als Komodo-deployter Container auf `laptop-omen` (Label `ubuntu`, host-neutraler Stack `docker-stacks/forgejo-runner/docker-compose.ci.yml`), der homelab-Runner (Label `docker`) bleibt unberührt. Nebenbefund behoben: Ubuntu liefert keine wxWidgets-CMake-Config → Module-Mode-Fallback in `CMakeLists.txt`.
 - ~~`src/` auf Clean-Architecture-Verzeichnisse umgestellt~~ (2026-07-10) — die Ordnernamen benennen jetzt die Schichten 1:1: `packages/` → `domain/` (Namespace `packages::detail` → `domain::detail`), `gui/` → `presentation/`, `graphics/`+`physics/` → `infrastructure/{graphics,physics}`, `app/services/` → `infrastructure/persistence/` (Namespaces → `persistence::…`), `app/` → `application/`; `app/binding/` aufgelöst in Verdrahtung (`application/event_bus.hpp`, `main_window_binder.hpp`) und Rendering-Adapter (`application/calendar/`). Dazu: `scene_snapshot.hpp` in die Domain (rein std-basiert; löste den Presentation→Application-Include), `debug_log.hpp` nach `common/` (Querschnitt), Renames `opengl_panel.hpp` → `gl_canvas.hpp` und `graphics/icu.hpp` → `unicode.hpp`. Testspiegel und CMake nachgezogen; verhaltenserhaltend in kleinen Commits (Build + `ctest` + clang-tidy-Gate grün).
 - ~~wxWidgets 3.2 → 3.3 abklären~~ (2026-07-10) — Ergebnis: warten auf 3.4 in Arch `extra`; Details und Upgrade-Checkliste im TODO «wxWidgets-3.4-Upgrade» oben. Kern: 3.3 ist Development-Zweig, Arch paketiert ihn nicht offiziell, und die GLX/EGL-Laufzeitwahl braucht ein mit beiden Backends gebautes Paket (das heutige Arch-Paket ist EGL-only).
 - ~~Kopflose Läufe auf CLI-Argumente umstellen~~ (2026-07-10) — die `DECADE_*`-Umgebungsvariablen ersatzlos durch GNU-Long-Options ersetzt (`--dump-png`, `--exit-after-ms`, …, `--debug-log`; siehe [Kopflose / skriptgesteuerte Läufe](#kopflose--skriptgesteuerte-läufe)). Definition und Parsen des Vokabulars an genau einer Stelle (`AddRuntimeOptions` / `RuntimeOptionsFromParser` in `src/application/runtime_options.hpp`, via `wxCmdLineParser`); `DECADE_DEBUG_LOG` läuft jetzt über `decade_debug::SetLogEnabled` statt `getenv`; `DECADE_DEFAULT_CSV` gestrichen (Startdatei nur noch als Positionsargument).
