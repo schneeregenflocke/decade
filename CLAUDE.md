@@ -303,6 +303,7 @@ Wende die GRASP (https://en.wikipedia.org/wiki/GRASP_%28object-oriented_design%2
 - Reine Formatierungscommits isolieren und in `.git-blame-ignore-revs` eintragen (`git blame --ignore-revs-file` (https://git-scm.com/docs/git-blame)), damit die Historie lesbar bleibt.
 - Schrittweiser Ablauf: zuerst stabilisieren (Charakterisierungstests, Smoke-Pfade, Baseline-Output) → dann aufteilen (kleine Nähte extrahieren — Seams nach Michael Feathers, «Working Effectively with Legacy Code» —, Verhalten unverändert) → danach umbenennen (Absicht sichtbar machen, ohne Semantik zu ändern) → zuletzt entkoppeln (Kopplung erst entfernen, wenn die Form bereits sicher ist).
 - Wenn etwas nicht sofort geändert werden kann, im [Backlog-Abschnitt](#arbeitsnotizen--backlog) notieren, damit es nicht verloren geht.
+- Beim Arbeiten mit einer Datei aufgefallene Verstösse gegen die Konventionen dieser Datei werden — auch wenn sie nicht Teil der Aufgabe sind — als TODO im [Backlog](#arbeitsnotizen--backlog) notiert.
 
 ## Arbeitsnotizen & Backlog
 
