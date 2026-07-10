@@ -316,3 +316,78 @@ Warum die Extra-Args:
 ```bash
 find . -regex '.*\.\(cpp\|cxx\|hpp\|cc\|h\)' -not -path './build/*' -not -path './external/*' -exec clang-format -style=file -i {} +
 ```
+
+# CLAUDE.md — decade
+
+## Projekt
+decade ist ein C++23-Projekt (CMake, wxWidgets, Boost, OpenGL). Es ist aus
+einem Prototyp gewachsen und trägt technische Schulden: Spaghetti-Strukturen,
+Gott-Klassen, unklare Besitzverhältnisse. Ziel ist **evolutionäres Refactoring**
+— schrittweise, verhaltenserhaltend, ohne grossen Rewrite.
+
+## Grundhaltung bei Änderungen
+- **Sicherheit vor Struktur.** Bevor eine strukturelle Änderung an einer
+  Gott-Klasse oder einem verworrenen Pfad beginnt, muss eine Blackbox-Absicherung
+  stehen (Characterization Test: Input rein, Ist-Output als Erwartung
+  festschreiben). Kein Umbau ohne diese Absicherung.
+- **Verhalten nicht ändern, während aufgeräumt wird.** Aufräumen (Formatierung,
+  Umbenennung, Warnungsbeseitigung) und Verhaltensänderung sind *getrennte*
+  Commits. Beim „Reparieren" einer Warnung nie stillschweigend die Semantik
+  ändern.
+- **Kleine, umkehrbare Schritte.** Ein Commit = eine Absicht. Grosse gemischte
+  Diffs vermeiden.
+- Reine Formatierungscommits isolieren und in `.git-blame-ignore-revs`
+  eintragen, damit die Historie lesbar bleibt.
+
+## Besitzverhältnisse (Ownership)
+Der Kern der Schulden hier ist unklarer Besitz, nicht fehlende Kommentare.
+- **Besitz explizit machen.** RAII durchgehend; kein manuelles `new`/`delete` in
+  neuem oder berührtem Code.
+- Reihenfolge der Wahl: Wertsemantik / Stack / Container zuerst → `unique_ptr`
+  für exklusiven Besitz → `shared_ptr` *nur*, wenn Besitz nachweislich geteilt
+  ist (ein Design-Signal, kein Default) → `weak_ptr` gegen Zyklen.
+- Rohzeiger nur als nicht-besitzende Beobachter, nie als Besitzer.
+
+## Code-Ästhetik: selbstdokumentierend
+Ziel: Der Code kommuniziert seine Absicht selbst; Prosa ist minimal.
+- **Intention-revealing names**: Namen nennen den Zweck, nicht die Mechanik.
+- Kleine, fokussierte Funktionen mit einer Verantwortung.
+- Kommentare erklären das **Warum** (Entscheidung, Trade-off, Nicht-Offensichtliches),
+  nie das Was. Ein Kommentar, der beschreibt, *was* der Code tut, ist ein Hinweis,
+  den Code klarer zu machen — nicht, den Kommentar zu behalten.
+- **Principle of Least Astonishment**: Verhalten entspricht dem, was Signatur und
+  Name erwarten lassen.
+
+## Wissen nicht duplizieren: SSOT
+- Massgeblich ist **Single Source of Truth**: Jedes Stück Wissen (Regel,
+  Konstante, Domänenentscheidung) hat genau eine autoritative Repräsentation.
+- „DRY" hier im Originalsinn verstehen: Duplikation von *Wissen/Absicht*
+  vermeiden — nicht mechanisch jeden gleich aussehenden Codeblock zusammenlegen.
+- Zwei zufällig identische Blöcke, die *verschiedene* Konzepte ausdrücken,
+  bleiben getrennt. Duplikation ist billiger als die falsche Abstraktion; im
+  Zweifel nicht verfrüht abstrahieren.
+- **const-correctness** konsequent: SSOT für Veränderlichkeit — was nicht
+  verändert wird, ist `const`.
+
+## C++-Spezifika
+- **Header-Hygiene**: Include-Dickicht auflösen (Vorwärtsdeklarationen, minimale
+  Includes, include-what-you-use). Grösserer struktureller Hebel als
+  Reformatierung, senkt nebenbei Compile-Zeiten.
+- **Warnungen schrittweise**: `-Wall -Wextra` an; Warnungen als getrackte Metrik
+  abbauen. `-Werror` nicht sofort projektweit, sondern für bereinigte Module /
+  neu berührten Code scharfschalten.
+- `clang-format` / `clang-tidy` als konsistenter Style; Änderungen daraus als
+  eigene Commits (siehe oben).
+
+## Was zu vermeiden ist
+- Strukturelle Umbauten ohne vorherige Test-Absicherung.
+- Verhaltensänderung vermischt mit Aufräumen im selben Commit.
+- Massen-Reformatierung vermischt mit Logikänderung.
+- Spekulative Abstraktion / verfrühtes DRY über Konzeptgrenzen hinweg.
+- `shared_ptr` als Default statt als bewusstes Besitz-Signal.
+
+## Stil
+
+- Kommentare und Doku: knappes, aktives Deutsch (Wolf Schneider). So wenige Zeilen wie möglich; nur Nicht-Offensichtliches kommentieren.
+- **Echte Umlaute schreiben** (ä/ö/ü), nie Ersatzschreibweisen (ae/oe/ue). Schweizer Rechtschreibung: ss statt ß.
+
