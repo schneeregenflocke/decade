@@ -1,18 +1,18 @@
 find_package(GTest CONFIG REQUIRED)
 
 add_executable(decade_tests
-	packages/test_date.cpp
-	packages/test_date_period.cpp
-	packages/test_date_format.cpp
-	packages/test_reentry_guard.cpp
-	packages/test_date_group_store.cpp
-	packages/test_page_setup_store.cpp
-	packages/test_title_config_store.cpp
-	packages/test_shape_configuration_store.cpp
-	packages/test_calendar_config.cpp
-	packages/test_timeline_projection.cpp
-	packages/test_date_entry_store.cpp
-	packages/test_transform_date_entry.cpp
+	domain/test_date.cpp
+	domain/test_date_period.cpp
+	domain/test_date_format.cpp
+	domain/test_reentry_guard.cpp
+	domain/test_date_group_store.cpp
+	domain/test_page_setup_store.cpp
+	domain/test_title_config_store.cpp
+	domain/test_shape_configuration_store.cpp
+	domain/test_calendar_config.cpp
+	domain/test_timeline_projection.cpp
+	domain/test_date_entry_store.cpp
+	domain/test_transform_date_entry.cpp
 	services/test_csv_io.cpp
 	services/test_value_serialization.cpp
 	physics/test_physics_world.cpp
@@ -28,7 +28,7 @@ target_include_directories(decade_tests PRIVATE
 	${CMAKE_SOURCE_DIR}/external/sigslot/include
 )
 
-# The packages under test are Boost-free. Third-party dependencies: the ICU
+# The units under test are Boost-free. Third-party dependencies: the ICU
 # date backend, tinycolormap (the categorical palette behind the shape-config
 # group synthesis) and Bullet (physics). The services tests additionally
 # exercise CSV I/O (csv2, header-only) and the Boost.Serialization XML round

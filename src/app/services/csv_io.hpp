@@ -18,9 +18,9 @@
 #include <string>
 #include <vector>
 
-#include "../../packages/date_entry.hpp"
-#include "../../packages/date_format.hpp"
-#include "../../packages/date_period.hpp"
+#include "../../domain/date_entry.hpp"
+#include "../../domain/date_format.hpp"
+#include "../../domain/date_period.hpp"
 
 namespace app::io {
 

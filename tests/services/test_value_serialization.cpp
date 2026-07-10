@@ -9,11 +9,11 @@
 #include <vector>
 
 #include "app/services/value_serialization.hpp"
-#include "packages/calendar_config.hpp"
-#include "packages/date.hpp"
-#include "packages/date_entry.hpp"
-#include "packages/date_group.hpp"
-#include "packages/date_period.hpp"
+#include "domain/calendar_config.hpp"
+#include "domain/date.hpp"
+#include "domain/date_entry.hpp"
+#include "domain/date_group.hpp"
+#include "domain/date_period.hpp"
 
 namespace {
 

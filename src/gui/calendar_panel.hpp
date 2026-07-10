@@ -9,7 +9,7 @@
 #include <sigslot/signal.hpp>
 #include <vector>
 
-#include "../packages/calendar_config.hpp"
+#include "../domain/calendar_config.hpp"
 #include "wx_owned.hpp"
 
 // Property grid that edits a CalendarConfig: the calendar's year span and the

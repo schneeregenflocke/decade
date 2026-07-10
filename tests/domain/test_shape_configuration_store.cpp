@@ -3,8 +3,8 @@
 #include <glm/vec4.hpp>
 #include <string>
 
-#include "packages/shape_configuration.hpp"
-#include "packages/shape_configuration_store.hpp"
+#include "domain/shape_configuration.hpp"
+#include "domain/shape_configuration_store.hpp"
 
 TEST(ShapeConfigSetTest, DefaultsContainExpectedNames) {
   ShapeConfigSet set;

@@ -23,7 +23,7 @@ class TitleConfigStore {
     if (emitting_) {
       return;
     }
-    const packages::detail::ScopedReentryFlag guard(emitting_);
+    const domain::detail::ScopedReentryFlag guard(emitting_);
     title_config_ = incoming_title_config;
     signal_title_config_(title_config_);
   }

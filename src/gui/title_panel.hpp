@@ -10,7 +10,7 @@
 #include <memory>
 #include <sigslot/signal.hpp>
 
-#include "../packages/title_config.hpp"
+#include "../domain/title_config.hpp"
 #include "casts.hpp"
 #include "wx_owned.hpp"
 

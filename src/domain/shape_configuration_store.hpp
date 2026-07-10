@@ -24,7 +24,7 @@ class ShapeConfigurationStore {
     if (emitting_) {
       return;
     }
-    const packages::detail::ScopedReentryFlag guard(emitting_);
+    const domain::detail::ScopedReentryFlag guard(emitting_);
     shape_config_set_ = incoming_shape_config_set;
     signal_shape_config_set_(shape_config_set_);
   }
@@ -37,7 +37,7 @@ class ShapeConfigurationStore {
     if (emitting_) {
       return;
     }
-    const packages::detail::ScopedReentryFlag guard(emitting_);
+    const domain::detail::ScopedReentryFlag guard(emitting_);
     shape_config_set_.SyncToDateGroups(date_groups.size());
     signal_shape_config_set_(shape_config_set_);
   }

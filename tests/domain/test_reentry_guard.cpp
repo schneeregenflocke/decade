@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include "packages/detail/reentry_guard.hpp"
+#include "domain/detail/reentry_guard.hpp"
 
-using packages::detail::ScopedReentryFlag;
+using domain::detail::ScopedReentryFlag;
 
 TEST(ReentryGuardTest, SetsFlagWhileAliveResetsOnDestruction) {
   bool flag = false;

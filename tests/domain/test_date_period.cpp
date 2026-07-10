@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "packages/date.hpp"
-#include "packages/date_period.hpp"
+#include "domain/date.hpp"
+#include "domain/date_period.hpp"
 
 namespace {
 

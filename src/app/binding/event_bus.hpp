@@ -7,12 +7,12 @@
 #include <vector>
 
 #include "../../graphics/pick_id.hpp"
-#include "../../packages/calendar_config.hpp"
-#include "../../packages/date_entry.hpp"
-#include "../../packages/date_group.hpp"
-#include "../../packages/page_setup_config.hpp"
-#include "../../packages/shape_configuration.hpp"
-#include "../../packages/title_config.hpp"
+#include "../../domain/calendar_config.hpp"
+#include "../../domain/date_entry.hpp"
+#include "../../domain/date_group.hpp"
+#include "../../domain/page_setup_config.hpp"
+#include "../../domain/shape_configuration.hpp"
+#include "../../domain/title_config.hpp"
 #include "scene_snapshot.hpp"
 
 // Central typed event bus for cross-component communication.

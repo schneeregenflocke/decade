@@ -19,7 +19,7 @@ class DateEntryBarStore : public DateEntryStore {
     if (Emitting()) {
       return;
     }
-    const packages::detail::ScopedReentryFlag guard(Emitting());
+    const domain::detail::ScopedReentryFlag guard(Emitting());
     ProcessDateEntries(incoming_date_entries);
 
     ProcessBars();

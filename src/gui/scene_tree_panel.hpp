@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "../app/binding/scene_snapshot.hpp"
-#include "../packages/shape_configuration.hpp"
+#include "../domain/shape_configuration.hpp"
 #include "casts.hpp"
 #include "rgba_colour_property.hpp"
 #include "wx_owned.hpp"

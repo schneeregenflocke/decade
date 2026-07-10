@@ -1,7 +1,7 @@
 #ifndef REENTRY_GUARD_HPP
 #define REENTRY_GUARD_HPP
 
-namespace packages::detail {
+namespace domain::detail {
 
 // RAII helper: sets `flag` to true on construction, resets to false on
 // destruction. Used by stores to break echo loops where a slot connected to a
@@ -20,6 +20,6 @@ class ScopedReentryFlag {
   bool* flag_;
 };
 
-}  // namespace packages::detail
+}  // namespace domain::detail
 
 #endif  // REENTRY_GUARD_HPP

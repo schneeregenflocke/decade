@@ -22,7 +22,7 @@ class CalendarConfigStore {
     if (emitting_) {
       return;
     }
-    const packages::detail::ScopedReentryFlag guard(emitting_);
+    const domain::detail::ScopedReentryFlag guard(emitting_);
     calendar_config_ = incoming_calendar_config;
     signal_calendar_config_(calendar_config_);
   }

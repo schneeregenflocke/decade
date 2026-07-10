@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 
-#include "../packages/date_group.hpp"
+#include "../domain/date_group.hpp"
 #include "table_panel_base.hpp"
 
 class DateGroupsTablePanel : public TablePanelBase {

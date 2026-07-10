@@ -27,7 +27,7 @@ class DateEntryStore {
     if (emitting_) {
       return;
     }
-    const packages::detail::ScopedReentryFlag guard(emitting_);
+    const domain::detail::ScopedReentryFlag guard(emitting_);
     ProcessDateEntries(incoming_date_entries);
     signal_date_entries_(date_entries_);
   }

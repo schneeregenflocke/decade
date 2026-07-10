@@ -11,18 +11,18 @@
 #include <string>
 #include <vector>
 
-#include "../../packages/calendar_config.hpp"
-#include "../../packages/calendar_config_store.hpp"
-#include "../../packages/date_entry.hpp"
-#include "../../packages/date_entry_store.hpp"
-#include "../../packages/date_group.hpp"
-#include "../../packages/date_group_store.hpp"
-#include "../../packages/page_setup_config.hpp"
-#include "../../packages/page_setup_store.hpp"
-#include "../../packages/shape_configuration.hpp"
-#include "../../packages/shape_configuration_store.hpp"
-#include "../../packages/title_config.hpp"
-#include "../../packages/title_config_store.hpp"
+#include "../../domain/calendar_config.hpp"
+#include "../../domain/calendar_config_store.hpp"
+#include "../../domain/date_entry.hpp"
+#include "../../domain/date_entry_store.hpp"
+#include "../../domain/date_group.hpp"
+#include "../../domain/date_group_store.hpp"
+#include "../../domain/page_setup_config.hpp"
+#include "../../domain/page_setup_store.hpp"
+#include "../../domain/shape_configuration.hpp"
+#include "../../domain/shape_configuration_store.hpp"
+#include "../../domain/title_config.hpp"
+#include "../../domain/title_config_store.hpp"
 #include "value_serialization.hpp"
 
 namespace app::io {

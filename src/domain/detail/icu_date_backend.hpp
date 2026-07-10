@@ -27,7 +27,7 @@
 #include <optional>
 #include <stdexcept>
 
-namespace packages::detail {
+namespace domain::detail {
 
 // Plain year/month/day triple exchanged with the backend. `month` and `day`
 // are 1-based (January = 1), matching the domain convention.
@@ -136,6 +136,6 @@ class IcuCalendarBackend {
   std::unique_ptr<icu::GregorianCalendar> calendar_;
 };
 
-}  // namespace packages::detail
+}  // namespace domain::detail
 
 #endif  // ICU_DATE_BACKEND_HPP

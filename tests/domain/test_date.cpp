@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "packages/date.hpp"
+#include "domain/date.hpp"
 
 TEST(DateTest, DefaultConstructedIsInvalid) {
   const Date date;

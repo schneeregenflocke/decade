@@ -24,7 +24,7 @@ class DateGroupStore {
     if (emitting_) {
       return;
     }
-    const packages::detail::ScopedReentryFlag guard(emitting_);
+    const domain::detail::ScopedReentryFlag guard(emitting_);
     date_groups_.Assign(incoming_date_groups);
     signal_date_groups_(date_groups_.Items());
   }

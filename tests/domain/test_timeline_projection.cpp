@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 
-#include "packages/calendar_config.hpp"
-#include "packages/date.hpp"
-#include "packages/date_period.hpp"
-#include "packages/timeline_projection.hpp"
+#include "domain/calendar_config.hpp"
+#include "domain/date.hpp"
+#include "domain/date_period.hpp"
+#include "domain/timeline_projection.hpp"
 
 namespace {
 

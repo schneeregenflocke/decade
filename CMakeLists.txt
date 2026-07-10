@@ -75,28 +75,28 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/scene_highlighter.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/scene_snapshot.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/scene_snapshot_builder.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/bar.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/calendar_config.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/calendar_config_store.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/color_palette.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_format.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_group.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_group_store.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_entry.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_entry_bar_store.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_entry_store.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/date_period.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/page_setup_config.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/page_setup_store.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/shape_configuration.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/shape_configuration_store.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/timeline_projection.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/title_config.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/title_config_store.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/transform_date_entry.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/detail/icu_date_backend.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/packages/detail/reentry_guard.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/bar.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/calendar_config.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/calendar_config_store.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/color_palette.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/date.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/date_format.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/date_group.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/date_group_store.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/date_entry.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/date_entry_bar_store.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/date_entry_store.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/date_period.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/page_setup_config.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/page_setup_store.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/shape_configuration.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/shape_configuration_store.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/timeline_projection.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/title_config.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/title_config_store.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/transform_date_entry.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/detail/icu_date_backend.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/detail/reentry_guard.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/calendar_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/casts.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/date_panel.hpp
@@ -274,7 +274,7 @@ embed_resources(${PROJECT_NAME}_RESOURCES ${RESOURCE_FILES})
 cmake_print_variables(${PROJECT_NAME}_RESOURCES)
 target_sources(${PROJECT_NAME} PRIVATE ${${PROJECT_NAME}_RESOURCES})
 
-option(DECADE_BUILD_TESTS "Build unit tests for src/packages/" ON)
+option(DECADE_BUILD_TESTS "Build unit tests for src/domain/" ON)
 if(DECADE_BUILD_TESTS)
 	enable_testing()
 	add_subdirectory(tests)

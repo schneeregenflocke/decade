@@ -21,7 +21,7 @@ class PageSetupStore {
     if (emitting_) {
       return;
     }
-    const packages::detail::ScopedReentryFlag guard(emitting_);
+    const domain::detail::ScopedReentryFlag guard(emitting_);
     page_setup_config_ = incoming_page_setup_config;
     signal_page_setup_config_(page_setup_config_);
   }

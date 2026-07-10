@@ -26,7 +26,7 @@
 #include "../graphics/png_writer.hpp"
 #include "../graphics/projection.hpp"
 #include "../graphics/render_to_png.hpp"
-#include "../packages/page_setup_config.hpp"
+#include "../domain/page_setup_config.hpp"
 #include "mouse_interaction.hpp"
 
 class GLCanvas : public wxGLCanvas {

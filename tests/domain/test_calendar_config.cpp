@@ -2,8 +2,8 @@
 
 #include <stdexcept>
 
-#include "packages/calendar_config.hpp"
-#include "packages/calendar_config_store.hpp"
+#include "domain/calendar_config.hpp"
+#include "domain/calendar_config_store.hpp"
 
 TEST(CalendarSpanTest, DefaultSpanIsValid) {
   CalendarSpan span;

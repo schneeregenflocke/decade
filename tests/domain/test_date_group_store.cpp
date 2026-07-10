@@ -4,8 +4,8 @@
 #include <string>
 #include <vector>
 
-#include "packages/date_group.hpp"
-#include "packages/date_group_store.hpp"
+#include "domain/date_group.hpp"
+#include "domain/date_group_store.hpp"
 
 namespace {
 

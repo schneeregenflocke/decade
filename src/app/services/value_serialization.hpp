@@ -3,7 +3,7 @@
 
 // Non-intrusive Boost.Serialization for the domain value types.
 //
-// The domain values in `packages/` are deliberately Boost-free (SoC / Clean
+// The domain values in `domain/` are deliberately Boost-free (SoC / Clean
 // Architecture): persistence is an infrastructure concern and lives here, not
 // in the domain. Every serializer below goes through the value's public API
 // only — no `friend`, no member `serialize`. The on-disk format is owned by
@@ -23,14 +23,14 @@
 #include <system_error>
 #include <vector>
 
-#include "../../packages/calendar_config.hpp"
-#include "../../packages/date.hpp"
-#include "../../packages/date_entry.hpp"
-#include "../../packages/date_group.hpp"
-#include "../../packages/date_period.hpp"
-#include "../../packages/page_setup_config.hpp"
-#include "../../packages/shape_configuration.hpp"
-#include "../../packages/title_config.hpp"
+#include "../../domain/calendar_config.hpp"
+#include "../../domain/date.hpp"
+#include "../../domain/date_entry.hpp"
+#include "../../domain/date_group.hpp"
+#include "../../domain/date_period.hpp"
+#include "../../domain/page_setup_config.hpp"
+#include "../../domain/shape_configuration.hpp"
+#include "../../domain/title_config.hpp"
 
 namespace app::serialization_detail {
 

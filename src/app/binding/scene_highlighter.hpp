@@ -15,8 +15,8 @@
 #include "../../graphics/scene.hpp"
 #include "../../graphics/scene_graph.hpp"
 #include "../../graphics/shapes.hpp"
-#include "../../packages/date_entry_bar_store.hpp"
-#include "../../packages/shape_configuration.hpp"
+#include "../../domain/date_entry_bar_store.hpp"
+#include "../../domain/shape_configuration.hpp"
 
 // Application/Infrastructure bridge: the interactive highlighting of the
 // calendar scene, kept apart from the construction concern

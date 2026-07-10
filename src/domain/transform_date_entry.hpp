@@ -21,7 +21,7 @@ class TransformDateEntry {
     if (emitting_) {
       return;
     }
-    const packages::detail::ScopedReentryFlag guard(emitting_);
+    const domain::detail::ScopedReentryFlag guard(emitting_);
     std::vector<DateEntry> transformed_entries = date_entries;
     auto entries_iterator = transformed_entries.begin();
 

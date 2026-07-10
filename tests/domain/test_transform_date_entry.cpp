@@ -2,10 +2,10 @@
 
 #include <vector>
 
-#include "packages/date.hpp"
-#include "packages/date_entry.hpp"
-#include "packages/date_period.hpp"
-#include "packages/transform_date_entry.hpp"
+#include "domain/date.hpp"
+#include "domain/date_entry.hpp"
+#include "domain/date_period.hpp"
+#include "domain/transform_date_entry.hpp"
 
 namespace {
 

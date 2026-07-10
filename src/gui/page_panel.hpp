@@ -10,7 +10,7 @@
 #include <memory>
 #include <sigslot/signal.hpp>
 
-#include "../packages/page_setup_config.hpp"
+#include "../domain/page_setup_config.hpp"
 #include "wx_owned.hpp"
 
 class PageSetupPanel : public wxPanel {

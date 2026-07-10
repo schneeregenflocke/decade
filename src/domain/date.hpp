@@ -41,8 +41,8 @@ class Date {
     if (year < kMinYear || year > kMaxYear) {
       return {};
     }
-    const packages::detail::Ymd ymd{.year = year, .month = month, .day = day};
-    if (!packages::detail::IcuCalendarBackend::Instance().IsValidDate(ymd)) {
+    const domain::detail::Ymd ymd{.year = year, .month = month, .day = day};
+    if (!domain::detail::IcuCalendarBackend::Instance().IsValidDate(ymd)) {
       return {};
     }
     Date date;
@@ -63,7 +63,7 @@ class Date {
     if (!IsValid()) {
       return 0;
     }
-    return packages::detail::IcuCalendarBackend::Instance().DayOfYear(ToYmd());
+    return domain::detail::IcuCalendarBackend::Instance().DayOfYear(ToYmd());
   }
 
   // Precondition: IsValid(). An invalid date reports kSunday.
@@ -72,13 +72,13 @@ class Date {
       return Weekday::kSunday;
     }
     return static_cast<Weekday>(
-        packages::detail::IcuCalendarBackend::Instance().DayOfWeek(ToYmd()));
+        domain::detail::IcuCalendarBackend::Instance().DayOfWeek(ToYmd()));
   }
 
   // Invalid stays invalid; a result outside the supported year range is
   // invalid as well.
   [[nodiscard]] Date AddDays(int days) const {
-    return ShiftedDate(packages::detail::IcuCalendarBackend::Instance().AddDays(
+    return ShiftedDate(domain::detail::IcuCalendarBackend::Instance().AddDays(
         ToYmd(), days));
   }
 
@@ -86,7 +86,7 @@ class Date {
   // Feb 28/29), matching the previous Boost.DateTime behavior.
   [[nodiscard]] Date AddMonths(int months) const {
     return ShiftedDate(
-        packages::detail::IcuCalendarBackend::Instance().AddMonths(ToYmd(),
+        domain::detail::IcuCalendarBackend::Instance().AddMonths(ToYmd(),
                                                                    months));
   }
 
@@ -96,7 +96,7 @@ class Date {
     if (!from.IsValid() || !to.IsValid()) {
       return 0;
     }
-    return packages::detail::IcuCalendarBackend::Instance().DaysBetween(
+    return domain::detail::IcuCalendarBackend::Instance().DaysBetween(
         from.ToYmd(), to.ToYmd());
   }
 
@@ -105,12 +105,12 @@ class Date {
   friend auto operator<=>(const Date&, const Date&) = default;
 
  private:
-  [[nodiscard]] packages::detail::Ymd ToYmd() const {
+  [[nodiscard]] domain::detail::Ymd ToYmd() const {
     return {.year = year_, .month = month_, .day = day_};
   }
 
   [[nodiscard]] Date ShiftedDate(
-      const std::optional<packages::detail::Ymd>& shifted) const {
+      const std::optional<domain::detail::Ymd>& shifted) const {
     if (!IsValid() || !shifted.has_value()) {
       return {};
     }

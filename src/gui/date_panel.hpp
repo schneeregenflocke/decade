@@ -13,12 +13,12 @@
 #include <utility>
 #include <vector>
 
-#include "../packages/date.hpp"
-#include "../packages/date_entry.hpp"
-#include "../packages/date_format.hpp"
-#include "../packages/date_group.hpp"
-#include "../packages/date_group_store.hpp"
-#include "../packages/date_period.hpp"
+#include "../domain/date.hpp"
+#include "../domain/date_entry.hpp"
+#include "../domain/date_format.hpp"
+#include "../domain/date_group.hpp"
+#include "../domain/date_group_store.hpp"
+#include "../domain/date_period.hpp"
 #include "table_panel_base.hpp"
 #include "wx_owned.hpp"
 

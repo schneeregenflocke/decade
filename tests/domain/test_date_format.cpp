@@ -2,8 +2,8 @@
 
 #include <string>
 
-#include "packages/date.hpp"
-#include "packages/date_format.hpp"
+#include "domain/date.hpp"
+#include "domain/date_format.hpp"
 
 // All tests pin an explicit locale so they are independent of the machine the
 // suite runs on.
