@@ -60,6 +60,46 @@ TEST(CsvIoTest, UnparseableRowsYieldNullPeriods) {
   EXPECT_FALSE(entries[1].GetDateInterval().IsNull());
 }
 
+TEST(CsvIoTest, BlankLinesAreSkipped) {
+  const std::string path = TempCsvPath("decade_blank_lines.csv");
+  // A leading blank line and blank lines between rows are not entries.
+  WriteFile(path,
+            "\n"
+            "01.01.1992,03.05.1993\n"
+            "\n"
+            "03.05.1994,05.05.1994\n"
+            "\n"
+            "\n"
+            "01.03.1996,05.08.1997\n");
+
+  auto formatter = MakeFormatter();
+  const auto entries = app::io::ReadDateEntriesFromCsv(path, formatter);
+
+  ASSERT_EQ(entries.size(), 3U);
+  for (const auto& entry : entries) {
+    EXPECT_FALSE(entry.GetDateInterval().IsNull());
+  }
+}
+
+TEST(CsvIoTest, SingleColumnRowsYieldSingleDayPeriods) {
+  const std::string path = TempCsvPath("decade_single_column.csv");
+  WriteFile(path,
+            "02.05.2001\n"
+            "01.03.1996,05.08.1997\n"
+            "text\n");
+
+  auto formatter = MakeFormatter();
+  const auto entries = app::io::ReadDateEntriesFromCsv(path, formatter);
+
+  ASSERT_EQ(entries.size(), 3U);
+  // A missing to-date means "same as from-date": a single-day period.
+  EXPECT_EQ(entries[0].GetDateInterval().Begin(), Date::FromYmd(2001, 5, 2));
+  EXPECT_EQ(entries[0].GetDateInterval().LengthDays(), 1);
+  EXPECT_FALSE(entries[1].GetDateInterval().IsNull());
+  // Without a parseable from-date the row is a null period.
+  EXPECT_TRUE(entries[2].GetDateInterval().IsNull());
+}
+
 TEST(CsvIoTest, MissingFileYieldsNoEntries) {
   auto formatter = MakeFormatter();
   EXPECT_TRUE(

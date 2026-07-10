@@ -58,7 +58,7 @@ Eine CSV-Datendatei kann beim Start optional per CLI-Argument importiert werden.
 
 ```bash
 # CSV-Import
-./build/decade test-files/test_dates_1.csv
+./build/decade examples/sample_dates.csv
 ```
 
 ### Kopflose / skriptgesteuerte Läufe
@@ -87,7 +87,7 @@ Die Startdatei (CSV oder XML) wird ausschliesslich als Positionsargument überge
 Typischer Smoke-Test (Sample-Daten explizit mitgeben):
 ```bash
 stdbuf -oL -eL timeout 12 ./build/decade \
-  --dump-png=/tmp/decade_render.png --exit-after-ms=2000 test-files/test_dates_1.csv
+  --dump-png=/tmp/decade_render.png --exit-after-ms=2000 examples/sample_dates.csv
 ```
 
 Vollständiger UI-Screenshot (Tabs + Panels + Canvas) eines bestimmten Tabs. Der Widget-Read-back funktioniert nur auf dem **X11-Backend** — ein `wxClientDC`-Blit liefert unter Wayland schwarz — also headless unter **Xvfb** mit Software-GL ausführen. Das ist der unterstützte Weg, die echte GUI zu screenshotten: GNOME/Wayland blockiert programmatisches Screen-Capture, und `GDK_BACKEND=x11` auf einer laufenden XWayland-Session bricht die EGL-Surface des GL-Canvas.
@@ -95,7 +95,7 @@ Vollständiger UI-Screenshot (Tabs + Panels + Canvas) eines bestimmten Tabs. Der
 xvfb-run -a -s "-screen 0 1600x1000x24" \
   env GDK_BACKEND=x11 LIBGL_ALWAYS_SOFTWARE=1 \
   timeout 30 ./build/decade --select-tab=Timeframe \
-  --dump-frame-png=/tmp/decade_ui.png --exit-after-ms=3000 test-files/test_dates_1.csv
+  --dump-frame-png=/tmp/decade_ui.png --exit-after-ms=3000 examples/sample_dates.csv
 ```
 
 ## Build-Prüfungen & Werkzeuge
