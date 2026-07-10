@@ -11,6 +11,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -39,15 +40,13 @@ class Shader {
 
   void SetUniform(const std::string& uniform_name,
                   const glm::mat4& matrix) const {
-    auto location = glGetUniformLocation(program_, uniform_name.c_str());
-    glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
+    glUniformMatrix4fv(UniformLocation(uniform_name), 1, GL_FALSE,
+                       glm::value_ptr(matrix));
   }
 
   void SetUniform(const std::string& uniform_name,
                   const glm::vec4& vector) const {
-    auto location = glGetUniformLocation(program_, uniform_name.c_str());
-    glUniform4fv(location, 1, glm::value_ptr(vector));
-    // glProgramUniform
+    glUniform4fv(UniformLocation(uniform_name), 1, glm::value_ptr(vector));
   }
 
   void PrintShaderInfo() const {
@@ -74,6 +73,19 @@ class Shader {
     GLuint vertex;
     GLuint fragment;
   };
+
+  // Uniform-Locations sind nach dem Linken stabil; der Cache erspart den
+  // glGetUniformLocation-String-Lookup, der sonst pro Shape und Frame anfällt.
+  GLint UniformLocation(const std::string& uniform_name) const {
+    auto found = uniform_locations_.find(uniform_name);
+    if (found == uniform_locations_.end()) {
+      found = uniform_locations_
+                  .emplace(uniform_name,
+                           glGetUniformLocation(program_, uniform_name.c_str()))
+                  .first;
+    }
+    return found->second;
+  }
 
   void CompileProgram(const ShaderSources& sources) {
     const ShaderHandles handles{
@@ -138,6 +150,7 @@ class Shader {
   GLuint program_{0};
   std::string name_;
   ShaderInfos shader_info_;
+  mutable std::unordered_map<std::string, GLint> uniform_locations_;
 };
 
 class Shaders {

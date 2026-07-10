@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <functional>
 #include <glm/glm.hpp>
@@ -18,6 +19,7 @@
 #include <vector>
 
 #include "../graphics/debug_log.hpp"
+#include "../graphics/frame_stats.hpp"
 #include "../graphics/graphics_engine.hpp"
 #include "../graphics/mvp_matrices.hpp"
 #include "../graphics/pan_zoom_camera.hpp"
@@ -190,6 +192,15 @@ class GLCanvas : public wxGLCanvas {
     Refresh(false);
   }
 
+  // Stösst nur einen Repaint an — für Änderungen, die weder Projektion noch
+  // Zoom-Grenzen berühren (Hover-/Selektionsfarben). Deutlich billiger als
+  // RefreshMVP.
+  void Repaint() { Refresh(false); }
+
+  // Bildrate im Sekundenfenster des jüngsten Frames; da nur ereignisgesteuert
+  // gezeichnet wird, ist der Wert während einer Interaktion aussagekräftig.
+  [[nodiscard]] double CurrentFps() const { return frame_stats_.Fps(); }
+
   void SavePNG(std::string file_path, int dpi = kExportPngDpi) {
     RenderToPNG const render_to_png(std::move(file_path), page_size_,
                                     static_cast<float>(dpi), graphics_engine_,
@@ -285,9 +296,26 @@ class GLCanvas : public wxGLCanvas {
 
   void PaintCallback(wxPaintEvent& /*event*/) {
     wxPaintDC const dc(this);
+    const auto render_start = FrameStats::Clock::now();
     graphics_engine_->SetMVP(mvp_);
     graphics_engine_->Render();
     SwapBuffers();
+    const auto render_end = FrameStats::Clock::now();
+    frame_stats_.AddFrame(render_end, render_end - render_start);
+    LogFrameStats(render_end);
+  }
+
+  // Loggt FPS und Renderdauer höchstens einmal pro Sekunde (Debug-Modus).
+  void LogFrameStats(FrameStats::Clock::time_point now) {
+    if (!decade_debug::LogEnabled()) {
+      return;
+    }
+    if (now - last_fps_log_ < std::chrono::seconds(1)) {
+      return;
+    }
+    last_fps_log_ = now;
+    std::cout << "FPS: " << frame_stats_.Fps() << " (render "
+              << frame_stats_.LastRenderMillis() << " ms)\n";
   }
 
   void SizeCallback(wxSizeEvent& /*event*/) {
@@ -307,7 +335,13 @@ class GLCanvas : public wxGLCanvas {
     if (on_pointer_move_) {
       on_pointer_move_(MouseInteraction::ScreenToPage(pos_physical, mvp_));
     }
-    RefreshMVP();
+    // Nur Ziehen und Mausrad ändern die Ansicht; blosse Zeigerbewegung löst
+    // keinen Repaint aus — ein Hover-Wechsel stösst seinen eigenen über
+    // CalendarPage::ReceiveHovered an. Projektion und Zoom-Grenzen bleiben
+    // unberührt, RefreshMVP ist hier nicht nötig.
+    if (event.Dragging() || event.GetWheelRotation() != 0) {
+      Repaint();
+    }
   }
 
   int gl_loaded_{0};
@@ -320,6 +354,9 @@ class GLCanvas : public wxGLCanvas {
 
   rectf page_size_;
   MVP mvp_;
+
+  FrameStats frame_stats_;
+  FrameStats::Clock::time_point last_fps_log_;
 
   std::array<int, 2> gl_version_{};
   std::function<void()> on_gl_ready_;

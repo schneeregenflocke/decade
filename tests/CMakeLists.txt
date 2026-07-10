@@ -17,6 +17,7 @@ add_executable(decade_tests
 	services/test_value_serialization.cpp
 	physics/test_physics_world.cpp
 	graphics/test_pan_zoom_camera.cpp
+	graphics/test_frame_stats.cpp
 	app/test_calendar_layout.cpp
 )
 

@@ -93,17 +93,18 @@ class CalendarPage {
     return physics_world_.Raycast(page_point);
   }
 
-  // Highlights the hovered bar in place (no rebuild) and repaints.
+  // Highlights the hovered bar in place (no rebuild) and repaints. Only
+  // colours change, so the cheap Repaint suffices — no projection refresh.
   void ReceiveHovered(const std::optional<PickId>& hovered) {
     scene_composer_.SetHoveredBar(hovered);
-    gl_canvas_->RefreshMVP();
+    gl_canvas_->Repaint();
   }
 
   // Highlights the scene-tree-selected node (and its subtree) in place and
   // repaints. The path identifies the node within the scene graph.
   void ReceiveSelectedNode(const std::optional<std::string>& path) {
     scene_composer_.SetSelectedNode(path);
-    gl_canvas_->RefreshMVP();
+    gl_canvas_->Repaint();
   }
 
  private:
