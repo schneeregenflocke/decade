@@ -20,7 +20,7 @@
 #include <vector>
 
 #include "freetype.hpp"
-#include "icu.hpp"
+#include "unicode.hpp"
 #include "rect.hpp"
 #include "shaders.hpp"
 #include "shapes_base.hpp"

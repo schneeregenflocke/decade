@@ -113,7 +113,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/frame_layout.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/freetype.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/graphics_engine.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/icu.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/unicode.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/projection.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/rect.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/render_to_texture.hpp

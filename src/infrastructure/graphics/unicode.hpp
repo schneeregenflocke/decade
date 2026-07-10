@@ -1,5 +1,5 @@
-#ifndef ICU_HPP
-#define ICU_HPP
+#ifndef UNICODE_HPP
+#define UNICODE_HPP
 
 // Single entry point for the ICU headers used by the text renderer, mirroring
 // freetype.hpp. ICU (https://icu.unicode.org/) provides the Unicode handling in
@@ -17,4 +17,4 @@
 #include <unicode/unistr.h>
 #include <unicode/utypes.h>
 
-#endif  // ICU_HPP
+#endif  // UNICODE_HPP
