@@ -1,30 +1,55 @@
 # CLAUDE.md
 
-Diese Datei enthält Anweisungen für Claude Code (claude.ai/code) und andere Coding-Agents, die in diesem Repository mit dem Code arbeiten.
+Diese Datei enthält Anweisungen für Claude Code (claude.ai/code) und andere Coding-Agents, die in diesem Repository mit dem Code arbeiten. Sie hält die stabilen Leitplanken — Bauen, Architektur, Konventionen, Prinzipien — und am Ende einen Backlog-Abschnitt für offene Punkte.
 
 ## Projekt
 
-C++23-Desktopanwendung für Kalender und Zeitachsen. wxWidgets-GUI, OpenGL (4.6 core) Rendering via libepoxy, ICU für Kalenderarithmetik, lokales Datumsparsen und -formatieren sowie Unicode-Textverarbeitung, Boost.Serialization für XML-Projektdateien, FreeType für Text, csv2 für CSV-Import und -Export, Bullet (Collision World) für Hit-Testing und Picking, sigslot für Signal/Slot-Verdrahtung.
+C++23-Desktopanwendung für Kalender und Zeitachsen. Aus einem Prototyp gewachsen; sie trägt noch technische Schulden (Gott-Klassen, unklare Besitzverhältnisse). Ziel ist evolutionäres Refactoring — schrittweise, verhaltenserhaltend, ohne Rewrite (siehe [Refactoring](#refactoring)).
 
-## Stil
+Abhängigkeiten:
 
-- Kommentare und Doku: knappes, aktives Deutsch (Wolf Schneider). So wenige Zeilen wie möglich; nur Nicht-Offensichtliches kommentieren.
-- Echte Umlaute schreiben (ä/ö/ü), nie ae/oe/ue. Schweizer Rechtschreibung: ss statt ß.
-- In Markdown-Dateien keine Tabellen verwenden; stattdessen mehrzeilige Listen. Sie sind leichter lesbar, leichter zu schreiben und oft kürzer.
+- wxWidgets (https://docs.wxwidgets.org/3.2/) — GUI-Toolkit.
+- OpenGL 4.6 core (https://registry.khronos.org/OpenGL-Refpages/gl4/) via libepoxy (https://github.com/anholt/libepoxy) — Rendering.
+- ICU (https://unicode-org.github.io/icu/userguide/datetime/calendar/) — Kalenderarithmetik, lokales Datumsparsen und -formatieren, Unicode-Textverarbeitung.
+- Boost.Serialization (https://www.boost.org/doc/libs/release/libs/serialization/doc/index.html) — XML-Projektdateien.
+- FreeType (https://freetype.org/freetype2/docs/documentation.html) — Text-Rasterung.
+- csv2 (https://github.com/p-ranav/csv2) — CSV-Import und -Export.
+- Bullet Collision World (https://github.com/bulletphysics/bullet3) — Hit-Testing und Picking.
+- sigslot (https://github.com/palacaze/sigslot) — Signal/Slot-Verdrahtung.
+- tinycolormap (https://github.com/yuki-koyama/tinycolormap) — Farbskalen.
+
+### Untermodule
+
+Fünf Git-Untermodule liegen unter `external/`: embed-resource (eigener Fork, https://github.com/schneeregenflocke/embed-resource), sigslot (https://github.com/palacaze/sigslot), csv2 (https://github.com/p-ranav/csv2), tinycolormap (https://github.com/yuki-koyama/tinycolormap), bullet3 (https://github.com/bulletphysics/bullet3) — nach dem Klonen mit `git submodule update --init --recursive` initialisieren. Shader und Lizenzen werden über `embed_resources()` in `CMakeLists.txt` ins Binary eingebettet.
 
 ## Bauen & Starten
 
-Das CMake-Build-Verzeichnis ist `build/` (Ninja-Generator, `compile_commands.json` für clangd/clang-tidy exportiert).
+Gebaut wird mit CMake (https://cmake.org/cmake/help/latest/) und dem Ninja-Generator (https://ninja-build.org/manual.html). Das Build-Verzeichnis ist `build/`; `compile_commands.json` wird für clangd/clang-tidy exportiert.
+
+Neu konfigurieren (nur wenn sich `CMakeLists.txt` oder Abhängigkeiten ändern):
 
 ```bash
-# Neu konfigurieren (nur wenn sich CMakeLists.txt oder Abhängigkeiten ändern)
 cmake -S . -B build -G Ninja
+```
 
-# Bauen (aus dem Repository-Root; die Ninja-Datei liegt in build/)
+Bauen (aus dem Repository-Root; die Ninja-Datei liegt in `build/`):
+
+```bash
 ninja -C build
+```
 
-# GUI starten
+GUI starten:
+
+```bash
 ./build/decade
+```
+
+### Tests
+
+`tests/` spiegelt die `src/`-Struktur; die wx-freien Header sind direkt unit-getestet. Nach dem Bauen:
+
+```bash
+ctest --test-dir build
 ```
 
 ### Startdatei
@@ -38,7 +63,7 @@ Eine CSV-Datendatei kann beim Start optional per CLI-Argument importiert werden.
 
 ### Kopflose / skriptgesteuerte Läufe
 
-Das Binary beachtet mehrere Umgebungsvariablen (gelesen in `src/app/runtime_options.hpp`) für nicht-interaktive Nutzung — CI, Screenshots, Smoke-Tests.
+Das Binary beachtet mehrere Umgebungsvariablen (gelesen an genau einer Stelle, `RuntimeOptionsFromEnv`) für nicht-interaktive Nutzung — CI, Screenshots, Smoke-Tests.
 
 **Bildaufnahme** — drei Variablen erfassen drei unterschiedliche Dinge; sie sind nicht redundant:
 
@@ -72,220 +97,13 @@ xvfb-run -a -s "-screen 0 1600x1000x24" \
   DECADE_EXIT_AFTER_MS=3000 timeout 30 ./build/decade test-files/test_dates_1.csv
 ```
 
-## Build-Prüfungen
+## Build-Prüfungen & Werkzeuge
 
-- **Warnings brechen den Build — behebe sie, unterdrücke sie nicht. Diese Regel gilt sowohl für Compiler-Warnungen als auch für clang-tidy-Diagnosen.** Kein Finding mit `NOLINT` / `NOLINTNEXTLINE` / `NOLINTBEGIN`, einem `#pragma`, einem `-Wno-…`-Flag oder einer `.clang-tidy`-Einzelzeilen-Ausnahme einfach ruhigstellen. Ändere den Code so, dass das Finding nicht mehr greift. Umstrukturierung, RAII und korrekte Typannotationen sind Fixes; Unterdrückung ist keiner.
-  - **Bevorzuge einen echten Fix, auch wenn die Warnung zunächst "nicht behebbar" wirkt.** Meist ist sie es doch. Beispiel: `cppcoreguidelines-owning-memory` über einer rohen C-Ressource ist erfüllt, wenn Ownership mit `gsl::owner<>` (das Projekt verlinkt bereits `Microsoft.GSL::GSL`) und/oder einem `std::unique_ptr` mit Custom-Deleter ausgedrückt wird — siehe `src/graphics/png_writer.hpp`. Eine Regel, die für den Projektstil wirklich nicht anwendbar ist, wird **einmal, global** in `.clang-tidy` mit Kommentar deaktiviert (wie bereits `-modernize-use-trailing-return-type`, `-llvm-header-guard`, …) — niemals verteilt pro Zeile.
+### Warnings & clang-tidy-Gate
+
+- **Warnings brechen den Build — behebe sie, unterdrücke sie nicht. Diese Regel gilt sowohl für Compiler-Warnungen als auch für Diagnosen von clang-tidy (https://clang.llvm.org/extra/clang-tidy/).** Kein Finding mit `NOLINT` / `NOLINTNEXTLINE` / `NOLINTBEGIN` (https://clang.llvm.org/extra/clang-tidy/index.html#suppressing-undesired-diagnostics), einem `#pragma`, einem `-Wno-…`-Flag oder einer `.clang-tidy`-Einzelzeilen-Ausnahme einfach ruhigstellen. Ändere den Code so, dass das Finding nicht mehr greift. Umstrukturierung, RAII und korrekte Typannotationen sind Fixes; Unterdrückung ist keiner.
+  - **Bevorzuge einen echten Fix, auch wenn die Warnung zunächst "nicht behebbar" wirkt.** Meist ist sie es doch. Beispiel: `cppcoreguidelines-owning-memory` (https://clang.llvm.org/extra/clang-tidy/checks/cppcoreguidelines/owning-memory.html) über einer rohen C-Ressource ist erfüllt, wenn Ownership mit `gsl::owner<>` aus der GSL (https://github.com/microsoft/GSL) — das Projekt verlinkt bereits `Microsoft.GSL::GSL` — und/oder einem `std::unique_ptr` mit Custom-Deleter ausgedrückt wird — siehe `src/graphics/png_writer.hpp`. Eine Regel, die für den Projektstil wirklich nicht anwendbar ist, wird **einmal, global** in `.clang-tidy` mit Kommentar deaktiviert (wie bereits `-modernize-use-trailing-return-type`, `-llvm-header-guard`, …) — niemals verteilt pro Zeile.
   - **Unterdrückung ist nur als letzter Ausweg erlaubt, und zwar nur für Konstrukte, die uns ein Third-Party-C-API vertraglich aufzwingt und die im Code nicht anders lösbar sind.** Das kanonische (und derzeit einzige zugelassene) Beispiel ist das zwingende `setjmp`/`longjmp`-Error-Handling von libpng in `src/graphics/png_writer.hpp`. Wenn du unterdrücken musst: scoping des `NOLINT` auf die **konkreten Check-Namen** (niemals ein nacktes `NOLINT`), auf die engste Zeile beschränken und einen Kommentar hinzufügen, der erklärt, *warum* das nicht behebbar ist. Wenn eine ganze Abhängigkeit eine Warnungsklasse unvermeidbar macht, ersetze lieber diese Abhängigkeit, statt Unterdrückungen zu verteilen.
-- `.clang-format` ist die verbindliche Quelle für das Formatting.
-- Die CI-Workflow-Datei ist derzeit deaktiviert (`.github/workflows/cmake.yml.disable`).
-
-## Refactoring
-
-- Sicherheit vor Struktur. Vor einer strukturellen Änderung an einer God Class oder einem verhedderten Pfad zuerst eine Black-Box-Schutzschicht ergänzen: einen Charakterisierungstest mit Eingabe und dem aktuellen Output als eingefrorener Erwartung.
-- Verhalten beim Aufräumen nicht ändern. Formatting, Umbenennungen, Warnungsbereinigung und Verhaltensänderungen sind getrennte Schritte oder Commits.
-- Kleine, umkehrbare Schritte. Ein Commit, ein Ziel. Diffs klein genug halten, um sie sauber zurückdrehen zu können.
-- Refactoring ist evolutionär, kein Rewrite. Erst das Risiko senken, dann entlang der tragenden Abstraktion schneiden.
-- `TODO.txt` bleibt vorläufig bestehen. Dort liegt das laufende Backlog; `CLAUDE.md` soll die Regeln, Grenzen und Arbeitsvereinbarungen kurz und stabil halten.
-- Wenn etwas nicht sofort geändert werden kann, in der passenden Sektion notieren, damit es nicht verloren geht.
-- Designkriterien, die mitgedacht werden sollen:
-  - Intention-revealing names: Namen sollen den Zweck ausdrücken, nicht den Mechanismus.
-  - Principle of Least Astonishment: Verhalten soll zur Aussage von Name und Signatur passen.
-  - SRP, SoC, geringe Kopplung, hohe Kohäsion.
-  - Explizite Ownership und explizite Lifetimes.
-  - DRY als Wissens-DRY, nicht als mechanisches Code-Zusammenfalten.
-  - Unübersichtliche Konstrukte einkapseln statt sie zu verbreiten.
-  - Lieber direkten Ausdruck im Code als Kommentar, wenn der Code es klar sagen kann.
-- Offene Folgefragen:
-  - Welche 2 bis 3 Hotspots sollen zuerst charakterisiert werden?
-  - Wie strikt soll Header-only als harte Vorgabe bleiben?
-  - Wie viel API-Härtung mit non-null/span soll jetzt passieren?
-  - Wie viel Include-Umschreiben soll pro Sprint automatisiert werden?
-  - Wie weit soll die EventBus-Zentralisierung gehen, bevor ein pragmatischer Hybrid bleibt?
-- Schrittweiser Ablauf für Refactoring-Arbeiten:
-  - Zuerst stabilisieren: Charakterisierungstests, Smoke-Pfade, Baseline-Output.
-  - Dann aufteilen: kleine Nähte extrahieren, Verhalten unverändert lassen.
-  - Danach umbenennen: Absicht sichtbar machen, ohne Semantik zu ändern.
-  - Zuletzt entkoppeln: Kopplung erst entfernen, wenn die Form bereits sicher ist.
-
-## Untermodule
-
-`external/embed-resource`, `external/sigslot`, `external/csv2` sind Git-Untermodule — nach dem Klonen mit `git submodule update --init --recursive` initialisieren. Shader und Lizenzen werden über `embed_resources()` in `CMakeLists.txt` ins Binary eingebettet.
-
-## Als Header-only konzipiert
-
-Die Codebasis ist **absichtlich als Header-only konzipiert** (`main.cpp` ist die einzige Translation Unit). Beim Hinzufügen von Code lieber bestehende Header direkt erweitern als in `.cpp` aufzuteilen. Diese Konvention auch bei Refactorings beibehalten. Definitionen, die in einem Header leben, müssen `inline` sein (freie Funktionen und out-of-class Member-Definitionen), damit die Single-TU-Regel ODR-Verstösse nicht stillschweigend verdeckt, falls ein Header irgendwann von woanders eingebunden wird (z. B. Tests).
-
-## Arbeitsnotizen
-
-- `TODO.txt` als Backlog der offenen Punkte behalten.
-- Diese Datei für stabile Leitplanken, Refactoring-Kriterien und Architekturgrenzen nutzen.
-- Neue Gedanken kurz halten und direkt neben die Regel setzen, die sie betreffen.
-- Markdown in diesem Repository soll keine Tabellen verwenden; stattdessen Listen mit klaren Aufzählungen und kurzen Teilsätzen.
-- **TODO — CI via Forgejo-Runner (notiert 2026-07-10):** Für dieses Repo einen
-  Build-/Test-Workflow auf https://git.blem.ch/ einrichten, analog zur bestehenden Kette bei
-  `github-mirror/blem-website`. Abweichung: Der C++-Build würde den homelab-Server überlasten —
-  darum vorher abklären, ob Forgejo den Runner-Job auf den Host `laptop-omen` auslagern kann
-  (eigener Runner auf dem Laptop, Job-Zuordnung per Runner-Label). Erst planen, dann umsetzen.
-- **TODO — CLAUDE.md aufräumen (notiert 2026-07-10):** Diese Datei ordnen und straffen
-  (Sichten → Trennen → Versorgen → Verdichten), als Vorstufe zum Ordnen und Aufräumen des
-  ganzen Repos.
-
-## Architektur
-
-### Ziele
-
-- Den Startpfad klein und testbar halten.
-- UI-Verdrahtung vom App-Bootstrap isolieren.
-- Den Datenfluss zwischen Stores, Panels und Renderer explizit halten.
-- Zweckorientierte Variablennamen und klare Schichtung, damit der Code navigierbar und selbstdokumentierend bleibt.
-
-### Geschichtete Architektur
-
-Die Codebasis folgt einer Architektur mit vier Schichten. Abhängigkeiten fliessen nur **nach innen** (Presentation → Application → Domain; Infrastructure wird von der Application konsumiert). Die Domain kennt nichts anderes; die Infrastructure kennt nur die Domain-Typen, die sie serialisiert.
-
-- **Presentation:** `src/gui/`, `src/app/main_window.*` — wxWidgets-Panels, GLCanvas, Menüs, Dialoge.
-- **Application:** `src/app/` (inkl. `src/app/binding/`) — Composition Root, EventBus, `main_window_binder`, wx-App-Lifecycle, Command-Callbacks.
-- **Domain:** `src/packages/` — Value Objects, Stores, Transformationslogik, sigslot-Signale — UI-agnostisch und Boost-frei (kein `friend boost::serialization::access`, keine `serialize`-Member).
-- **Infrastructure:** `src/graphics/`, `src/app/services/` — OpenGL-Pipeline, FreeType, XML-/CSV-/PNG-I/O, **nicht-intrusive Serialisierung**.
-
-Der Rendering-Adapter (`calendar_page.hpp` + `calendar_scene_composer.hpp`) ist die Brücke zwischen Application und Infrastructure; beide werden in der Verzeichnisübersicht weiter unten detailliert.
-
-### Verzeichnisübersicht
-
-- `src/app/`
-  - `main.cpp` — nur Prozesseinstiegspunkt (Application).
-  - `decade_app.hpp` — wx-App-Lifecycle, Locale-Initialisierung und Command-Line-Parsen des optionalen Startup-File-Arguments (Application).
-  - `app_config.hpp` — Startup-/Fenster-Defaults (Application).
-  - `runtime_options.hpp` — `app::RuntimeOptions` plus `RuntimeOptionsFromEnv()`: die einzige Stelle, die die `DECADE_*`-Env-Variablen liest (Startdatei, PNG-Dumps, Auto-Exit). CLI-Argumente überschreiben die aus der Umgebung abgeleiteten Werte in `DecadeApp::OnInit` (Application).
-  - `main_window.hpp` — Composition Root: besitzt alle Stores, Panels, den Renderer und den anwendungsweiten `LocaleDateFormatter` via PIMPL (`struct Impl`) (Presentation/Application-Grenze). Der Formatter wird hier einmal konstruiert und an alle Konsumenten per Referenz weitergegeben (Datentabelle, CSV-I/O), damit die Locale-Konfiguration an einer Stelle bleibt.
-  - `services/project_io.hpp` — XML-Projektdatei-Persistenz (`LoadProjectXml`/`SaveProjectXml`) (Infrastructure). UI-agnostisch, nimmt Stores per Referenz; serialisiert deren Value Objects und schreibt sie beim Laden über `Receive*` / `SetValue` zurück.
-  - `services/csv_io.hpp` — CSV-Import/Export für Datumseinträge (Infrastructure). wx-frei und unit-getestet; nimmt ein `LocaleDateFormatter&`. Das ist eine benutzerseitige Grenze: CSV-zu-Daten sind inklusiv, werden beim Lesen in das interne halb-offene Intervall umgerechnet (`PeriodFromInclusiveDates`) und beim Schreiben mit `Last()` zurückgeführt.
-  - `services/runtime_info.hpp` — `PrintRuntimeInfo`: Startdiagnostik (Compiler-/OS-/Toolkit-Versionen). Separat von den Persistenzdiensten gehalten, weil es die wx-Platform-Header benötigt.
-  - `services/value_serialization.hpp` — nicht-intrusive, Boost-Serialization-freie Funktionen für jeden Domain-Value-Type (Infrastructure). Arbeitet nur über öffentliche APIs; besitzt das On-Disk-Format. Hält die Domain-Schicht Boost-frei.
-  - `binding/event_bus.hpp` — typisierter Signal-Hub für Domain-Ereignisse (Application).
-  - `binding/main_window_binder.hpp` — verdrahtet Produzenten und Konsumenten über den EventBus (Application).
-  - `binding/calendar_page.hpp` — Rendering-Adapter: besitzt den kalenderrelevanten Domain-Status, stellt die `Receive*`-Slots bereit und treibt bei Updates den Scene-Builder an (Application).
-  - `binding/calendar_scene_composer.hpp` — koordiniert den Aufbau des Kalender-Scene-Graphen aus dem (referenzierten) Domain-Status; GL-Canvas-frei, kennt nur `GraphicsEngine` und die `Scene` (Application/Infrastructure-Brücke). Es ist ein dünner Koordinator, der an folgende Bausteine delegiert: `calendar_layout.hpp` (`CalendarLayout`, die GL-freie Seitengeometrie, unit-getestet), `calendar_scene_nodes.hpp` (`CalendarSceneNodes` als Handle-Struct + `BuildCalendarSceneNodes`-Skeleton-Factory + die `calendar_layers`-Painter-Layer), `calendar_section_builders.hpp` (je ein freies `calendar_sections::Build*` pro Kalenderelement, jeweils mit einem `SectionContext`; `BuildBars` emittiert zusätzlich die `PickBox`es der Bars in Seitenkoordinaten), und `scene_highlighter.hpp` (`SceneHighlighter`: Hover-Farbwechsel + Scene-Tree-Selection-Overlay + `NodeWorldBounds`). Die generischen, domainfreien Node-Fill-Helper liegen in `graphics/scene_shape_filler.hpp` (`scene_shapes::FillRectangles` / `AddCenteredText`).
-  - `binding/scene_snapshot.hpp` — `SceneNodeSnapshot`: ein schlichtes, GL-freies Read-Model des Render-Scene-Graphs (Name + Has-Shape + Children). Der Bus trägt es, das Scene-Tree-Panel rendert es — so hängt die Presentation-Schicht nie vom OpenGL-Typ `SceneNode` ab (Application).
-  - `binding/scene_snapshot_builder.hpp` — `BuildSceneSnapshot(const SceneNode&)`: die Brücke zwischen Application und Infrastructure, die den lebenden `SceneNode`-Graphen in ein `SceneNodeSnapshot` spiegelt. Separat von `scene_snapshot.hpp` gehalten (das GL-frei bleibt) und vom Scene-Builder (dessen Aufgabe das Bauen des Graphen ist, nicht das Spiegeln).
-  - `binding/interaction_controller.hpp` — übersetzt Canvas-Pointer-Bewegungen in Hover-/Pick-Ereignisse. Hit-Testing über eine austauschbare Pick-Quelle (damit es `CalendarPage`/`PhysicsWorld` nicht kennen muss) und emittiert `hovered` nur bei Änderungen (Application).
-- `src/packages/` — Domain-Schicht, aufgeteilt in **Value Objects** und **Stores**. Die konzeptionelle Trennung ist auch physisch: jedes Value Object und sein Store liegen in **separaten Dateien** mit dem Namen der Hauptklasse (z. B. `date_group.hpp` + `date_group_store.hpp`, `date_entry.hpp` + `date_entry_store.hpp`, `page_setup_config.hpp` + `page_setup_store.hpp`). Der Value-Object-Header hat keine Store-Abhängigkeit; der Store-Header inkludiert seinen Value-Object-Header.
-  - **Value Objects** (`Date`/`DatePeriod`, `DateGroup`/`DateGroups`, `DateEntry`, `Bar`, `PageSetupConfig`, `TitleConfig`, `ShapeConfiguration`/`ShapeConfigSet`, `CalendarSpan`/`CalendarConfig`) halten Daten plus die Abfragen darauf. Sie **kapseln ihren Zustand**: Datenmember sind `private`, werden über konstante Accessor-/Query-Methoden exponiert und nur über benannte Setter verändert — das ist die orthodoxe DDD-Form (ein Value Object ist durch seine Attribute definiert, nicht durch öffentlich sichtbare Felder), und sie hält On-Disk-Format und Invarianten an einer Stelle. Kein Signal, keine Serialisierung, kein `friend` → Rule of Zero, frei kopierbar.
-  - **Stores** (`DateGroupStore`, `DateEntryStore`/`DateEntryBarStore`, `TransformDateEntry`, `PageSetupStore`, `TitleConfigStore`, `ShapeConfigurationStore`, `CalendarConfigStore`) kombinieren ein Value Object mit einem `sigslot::signal` und einer Re-Entry-Guard. Sie haben Identität → explizit nicht kopierbar. Ihr **Signal trägt den Value** (`signal<const Value&>`), sodass Konsumenten (Panels, `CalendarPage`) direkt mit kopierbaren Value Objects arbeiten; der Store stellt `Receive<Value>` / `Send<Value>` / einen `Get<Value>`-Getter bereit und hat keine eigene Query-Delegation.
-  - **Muss UI-agnostisch bleiben (kein wx, kein GL) und Boost-frei** — Persistenz liegt in `services/value_serialization.hpp`.
-  - **Datumslogik:** `date.hpp` (`Date`, proleptischer Gregorianischer Kalender, expliziter Invalid-State) und `date_period.hpp` (`DatePeriod`) bieten eine **datenbankfreie Schnittstelle**. Die kalenderbezogenen Berechnungen sind an ICU delegiert und bewusst auf genau zwei Header beschränkt: `detail/icu_date_backend.hpp` (Arithmetik-Backend) und `date_format.hpp` (`LocaleDateFormatter`, sprach- und lokalisierungsabhängiges Parsen und Formatieren für GUI/CSV). Einen Wechsel der Datumslibrary bedeutet, genau diese zwei Header neu zu implementieren — sonst greift niemand im Code direkt auf ICU-Datum-APIs zu. Daten werden als ISO-8601-Strings persistiert (`app::serialization_detail` in `services/value_serialization.hpp`); das frühere Boost.DateTime-basierte Projektdateiformat ist **nicht mehr lesbar** (bewusster Formatbruch).
-  - **Intervallsemantik:** `DatePeriod` ist **überall im Modell einheitlich halb-offen `[begin, end)`** — `LengthDays()` ist `end - begin`, `Last()` ist der Tag vor `end`, und ein Zeitraum ohne enthaltenen Tag (`end <= begin`) ist *null*. Ein einzelner Tag ist `(d, d+1)`, Länge 1; die Stores verwerfen null Periods beim Empfang. Nutzer denken in *inklusiven* "von .. bis"-Daten, daher passiert die Umrechnung an genau zwei nutzerseitigen Grenzen — im Datumstabellen-Panel und im CSV-I/O — via `PeriodFromInclusiveDates()` beim Eingang und `Last()` bei der Anzeige. Nirgends sonst soll ±1-Tag-Arithmetik auftauchen; es soll so bleiben.
-- `src/gui/` — Presentation: wxWidgets-Panels und der GL-Canvas-Wrapper. Jedes Panel besitzt seine Widgets und bietet Signale mit derselben Schnittstelle wie sein Store. `scene_tree_panel.hpp` ist eine schreibgeschützte Baumansicht des Scene-Graphs (verarbeitet `SceneNodeSnapshot`); `mouse_interaction.hpp` wandelt Drag/Wheel in Pan/Zoom für das MVP um und rechnet Pixel in Seitenraum zurück, damit Hit-Testing möglich ist. Zwei gemeinsame Helfer liegen hier: `wx_owned.hpp` (`MakeOwned<T>`, das Konstruktionsmuster für parent-owned Widgets) und `table_panel_base.hpp` (`TablePanelBase`, das Table-Plus-Add/Delete-Gerüst für die Eintrags- und Gruppen-Panels).
-- `src/graphics/` — Infrastructure: OpenGL-Engine, Shader, `SceneNode`-Scene-Graph, `RectanglesShape` / `QuadrilateralShape` / `FontShape`, `RenderToTexture`, `RenderToPng`, FreeType-Wrapper. `pick_id.hpp` hält die dependency-freien Werttypen `PickId` / `PickBox`, die Scene-Builder und Picking-Layer gemeinsam nutzen.
-- `src/physics/` — Infrastructure: `physics_world.hpp` (`PhysicsWorld`), ein schlanker RAII-Wrapper um einen Bullet-`btCollisionWorld`, der für 2D-Hit-Testing verwendet wird. Pickbare Bars werden als dünne achsenparallele Boxen registriert; ein Strahl durch den Seitenraum-Punkt des Cursors meldet die getroffene `PickId`. Das Collision World ist die räumliche Struktur, die eine spätere Dynamics-World (Dragging, echte Physik) erweitern kann, ohne den Picking-Pfad zu ändern.
-
-### Schichtregeln
-
-1. `main.cpp` darf keine Business- oder UI-Verdrahtungslogik enthalten.
-2. `DecadeApp` darf High-Level-Objekte konstruieren, sollte aber Panel-/Store-Interna vermeiden.
-3. `MainWindow` besitzt die Lifetime; die Verdrahtung lebt in `main_window_binder` (freie Funktionen in `src/app/binding/`).
-4. `packages/` (Domain) muss UI-agnostisch bleiben — kein wx, kein GL.
-5. Domain-Stores publizieren ihren Zustand über den `EventBus`; Konsumenten abonnieren über den Bus statt über einzelne Store-Signale.
-6. Infrastructure-Module nehmen Domain-Typen per Referenz; sie dürfen nicht von Presentation abhängen.
-
-### Ereignisfluss (EventBus via sigslot)
-
-Die komponentenübergreifende Kommunikation läuft über einen in-process **EventBus** (siehe `src/app/binding/event_bus.hpp`). Der Bus besitzt pro Domain-Ereignis ein typisiertes `sigslot::signal`. Panels und Stores behalten ihre eigenen `Send*`- / `Receive*`-Methoden, aber die Verdrahtung ist zentral in `main_window_binder::Bind` — jeder Produzent wird in den Bus weitergeleitet, jeder Konsument vom Bus abonniert.
-`MainWindow::EstablishConnections` ist inzwischen nur noch ein dünner Wrapper, der `main_window_binder::Bind(...)` gefolgt von `SendInitialValues(...)` aufruft.
-
-```
-Panel ──Send──▶ EventBus.<event> ──▶ Store.Receive
-Store ──Send──▶ EventBus.<event> ──▶ Panel.Receive , CalendarPage.Receive , GLCanvas.Receive
-```
-
-Der `TransformDateEntry`-Adapter sitzt zwischen `date_entries` (Input) und `transformed_date_entries` (Output) auf dem Bus.
-
-Zwei weitere Themen laufen auf demselben Bus. Bei jedem Rebuild emittiert `CalendarPage` ein `SceneNodeSnapshot` (`scene_snapshot`-Topic), das das Scene-Tree-Panel rendert. Für Picking meldet der GL-Canvas Pointer-Bewegungen im Seitenraum an den `InteractionController`, der sie über `CalendarPage::Pick` (ein Bullet-Raycast über die `PickBox`es der Bars) hit-tested und den geänderten Hover über das `hovered`-Topic publiziert; `CalendarPage::ReceiveHovered` färbt die Bar dann direkt um.
-
-```
-GLCanvas ──pointer move──▶ InteractionController ──Pick──▶ CalendarPage/PhysicsWorld
-InteractionController ──Send──▶ EventBus.hovered ──▶ CalendarPage.ReceiveHovered
-CalendarPage ──Send──▶ EventBus.scene_snapshot ──▶ SceneTreePanel.Receive
-```
-
-Wenn du einen neuen Zustand hinzufügst: Erzeuge ein Boost-freies **Value Object** plus einen `*Store` darum in `packages/`, ein Panel in `gui/`, füge ein typisiertes Signal zu `EventBus` hinzu und registriere beide Enden in `main_window_binder::Bind`. Wenn der Zustand persistiert wird, ergänze nicht-intrusive `save`/`load` (oder `serialize`) für den Value in `services/value_serialization.hpp` und eine Zeile in `project_io`. `CalendarPage` braucht nur dann einen `Receive*`-Slot, wenn sich der Zustand auf das Rendering auswirkt.
-
-### OpenGL-Initialisierung
-
-Verzögert: `MainWindow` ruft `GLCanvas::InitOpenGL(version, callback)` auf. Der Callback läuft **nachdem** der GL-Context aktuell ist — dort wird `CalendarPage` konstruiert und `main_window_binder::Bind` ausgeführt. Vor diesem Callback darf kein GL-Zustand angefasst werden.
-
-### Weiterführende Refactoring-Ziele
-
-1. Stores sollen direkt in den `EventBus` publizieren, sobald alle Konsumenten bus-only sind.
-2. Refactoring-Notizen sollen in dieser Datei bleiben, bis eine Entscheidung stabil genug für ein eigenes Dokument ist.
-3. Das aktuelle Verhalten soll erhalten bleiben, während die Anzahl der Stellen sinkt, die von einem bestimmten Zustand wissen müssen.
-
-### Designkriterien
-
-- Intention-revealing names: Namen sollen den Zweck beschreiben, nicht den Mechanismus.
-- Principle of Least Astonishment: Namen, Signaturen und Verhalten sollen zusammenpassen.
-- Die kleinste nützliche Abstraktion wählen.
-- Expliziten Datenfluss vor versteckter Kopplung bevorzugen.
-- Stabile Regeln von instabilem Backlog trennen.
-- Kommentare für das Warum, nicht für das Was.
-- Wissensduplikation reduzieren, nicht jede ähnlich aussehende Zeile.
-
-**Erledigt** (zur Nachvollziehbarkeit, nicht mehr offen):
-
-- ~~Style-Migration auf Google C++ Style~~ — Klassen-Datenmember tragen den Trailing-Underscore; vom Gate erzwungen via `readability-identifier-naming` (siehe `.clang-tidy` und die Naming/Style-Notiz unter [Konventionen](#konventionen)).
-- ~~Datei- und Naming-Struktur in `packages/`~~ — Value-Object und Store je eigene Datei (nach Hauptklasse benannt), Store-Suffix einheitlich `…Store`; auch die Member-/Parameternamen sind auf `…_store` vereinheitlicht (kein `…_storage`).
-- ~~Unit-Tests für die CSV-/XML-Konvertierung~~ — `tests/services/test_csv_io.cpp` und `tests/services/test_value_serialization.cpp` decken Lesen/Schreiben, Rundläufe und Grenzfälle ab; die CSV-/XML-Logik liegt dafür in eigenen, wx-freien Headern (`services/csv_io.hpp`, `services/value_serialization.hpp`).
-- ~~`PageSetupConfig` als gekapseltes Value-Object~~ — war als einziges Value-Object ein öffentliches Aggregat; jetzt private Member mit `Size()`/`Margins()`/`Orientation()`-Accessoren und `Set*`-Settern, genau wie die übrigen Value-Objects (siehe die Value-Objects-Notiz oben). Persistenz läuft non-intrusiv über die `save`/`load`-Paarung in `services/value_serialization.hpp`.
-
-## Entwurfsprinzipien
-
-Das sind die verbindlichen Entwurfsprinzipien für diese Codebasis.
-
-- Single Responsibility Principle (SRP)
-- Separation of Concerns (SoC)
-- Kopplung und Kohäsion
-- Domain-Driven Design (DDD)
-- Clean Architecture
-- Don’t Repeat Yourself (DRY) — wenn dieselbe mehrzeilige Form über mehrere Methoden (oder Panels) wiederkehrt, ziehe sie in einen kleinen Helfer hoch — ein `private`-Member, eine freie Funktion oder eine gemeinsame Basisklasse — statt sie zu kopieren. Etablierte Beispiele: `scene_shapes::FillRectangles` / `AddCenteredText` (Scene-Node-Erzeugung), `GLCanvas::ReadBackBuffer` (Rendern + `glReadPixels` + Zeilenflip), `MakeOwned<T>` in `gui/wx_owned.hpp` (das `make_unique<T>(...).release()`-Muster für parent-owned Widgets), `TablePanelBase` in `gui/table_panel_base.hpp` (das Tabellen- plus Add/Delete-Gerüst, das von den Entries- und Groups-Panels gemeinsam genutzt wird), und `serialization_detail::ColorToArray` / `ColorFromArray` (glm::vec4-zu-Array-Marshalling). Bevorzuge dies gegenüber Makros, weil Makros Lesbarkeit und Debuggability verschlechtern — die expliziten, feldweisen `save`/`load`-Paare in `services/value_serialization.hpp` bleiben absichtlich ausgeschrieben, weil sie das On-Disk-Format dokumentieren.
-
-### GRASP-Muster
-
-Wende die GRASP-Heuristiken zur Verantwortungszuweisung an, wenn du entscheidest, wo Code hingehört:
-
-- Information Expert
-- Creator
-- Controller
-- Low Coupling / High Cohesion
-- Indirection
-- Pure Fabrication
-- Polymorphism / Protected Variations
-
-### Geschichtete Architektur
-
-Beachte die vier Schichten und die inwards-only-Abhängigkeitsregel aus den [Schichtregeln](#schichtregeln). Neuer Code muss angeben, zu welcher Schicht er gehört, und deren Abhängigkeitsgrenzen einhalten.
-
-## Konventionen
-
-- C++23, keine Compiler-Erweiterungen.
-- Header-Guards benutzen den Dateinamenstil: der grossgeschriebene Dateiname mit dem Punkt vor dem Suffix als `_`, z. B. `main_window.hpp` → `MAIN_WINDOW_HPP`, `opengl_panel.hpp` → `OPENGL_PANEL_HPP`. Kein Verzeichnispfadpräfix. Das konsequent in `#ifndef`, `#define` und dem abschliessenden `#endif  // <GUARD>`-Kommentar anwenden. (Die clang-tidy-Prüfung `llvm-header-guard`, die sonst einen Full-Path-Stil wie `HOME_TITAN99_CODE_DECADE_SRC_..._HPP` erzwingen würde, ist in `.clang-tidy` deaktiviert — so lassen.)
-- **Naming/Style — Konvention: Google C++ Style** (in Kraft):
-  - Typen: `PascalCase` (`DateGroup`).
-  - Funktionen & Methoden: `PascalCase` (`GetDateGroups()`); triviale Accessor/Mutator dürfen `snake_case` wie ihr Member heissen (`set_count()`).
-  - Klassen-Datenmember: `snake_case` **mit Trailing-Underscore** (`date_format_`). Struct-Member ohne Underscore. Diese Member-Regel wird vom clang-tidy-Gate erzwungen (`readability-identifier-naming` in `.clang-tidy`); ein Member ohne Underscore bricht den Build.
-  - Locals: `snake_case`. Konstanten/Enumeratoren: `kPascalCase` (`kColorScale`).
-  - Der Store-Suffix ist einheitlich `…Store` (kein `…Storage`) — bei Typen **und** bei Member-/Parameternamen (`…_store`, nicht `…_storage`).
-  - Renames zur Vereinheitlichung von Schreibweise und Bezeichnern sind erwünscht. Wenn umbenannt wird, dann **vollständig und konsistent** über alle Vorkommen (Deklaration, Definition, Aufrufstellen, Tests, Doku) — kein halber Rename, der zwei Schreibweisen nebeneinander stehen lässt. Den Build danach grün halten (Compile + `ctest` + clang-tidy-Gate).
-- Rule of Five: Klassen mit expliziten Destruktoren sollten Copy/Move ebenfalls löschen oder defaulten (siehe `MainWindow`, `DateEntryStore`).
-- Niemals rohes `new`/`delete` verwenden. Ownership immer über Smart Pointer ausdrücken (`std::unique_ptr` für exklusive Ownership, `std::shared_ptr` für geteilte Ownership), damit die Lifetime im Typsystem kodiert ist, Ausnahmen keine Ressourcen leaken und Ownership-Übergaben an Call-Sites explizit sind. wx-Widgets werden typischerweise via `.release()` an wx-owned Parents übergeben (wx besitzt dann die Lifetime).
-- **Raw-Pointer-Datenmember sind verboten** — auch nicht-ownende. Ein rohes `T*`-Member kodiert weder Ownership noch Lifetime und ist die klassische Dangling-Pointer-Falle. Drücke die Beziehung stattdessen im Typsystem aus:
-  - **Nicht-ownende Referenz auf ein von `wxTrackable` abgeleitetes Objekt** (wx-owned Parents/Children — `wxWindow`, `wxEvtHandler` und die meisten wx-Klassen): `wxWeakRef<T>` verwenden. Es setzt sich automatisch auf null zurück, wenn das referenzierte Objekt zerstört wird. Siehe [wxWeakRef](https://docs.wxwidgets.org/3.2/classwx_weak_ref_3_01_t_01_4.html) und [wxTrackable](https://docs.wxwidgets.org/3.2/classwx_trackable.html).
-  - **Nicht-ownende Referenz auf ein wx-owned Objekt, das *nicht* `wxTrackable` ist** (z. B. `wxPGProperty` und seine Subklassen erben von `wxObject`, daher kompiliert `wxWeakRef` nicht): **gar keinen Pointer cachen**. Das Objekt bei Bedarf vom Owner holen — aus dem Event, das es trägt (`wxPropertyGridEvent::GetProperty()`), oder per Namenssuche am Owner (`wxPropertyGrid::GetPropertyByName()`) — mit einer stabilen Namenskonstante, die Erzeugung und Lookup gemeinsam verwenden. Der temporäre `T*`, den eine wx-API am Call-Site zurückgibt, ist in Ordnung; das Speichern als Member nicht.
-  - **Ein Heap-Objekt besitzen**: ein Smart Pointer (`std::unique_ptr` / `std::shared_ptr`) oder `MakeOwned<T>`, wenn ein wx-Widget an seinen wx-owned Parent übergeben wird.
-
-## Werkzeuge
-
-### clang-tidy
 
 **Durchsetzungs-Gate (Build-Brecher).** Das Gate führt clang-tidy auf der einzelnen Translation Unit `src/app/main.cpp` aus — die transitiv alle `src/`-Header via `HeaderFilterRegex` abdeckt — und stuft jedes Finding als Error ein:
 
@@ -293,7 +111,7 @@ Beachte die vier Schichten und die inwards-only-Abhängigkeitsregel aus den [Sch
 cmake --build build --target clang-tidy   # schlägt bei JEDEM Finding fehl
 ```
 
- Der Baum wird bei **null Findings** gehalten; ein neues Finding bricht dieses Target. Das Gate ist bewusst *nicht* Teil des Standard-Builds, damit normale Compiles schnell bleiben — explizit oder in CI ausführen. Bevorzuge diese Single-TU-Form gegenüber direktem Globbing von `src/**/*.hpp`: Header isoliert zu analysieren erzeugt künstliches `misc-include-cleaner`-Rauschen für die GL-/wx-Umbrella-Header, das in einer echten Translation Unit nie auftritt. Die in `.clang-tidy` deaktivierten Checks tragen jeweils einen Kommentar, der erklärt, warum (glm-Unions, GL-/wx-C-API-Interop, absichtlicher Stil); siehe auch die Unterdrückungsregel unter [Build-Prüfungen](#build-prüfungen).
+Der Baum wird bei **null Findings** gehalten; ein neues Finding bricht dieses Target. Das Gate ist bewusst *nicht* Teil des Standard-Builds, damit normale Compiles schnell bleiben — explizit oder in CI ausführen. Bevorzuge diese Single-TU-Form gegenüber direktem Globbing von `src/**/*.hpp`: Header isoliert zu analysieren erzeugt künstliches `misc-include-cleaner`-Rauschen für die GL-/wx-Umbrella-Header, das in einer echten Translation Unit nie auftritt. Die in `.clang-tidy` deaktivierten Checks tragen jeweils einen Kommentar, der erklärt, warum (glm-Unions, GL-/wx-C-API-Interop, absichtlicher Stil).
 
 Voller Lauf (Bericht in `build/clang-tidy.log`):
 ```bash
@@ -321,81 +139,198 @@ Warum die Extra-Args:
 
 ### clang-format
 
+`.clang-format` ist die verbindliche Quelle für das Formatting (ClangFormat-Doku (https://clang.llvm.org/docs/ClangFormat.html)).
+
 ```bash
 find . -regex '.*\.\(cpp\|cxx\|hpp\|cc\|h\)' -not -path './build/*' -not -path './external/*' -exec clang-format -style=file -i {} +
 ```
-# TODO.txt
-### CLAUDE.md — decade
 
-## Projekt
-decade ist ein C++23-Projekt (CMake, wxWidgets, Boost, OpenGL). Es ist aus
-einem Prototyp gewachsen und trägt technische Schulden: Spaghetti-Strukturen,
-Gott-Klassen, unklare Besitzverhältnisse. Ziel ist **evolutionäres Refactoring**
-— schrittweise, verhaltenserhaltend, ohne grossen Rewrite.
+### CI
 
-## Grundhaltung bei Änderungen
-- **Sicherheit vor Struktur.** Bevor eine strukturelle Änderung an einer
-  Gott-Klasse oder einem verworrenen Pfad beginnt, muss eine Blackbox-Absicherung
-  stehen (Characterization Test: Input rein, Ist-Output als Erwartung
-  festschreiben). Kein Umbau ohne diese Absicherung.
-- **Verhalten nicht ändern, während aufgeräumt wird.** Aufräumen (Formatierung,
-  Umbenennung, Warnungsbeseitigung) und Verhaltensänderung sind *getrennte*
-  Commits. Beim „Reparieren" einer Warnung nie stillschweigend die Semantik
-  ändern.
-- **Kleine, umkehrbare Schritte.** Ein Commit = eine Absicht. Grosse gemischte
-  Diffs vermeiden.
-- Reine Formatierungscommits isolieren und in `.git-blame-ignore-revs`
-  eintragen, damit die Historie lesbar bleibt.
+Die CI-Workflow-Datei ist derzeit deaktiviert (`.github/workflows/cmake.yml.disable`); siehe das Forgejo-CI-TODO im [Backlog](#arbeitsnotizen--backlog).
 
-## Besitzverhältnisse (Ownership)
-Der Kern der Schulden hier ist unklarer Besitz, nicht fehlende Kommentare.
-- **Besitz explizit machen.** RAII durchgehend; kein manuelles `new`/`delete` in
-  neuem oder berührtem Code.
-- Reihenfolge der Wahl: Wertsemantik / Stack / Container zuerst → `unique_ptr`
-  für exklusiven Besitz → `shared_ptr` *nur*, wenn Besitz nachweislich geteilt
-  ist (ein Design-Signal, kein Default) → `weak_ptr` gegen Zyklen.
-- Rohzeiger nur als nicht-besitzende Beobachter, nie als Besitzer.
+## Architektur
 
-## Code-Ästhetik: selbstdokumentierend
-Ziel: Der Code kommuniziert seine Absicht selbst; Prosa ist minimal.
-- **Intention-revealing names**: Namen nennen den Zweck, nicht die Mechanik.
-- Kleine, fokussierte Funktionen mit einer Verantwortung.
-- Kommentare erklären das **Warum** (Entscheidung, Trade-off, Nicht-Offensichtliches),
-  nie das Was. Ein Kommentar, der beschreibt, *was* der Code tut, ist ein Hinweis,
-  den Code klarer zu machen — nicht, den Kommentar zu behalten.
-- **Principle of Least Astonishment**: Verhalten entspricht dem, was Signatur und
-  Name erwarten lassen.
+### Ziele
 
-## Wissen nicht duplizieren: SSOT
-- Massgeblich ist **Single Source of Truth**: Jedes Stück Wissen (Regel,
-  Konstante, Domänenentscheidung) hat genau eine autoritative Repräsentation.
-- „DRY" hier im Originalsinn verstehen: Duplikation von *Wissen/Absicht*
-  vermeiden — nicht mechanisch jeden gleich aussehenden Codeblock zusammenlegen.
-- Zwei zufällig identische Blöcke, die *verschiedene* Konzepte ausdrücken,
-  bleiben getrennt. Duplikation ist billiger als die falsche Abstraktion; im
-  Zweifel nicht verfrüht abstrahieren.
-- **const-correctness** konsequent: SSOT für Veränderlichkeit — was nicht
-  verändert wird, ist `const`.
+- Den Startpfad klein und testbar halten.
+- UI-Verdrahtung vom App-Bootstrap isolieren.
+- Den Datenfluss zwischen Stores, Panels und Renderer explizit halten.
+- Klare Schichtung und selbsterklärende Namen, damit der Code navigierbar bleibt — siehe [Selbsterklärender Code](#selbsterklärender-code).
 
-## C++-Spezifika
-- **Header-Hygiene**: Include-Dickicht auflösen (Vorwärtsdeklarationen, minimale
-  Includes, include-what-you-use). Grösserer struktureller Hebel als
-  Reformatierung, senkt nebenbei Compile-Zeiten.
-- **Warnungen schrittweise**: `-Wall -Wextra` an; Warnungen als getrackte Metrik
-  abbauen. `-Werror` nicht sofort projektweit, sondern für bereinigte Module /
-  neu berührten Code scharfschalten.
-- `clang-format` / `clang-tidy` als konsistenter Style; Änderungen daraus als
-  eigene Commits (siehe oben).
+### Schichten & Schichtregeln
 
-## Was zu vermeiden ist
-- Strukturelle Umbauten ohne vorherige Test-Absicherung.
-- Verhaltensänderung vermischt mit Aufräumen im selben Commit.
-- Massen-Reformatierung vermischt mit Logikänderung.
-- Spekulative Abstraktion / verfrühtes DRY über Konzeptgrenzen hinweg.
-- `shared_ptr` als Default statt als bewusstes Besitz-Signal.
+Die Codebasis folgt einer Architektur mit vier Schichten im Sinn der Clean Architecture (https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html). Abhängigkeiten fliessen nur **nach innen** (Presentation → Application → Domain; Infrastructure wird von der Application konsumiert). Die Domain kennt nichts anderes; die Infrastructure kennt nur die Domain-Typen, die sie serialisiert. Neuer Code muss angeben, zu welcher Schicht er gehört, und deren Abhängigkeitsgrenzen einhalten.
 
-## Stil
+- **Presentation** — wxWidgets-Panels, GL-Canvas-Wrapper, Menüs, Dialoge. Jedes Panel besitzt seine Widgets und bietet Signale mit derselben Schnittstelle wie sein Store.
+- **Application** — Composition Root, EventBus, Binder, Rendering-Adapter, App-Lifecycle: konstruiert, besitzt und verdrahtet, enthält aber selbst keine Domänenlogik.
+- **Domain** — Value Objects, Stores, Transformationslogik, sigslot-Signale — UI-agnostisch und Boost-frei (kein `friend boost::serialization::access`, keine `serialize`-Member).
+- **Infrastructure** — Rendering (OpenGL, FreeType), Persistenz (XML/CSV/PNG), Hit-Testing (Bullet) — nicht-intrusiv, kennt nur Domain-Typen.
 
-- Kommentare und Doku: knappes, aktives Deutsch (Wolf Schneider). So wenige Zeilen wie möglich; nur Nicht-Offensichtliches kommentieren.
-- **Echte Umlaute schreiben** (ä/ö/ü), nie Ersatzschreibweisen (ae/oe/ue). Schweizer Rechtschreibung: ss statt ß.
+Welche Dateien zu welcher Schicht gehören, zeigt die Verzeichnisstruktur unter `src/` selbst — der Code ist die Referenz, nicht diese Datei.
 
+Regeln:
+
+1. Der Prozesseinstiegspunkt enthält keine Business- oder UI-Verdrahtungslogik.
+2. Der App-Lifecycle konstruiert High-Level-Objekte, kennt aber keine Panel-/Store-Interna.
+3. Die Composition Root besitzt alle Lifetimes. Die Verdrahtung lebt getrennt davon im Binder (freie Funktionen) — Komponenten kennen einander nicht direkt.
+4. Die Domain bleibt UI-agnostisch — kein wx, kein GL, kein Boost.
+5. Stores publizieren ihren Zustand über den EventBus; Konsumenten abonnieren über den Bus statt über einzelne Store-Signale.
+6. Infrastructure nimmt Domain-Typen per Referenz; sie darf nicht von Presentation abhängen.
+7. Umgebung und CLI werden an genau einer Stelle gelesen und in ein Options-Objekt übersetzt; CLI-Argumente haben Vorrang vor den `DECADE_*`-Variablen.
+8. Die Serialisierung ist nicht-intrusiv: Sie arbeitet nur über öffentliche APIs und besitzt das On-Disk-Format; Domain-Typen wissen nichts von Persistenz.
+9. Genau eine Brücke verbindet Application und Rendering-Infrastructure: der Rendering-Adapter mit seinem Scene-Composer. Presentation hängt nie von GL-Typen ab — sie sieht den Scene-Graph nur als GL-freies Read-Model (Snapshot).
+10. Der anwendungsweite `LocaleDateFormatter` wird einmal in der Composition Root konstruiert und per Referenz weitergereicht — die Locale-Konfiguration bleibt an einer Stelle.
+
+### Domain-Muster: Value Objects & Stores
+
+- **Value Objects (https://martinfowler.com/bliki/ValueObject.html)** halten Daten plus die Abfragen darauf und kapseln ihren Zustand: Datenmember `private`, Zugriff über konstante Accessors, Änderung nur über benannte Setter — so bleiben Invarianten und On-Disk-Format an einer Stelle. Kein Signal, keine Serialisierung, kein `friend` → Rule of Zero (https://en.cppreference.com/w/cpp/language/rule_of_three), frei kopierbar.
+- **Stores** kombinieren ein Value Object mit einem `sigslot::signal` und einer Re-Entry-Guard. Sie haben Identität → explizit nicht kopierbar. Das Signal trägt den Value (`signal<const Value&>`), sodass Konsumenten mit kopierbaren Value Objects arbeiten; der Store bietet `Receive`/`Send`/`Get`, keine eigene Query-Delegation.
+- Value Object und Store liegen in **separaten Dateien**, benannt nach der Hauptklasse (`date_group.hpp` + `date_group_store.hpp`); der Value-Object-Header hat keine Store-Abhängigkeit.
+
+### Datums- & Intervallsemantik
+
+- `Date` (proleptischer Gregorianischer Kalender, expliziter Invalid-State) und `DatePeriod` sind die datenbankfreie Schnittstelle. Die Kalenderberechnungen sind an ICU delegiert und bewusst auf genau zwei Stellen beschränkt: das interne Arithmetik-Backend und den `LocaleDateFormatter` (sprach- und locale-abhängiges Parsen und Formatieren für GUI und CSV). Ein Wechsel der Datumslibrary heisst: genau diese zwei Stellen neu implementieren — sonst greift niemand direkt auf ICU-Datum-APIs zu.
+- Persistiert wird als ISO-8601-String (https://de.wikipedia.org/wiki/ISO_8601); das frühere Boost.DateTime-basierte Projektdateiformat ist **nicht mehr lesbar** (bewusster Formatbruch).
+- `DatePeriod` ist **überall im Modell einheitlich halb-offen `begin, end)`** (zur Begründung: [Dijkstra, EWD831 (https://www.cs.utexas.edu/users/EWD/transcriptions/EWD08xx/EWD831.html)) — `LengthDays()` ist `end - begin`, `Last()` der Tag vor `end`, und ein Zeitraum ohne enthaltenen Tag (`end <= begin`) ist *null* (die Stores verwerfen null Periods). Nutzer denken in *inklusiven* "von .. bis"-Daten; die Umrechnung passiert an genau zwei nutzerseitigen Grenzen — Datumstabellen-Panel und CSV-I/O — via `PeriodFromInclusiveDates()` beim Eingang und `Last()` bei der Anzeige. Nirgends sonst soll ±1-Tag-Arithmetik auftauchen; es soll so bleiben.
+
+### Ereignisfluss (EventBus via sigslot)
+
+Die komponentenübergreifende Kommunikation läuft über einen in-process **EventBus**. Der Bus besitzt pro Domain-Ereignis ein typisiertes `sigslot::signal`. Panels und Stores behalten ihre eigenen `Send*`- / `Receive*`-Methoden, aber die Verdrahtung ist zentral in `main_window_binder::Bind` — jeder Produzent wird in den Bus weitergeleitet, jeder Konsument vom Bus abonniert. `MainWindow::EstablishConnections` ist nur noch ein dünner Wrapper, der `main_window_binder::Bind(...)` gefolgt von `SendInitialValues(...)` aufruft.
+
+```
+Panel ──Send──▶ EventBus.<event> ──▶ Store.Receive
+Store ──Send──▶ EventBus.<event> ──▶ Panel.Receive , CalendarPage.Receive , GLCanvas.Receive
+```
+
+Der `TransformDateEntry`-Adapter sitzt zwischen `date_entries` (Input) und `transformed_date_entries` (Output) auf dem Bus.
+
+Zwei weitere Themen laufen auf demselben Bus. Bei jedem Rebuild emittiert `CalendarPage` ein `SceneNodeSnapshot` (`scene_snapshot`-Topic), das das Scene-Tree-Panel rendert. Für Picking meldet der GL-Canvas Pointer-Bewegungen im Seitenraum an den `InteractionController`, der sie über `CalendarPage::Pick` (ein Bullet-Raycast über die `PickBox`es der Bars) hit-tested und den geänderten Hover über das `hovered`-Topic publiziert; `CalendarPage::ReceiveHovered` färbt die Bar dann direkt um.
+
+```
+GLCanvas ──pointer move──▶ InteractionController ──Pick──▶ CalendarPage/PhysicsWorld
+InteractionController ──Send──▶ EventBus.hovered ──▶ CalendarPage.ReceiveHovered
+CalendarPage ──Send──▶ EventBus.scene_snapshot ──▶ SceneTreePanel.Receive
+```
+
+Wenn du einen neuen Zustand hinzufügst: Erzeuge ein Boost-freies **Value Object** plus einen `*Store` darum in `packages/`, ein Panel in `gui/`, füge ein typisiertes Signal zu `EventBus` hinzu und registriere beide Enden in `main_window_binder::Bind`. Wenn der Zustand persistiert wird, ergänze nicht-intrusive `save`/`load` (oder `serialize`) für den Value in `services/value_serialization.hpp` und eine Zeile in `project_io`. `CalendarPage` braucht nur dann einen `Receive*`-Slot, wenn sich der Zustand auf das Rendering auswirkt.
+
+### OpenGL-Initialisierung
+
+Verzögert: `MainWindow` ruft `GLCanvas::InitOpenGL(version, callback)` auf. Der Callback läuft **nachdem** der GL-Context aktuell ist — dort wird `CalendarPage` konstruiert und `main_window_binder::Bind` ausgeführt. Vor diesem Callback darf kein GL-Zustand angefasst werden.
+
+## Konventionen
+
+- C++23, keine Compiler-Erweiterungen.
+- Header-Guards benutzen den Dateinamenstil: der grossgeschriebene Dateiname mit dem Punkt vor dem Suffix als `_`, z. B. `main_window.hpp` → `MAIN_WINDOW_HPP`, `opengl_panel.hpp` → `OPENGL_PANEL_HPP`. Kein Verzeichnispfadpräfix. Das konsequent in `#ifndef`, `#define` und dem abschliessenden `#endif  // <GUARD>`-Kommentar anwenden. (Die clang-tidy-Prüfung `llvm-header-guard`, die sonst einen Full-Path-Stil erzwingen würde, ist in `.clang-tidy` deaktiviert — so lassen.)
+
+### Selbsterklärender Code
+
+Der Code kommuniziert seine Absicht selbst; Prosa ist die Ausnahme. Leitplanke ist P.1 «Express ideas directly in code» der C++ Core Guidelines (https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#Rp-direct).
+
+- **Namen tragen den Zweck, nicht den Mechanismus** — auf allen Ebenen: Variablen, Funktionen, Klassen, Member. Anker: Intention-Revealing Selector (Kent Beck, «Smalltalk Best Practice Patterns») für Namen; Intention-Revealing Interfaces (Eric Evans, DDD Reference, https://www.domainlanguage.com/ddd/reference/) für Schnittstellen; General Naming Rules (https://google.github.io/styleguide/cppguide.html#General_Naming_Rules): für Lesbarkeit optimieren, keine kryptischen Abkürzungen.
+- **Struktur erklärt sich selbst:** kleine Einheiten mit einer Verantwortung; eine Abstraktionsebene pro Funktion (Single Level of Abstraction Principle, SLAP); tiefe Module — kleine Schnittstelle, viel Funktionalität dahinter (Deep Modules; John Ousterhout, «A Philosophy of Software Design», https://web.stanford.edu/~ouster/cgi-bin/book.php).
+- **Kommentare sind sparsam** und erklären nur das nicht-offensichtliche Warum (Entscheidung, Trade-off), nie das Was (NL.1 der Core Guidelines, https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#S-naming). Ein Kommentar, der beschreibt, *was* der Code tut, ist ein Hinweis, den Code klarer zu machen — nicht, den Kommentar zu behalten.
+
+### Naming & Style
+
+Konvention: Google C++ Style (https://google.github.io/styleguide/cppguide.html#Naming) (in Kraft):
+
+- Typen: `PascalCase` (`DateGroup`).
+- Funktionen & Methoden: `PascalCase` (`GetDateGroups()`); triviale Accessor/Mutator dürfen `snake_case` wie ihr Member heissen (`set_count()`).
+- Klassen-Datenmember: `snake_case` **mit Trailing-Underscore** (`date_format_`). Struct-Member ohne Underscore. Diese Member-Regel wird vom clang-tidy-Gate erzwungen (`readability-identifier-naming` (https://clang.llvm.org/extra/clang-tidy/checks/readability/identifier-naming.html) in `.clang-tidy`); ein Member ohne Underscore bricht den Build.
+- Locals: `snake_case`. Konstanten/Enumeratoren: `kPascalCase` (`kColorScale`).
+- Der Store-Suffix ist einheitlich `…Store` (kein `…Storage`) — bei Typen **und** bei Member-/Parameternamen (`…_store`, nicht `…_storage`).
+- Renames zur Vereinheitlichung von Schreibweise und Bezeichnern sind erwünscht. Wenn umbenannt wird, dann **vollständig und konsistent** über alle Vorkommen (Deklaration, Definition, Aufrufstellen, Tests, Doku) — kein halber Rename, der zwei Schreibweisen nebeneinander stehen lässt. Den Build danach grün halten (Compile + `ctest` + clang-tidy-Gate).
+
+### Ownership & Lifetimes
+
+- Niemals rohes `new`/`delete` verwenden. Ownership immer über Smart Pointer ausdrücken, damit die Lifetime im Typsystem kodiert ist, Ausnahmen keine Ressourcen leaken und Ownership-Übergaben an Call-Sites explizit sind (vgl. C++ Core Guidelines, Resource management (https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#S-resource)). wx-Widgets werden typischerweise via `.release()` an wx-owned Parents übergeben (wx besitzt dann die Lifetime).
+- Reihenfolge der Wahl: Wertsemantik / Stack / Container zuerst → `std::unique_ptr` für exklusiven Besitz → `std::shared_ptr` *nur*, wenn Besitz nachweislich geteilt ist (ein Design-Signal, kein Default) → `std::weak_ptr` gegen Zyklen.
+- Rohzeiger sind nie Besitzer (https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#Rr-ptr); als nicht-besitzende Beobachter sind sie nur in Parametern und Locals zulässig. **Raw-Pointer-Datenmember sind verboten** — auch nicht-ownende: ein rohes `T*`-Member kodiert weder Ownership noch Lifetime und ist die klassische Dangling-Pointer-Falle. Drücke die Beziehung stattdessen im Typsystem aus:
+  - **Nicht-ownende Referenz auf ein von `wxTrackable` abgeleitetes Objekt** (wx-owned Parents/Children — `wxWindow`, `wxEvtHandler` und die meisten wx-Klassen): `wxWeakRef<T>` (https://docs.wxwidgets.org/3.2/classwx_weak_ref_3_01_t_01_4.html) verwenden. Es setzt sich automatisch auf null zurück, wenn das referenzierte Objekt zerstört wird (siehe wxTrackable (https://docs.wxwidgets.org/3.2/classwx_trackable.html)).
+  - **Nicht-ownende Referenz auf ein wx-owned Objekt, das *nicht* `wxTrackable` ist** (z. B. `wxPGProperty` erbt von `wxObject`, daher kompiliert `wxWeakRef` nicht): **gar keinen Pointer cachen**. Das Objekt bei Bedarf vom Owner holen — aus dem Event, das es trägt (`wxPropertyGridEvent::GetProperty()`), oder per Namenssuche am Owner (`wxPropertyGrid::GetPropertyByName()`) — mit einer stabilen Namenskonstante, die Erzeugung und Lookup gemeinsam verwenden. Der temporäre `T*`, den eine wx-API am Call-Site zurückgibt, ist in Ordnung; das Speichern als Member nicht.
+  - **Ein Heap-Objekt besitzen**: ein Smart Pointer (`std::unique_ptr` / `std::shared_ptr`) oder `MakeOwned<T>`, wenn ein wx-Widget an seinen wx-owned Parent übergeben wird.
+- Rule of Five (https://en.cppreference.com/w/cpp/language/rule_of_three): Klassen mit expliziten Destruktoren sollten Copy/Move ebenfalls löschen oder defaulten (siehe `MainWindow`, `DateEntryStore`).
+
+### C++-Disziplin
+
+- const-correctness (https://isocpp.org/wiki/faq/const-correctness) konsequent: SSOT für Veränderlichkeit — was nicht verändert wird, ist `const`.
+- Include-Disziplin: Include-Dickicht auflösen (Vorwärtsdeklarationen, minimale Includes, include-what-you-use (https://include-what-you-use.org/)). Grösserer struktureller Hebel als Reformatierung, senkt nebenbei Compile-Zeiten.
+
+### Als Header-only konzipiert
+
+Die Codebasis ist **absichtlich als Header-only konzipiert** (`main.cpp` ist die einzige Translation Unit). Beim Hinzufügen von Code lieber bestehende Header direkt erweitern als in `.cpp` aufzuteilen. Diese Konvention auch bei Refactorings beibehalten. Definitionen, die in einem Header leben, müssen `inline` (https://en.cppreference.com/w/cpp/language/inline) sein (freie Funktionen und out-of-class Member-Definitionen), damit die Single-TU-Regel ODR-Verstösse nicht stillschweigend verdeckt, falls ein Header irgendwann von woanders eingebunden wird (z. B. Tests).
+
+### Stil (Sprache & Doku)
+
+- Kommentare und Doku: knappes, aktives Deutsch (Wolf Schneider (https://de.wikipedia.org/wiki/Wolf_Schneider)). So wenige Zeilen wie möglich; nur Nicht-Offensichtliches kommentieren.
+- Echte Umlaute schreiben (ä/ö/ü), nie ae/oe/ue. Schweizer Rechtschreibung: ss statt ß.
+- In Markdown-Dateien keine Tabellen verwenden; stattdessen mehrzeilige Listen. Sie sind leichter lesbar, leichter zu schreiben und oft kürzer.
+
+## Entwurfsprinzipien
+
+Das sind die verbindlichen Entwurfsprinzipien für diese Codebasis. Die etablierten Fachbegriffe sind hier — wie im ganzen Dokument — bewusst als semantische Anker gesetzt (Semantic Anchors, https://github.com/LLM-Coding/Semantic-Anchors): Der Begriff aktiviert das dahinterliegende Wissen, bei Menschen wie bei Coding-Agents, präziser als jede Umschreibung.
+
+- Single Responsibility Principle (https://en.wikipedia.org/wiki/Single-responsibility_principle) und Separation of Concerns (https://en.wikipedia.org/wiki/Separation_of_concerns); geringe Kopplung (https://en.wikipedia.org/wiki/Coupling_%28computer_programming%29), hohe Kohäsion (https://en.wikipedia.org/wiki/Cohesion_%28computer_science%29).
+- Domain-Driven Design (https://www.domainlanguage.com/ddd/reference/) — siehe das [Domain-Muster](#domain-muster-value-objects--stores) — und Clean Architecture (https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) — siehe [Schichten & Schichtregeln](#schichten--schichtregeln).
+- DRY (https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) als Wissens-DRY, massgeblich ist Single Source of Truth (https://en.wikipedia.org/wiki/Single_source_of_truth): jedes Stück Wissen (Regel, Konstante, Domänenentscheidung) hat genau eine autoritative Repräsentation — nicht jede ähnlich aussehende Zeile zusammenfalten. Aber: Duplikation ist billiger als die falsche Abstraktion (https://sandimetz.com/blog/2016/1/20/the-wrong-abstraction); zwei zufällig identische Blöcke, die *verschiedene* Konzepte ausdrücken, bleiben getrennt — im Zweifel nicht verfrüht abstrahieren (YAGNI, https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it; KISS, https://en.wikipedia.org/wiki/KISS_principle).
+  - Mechanik: wenn dieselbe mehrzeilige Form über mehrere Methoden (oder Panels) wiederkehrt, ziehe sie in einen kleinen Helfer hoch — ein `private`-Member, eine freie Funktion oder eine gemeinsame Basisklasse — statt sie zu kopieren. Etablierte Beispiele: `scene_shapes::FillRectangles` / `AddCenteredText` (Scene-Node-Erzeugung), `GLCanvas::ReadBackBuffer` (Rendern + `glReadPixels` + Zeilenflip), `MakeOwned<T>` (parent-owned Widgets), `TablePanelBase` (Tabellen-plus-Add/Delete-Gerüst), `serialization_detail::ColorToArray` / `ColorFromArray` (glm::vec4-Marshalling). Bevorzuge dies gegenüber Makros, weil Makros Lesbarkeit und Debuggability verschlechtern — die expliziten, feldweisen `save`/`load`-Paare in `services/value_serialization.hpp` bleiben absichtlich ausgeschrieben, weil sie das On-Disk-Format dokumentieren.
+- Selbsterklärender Code — Namen, Struktur und sparsame Kommentare tragen die Absicht: siehe [Selbsterklärender Code](#selbsterklärender-code).
+- Principle of Least Astonishment (https://en.wikipedia.org/wiki/Principle_of_least_astonishment): Namen, Signaturen und Verhalten passen zusammen.
+- Die kleinste nützliche Abstraktion wählen; expliziten Datenfluss vor versteckter Kopplung bevorzugen (Law of Demeter, https://en.wikipedia.org/wiki/Law_of_Demeter); unübersichtliche Konstrukte einkapseln statt sie zu verbreiten.
+- Stabile Regeln von instabilem Backlog trennen (diese Datei vs. der [Backlog-Abschnitt](#arbeitsnotizen--backlog)).
+
+### GRASP-Muster
+
+Wende die GRASP (https://en.wikipedia.org/wiki/GRASP_%28object-oriented_design%29)-Heuristiken zur Verantwortungszuweisung an, wenn du entscheidest, wo Code hingehört:
+
+- Information Expert
+- Creator
+- Controller
+- Low Coupling / High Cohesion
+- Indirection
+- Pure Fabrication
+- Polymorphism / Protected Variations
+
+## Refactoring
+
+- Sicherheit vor Struktur. Vor einer strukturellen Änderung an einer God Class oder einem anderen Code Smell (https://en.wikipedia.org/wiki/Code_smell) zuerst eine Black-Box-Schutzschicht ergänzen: einen Charakterisierungstest (https://en.wikipedia.org/wiki/Characterization_test) mit Eingabe und dem aktuellen Output als eingefrorener Erwartung. Kein Umbau ohne diese Absicherung.
+- Verhalten beim Aufräumen nicht ändern. Formatting, Umbenennungen, Warnungsbereinigung und Verhaltensänderungen sind getrennte Schritte oder Commits. Beim Reparieren einer Warnung nie stillschweigend die Semantik ändern.
+- Kleine, umkehrbare Schritte. Ein Commit, ein Ziel. Diffs klein genug halten, um sie sauber zurückdrehen zu können. Für grössere Umbauten: Mikado-Methode (Ellnestam/Brolund) — Ziel notieren, Voraussetzungen explorieren, bei Bruch zurückrollen statt durchdrücken.
+- Refactoring ist evolutionär, kein Rewrite. Erst das Risiko senken, dann entlang der tragenden Abstraktion schneiden.
+- Reine Formatierungscommits isolieren und in `.git-blame-ignore-revs` eintragen (`git blame --ignore-revs-file` (https://git-scm.com/docs/git-blame)), damit die Historie lesbar bleibt.
+- Schrittweiser Ablauf: zuerst stabilisieren (Charakterisierungstests, Smoke-Pfade, Baseline-Output) → dann aufteilen (kleine Nähte extrahieren — Seams nach Michael Feathers, «Working Effectively with Legacy Code» —, Verhalten unverändert) → danach umbenennen (Absicht sichtbar machen, ohne Semantik zu ändern) → zuletzt entkoppeln (Kopplung erst entfernen, wenn die Form bereits sicher ist).
+- Wenn etwas nicht sofort geändert werden kann, im [Backlog-Abschnitt](#arbeitsnotizen--backlog) notieren, damit es nicht verloren geht.
+
+## Arbeitsnotizen & Backlog
+
+Diese Datei hält die stabilen Leitplanken; offene Punkte, Fragen und Historik leben in diesem Abschnitt (die frühere `TODO.txt` ist hier aufgegangen). Neue Gedanken kurz halten und direkt neben die Regel setzen, die sie betreffen; Refactoring-Notizen bleiben hier, bis eine Entscheidung stabil genug für ein eigenes Dokument ist.
+
+### Offene TODOs
+
+- **CI via Forgejo-Runner (notiert 2026-07-10):** Für dieses Repo einen Build-/Test-Workflow auf https://git.blem.ch/ einrichten, analog zur bestehenden Kette bei `github-mirror/blem-website`. Abweichung: Der C++-Build würde den homelab-Server überlasten — darum vorher abklären, ob Forgejo den Runner-Job auf den Host `laptop-omen` auslagern kann (eigener Runner auf dem Laptop, Job-Zuordnung per Runner-Label). Erst planen, dann umsetzen.
+- **Kopflose Läufe auf CLI-Argumente umstellen (notiert 2026-07-10):** Die `DECADE_*`-Umgebungsvariablen aus [Kopflose / skriptgesteuerte Läufe](#kopflose--skriptgesteuerte-läufe) in CLI-Argumente nach der GNU-Argument-Syntax (https://www.gnu.org/software/libc/manual/html_node/Argument-Syntax.html) umwandeln; die Optionen behalten genau eine Parse-Stelle.
+- **wxWidgets 3.2 → 3.3 abklären (notiert 2026-07-10):** Installiert ist 3.2.11; die 3.3-Serie ist die aktuelle (3.3.0 seit Juni 2025, https://wxwidgets.org/news/2025/06/wxwidgets-3.3.0-released/; 3.3.2 seit März 2026, https://wxwidgets.org/news/2026/03/wxwidgets-3.2.10-and-3.3.2-released/). Besonders relevant: Seit 3.3.2 sind GLX und EGL im selben Programm nutzbar (Laufzeit- statt Compile-Zeit-Wahl) — genau die Einschränkung, die heute den `GDK_BACKEND=x11`-Screenshot-Weg bricht (EGL-Surface des GL-Canvas). Beim Upgrade die Screenshot-Anleitung unter [Kopflose / skriptgesteuerte Läufe](#kopflose--skriptgesteuerte-läufe) neu prüfen; Doku-Links von /3.2/ nachziehen.
+- **Repo ordnen und aufräumen (notiert 2026-07-10):** Struktur und Inhalte des ganzen Repositorys ordnen, nach demselben Vorgehen wie beim CLAUDE.md-Aufräumen (siehe Erledigt): Sichten → Trennen → Versorgen → Verdichten.
+
+### Offene Folgefragen
+
+- Welche 2 bis 3 Hotspots sollen zuerst charakterisiert werden?
+- Wie strikt soll Header-only als harte Vorgabe bleiben?
+- Wie viel API-Härtung mit non-null/span soll jetzt passieren?
+- Wie viel Include-Umschreiben soll pro Sprint automatisiert werden?
+- Wie weit soll die EventBus-Zentralisierung gehen, bevor ein pragmatischer Hybrid bleibt?
+
+### Weiterführende Refactoring-Ziele
+
+1. Stores sollen direkt in den `EventBus` publizieren, sobald alle Konsumenten bus-only sind.
+2. Das aktuelle Verhalten soll erhalten bleiben, während die Anzahl der Stellen sinkt, die von einem bestimmten Zustand wissen müssen.
+
+### Erledigt (Historik)
+
+- ~~CLAUDE.md ordnen und straffen~~ (2026-07-10) — dedupliziert (einkopierter `TODO.txt`-Block aufgelöst, Prinzipien-Listen vereint), nach Nutzungsfluss neu gegliedert, Referenz-Links ergänzt, Untermodul-Liste korrigiert (fünf statt drei).
+- ~~Style-Migration auf Google C++ Style~~ — Klassen-Datenmember tragen den Trailing-Underscore; vom Gate erzwungen via `readability-identifier-naming` (siehe [Naming & Style](#naming--style)).
+- ~~Datei- und Naming-Struktur in `packages/`~~ — Value-Object und Store je eigene Datei (nach Hauptklasse benannt), Store-Suffix einheitlich `…Store`; auch die Member-/Parameternamen sind auf `…_store` vereinheitlicht (kein `…_storage`).
+- ~~Unit-Tests für die CSV-/XML-Konvertierung~~ — `tests/services/test_csv_io.cpp` und `tests/services/test_value_serialization.cpp` decken Lesen/Schreiben, Rundläufe und Grenzfälle ab; die CSV-/XML-Logik liegt dafür in eigenen, wx-freien Headern (`services/csv_io.hpp`, `services/value_serialization.hpp`).
+- ~~`PageSetupConfig` als gekapseltes Value-Object~~ — war als einziges Value-Object ein öffentliches Aggregat; jetzt private Member mit `Size()`/`Margins()`/`Orientation()`-Accessoren und `Set*`-Settern, genau wie die übrigen Value-Objects. Persistenz läuft non-intrusiv über die `save`/`load`-Paarung in `services/value_serialization.hpp`.
