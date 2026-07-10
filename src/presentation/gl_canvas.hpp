@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "../common/debug_log.hpp"
+#include "../domain/page_setup_config.hpp"
 #include "../infrastructure/graphics/frame_stats.hpp"
 #include "../infrastructure/graphics/graphics_engine.hpp"
 #include "../infrastructure/graphics/mvp_matrices.hpp"
@@ -26,7 +27,6 @@
 #include "../infrastructure/graphics/png_writer.hpp"
 #include "../infrastructure/graphics/projection.hpp"
 #include "../infrastructure/graphics/render_to_png.hpp"
-#include "../domain/page_setup_config.hpp"
 #include "mouse_interaction.hpp"
 
 class GLCanvas : public wxGLCanvas {

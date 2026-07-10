@@ -30,18 +30,6 @@
 #include <string>
 #include <utility>
 
-#include "../presentation/calendar_panel.hpp"
-#include "../presentation/date_panel.hpp"
-#include "../presentation/document_panel.hpp"
-#include "../presentation/font_panel.hpp"
-#include "../presentation/groups_panel.hpp"
-#include "../presentation/license_panel.hpp"
-#include "../presentation/main_menu.hpp"
-#include "../presentation/gl_canvas.hpp"
-#include "../presentation/page_panel.hpp"
-#include "../presentation/scene_tree_panel.hpp"
-#include "../presentation/title_panel.hpp"
-#include "../presentation/wx_owned.hpp"
 #include "../domain/calendar_config_store.hpp"
 #include "../domain/date_entry_store.hpp"
 #include "../domain/date_format.hpp"
@@ -50,14 +38,26 @@
 #include "../domain/shape_configuration_store.hpp"
 #include "../domain/title_config_store.hpp"
 #include "../domain/transform_date_entry.hpp"
-#include "calendar/calendar_page.hpp"
-#include "event_bus.hpp"
-#include "calendar/interaction_controller.hpp"
-#include "main_window_binder.hpp"
-#include "runtime_options.hpp"
 #include "../infrastructure/persistence/csv_io.hpp"
 #include "../infrastructure/persistence/project_io.hpp"
+#include "../presentation/calendar_panel.hpp"
+#include "../presentation/date_panel.hpp"
+#include "../presentation/document_panel.hpp"
+#include "../presentation/font_panel.hpp"
+#include "../presentation/gl_canvas.hpp"
+#include "../presentation/groups_panel.hpp"
+#include "../presentation/license_panel.hpp"
+#include "../presentation/main_menu.hpp"
+#include "../presentation/page_panel.hpp"
+#include "../presentation/scene_tree_panel.hpp"
+#include "../presentation/title_panel.hpp"
+#include "../presentation/wx_owned.hpp"
+#include "calendar/calendar_page.hpp"
+#include "calendar/interaction_controller.hpp"
+#include "event_bus.hpp"
+#include "main_window_binder.hpp"
 #include "runtime_info.hpp"
+#include "runtime_options.hpp"
 
 class MainWindow : public wxFrame {
  public:
@@ -447,16 +447,16 @@ inline void MainWindow::CallbackSaveXML(wxCommandEvent& event) {
 
 inline void MainWindow::LoadXML(const std::string& filepath) {
   persistence::LoadProjectXml(filepath, date_groups_store_, date_entry_store_,
-                          page_setup_store_, title_config_store_,
-                          shape_configuration_store_,
-                          calendar_configuration_store_);
+                              page_setup_store_, title_config_store_,
+                              shape_configuration_store_,
+                              calendar_configuration_store_);
 }
 
 inline void MainWindow::SaveXML(const std::string& filepath) {
   persistence::SaveProjectXml(filepath, date_groups_store_, date_entry_store_,
-                          page_setup_store_, title_config_store_,
-                          shape_configuration_store_,
-                          calendar_configuration_store_);
+                              page_setup_store_, title_config_store_,
+                              shape_configuration_store_,
+                              calendar_configuration_store_);
 }
 
 inline void MainWindow::CallbackImportCSV(wxCommandEvent& event) {
@@ -485,8 +485,8 @@ inline void MainWindow::CallbackExportCSV(wxCommandEvent& event) {
   }
 
   const std::string file_path = save_file_dialog.GetPath().ToStdString();
-  persistence::WriteDateEntriesToCsv(file_path, date_entry_store_.GetDateEntries(),
-                                 locale_date_format_);
+  persistence::WriteDateEntriesToCsv(
+      file_path, date_entry_store_.GetDateEntries(), locale_date_format_);
 }
 
 inline void MainWindow::CallbackExportPNG(wxCommandEvent& event) {

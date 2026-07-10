@@ -5,15 +5,6 @@
 #include <optional>
 #include <vector>
 
-#include "../infrastructure/graphics/pick_id.hpp"
-#include "../presentation/calendar_panel.hpp"
-#include "../presentation/date_panel.hpp"
-#include "../presentation/font_panel.hpp"
-#include "../presentation/groups_panel.hpp"
-#include "../presentation/gl_canvas.hpp"
-#include "../presentation/page_panel.hpp"
-#include "../presentation/scene_tree_panel.hpp"
-#include "../presentation/title_panel.hpp"
 #include "../domain/calendar_config.hpp"
 #include "../domain/calendar_config_store.hpp"
 #include "../domain/date_entry.hpp"
@@ -22,15 +13,24 @@
 #include "../domain/date_group_store.hpp"
 #include "../domain/page_setup_config.hpp"
 #include "../domain/page_setup_store.hpp"
+#include "../domain/scene_snapshot.hpp"
 #include "../domain/shape_configuration.hpp"
 #include "../domain/shape_configuration_store.hpp"
 #include "../domain/title_config.hpp"
 #include "../domain/title_config_store.hpp"
 #include "../domain/transform_date_entry.hpp"
+#include "../infrastructure/graphics/pick_id.hpp"
+#include "../presentation/calendar_panel.hpp"
+#include "../presentation/date_panel.hpp"
+#include "../presentation/font_panel.hpp"
+#include "../presentation/gl_canvas.hpp"
+#include "../presentation/groups_panel.hpp"
+#include "../presentation/page_panel.hpp"
+#include "../presentation/scene_tree_panel.hpp"
+#include "../presentation/title_panel.hpp"
 #include "calendar/calendar_page.hpp"
-#include "event_bus.hpp"
 #include "calendar/interaction_controller.hpp"
-#include "../domain/scene_snapshot.hpp"
+#include "event_bus.hpp"
 
 // Centralised wiring between domain stores, presentation panels, the
 // rendering adapter, and the GL canvas — all routed through `EventBus`.

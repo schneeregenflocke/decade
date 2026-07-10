@@ -6,14 +6,14 @@
 #include <string>
 #include <vector>
 
-#include "../infrastructure/graphics/pick_id.hpp"
 #include "../domain/calendar_config.hpp"
 #include "../domain/date_entry.hpp"
 #include "../domain/date_group.hpp"
 #include "../domain/page_setup_config.hpp"
+#include "../domain/scene_snapshot.hpp"
 #include "../domain/shape_configuration.hpp"
 #include "../domain/title_config.hpp"
-#include "../domain/scene_snapshot.hpp"
+#include "../infrastructure/graphics/pick_id.hpp"
 
 // Central typed event bus for cross-component communication.
 //

@@ -8,21 +8,21 @@
 #include <string>
 #include <vector>
 
-#include "../../infrastructure/graphics/font.hpp"
-#include "../../infrastructure/graphics/pick_id.hpp"
-#include "../../infrastructure/graphics/rect.hpp"
-#include "../../infrastructure/graphics/scene.hpp"
-#include "../../presentation/gl_canvas.hpp"
 #include "../../domain/calendar_config.hpp"
 #include "../../domain/date_entry.hpp"
 #include "../../domain/date_entry_bar_store.hpp"
 #include "../../domain/date_group.hpp"
 #include "../../domain/page_setup_config.hpp"
+#include "../../domain/scene_snapshot.hpp"
 #include "../../domain/shape_configuration.hpp"
 #include "../../domain/title_config.hpp"
+#include "../../infrastructure/graphics/font.hpp"
+#include "../../infrastructure/graphics/pick_id.hpp"
+#include "../../infrastructure/graphics/rect.hpp"
+#include "../../infrastructure/graphics/scene.hpp"
 #include "../../infrastructure/physics/physics_world.hpp"
+#include "../../presentation/gl_canvas.hpp"
 #include "calendar_scene_composer.hpp"
-#include "../../domain/scene_snapshot.hpp"
 
 // Rendering adapter: owns the domain state relevant to the calendar drawing,
 // receives updates via the Receive* slots, and drives the CalendarSceneComposer

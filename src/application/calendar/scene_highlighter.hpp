@@ -10,13 +10,13 @@
 #include <unordered_map>
 #include <vector>
 
+#include "../../domain/date_entry_bar_store.hpp"
+#include "../../domain/shape_configuration.hpp"
 #include "../../infrastructure/graphics/pick_id.hpp"
 #include "../../infrastructure/graphics/rect.hpp"
 #include "../../infrastructure/graphics/scene.hpp"
 #include "../../infrastructure/graphics/scene_graph.hpp"
 #include "../../infrastructure/graphics/shapes.hpp"
-#include "../../domain/date_entry_bar_store.hpp"
-#include "../../domain/shape_configuration.hpp"
 
 // Application/Infrastructure bridge: the interactive highlighting of the
 // calendar scene, kept apart from the construction concern

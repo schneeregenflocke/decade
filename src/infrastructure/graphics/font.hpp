@@ -20,11 +20,11 @@
 #include <vector>
 
 #include "freetype.hpp"
-#include "unicode.hpp"
 #include "rect.hpp"
 #include "shaders.hpp"
 #include "shapes_base.hpp"
 #include "texture_object.hpp"
+#include "unicode.hpp"
 
 // Append the code points of the half-open UTF-16 range [begin, end) of an
 // ICU string to out. char32At returns the full code point at a unit index; a

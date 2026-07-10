@@ -7,21 +7,21 @@
 #include <string>
 #include <vector>
 
+#include "../../domain/calendar_config.hpp"
+#include "../../domain/date_entry_bar_store.hpp"
+#include "../../domain/date_group.hpp"
+#include "../../domain/scene_snapshot.hpp"
+#include "../../domain/shape_configuration.hpp"
+#include "../../domain/title_config.hpp"
 #include "../../infrastructure/graphics/font.hpp"
 #include "../../infrastructure/graphics/graphics_engine.hpp"
 #include "../../infrastructure/graphics/pick_id.hpp"
 #include "../../infrastructure/graphics/scene.hpp"
 #include "../../infrastructure/graphics/shapes.hpp"
-#include "../../domain/calendar_config.hpp"
-#include "../../domain/date_entry_bar_store.hpp"
-#include "../../domain/date_group.hpp"
-#include "../../domain/shape_configuration.hpp"
-#include "../../domain/title_config.hpp"
 #include "calendar_layout.hpp"
 #include "calendar_scene_nodes.hpp"
 #include "calendar_section_builders.hpp"
 #include "scene_highlighter.hpp"
-#include "../../domain/scene_snapshot.hpp"
 #include "scene_snapshot_builder.hpp"
 
 // Builds and fills the calendar scene graph from domain state. This is the

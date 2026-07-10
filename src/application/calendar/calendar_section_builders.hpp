@@ -14,13 +14,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../../infrastructure/graphics/font.hpp"
-#include "../../infrastructure/graphics/pick_id.hpp"
-#include "../../infrastructure/graphics/rect.hpp"
-#include "../../infrastructure/graphics/scene_graph.hpp"
-#include "../../infrastructure/graphics/scene_shape_filler.hpp"
-#include "../../infrastructure/graphics/shaders.hpp"
-#include "../../infrastructure/graphics/shapes.hpp"
 #include "../../domain/calendar_config.hpp"
 #include "../../domain/date.hpp"
 #include "../../domain/date_entry_bar_store.hpp"
@@ -28,6 +21,13 @@
 #include "../../domain/shape_configuration.hpp"
 #include "../../domain/timeline_projection.hpp"
 #include "../../domain/title_config.hpp"
+#include "../../infrastructure/graphics/font.hpp"
+#include "../../infrastructure/graphics/pick_id.hpp"
+#include "../../infrastructure/graphics/rect.hpp"
+#include "../../infrastructure/graphics/scene_graph.hpp"
+#include "../../infrastructure/graphics/scene_shape_filler.hpp"
+#include "../../infrastructure/graphics/shaders.hpp"
+#include "../../infrastructure/graphics/shapes.hpp"
 #include "calendar_layout.hpp"
 #include "calendar_scene_nodes.hpp"
 
