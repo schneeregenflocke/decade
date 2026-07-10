@@ -8,10 +8,10 @@
 #include <string>
 #include <vector>
 
-#include "../../graphics/font.hpp"
-#include "../../graphics/pick_id.hpp"
-#include "../../graphics/rect.hpp"
-#include "../../graphics/scene.hpp"
+#include "../../infrastructure/graphics/font.hpp"
+#include "../../infrastructure/graphics/pick_id.hpp"
+#include "../../infrastructure/graphics/rect.hpp"
+#include "../../infrastructure/graphics/scene.hpp"
 #include "../../presentation/opengl_panel.hpp"
 #include "../../domain/calendar_config.hpp"
 #include "../../domain/date_entry.hpp"
@@ -20,7 +20,7 @@
 #include "../../domain/page_setup_config.hpp"
 #include "../../domain/shape_configuration.hpp"
 #include "../../domain/title_config.hpp"
-#include "../../physics/physics_world.hpp"
+#include "../../infrastructure/physics/physics_world.hpp"
 #include "calendar_scene_composer.hpp"
 #include "scene_snapshot.hpp"
 

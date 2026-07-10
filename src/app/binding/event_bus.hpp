@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include "../../graphics/pick_id.hpp"
+#include "../../infrastructure/graphics/pick_id.hpp"
 #include "../../domain/calendar_config.hpp"
 #include "../../domain/date_entry.hpp"
 #include "../../domain/date_group.hpp"

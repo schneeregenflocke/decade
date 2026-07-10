@@ -14,13 +14,13 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../../graphics/font.hpp"
-#include "../../graphics/pick_id.hpp"
-#include "../../graphics/rect.hpp"
-#include "../../graphics/scene_graph.hpp"
-#include "../../graphics/scene_shape_filler.hpp"
-#include "../../graphics/shaders.hpp"
-#include "../../graphics/shapes.hpp"
+#include "../../infrastructure/graphics/font.hpp"
+#include "../../infrastructure/graphics/pick_id.hpp"
+#include "../../infrastructure/graphics/rect.hpp"
+#include "../../infrastructure/graphics/scene_graph.hpp"
+#include "../../infrastructure/graphics/scene_shape_filler.hpp"
+#include "../../infrastructure/graphics/shaders.hpp"
+#include "../../infrastructure/graphics/shapes.hpp"
 #include "../../domain/calendar_config.hpp"
 #include "../../domain/date.hpp"
 #include "../../domain/date_entry_bar_store.hpp"

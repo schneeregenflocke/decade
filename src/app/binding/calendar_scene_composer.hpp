@@ -7,11 +7,11 @@
 #include <string>
 #include <vector>
 
-#include "../../graphics/font.hpp"
-#include "../../graphics/graphics_engine.hpp"
-#include "../../graphics/pick_id.hpp"
-#include "../../graphics/scene.hpp"
-#include "../../graphics/shapes.hpp"
+#include "../../infrastructure/graphics/font.hpp"
+#include "../../infrastructure/graphics/graphics_engine.hpp"
+#include "../../infrastructure/graphics/pick_id.hpp"
+#include "../../infrastructure/graphics/scene.hpp"
+#include "../../infrastructure/graphics/shapes.hpp"
 #include "../../domain/calendar_config.hpp"
 #include "../../domain/date_entry_bar_store.hpp"
 #include "../../domain/date_group.hpp"

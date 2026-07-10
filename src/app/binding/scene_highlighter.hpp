@@ -10,11 +10,11 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../../graphics/pick_id.hpp"
-#include "../../graphics/rect.hpp"
-#include "../../graphics/scene.hpp"
-#include "../../graphics/scene_graph.hpp"
-#include "../../graphics/shapes.hpp"
+#include "../../infrastructure/graphics/pick_id.hpp"
+#include "../../infrastructure/graphics/rect.hpp"
+#include "../../infrastructure/graphics/scene.hpp"
+#include "../../infrastructure/graphics/scene_graph.hpp"
+#include "../../infrastructure/graphics/shapes.hpp"
 #include "../../domain/date_entry_bar_store.hpp"
 #include "../../domain/shape_configuration.hpp"
 

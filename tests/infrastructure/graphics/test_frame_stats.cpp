@@ -2,7 +2,7 @@
 
 #include <chrono>
 
-#include "graphics/frame_stats.hpp"
+#include "infrastructure/graphics/frame_stats.hpp"
 
 using namespace std::chrono_literals;
 

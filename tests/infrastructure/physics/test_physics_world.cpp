@@ -2,9 +2,9 @@
 
 #include <vector>
 
-#include "graphics/pick_id.hpp"
-#include "graphics/rect.hpp"
-#include "physics/physics_world.hpp"
+#include "infrastructure/graphics/pick_id.hpp"
+#include "infrastructure/graphics/rect.hpp"
+#include "infrastructure/physics/physics_world.hpp"
 
 namespace {
 

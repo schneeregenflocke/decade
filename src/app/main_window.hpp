@@ -55,9 +55,9 @@
 #include "binding/interaction_controller.hpp"
 #include "binding/main_window_binder.hpp"
 #include "runtime_options.hpp"
-#include "services/csv_io.hpp"
-#include "services/project_io.hpp"
-#include "services/runtime_info.hpp"
+#include "../infrastructure/persistence/csv_io.hpp"
+#include "../infrastructure/persistence/project_io.hpp"
+#include "runtime_info.hpp"
 
 class MainWindow : public wxFrame {
  public:

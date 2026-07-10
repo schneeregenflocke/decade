@@ -5,8 +5,8 @@
 #include <glm/vec3.hpp>
 #include <vector>
 
-#include "../../graphics/frame_layout.hpp"
-#include "../../graphics/rect.hpp"
+#include "../../infrastructure/graphics/frame_layout.hpp"
+#include "../../infrastructure/graphics/rect.hpp"
 
 // Application/Infrastructure bridge: the calendar's page geometry, computed
 // once per rebuild from the page size, margins, title height and calendar span.

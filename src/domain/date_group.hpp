@@ -10,7 +10,7 @@
 
 // Pure domain value: one date group. No serialization, no signal -> Rule of
 // Zero, freely copyable. Persistence is handled non-intrusively in the
-// infrastructure layer (see app/services/value_serialization.hpp).
+// infrastructure layer (see infrastructure/persistence/value_serialization.hpp).
 class DateGroup {
  public:
   DateGroup() = default;

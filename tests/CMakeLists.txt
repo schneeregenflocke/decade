@@ -13,11 +13,11 @@ add_executable(decade_tests
 	domain/test_timeline_projection.cpp
 	domain/test_date_entry_store.cpp
 	domain/test_transform_date_entry.cpp
-	services/test_csv_io.cpp
-	services/test_value_serialization.cpp
-	physics/test_physics_world.cpp
-	graphics/test_pan_zoom_camera.cpp
-	graphics/test_frame_stats.cpp
+	infrastructure/persistence/test_csv_io.cpp
+	infrastructure/persistence/test_value_serialization.cpp
+	infrastructure/physics/test_physics_world.cpp
+	infrastructure/graphics/test_pan_zoom_camera.cpp
+	infrastructure/graphics/test_frame_stats.cpp
 	app/test_calendar_layout.cpp
 )
 

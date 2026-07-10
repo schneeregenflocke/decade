@@ -60,10 +60,10 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/decade_app.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/app_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/main_window.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/app/services/csv_io.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/app/services/project_io.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/app/services/runtime_info.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/app/services/value_serialization.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/persistence/csv_io.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/persistence/project_io.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/app/runtime_info.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/persistence/value_serialization.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/calendar_layout.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/calendar_page.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/calendar_scene_composer.hpp
@@ -108,27 +108,27 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/page_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/scene_tree_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/title_panel.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/debug_log.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/font.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/frame_layout.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/freetype.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/graphics_engine.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/icu.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/projection.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/rect.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/render_to_texture.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/render_to_png.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/shaders.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/shaders_info.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/shapes.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/shapes_base.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/texture_object.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/mvp_matrices.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/scene.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/scene_graph.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/scene_shape_filler.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/pick_id.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/physics/physics_world.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/debug_log.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/font.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/frame_layout.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/freetype.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/graphics_engine.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/icu.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/projection.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/rect.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/render_to_texture.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/render_to_png.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/shaders.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/shaders_info.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/shapes.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/shapes_base.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/texture_object.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/mvp_matrices.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/scene.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/scene_graph.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/scene_shape_filler.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/pick_id.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/physics/physics_world.hpp
 )
 
 
@@ -173,7 +173,7 @@ else()
 endif()
 
 # ICU: Unicode text handling (UTF-8 decode, NFC normalisation, grapheme
-# segmentation) in src/graphics/font.hpp. icu-uc = Unicode/common (libicuuc),
+# segmentation) in src/infrastructure/graphics/font.hpp. icu-uc = Unicode/common (libicuuc),
 # icu-i18n = i18n services incl. BreakIterator (libicui18n). No CMake config
 # ships on every distro, so go through pkg-config like epoxy. Headers are added
 # as SYSTEM so their warnings/clang-tidy findings stay out of our gate.

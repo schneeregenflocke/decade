@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "app/services/csv_io.hpp"
+#include "infrastructure/persistence/csv_io.hpp"
 #include "domain/date.hpp"
 #include "domain/date_entry.hpp"
 #include "domain/date_format.hpp"

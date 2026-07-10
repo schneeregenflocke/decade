@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-#include "app/services/value_serialization.hpp"
+#include "infrastructure/persistence/value_serialization.hpp"
 #include "domain/calendar_config.hpp"
 #include "domain/date.hpp"
 #include "domain/date_entry.hpp"

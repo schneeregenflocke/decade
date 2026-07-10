@@ -5,9 +5,9 @@
 #include <memory>
 #include <vector>
 
-#include "../../graphics/font.hpp"
-#include "../../graphics/scene_graph.hpp"
-#include "../../graphics/shapes.hpp"
+#include "../../infrastructure/graphics/font.hpp"
+#include "../../infrastructure/graphics/scene_graph.hpp"
+#include "../../infrastructure/graphics/shapes.hpp"
 #include "scene_snapshot.hpp"
 
 // Classifies the shape carried by a node into the GL-free SnapshotShapeKind, so

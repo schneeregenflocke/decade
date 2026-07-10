@@ -18,14 +18,14 @@
 #include <utility>
 #include <vector>
 
-#include "../graphics/debug_log.hpp"
-#include "../graphics/frame_stats.hpp"
-#include "../graphics/graphics_engine.hpp"
-#include "../graphics/mvp_matrices.hpp"
-#include "../graphics/pan_zoom_camera.hpp"
-#include "../graphics/png_writer.hpp"
-#include "../graphics/projection.hpp"
-#include "../graphics/render_to_png.hpp"
+#include "../infrastructure/graphics/debug_log.hpp"
+#include "../infrastructure/graphics/frame_stats.hpp"
+#include "../infrastructure/graphics/graphics_engine.hpp"
+#include "../infrastructure/graphics/mvp_matrices.hpp"
+#include "../infrastructure/graphics/pan_zoom_camera.hpp"
+#include "../infrastructure/graphics/png_writer.hpp"
+#include "../infrastructure/graphics/projection.hpp"
+#include "../infrastructure/graphics/render_to_png.hpp"
 #include "../domain/page_setup_config.hpp"
 #include "mouse_interaction.hpp"
 

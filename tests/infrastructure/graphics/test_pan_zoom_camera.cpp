@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "graphics/pan_zoom_camera.hpp"
+#include "infrastructure/graphics/pan_zoom_camera.hpp"
 
 namespace {
 

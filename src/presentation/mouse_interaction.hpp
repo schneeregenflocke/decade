@@ -9,9 +9,9 @@
 #include <glm/glm.hpp>
 #include <iostream>
 
-#include "../graphics/debug_log.hpp"
-#include "../graphics/mvp_matrices.hpp"
-#include "../graphics/pan_zoom_camera.hpp"
+#include "../infrastructure/graphics/debug_log.hpp"
+#include "../infrastructure/graphics/mvp_matrices.hpp"
+#include "../infrastructure/graphics/pan_zoom_camera.hpp"
 
 // Übersetzt Mausereignisse in Kamera-Befehle: Ziehen wird zum Pan-Delta im
 // Weltraum, das Mausrad zum Zoom-Faktor um den Zeiger. Der Pan-/Zoom-Zustand

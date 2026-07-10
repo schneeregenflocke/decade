@@ -7,7 +7,7 @@
 
 // Kind of shape a scene node carries, as a GL-free enum so the presentation
 // layer can describe a node without depending on the OpenGL shape types in
-// `src/graphics/`.
+// `src/infrastructure/graphics/`.
 enum class SnapshotShapeKind : std::uint8_t {
   kNone,
   kQuadrilateral,
@@ -18,7 +18,7 @@ enum class SnapshotShapeKind : std::uint8_t {
 // Application-layer read model of the render scene graph: a plain, GL-free
 // mirror of the SceneNode hierarchy. It exists so the presentation layer (the
 // scene-tree widget) can display the graph structure and per-node detail
-// without depending on the OpenGL `SceneNode` type in `src/graphics/`. The
+// without depending on the OpenGL `SceneNode` type in `src/infrastructure/graphics/`. The
 // rendering side builds it; the bus carries it; the panel renders it.
 //
 // `style_id` is the name of the domain ShapeConfiguration the node's appearance

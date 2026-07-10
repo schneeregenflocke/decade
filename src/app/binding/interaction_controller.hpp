@@ -8,8 +8,8 @@
 #include <sigslot/signal.hpp>
 #include <utility>
 
-#include "../../graphics/debug_log.hpp"
-#include "../../graphics/pick_id.hpp"
+#include "../../infrastructure/graphics/debug_log.hpp"
+#include "../../infrastructure/graphics/pick_id.hpp"
 
 // Application: turns pointer movement into picking events. The canvas feeds it
 // page-space points; it hit-tests them through a pluggable pick source (so it
