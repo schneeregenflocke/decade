@@ -1,0 +1,36 @@
+# CI auf git.blem.ch (Mirror github-mirror/decade): Build + ctest + clang-tidy-Gate.
+# Läuft auf dem CI-Runner mit Label `ubuntu` (docker-stacks/forgejo-runner,
+# docker-compose.ci.yml — aktuell auf laptop-omen, NICHT auf homelab: der
+# C++-Build würde den RPi überlasten). Getriggert vom Mirror-Sync, den ein
+# GitHub-Webhook bei jedem Push sofort anstösst.
+name: build
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu
+    container:
+      image: ubuntu:26.04
+    steps:
+      # Vor dem Checkout: actions/checkout braucht git im Job-Container.
+      - name: Toolchain & Abhängigkeiten
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+            git cmake ninja-build pkg-config g++ clang-tidy \
+            libboost-serialization-dev libepoxy-dev libwxgtk3.2-dev \
+            zlib1g-dev libpng-dev libfontconfig-dev libfreetype-dev \
+            libicu-dev libglm-dev libmsgsl-dev libgtest-dev libgl1-mesa-dev
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Configure
+        run: cmake -S . -B build -G Ninja
+      - name: Build
+        run: ninja -C build
+      - name: Tests
+        run: ctest --test-dir build --output-on-failure
+      - name: clang-tidy-Gate
+        run: cmake --build build --target clang-tidy
