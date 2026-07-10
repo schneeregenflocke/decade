@@ -7,41 +7,34 @@
 #include <array>
 #include <cmath>
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 
 #include "../graphics/debug_log.hpp"
 #include "../graphics/mvp_matrices.hpp"
+#include "../graphics/pan_zoom_camera.hpp"
 
-// Übersetzt Mausbewegungen (Ziehen und Mausrad) in Pan- und Zoom-Operationen
-// auf der View-Matrix der MVP. Der Zoom bleibt dabei auf den Mauszeiger
-// zentriert, indem die durch die Skalierung entstandene Verschiebung
-// korrigiert wird.
+// Übersetzt Mausereignisse in Kamera-Befehle: Ziehen wird zum Pan-Delta im
+// Weltraum, das Mausrad zum Zoom-Faktor um den Zeiger. Der Pan-/Zoom-Zustand
+// selbst lebt in PanZoomCamera.
 class MouseInteraction {
  public:
-  MouseInteraction()
-      : persistent_mouse_pos_(0.F),
-        translate_pre_scaled_(0.F),
-        translate_post_scaled_(0.F) {}
-
-  void Apply(MVP& mvp, wxPoint mouse_position, bool dragging,
-             int wheel_rotation) {
+  void Apply(MVP& mvp, PanZoomCamera& camera, wxPoint mouse_position,
+             bool dragging, int wheel_rotation) {
     glm::vec3 const current_mouse_pos = MouseWorldSpacePos(mouse_position, mvp);
     LogPointerInput(mouse_position, dragging, wheel_rotation,
                     current_mouse_pos);
 
-    // Reihenfolge tragend: der Zoom liest den Pan-Zustand über
-    // CalculateViewMatrix, Pan muss also zuerst laufen.
+    // Reihenfolge tragend: der Zoom korrigiert über die View-Matrix, die den
+    // aktuellen Pan-Zustand enthält — Pan muss also zuerst laufen.
     if (dragging) {
-      Pan(current_mouse_pos);
+      camera.Pan(current_mouse_pos - persistent_mouse_pos_);
     }
     if (wheel_rotation != 0) {
-      ZoomAroundMouse(current_mouse_pos, wheel_rotation);
+      camera.ZoomAround(current_mouse_pos, WheelZoomFactor(wheel_rotation));
     }
 
-    const auto view_matrix = CalculateViewMatrix(persistent_scale_factor_);
-    mvp.SetView(view_matrix);
-    LogViewState(view_matrix);
+    mvp.SetView(camera.ViewMatrix());
+    LogViewState(camera, mvp.GetView());
 
     persistent_mouse_pos_ = current_mouse_pos;
   }
@@ -56,31 +49,8 @@ class MouseInteraction {
   }
 
  private:
-  // Verschiebt die Seite um die Mausbewegung seit dem letzten Ereignis.
-  void Pan(const glm::vec3& current_mouse_pos) {
-    translate_pre_scaled_ += current_mouse_pos - persistent_mouse_pos_;
-  }
-
-  // Skaliert um den Mauszeiger: die Verschiebung, die der Punkt unter dem
-  // Zeiger durch die Skalierung erfährt, wird zurückkorrigiert.
-  void ZoomAroundMouse(const glm::vec3& current_mouse_pos, int wheel_rotation) {
-    const auto scale = static_cast<float>(wheel_rotation) / kMouseWheelStep;
-
-    const auto pre_scale_view_matrix =
-        CalculateViewMatrix(persistent_scale_factor_);
-    const auto pre_scale_mouse_pos =
-        MouseViewSpacePos(current_mouse_pos, pre_scale_view_matrix);
-
-    persistent_scale_factor_ *= std::exp(scale);
-
-    const auto post_scale_view_matrix =
-        CalculateViewMatrix(persistent_scale_factor_);
-    const auto post_scale_mouse_pos =
-        MouseViewSpacePos(current_mouse_pos, post_scale_view_matrix);
-
-    const glm::vec3 view_space_correction =
-        post_scale_mouse_pos - pre_scale_mouse_pos;
-    translate_post_scaled_ += view_space_correction;
+  static float WheelZoomFactor(int wheel_rotation) {
+    return std::exp(static_cast<float>(wheel_rotation) / kMouseWheelStep);
   }
 
   void LogPointerInput(wxPoint mouse_position, bool dragging,
@@ -95,22 +65,13 @@ class MouseInteraction {
     decade_debug::LogVec3("Mouse persistent (prev)", persistent_mouse_pos_);
   }
 
-  void LogViewState(const glm::mat4& view_matrix) const {
+  static void LogViewState(const PanZoomCamera& camera,
+                           const glm::mat4& view_matrix) {
     if (!decade_debug::LogEnabled()) {
       return;
     }
-    decade_debug::LogVec3("translate_pre_scaled", translate_pre_scaled_);
-    decade_debug::LogVec3("translate_post_scaled", translate_post_scaled_);
-    std::cout << "scale=" << persistent_scale_factor_ << '\n';
+    std::cout << "scale=" << camera.ScaleFactor() << '\n';
     decade_debug::LogMat4("view_matrix", view_matrix);
-  }
-
-  glm::mat4 CalculateViewMatrix(float scale_factor) {
-    auto pre_scaled = glm::translate(glm::mat4(1.F), translate_pre_scaled_);
-    auto post_scaled =
-        glm::scale(pre_scaled, glm::vec3(scale_factor, scale_factor, 1.F));
-    auto view_matrix = glm::translate(post_scaled, translate_post_scaled_);
-    return view_matrix;
   }
 
   static glm::vec3 MouseClipSpace(const wxPoint& mouse_pos_px) {
@@ -150,10 +111,7 @@ class MouseInteraction {
 
   static constexpr float kMouseWheelStep = 1200.F;
 
-  float persistent_scale_factor_{1.F};
-  glm::vec3 persistent_mouse_pos_;
-  glm::vec3 translate_pre_scaled_;
-  glm::vec3 translate_post_scaled_;
+  glm::vec3 persistent_mouse_pos_{0.F};
 };
 
 #endif  // MOUSE_INTERACTION_HPP

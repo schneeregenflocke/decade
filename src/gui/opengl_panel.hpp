@@ -20,6 +20,7 @@
 #include "../graphics/debug_log.hpp"
 #include "../graphics/graphics_engine.hpp"
 #include "../graphics/mvp_matrices.hpp"
+#include "../graphics/pan_zoom_camera.hpp"
 #include "../graphics/png_writer.hpp"
 #include "../graphics/projection.hpp"
 #include "../graphics/render_to_png.hpp"
@@ -171,6 +172,9 @@ class GLCanvas : public wxGLCanvas {
 
     rectf const view_size = page_size_.scale(view_size_scale);
     mvp_.SetProjection(Projection::OrthoMatrix(view_size));
+    camera_.SetScaleLimits(ComputeZoomLimits(
+        mvp_.GetProjection(), {page_size_.width(), page_size_.height()},
+        static_cast<float>(kExportPngDpi)));
 
     graphics_engine_->SetMVP(mvp_);
 
@@ -296,7 +300,7 @@ class GLCanvas : public wxGLCanvas {
     const wxPoint pos_physical(
         static_cast<int>(std::lround(event.GetPosition().x * scale)),
         static_cast<int>(std::lround(event.GetPosition().y * scale)));
-    mouse_interaction_->Apply(mvp_, pos_physical, event.Dragging(),
+    mouse_interaction_->Apply(mvp_, camera_, pos_physical, event.Dragging(),
                               event.GetWheelRotation());
     // Forward the cursor in page/world space for hit-testing. Computed after
     // Apply so it uses the current (possibly just panned/zoomed) view.
@@ -312,6 +316,7 @@ class GLCanvas : public wxGLCanvas {
 
   std::shared_ptr<GraphicsEngine> graphics_engine_;
   std::unique_ptr<MouseInteraction> mouse_interaction_;
+  PanZoomCamera camera_;
 
   rectf page_size_;
   MVP mvp_;

@@ -122,6 +122,14 @@ Die Codebasis ist **absichtlich als Header-only konzipiert** (`main.cpp` ist die
 - Diese Datei für stabile Leitplanken, Refactoring-Kriterien und Architekturgrenzen nutzen.
 - Neue Gedanken kurz halten und direkt neben die Regel setzen, die sie betreffen.
 - Markdown in diesem Repository soll keine Tabellen verwenden; stattdessen Listen mit klaren Aufzählungen und kurzen Teilsätzen.
+- **TODO — CI via Forgejo-Runner (notiert 2026-07-10):** Für dieses Repo einen
+  Build-/Test-Workflow auf https://git.blem.ch/ einrichten, analog zur bestehenden Kette bei
+  `github-mirror/blem-website`. Abweichung: Der C++-Build würde den homelab-Server überlasten —
+  darum vorher abklären, ob Forgejo den Runner-Job auf den Host `laptop-omen` auslagern kann
+  (eigener Runner auf dem Laptop, Job-Zuordnung per Runner-Label). Erst planen, dann umsetzen.
+- **TODO — CLAUDE.md aufräumen (notiert 2026-07-10):** Diese Datei ordnen und straffen
+  (Sichten → Trennen → Versorgen → Verdichten), als Vorstufe zum Ordnen und Aufräumen des
+  ganzen Repos.
 
 ## Architektur
 
