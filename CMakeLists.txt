@@ -274,7 +274,7 @@ embed_resources(${PROJECT_NAME}_RESOURCES ${RESOURCE_FILES})
 cmake_print_variables(${PROJECT_NAME}_RESOURCES)
 target_sources(${PROJECT_NAME} PRIVATE ${${PROJECT_NAME}_RESOURCES})
 
-option(DECADE_BUILD_TESTS "Build unit tests for src/domain/" ON)
+option(DECADE_BUILD_TESTS "Build unit tests (tests/ mirrors src/)" ON)
 if(DECADE_BUILD_TESTS)
 	enable_testing()
 	add_subdirectory(tests)
