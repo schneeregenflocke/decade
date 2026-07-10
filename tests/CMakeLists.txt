@@ -18,7 +18,7 @@ add_executable(decade_tests
 	infrastructure/physics/test_physics_world.cpp
 	infrastructure/graphics/test_pan_zoom_camera.cpp
 	infrastructure/graphics/test_frame_stats.cpp
-	app/test_calendar_layout.cpp
+	application/calendar/test_calendar_layout.cpp
 )
 
 target_compile_features(decade_tests PRIVATE cxx_std_23)

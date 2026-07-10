@@ -56,25 +56,25 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 target_sources(${PROJECT_NAME} PRIVATE
-	${CMAKE_CURRENT_SOURCE_DIR}/src/app/main.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/app/decade_app.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/app/app_config.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/app/main_window.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/application/main.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/application/decade_app.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/application/app_config.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/application/main_window.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/persistence/csv_io.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/persistence/project_io.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/app/runtime_info.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/application/runtime_info.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/persistence/value_serialization.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/calendar_layout.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/calendar_page.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/calendar_scene_composer.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/calendar_scene_nodes.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/calendar_section_builders.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/event_bus.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/interaction_controller.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/main_window_binder.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/scene_highlighter.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/application/calendar/calendar_layout.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/application/calendar/calendar_page.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/application/calendar/calendar_scene_composer.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/application/calendar/calendar_scene_nodes.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/application/calendar/calendar_section_builders.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/application/event_bus.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/application/calendar/interaction_controller.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/application/main_window_binder.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/application/calendar/scene_highlighter.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/scene_snapshot.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/app/binding/scene_snapshot_builder.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/application/calendar/scene_snapshot_builder.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/bar.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/calendar_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/calendar_config_store.hpp
@@ -294,8 +294,8 @@ if(CLANG_TIDY_EXE)
 			--warnings-as-errors=*
 			--extra-arg=-include --extra-arg=type_traits
 			--extra-arg=-Wno-error --extra-arg=-Wno-unknown-warning-option
-			${CMAKE_CURRENT_SOURCE_DIR}/src/app/main.cpp
+			${CMAKE_CURRENT_SOURCE_DIR}/src/application/main.cpp
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-		COMMENT "clang-tidy gate (warnings = errors) on src/app/main.cpp"
+		COMMENT "clang-tidy gate (warnings = errors) on src/application/main.cpp"
 		VERBATIM USES_TERMINAL)
 endif()

@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "app/binding/calendar_layout.hpp"
+#include "application/calendar/calendar_layout.hpp"
 #include "infrastructure/graphics/rect.hpp"
 
 namespace {

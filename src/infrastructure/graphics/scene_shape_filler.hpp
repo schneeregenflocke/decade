@@ -17,7 +17,7 @@
 // plain colours/line width and a shader/font (never a domain
 // ShapeConfiguration) so this stays a reusable graphics utility; the
 // calendar-specific mapping from a configuration to these primitives lives in
-// the binding layer.
+// the calendar adapter (src/application/calendar/).
 namespace scene_shapes {
 
 // Fills the RectanglesShape carried by `node` with the given rectangle(s) (a
