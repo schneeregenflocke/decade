@@ -9,7 +9,7 @@
 #include <glm/glm.hpp>
 #include <iostream>
 
-#include "../infrastructure/graphics/debug_log.hpp"
+#include "../common/debug_log.hpp"
 #include "../infrastructure/graphics/mvp_matrices.hpp"
 #include "../infrastructure/graphics/pan_zoom_camera.hpp"
 

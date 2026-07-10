@@ -108,7 +108,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/page_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/scene_tree_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/title_panel.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/debug_log.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/common/debug_log.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/font.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/frame_layout.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/infrastructure/graphics/freetype.hpp

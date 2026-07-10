@@ -18,7 +18,7 @@
 #include <utility>
 #include <vector>
 
-#include "../infrastructure/graphics/debug_log.hpp"
+#include "../common/debug_log.hpp"
 #include "../infrastructure/graphics/frame_stats.hpp"
 #include "../infrastructure/graphics/graphics_engine.hpp"
 #include "../infrastructure/graphics/mvp_matrices.hpp"

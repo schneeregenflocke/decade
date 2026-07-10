@@ -11,7 +11,7 @@
 #include <sigslot/signal.hpp>
 #include <string>
 
-#include "../infrastructure/graphics/debug_log.hpp"
+#include "../common/debug_log.hpp"
 #include "wx_owned.hpp"
 
 class FontPanel : public wxPanel {

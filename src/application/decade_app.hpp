@@ -11,7 +11,7 @@
 #include <memory>
 #include <string>
 
-#include "../infrastructure/graphics/debug_log.hpp"
+#include "../common/debug_log.hpp"
 #include "app_config.hpp"
 #include "main_window.hpp"
 #include "runtime_options.hpp"

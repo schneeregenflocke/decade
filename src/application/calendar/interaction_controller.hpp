@@ -8,7 +8,7 @@
 #include <sigslot/signal.hpp>
 #include <utility>
 
-#include "../../infrastructure/graphics/debug_log.hpp"
+#include "../../common/debug_log.hpp"
 #include "../../infrastructure/graphics/pick_id.hpp"
 
 // Application: turns pointer movement into picking events. The canvas feeds it
