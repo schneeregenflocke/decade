@@ -236,8 +236,8 @@ inline void MainWindow::SelectStartupTab() {
       return;
     }
   }
-  std::cerr << "DECADE_SELECT_TAB: no tab labelled '"
-            << *runtime_options_.select_tab << "'\n";
+  std::cerr << "--select-tab: no tab labelled '" << *runtime_options_.select_tab
+            << "'\n";
 }
 
 inline void MainWindow::InitializeOpenGL() {
@@ -267,10 +267,10 @@ inline void MainWindow::InitializeOpenGL() {
 }
 
 inline void MainWindow::LoadStartupFile() {
-  // Opt-in: a file is loaded only when one was supplied, either as the
-  // positional command-line argument or via DECADE_DEFAULT_CSV. With neither
-  // set the application starts with an empty project. The caller is responsible
-  // for the path, so there is no hidden working-directory-relative default.
+  // Opt-in: a file is loaded only when one was supplied as the positional
+  // command-line argument. Without it the application starts with an empty
+  // project. The caller is responsible for the path, so there is no hidden
+  // working-directory-relative default.
   if (!runtime_options_.startup_file) {
     return;
   }
@@ -296,15 +296,14 @@ inline void MainWindow::DumpPngIfRequested() {
     const std::string& path = *runtime_options_.dump_png_path;
     const int dpi =
         runtime_options_.dump_png_dpi.value_or(GLCanvas::kExportPngDpi);
-    std::cout << "DECADE_DUMP_PNG: writing " << path << " at " << dpi
-              << " dpi\n";
+    std::cout << "--dump-png: writing " << path << " at " << dpi << " dpi\n";
     gl_canvas_->SavePNG(path, dpi);
   }
   if (runtime_options_.dump_window_png_path) {
     const std::string path = *runtime_options_.dump_window_png_path;
     // Defer until after the first real paint so the back buffer is populated.
     CallAfter([this, path]() {
-      std::cout << "DECADE_DUMP_WINDOW_PNG: writing " << path << '\n';
+      std::cout << "--dump-window-png: writing " << path << '\n';
       gl_canvas_->SaveWindowPNG(path);
     });
   }
@@ -312,7 +311,7 @@ inline void MainWindow::DumpPngIfRequested() {
     const std::string path = *runtime_options_.dump_frame_png_path;
     // Defer until after the first real paint so every panel has drawn itself.
     CallAfter([this, path]() {
-      std::cout << "DECADE_DUMP_FRAME_PNG: writing " << path << '\n';
+      std::cout << "--dump-frame-png: writing " << path << '\n';
       DumpFramePng(path);
     });
   }
@@ -353,7 +352,7 @@ inline void MainWindow::DumpFramePng(const std::string& path) {
     wxImage::AddHandler(MakeOwned<wxPNGHandler>());
   }
   if (!bitmap.ConvertToImage().SaveFile(path, wxBITMAP_TYPE_PNG)) {
-    std::cerr << "DECADE_DUMP_FRAME_PNG: failed to write " << path << '\n';
+    std::cerr << "--dump-frame-png: failed to write " << path << '\n';
   }
 }
 

@@ -63,38 +63,39 @@ Eine CSV-Datendatei kann beim Start optional per CLI-Argument importiert werden.
 
 ### Kopflose / skriptgesteuerte Läufe
 
-Das Binary beachtet mehrere Umgebungsvariablen (gelesen an genau einer Stelle, `RuntimeOptionsFromEnv`) für nicht-interaktive Nutzung — CI, Screenshots, Smoke-Tests.
+Das Binary beachtet mehrere Kommandozeilen-Optionen in GNU-Syntax (`--name=wert` oder `--name wert`; `--help` zeigt alle) für nicht-interaktive Nutzung — CI, Screenshots, Smoke-Tests. Das Options-Vokabular ist an genau einer Stelle definiert und geparst (`AddRuntimeOptions` / `RuntimeOptionsFromParser` in `src/app/runtime_options.hpp`); Umgebungsvariablen liest das Binary keine mehr.
 
-**Bildaufnahme** — drei Variablen erfassen drei unterschiedliche Dinge; sie sind nicht redundant:
+**Bildaufnahme** — drei Optionen erfassen drei unterschiedliche Dinge; sie sind nicht redundant:
 
-- `DECADE_DUMP_PNG=<path>` — nur das Kalender-**Seitenbild** über ein off-screen FBO. Auflösung: Export-DPI, weisser Hintergrund, keine App-Chrome. Benötigt: nur OpenGL.
-- `DECADE_DUMP_WINDOW_PNG=<path>` — das **GL-Canvas-Pane** exakt wie auf dem Bildschirm (`glReadPixels` auf dem Back Buffer). Auflösung: Bildschirmauflösung, dunkle Ränder um die Seite. Benötigt: nur OpenGL, funktioniert unter Wayland.
-- `DECADE_DUMP_FRAME_PNG=<path>` — das **gesamte Fenster**: Tabs + Panels (`wxClientDC`-Blit) mit dem oben auf das GL-Back-Buffer komponierten Inhalt. Auflösung: Bildschirmauflösung. Benötigt: Widget-Read-back nur mit X11/Xvfb, unter Wayland leer.
+- `--dump-png=<path>` — nur das Kalender-**Seitenbild** über ein off-screen FBO. Auflösung: Export-DPI, weisser Hintergrund, keine App-Chrome. Benötigt: nur OpenGL.
+- `--dump-window-png=<path>` — das **GL-Canvas-Pane** exakt wie auf dem Bildschirm (`glReadPixels` auf dem Back Buffer). Auflösung: Bildschirmauflösung, dunkle Ränder um die Seite. Benötigt: nur OpenGL, funktioniert unter Wayland.
+- `--dump-frame-png=<path>` — das **gesamte Fenster**: Tabs + Panels (`wxClientDC`-Blit) mit dem oben auf das GL-Back-Buffer komponierten Inhalt. Auflösung: Bildschirmauflösung. Benötigt: Widget-Read-back nur mit X11/Xvfb, unter Wayland leer.
 
-`DUMP_WINDOW_PNG` ist die Canvas-only-Untermenge von `DUMP_FRAME_PNG`; verwende es, wenn du nur das gerenderte Canvas brauchst (und Xvfb vermeiden willst), und `DUMP_PNG`, wenn du einen sauberen High-DPI-Export der Seite selbst brauchst. Alle Dumps werden via `CallAfter` verzögert, damit der erste Paint bereits stattgefunden hat.
+`--dump-window-png` ist die Canvas-only-Untermenge von `--dump-frame-png`; verwende es, wenn du nur das gerenderte Canvas brauchst (und Xvfb vermeiden willst), und `--dump-png`, wenn du einen sauberen High-DPI-Export der Seite selbst brauchst. Alle Dumps werden via `CallAfter` verzögert, damit der erste Paint bereits stattgefunden hat.
 
 **Steuerung:**
 
-- `DECADE_DUMP_PNG_DPI=<dpi>` — Export-DPI für `DECADE_DUMP_PNG`; standardmässig `GLCanvas::kExportPngDpi` (200), wenn unset. Wird z. B. für hochaufgelöste README-Renderings verwendet.
-- `DECADE_EXIT_AFTER_MS=<ms>` — schliesst das Hauptfenster nach N ms automatisch.
-- `DECADE_SELECT_TAB=<label>` — wählt beim Start einen Notebook-Tab per Label vor (case-insensitive), z. B. zum Screenshotten eines bestimmten Tabs.
-- `DECADE_DEBUG_LOG=1` — aktiviert OpenGL-/Runtime-Debug-Logging. Leitet ausserdem wx-**Assert-Fehler nach stderr weiter und läuft weiter** statt einen modalen Dialog zu öffnen, damit headless/screenshotte Läufe einen fehlschlagenden `wxASSERT` sichtbar machen (statt still zu blockieren) — siehe `DecadeApp::OnAssertFailure`.
-- `DECADE_DEBUG_HOVER_BAR=<index>` — hebt beim Start die Bar mit dem angegebenen Index hervor, als wäre sie gehovert, um den Hover-Pfad ohne Live-Cursor zu screenshotten oder zu debuggen.
-- `DECADE_DEBUG_SELECT_NODE=<path>` — wählt beim Start den Scene-Tree-Node an `path` (`root/.../name`) aus und durchläuft damit den realen Selektionspfad (Scene-Tab-Detailgrid + Kalender-Selection-Highlight des Knotens und seines Teilbaums) ohne Zeigegerät.
-- `DECADE_DEFAULT_CSV=<path>` — optionale Startdatei (CSV oder XML), wenn kein Positionsargument gegeben ist; das CLI-Argument hat Vorrang. Es wird keine Datei geladen, wenn dies unset ist.
+- `--dump-png-dpi=<dpi>` — Export-DPI für `--dump-png`; standardmässig `GLCanvas::kExportPngDpi` (200), wenn nicht gesetzt. Wird z. B. für hochaufgelöste README-Renderings verwendet.
+- `--exit-after-ms=<ms>` — schliesst das Hauptfenster nach N ms automatisch.
+- `--select-tab=<label>` — wählt beim Start einen Notebook-Tab per Label vor (case-insensitive), z. B. zum Screenshotten eines bestimmten Tabs.
+- `--debug-log` — aktiviert OpenGL-/Runtime-Debug-Logging. Leitet ausserdem wx-**Assert-Fehler nach stderr weiter und läuft weiter** statt einen modalen Dialog zu öffnen, damit headless/screenshotte Läufe einen fehlschlagenden `wxASSERT` sichtbar machen (statt still zu blockieren) — siehe `DecadeApp::OnAssertFailure`.
+- `--debug-hover-bar=<index>` — hebt beim Start die Bar mit dem angegebenen Index hervor, als wäre sie gehovert, um den Hover-Pfad ohne Live-Cursor zu screenshotten oder zu debuggen.
+- `--debug-select-node=<path>` — wählt beim Start den Scene-Tree-Node an `path` (`root/.../name`) aus und durchläuft damit den realen Selektionspfad (Scene-Tab-Detailgrid + Kalender-Selection-Highlight des Knotens und seines Teilbaums) ohne Zeigegerät.
+
+Die Startdatei (CSV oder XML) wird ausschliesslich als Positionsargument übergeben (siehe [Startdatei](#startdatei)); ohne Angabe startet ein leeres Projekt.
 
 Typischer Smoke-Test (Sample-Daten explizit mitgeben):
 ```bash
-DECADE_DUMP_PNG=/tmp/decade_render.png DECADE_EXIT_AFTER_MS=2000 \
-  stdbuf -oL -eL timeout 12 ./build/decade test-files/test_dates_1.csv
+stdbuf -oL -eL timeout 12 ./build/decade \
+  --dump-png=/tmp/decade_render.png --exit-after-ms=2000 test-files/test_dates_1.csv
 ```
 
 Vollständiger UI-Screenshot (Tabs + Panels + Canvas) eines bestimmten Tabs. Der Widget-Read-back funktioniert nur auf dem **X11-Backend** — ein `wxClientDC`-Blit liefert unter Wayland schwarz — also headless unter **Xvfb** mit Software-GL ausführen. Das ist der unterstützte Weg, die echte GUI zu screenshotten: GNOME/Wayland blockiert programmatisches Screen-Capture, und `GDK_BACKEND=x11` auf einer laufenden XWayland-Session bricht die EGL-Surface des GL-Canvas.
 ```bash
 xvfb-run -a -s "-screen 0 1600x1000x24" \
   env GDK_BACKEND=x11 LIBGL_ALWAYS_SOFTWARE=1 \
-  DECADE_SELECT_TAB=Timeframe DECADE_DUMP_FRAME_PNG=/tmp/decade_ui.png \
-  DECADE_EXIT_AFTER_MS=3000 timeout 30 ./build/decade test-files/test_dates_1.csv
+  timeout 30 ./build/decade --select-tab=Timeframe \
+  --dump-frame-png=/tmp/decade_ui.png --exit-after-ms=3000 test-files/test_dates_1.csv
 ```
 
 ## Build-Prüfungen & Werkzeuge
@@ -177,7 +178,7 @@ Regeln:
 4. Die Domain bleibt UI-agnostisch — kein wx, kein GL, kein Boost.
 5. Stores publizieren ihren Zustand über den EventBus; Konsumenten abonnieren über den Bus statt über einzelne Store-Signale.
 6. Infrastructure nimmt Domain-Typen per Referenz; sie darf nicht von Presentation abhängen.
-7. Umgebung und CLI werden an genau einer Stelle gelesen und in ein Options-Objekt übersetzt; CLI-Argumente haben Vorrang vor den `DECADE_*`-Variablen.
+7. Die Kommandozeile wird an genau einer Stelle gelesen und in ein Options-Objekt übersetzt (`src/app/runtime_options.hpp`); Umgebungsvariablen liest die Anwendung nicht.
 8. Die Serialisierung ist nicht-intrusiv: Sie arbeitet nur über öffentliche APIs und besitzt das On-Disk-Format; Domain-Typen wissen nichts von Persistenz.
 9. Genau eine Brücke verbindet Application und Rendering-Infrastructure: der Rendering-Adapter mit seinem Scene-Composer. Presentation hängt nie von GL-Typen ab — sie sieht den Scene-Graph nur als GL-freies Read-Model (Snapshot).
 10. Der anwendungsweite `LocaleDateFormatter` wird einmal in der Composition Root konstruiert und per Referenz weitergereicht — die Locale-Konfiguration bleibt an einer Stelle.
@@ -310,7 +311,6 @@ Diese Datei hält die stabilen Leitplanken; offene Punkte, Fragen und Historik l
 ### Offene TODOs
 
 - **CI via Forgejo-Runner (notiert 2026-07-10):** Für dieses Repo einen Build-/Test-Workflow auf https://git.blem.ch/ einrichten, analog zur bestehenden Kette bei `github-mirror/blem-website`. Abweichung: Der C++-Build würde den homelab-Server überlasten — darum vorher abklären, ob Forgejo den Runner-Job auf den Host `laptop-omen` auslagern kann (eigener Runner auf dem Laptop, Job-Zuordnung per Runner-Label). Erst planen, dann umsetzen.
-- **Kopflose Läufe auf CLI-Argumente umstellen (notiert 2026-07-10):** Die `DECADE_*`-Umgebungsvariablen aus [Kopflose / skriptgesteuerte Läufe](#kopflose--skriptgesteuerte-läufe) in CLI-Argumente nach der GNU-Argument-Syntax (https://www.gnu.org/software/libc/manual/html_node/Argument-Syntax.html) umwandeln; die Optionen behalten genau eine Parse-Stelle.
 - **wxWidgets 3.2 → 3.3 abklären (notiert 2026-07-10):** Installiert ist 3.2.11; die 3.3-Serie ist die aktuelle (3.3.0 seit Juni 2025, https://wxwidgets.org/news/2025/06/wxwidgets-3.3.0-released/; 3.3.2 seit März 2026, https://wxwidgets.org/news/2026/03/wxwidgets-3.2.10-and-3.3.2-released/). Besonders relevant: Seit 3.3.2 sind GLX und EGL im selben Programm nutzbar (Laufzeit- statt Compile-Zeit-Wahl) — genau die Einschränkung, die heute den `GDK_BACKEND=x11`-Screenshot-Weg bricht (EGL-Surface des GL-Canvas). Beim Upgrade die Screenshot-Anleitung unter [Kopflose / skriptgesteuerte Läufe](#kopflose--skriptgesteuerte-läufe) neu prüfen; Doku-Links von /3.2/ nachziehen.
 - **Repo ordnen und aufräumen (notiert 2026-07-10):** Struktur und Inhalte des ganzen Repositorys ordnen, nach demselben Vorgehen wie beim CLAUDE.md-Aufräumen (siehe Erledigt): Sichten → Trennen → Versorgen → Verdichten.
 
@@ -329,6 +329,7 @@ Diese Datei hält die stabilen Leitplanken; offene Punkte, Fragen und Historik l
 
 ### Erledigt (Historik)
 
+- ~~Kopflose Läufe auf CLI-Argumente umstellen~~ (2026-07-10) — die `DECADE_*`-Umgebungsvariablen ersatzlos durch GNU-Long-Options ersetzt (`--dump-png`, `--exit-after-ms`, …, `--debug-log`; siehe [Kopflose / skriptgesteuerte Läufe](#kopflose--skriptgesteuerte-läufe)). Definition und Parsen des Vokabulars an genau einer Stelle (`AddRuntimeOptions` / `RuntimeOptionsFromParser` in `src/app/runtime_options.hpp`, via `wxCmdLineParser`); `DECADE_DEBUG_LOG` läuft jetzt über `decade_debug::SetLogEnabled` statt `getenv`; `DECADE_DEFAULT_CSV` gestrichen (Startdatei nur noch als Positionsargument).
 - ~~CLAUDE.md ordnen und straffen~~ (2026-07-10) — dedupliziert (einkopierter `TODO.txt`-Block aufgelöst, Prinzipien-Listen vereint), nach Nutzungsfluss neu gegliedert, Referenz-Links ergänzt, Untermodul-Liste korrigiert (fünf statt drei).
 - ~~Style-Migration auf Google C++ Style~~ — Klassen-Datenmember tragen den Trailing-Underscore; vom Gate erzwungen via `readability-identifier-naming` (siehe [Naming & Style](#naming--style)).
 - ~~Datei- und Naming-Struktur in `packages/`~~ — Value-Object und Store je eigene Datei (nach Hauptklasse benannt), Store-Suffix einheitlich `…Store`; auch die Member-/Parameternamen sind auf `…_store` vereinheitlicht (kein `…_storage`).

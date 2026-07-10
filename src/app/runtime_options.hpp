@@ -1,132 +1,148 @@
 #ifndef RUNTIME_OPTIONS_HPP
 #define RUNTIME_OPTIONS_HPP
 
+#include <wx/cmdline.h>
 #include <wx/string.h>
-#include <wx/utils.h>
 
 #include <cstddef>
 #include <cstdint>
-#include <exception>
 #include <iostream>
 #include <optional>
 #include <string>
 
 namespace app {
 
-// Centralises the runtime knobs the application reads at startup. These drive
-// non-interactive use (CI, screenshots, smoke tests) plus the optional startup
-// file. Command-line arguments take precedence over the environment (see
-// `DecadeApp::OnInit`). Keeping this here means the env-var vocabulary lives in
-// one place instead of being scattered across `MainWindow`.
+// Bündelt die Laufzeit-Optionen, die die Anwendung beim Start liest. Sie
+// steuern die nicht-interaktive Nutzung (CI, Screenshots, Smoke-Tests) plus
+// die optionale Startdatei. Alle Optionen sind Kommandozeilen-Argumente in
+// GNU-Syntax (`--name=wert` oder `--name wert`); `AddRuntimeOptions` und
+// `RuntimeOptionsFromParser` unten sind die einzige Stelle, die dieses
+// Vokabular definiert und parst.
 //
-// Recognised environment variables:
-//   DECADE_DEFAULT_CSV=<path>     opt-in startup file (CSV or XML); nothing is
-//                                 loaded unless this (or a CLI argument) is
-//                                 set.
-//   DECADE_DUMP_PNG=<path>        render the calendar page to PNG via FBO.
-//   DECADE_DUMP_PNG_DPI=<dpi>     export DPI for DECADE_DUMP_PNG; defaults to
-//                                 GLCanvas::kExportPngDpi when unset.
-//   DECADE_DUMP_WINDOW_PNG=<path> capture the window back buffer after paint.
-//   DECADE_DUMP_FRAME_PNG=<path>  capture the whole main frame (tabs + panels +
-//                                 canvas) to PNG via wxDC, compositing the GL
-//                                 back buffer on top. The widget read-back
-//                                 needs the X11 backend (a wxClientDC blit
-//                                 returns black under Wayland), so run it
-//                                 headless under Xvfb (see CLAUDE.md, "Headless
-//                                 / scripted runs", for the full xvfb-run
-//                                 line).
-//   DECADE_SELECT_TAB=<label>     pre-select a notebook tab by its label
-//                                 (case-insensitive) at startup, e.g. for
-//                                 screenshotting a specific tab.
-//   DECADE_EXIT_AFTER_MS=<ms>     auto-close the main window after N ms.
-//   DECADE_DEBUG_HOVER_BAR=<n>    force the hover highlight on bar N after load
-//                                 (debug/screenshot aid for picking, no mouse).
-//   DECADE_DEBUG_SELECT_NODE=<p>  force the scene-tree selection highlight on
-//                                 the node at path `p` ("root/.../name") after
-//                                 load (debug/screenshot aid, no mouse).
-//
-// (DECADE_DEBUG_LOG is read by the Infrastructure layer in
-// `src/graphics/debug_log.hpp`, which must not depend on this Application
-// header, so it is intentionally not mirrored here.)
+// Erkannte Argumente:
+//   <file>                    optionales Positionsargument: Projekt-/Daten-
+//                             datei (CSV oder XML), die beim Start geladen
+//                             wird; ohne Angabe startet ein leeres Projekt.
+//   --dump-png=<path>         rendert die Kalenderseite via Off-Screen-FBO
+//                             als PNG.
+//   --dump-png-dpi=<dpi>      Export-DPI für --dump-png; ohne Angabe gilt
+//                             GLCanvas::kExportPngDpi.
+//   --dump-window-png=<path>  liest den Window-Back-Buffer nach dem ersten
+//                             Paint als PNG aus.
+//   --dump-frame-png=<path>   schreibt das gesamte Hauptfenster (Tabs +
+//                             Panels + Canvas) via wxDC als PNG, mit dem GL-
+//                             Back-Buffer obenauf komponiert. Der Widget-
+//                             Read-back braucht das X11-Backend (ein
+//                             wxClientDC-Blit liefert unter Wayland schwarz),
+//                             also headless unter Xvfb ausführen (siehe
+//                             CLAUDE.md, «Kopflose / skriptgesteuerte Läufe»).
+//   --select-tab=<label>      wählt beim Start einen Notebook-Tab per Label
+//                             vor (case-insensitive), z. B. zum Screenshotten
+//                             eines bestimmten Tabs.
+//   --exit-after-ms=<ms>      schliesst das Hauptfenster nach N ms.
+//   --debug-hover-bar=<n>     erzwingt nach dem Laden das Hover-Highlight auf
+//                             Bar N (Debug-/Screenshot-Hilfe fürs Picking,
+//                             ohne Maus).
+//   --debug-select-node=<p>   erzwingt nach dem Laden das Selektions-
+//                             Highlight des Scene-Tree-Knotens am Pfad `p`
+//                             («root/.../name»); Debug-/Screenshot-Hilfe.
+//   --debug-log               aktiviert OpenGL-/Runtime-Debug-Logging und
+//                             leitet wx-Assert-Fehler nach stderr um (siehe
+//                             `DecadeApp::OnAssertFailure`).
 struct RuntimeOptions {
-  // File to load at startup. Opt-in: empty means "start with an empty project".
+  // Beim Start zu ladende Datei. Opt-in: leer heisst «leeres Projekt».
   std::optional<std::string> startup_file;
   std::optional<std::string> dump_png_path;
-  // Export DPI for dump_png_path; falls back to GLCanvas::kExportPngDpi.
+  // Export-DPI für dump_png_path; Fallback ist GLCanvas::kExportPngDpi.
   std::optional<int> dump_png_dpi;
   std::optional<std::string> dump_window_png_path;
   std::optional<std::string> dump_frame_png_path;
   std::optional<std::string> select_tab;
   std::optional<std::int64_t> exit_after_ms;
-  // Debug/screenshot aid: force the hover highlight on this bar index at
-  // startup, so the picking highlight can be verified without a pointer device.
+  // Debug-/Screenshot-Hilfe: erzwingt beim Start das Hover-Highlight auf
+  // diesem Bar-Index, damit das Picking-Highlight ohne Zeigegerät prüfbar ist.
   std::optional<std::size_t> debug_hover_bar;
-  // Debug/screenshot aid: force the scene-tree selection highlight on this node
-  // path at startup, so the selection overlay can be verified without a mouse.
+  // Debug-/Screenshot-Hilfe: erzwingt beim Start das Selektions-Highlight auf
+  // diesem Knotenpfad, damit das Selektions-Overlay ohne Maus prüfbar ist.
   std::optional<std::string> debug_select_node;
+  bool debug_log{false};
 };
 
+// Registriert alle Laufzeit-Optionen am Parser. Die Beschreibungen erscheinen
+// in der --help-Ausgabe.
+inline void AddRuntimeOptions(wxCmdLineParser& parser) {
+  parser.AddLongOption("dump-png",
+                       "render the calendar page to PNG (off-screen FBO)");
+  parser.AddLongOption("dump-png-dpi", "export DPI for --dump-png",
+                       wxCMD_LINE_VAL_NUMBER);
+  parser.AddLongOption("dump-window-png",
+                       "capture the GL canvas back buffer to PNG");
+  parser.AddLongOption("dump-frame-png",
+                       "capture the whole main frame to PNG (needs X11/Xvfb)");
+  parser.AddLongOption("select-tab",
+                       "pre-select a notebook tab by label (case-insensitive)");
+  parser.AddLongOption("exit-after-ms", "auto-close the main window after N ms",
+                       wxCMD_LINE_VAL_NUMBER);
+  parser.AddLongOption("debug-hover-bar", "force the hover highlight on bar N",
+                       wxCMD_LINE_VAL_NUMBER);
+  parser.AddLongOption("debug-select-node",
+                       "force the scene-tree selection on node path "
+                       "root/.../name");
+  parser.AddLongSwitch("debug-log",
+                       "enable debug logging; route wx asserts to stderr");
+  parser.AddParam("file", wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL);
+}
+
 namespace runtime_options_detail {
-inline std::optional<std::string> GetEnvString(const char* name) {
+inline std::optional<std::string> FoundString(const wxCmdLineParser& parser,
+                                              const wxString& name) {
   wxString value;
-  if (wxGetEnv(name, &value)) {
+  if (parser.Found(name, &value)) {
     return value.ToStdString();
   }
   return std::nullopt;
 }
 }  // namespace runtime_options_detail
 
-// Builds the options from the environment. The startup file falls back to
-// DECADE_DEFAULT_CSV; callers may override it from the command line afterwards.
-inline RuntimeOptions RuntimeOptionsFromEnv() {
-  using runtime_options_detail::GetEnvString;
+// Baut die Optionen aus dem geparsten Kommandozeilen-Parser. Nicht plausible
+// Zahlenwerte werden mit einer stderr-Warnung ignoriert.
+inline RuntimeOptions RuntimeOptionsFromParser(const wxCmdLineParser& parser) {
+  using runtime_options_detail::FoundString;
 
   RuntimeOptions options;
-  options.startup_file = GetEnvString("DECADE_DEFAULT_CSV");
-  options.dump_png_path = GetEnvString("DECADE_DUMP_PNG");
-  options.dump_window_png_path = GetEnvString("DECADE_DUMP_WINDOW_PNG");
-
-  if (const std::optional<std::string> dump_png_dpi =
-          GetEnvString("DECADE_DUMP_PNG_DPI")) {
-    try {
-      const int parsed = std::stoi(*dump_png_dpi);
-      if (parsed > 0) {
-        options.dump_png_dpi = parsed;
-      }
-    } catch (const std::exception& ex) {
-      std::cerr << "Invalid DECADE_DUMP_PNG_DPI: " << ex.what() << '\n';
-    }
+  if (parser.GetParamCount() > 0) {
+    options.startup_file = parser.GetParam(0).ToStdString();
   }
-  options.dump_frame_png_path = GetEnvString("DECADE_DUMP_FRAME_PNG");
-  options.select_tab = GetEnvString("DECADE_SELECT_TAB");
+  options.dump_png_path = FoundString(parser, "dump-png");
+  options.dump_window_png_path = FoundString(parser, "dump-window-png");
+  options.dump_frame_png_path = FoundString(parser, "dump-frame-png");
+  options.select_tab = FoundString(parser, "select-tab");
+  options.debug_select_node = FoundString(parser, "debug-select-node");
+  options.debug_log = parser.Found("debug-log");
 
-  if (const std::optional<std::string> exit_after_ms =
-          GetEnvString("DECADE_EXIT_AFTER_MS")) {
-    try {
-      const std::int64_t parsed = std::stoll(*exit_after_ms);
-      if (parsed > 0) {
-        options.exit_after_ms = parsed;
-      }
-    } catch (const std::exception& ex) {
-      std::cerr << "Invalid DECADE_EXIT_AFTER_MS: " << ex.what() << '\n';
+  if (long dump_png_dpi = 0; parser.Found("dump-png-dpi", &dump_png_dpi)) {
+    if (dump_png_dpi > 0) {
+      options.dump_png_dpi = static_cast<int>(dump_png_dpi);
+    } else {
+      std::cerr << "--dump-png-dpi must be positive; ignored\n";
     }
   }
 
-  if (const std::optional<std::string> debug_hover_bar =
-          GetEnvString("DECADE_DEBUG_HOVER_BAR")) {
-    try {
-      const long long parsed = std::stoll(*debug_hover_bar);
-      if (parsed >= 0) {
-        options.debug_hover_bar = static_cast<std::size_t>(parsed);
-      }
-    } catch (const std::exception& ex) {
-      std::cerr << "Invalid DECADE_DEBUG_HOVER_BAR: " << ex.what() << '\n';
+  if (long exit_after_ms = 0; parser.Found("exit-after-ms", &exit_after_ms)) {
+    if (exit_after_ms > 0) {
+      options.exit_after_ms = exit_after_ms;
+    } else {
+      std::cerr << "--exit-after-ms must be positive; ignored\n";
     }
   }
 
-  if (std::optional<std::string> debug_select_node =
-          GetEnvString("DECADE_DEBUG_SELECT_NODE")) {
-    options.debug_select_node = std::move(*debug_select_node);
+  if (long debug_hover_bar = 0;
+      parser.Found("debug-hover-bar", &debug_hover_bar)) {
+    if (debug_hover_bar >= 0) {
+      options.debug_hover_bar = static_cast<std::size_t>(debug_hover_bar);
+    } else {
+      std::cerr << "--debug-hover-bar must be >= 0; ignored\n";
+    }
   }
 
   return options;
