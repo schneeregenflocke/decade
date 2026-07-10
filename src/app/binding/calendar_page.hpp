@@ -12,7 +12,7 @@
 #include "../../graphics/pick_id.hpp"
 #include "../../graphics/rect.hpp"
 #include "../../graphics/scene.hpp"
-#include "../../gui/opengl_panel.hpp"
+#include "../../presentation/opengl_panel.hpp"
 #include "../../domain/calendar_config.hpp"
 #include "../../domain/date_entry.hpp"
 #include "../../domain/date_entry_bar_store.hpp"

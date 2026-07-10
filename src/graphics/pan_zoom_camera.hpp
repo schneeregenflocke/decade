@@ -8,7 +8,7 @@
 
 // 2D-Kamera der Seitenansicht: hält den Pan-/Zoom-Zustand und leitet daraus
 // die View-Matrix ab. GL- und UI-frei, damit unit-testbar; die Maus-Seite
-// (Pixel → Weltraum) liegt in gui/mouse_interaction.hpp.
+// (Pixel → Weltraum) liegt in presentation/mouse_interaction.hpp.
 class PanZoomCamera {
  public:
   // Erlaubter Bereich des Skalierungsfaktors; siehe ComputeZoomLimits.

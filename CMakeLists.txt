@@ -97,17 +97,17 @@ target_sources(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/transform_date_entry.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/detail/icu_date_backend.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/domain/detail/reentry_guard.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/calendar_panel.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/casts.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/date_panel.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/font_panel.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/groups_panel.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/license_panel.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/mouse_interaction.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/opengl_panel.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/page_panel.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/scene_tree_panel.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/gui/title_panel.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/calendar_panel.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/casts.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/date_panel.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/font_panel.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/groups_panel.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/license_panel.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/mouse_interaction.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/opengl_panel.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/page_panel.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/scene_tree_panel.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/presentation/title_panel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/debug_log.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/font.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/graphics/frame_layout.hpp
