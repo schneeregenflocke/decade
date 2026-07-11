@@ -62,8 +62,9 @@ class DecadeApp : public wxApp {
 
     decade_debug::SetLogEnabled(runtime_options_.debug_log);
 
-    locale_.Init();
-    std::locale::global(std::locale(""));
+    if (!InitializeLocalization()) {
+      return false;
+    }
 
     const application::MainWindowConfig window_config = application::DefaultMainWindowConfig();
     auto* main_window = std::make_unique<MainWindow>(
@@ -76,6 +77,26 @@ class DecadeApp : public wxApp {
   }
 
  private:
+  [[nodiscard]] bool InitializeLocalization() {
+    // Deliberate split of responsibilities:
+    //  - wxLocale owns wxWidgets/UI/process locale wiring and translations.
+    //  - std::locale owns the global C++ locale used by std facilities.
+    // We initialise both explicitly to keep behaviour deterministic and avoid
+    // relying on incidental side effects between libraries.
+    if (!locale_.Init()) {
+      std::cerr << "failed to initialize wx locale\n";
+      return false;
+    }
+    try {
+      std::locale::global(std::locale(""));
+    } catch (const std::exception& exception) {
+      std::cerr << "failed to initialize global std locale: "
+                << exception.what() << '\n';
+      return false;
+    }
+    return true;
+  }
+
   wxLocale locale_;
   application::RuntimeOptions runtime_options_;
 };
