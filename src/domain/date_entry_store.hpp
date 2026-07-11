@@ -57,9 +57,12 @@ class DateEntryStore {
     if (date_entries_.empty()) {
       return 0;
     }
-    // Stored periods are never null (filtered in ProcessDateEntries), so
-    // Last() >= Begin() always holds.
-    return date_entries_.back().GetDateInterval().Last().Year();
+    // Sortiert ist nach Begin(); das späteste End() kann bei einem früher
+    // beginnenden, mehrjährigen Eintrag liegen — über alle Einträge maximieren.
+    const auto& latest = std::ranges::max(
+        date_entries_, {},
+        [](const DateEntry& entry) { return entry.GetDateInterval().Last(); });
+    return latest.GetDateInterval().Last().Year();
   }
 
   void ReceiveDateGroups(const std::vector<DateGroup>& date_groups) {

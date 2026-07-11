@@ -26,13 +26,17 @@ class CalendarSpan {
               Date::FromYmd(kDefaultEndYear, 1, 1)) {}
 
   void SetSpan(YearSpan span_years) {
-    const int clamped_lower_year =
-        std::clamp(span_years.first_year, Date::kMinYear, Date::kMaxYear);
-    const int clamped_upper_year =
-        std::clamp(span_years.last_year + 1, Date::kMinYear, Date::kMaxYear);
+    // Erzeugt nie einen null Span: das halb-offene Ende Jan 1 (last + 1)
+    // braucht ein darstellbares Jahr — das letzte wählbare Kalenderjahr ist
+    // deshalb kMaxYear - 1, und ein Last Year vor dem First Year wird auf das
+    // First Year angehoben (Span von genau einem Jahr).
+    const int first_year =
+        std::clamp(span_years.first_year, Date::kMinYear, Date::kMaxYear - 1);
+    const int last_year =
+        std::clamp(span_years.last_year, first_year, Date::kMaxYear - 1);
 
-    span_ = DatePeriod(Date::FromYmd(clamped_lower_year, 1, 1),
-                       Date::FromYmd(clamped_upper_year, 1, 1));
+    span_ = DatePeriod(Date::FromYmd(first_year, 1, 1),
+                       Date::FromYmd(last_year + 1, 1, 1));
   }
 
   [[nodiscard]] bool IsValidSpan() const { return !span_.IsNull(); }

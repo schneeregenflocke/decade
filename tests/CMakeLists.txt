@@ -14,6 +14,7 @@ add_executable(decade_tests
 	domain/test_date_entry_store.cpp
 	domain/test_transform_date_entry.cpp
 	infrastructure/persistence/test_csv_io.cpp
+	infrastructure/persistence/test_project_io.cpp
 	infrastructure/persistence/test_value_serialization.cpp
 	infrastructure/physics/test_physics_world.cpp
 	infrastructure/graphics/test_pan_zoom_camera.cpp

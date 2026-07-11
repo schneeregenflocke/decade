@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#include <cstddef>
+#include <cstdint>
 #include <vector>
 
 #include "domain/date.hpp"
@@ -164,6 +166,36 @@ TEST(DateEntryBarStoreTest, SingleDayOnJanuaryFirstProducesOneBar) {
   EXPECT_EQ(store.GetBar(0).GetYear(), 2030);
   EXPECT_EQ(store.GetBar(0).GetLength(), 1);
   EXPECT_EQ(store.GetAnnualTotal(0), 1);
+}
+
+// Regression: Der Eintrag mit dem spätesten Begin() hat nicht zwingend das
+// späteste End(). GetLastYear()/GetSpan() müssen über alle Einträge
+// maximieren, sonst schreibt ProcessAnnualTotals für die Jahres-Bars des
+// mehrjährigen Eintrags über das Ende von annual_totals_ hinaus.
+TEST(DateEntryBarStoreTest, LastYearComesFromLatestEndNotLatestBegin) {
+  DateEntryBarStore store;
+  SeedDefaultGroup(store);
+  DateEntry long_entry;
+  long_entry.SetDateInterval(
+      DatePeriod(Date::FromYmd(2000, 1, 1), Date::FromYmd(2010, 1, 1)));
+  std::vector<DateEntry> input;
+  input.push_back(long_entry);
+  input.push_back(MakeEntry(2001, 6, 1, 6, 10));
+
+  store.ReceiveDateEntries(input);
+
+  EXPECT_EQ(store.GetFirstYear(), 2000);
+  EXPECT_EQ(store.GetLastYear(), 2009);
+  ASSERT_EQ(store.GetSpan(), 10U);
+
+  std::int64_t total = 0;
+  for (size_t index = 0; index < store.GetSpan(); ++index) {
+    total += store.GetAnnualTotal(index);
+  }
+  const auto expected =
+      Date::DaysBetween(Date::FromYmd(2000, 1, 1), Date::FromYmd(2010, 1, 1)) +
+      Date::DaysBetween(Date::FromYmd(2001, 6, 1), Date::FromYmd(2001, 6, 10));
+  EXPECT_EQ(total, expected);
 }
 
 // Null periods (no contained day) carry no data and are filtered out.

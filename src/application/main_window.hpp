@@ -13,6 +13,7 @@
 #include <wx/image.h>
 #include <wx/imagpng.h>
 #include <wx/menu.h>
+#include <wx/msgdlg.h>
 #include <wx/notebook.h>
 #include <wx/panel.h>
 #include <wx/sizer.h>
@@ -92,8 +93,8 @@ class MainWindow : public wxFrame {
   void OnExitTimer(wxTimerEvent& event);
   void CallbackLicenseInfo(wxCommandEvent& event);
 
-  void LoadXML(const std::string& filepath);
-  void SaveXML(const std::string& filepath);
+  [[nodiscard]] std::optional<std::string> LoadXML(const std::string& filepath);
+  [[nodiscard]] std::optional<std::string> SaveXML(const std::string& filepath);
 
   // Declared first so it is destroyed *last* — every producer (stores,
   // panels, the GL canvas) emits via `event_bus_`, and some emissions can run
@@ -284,7 +285,12 @@ inline void MainWindow::LoadStartupFile() {
 
   std::cout << "LoadStartupFile: loading " << path << '\n';
   if (path.ends_with(".xml")) {
-    LoadXML(path);
+    // Kopflose Läufe: Fehler auf die Konsole statt in einen modalen Dialog,
+    // der einen --exit-after-ms-Lauf blockieren würde.
+    if (const auto error = LoadXML(path)) {
+      std::cout << "LoadStartupFile: " << *error << '\n';
+      return;
+    }
     xml_file_path_ = path;
   } else {
     date_entry_store_.ReceiveDateEntries(
@@ -419,14 +425,19 @@ inline void MainWindow::CallbackLoadXML(wxCommandEvent& event) {
   }
 
   const std::string file_path = open_file_dialog.GetPath().ToStdString();
-  LoadXML(file_path);
+  if (const auto error = LoadXML(file_path)) {
+    wxMessageBox(*error, "Open File", wxOK | wxICON_ERROR, this);
+    return;
+  }
   xml_file_path_ = file_path;
 }
 
 inline void MainWindow::CallbackSaveXML(wxCommandEvent& event) {
   const MainMenuIds& ids = menu_.Ids();
   if (event.GetId() == ids.save_xml && !xml_file_path_.empty()) {
-    SaveXML(xml_file_path_);
+    if (const auto error = SaveXML(xml_file_path_)) {
+      wxMessageBox(*error, "Save File", wxOK | wxICON_ERROR, this);
+    }
     return;
   }
 
@@ -442,22 +453,27 @@ inline void MainWindow::CallbackSaveXML(wxCommandEvent& event) {
   }
 
   const std::string file_path = save_file_dialog.GetPath().ToStdString();
-  SaveXML(file_path);
+  if (const auto error = SaveXML(file_path)) {
+    wxMessageBox(*error, "Save File", wxOK | wxICON_ERROR, this);
+    return;
+  }
   xml_file_path_ = file_path;
 }
 
-inline void MainWindow::LoadXML(const std::string& filepath) {
-  persistence::LoadProjectXml(filepath, date_groups_store_, date_entry_store_,
-                              page_setup_store_, title_config_store_,
-                              shape_configuration_store_,
-                              calendar_configuration_store_);
+inline std::optional<std::string> MainWindow::LoadXML(
+    const std::string& filepath) {
+  return persistence::LoadProjectXml(
+      filepath, date_groups_store_, date_entry_store_, page_setup_store_,
+      title_config_store_, shape_configuration_store_,
+      calendar_configuration_store_);
 }
 
-inline void MainWindow::SaveXML(const std::string& filepath) {
-  persistence::SaveProjectXml(filepath, date_groups_store_, date_entry_store_,
-                              page_setup_store_, title_config_store_,
-                              shape_configuration_store_,
-                              calendar_configuration_store_);
+inline std::optional<std::string> MainWindow::SaveXML(
+    const std::string& filepath) {
+  return persistence::SaveProjectXml(
+      filepath, date_groups_store_, date_entry_store_, page_setup_store_,
+      title_config_store_, shape_configuration_store_,
+      calendar_configuration_store_);
 }
 
 inline void MainWindow::CallbackImportCSV(wxCommandEvent& event) {

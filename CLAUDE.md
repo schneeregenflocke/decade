@@ -324,6 +324,92 @@ Diese Datei hält die stabilen Leitplanken; offene Punkte, Fragen und Historik l
 - **`CalendarPage` von `GLCanvas` entkoppeln (notiert 2026-07-10):** `application/calendar/calendar_page.hpp` inkludiert `presentation/gl_canvas.hpp` — der Rendering-Adapter hängt damit an einem Presentation-Panel, entgegen der Abhängigkeitsrichtung (Regeln 6/9). Die benötigte Fähigkeit (Redraw/Context) über ein schmales Interface oder einen Callback hereinreichen.
 - **`calendar_section_builders.hpp` aufteilen (notiert 2026-07-10):** Mit 582 Zeilen die grösste Datei im Baum; entlang der Section-Builder in kleinere Header splitten (vorher Charakterisierungstest, siehe [Refactoring](#refactoring)).
 
+### Code-Review-Befunde (Voll-Review über `src/`, 2026-07-11)
+
+High-Effort-Review (8 Finder-Winkel, jeder Kandidat einzeln gegen den Code verifiziert).
+23 von 46 Kandidaten überlebten die Verifikation. Pro Fix gilt die [Refactoring](#refactoring)-Regel:
+zuerst Regressions-/Charakterisierungstest, dann die kleinste verhaltenskorrigierende Änderung.
+
+**Korrektheit — CONFIRMED (9):**
+
+- **Heap-Korruption in `ProcessAnnualTotals`** (`domain/date_entry_bar_store.hpp:65`):
+  `GetLastYear()`/`GetSpan()` (`domain/date_entry_store.hpp:62`) lesen `back().Last()` der nach
+  `Begin()` sortierten Liste — der Eintrag mit spätestem Begin hat nicht das späteste End.
+  Mehrjähriger Eintrag plus später beginnender kurzer Eintrag → `annual_totals_` zu klein →
+  Out-of-bounds-Write per `operator[]` bei jedem `ReceiveDateEntries`. Über normale Eingabe/CSV erreichbar.
+- **Abort bei ungültigem Span** (`application/calendar/calendar_scene_composer.hpp:86`):
+  `Build()` ruft `GetSpanLengthYears()` ohne `IsValidSpan()`-Guard; First Year > Last Year im
+  Timeframe-Tab (Panel validiert nicht) → `std::runtime_error` entweicht ungefangen dem
+  wx-Event-Handler → App-Abbruch.
+- **Projektladen/-speichern ohne Fehlerbehandlung** (`infrastructure/persistence/project_io.hpp:38`):
+  weder fstream-Prüfung noch catch um `boost::archive`; kaputte/alte XML → abort; Stores werden
+  sequenziell mutiert → halb geladener Zustand bei Abbruch mitten im Laden.
+- **Use-after-free beim Beenden** (`application/main_window.hpp:102`): wx-Children (Panels, GLCanvas)
+  sterben erst im `~wxFrame`-Basisdestruktor — nach `event_bus_` und den Stores; Panel-Signale sind
+  nirgends disconnected. Feuert ein Control beim Zerstören ein Event (offener Editor-Commit), ruft
+  der Slot in zerstörte Objekte.
+- **Falsche Zeile beim Edit-Commit** (`presentation/date_panel.hpp:313`): `OnItemEditing` nutzt
+  `GetSelectedRow()` statt `event.GetItem()`; bei `wxDV_MULTIPLE` und ≠1 Selektion ist das
+  `wxNOT_FOUND` → Cast nach unsigned → `SetValue` an Zeile 4294967295; bei divergierender
+  Selektion landet der Edit in der falschen Zeile.
+- **Kein GL-Context → unverdrahtete, bedienbare GUI** (`presentation/gl_canvas.hpp:287`):
+  schlägt die Context-Erzeugung fehl, feuert `on_gl_ready` nie (kein `EstablishConnections`/
+  `SendInitialValues`), das Fenster bleibt aber bedienbar → `GetName(0)` auf leerem Store wirft →
+  abort; zudem pro Paint ein neuer `wxGLContext` (Endlos-Retry ohne Meldung).
+- **Stiller Fehlschlag beim CSV-Export** (`infrastructure/persistence/csv_io.hpp:85`):
+  `WriteDateEntriesToCsv` prüft weder `is_open()` noch den Stream-Zustand, Aufrufer meldet nichts —
+  Export auf unbeschreibbaren Pfad scheitert ohne jede Meldung (Datenverlust-Illusion).
+- **Division durch 0 in `AspectRatio`** (`infrastructure/graphics/projection.hpp:22`):
+  Canvas-Höhe 0 (extrem flaches Fenster; Splitter schützt nur die Breite) → inf/NaN propagiert in
+  `OrthoMatrix` und `ComputeZoomLimits` → kaputtes Rendering bis zum nächsten gültigen Resize.
+- **Halb-offen-Invariante kollabiert an `kMaxYear`** (`domain/calendar_config.hpp:32`):
+  `SetSpan` clampt `last_year + 1` auf 9999; first=last=9999 → null Span → Throw im Composer;
+  schon 9998/9999 verliert stillschweigend das Jahr 9999.
+
+**Korrektheit — PLAUSIBLE (4):**
+
+- **Gruppen-Integrität lückenhaft** (`domain/date_entry_store.hpp:163`): nur `group > GetGroupMax()`
+  wird geklemmt; negatives `group` aus editierter Projektdatei (XML-Load liest ungeprüft) erreicht
+  `calendar_section_builders.hpp:348` bzw. `group_nodes.at(...)` → unbehandelte Exception.
+- **Unbounds-Index beim Gruppen-Rename** (`presentation/groups_panel.hpp:157`): `CallbackItemEditing`
+  castet `GetSelectedRow()` ungeprüft nach unsigned und indiziert `date_groups_[...]` ohne
+  Bounds-Check — Edit-Commit ohne Selektion (Umbau während offenem Edit) → OOB-Write.
+- **`float`→`size_t`-UB im PNG-Renderer** (`infrastructure/graphics/render_to_png.hpp:311`): Cast vor
+  `FitsPngLimits`; die CLI-DPI ist geclampt, aber eine präparierte XML setzt die Seitengrösse
+  unvalidiert (`value_serialization.hpp:152`, kein Clamp in `SetSize`) → nicht darstellbarer float → UB.
+- **Zeichenreihenfolge gleicher Layer invertiert** (`infrastructure/graphics/scene_graph.hpp:168`):
+  Stack-DFS arbeitet Geschwister rückwärts ab, `stable_sort` konserviert das — zuerst hinzugefügte
+  Bars liegen oben, entgegen dem Kommentar «keep their traversal order» (mindestens irreführende Doku).
+
+**CLAUDE.md-Verstösse — CONFIRMED (4):**
+
+- Gecachte rohe `wxPGProperty`-Subklassen-Pointer als Datenmember (`presentation/calendar_panel.hpp:140-144`)
+  — Regel: für nicht-wxTrackable wx-Objekte «gar keinen Pointer cachen».
+- `NOLINTNEXTLINE(misc-include-cleaner)` ohne Warum-Kommentar (`application/main_window.hpp:413`)
+  — einziger zugelassener Fall ist png_writer.hpp, und nur mit Begründung.
+- `bool* flag_` als Raw-Pointer-Member (`domain/detail/reentry_guard.hpp:20`) — `bool&` wäre trivial
+  möglich (Copy/Move sind bereits deleted).
+- Rohes `make_unique().release()`-Idiom statt `MakeOwned<T>` (`application/main_window.hpp:163ff`,
+  `presentation/main_menu.hpp:36-56`, `application/decade_app.hpp:73-77`) — dieselbe Datei nutzt
+  `MakeOwned` bereits.
+
+**Cleanup — CONFIRMED (6):**
+
+- `Find`/`FindMutable` byte-identisch dupliziert (`domain/shape_configuration.hpp:183`) — z. B. per
+  deducing this zusammenführen.
+- `Draw`/`WorldBounds` duplizieren dieselbe Stack-DFS mit Welt-Matrix-Akkumulation
+  (`infrastructure/graphics/scene_graph.hpp:71+144`) — gemeinsamen Visit-Helfer extrahieren.
+- ~6 Voll-Rebuilds (Szene + Bullet + Snapshot + Tree) vor dem ersten Frame: jeder `Receive*`-Slot
+  ruft `Update()`, `SendInitialValues` feuert 5 Signale plus Shape-Config-Re-Emit
+  (`application/calendar/calendar_page.hpp:82`) — Updates koaleszieren (Dirty-Flag + ein Rebuild).
+- Ein `glBindTexture` + `glDrawArrays` pro Glyph bei 2048-px-Einzeltexturen
+  (`infrastructure/graphics/font.hpp:390`) — Glyph-Atlas oder Batching; `kFontPixelHeight` prüfen.
+- Shape-Config-Schlüssel als rohe String-Literale, Silent-Default bei Miss
+  (`application/calendar/calendar_section_builders.hpp:103ff`; Z. 465 nutzt Literal statt des
+  vorhandenen `AnnualSumConfigurationName()`) — Namen als Konstanten in die Domain.
+- `PageSetupConfig`→`rectf`-Umrechnung doppelt kodiert (`presentation/gl_canvas.hpp:134` vs
+  `application/calendar/calendar_page.hpp:53`) — einmal definieren (Helfer neben `PageSetupConfig`).
+
 ### Offene Folgefragen
 
 - Welche 2 bis 3 Hotspots sollen zuerst charakterisiert werden?
