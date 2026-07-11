@@ -66,7 +66,8 @@ class DecadeApp : public wxApp {
       return false;
     }
 
-    const application::MainWindowConfig window_config = application::DefaultMainWindowConfig();
+    const application::MainWindowConfig window_config =
+        application::DefaultMainWindowConfig();
     auto* main_window = std::make_unique<MainWindow>(
                             nullptr, window_config.title,
                             window_config.position, window_config.size,
