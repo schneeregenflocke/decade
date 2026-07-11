@@ -52,6 +52,7 @@
 #include "../presentation/scene_tree_panel.hpp"
 #include "../presentation/title_panel.hpp"
 #include "../presentation/wx_owned.hpp"
+#include "app_config.hpp"
 #include "calendar/calendar_page.hpp"
 #include "calendar/interaction_controller.hpp"
 #include "event_bus.hpp"
@@ -61,8 +62,8 @@
 
 class MainWindow : public wxFrame {
  public:
-  MainWindow(wxWindow* parent, const wxString& title, const wxPoint& pos,
-             const wxSize& size, bool maximize_on_start = true,
+  MainWindow(wxWindow* parent, const application::MainWindowConfig& config,
+             LocaleDateFormatter& locale_date_formatter,
              application::RuntimeOptions runtime_options = {});
   ~MainWindow() override;
   MainWindow(const MainWindow&) = delete;
@@ -112,10 +113,7 @@ class MainWindow : public wxFrame {
   wxWeakRef<DateTablePanel> data_table_panel_;
   wxWeakRef<SceneTreePanel> scene_tree_panel_;
 
-  // Application-wide locale date formatter: constructed once here and handed
-  // by reference to every consumer (date table panel, CSV import/export) so
-  // the locale configuration lives in exactly one place.
-  LocaleDateFormatter locale_date_format_;
+  LocaleDateFormatter& locale_date_formatter_;
 
   DateGroupStore date_groups_store_;
   DateEntryStore date_entry_store_;
@@ -139,15 +137,17 @@ constexpr int kOpenGLMajor = 4;
 constexpr int kOpenGLMinor = 6;
 }  // namespace main_window_detail
 
-inline MainWindow::MainWindow(wxWindow* parent, const wxString& title,
-                              const wxPoint& pos, const wxSize& size,
-                              bool maximize_on_start,
+inline MainWindow::MainWindow(wxWindow* parent,
+                              const application::MainWindowConfig& config,
+                              LocaleDateFormatter& locale_date_formatter,
                               application::RuntimeOptions runtime_options)
-    : wxFrame(parent, wxID_ANY, title, pos, size),
+    : wxFrame(parent, wxID_ANY, wxString::FromUTF8(config.title),
+              config.position, config.size, config.style, config.frame_name),
+      locale_date_formatter_(locale_date_formatter),
       exit_timer_(this),
       menu_(GLCanvas::kExportPngDpi),
       runtime_options_(std::move(runtime_options)) {
-  CreateLayout(maximize_on_start);
+  CreateLayout(config.maximize_on_start);
   InitMenu();
   InitializeOpenGL();
   ConfigureAutoExitTimer();
@@ -205,7 +205,8 @@ inline void MainWindow::CreateLayout(bool maximize_on_start) {
 }
 
 inline void MainWindow::CreatePanels(wxNotebook* notebook) {
-  data_table_panel_ = MakeOwned<DateTablePanel>(notebook, locale_date_format_);
+  data_table_panel_ =
+      MakeOwned<DateTablePanel>(notebook, locale_date_formatter_);
   date_groups_table_panel_ = MakeOwned<DateGroupsTablePanel>(notebook);
   calendar_setup_panel_ = MakeOwned<CalendarSetupPanel>(notebook);
   scene_tree_panel_ = MakeOwned<SceneTreePanel>(notebook);
@@ -287,7 +288,7 @@ inline void MainWindow::LoadStartupFile() {
     xml_file_path_ = path;
   } else {
     date_entry_store_.ReceiveDateEntries(
-        persistence::ReadDateEntriesFromCsv(path, locale_date_format_));
+        persistence::ReadDateEntriesFromCsv(path, locale_date_formatter_));
   }
 }
 
@@ -471,7 +472,7 @@ inline void MainWindow::CallbackImportCSV(wxCommandEvent& event) {
 
   const std::string file_path = open_file_dialog.GetPath().ToStdString();
   date_entry_store_.ReceiveDateEntries(
-      persistence::ReadDateEntriesFromCsv(file_path, locale_date_format_));
+      persistence::ReadDateEntriesFromCsv(file_path, locale_date_formatter_));
 }
 
 inline void MainWindow::CallbackExportCSV(wxCommandEvent& event) {
@@ -486,7 +487,7 @@ inline void MainWindow::CallbackExportCSV(wxCommandEvent& event) {
 
   const std::string file_path = save_file_dialog.GetPath().ToStdString();
   persistence::WriteDateEntriesToCsv(
-      file_path, date_entry_store_.GetDateEntries(), locale_date_format_);
+      file_path, date_entry_store_.GetDateEntries(), locale_date_formatter_);
 }
 
 inline void MainWindow::CallbackExportPNG(wxCommandEvent& event) {

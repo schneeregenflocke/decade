@@ -3,16 +3,15 @@
 
 #include <wx/app.h>
 #include <wx/cmdline.h>
-#include <wx/intl.h>
 #include <wx/string.h>
 
+#include <exception>
 #include <iostream>
-#include <locale>
 #include <memory>
-#include <string>
 
 #include "../common/debug_log.hpp"
 #include "app_config.hpp"
+#include "locale_services.hpp"
 #include "main_window.hpp"
 #include "runtime_options.hpp"
 
@@ -62,43 +61,26 @@ class DecadeApp : public wxApp {
 
     decade_debug::SetLogEnabled(runtime_options_.debug_log);
 
-    if (!InitializeLocalization()) {
+    try {
+      locale_services_ = std::make_unique<application::LocaleServices>();
+    } catch (const std::exception& exception) {
+      std::cerr << exception.what() << '\n';
       return false;
     }
 
     const application::MainWindowConfig window_config =
         application::DefaultMainWindowConfig();
-    auto* main_window = std::make_unique<MainWindow>(
-                            nullptr, window_config.title,
-                            window_config.position, window_config.size,
-                            window_config.maximize_on_start, runtime_options_)
-                            .release();
+    auto* main_window =
+        std::make_unique<MainWindow>(nullptr, window_config,
+                                     locale_services_->date_formatter(),
+                                     runtime_options_)
+            .release();
     SetTopWindow(main_window);
     return true;
   }
 
  private:
-  [[nodiscard]] bool InitializeLocalization() {
-    // Deliberate split of responsibilities:
-    //  - wxLocale owns wxWidgets/UI/process locale wiring and translations.
-    //  - std::locale owns the global C++ locale used by std facilities.
-    // We initialise both explicitly to keep behaviour deterministic and avoid
-    // relying on incidental side effects between libraries.
-    if (!locale_.Init()) {
-      std::cerr << "failed to initialize wx locale\n";
-      return false;
-    }
-    try {
-      std::locale::global(std::locale(""));
-    } catch (const std::exception& exception) {
-      std::cerr << "failed to initialize global std locale: "
-                << exception.what() << '\n';
-      return false;
-    }
-    return true;
-  }
-
-  wxLocale locale_;
+  std::unique_ptr<application::LocaleServices> locale_services_;
   application::RuntimeOptions runtime_options_;
 };
 
