@@ -1,9 +1,10 @@
 # CI auf git.blem.ch (Mirror github-mirror/decade): Build + ctest + clang-tidy-Gate.
-# `ubuntu-ci` tragen beide Runner (laptop-omen und homelab) — der erste freie
-# nimmt den Job. Normalfall laptop-omen; landet er auf homelab (RPi4),
-# scheitert der Build voraussichtlich am 1200-MB-Limit des dortigen Runners —
-# bewusste Abwägung, damit CI nicht hängt, wenn der Laptop aus ist. Getriggert
-# vom Mirror-Sync, den ein GitHub-Webhook bei jedem Push sofort anstösst.
+# `runner-laptop-omen` bindet den Job EXKLUSIV an den CI-Runner auf laptop-omen —
+# der schwere C++-Build (Boost/wx/Submodule) läuft nie auf homelab (RPi4 + USB-SMR),
+# wo er die Platte in I/O-Sättigung treibt (loadavg-Vorfall 2026-07-11) und am
+# 1200-MB-Limit scheitern würde. Ist der Laptop aus, wartet der Job in der Queue,
+# statt auf homelab zu fallen. Getriggert vom Mirror-Sync, den ein GitHub-Webhook
+# bei jedem Push sofort anstösst.
 name: build
 on:
   push:
@@ -11,7 +12,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-ci
+    runs-on: runner-laptop-omen
     container:
       image: ubuntu:26.04
     steps:
