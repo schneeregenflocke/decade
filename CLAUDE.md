@@ -172,8 +172,6 @@ Die Codebasis folgt einer Architektur mit vier Schichten im Sinn der Clean Archi
 - **Domain** — Value Objects, Stores, Transformationslogik, sigslot-Signale — UI-agnostisch und Boost-frei (kein `friend boost::serialization::access`, keine `serialize`-Member).
 - **Infrastructure** — Rendering (OpenGL, FreeType), Persistenz (XML/CSV/PNG), Hit-Testing (Bullet) — nicht-intrusiv, kennt nur Domain-Typen.
 
-Die Verzeichnisnamen unter `src/` benennen die Schichten direkt: `presentation/`, `application/` (mit dem Rendering-Adapter in `application/calendar/`), `domain/`, `infrastructure/{graphics,physics,persistence}`; dazu `common/` für Querschnitt (z. B. `debug_log.hpp`). `tests/` spiegelt diese Struktur. Welche Datei zu welcher Schicht gehört, zeigt der Baum selbst — der Code ist die Referenz, nicht diese Datei.
-
 Regeln:
 
 1. Der Prozesseinstiegspunkt enthält keine Business- oder UI-Verdrahtungslogik.
