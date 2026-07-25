@@ -25,7 +25,6 @@
 #include "../infrastructure/graphics/graphics_engine.hpp"
 #include "../infrastructure/graphics/mvp_matrices.hpp"
 #include "../infrastructure/graphics/pan_zoom_camera.hpp"
-#include "../infrastructure/graphics/png_writer.hpp"
 #include "../infrastructure/graphics/projection.hpp"
 #include "../infrastructure/graphics/render_to_png.hpp"
 #include "mouse_interaction.hpp"
@@ -228,24 +227,13 @@ class GLCanvas : public wxGLCanvas {
                                     kExportMsaaSamples);
   }
 
-  // Dumps the current window framebuffer (what is actually on screen) to PNG.
-  void SaveWindowPNG(const std::string& file_path) {
-    BackBuffer back = ReadBackBuffer(GL_RGBA, 4);
-    if (back.pixels.empty()) {
-      return;
-    }
-    png_io::WriteRgbaPng(
-        file_path.c_str(), back.pixels,
-        png_io::PngImageSize{.width = back.width, .height = back.height});
-  }
-
   // Returns the current GL back buffer as a top-left-origin RGB wxImage so it
   // can be composited into a full-window screenshot. A wxDC cannot read the GL
   // surface directly, so callers that screenshot the whole frame paste this on
   // top of the GL canvas region. Returns an invalid image when the canvas has
   // no area yet.
   wxImage CaptureBackBufferImage() {
-    const BackBuffer back = ReadBackBuffer(GL_RGB, 3);
+    const BackBuffer back = ReadBackBuffer();
     if (back.pixels.empty()) {
       return {};
     }
@@ -262,10 +250,10 @@ class GLCanvas : public wxGLCanvas {
   };
 
   // Renders the scene to the back buffer and reads it back as a top-left-origin
-  // pixel buffer in the given GL format (GL_RGB/GL_RGBA, `bytes_per_pixel`
-  // matching). OpenGL's origin is bottom-left, so the rows are flipped. Returns
-  // an empty buffer when the canvas has no area yet.
-  BackBuffer ReadBackBuffer(GLenum format, size_t bytes_per_pixel) {
+  // RGB pixel buffer. OpenGL's origin is bottom-left, so the rows are flipped.
+  // Returns an empty buffer when the canvas has no area yet.
+  BackBuffer ReadBackBuffer() {
+    constexpr size_t bytes_per_pixel = 3;
     SetCurrent(*context_);
     graphics_engine_->SetMVP(mvp_);
     graphics_engine_->Render();
@@ -285,7 +273,7 @@ class GLCanvas : public wxGLCanvas {
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
     glReadBuffer(GL_BACK);
     glReadPixels(0, 0, static_cast<GLsizei>(width),
-                 static_cast<GLsizei>(height), format, GL_UNSIGNED_BYTE,
+                 static_cast<GLsizei>(height), GL_RGB, GL_UNSIGNED_BYTE,
                  buffer.data());
 
     std::vector<unsigned char> flipped(buffer.size());

@@ -341,14 +341,6 @@ inline void MainWindow::DumpPngIfRequested() {
     std::cout << "--dump-png: writing " << path << " at " << dpi << " dpi\n";
     gl_canvas_->SavePNG(path, dpi);
   }
-  if (runtime_options_.dump_window_png_path) {
-    const std::string path = *runtime_options_.dump_window_png_path;
-    // Defer until after the first real paint so the back buffer is populated.
-    CallAfter([this, path]() {
-      std::cout << "--dump-window-png: writing " << path << '\n';
-      gl_canvas_->SaveWindowPNG(path);
-    });
-  }
   if (runtime_options_.dump_frame_png_path) {
     const std::string path = *runtime_options_.dump_frame_png_path;
     // Defer until after the first real paint so every panel has drawn itself.

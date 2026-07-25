@@ -51,13 +51,12 @@ Eine Startdatei (CSV oder XML) wird ausschliesslich als Positionsargument überg
 
 Das Binary beachtet mehrere Kommandozeilen-Optionen in GNU-Syntax (`--name=wert` oder `--name wert`; `--help` zeigt alle) für nicht-interaktive Nutzung — CI, Screenshots, Smoke-Tests. Das Options-Vokabular ist an genau einer Stelle definiert und geparst (`AddRuntimeOptions` / `RuntimeOptionsFromParser` in `src/application/runtime_options.hpp`); Umgebungsvariablen liest das Binary keine mehr.
 
-**Bildaufnahme** — drei Optionen erfassen drei unterschiedliche Dinge; sie sind nicht redundant:
+**Bildaufnahme** — zwei Optionen erfassen zwei unterschiedliche Dinge; sie sind nicht redundant:
 
 - `--dump-png=<path>` — nur das Kalender-**Seitenbild** über ein off-screen FBO. Auflösung: Export-DPI, weisser Hintergrund, keine App-Chrome. Benötigt: nur OpenGL.
-- `--dump-window-png=<path>` — das **GL-Canvas-Pane** exakt wie auf dem Bildschirm (`glReadPixels` auf dem Back Buffer). Auflösung: Bildschirmauflösung, dunkle Ränder um die Seite. Benötigt: nur OpenGL, funktioniert unter Wayland.
 - `--dump-frame-png=<path>` — das **gesamte Fenster**: Tabs + Panels (`wxClientDC`-Blit) mit dem oben auf das GL-Back-Buffer komponierten Inhalt. Auflösung: Bildschirmauflösung. Benötigt: Widget-Read-back nur mit X11/Xvfb, unter Wayland leer.
 
-`--dump-window-png` ist die Canvas-only-Untermenge von `--dump-frame-png`; verwende es, wenn du nur das gerenderte Canvas brauchst (und Xvfb vermeiden willst), und `--dump-png`, wenn du einen sauberen High-DPI-Export der Seite selbst brauchst. Alle Dumps werden via `CallAfter` verzögert, damit der erste Paint bereits stattgefunden hat.
+Nimm `--dump-png` für einen sauberen High-DPI-Export der Seite selbst, `--dump-frame-png` für die echte GUI samt Chrome. `--dump-frame-png` wird via `CallAfter` verzögert, damit der erste Paint bereits stattgefunden hat.
 
 **Steuerung:**
 

@@ -27,8 +27,6 @@ namespace application {
 //                             als PNG.
 //   --dump-png-dpi=<dpi>      Export-DPI für --dump-png; ohne Angabe gilt
 //                             GLCanvas::kExportPngDpi.
-//   --dump-window-png=<path>  liest den Window-Back-Buffer nach dem ersten
-//                             Paint als PNG aus.
 //   --dump-frame-png=<path>   schreibt das gesamte Hauptfenster (Tabs +
 //                             Panels + Canvas) via wxDC als PNG, mit dem GL-
 //                             Back-Buffer obenauf komponiert. Der Widget-
@@ -55,7 +53,6 @@ struct RuntimeOptions {
   std::optional<std::string> dump_png_path;
   // Export-DPI für dump_png_path; Fallback ist GLCanvas::kExportPngDpi.
   std::optional<int> dump_png_dpi;
-  std::optional<std::string> dump_window_png_path;
   std::optional<std::string> dump_frame_png_path;
   std::optional<std::string> select_tab;
   std::optional<std::int64_t> exit_after_ms;
@@ -73,7 +70,6 @@ struct RuntimeOptions {
 // blockiert den Lauf bis zum Timeout, statt zu melden.
 [[nodiscard]] inline bool IsHeadlessRun(const RuntimeOptions& options) {
   return options.dump_png_path.has_value() ||
-         options.dump_window_png_path.has_value() ||
          options.dump_frame_png_path.has_value() ||
          options.exit_after_ms.has_value();
 }
@@ -85,8 +81,6 @@ inline void AddRuntimeOptions(wxCmdLineParser& parser) {
                        "render the calendar page to PNG (off-screen FBO)");
   parser.AddLongOption("dump-png-dpi", "export DPI for --dump-png",
                        wxCMD_LINE_VAL_NUMBER);
-  parser.AddLongOption("dump-window-png",
-                       "capture the GL canvas back buffer to PNG");
   parser.AddLongOption("dump-frame-png",
                        "capture the whole main frame to PNG (needs X11/Xvfb)");
   parser.AddLongOption("select-tab",
@@ -124,7 +118,6 @@ inline RuntimeOptions RuntimeOptionsFromParser(const wxCmdLineParser& parser) {
     options.startup_file = parser.GetParam(0).ToStdString();
   }
   options.dump_png_path = FoundString(parser, "dump-png");
-  options.dump_window_png_path = FoundString(parser, "dump-window-png");
   options.dump_frame_png_path = FoundString(parser, "dump-frame-png");
   options.select_tab = FoundString(parser, "select-tab");
   options.debug_select_node = FoundString(parser, "debug-select-node");
