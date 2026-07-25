@@ -6,6 +6,12 @@ Build, Tests, kopflose Läufe und die Lint-Gates. Prinzipien, Architektur und Ko
 
 Gebaut wird mit CMake (https://cmake.org/cmake/help/latest/) und dem Ninja-Generator (https://ninja-build.org/manual.html). Das Build-Verzeichnis ist `build/`; `compile_commands.json` wird für clangd/clang-tidy exportiert.
 
+Untermodule einmalig nach dem Klonen initialisieren (Stand jederzeit via `git submodule status`):
+
+```bash
+git submodule update --init --recursive
+```
+
 Neu konfigurieren (nur wenn sich `CMakeLists.txt` oder Abhängigkeiten ändern):
 
 ```bash
