@@ -249,6 +249,50 @@ inline void Bind(EventBus& bus, MainWindowComponents& components) {
   detail::BindInteraction(bus, components);
 }
 
+// Gegenstück zu Bind: trennt alle Verbindungen. Nötig beim Beenden — die
+// wx-Children (Panels, GL-Canvas) sterben erst im ~wxFrame-Basisdestruktor,
+// also nach den Stores und dem EventBus, die MainWindow als Member gehören.
+// Feuert ein Control beim Zerstören noch ein Ereignis (ein offener
+// Editor-Commit etwa), liefe der Slot sonst in bereits zerstörte Objekte.
+inline void Unbind(EventBus& bus, MainWindowComponents& components) {
+  // Ereignisquellen der Presentation-Schicht.
+  components.data_table_panel.SignalTableDateEntries().disconnect_all();
+  components.date_groups_table_panel.SignalTableDateGroups().disconnect_all();
+  components.page_setup_panel.SignalPageSetupConfig().disconnect_all();
+  components.title_setup_panel.SignalTitleConfig().disconnect_all();
+  components.calendar_setup_panel.SignalCalendarConfig().disconnect_all();
+  components.font_panel.SignalFontFilepath().disconnect_all();
+  components.scene_tree_panel.SignalShapeConfigSet().disconnect_all();
+  components.scene_tree_panel.SignalSelectedNode().disconnect_all();
+  components.gl_canvas.SetPointerMoveCallback(nullptr);
+
+  // Stores und Adapter.
+  components.date_entry_store.SignalDateEntries().disconnect_all();
+  components.date_groups_store.SignalDateGroups().disconnect_all();
+  components.transform_date_entry.SignalTransformDateEntries().disconnect_all();
+  components.page_setup_store.SignalPageSetupConfig().disconnect_all();
+  components.title_config_store.SignalTitleConfig().disconnect_all();
+  components.shape_configuration_store.SignalShapeConfigSet().disconnect_all();
+  components.calendar_configuration_store.SignalCalendarConfig()
+      .disconnect_all();
+  components.calendar_page.SignalSceneSnapshot().disconnect_all();
+  components.interaction_controller.SignalHovered().disconnect_all();
+  components.interaction_controller.SetPickSource(nullptr);
+
+  // Bus-Topics: ihre Slots zeigen auf Panels und den Rendering-Adapter.
+  bus.date_entries().disconnect_all();
+  bus.transformed_date_entries().disconnect_all();
+  bus.date_groups().disconnect_all();
+  bus.page_setup().disconnect_all();
+  bus.font_filepath().disconnect_all();
+  bus.title_config().disconnect_all();
+  bus.shape_config_set().disconnect_all();
+  bus.calendar_config().disconnect_all();
+  bus.scene_snapshot().disconnect_all();
+  bus.hovered().disconnect_all();
+  bus.selected_node().disconnect_all();
+}
+
 inline void SendInitialValues(MainWindowComponents& components) {
   components.shape_configuration_store.SendShapeConfigSet();
   components.date_groups_store.SendDefaultValues();

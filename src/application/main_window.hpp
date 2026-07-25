@@ -78,6 +78,10 @@ class MainWindow : public wxFrame {
   void SelectStartupTab();
   void InitializeOpenGL();
   void EstablishConnections();
+  // Bündelt Stores, Panels und Adapter für Binder-Aufrufe. Gültig erst, wenn
+  // IsWired() zutrifft — vor dem GL-Init gibt es keinen Rendering-Adapter.
+  [[nodiscard]] MainWindowComponents MakeComponents();
+  [[nodiscard]] bool IsWired() const { return calendar_page_ != nullptr; }
   void LoadStartupFile();
   void ConfigureAutoExitTimer();
   void DumpPngIfRequested();
@@ -154,7 +158,16 @@ inline MainWindow::MainWindow(wxWindow* parent,
   ConfigureAutoExitTimer();
 }
 
-inline MainWindow::~MainWindow() = default;
+inline MainWindow::~MainWindow() {
+  // Die Verdrahtung trennen, solange beide Enden noch leben: die wx-Children
+  // sterben erst im ~wxFrame-Basisdestruktor, also nach Stores und EventBus.
+  // Ohne das liefe ein beim Zerstören noch gefeuertes Panel-Ereignis in
+  // zerstörte Objekte.
+  if (IsWired()) {
+    MainWindowComponents components = MakeComponents();
+    main_window_binder::Unbind(event_bus_, components);
+  }
+}
 
 inline void MainWindow::CreateLayout(bool maximize_on_start) {
   if (maximize_on_start) {
@@ -385,8 +398,8 @@ inline void MainWindow::DumpFramePng(const std::string& path) {
   }
 }
 
-inline void MainWindow::EstablishConnections() {
-  MainWindowComponents components{
+inline MainWindowComponents MainWindow::MakeComponents() {
+  return MainWindowComponents{
       .date_groups_store = date_groups_store_,
       .date_entry_store = date_entry_store_,
       .transform_date_entry = transform_date_entry_,
@@ -405,7 +418,10 @@ inline void MainWindow::EstablishConnections() {
       .gl_canvas = *gl_canvas_,
       .interaction_controller = interaction_controller_,
   };
+}
 
+inline void MainWindow::EstablishConnections() {
+  MainWindowComponents components = MakeComponents();
   main_window_binder::Bind(event_bus_, components);
   main_window_binder::SendInitialValues(components);
 }
