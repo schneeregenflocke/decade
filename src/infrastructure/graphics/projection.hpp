@@ -12,14 +12,25 @@
 
 class Projection {
  public:
+  // Ein entartetes Viewport (Höhe oder Breite 0 bei einem extrem flach
+  // gezogenen Fenster) trüge sonst inf/NaN über OrthoMatrix und
+  // ComputeZoomLimits in die gesamte Darstellung — und bliebe dort bis zum
+  // nächsten gültigen Resize. 1:1 hält die Matrizen endlich.
+  static constexpr float kDegenerateAspectRatio = 1.0F;
+
+  [[nodiscard]] static constexpr float AspectRatioOf(GLint width,
+                                                     GLint height) {
+    if (width <= 0 || height <= 0) {
+      return kDegenerateAspectRatio;
+    }
+    return static_cast<float>(width) / static_cast<float>(height);
+  }
+
   static float AspectRatio() {
     std::array<GLint, 4> viewport{};
     glGetIntegerv(GL_VIEWPORT, viewport.data());
 
-    const auto width = static_cast<float>(viewport[2]);
-    const auto height = static_cast<float>(viewport[3]);
-
-    return width / height;
+    return AspectRatioOf(viewport[2], viewport[3]);
   }
 
   static glm::mat4 OrthoMatrix(const rectf& view_size) {
