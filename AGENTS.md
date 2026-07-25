@@ -1,6 +1,6 @@
 # decade
 
-Stabile Leitplanken für die Arbeit am decade-Code: Architektur, Konventionen, Prinzipien. Build und Betrieb stehen in [betrieb.md](betrieb.md), offene Punkte als Issues.
+Stabile Leitplanken für die Arbeit am decade-Code: Architektur und Konventionen. Build und Betrieb stehen in [betrieb.md](betrieb.md), offene Punkte als Issues.
 
 ## Zweck
 
@@ -97,6 +97,31 @@ Verzögert: `MainWindow` ruft `GLCanvas::InitOpenGL(version, callback)` auf. Der
 - C++23, keine Compiler-Erweiterungen.
 - Header-Guards benutzen den Dateinamenstil: der grossgeschriebene Dateiname mit dem Punkt vor dem Suffix als `_`, z. B. `main_window.hpp` → `MAIN_WINDOW_HPP`, `gl_canvas.hpp` → `GL_CANVAS_HPP`. Kein Verzeichnispfadpräfix. Das konsequent in `#ifndef`, `#define` und dem abschliessenden `#endif  // <GUARD>`-Kommentar anwenden. (Die clang-tidy-Prüfung `llvm-header-guard`, die sonst einen Full-Path-Stil erzwingen würde, ist in `.clang-tidy` deaktiviert — so lassen.)
 
+### Prinzipien
+
+Die verbindlichen Entwurfsprinzipien für diese Codebasis. Die etablierten Fachbegriffe sind hier — wie im ganzen Dokument — bewusst als semantische Anker gesetzt (Semantic Anchors, https://github.com/LLM-Coding/Semantic-Anchors): Der Begriff aktiviert das dahinterliegende Wissen, bei Menschen wie bei Coding-Agents, präziser als jede Umschreibung.
+
+- Single Responsibility Principle (https://en.wikipedia.org/wiki/Single-responsibility_principle) und Separation of Concerns (https://en.wikipedia.org/wiki/Separation_of_concerns); geringe Kopplung (https://en.wikipedia.org/wiki/Coupling_%28computer_programming%29), hohe Kohäsion (https://en.wikipedia.org/wiki/Cohesion_%28computer_science%29).
+- Domain-Driven Design (https://www.domainlanguage.com/ddd/reference/) — siehe das [Domain-Muster](#domain-muster-value-objects--stores) — und Clean Architecture (https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) — siehe [Schichten & Schichtregeln](#schichten--schichtregeln).
+- DRY (https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) als Wissens-DRY, massgeblich ist Single Source of Truth (https://en.wikipedia.org/wiki/Single_source_of_truth): jedes Stück Wissen (Regel, Konstante, Domänenentscheidung) hat genau eine autoritative Repräsentation — nicht jede ähnlich aussehende Zeile zusammenfalten. Aber: Duplikation ist billiger als die falsche Abstraktion (https://sandimetz.com/blog/2016/1/20/the-wrong-abstraction); zwei zufällig identische Blöcke, die *verschiedene* Konzepte ausdrücken, bleiben getrennt — im Zweifel nicht verfrüht abstrahieren (YAGNI, https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it; KISS, https://en.wikipedia.org/wiki/KISS_principle).
+  - Mechanik: wenn dieselbe mehrzeilige Form über mehrere Methoden (oder Panels) wiederkehrt, ziehe sie in einen kleinen Helfer hoch — ein `private`-Member, eine freie Funktion oder eine gemeinsame Basisklasse — statt sie zu kopieren. Etablierte Beispiele: `scene_shapes::FillRectangles` / `AddCenteredText` (Scene-Node-Erzeugung), `GLCanvas::ReadBackBuffer` (Rendern + `glReadPixels` + Zeilenflip), `MakeOwned<T>` (parent-owned Widgets), `TablePanelBase` (Tabellen-plus-Add/Delete-Gerüst), `serialization_detail::ColorToArray` / `ColorFromArray` (glm::vec4-Marshalling). Bevorzuge dies gegenüber Makros, weil Makros Lesbarkeit und Debuggability verschlechtern — die expliziten, feldweisen `save`/`load`-Paare in `infrastructure/persistence/value_serialization.hpp` bleiben absichtlich ausgeschrieben, weil sie das On-Disk-Format dokumentieren.
+- Selbsterklärender Code — Namen, Struktur und sparsame Kommentare tragen die Absicht: siehe [Selbsterklärender Code](#selbsterklärender-code).
+- Principle of Least Astonishment (https://en.wikipedia.org/wiki/Principle_of_least_astonishment): Namen, Signaturen und Verhalten passen zusammen.
+- Die kleinste nützliche Abstraktion wählen; expliziten Datenfluss vor versteckter Kopplung bevorzugen (Law of Demeter, https://en.wikipedia.org/wiki/Law_of_Demeter); unübersichtliche Konstrukte einkapseln statt sie zu verbreiten.
+- Stabile Regeln von instabiler Arbeit trennen (diese Datei vs. die Issues, siehe [Offene Punkte](#offene-punkte)).
+
+### GRASP-Muster
+
+Wende die GRASP (https://en.wikipedia.org/wiki/GRASP_%28object-oriented_design%29)-Heuristiken zur Verantwortungszuweisung an, wenn du entscheidest, wo Code hingehört:
+
+- Information Expert
+- Creator
+- Controller
+- Low Coupling / High Cohesion
+- Indirection
+- Pure Fabrication
+- Polymorphism / Protected Variations
+
 ### Warnings & clang-tidy-Gate
 
 - **Warnings brechen den Build — behebe sie, unterdrücke sie nicht. Diese Regel gilt sowohl für Compiler-Warnungen als auch für Diagnosen von clang-tidy (https://clang.llvm.org/extra/clang-tidy/).** Kein Finding mit `NOLINT` / `NOLINTNEXTLINE` / `NOLINTBEGIN` (https://clang.llvm.org/extra/clang-tidy/index.html#suppressing-undesired-diagnostics), einem `#pragma`, einem `-Wno-…`-Flag oder einer `.clang-tidy`-Einzelzeilen-Ausnahme einfach ruhigstellen. Ändere den Code so, dass das Finding nicht mehr greift. Umstrukturierung, RAII und korrekte Typannotationen sind Fixes; Unterdrückung ist keiner.
@@ -141,37 +166,6 @@ Konkret, nach Google C++ Style (https://google.github.io/styleguide/cppguide.htm
 
 Die Codebasis ist **absichtlich als Header-only konzipiert** (`main.cpp` ist die einzige Translation Unit). Beim Hinzufügen von Code lieber bestehende Header direkt erweitern als in `.cpp` aufzuteilen. Diese Konvention auch bei Refactorings beibehalten. Definitionen, die in einem Header leben, müssen `inline` (https://en.cppreference.com/w/cpp/language/inline) sein (freie Funktionen und out-of-class Member-Definitionen), damit die Single-TU-Regel ODR-Verstösse nicht stillschweigend verdeckt, falls ein Header irgendwann von woanders eingebunden wird (z. B. Tests).
 
-### Stil (Sprache & Doku)
-
-- Kommentare und Doku: knappes, aktives Deutsch (Wolf Schneider (https://de.wikipedia.org/wiki/Wolf_Schneider)). So wenige Zeilen wie möglich; nur Nicht-Offensichtliches kommentieren.
-- Echte Umlaute schreiben (ä/ö/ü), nie ae/oe/ue. Schweizer Rechtschreibung: `ss` statt `ß`.
-- In Markdown-Dateien keine Tabellen verwenden; stattdessen mehrzeilige Listen. Sie sind leichter lesbar, leichter zu schreiben und oft kürzer.
-
-## Entwurfsprinzipien
-
-Das sind die verbindlichen Entwurfsprinzipien für diese Codebasis. Die etablierten Fachbegriffe sind hier — wie im ganzen Dokument — bewusst als semantische Anker gesetzt (Semantic Anchors, https://github.com/LLM-Coding/Semantic-Anchors): Der Begriff aktiviert das dahinterliegende Wissen, bei Menschen wie bei Coding-Agents, präziser als jede Umschreibung.
-
-- Single Responsibility Principle (https://en.wikipedia.org/wiki/Single-responsibility_principle) und Separation of Concerns (https://en.wikipedia.org/wiki/Separation_of_concerns); geringe Kopplung (https://en.wikipedia.org/wiki/Coupling_%28computer_programming%29), hohe Kohäsion (https://en.wikipedia.org/wiki/Cohesion_%28computer_science%29).
-- Domain-Driven Design (https://www.domainlanguage.com/ddd/reference/) — siehe das [Domain-Muster](#domain-muster-value-objects--stores) — und Clean Architecture (https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) — siehe [Schichten & Schichtregeln](#schichten--schichtregeln).
-- DRY (https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) als Wissens-DRY, massgeblich ist Single Source of Truth (https://en.wikipedia.org/wiki/Single_source_of_truth): jedes Stück Wissen (Regel, Konstante, Domänenentscheidung) hat genau eine autoritative Repräsentation — nicht jede ähnlich aussehende Zeile zusammenfalten. Aber: Duplikation ist billiger als die falsche Abstraktion (https://sandimetz.com/blog/2016/1/20/the-wrong-abstraction); zwei zufällig identische Blöcke, die *verschiedene* Konzepte ausdrücken, bleiben getrennt — im Zweifel nicht verfrüht abstrahieren (YAGNI, https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it; KISS, https://en.wikipedia.org/wiki/KISS_principle).
-  - Mechanik: wenn dieselbe mehrzeilige Form über mehrere Methoden (oder Panels) wiederkehrt, ziehe sie in einen kleinen Helfer hoch — ein `private`-Member, eine freie Funktion oder eine gemeinsame Basisklasse — statt sie zu kopieren. Etablierte Beispiele: `scene_shapes::FillRectangles` / `AddCenteredText` (Scene-Node-Erzeugung), `GLCanvas::ReadBackBuffer` (Rendern + `glReadPixels` + Zeilenflip), `MakeOwned<T>` (parent-owned Widgets), `TablePanelBase` (Tabellen-plus-Add/Delete-Gerüst), `serialization_detail::ColorToArray` / `ColorFromArray` (glm::vec4-Marshalling). Bevorzuge dies gegenüber Makros, weil Makros Lesbarkeit und Debuggability verschlechtern — die expliziten, feldweisen `save`/`load`-Paare in `infrastructure/persistence/value_serialization.hpp` bleiben absichtlich ausgeschrieben, weil sie das On-Disk-Format dokumentieren.
-- Selbsterklärender Code — Namen, Struktur und sparsame Kommentare tragen die Absicht: siehe [Selbsterklärender Code](#selbsterklärender-code).
-- Principle of Least Astonishment (https://en.wikipedia.org/wiki/Principle_of_least_astonishment): Namen, Signaturen und Verhalten passen zusammen.
-- Die kleinste nützliche Abstraktion wählen; expliziten Datenfluss vor versteckter Kopplung bevorzugen (Law of Demeter, https://en.wikipedia.org/wiki/Law_of_Demeter); unübersichtliche Konstrukte einkapseln statt sie zu verbreiten.
-- Stabile Regeln von instabiler Arbeit trennen (diese Datei vs. die Issues, siehe [Offene Punkte](#offene-punkte)).
-
-### GRASP-Muster
-
-Wende die GRASP (https://en.wikipedia.org/wiki/GRASP_%28object-oriented_design%29)-Heuristiken zur Verantwortungszuweisung an, wenn du entscheidest, wo Code hingehört:
-
-- Information Expert
-- Creator
-- Controller
-- Low Coupling / High Cohesion
-- Indirection
-- Pure Fabrication
-- Polymorphism / Protected Variations
-
 ### Refactoring
 
 - Sicherheit vor Struktur. Vor einer strukturellen Änderung an einer God Class oder einem anderen Code Smell (https://en.wikipedia.org/wiki/Code_smell) zuerst eine Black-Box-Schutzschicht ergänzen: einen Charakterisierungstest (https://en.wikipedia.org/wiki/Characterization_test) mit Eingabe und dem aktuellen Output als eingefrorener Erwartung. Kein Umbau ohne diese Absicherung.
@@ -182,6 +176,12 @@ Wende die GRASP (https://en.wikipedia.org/wiki/GRASP_%28object-oriented_design%2
 - Schrittweiser Ablauf: zuerst stabilisieren (Charakterisierungstests, Smoke-Pfade, Baseline-Output) → dann aufteilen (kleine Nähte extrahieren — Seams nach Michael Feathers, «Working Effectively with Legacy Code» —, Verhalten unverändert) → danach umbenennen (Absicht sichtbar machen, ohne Semantik zu ändern) → zuletzt entkoppeln (Kopplung erst entfernen, wenn die Form bereits sicher ist).
 - Wenn etwas nicht sofort geändert werden kann, wird es ein Issue (siehe [Offene Punkte](#offene-punkte)), damit es nicht verloren geht.
 - Beim Arbeiten mit einer Datei aufgefallene Verstösse gegen die Konventionen dieser Datei werden — auch wenn sie nicht Teil der Aufgabe sind — als Issue angelegt.
+
+### Stil (Sprache & Doku)
+
+- Kommentare und Doku: knappes, aktives Deutsch (Wolf Schneider (https://de.wikipedia.org/wiki/Wolf_Schneider)). So wenige Zeilen wie möglich; nur Nicht-Offensichtliches kommentieren.
+- Echte Umlaute schreiben (ä/ö/ü), nie ae/oe/ue. Schweizer Rechtschreibung: `ss` statt `ß`.
+- In Markdown-Dateien keine Tabellen verwenden; stattdessen mehrzeilige Listen. Sie sind leichter lesbar, leichter zu schreiben und oft kürzer.
 
 ## Offene Punkte
 
