@@ -122,6 +122,20 @@ Warum die Extra-Args:
 
 `src/**/*.cpp src/**/*.hpp` setzt voraus, dass die Shell rekursive Globs unterstützt (zsh standardmässig; bash erst nach `shopt -s globstar`).
 
+### Sanitizer
+
+Das zweite Gate neben clang-tidy: der Code läuft instrumentiert, statt nur gelesen zu werden. Beide Targets konfigurieren einen eigenen Build-Ordner unter `build/`, bauen alles darin neu und lassen `ctest` darin laufen — nur ein Lauf findet Fehler, ein Bau allein nicht. Flags: [GCC, Instrumentation Options](https://gcc.gnu.org/onlinedocs/gcc-9.2.0/gcc/Instrumentation-Options.html).
+
+```bash
+cmake --build build --target sanitize-address   # address,leak,undefined — der Gate-Lauf
+cmake --build build --target sanitize-memory    # memory (clang) — Diagnose, siehe unten
+```
+
+- **`sanitize-address`** ist das Gate. Es kombiniert AddressSanitizer (Puffer-Überläufe, Use-after-free), LeakSanitizer und UndefinedBehaviorSanitizer. Der Baum wird bei **null Befunden** gehalten. `-fno-sanitize-recover=undefined` ist nötig, weil UBSan sonst nur meldet und weiterläuft — das Gate bliebe grün. LeakSanitizer steckt unter Linux schon in AddressSanitizer; er ist trotzdem genannt, damit die Absicht im Target steht.
+- **`sanitize-memory`** ist ein Diagnosewerkzeug, kein Gate. MemorySanitizer (uninitialisierte Lesezugriffe) schliesst AddressSanitizer aus — der Compiler weist die Kombination ab — und kennt nur clang, darum ein zweites Target. Er verlangt, dass **alle** Abhängigkeiten instrumentiert sind; mit dem System-libstdc++ und -gtest meldet er Fehlalarme aus fremdem Code und bricht schon in der Test-Discovery ab. Brauchbar würde er erst mit einem selbst gebauten, instrumentierten libc++ samt neu gebautem gtest, ICU und Boost.
+- `embed-resource` läuft während des Builds und ist per `-fno-sanitize=all` ausgenommen: ein Befund im Werkzeug würde den Bau abbrechen, statt das Programm zu prüfen.
+- Das GUI-Binary im Sanitizer-Ordner (`build/san-address/decade`) lässt sich wie üblich unter Xvfb starten; die GL-Treiber halten beim Beenden Speicher, ein Leak-Report daraus sagt wenig.
+
 ### clang-format
 
 `.clang-format` ist die verbindliche Quelle für das Formatting (ClangFormat-Doku (https://clang.llvm.org/docs/ClangFormat.html)).

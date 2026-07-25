@@ -295,7 +295,7 @@ inline void MainWindow::InitializeOpenGL() {
         // von dort verpufft, und ein modaler Dialog stünde vor der Loop.
         std::cerr << message << '\n';
         CallAfter([this, message]() {
-          if (!application::IsHeadlessRun(runtime_options_)) {
+          if (!application::IsNonInteractiveRun(runtime_options_)) {
             wxMessageBox(message, "OpenGL", wxOK | wxICON_ERROR, this);
           }
           Close(true);

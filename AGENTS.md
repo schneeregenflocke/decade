@@ -118,13 +118,15 @@ Ziel ist selbsterklärender Code; Refactoring bringt ihn schrittweise dorthin.
 
 Die Codebasis ist **absichtlich als Header-only konzipiert** (`main.cpp` ist die einzige Translation Unit). Beim Hinzufügen von Code lieber bestehende Header direkt erweitern als in `.cpp` aufzuteilen. Diese Konvention auch bei Refactorings beibehalten. Definitionen, die in einem Header leben, müssen `inline` (https://en.cppreference.com/w/cpp/language/inline) sein (freie Funktionen und out-of-class Member-Definitionen), damit die Single-TU-Regel ODR-Verstösse nicht stillschweigend verdeckt, falls ein Header irgendwann von woanders eingebunden wird (z. B. Tests).
 
-### Warnings & clang-tidy-Gate
+### Warnings, clang-tidy- und Sanitizer-Gate
 
 - **Warnings brechen den Build — behebe sie, unterdrücke sie nicht. Diese Regel gilt sowohl für Compiler-Warnungen als auch für Diagnosen von clang-tidy (https://clang.llvm.org/extra/clang-tidy/).** Kein Finding mit `NOLINT` / `NOLINTNEXTLINE` / `NOLINTBEGIN` (https://clang.llvm.org/extra/clang-tidy/index.html#suppressing-undesired-diagnostics), einem `#pragma`, einem `-Wno-…`-Flag oder einer `.clang-tidy`-Einzelzeilen-Ausnahme einfach ruhigstellen. Ändere den Code so, dass das Finding nicht mehr greift. Umstrukturierung, RAII und korrekte Typannotationen sind Fixes; Unterdrückung ist keiner.
   - **Bevorzuge einen echten Fix, auch wenn die Warnung zunächst "nicht behebbar" wirkt.** Meist ist sie es doch. Beispiel: `cppcoreguidelines-owning-memory` (https://clang.llvm.org/extra/clang-tidy/checks/cppcoreguidelines/owning-memory.html) über einer rohen C-Ressource ist erfüllt, wenn Ownership mit `gsl::owner<>` aus der GSL (https://github.com/microsoft/GSL) — das Projekt verlinkt bereits `Microsoft.GSL::GSL` — und/oder einem `std::unique_ptr` mit Custom-Deleter ausgedrückt wird — siehe `src/infrastructure/graphics/png_writer.hpp`. Eine Regel, die für den Projektstil wirklich nicht anwendbar ist, wird **einmal, global** in `.clang-tidy` mit Kommentar deaktiviert (wie bereits `-modernize-use-trailing-return-type`, `-llvm-header-guard`, …) — niemals verteilt pro Zeile.
   - **Unterdrückung ist nur als letzter Ausweg erlaubt, und zwar nur für Konstrukte, die uns ein Third-Party-C-API vertraglich aufzwingt und die im Code nicht anders lösbar sind.** Das kanonische (und derzeit einzige zugelassene) Beispiel ist das zwingende `setjmp`/`longjmp`-Error-Handling von libpng in `src/infrastructure/graphics/png_writer.hpp`. Wenn du unterdrücken musst: scoping des `NOLINT` auf die **konkreten Check-Namen** (niemals ein nacktes `NOLINT`), auf die engste Zeile beschränken und einen Kommentar hinzufügen, der erklärt, *warum* das nicht behebbar ist. Wenn eine ganze Abhängigkeit eine Warnungsklasse unvermeidbar macht, ersetze lieber diese Abhängigkeit, statt Unterdrückungen zu verteilen.
 
-Die Gate-Befehle (Durchsetzungs-Target, voller Lauf, Auto-Fix, clang-format, CI) stehen in [betrieb.md](betrieb.md), Abschnitt Build-Prüfungen.
+Neben clang-tidy steht das Sanitizer-Gate `sanitize-address` (address, leak, undefined): es baut den Baum instrumentiert neu und lässt die Testsuite darunter laufen. Auch dieser Baum wird bei **null Befunden** gehalten; ein Sanitizer-Treffer wird behoben, nicht unterdrückt. Wer Verhalten ändert, das im Test nicht abgedeckt ist, deckt es zuerst ab — der Sanitizer sieht nur, was auch läuft.
+
+Die Gate-Befehle (Durchsetzungs-Targets, voller Lauf, Auto-Fix, clang-format, CI) stehen in [betrieb.md](betrieb.md), Abschnitt Build-Prüfungen.
 
 ### Prinzipien
 

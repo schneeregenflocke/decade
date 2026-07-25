@@ -47,7 +47,8 @@ target_link_libraries(decade_tests PRIVATE
 	GTest::gtest_main
 	glm::glm
 	${ICU_LIBRARIES}
-	${Boost_LIBRARIES}
+	Boost::serialization
+	Boost::wserialization
 	BulletCollision
 	LinearMath
 )

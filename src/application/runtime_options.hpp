@@ -32,8 +32,8 @@ namespace application {
 //                             Back-Buffer obenauf komponiert. Der Widget-
 //                             Read-back braucht das X11-Backend (ein
 //                             wxClientDC-Blit liefert unter Wayland schwarz),
-//                             also headless unter Xvfb ausführen (siehe
-//                             CLAUDE.md, «Kopflose / skriptgesteuerte Läufe»).
+//                             also unter Xvfb ausführen (siehe betrieb.md,
+//                             «Kopflose Läufe»).
 //   --select-tab=<label>      wählt beim Start einen Notebook-Tab per Label
 //                             vor (case-insensitive), z. B. zum Screenshotten
 //                             eines bestimmten Tabs.
@@ -67,8 +67,9 @@ struct RuntimeOptions {
 
 // Kennzeichen eines nicht-interaktiven Laufs: eine Bildaufnahme oder ein
 // Auto-Exit ist angefordert. Dort darf kein modaler Dialog stehen bleiben — er
-// blockiert den Lauf bis zum Timeout, statt zu melden.
-[[nodiscard]] inline bool IsHeadlessRun(const RuntimeOptions& options) {
+// blockiert den Lauf bis zum Timeout, statt zu melden. Ein Display braucht auch
+// dieser Lauf; headless im Wortsinn ist er nicht.
+[[nodiscard]] inline bool IsNonInteractiveRun(const RuntimeOptions& options) {
   return options.dump_png_path.has_value() ||
          options.dump_frame_png_path.has_value() ||
          options.exit_after_ms.has_value();

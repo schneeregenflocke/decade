@@ -15,7 +15,7 @@ class TransformDateEntry {
     int end_days;
   };
 
-  TransformDateEntry() : date_shift_{.begin_days = 0, .end_days = 0} {};
+  TransformDateEntry() : date_shift_{.begin_days = 0, .end_days = 0} {}
 
   void ReceiveDateEntries(const std::vector<DateEntry>& date_entries) {
     if (emitting_) {
