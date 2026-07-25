@@ -23,7 +23,6 @@
 #include <wx/weakref.h>
 #include <wx/window.h>
 
-#include <array>
 #include <cstdint>
 #include <iostream>
 #include <memory>
@@ -136,11 +135,6 @@ class MainWindow : public wxFrame {
   MainMenu menu_;
   application::RuntimeOptions runtime_options_;
 };
-
-namespace main_window_detail {
-constexpr int kOpenGLMajor = 4;
-constexpr int kOpenGLMinor = 6;
-}  // namespace main_window_detail
 
 inline MainWindow::MainWindow(wxWindow* parent,
                               const application::MainWindowConfig& config,
@@ -260,16 +254,13 @@ inline void MainWindow::InitializeOpenGL() {
   Show();
   Raise();
 
-  const std::array<int, 2> gl_version{main_window_detail::kOpenGLMajor,
-                                      main_window_detail::kOpenGLMinor};
   // The callback runs once the GL context is current — only here may GL state
   // be touched. CalendarPage and the binder wiring live inside it, never
   // before.
   gl_canvas_->InitOpenGL(
-      gl_version,
       [this]() {
         calendar_page_ = std::make_unique<CalendarPage>(
-            gl_canvas_.get(), font_panel_->GetFontFilePath());
+            *gl_canvas_, font_panel_->GetFontFilePath());
         EstablishConnections();
         LoadStartupFile();
         if (runtime_options_.debug_hover_bar) {

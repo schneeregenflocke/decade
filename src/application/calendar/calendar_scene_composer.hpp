@@ -32,7 +32,7 @@
 // and drives Build() in reaction to store updates.
 class CalendarSceneComposer {
  public:
-  CalendarSceneComposer(GraphicsEngine* graphics_engine_in, Scene& scene_in,
+  CalendarSceneComposer(GraphicsEngine& graphics_engine_in, Scene& scene_in,
                         const std::shared_ptr<Font>& font_in,
                         const rectf& page_size_in, const rectf& page_margin_in,
                         const TitleConfig& title_config_in,
@@ -50,13 +50,13 @@ class CalendarSceneComposer {
         shape_config_(shape_config_in),
         date_groups_(date_groups_in),
         bar_store_(bar_store_in) {
-    graphics_engine_->SetScene(scene_);
+    graphics_engine_.SetScene(scene_);
     auto* simple_shader =
-        graphics_engine_->SearchShader("Simple Shader").value_or(nullptr);
+        graphics_engine_.SearchShader("Simple Shader").value_or(nullptr);
     rectangles_shader_ =
-        graphics_engine_->SearchShader("Rectangles Shader").value_or(nullptr);
+        graphics_engine_.SearchShader("Rectangles Shader").value_or(nullptr);
     font_shader_ =
-        graphics_engine_->SearchShader("Font Shader").value_or(nullptr);
+        graphics_engine_.SearchShader("Font Shader").value_or(nullptr);
 
     // The fixed scene skeleton (named nodes, their painter layers and parent
     // attachments) is built once here; the handles drive the section builders.
@@ -155,7 +155,7 @@ class CalendarSceneComposer {
   // The scene graph's owner is the Scene (held by CalendarPage); the builder
   // borrows it to mutate the graph. It is not owned here.
   Scene& scene_;
-  GraphicsEngine* graphics_engine_{nullptr};
+  GraphicsEngine& graphics_engine_;
 
   // Cached shader handles, looked up once in the constructor. The shaders live
   // in the GraphicsEngine for the builder's whole lifetime; they are forwarded

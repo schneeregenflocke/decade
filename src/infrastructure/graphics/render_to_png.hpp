@@ -53,8 +53,7 @@ struct ImageSize {
 class ImageComposer {
  public:
   ImageComposer(ImageSize image_size, const rectf& ortho_region_in,
-                const std::shared_ptr<GraphicsEngine>& graphics_engine_in,
-                int msaa_samples_in)
+                GraphicsEngine& graphics_engine_in, int msaa_samples_in)
       : width_(image_size.width),
         height_(image_size.height),
         ortho_region_(ortho_region_in),
@@ -190,8 +189,8 @@ class ImageComposer {
             glm::ortho(tile.ortho_region.l(), tile.ortho_region.r(),
                        tile.ortho_region.b(), tile.ortho_region.t()));
 
-        graphics_engine_->SetMVP(mvp);
-        graphics_engine_->Render();
+        graphics_engine_.SetMVP(mvp);
+        graphics_engine_.Render();
 
         render_texture.EndRender();
 
@@ -265,7 +264,7 @@ class ImageComposer {
   size_t tile_columns_{0};
   size_t tile_rows_{0};
 
-  std::shared_ptr<GraphicsEngine> graphics_engine_;
+  GraphicsEngine& graphics_engine_;
 
   size_t bytes_per_pixel_{0};
   std::vector<unsigned char> image_;
@@ -283,60 +282,39 @@ class ImageComposer {
   static constexpr size_t kMaxTileSize = 4096;
 };
 
-// Renders the calendar page to a PNG at a given resolution. Converts the page's
-// orthographic millimetre extent into a pixel size via the requested dpi, then
-// delegates tiled rendering to ImageComposer and file writing to png_io.
-class RenderToPNG {
- public:
-  RenderToPNG(std::string file_path_in, const rectf& ortho_region_in,
-              const float dpi_in,
-              std::shared_ptr<GraphicsEngine> graphics_engine_in,
-              int msaa_samples_in)
-      : file_path_(std::move(file_path_in)),
-        ortho_region_(ortho_region_in),
-        dpi_(dpi_in),
-        graphics_engine_(std::move(graphics_engine_in)),
-        msaa_samples_(msaa_samples_in) {
-    RenderPicture();
+namespace render_to_png_detail {
+
+[[nodiscard]] inline float DotsPerInchToDotsPerMillimeter(float dpi) {
+  constexpr float kInchInMillimeters = 25.4F;
+  return dpi / kInchInMillimeters;
+}
+
+}  // namespace render_to_png_detail
+
+// Zeichnet die Kalenderseite in der gewünschten Auflösung als PNG. Rechnet die
+// Millimeter-Ausdehnung der Seite über die dpi in eine Pixelgrösse um, lässt
+// ImageComposer gekachelt rendern und png_io schreiben. Tut nichts, wenn die
+// Bildgrösse die PNG-Grenzen sprengt.
+inline void WritePageToPng(const std::string& file_path,
+                           const rectf& ortho_region, float dpi,
+                           GraphicsEngine& graphics_engine, int msaa_samples) {
+  const float dots_per_millimeter =
+      render_to_png_detail::DotsPerInchToDotsPerMillimeter(dpi);
+  const auto image_width = static_cast<size_t>(
+      std::max(0.0F, std::round(ortho_region.width() * dots_per_millimeter)));
+  const auto image_height = static_cast<size_t>(
+      std::max(0.0F, std::round(ortho_region.height() * dots_per_millimeter)));
+
+  if (!png_io::FitsPngLimits(image_width, image_height)) {
+    return;
   }
 
-  void RenderPicture() {
-    // calculate the rounded pixel dimension from dpi
-    const float dots_per_millimeter = DotsPerInchToDotsPerMillimeter(dpi_);
-    const float pixel_width =
-        std::round(ortho_region_.width() * dots_per_millimeter);
-    const float pixel_height =
-        std::round(ortho_region_.height() * dots_per_millimeter);
-
-    image_width_ = static_cast<size_t>(std::max(0.0F, pixel_width));
-    image_height_ = static_cast<size_t>(std::max(0.0F, pixel_height));
-
-    if (!png_io::FitsPngLimits(image_width_, image_height_)) {
-      return;
-    }
-
-    const ImageComposer composer(
-        ImageSize{.width = image_width_, .height = image_height_},
-        ortho_region_, graphics_engine_, msaa_samples_);
-    auto pixels = composer.CopyImage();
-    png_io::WriteRgbaPng(
-        file_path_.c_str(), pixels,
-        png_io::PngImageSize{.width = image_width_, .height = image_height_});
-  }
-
- private:
-  [[nodiscard]] static float DotsPerInchToDotsPerMillimeter(
-      const float dpi_value) {
-    constexpr float ratio = 1.0F / 25.4F;
-    return ratio * dpi_value;
-  }
-
-  std::string file_path_;
-  rectf ortho_region_;
-  float dpi_;
-  size_t image_width_{0};
-  size_t image_height_{0};
-  std::shared_ptr<GraphicsEngine> graphics_engine_;
-  int msaa_samples_;
-};
+  const ImageComposer composer(
+      ImageSize{.width = image_width, .height = image_height}, ortho_region,
+      graphics_engine, msaa_samples);
+  auto pixels = composer.CopyImage();
+  png_io::WriteRgbaPng(
+      file_path.c_str(), pixels,
+      png_io::PngImageSize{.width = image_width, .height = image_height});
+}
 #endif  // RENDER_TO_PNG_HPP

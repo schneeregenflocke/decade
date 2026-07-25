@@ -17,6 +17,7 @@
 #include "../../domain/shape_configuration.hpp"
 #include "../../domain/title_config.hpp"
 #include "../../infrastructure/graphics/font.hpp"
+#include "../../infrastructure/graphics/page_geometry.hpp"
 #include "../../infrastructure/graphics/pick_id.hpp"
 #include "../../infrastructure/graphics/rect.hpp"
 #include "../../infrastructure/graphics/scene.hpp"
@@ -30,13 +31,12 @@
 // (copyable); every incoming signal carries a value, so the slots just assign.
 class CalendarPage {
  public:
-  CalendarPage(GLCanvas* gl_canvas_in, const std::string& font_filepath)
+  CalendarPage(GLCanvas& gl_canvas_in, const std::string& font_filepath)
       : gl_canvas_(gl_canvas_in),
         font_(std::make_shared<Font>(font_filepath)),
-        scene_composer_(gl_canvas_in->GraphicsEnginePtr(), scene_, font_,
-                        page_size_, page_margin_, title_config_,
-                        calendar_config_, shape_config_, date_groups_,
-                        bar_store_) {}
+        scene_composer_(gl_canvas_in.Engine(), scene_, font_, page_size_,
+                        page_margin_, title_config_, calendar_config_,
+                        shape_config_, date_groups_, bar_store_) {}
 
   void ReceiveDateGroups(const std::vector<DateGroup>& date_groups_in) {
     date_groups_.Assign(date_groups_in);
@@ -50,12 +50,8 @@ class CalendarPage {
   }
 
   void ReceivePageSetup(const PageSetupConfig& page_setup_config) {
-    this->page_size_ = rectf::from_dimension(
-        rectf::Dimension{.width = page_setup_config.Size()[0],
-                         .height = page_setup_config.Size()[1]});
-    this->page_margin_ =
-        rectf(page_setup_config.Margins()[0], page_setup_config.Margins()[1],
-              page_setup_config.Margins()[2], page_setup_config.Margins()[3]);
+    page_size_ = PageRect(page_setup_config);
+    page_margin_ = PageMarginRect(page_setup_config);
     Update();
   }
 
@@ -82,7 +78,7 @@ class CalendarPage {
   void Update() {
     scene_composer_.Build();
     physics_world_.Rebuild(scene_composer_.BarPickBoxes());
-    gl_canvas_->RefreshMVP();
+    gl_canvas_.RefreshView();
     signal_scene_snapshot_(scene_composer_.SceneSnapshot());
   }
 
@@ -97,21 +93,21 @@ class CalendarPage {
   // colours change, so the cheap Repaint suffices — no projection refresh.
   void ReceiveHovered(const std::optional<PickId>& hovered) {
     scene_composer_.SetHoveredBar(hovered);
-    gl_canvas_->Repaint();
+    gl_canvas_.Repaint();
   }
 
   // Highlights the scene-tree-selected node (and its subtree) in place and
   // repaints. The path identifies the node within the scene graph.
   void ReceiveSelectedNode(const std::optional<std::string>& path) {
     scene_composer_.SetSelectedNode(path);
-    gl_canvas_->Repaint();
+    gl_canvas_.Repaint();
   }
 
  private:
   sigslot::signal<const SceneNodeSnapshot&> signal_scene_snapshot_;
-  PhysicsWorld physics_world_;
+  GLCanvas& gl_canvas_;
 
-  GLCanvas* gl_canvas_{nullptr};
+  PhysicsWorld physics_world_;
 
   std::shared_ptr<Font> font_;
   rectf page_size_;
