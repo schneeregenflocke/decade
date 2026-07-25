@@ -10,9 +10,9 @@
 #include <memory>
 
 #include "../common/debug_log.hpp"
-#include "app_config.hpp"
+#include "app_composition.hpp"
 #include "locale_services.hpp"
-#include "main_window.hpp"
+#include "runtime_info.hpp"
 #include "runtime_options.hpp"
 
 class DecadeApp : public wxApp {
@@ -68,19 +68,17 @@ class DecadeApp : public wxApp {
       return false;
     }
 
-    const application::MainWindowConfig window_config =
-        application::DefaultMainWindowConfig();
-    auto* main_window =
-        std::make_unique<MainWindow>(nullptr, window_config,
-                                     locale_services_->date_formatter(),
-                                     runtime_options_)
-            .release();
-    SetTopWindow(main_window);
+    application::PrintRuntimeInfo(std::cout);
+
+    composition_ = std::make_unique<application::AppComposition>(
+        locale_services_->date_formatter(), runtime_options_);
+    SetTopWindow(&composition_->Frame());
     return true;
   }
 
  private:
   std::unique_ptr<application::LocaleServices> locale_services_;
+  std::unique_ptr<application::AppComposition> composition_;
   application::RuntimeOptions runtime_options_;
 };
 

@@ -8,7 +8,7 @@
 #include <string>
 
 namespace application {
-struct MainWindowConfig {
+struct MainFrameConfig {
   std::string title;
   wxPoint position;
   wxSize size;
@@ -17,15 +17,15 @@ struct MainWindowConfig {
   bool maximize_on_start{true};
 };
 
-inline MainWindowConfig DefaultMainWindowConfig() {
-  constexpr int kMainWindowPosX = 100;
-  constexpr int kMainWindowPosY = 100;
-  constexpr int kMainWindowWidth = 1280;
-  constexpr int kMainWindowHeight = 800;
+inline MainFrameConfig DefaultMainFrameConfig() {
+  constexpr int kMainFramePosX = 100;
+  constexpr int kMainFramePosY = 100;
+  constexpr int kMainFrameWidth = 1280;
+  constexpr int kMainFrameHeight = 800;
 
   return {.title = "Decade",
-          .position = wxPoint(kMainWindowPosX, kMainWindowPosY),
-          .size = wxSize(kMainWindowWidth, kMainWindowHeight),
+          .position = wxPoint(kMainFramePosX, kMainFramePosY),
+          .size = wxSize(kMainFrameWidth, kMainFrameHeight),
           .style = wxDEFAULT_FRAME_STYLE,
           .frame_name = "main_window",
           .maximize_on_start = false};

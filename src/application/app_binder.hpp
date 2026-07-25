@@ -1,5 +1,5 @@
-#ifndef MAIN_WINDOW_BINDER_HPP
-#define MAIN_WINDOW_BINDER_HPP
+#ifndef APP_BINDER_HPP
+#define APP_BINDER_HPP
 
 #include <glm/vec2.hpp>
 #include <optional>
@@ -37,7 +37,7 @@
 // Würden Panels ihre Edits auf dasselbe Topic legen, das sie abonnieren, gäbe
 // es Rückkopplungen; die Trennung verhindert das und hält Produzent und
 // Konsument voneinander unabhängig.
-struct MainWindowComponents {
+struct AppComponents {
   DateGroupStore& date_groups_store;
   DateEntryStore& date_entry_store;
   TransformDateEntry& transform_date_entry;
@@ -59,7 +59,7 @@ struct MainWindowComponents {
   InteractionController& interaction_controller;
 };
 
-namespace main_window_binder {
+namespace app_binder {
 
 namespace detail {
 
@@ -70,7 +70,7 @@ void Forward(Signal& from, Topic& to) {
   from.connect([&to](const auto& value) { to(value); });
 }
 
-inline void BindDateEntries(EventBus& bus, MainWindowComponents& components) {
+inline void BindDateEntries(EventBus& bus, AppComponents& components) {
   // Panel -> Store (Nutzereingabe)
   components.data_table_panel.SignalTableDateEntries().connect(
       &DateEntryStore::ReceiveDateEntries, &components.date_entry_store);
@@ -89,7 +89,7 @@ inline void BindDateEntries(EventBus& bus, MainWindowComponents& components) {
                                          &components.calendar_page);
 }
 
-inline void BindDateGroups(EventBus& bus, MainWindowComponents& components) {
+inline void BindDateGroups(EventBus& bus, AppComponents& components) {
   components.date_groups_table_panel.SignalTableDateGroups().connect(
       &DateGroupStore::ReceiveDateGroups, &components.date_groups_store);
 
@@ -108,7 +108,7 @@ inline void BindDateGroups(EventBus& bus, MainWindowComponents& components) {
                             &components.calendar_page);
 }
 
-inline void BindPageSetup(EventBus& bus, MainWindowComponents& components) {
+inline void BindPageSetup(EventBus& bus, AppComponents& components) {
   components.page_setup_panel.SignalPageSetupConfig().connect(
       &PageSetupStore::ReceivePageSetup, &components.page_setup_store);
 
@@ -122,14 +122,14 @@ inline void BindPageSetup(EventBus& bus, MainWindowComponents& components) {
 // Die Schrift hat keinen Store — der Panelwert geht direkt aufs Topic und von
 // dort an den Renderer. Soll die Schrift einmal mit dem Projekt gespeichert
 // werden, tritt ein FontStore an dieselbe Stelle wie bei den anderen Themen.
-inline void BindFont(EventBus& bus, MainWindowComponents& components) {
+inline void BindFont(EventBus& bus, AppComponents& components) {
   Forward(components.font_panel.SignalFontFilepath(), bus.font_filepath());
 
   bus.font_filepath().connect(&CalendarPage::ReceiveFont,
                               &components.calendar_page);
 }
 
-inline void BindTitleConfig(EventBus& bus, MainWindowComponents& components) {
+inline void BindTitleConfig(EventBus& bus, AppComponents& components) {
   components.title_setup_panel.SignalTitleConfig().connect(
       &TitleConfigStore::ReceiveTitleConfig, &components.title_config_store);
 
@@ -139,7 +139,7 @@ inline void BindTitleConfig(EventBus& bus, MainWindowComponents& components) {
                              &components.calendar_page);
 }
 
-inline void BindShapeConfiguration(EventBus& bus, MainWindowComponents& components) {
+inline void BindShapeConfiguration(EventBus& bus, AppComponents& components) {
   // Der Szenenbaum bearbeitet die Shape-Konfigurationen in seinem Detailgrid.
   components.scene_tree_panel.SignalShapeConfigSet().connect(
       &ShapeConfigurationStore::ReceiveShapeConfigSet,
@@ -151,7 +151,7 @@ inline void BindShapeConfiguration(EventBus& bus, MainWindowComponents& componen
                                  &components.scene_tree_panel);
 }
 
-inline void BindCalendarConfig(EventBus& bus, MainWindowComponents& components) {
+inline void BindCalendarConfig(EventBus& bus, AppComponents& components) {
   components.calendar_setup_panel.SignalCalendarConfig().connect(
       &CalendarConfigStore::ReceiveCalendarConfig,
       &components.calendar_configuration_store);
@@ -165,7 +165,7 @@ inline void BindCalendarConfig(EventBus& bus, MainWindowComponents& components) 
 // Der Rendering-Adapter veröffentlicht die Szenen-Momentaufnahmen selbst; das
 // Szenenbaum-Panel ist der einzige Konsument. Dessen Auswahl geht umgekehrt
 // über den Bus zurück an die Hervorhebung im Renderer.
-inline void BindSceneSnapshot(EventBus& bus, MainWindowComponents& components) {
+inline void BindSceneSnapshot(EventBus& bus, AppComponents& components) {
   bus.scene_snapshot().connect(&SceneTreePanel::ReceiveSceneSnapshot,
                                &components.scene_tree_panel);
 
@@ -177,7 +177,7 @@ inline void BindSceneSnapshot(EventBus& bus, MainWindowComponents& components) {
 
 // Picking: das Canvas meldet Zeigerbewegungen im Seitenraum, der Controller
 // testet sie über den Rendering-Adapter und veröffentlicht den Hover selbst.
-inline void BindInteraction(EventBus& bus, MainWindowComponents& components) {
+inline void BindInteraction(EventBus& bus, AppComponents& components) {
   components.interaction_controller.SetPickSource(
       [page = &components.calendar_page](glm::vec2 point) {
         return page->Pick(point);
@@ -194,7 +194,7 @@ inline void BindInteraction(EventBus& bus, MainWindowComponents& components) {
 
 }  // namespace detail
 
-inline void Bind(EventBus& bus, MainWindowComponents& components) {
+inline void Bind(EventBus& bus, AppComponents& components) {
   detail::BindDateEntries(bus, components);
   detail::BindDateGroups(bus, components);
   detail::BindPageSetup(bus, components);
@@ -211,7 +211,7 @@ inline void Bind(EventBus& bus, MainWindowComponents& components) {
 // also nach den Stores und dem EventBus. Feuert ein Control beim Zerstören noch
 // ein Ereignis (ein offener Editor-Commit etwa), liefe der Slot sonst in
 // bereits zerstörte Objekte.
-inline void Unbind(EventBus& bus, MainWindowComponents& components) {
+inline void Unbind(EventBus& bus, AppComponents& components) {
   // Ereignisquellen der Presentation-Schicht.
   components.data_table_panel.SignalTableDateEntries().disconnect_all();
   components.date_groups_table_panel.SignalTableDateGroups().disconnect_all();
@@ -239,7 +239,7 @@ inline void Unbind(EventBus& bus, MainWindowComponents& components) {
   bus.selected_node().disconnect_all();
 }
 
-inline void SendInitialValues(MainWindowComponents& components) {
+inline void SendInitialValues(AppComponents& components) {
   components.shape_configuration_store.SendShapeConfigSet();
   components.date_groups_store.SendDefaultValues();
   components.page_setup_panel.SendDefaultValues();
@@ -247,28 +247,28 @@ inline void SendInitialValues(MainWindowComponents& components) {
   components.calendar_configuration_store.SendCalendarConfig();
 }
 
-}  // namespace main_window_binder
+}  // namespace app_binder
 
 // Die Verdrahtung als Lebensdauer statt als zwei von Hand gepaarte Aufrufe:
 // verbinden beim Bauen, trennen beim Zerstören. Als letztes Mitglied deklariert
 // stirbt sie vor Stores und Bus — genau die Reihenfolge, die das Trennen
 // braucht.
-class MainWindowWiring {
+class AppWiring {
  public:
-  MainWindowWiring(EventBus& bus, MainWindowComponents components)
+  AppWiring(EventBus& bus, AppComponents components)
       : bus_(bus), components_(components) {
-    main_window_binder::Bind(bus_, components_);
-    main_window_binder::SendInitialValues(components_);
+    app_binder::Bind(bus_, components_);
+    app_binder::SendInitialValues(components_);
   }
-  ~MainWindowWiring() { main_window_binder::Unbind(bus_, components_); }
-  MainWindowWiring(const MainWindowWiring&) = delete;
-  MainWindowWiring& operator=(const MainWindowWiring&) = delete;
-  MainWindowWiring(MainWindowWiring&&) = delete;
-  MainWindowWiring& operator=(MainWindowWiring&&) = delete;
+  ~AppWiring() { app_binder::Unbind(bus_, components_); }
+  AppWiring(const AppWiring&) = delete;
+  AppWiring& operator=(const AppWiring&) = delete;
+  AppWiring(AppWiring&&) = delete;
+  AppWiring& operator=(AppWiring&&) = delete;
 
  private:
   EventBus& bus_;
-  MainWindowComponents components_;
+  AppComponents components_;
 };
 
-#endif  // MAIN_WINDOW_BINDER_HPP
+#endif  // APP_BINDER_HPP

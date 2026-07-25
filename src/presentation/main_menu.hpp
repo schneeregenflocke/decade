@@ -21,11 +21,11 @@ struct MainMenuIds {
   int license_info{wxWindow::NewControlId()};
 };
 
-// Presentation layer: owns the main menu *layout* only (File + Help). Command
-// handling stays in the frame; this class just builds the wxMenuBar, attaches
-// it to a frame, and exposes the command IDs the frame binds against. Splitting
-// it out of MainWindow follows SRP — the menu changes when the menu layout
-// changes, independent of the window's wiring and callbacks.
+// Presentation: besitzt nur das Menü-*Layout* (File + Help). Was ein Befehl
+// bewirkt, entscheidet das Fenster; diese Klasse baut die wxMenuBar, hängt sie
+// an einen Frame und veröffentlicht die IDs, gegen die der Frame bindet. Das
+// Menü ändert sich, wenn sich das Menü ändert — unabhängig von Verdrahtung und
+// Befehlen.
 class MainMenu {
  public:
   explicit MainMenu(int export_png_dpi) : export_png_dpi_(export_png_dpi) {}
