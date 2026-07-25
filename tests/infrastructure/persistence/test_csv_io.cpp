@@ -4,11 +4,11 @@
 #include <string>
 #include <vector>
 
-#include "infrastructure/persistence/csv_io.hpp"
 #include "domain/date.hpp"
 #include "domain/date_entry.hpp"
 #include "domain/date_format.hpp"
 #include "domain/date_period.hpp"
+#include "infrastructure/persistence/csv_io.hpp"
 
 namespace {
 
@@ -117,7 +117,7 @@ TEST(CsvIoTest, WriteReadRoundTripPreservesPeriods) {
       DatePeriod(Date::FromYmd(2022, 1, 1), Date::FromYmd(2022, 1, 2)));
 
   auto formatter = MakeFormatter();
-  persistence::WriteDateEntriesToCsv(path, entries, formatter);
+  EXPECT_FALSE(persistence::WriteDateEntriesToCsv(path, entries, formatter));
   const auto loaded = persistence::ReadDateEntriesFromCsv(path, formatter);
 
   ASSERT_EQ(loaded.size(), entries.size());
@@ -125,4 +125,16 @@ TEST(CsvIoTest, WriteReadRoundTripPreservesPeriods) {
     EXPECT_EQ(loaded[index].GetDateInterval(), entries[index].GetDateInterval())
         << "row " << index;
   }
+}
+
+// Regression: ein Export auf einen unbeschreibbaren Pfad scheiterte still —
+// der Nutzer sah einen gelungenen Export ohne Datei.
+TEST(CsvIoTest, UnwritablePathReportsError) {
+  std::vector<DateEntry> entries(1);
+  entries[0].SetDateInterval(
+      DatePeriod(Date::FromYmd(2030, 6, 10), Date::FromYmd(2030, 6, 11)));
+
+  auto formatter = MakeFormatter();
+  EXPECT_TRUE(persistence::WriteDateEntriesToCsv("/nonexistent/decade.csv",
+                                                 entries, formatter));
 }

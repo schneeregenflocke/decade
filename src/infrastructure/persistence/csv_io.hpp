@@ -15,6 +15,7 @@
 #include <csv2/writer.hpp>
 #include <filesystem>
 #include <fstream>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -79,18 +80,34 @@ inline std::vector<DateEntry> ReadDateEntriesFromCsv(
   return date_entries;
 }
 
-inline void WriteDateEntriesToCsv(const std::string& file_path,
-                                  const std::vector<DateEntry>& date_entries,
-                                  LocaleDateFormatter& date_format) {
+// Rückgabe: leer bei Erfolg, sonst die anzeigefertige Fehlermeldung — wie beim
+// Projekt-I/O. Ein unbemerkt fehlgeschlagener Export sähe für den Nutzer aus
+// wie ein gelungener.
+[[nodiscard]] inline std::optional<std::string> WriteDateEntriesToCsv(
+    const std::string& file_path, const std::vector<DateEntry>& date_entries,
+    LocaleDateFormatter& date_format) {
   std::ofstream file_stream(file_path, std::ios_base::trunc);
-  csv2::Writer<csv2::delimiter<','>> csv_writer(file_stream);
-
-  for (const auto& date_entry : date_entries) {
-    const std::array<std::string, 2> date_interval_strings{
-        date_format.Format(date_entry.GetDateInterval().Begin()),
-        date_format.Format(date_entry.GetDateInterval().Last())};
-    csv_writer.write_row(date_interval_strings);
+  if (!file_stream.is_open()) {
+    return "Cannot open file for writing: " + file_path;
   }
+
+  {
+    // csv2::Writer schliesst den Stream in seinem Destruktor — deshalb der
+    // eigene Scope vor der Zustandsprüfung.
+    csv2::Writer<csv2::delimiter<','>> csv_writer(file_stream);
+
+    for (const auto& date_entry : date_entries) {
+      const std::array<std::string, 2> date_interval_strings{
+          date_format.Format(date_entry.GetDateInterval().Begin()),
+          date_format.Format(date_entry.GetDateInterval().Last())};
+      csv_writer.write_row(date_interval_strings);
+    }
+  }
+
+  if (!file_stream.good()) {
+    return "Writing to " + file_path + " failed.";
+  }
+  return std::nullopt;
 }
 
 }  // namespace persistence

@@ -249,8 +249,9 @@ inline void MainWindow::InitializeOpenGL() {
 
   const std::array<int, 2> gl_version{main_window_detail::kOpenGLMajor,
                                       main_window_detail::kOpenGLMinor};
-  // The callback runs once the GL context is current — only here may GL state be
-  // touched. CalendarPage and the binder wiring live inside it, never before.
+  // The callback runs once the GL context is current — only here may GL state
+  // be touched. CalendarPage and the binder wiring live inside it, never
+  // before.
   gl_canvas_->InitOpenGL(gl_version, [this]() {
     calendar_page_ = std::make_unique<CalendarPage>(
         gl_canvas_.get(), font_panel_->GetFontFilePath());
@@ -504,8 +505,11 @@ inline void MainWindow::CallbackExportCSV(wxCommandEvent& event) {
   }
 
   const std::string file_path = save_file_dialog.GetPath().ToStdString();
-  persistence::WriteDateEntriesToCsv(
-      file_path, date_entry_store_.GetDateEntries(), locale_date_formatter_);
+  if (const auto error = persistence::WriteDateEntriesToCsv(
+          file_path, date_entry_store_.GetDateEntries(),
+          locale_date_formatter_)) {
+    wxMessageBox(*error, "Export file", wxOK | wxICON_ERROR, this);
+  }
 }
 
 inline void MainWindow::CallbackExportPNG(wxCommandEvent& event) {
