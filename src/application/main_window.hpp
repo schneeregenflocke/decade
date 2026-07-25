@@ -65,7 +65,7 @@ class MainWindow : public wxFrame {
   MainWindow(wxWindow* parent, const application::MainWindowConfig& config,
              LocaleDateFormatter& locale_date_formatter,
              application::RuntimeOptions runtime_options = {});
-  ~MainWindow() override;
+  ~MainWindow() override = default;
   MainWindow(const MainWindow&) = delete;
   MainWindow& operator=(const MainWindow&) = delete;
   MainWindow(MainWindow&&) = delete;
@@ -76,11 +76,8 @@ class MainWindow : public wxFrame {
   void CreatePanels(wxNotebook* notebook);
   void SelectStartupTab();
   void InitializeOpenGL();
-  void EstablishConnections();
-  // Bündelt Stores, Panels und Adapter für Binder-Aufrufe. Gültig erst, wenn
-  // IsWired() zutrifft — vor dem GL-Init gibt es keinen Rendering-Adapter.
-  [[nodiscard]] MainWindowComponents MakeComponents();
-  [[nodiscard]] bool IsWired() const { return calendar_page_ != nullptr; }
+  // Bündelt Stores, Panels und Adapter für die Binder-Aufrufe.
+  [[nodiscard]] MainWindowComponents MakeComponents(CalendarPage& calendar_page);
   void LoadStartupFile();
   void ConfigureAutoExitTimer();
   void DumpPngIfRequested();
@@ -126,7 +123,7 @@ class MainWindow : public wxFrame {
   TitleConfigStore title_config_store_;
   ShapeConfigurationStore shape_configuration_store_;
   CalendarConfigStore calendar_configuration_store_;
-  std::unique_ptr<CalendarPage> calendar_page_;
+  std::optional<CalendarPage> calendar_page_;
   InteractionController interaction_controller_;
 
   std::string xml_file_path_;
@@ -134,6 +131,10 @@ class MainWindow : public wxFrame {
 
   MainMenu menu_;
   application::RuntimeOptions runtime_options_;
+
+  // Zuletzt deklariert, also zuerst zerstört: die Verdrahtung muss getrennt
+  // sein, solange Stores, Bus und wx-Children noch leben.
+  std::optional<MainWindowWiring> wiring_;
 };
 
 inline MainWindow::MainWindow(wxWindow* parent,
@@ -158,17 +159,6 @@ inline MainWindow::MainWindow(wxWindow* parent,
   InitMenu();
   InitializeOpenGL();
   ConfigureAutoExitTimer();
-}
-
-inline MainWindow::~MainWindow() {
-  // Die Verdrahtung trennen, solange beide Enden noch leben: die wx-Children
-  // sterben erst im ~wxFrame-Basisdestruktor, also nach Stores und EventBus.
-  // Ohne das liefe ein beim Zerstören noch gefeuertes Panel-Ereignis in
-  // zerstörte Objekte.
-  if (IsWired()) {
-    MainWindowComponents components = MakeComponents();
-    main_window_binder::Unbind(event_bus_, components);
-  }
 }
 
 inline void MainWindow::CreateLayout(bool maximize_on_start) {
@@ -267,13 +257,13 @@ inline void MainWindow::InitializeOpenGL() {
   // before.
   gl_canvas_->InitOpenGL(
       [this]() {
-        calendar_page_ = std::make_unique<CalendarPage>(
+        CalendarPage& calendar_page = calendar_page_.emplace(
             *gl_canvas_, font_panel_->GetFontFilePath(),
             event_bus_.scene_snapshot());
-        EstablishConnections();
+        wiring_.emplace(event_bus_, MakeComponents(calendar_page));
         LoadStartupFile();
         if (runtime_options_.debug_hover_bar) {
-          calendar_page_->ReceiveHovered(
+          calendar_page.ReceiveHovered(
               PickId{.kind = PickId::Kind::kBar,
                      .index = *runtime_options_.debug_hover_bar});
         }
@@ -390,7 +380,8 @@ inline void MainWindow::DumpFramePng(const std::string& path) {
   }
 }
 
-inline MainWindowComponents MainWindow::MakeComponents() {
+inline MainWindowComponents MainWindow::MakeComponents(
+    CalendarPage& calendar_page) {
   return MainWindowComponents{
       .date_groups_store = date_groups_store_,
       .date_entry_store = date_entry_store_,
@@ -406,16 +397,10 @@ inline MainWindowComponents MainWindow::MakeComponents() {
       .calendar_setup_panel = *calendar_setup_panel_,
       .font_panel = *font_panel_,
       .scene_tree_panel = *scene_tree_panel_,
-      .calendar_page = *calendar_page_,
+      .calendar_page = calendar_page,
       .gl_canvas = *gl_canvas_,
       .interaction_controller = interaction_controller_,
   };
-}
-
-inline void MainWindow::EstablishConnections() {
-  MainWindowComponents components = MakeComponents();
-  main_window_binder::Bind(event_bus_, components);
-  main_window_binder::SendInitialValues(components);
 }
 
 inline void MainWindow::ConfigureAutoExitTimer() {

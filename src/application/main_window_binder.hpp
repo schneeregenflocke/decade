@@ -249,4 +249,26 @@ inline void SendInitialValues(MainWindowComponents& components) {
 
 }  // namespace main_window_binder
 
+// Die Verdrahtung als Lebensdauer statt als zwei von Hand gepaarte Aufrufe:
+// verbinden beim Bauen, trennen beim Zerstören. Als letztes Mitglied deklariert
+// stirbt sie vor Stores und Bus — genau die Reihenfolge, die das Trennen
+// braucht.
+class MainWindowWiring {
+ public:
+  MainWindowWiring(EventBus& bus, MainWindowComponents components)
+      : bus_(bus), components_(components) {
+    main_window_binder::Bind(bus_, components_);
+    main_window_binder::SendInitialValues(components_);
+  }
+  ~MainWindowWiring() { main_window_binder::Unbind(bus_, components_); }
+  MainWindowWiring(const MainWindowWiring&) = delete;
+  MainWindowWiring& operator=(const MainWindowWiring&) = delete;
+  MainWindowWiring(MainWindowWiring&&) = delete;
+  MainWindowWiring& operator=(MainWindowWiring&&) = delete;
+
+ private:
+  EventBus& bus_;
+  MainWindowComponents components_;
+};
+
 #endif  // MAIN_WINDOW_BINDER_HPP
