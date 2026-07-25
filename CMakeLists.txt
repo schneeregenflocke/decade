@@ -260,8 +260,6 @@ target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CMAKE_CURRENT_SOURCE
 list(APPEND RESOURCE_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/shaders/font_fragment_shader.glsl shader
 	${CMAKE_CURRENT_SOURCE_DIR}/shaders/font_vertex_shader.glsl shader
-	${CMAKE_CURRENT_SOURCE_DIR}/shaders/phong_fragment_shader.glsl shader
-	${CMAKE_CURRENT_SOURCE_DIR}/shaders/phong_vertex_shader.glsl shader
 	${CMAKE_CURRENT_SOURCE_DIR}/shaders/simple_fragment_shader.glsl shader
 	${CMAKE_CURRENT_SOURCE_DIR}/shaders/simple_vertex_shader.glsl shader
 	${CMAKE_CURRENT_SOURCE_DIR}/shaders/rectangles_fragment_shader.glsl shader

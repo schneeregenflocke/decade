@@ -133,7 +133,7 @@ find . -regex '.*\.\(cpp\|cxx\|hpp\|cc\|h\)' -not -path './build/*' -not -path '
 
 ### CI
 
-CI läuft auf der eigenen Forgejo-Instanz (https://git.blem.ch/), nicht auf GitHub Actions (die alte Workflow-Datei liegt deaktiviert unter `.github/workflows/cmake.yml.disable`). Die Kette, analog zu `blem-website`:
+CI läuft auf der eigenen Forgejo-Instanz (https://git.blem.ch/), nicht auf GitHub Actions. Die alte Workflow-Datei `.github/workflows/cmake.yml` läuft nur noch auf Anforderung (`on: workflow_dispatch`, also `gh workflow run cmake.yml`) und ist an keinem Push beteiligt. Die Kette, analog zu `blem-website`:
 
 - `git push origin main` (GitHub) → GitHub-Webhook ruft die `mirror-sync`-API → Pull-Mirror `github-mirror/decade` synct sofort → der Sync feuert das push-Event für `.forgejo/workflows/build.yml`.
 - Der Workflow (`runs-on: runner-laptop-omen`) läuft in einem `ubuntu:26.04`-Container **exklusiv** auf dem CI-Runner auf `laptop-omen` — `runner-<host>` ist das exklusive Runner-Label (vgl. geteiltes `ubuntu-ci`). Der schwere C++-Build (Boost/wx/Submodule) darf nicht auf homelab (RPi4 + USB-SMR) landen: dort scheitert er am 1200-MB-Limit und treibt die Platte in I/O-Sättigung (loadavg-Vorfall 2026-07-11). Ist der Laptop aus, wartet der Job in der Queue, statt auf homelab zu fallen. Runner-Stack: `docker-stacks/forgejo-runner/docker-compose.ci.yml`, deployt über Komodo (Stack `forgejo-runner-laptop-omen`); Label-Schema im dortigen README.

@@ -1,17 +1,19 @@
 # decade
 
-## Build Status
+Desktopanwendung, die Zeiträume über mehrere Jahre auf einer Kalenderseite darstellt — eine Zeile pro Jahr, darunter die Jahressumme. Die Seite lässt sich als PNG exportieren; Daten kommen aus CSV, ganze Projekte aus XML.
 
-[![CMake](https://github.com/schneeregenflocke/decade.bak/actions/workflows/cmake.yml/badge.svg)](https://github.com/schneeregenflocke/decade.bak/actions/workflows/cmake.yml)
+Alpha-Stand, aus einem Übungsprojekt gewachsen. C++23, wxWidgets, OpenGL, ICU.
 
-## Description
+Bauen, starten, Tests und die kopflosen Läufe stehen in [betrieb.md](betrieb.md); Architektur und Konventionen in [AGENTS.md](AGENTS.md).
 
-Calendar (alpha-version/exercise project)
+## Oberfläche
 
-## Screenshot
+Links die Eingabetabellen und Einstellungen, rechts die gerenderte Seite:
 
-![Alt text](assets/screenshot.png "Title")
+![Hauptfenster mit Datentabelle und Kalendervorschau](assets/screenshot.png)
 
-## Rendered output
+## Export
 
-![Alt text](assets/render.png "Title")
+Dieselbe Seite als PNG-Export in Druckauflösung:
+
+![Als PNG exportierte Kalenderseite](assets/render.png)

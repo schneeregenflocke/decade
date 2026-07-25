@@ -167,10 +167,6 @@ class Shaders {
     auto font_vertex_shader_resource = LOAD_RESOURCE(shader_font_vertex_shader);
     auto font_fragment_shader_resource =
         LOAD_RESOURCE(shader_font_fragment_shader);
-    // auto phong_vertex_shader_resource =
-    // LOAD_RESOURCE(shader_phong_vertex_shader); auto
-    // phong_fragment_shader_resource =
-    // LOAD_RESOURCE(shader_phong_fragment_shader);
 
     shaders_.emplace_back(
         Shader::ShaderSources{
@@ -187,9 +183,6 @@ class Shaders {
             .vertex = font_vertex_shader_resource.toString(),
             .fragment = font_fragment_shader_resource.toString()},
         "Font Shader");
-    // shaders.push_back(Shader(phong_vertex_shader_resource.toString(),
-    // phong_fragment_shader_resource.toString(), std::string("Phong Shader")));
-
     PrintInfo();
   }
 

@@ -47,11 +47,6 @@ class Projection {
     return ortho_matrix;
   }
 
-  static glm::mat4 PerspectiveMatrix(const float fovy, const float z_near,
-                                     const float z_far) {
-    return glm::perspective(fovy, AspectRatio(), z_near, z_far);
-  }
-
   static glm::mat4 OrthoMatrixWidth(float width) {
     constexpr float kHalf = 0.5F;
     const float x_half_size = width * kHalf;
