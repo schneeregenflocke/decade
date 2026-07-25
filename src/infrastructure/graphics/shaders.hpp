@@ -168,6 +168,10 @@ class Shaders {
     auto font_fragment_shader_resource =
         LOAD_RESOURCE(shader_font_fragment_shader);
 
+    // Die Lambert-Shader (diffuse Beleuchtung pro Fragment) sind als Ressource
+    // eingebettet, aber bewusst nicht geladen: sie gehören zum 3D-Pfad, den
+    // die Kalenderdarstellung nicht benutzt.
+
     shaders_.emplace_back(
         Shader::ShaderSources{
             .vertex = simple_vertex_shader_resource.toString(),
