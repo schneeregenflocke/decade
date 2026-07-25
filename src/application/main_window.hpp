@@ -249,6 +249,8 @@ inline void MainWindow::InitializeOpenGL() {
 
   const std::array<int, 2> gl_version{main_window_detail::kOpenGLMajor,
                                       main_window_detail::kOpenGLMinor};
+  // The callback runs once the GL context is current — only here may GL state be
+  // touched. CalendarPage and the binder wiring live inside it, never before.
   gl_canvas_->InitOpenGL(gl_version, [this]() {
     calendar_page_ = std::make_unique<CalendarPage>(
         gl_canvas_.get(), font_panel_->GetFontFilePath());
