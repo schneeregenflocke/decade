@@ -309,8 +309,15 @@ class DateTablePanel : public TablePanelBase {
       if (!event.IsEditCancelled()) {
         auto edited_string = event.GetValue().GetString().ToStdString();
 
-        const auto selected_row =
-            static_cast<unsigned int>(table()->GetSelectedRow());
+        // Die Zeile kommt aus dem Ereignis, nicht aus der Selektion: die
+        // Tabelle ist wxDV_MULTIPLE, und dort liefert GetSelectedRow() über
+        // GetSelection() wxNOT_FOUND, sobald nicht genau eine Zeile selektiert
+        // ist — als unsigned wäre das Zeile 4294967295.
+        const int edited_row = table()->ItemToRow(event.GetItem());
+        if (edited_row == wxNOT_FOUND) {
+          return;
+        }
+        const auto selected_row = static_cast<unsigned int>(edited_row);
         const auto edited_column = static_cast<unsigned int>(event.GetColumn());
 
         // Check Date
