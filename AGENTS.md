@@ -21,8 +21,8 @@ Getragen von wxWidgets (GUI), OpenGL via libepoxy (Rendering), ICU (Kalender/Loc
 
 Die Codebasis folgt einer Architektur mit vier Schichten im Sinn der Clean Architecture (https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html). Abhängigkeiten fliessen nur **nach innen** (Presentation → Application → Domain; Infrastructure wird von der Application konsumiert). Die Domain kennt nichts anderes; die Infrastructure kennt nur die Domain-Typen, die sie serialisiert. Neuer Code muss angeben, zu welcher Schicht er gehört, und deren Abhängigkeitsgrenzen einhalten.
 
-- **Presentation** — wxWidgets-Panels, GL-Canvas-Wrapper, Menüs, Dialoge. Jedes Panel besitzt seine Widgets und bietet Signale mit derselben Schnittstelle wie sein Store.
-- **Application** — Composition Root, EventBus, Binder, Rendering-Adapter, App-Lifecycle: konstruiert, besitzt und verdrahtet, enthält aber selbst keine Domänenlogik.
+- **Presentation** — das Hauptfenster (`MainFrame`), wxWidgets-Panels, GL-Canvas-Wrapper, Menüs, Dialoge, Datei-Befehle. Jedes Panel besitzt seine Widgets und bietet Signale mit derselben Schnittstelle wie sein Store. Das Fenster besitzt nur Widgets: keine Stores, kein Bus, keine Laufzeitoptionen.
+- **Application** — Composition Root (`AppComposition`), EventBus, Binder, Projektdokument, Startskript, Rendering-Adapter, App-Lifecycle: konstruiert, besitzt und verdrahtet, enthält aber selbst keine Domänenlogik.
 - **Domain** — Value Objects, Stores, Transformationslogik, sigslot-Signale — UI-agnostisch und Boost-frei (kein `friend boost::serialization::access`, keine `serialize`-Member).
 - **Infrastructure** — Rendering (OpenGL, FreeType), Persistenz (XML/CSV/PNG), Hit-Testing (Bullet) — nicht-intrusiv, kennt nur Domain-Typen.
 
@@ -30,19 +30,20 @@ Regeln:
 
 1. Der Prozesseinstiegspunkt enthält keine Business- oder UI-Verdrahtungslogik.
 2. Der App-Lifecycle konstruiert High-Level-Objekte, kennt aber keine Panel-/Store-Interna.
-3. Die Composition Root besitzt alle Lifetimes. Die Verdrahtung lebt getrennt davon im Binder (freie Funktionen) — Komponenten kennen einander nicht direkt.
+3. Die Composition Root besitzt alle Lifetimes. Die Verdrahtung lebt getrennt davon im Binder (freie Funktionen) — Komponenten kennen einander nicht direkt. Was erst mit dem GL-Kontext entsteht (Rendering-Adapter, Verdrahtung), liegt in einem `optional` und wird beim Zerstören des Fensters aufgelöst, solange Panels und Canvas noch leben.
 4. Die Domain bleibt UI-agnostisch — kein wx, kein GL, kein Boost.
-5. Stores publizieren ihren Zustand über den EventBus; Konsumenten abonnieren über den Bus statt über einzelne Store-Signale.
+5. Stores publizieren ihren Zustand selbst auf einem eingesetzten Topic; Konsumenten abonnieren über den Bus. Kein Store besitzt ein eigenes Signal, und niemand hängt sich an einen Store statt an den Bus.
 6. Infrastructure nimmt Domain-Typen per Referenz; sie darf nicht von Presentation abhängen.
 7. Die Kommandozeile wird an genau einer Stelle gelesen und in ein Options-Objekt übersetzt (`src/application/runtime_options.hpp`); Umgebungsvariablen liest die Anwendung nicht.
 8. Die Serialisierung ist nicht-intrusiv: Sie arbeitet nur über öffentliche APIs und besitzt das On-Disk-Format; Domain-Typen wissen nichts von Persistenz.
 9. Genau eine Brücke verbindet Application und Rendering-Infrastructure: der Rendering-Adapter mit seinem Scene-Composer. Presentation hängt nie von GL-Typen ab — sie sieht den Scene-Graph nur als GL-freies Read-Model (Snapshot).
 10. Der anwendungsweite `LocaleDateFormatter` wird einmal in der Composition Root konstruiert und per Referenz weitergereicht — die Locale-Konfiguration bleibt an einer Stelle.
+11. Das geöffnete Projekt (alle Stores plus Dateipfad) ist ein Objekt: `ProjectDocument`. Laden, Speichern und CSV-Austausch gehen nur darüber; niemand reicht die sechs Stores einzeln durch.
 
 ### Domain-Muster: Value Objects & Stores
 
 - **Value Objects (https://martinfowler.com/bliki/ValueObject.html)** halten Daten plus die Abfragen darauf und kapseln ihren Zustand: Datenmember `private`, Zugriff über konstante Accessors, Änderung nur über benannte Setter — so bleiben Invarianten und On-Disk-Format an einer Stelle. Kein Signal, keine Serialisierung, kein `friend` → Rule of Zero (https://en.cppreference.com/w/cpp/language/rule_of_three), frei kopierbar.
-- **Stores** kombinieren ein Value Object mit einem `sigslot::signal` und einer Re-Entry-Guard. Sie haben Identität → explizit nicht kopierbar. Das Signal trägt den Value (`signal<const Value&>`), sodass Konsumenten mit kopierbaren Value Objects arbeiten; der Store bietet `Receive`/`Send`/`Get`, keine eigene Query-Delegation.
+- **Stores** kombinieren ein Value Object mit einem eingesetzten `domain::StateTopic` und einer Re-Entry-Guard. Sie haben Identität → explizit nicht kopierbar. Ein Store besitzt kein eigenes Signal: er bekommt sein Topic per Konstruktor-Referenz (der Port, `domain/state_topic.hpp`) und veröffentlicht direkt darauf. Wer das Topic besitzt, entscheidet die äussere Schicht — in der Anwendung der `EventBus`, im Test ein lokales Signal. Das Topic trägt den Value (`StateTopic<Value>` = `signal<const Value&>`), sodass Konsumenten mit kopierbaren Value Objects arbeiten; der Store bietet `Receive`/`Send`/`Get`, keine eigene Query-Delegation.
 - Value Object und Store liegen in **separaten Dateien**, benannt nach der Hauptklasse (`date_group.hpp` + `date_group_store.hpp`); der Value-Object-Header hat keine Store-Abhängigkeit.
 
 ### Datums- & Intervallsemantik
@@ -53,9 +54,11 @@ Regeln:
 
 ### Ereignisfluss (EventBus via sigslot)
 
-Die komponentenübergreifende Kommunikation läuft über einen in-process **EventBus** mit je einem typisierten `sigslot::signal` pro Domain-Ereignis; die Verdrahtung ist zentral in `main_window_binder::Bind` (jeder Produzent in den Bus, jeder Konsument vom Bus). Einen neuen Zustand fügst du als Boost-freies Value Object plus `*Store` in `domain/`, ein Panel in `presentation/`, ein Signal im `EventBus` und beide Enden im Binder hinzu; persistierter Zustand ergänzt `save`/`load` in `infrastructure/persistence/value_serialization.hpp` und eine Zeile in `project_io`.
+Die komponentenübergreifende Kommunikation läuft über einen in-process **EventBus** mit je einem typisierten Topic pro Domain-Ereignis. Stores publizieren direkt darauf (siehe [Domain-Muster](#domain-muster-value-objects--stores)); die Verdrahtung der Konsumenten ist zentral in `app_binder::Bind`. Einen neuen Zustand fügst du als Boost-freies Value Object plus `*Store` in `domain/`, ein Panel in `presentation/`, ein Topic im `EventBus` und die Konsumenten im Binder hinzu; persistierter Zustand ergänzt `save`/`load` in `infrastructure/persistence/value_serialization.hpp` und eine Zeile in `project_io`.
 
-Wie weit die Zentralisierung geht, ist noch offen — Stores publizieren noch nicht direkt in den Bus ([#44](https://github.com/schneeregenflocke/decade/issues/44), [#45](https://github.com/schneeregenflocke/decade/issues/45)).
+**Zwei Richtungen, zwei Regeln.** Ein Panel-Edit ist ein **Befehl** und geht direkt an den besitzenden Store — dessen `Receive*` ist der einzige Ort, an dem kanonischer Zustand entsteht. Der neue Zustand ist eine **Tatsache** und geht über den Bus. Legten Panels ihre Edits auf dasselbe Topic, das sie abonnieren, gäbe es Rückkopplungen. Nur wo ein Produzent in der Presentation sitzt und deshalb kein Topic eingesetzt bekommt (Schriftpfad, Baumauswahl), hängt `detail::Forward` das Panelsignal ans Topic.
+
+Die Verdrahtung selbst ist eine Lebensdauer, kein Aufrufpaar: `AppWiring` verbindet beim Bauen und trennt beim Zerstören. In der Composition Root steht sie als letztes Mitglied und stirbt damit vor Stores und Bus.
 
 ## Konventionen
 
