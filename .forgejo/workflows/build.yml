@@ -1,4 +1,5 @@
-# CI auf git.blem.ch (Mirror github-mirror/decade): Build + ctest + clang-tidy-Gate.
+# CI auf git.blem.ch (Mirror github-mirror/decade): Build + ctest + clang-tidy-
+# und Sanitizer-Gates.
 # `runner-laptop-omen` bindet den Job EXKLUSIV an den CI-Runner auf laptop-omen —
 # der schwere C++-Build (Boost/wx/Submodule) läuft nie auf homelab (RPi4 + USB-SMR),
 # wo er die Platte in I/O-Sättigung treibt (loadavg-Vorfall 2026-07-11) und am
@@ -22,7 +23,7 @@ jobs:
         run: |
           apt-get update -qq
           DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
-            nodejs git cmake ninja-build pkg-config g++ clang-tidy \
+            nodejs git cmake ninja-build pkg-config g++ clang clang-tidy \
             libboost-serialization-dev libepoxy-dev libwxgtk3.2-dev \
             zlib1g-dev libpng-dev libfontconfig-dev libfreetype-dev \
             libicu-dev libglm-dev libmsgsl-dev libgtest-dev libgl1-mesa-dev
@@ -37,3 +38,18 @@ jobs:
         run: ctest --test-dir build --output-on-failure
       - name: clang-tidy-Gate
         run: cmake --build build --target clang-tidy
+      # Baut den Baum instrumentiert neu und lässt die Tests darunter laufen —
+      # nur ein Lauf findet Fehler, ein Bau allein nicht. Der Baum wird bei null
+      # Befunden gehalten, ein Treffer bricht den Job.
+      - name: Sanitizer-Gate (address, leak, undefined)
+        run: cmake --build build --target sanitize-address
+      # Kein Gate: MemorySanitizer verlangt, dass ALLE Abhängigkeiten
+      # instrumentiert sind. Mit dem System-libstdc++ und -gtest meldet er
+      # Fehlalarme aus fremdem Code (use-of-uninitialized-value in memcmp) und
+      # bricht schon in der gtest-Discovery ab. Er läuft hier trotzdem mit,
+      # damit sein Bericht im Joblog steht — aber er färbt den Build nicht rot.
+      # Brauchbar als Gate würde er erst mit selbst gebautem, instrumentiertem
+      # libc++ samt neu gebautem gtest, ICU und Boost.
+      - name: Sanitizer-Diagnose (memory, clang)
+        run: cmake --build build --target sanitize-memory
+        continue-on-error: true
