@@ -10,6 +10,7 @@
 #include <array>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <functional>
 #include <glm/glm.hpp>
 #include <iostream>
@@ -51,27 +52,39 @@ class GLCanvas : public wxGLCanvas {
     on_pointer_move_ = std::move(callback);
   }
 
+  // Der Init ist verzögert, weil das Canvas erst beim ersten Paint gemappt
+  // ist: solange es das nicht ist, bleibt der Status kPending und der nächste
+  // Paint versucht es erneut.
+  enum class GlStatus : std::uint8_t { kPending, kReady, kFailed };
+
   // Verzögerter GL-Init: bindet wxEVT_PAINT auf einen einmaligen
-  // Init-Handler. Beim ersten Paint ist das Canvas garantiert gemappt,
-  // dann lädt LoadOpenGL und on_ready wird aufgerufen.
+  // Init-Handler. Beim ersten Paint ist das Canvas garantiert gemappt, dann
+  // lädt LoadOpenGL und genau einer der beiden Callbacks wird aufgerufen.
+  // `on_failed` ist Pflicht: ohne Kontext bleibt die Verdrahtung aus, und ein
+  // bedienbares, aber unverdrahtetes Fenster stürzt beim ersten Klick ab.
   void InitOpenGL(const std::array<int, 2>& version,
-                  std::function<void()> on_ready) {
+                  std::function<void()> on_ready,
+                  std::function<void(const std::string&)> on_failed) {
     gl_version_ = version;
     on_gl_ready_ = std::move(on_ready);
+    on_gl_failed_ = std::move(on_failed);
     Bind(wxEVT_PAINT, &GLCanvas::InitPaintCallback, this);
     if (IsShownOnScreen()) {
       Refresh(false);
     }
   }
 
-  int LoadOpenGL(const std::array<int, 2>& version) {
-    bool const canvas_shown_on_screen = IsShownOnScreen();
-
-    if (!canvas_shown_on_screen) {
-      std::cout << "!canvas_shown_on_screen\n";
+  GlStatus LoadOpenGL(const std::array<int, 2>& version) {
+    if (gl_status_ != GlStatus::kPending) {
+      return gl_status_;
     }
 
-    if (gl_loaded_ == 0 && canvas_shown_on_screen) {
+    if (!IsShownOnScreen()) {
+      std::cout << "!canvas_shown_on_screen\n";
+      return gl_status_;
+    }
+
+    {
       wxGLContextAttrs context_attributes;
       context_attributes.PlatformDefaults()
           .CoreProfile()
@@ -81,11 +94,19 @@ class GLCanvas : public wxGLCanvas {
           std::make_unique<wxGLContext>(this, nullptr, &context_attributes);
       std::cout << "context IsOK " << context_->IsOK() << '\n';
 
-      SetCurrent(*context_);
-      gl_loaded_ = context_->IsOK() ? 1 : 0;
+      // Ohne gültigen Kontext darf keine GL-Funktion mehr laufen: glGetString
+      // gäbe nullptr zurück, und ein neuer Versuch pro Paint wäre eine
+      // Endlosschleife ohne jede Meldung.
+      if (!context_->IsOK()) {
+        context_.reset();
+        gl_status_ = GlStatus::kFailed;
+        return gl_status_;
+      }
 
-      std::cout << "OpenGL ready: " << gl_loaded_
-                << " version: " << GetGLVersionString() << '\n';
+      SetCurrent(*context_);
+      gl_status_ = GlStatus::kReady;
+
+      std::cout << "OpenGL ready, version: " << GetGLVersionString() << '\n';
 
       glEnable(GL_CULL_FACE);
       glEnable(GL_DEPTH_TEST);
@@ -111,7 +132,7 @@ class GLCanvas : public wxGLCanvas {
       Bind(wxEVT_MOUSEWHEEL, &GLCanvas::MouseCallback, this);
     }
 
-    return gl_loaded_;
+    return gl_status_;
   }
 
   static std::string GetGLVersionString() {
@@ -284,14 +305,26 @@ class GLCanvas : public wxGLCanvas {
 
   void InitPaintCallback(wxPaintEvent& /*event*/) {
     wxPaintDC const dc(this);
-    if (LoadOpenGL(gl_version_) != 0) {
-      Unbind(wxEVT_PAINT, &GLCanvas::InitPaintCallback, this);
-      if (on_gl_ready_) {
-        auto cb = std::move(on_gl_ready_);
-        cb();
-      }
-      Refresh(false);
+    const GlStatus status = LoadOpenGL(gl_version_);
+    if (status == GlStatus::kPending) {
+      return;
     }
+
+    Unbind(wxEVT_PAINT, &GLCanvas::InitPaintCallback, this);
+
+    if (status == GlStatus::kFailed) {
+      on_gl_failed_("Creating an OpenGL " + std::to_string(gl_version_[0]) +
+                    "." + std::to_string(gl_version_[1]) +
+                    " core context failed. decade needs OpenGL to draw the "
+                    "calendar and cannot continue.");
+      return;
+    }
+
+    if (on_gl_ready_) {
+      auto cb = std::move(on_gl_ready_);
+      cb();
+    }
+    Refresh(false);
   }
 
   void PaintCallback(wxPaintEvent& /*event*/) {
@@ -344,7 +377,7 @@ class GLCanvas : public wxGLCanvas {
     }
   }
 
-  int gl_loaded_{0};
+  GlStatus gl_status_{GlStatus::kPending};
 
   std::unique_ptr<wxGLContext> context_;
 
@@ -360,6 +393,7 @@ class GLCanvas : public wxGLCanvas {
 
   std::array<int, 2> gl_version_{};
   std::function<void()> on_gl_ready_;
+  std::function<void(const std::string&)> on_gl_failed_;
   std::function<void(glm::vec2)> on_pointer_move_;
 };
 #endif  // GL_CANVAS_HPP

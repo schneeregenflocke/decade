@@ -252,23 +252,42 @@ inline void MainWindow::InitializeOpenGL() {
   // The callback runs once the GL context is current — only here may GL state
   // be touched. CalendarPage and the binder wiring live inside it, never
   // before.
-  gl_canvas_->InitOpenGL(gl_version, [this]() {
-    calendar_page_ = std::make_unique<CalendarPage>(
-        gl_canvas_.get(), font_panel_->GetFontFilePath());
-    EstablishConnections();
-    LoadStartupFile();
-    if (runtime_options_.debug_hover_bar) {
-      calendar_page_->ReceiveHovered(
-          PickId{.kind = PickId::Kind::kBar,
-                 .index = *runtime_options_.debug_hover_bar});
-    }
-    if (runtime_options_.debug_select_node) {
-      // Drive the real selection path (tree -> detail grid -> bus -> highlight)
-      // so this exercises the panel exactly as a click would.
-      scene_tree_panel_->SelectNodeByPath(*runtime_options_.debug_select_node);
-    }
-    DumpPngIfRequested();
-  });
+  gl_canvas_->InitOpenGL(
+      gl_version,
+      [this]() {
+        calendar_page_ = std::make_unique<CalendarPage>(
+            gl_canvas_.get(), font_panel_->GetFontFilePath());
+        EstablishConnections();
+        LoadStartupFile();
+        if (runtime_options_.debug_hover_bar) {
+          calendar_page_->ReceiveHovered(
+              PickId{.kind = PickId::Kind::kBar,
+                     .index = *runtime_options_.debug_hover_bar});
+        }
+        if (runtime_options_.debug_select_node) {
+          // Drive the real selection path (tree -> detail grid -> bus ->
+          // highlight) so this exercises the panel exactly as a click would.
+          scene_tree_panel_->SelectNodeByPath(
+              *runtime_options_.debug_select_node);
+        }
+        DumpPngIfRequested();
+      },
+      [this](const std::string& message) {
+        // Ohne Kontext läuft der Ready-Callback nie: keine Verdrahtung, keine
+        // Startwerte. Ein bedienbares Fenster in diesem Zustand stürzt beim
+        // ersten Klick ab — deshalb melden und schliessen.
+        //
+        // Über CallAfter, weil der erste Paint noch im Konstruktor eintreffen
+        // kann (Show() in InitializeOpenGL, vor der Event-Loop): ein Close()
+        // von dort verpufft, und ein modaler Dialog stünde vor der Loop.
+        std::cerr << message << '\n';
+        CallAfter([this, message]() {
+          if (!application::IsHeadlessRun(runtime_options_)) {
+            wxMessageBox(message, "OpenGL", wxOK | wxICON_ERROR, this);
+          }
+          Close(true);
+        });
+      });
 }
 
 inline void MainWindow::LoadStartupFile() {

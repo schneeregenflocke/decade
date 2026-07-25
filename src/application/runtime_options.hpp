@@ -68,6 +68,16 @@ struct RuntimeOptions {
   bool debug_log{false};
 };
 
+// Kennzeichen eines nicht-interaktiven Laufs: eine Bildaufnahme oder ein
+// Auto-Exit ist angefordert. Dort darf kein modaler Dialog stehen bleiben — er
+// blockiert den Lauf bis zum Timeout, statt zu melden.
+[[nodiscard]] inline bool IsHeadlessRun(const RuntimeOptions& options) {
+  return options.dump_png_path.has_value() ||
+         options.dump_window_png_path.has_value() ||
+         options.dump_frame_png_path.has_value() ||
+         options.exit_after_ms.has_value();
+}
+
 // Registriert alle Laufzeit-Optionen am Parser. Die Beschreibungen erscheinen
 // in der --help-Ausgabe.
 inline void AddRuntimeOptions(wxCmdLineParser& parser) {
