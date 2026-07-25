@@ -41,15 +41,10 @@ jobs:
       # Baut den Baum instrumentiert neu und lässt die Tests darunter laufen —
       # nur ein Lauf findet Fehler, ein Bau allein nicht. Der Baum wird bei null
       # Befunden gehalten, ein Treffer bricht den Job.
+      # sanitize-memory läuft hier bewusst nicht mit: MemorySanitizer verlangt,
+      # dass ALLE Abhängigkeiten instrumentiert sind, und meldet mit dem
+      # System-libstdc++ und -gtest Fehlalarme aus fremdem Code — schon in der
+      # gtest-Discovery. Er bleibt ein lokales Diagnosewerkzeug, siehe
+      # betrieb.md.
       - name: Sanitizer-Gate (address, leak, undefined)
         run: cmake --build build --target sanitize-address
-      # Kein Gate: MemorySanitizer verlangt, dass ALLE Abhängigkeiten
-      # instrumentiert sind. Mit dem System-libstdc++ und -gtest meldet er
-      # Fehlalarme aus fremdem Code (use-of-uninitialized-value in memcmp) und
-      # bricht schon in der gtest-Discovery ab. Er läuft hier trotzdem mit,
-      # damit sein Bericht im Joblog steht — aber er färbt den Build nicht rot.
-      # Brauchbar als Gate würde er erst mit selbst gebautem, instrumentiertem
-      # libc++ samt neu gebautem gtest, ICU und Boost.
-      - name: Sanitizer-Diagnose (memory, clang)
-        run: cmake --build build --target sanitize-memory
-        continue-on-error: true
