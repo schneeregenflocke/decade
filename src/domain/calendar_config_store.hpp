@@ -1,17 +1,17 @@
 #ifndef CALENDAR_CONFIG_STORE_HPP
 #define CALENDAR_CONFIG_STORE_HPP
 
-#include <sigslot/signal.hpp>
-
 #include "calendar_config.hpp"
 #include "detail/reentry_guard.hpp"
+#include "state_topic.hpp"
 
-// Owns a CalendarConfig value plus the change signal and re-entry guard. Has
-// identity -> non-copyable. The signal carries the value, so the store needs no
-// query delegation: consumers work with the CalendarConfig value directly.
+// Besitzt einen CalendarConfig-Wert und veröffentlicht ihn auf dem
+// eingesetzten Topic. Hat Identität -> nicht kopierbar. Das Topic trägt den
+// Wert, deshalb braucht der Store keine Query-Delegation.
 class CalendarConfigStore {
  public:
-  CalendarConfigStore() = default;
+  explicit CalendarConfigStore(domain::StateTopic<CalendarConfig>& topic)
+      : topic_(topic) {}
   ~CalendarConfigStore() = default;
   CalendarConfigStore(const CalendarConfigStore&) = delete;
   CalendarConfigStore(CalendarConfigStore&&) = delete;
@@ -24,22 +24,16 @@ class CalendarConfigStore {
     }
     const domain::detail::ScopedReentryFlag guard(emitting_);
     calendar_config_ = incoming_calendar_config;
-    signal_calendar_config_(calendar_config_);
+    topic_(calendar_config_);
   }
 
-  void SendCalendarConfig() { signal_calendar_config_(calendar_config_); }
+  void SendCalendarConfig() { topic_(calendar_config_); }
 
-  [[nodiscard]] const CalendarConfig& GetCalendarConfig() const {
-    return calendar_config_;
-  }
-
-  sigslot::signal<const CalendarConfig&>& SignalCalendarConfig() {
-    return signal_calendar_config_;
-  }
+  [[nodiscard]] const CalendarConfig& Get() const { return calendar_config_; }
 
  private:
   CalendarConfig calendar_config_;
-  sigslot::signal<const CalendarConfig&> signal_calendar_config_;
+  domain::StateTopic<CalendarConfig>& topic_;
   bool emitting_{false};
 };
 #endif  // CALENDAR_CONFIG_STORE_HPP

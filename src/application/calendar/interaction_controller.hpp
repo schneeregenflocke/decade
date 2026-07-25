@@ -5,20 +5,24 @@
 #include <glm/vec2.hpp>
 #include <iostream>
 #include <optional>
-#include <sigslot/signal.hpp>
 #include <utility>
 
 #include "../../common/debug_log.hpp"
+#include "../../domain/state_topic.hpp"
 #include "../../infrastructure/graphics/pick_id.hpp"
 
-// Application: turns pointer movement into picking events. The canvas feeds it
-// page-space points; it hit-tests them through a pluggable pick source (so it
-// stays unaware of CalendarPage/PhysicsWorld) and emits `hovered` only when the
-// hovered element actually changes. Selection and drag will hang off the same
-// controller later.
+// Application: macht aus Zeigerbewegung Picking-Ereignisse. Das Canvas liefert
+// Punkte im Seitenraum, der Controller testet sie über eine einsetzbare
+// Pick-Quelle (er kennt damit weder CalendarPage noch PhysicsWorld) und
+// veröffentlicht den Hover nur bei echtem Wechsel. Auswahl und Ziehen kommen
+// später an denselben Controller.
 class InteractionController {
  public:
   using PickSource = std::function<std::optional<PickId>(glm::vec2)>;
+
+  explicit InteractionController(
+      domain::StateTopic<std::optional<PickId>>& hovered_topic)
+      : hovered_topic_(hovered_topic) {}
 
   void SetPickSource(PickSource pick_source) {
     pick_source_ = std::move(pick_source);
@@ -42,15 +46,13 @@ class InteractionController {
       }
     }
 
-    signal_hovered_(hovered_);
+    hovered_topic_(hovered_);
   }
 
-  [[nodiscard]] auto& SignalHovered() { return signal_hovered_; }
-
  private:
+  domain::StateTopic<std::optional<PickId>>& hovered_topic_;
   PickSource pick_source_;
   std::optional<PickId> hovered_;
-  sigslot::signal<const std::optional<PickId>&> signal_hovered_;
 };
 
 #endif  // INTERACTION_CONTROLLER_HPP

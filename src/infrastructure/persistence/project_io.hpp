@@ -96,21 +96,20 @@ namespace persistence {
     // Scope vor der Stream-Prüfung. Die Stores selbst tragen keinen
     // Serialisierungscode; persistiert werden ihre Domain-Werte.
     boost::archive::xml_oarchive oarchive(filestream);
-    oarchive << boost::serialization::make_nvp(
-        "date_groups", date_groups_store.GetDateGroups());
-    oarchive << boost::serialization::make_nvp(
-        "date_entries", date_entry_store.GetDateEntries());
+    oarchive << boost::serialization::make_nvp("date_groups",
+                                               date_groups_store.Get().Items());
+    oarchive << boost::serialization::make_nvp("date_entries",
+                                               date_entry_store.Get().Items());
     oarchive << boost::serialization::make_nvp("page_setup",
-                                               page_setup_store.GetPageSetup());
+                                               page_setup_store.Get());
+    oarchive << boost::serialization::make_nvp("title_config",
+                                               title_config_store.Get());
+    oarchive << boost::serialization::make_nvp("shape_config",
+                                               shape_configuration_store.Get());
     oarchive << boost::serialization::make_nvp(
-        "title_config", title_config_store.GetTitleConfig());
-    oarchive << boost::serialization::make_nvp(
-        "shape_config", shape_configuration_store.GetShapeConfigSet());
-    oarchive << boost::serialization::make_nvp(
-        "calendar_config", calendar_configuration_store.GetCalendarConfig());
+        "calendar_config", calendar_configuration_store.Get());
   } catch (const std::exception& write_error) {
-    return "Saving the project file failed: " +
-           std::string(write_error.what());
+    return "Saving the project file failed: " + std::string(write_error.what());
   }
 
   filestream.flush();

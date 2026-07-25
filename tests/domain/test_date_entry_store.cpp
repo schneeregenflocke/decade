@@ -10,6 +10,7 @@
 #include "domain/date_entry_store.hpp"
 #include "domain/date_group.hpp"
 #include "domain/date_period.hpp"
+#include "domain/state_topic.hpp"
 
 namespace {
 
@@ -24,7 +25,8 @@ DateEntry MakeEntry(int year, int month_begin, int day_begin, int month_end,
 // In production the wiring guarantees a `Default` group is delivered before any
 // entry; seeding it here mirrors that setup so the store sees the same initial
 // state it does at runtime.
-void SeedDefaultGroup(DateEntryStore& store) {
+template <typename Store>
+void SeedDefaultGroup(Store& store) {
   std::vector<DateGroup> groups;
   groups.emplace_back("Default");
   store.ReceiveDateGroups(groups);
@@ -33,7 +35,8 @@ void SeedDefaultGroup(DateEntryStore& store) {
 }  // namespace
 
 TEST(DateEntryStoreTest, ReceiveSortsByBeginDate) {
-  DateEntryStore store;
+  domain::StateTopic<std::vector<DateEntry>> topic;
+  DateEntryStore store(topic);
   SeedDefaultGroup(store);
   std::vector<DateEntry> input;
   input.push_back(MakeEntry(2030, 6, 1, 6, 10));
@@ -42,7 +45,7 @@ TEST(DateEntryStoreTest, ReceiveSortsByBeginDate) {
 
   store.ReceiveDateEntries(input);
 
-  const auto& stored = store.GetDateEntries();
+  const auto& stored = store.Get().Items();
   ASSERT_EQ(stored.size(), 3U);
   EXPECT_EQ(stored[0].GetDateInterval().Begin().Month(), 1);
   EXPECT_EQ(stored[1].GetDateInterval().Begin().Month(), 3);
@@ -50,7 +53,8 @@ TEST(DateEntryStoreTest, ReceiveSortsByBeginDate) {
 }
 
 TEST(DateEntryStoreTest, ReceiveAssignsSequentialNumbers) {
-  DateEntryStore store;
+  domain::StateTopic<std::vector<DateEntry>> topic;
+  DateEntryStore store(topic);
   SeedDefaultGroup(store);
   std::vector<DateEntry> input;
   input.push_back(MakeEntry(2030, 1, 1, 1, 10));
@@ -59,7 +63,7 @@ TEST(DateEntryStoreTest, ReceiveAssignsSequentialNumbers) {
 
   store.ReceiveDateEntries(input);
 
-  const auto& stored = store.GetDateEntries();
+  const auto& stored = store.Get().Items();
   ASSERT_EQ(stored.size(), 3U);
   EXPECT_EQ(stored[0].GetNumber(), 0);
   EXPECT_EQ(stored[1].GetNumber(), 1);
@@ -67,24 +71,25 @@ TEST(DateEntryStoreTest, ReceiveAssignsSequentialNumbers) {
 }
 
 TEST(DateEntryStoreTest, SpanReflectsFirstAndLastYear) {
-  DateEntryStore store;
+  domain::StateTopic<std::vector<DateEntry>> topic;
+  DateEntryStore store(topic);
   SeedDefaultGroup(store);
   std::vector<DateEntry> input;
   input.push_back(MakeEntry(2030, 1, 1, 1, 10));
   input.push_back(MakeEntry(2034, 1, 1, 1, 10));
   store.ReceiveDateEntries(input);
 
-  EXPECT_EQ(store.GetFirstYear(), 2030);
-  EXPECT_EQ(store.GetLastYear(), 2034);
-  EXPECT_EQ(store.GetSpan(), 5);
+  EXPECT_EQ(store.Get().FirstYear(), 2030);
+  EXPECT_EQ(store.Get().LastYear(), 2034);
+  EXPECT_EQ(store.Get().YearSpan(), 5U);
 }
 
 TEST(DateEntryStoreTest, EmitsSignalOnReceive) {
-  DateEntryStore store;
+  domain::StateTopic<std::vector<DateEntry>> topic;
+  DateEntryStore store(topic);
   SeedDefaultGroup(store);
   int emissions = 0;
-  store.SignalDateEntries().connect(
-      [&](const std::vector<DateEntry>&) { ++emissions; });
+  topic.connect([&](const std::vector<DateEntry>&) { ++emissions; });
 
   std::vector<DateEntry> input;
   input.push_back(MakeEntry(2030, 1, 1, 1, 10));
@@ -94,13 +99,14 @@ TEST(DateEntryStoreTest, EmitsSignalOnReceive) {
 }
 
 TEST(DateEntryStoreTest, ReentryGuardBlocksRecursiveReceive) {
-  DateEntryStore store;
+  domain::StateTopic<std::vector<DateEntry>> topic;
+  DateEntryStore store(topic);
   SeedDefaultGroup(store);
   std::vector<DateEntry> recursive_input;
   recursive_input.push_back(MakeEntry(2099, 1, 1, 1, 10));
 
   int emissions = 0;
-  store.SignalDateEntries().connect([&](const std::vector<DateEntry>&) {
+  topic.connect([&](const std::vector<DateEntry>&) {
     ++emissions;
     if (emissions == 1) {
       store.ReceiveDateEntries(recursive_input);
@@ -112,8 +118,8 @@ TEST(DateEntryStoreTest, ReentryGuardBlocksRecursiveReceive) {
   store.ReceiveDateEntries(input);
 
   EXPECT_EQ(emissions, 1);
-  ASSERT_EQ(store.GetDateEntries().size(), 1U);
-  EXPECT_EQ(store.GetDateEntries()[0].GetDateInterval().Begin().Year(), 2030);
+  ASSERT_EQ(store.Get().Items().size(), 1U);
+  EXPECT_EQ(store.Get().Items()[0].GetDateInterval().Begin().Year(), 2030);
 }
 
 TEST(DateEntryBarStoreTest, ProducesOneBarPerIntervalWithinYear) {
@@ -200,7 +206,8 @@ TEST(DateEntryBarStoreTest, LastYearComesFromLatestEndNotLatestBegin) {
 
 // Null periods (no contained day) carry no data and are filtered out.
 TEST(DateEntryStoreTest, DropsNullPeriodEntries) {
-  DateEntryStore store;
+  domain::StateTopic<std::vector<DateEntry>> topic;
+  DateEntryStore store(topic);
   SeedDefaultGroup(store);
   DateEntry null_entry;
   null_entry.SetDateInterval(
@@ -211,5 +218,5 @@ TEST(DateEntryStoreTest, DropsNullPeriodEntries) {
 
   store.ReceiveDateEntries(input);
 
-  EXPECT_EQ(store.GetDateEntries().size(), 1U);
+  EXPECT_EQ(store.Get().Items().size(), 1U);
 }

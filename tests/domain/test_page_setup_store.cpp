@@ -2,6 +2,7 @@
 
 #include "domain/page_setup_config.hpp"
 #include "domain/page_setup_store.hpp"
+#include "domain/state_topic.hpp"
 
 namespace {
 
@@ -16,10 +17,11 @@ PageSetupConfig MakeConfig(float width, float height, int orientation) {
 }  // namespace
 
 TEST(PageSetupStoreTest, ReceiveStoresConfigAndEmitsSignal) {
-  PageSetupStore store;
+  domain::StateTopic<PageSetupConfig> topic;
+  PageSetupStore store(topic);
   int emissions = 0;
   PageSetupConfig captured{};
-  store.SignalPageSetupConfig().connect([&](const PageSetupConfig& config) {
+  topic.connect([&](const PageSetupConfig& config) {
     ++emissions;
     captured = config;
   });
@@ -31,15 +33,15 @@ TEST(PageSetupStoreTest, ReceiveStoresConfigAndEmitsSignal) {
   EXPECT_FLOAT_EQ(captured.Size()[0], 210.0F);
   EXPECT_FLOAT_EQ(captured.Size()[1], 297.0F);
   EXPECT_EQ(captured.Orientation(), 0);
-  EXPECT_FLOAT_EQ(store.GetPageSetup().Margins()[2], 3.0F);
+  EXPECT_FLOAT_EQ(store.Get().Margins()[2], 3.0F);
 }
 
 TEST(PageSetupStoreTest, SendPageSetupEmitsCurrentConfig) {
-  PageSetupStore store;
+  domain::StateTopic<PageSetupConfig> topic;
+  PageSetupStore store(topic);
   store.ReceivePageSetup(MakeConfig(100.0F, 100.0F, 1));
   int emissions = 0;
-  store.SignalPageSetupConfig().connect(
-      [&](const PageSetupConfig&) { ++emissions; });
+  topic.connect([&](const PageSetupConfig&) { ++emissions; });
 
   store.SendPageSetup();
   store.SendPageSetup();
@@ -47,9 +49,10 @@ TEST(PageSetupStoreTest, SendPageSetupEmitsCurrentConfig) {
 }
 
 TEST(PageSetupStoreTest, ReentryGuardBlocksRecursiveReceive) {
-  PageSetupStore store;
+  domain::StateTopic<PageSetupConfig> topic;
+  PageSetupStore store(topic);
   int emissions = 0;
-  store.SignalPageSetupConfig().connect([&](const PageSetupConfig&) {
+  topic.connect([&](const PageSetupConfig&) {
     ++emissions;
     if (emissions == 1) {
       store.ReceivePageSetup(MakeConfig(0.0F, 0.0F, 9));
@@ -59,6 +62,6 @@ TEST(PageSetupStoreTest, ReentryGuardBlocksRecursiveReceive) {
   store.ReceivePageSetup(MakeConfig(210.0F, 297.0F, 0));
 
   EXPECT_EQ(emissions, 1);
-  EXPECT_FLOAT_EQ(store.GetPageSetup().Size()[0], 210.0F);
-  EXPECT_EQ(store.GetPageSetup().Orientation(), 0);
+  EXPECT_FLOAT_EQ(store.Get().Size()[0], 210.0F);
+  EXPECT_EQ(store.Get().Orientation(), 0);
 }

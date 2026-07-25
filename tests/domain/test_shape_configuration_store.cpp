@@ -5,6 +5,7 @@
 
 #include "domain/shape_configuration.hpp"
 #include "domain/shape_configuration_store.hpp"
+#include "domain/state_topic.hpp"
 
 TEST(ShapeConfigSetTest, DefaultsContainExpectedNames) {
   ShapeConfigSet set;
@@ -94,24 +95,25 @@ TEST(ShapeConfigurationTest, OutlineColorReturnsValueWhenVisible) {
 
 TEST(ShapeConfigurationStoreTest, ReceiveEmitsAndCopiesContents) {
   ShapeConfigSet source;
-  ShapeConfigurationStore target;
+  domain::StateTopic<ShapeConfigSet> topic;
+  ShapeConfigurationStore target(topic);
 
   int emissions = 0;
-  target.SignalShapeConfigSet().connect(
-      [&](const ShapeConfigSet&) { ++emissions; });
+  topic.connect([&](const ShapeConfigSet&) { ++emissions; });
 
   target.ReceiveShapeConfigSet(source);
 
   EXPECT_EQ(emissions, 1);
-  EXPECT_EQ(target.GetShapeConfigSet().FixedConfigurations().size(),
+  EXPECT_EQ(target.Get().FixedConfigurations().size(),
             source.FixedConfigurations().size());
 }
 
 TEST(ShapeConfigurationStoreTest, ReentryGuardBlocksRecursiveReceive) {
   ShapeConfigSet secondary;
-  ShapeConfigurationStore primary;
+  domain::StateTopic<ShapeConfigSet> topic;
+  ShapeConfigurationStore primary(topic);
   int emissions = 0;
-  primary.SignalShapeConfigSet().connect([&](const ShapeConfigSet&) {
+  topic.connect([&](const ShapeConfigSet&) {
     ++emissions;
     if (emissions == 1) {
       primary.ReceiveShapeConfigSet(secondary);

@@ -4,6 +4,7 @@
 
 #include "domain/calendar_config.hpp"
 #include "domain/calendar_config_store.hpp"
+#include "domain/state_topic.hpp"
 
 TEST(CalendarSpanTest, DefaultSpanIsValid) {
   CalendarSpan span;
@@ -65,25 +66,26 @@ TEST(CalendarConfigStoreTest, ReceiveCopiesAndEmits) {
   source.SetSpan({.first_year = 2040, .last_year = 2042});
   source.SetAutoCalendarSpan(false);
 
-  CalendarConfigStore target;
+  domain::StateTopic<CalendarConfig> topic;
+  CalendarConfigStore target(topic);
   int emissions = 0;
-  target.SignalCalendarConfig().connect(
-      [&](const CalendarConfig&) { ++emissions; });
+  topic.connect([&](const CalendarConfig&) { ++emissions; });
 
   target.ReceiveCalendarConfig(source);
 
   EXPECT_EQ(emissions, 1);
-  EXPECT_FALSE(target.GetCalendarConfig().IsAutoCalendarSpan());
-  EXPECT_EQ(target.GetCalendarConfig().GetSpanLimitsYears()[0], 2040);
+  EXPECT_FALSE(target.Get().IsAutoCalendarSpan());
+  EXPECT_EQ(target.Get().GetSpanLimitsYears()[0], 2040);
 }
 
 TEST(CalendarConfigStoreTest, ReentryGuardBlocksRecursiveReceive) {
   CalendarConfig secondary;
   secondary.SetSpan({.first_year = 2050, .last_year = 2050});
 
-  CalendarConfigStore primary;
+  domain::StateTopic<CalendarConfig> topic;
+  CalendarConfigStore primary(topic);
   int emissions = 0;
-  primary.SignalCalendarConfig().connect([&](const CalendarConfig&) {
+  topic.connect([&](const CalendarConfig&) {
     ++emissions;
     if (emissions == 1) {
       primary.ReceiveCalendarConfig(secondary);

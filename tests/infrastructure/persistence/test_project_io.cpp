@@ -14,35 +14,42 @@
 #include "domain/date_period.hpp"
 #include "domain/page_setup_store.hpp"
 #include "domain/shape_configuration_store.hpp"
+#include "domain/state_topic.hpp"
 #include "domain/title_config_store.hpp"
 #include "infrastructure/persistence/project_io.hpp"
 
 namespace {
 
-// Bündelt die sechs Stores, die Load/Save verlangen, damit die Tests lesbar
-// bleiben.
+// Bündelt die sechs Stores, die Load/Save verlangen, samt ihren Topics — jeder
+// Store veröffentlicht auf einem eingesetzten Kanal. Die Topics sind zuerst
+// deklariert, damit sie die Stores überleben.
 struct ProjectStores {
-  DateGroupStore date_groups;
-  DateEntryStore date_entries;
-  PageSetupStore page_setup;
-  TitleConfigStore title_config;
-  ShapeConfigurationStore shape_configuration;
-  CalendarConfigStore calendar_configuration;
+  domain::StateTopic<std::vector<DateGroup>> date_groups_topic;
+  domain::StateTopic<std::vector<DateEntry>> date_entries_topic;
+  domain::StateTopic<PageSetupConfig> page_setup_topic;
+  domain::StateTopic<TitleConfig> title_config_topic;
+  domain::StateTopic<ShapeConfigSet> shape_configuration_topic;
+  domain::StateTopic<CalendarConfig> calendar_configuration_topic;
+
+  DateGroupStore date_groups{date_groups_topic};
+  DateEntryStore date_entries{date_entries_topic};
+  PageSetupStore page_setup{page_setup_topic};
+  TitleConfigStore title_config{title_config_topic};
+  ShapeConfigurationStore shape_configuration{shape_configuration_topic};
+  CalendarConfigStore calendar_configuration{calendar_configuration_topic};
 };
 
 std::optional<std::string> Load(const std::string& path, ProjectStores& s) {
-  return persistence::LoadProjectXml(path, s.date_groups, s.date_entries,
-                                     s.page_setup, s.title_config,
-                                     s.shape_configuration,
-                                     s.calendar_configuration);
+  return persistence::LoadProjectXml(
+      path, s.date_groups, s.date_entries, s.page_setup, s.title_config,
+      s.shape_configuration, s.calendar_configuration);
 }
 
 std::optional<std::string> Save(const std::string& path,
                                 const ProjectStores& s) {
-  return persistence::SaveProjectXml(path, s.date_groups, s.date_entries,
-                                     s.page_setup, s.title_config,
-                                     s.shape_configuration,
-                                     s.calendar_configuration);
+  return persistence::SaveProjectXml(
+      path, s.date_groups, s.date_entries, s.page_setup, s.title_config,
+      s.shape_configuration, s.calendar_configuration);
 }
 
 void SeedProject(ProjectStores& s) {
@@ -82,9 +89,9 @@ TEST(ProjectIoTest, CorruptFileReportsErrorAndLeavesStoresUntouched) {
   const auto error = Load(path, stores);
 
   ASSERT_TRUE(error.has_value());
-  ASSERT_EQ(stores.date_entries.GetDateEntries().size(), 1U);
-  EXPECT_EQ(stores.date_groups.GetDateGroups().size(), 1U);
-  EXPECT_EQ(stores.date_groups.GetDateGroups()[0].GetName(), "Seeded");
+  ASSERT_EQ(stores.date_entries.Get().Items().size(), 1U);
+  EXPECT_EQ(stores.date_groups.Get().Items().size(), 1U);
+  EXPECT_EQ(stores.date_groups.Get().Items()[0].GetName(), "Seeded");
 }
 
 TEST(ProjectIoTest, MissingFileReportsError) {
@@ -109,7 +116,7 @@ TEST(ProjectIoTest, RoundTripSucceedsWithoutError) {
 
   ProjectStores target;
   ASSERT_FALSE(Load(path, target).has_value());
-  ASSERT_EQ(target.date_entries.GetDateEntries().size(), 1U);
-  EXPECT_EQ(target.date_entries.GetDateEntries()[0].GetDateInterval().Begin(),
+  ASSERT_EQ(target.date_entries.Get().Items().size(), 1U);
+  EXPECT_EQ(target.date_entries.Get().Items()[0].GetDateInterval().Begin(),
             Date::FromYmd(2030, 1, 1));
 }

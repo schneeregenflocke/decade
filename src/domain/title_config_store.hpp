@@ -1,23 +1,22 @@
 #ifndef TITLE_CONFIG_STORE_HPP
 #define TITLE_CONFIG_STORE_HPP
 
-#include <sigslot/signal.hpp>
-
 #include "detail/reentry_guard.hpp"
+#include "state_topic.hpp"
 #include "title_config.hpp"
 
-// Owns a TitleConfig value plus the change signal. Non-copyable. No
-// serialization code (handled non-intrusively in the infrastructure layer).
+// Besitzt einen TitleConfig-Wert und veröffentlicht ihn auf dem eingesetzten
+// Topic. Nicht kopierbar, kein Serialisierungscode (der liegt nicht-intrusiv
+// in der Infrastructure).
 class TitleConfigStore {
  public:
-  TitleConfigStore() = default;
+  explicit TitleConfigStore(domain::StateTopic<TitleConfig>& topic)
+      : topic_(topic) {}
   ~TitleConfigStore() = default;
   TitleConfigStore(const TitleConfigStore&) = delete;
   TitleConfigStore& operator=(const TitleConfigStore&) = delete;
   TitleConfigStore(TitleConfigStore&&) = delete;
   TitleConfigStore& operator=(TitleConfigStore&&) = delete;
-
-  void SendTitleConfig() { signal_title_config_(title_config_); }
 
   void ReceiveTitleConfig(const TitleConfig& incoming_title_config) {
     if (emitting_) {
@@ -25,20 +24,16 @@ class TitleConfigStore {
     }
     const domain::detail::ScopedReentryFlag guard(emitting_);
     title_config_ = incoming_title_config;
-    signal_title_config_(title_config_);
+    topic_(title_config_);
   }
 
-  [[nodiscard]] const TitleConfig& GetTitleConfig() const {
-    return title_config_;
-  }
+  void SendTitleConfig() { topic_(title_config_); }
 
-  sigslot::signal<const TitleConfig&>& SignalTitleConfig() {
-    return signal_title_config_;
-  }
+  [[nodiscard]] const TitleConfig& Get() const { return title_config_; }
 
  private:
   TitleConfig title_config_;
-  sigslot::signal<const TitleConfig&> signal_title_config_;
+  domain::StateTopic<TitleConfig>& topic_;
   bool emitting_{false};
 };
 #endif  // TITLE_CONFIG_STORE_HPP

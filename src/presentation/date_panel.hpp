@@ -17,7 +17,6 @@
 #include "../domain/date_entry.hpp"
 #include "../domain/date_format.hpp"
 #include "../domain/date_group.hpp"
-#include "../domain/date_group_store.hpp"
 #include "../domain/date_period.hpp"
 #include "table_panel_base.hpp"
 #include "wx_owned.hpp"
@@ -29,8 +28,8 @@
 // on display) and nowhere else.
 class DateTablePanel : public TablePanelBase {
  public:
-  // `date_format` is owned by the composition root (MainWindow) so the whole
-  // application shares one locale configuration.
+  // `date_format` gehört der Composition Root, damit die ganze Anwendung
+  // eine Locale-Konfiguration teilt.
   DateTablePanel(wxWindow* parent, LocaleDateFormatter& date_format)
       : TablePanelBase(parent,
                        wxDV_MULTIPLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES),
@@ -102,10 +101,10 @@ class DateTablePanel : public TablePanelBase {
       // Unknown groups fall back to the default group (0); the store resets
       // them the same way on its side (CheckAndAdjustGroupIntegrity).
       int group = date_entries[index].GetGroup();
-      if (group > date_group_store_.GetGroupMax()) {
+      if (group > date_groups_.GetGroupMax()) {
         group = 0;
       }
-      table()->SetValue(date_group_store_.GetName(group), row,
+      table()->SetValue(date_groups_.GetName(group), row,
                         ColumnIndex(Columns::group));
 
       table()->SetValue(
@@ -130,11 +129,11 @@ class DateTablePanel : public TablePanelBase {
   }
 
   void ReceiveDateGroups(const std::vector<DateGroup>& date_groups) {
-    date_group_store_.ReceiveDateGroups(date_groups);
+    date_groups_.Assign(date_groups);
 
     SendDateEntries();
 
-    auto date_groups_std_string = date_group_store_.GetDateGroupsNames();
+    auto date_groups_std_string = date_groups_.GetDateGroupsNames();
     wxArrayString date_groups_strings;
     date_groups_strings.assign(date_groups_std_string.cbegin(),
                                date_groups_std_string.cend());
@@ -184,8 +183,8 @@ class DateTablePanel : public TablePanelBase {
 
         int group_number = 0;
         try {
-          group_number = date_group_store_.GetNumber(
-              group_string.GetString().ToStdString());
+          group_number =
+              date_groups_.GetNumber(group_string.GetString().ToStdString());
         } catch (const std::exception&) {
           group_number = 0;
         }
@@ -253,7 +252,7 @@ class DateTablePanel : public TablePanelBase {
       wxVector<wxVariant> empty_row;
       empty_row.resize(table()->GetColumnCount());
       empty_row[static_cast<size_t>(ColumnIndex(Columns::group))] =
-          date_group_store_.GetName(0);
+          date_groups_.GetName(0);
       table()->InsertItem(static_cast<unsigned int>(row), empty_row);
     }
   }
@@ -382,7 +381,7 @@ class DateTablePanel : public TablePanelBase {
     auto selections = GetSelectionList();
 
     auto group_number = event.GetSelection();
-    auto group_name = date_group_store_.GetName(group_number);
+    auto group_name = date_groups_.GetName(group_number);
 
     for (unsigned int const selection : selections) {
       table()->SetValue(group_name, selection, ColumnIndex(Columns::group));
@@ -394,7 +393,7 @@ class DateTablePanel : public TablePanelBase {
   wxWeakRef<wxComboBox> select_group_control_;
 
   LocaleDateFormatter& date_format_;
-  DateGroupStore date_group_store_;
+  DateGroups date_groups_;
   sigslot::signal<const std::vector<DateEntry>&> signal_table_date_entries_;
 };
 #endif  // DATE_PANEL_HPP

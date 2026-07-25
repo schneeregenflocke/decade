@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include "domain/state_topic.hpp"
 #include "domain/title_config.hpp"
 #include "domain/title_config_store.hpp"
 
@@ -18,14 +19,15 @@ TEST(TitleConfigTest, GettersReturnSetValues) {
 }
 
 TEST(TitleConfigStoreTest, ReceiveStoresAndEmits) {
-  TitleConfigStore store;
+  domain::StateTopic<TitleConfig> topic;
+  TitleConfigStore store(topic);
   TitleConfig incoming;
   incoming.SetTitleText("incoming");
   incoming.SetFrameHeight(20.0F);
 
   int emissions = 0;
   std::string observed_text;
-  store.SignalTitleConfig().connect([&](const TitleConfig& cfg) {
+  topic.connect([&](const TitleConfig& cfg) {
     ++emissions;
     observed_text = cfg.TitleText();
   });
@@ -37,9 +39,10 @@ TEST(TitleConfigStoreTest, ReceiveStoresAndEmits) {
 }
 
 TEST(TitleConfigStoreTest, ReentryGuardBlocksRecursiveReceive) {
-  TitleConfigStore store;
+  domain::StateTopic<TitleConfig> topic;
+  TitleConfigStore store(topic);
   int emissions = 0;
-  store.SignalTitleConfig().connect([&](const TitleConfig&) {
+  topic.connect([&](const TitleConfig&) {
     ++emissions;
     if (emissions == 1) {
       TitleConfig recursive;

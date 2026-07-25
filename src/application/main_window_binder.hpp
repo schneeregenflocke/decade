@@ -3,23 +3,16 @@
 
 #include <glm/vec2.hpp>
 #include <optional>
+#include <string>
 #include <vector>
 
-#include "../domain/calendar_config.hpp"
 #include "../domain/calendar_config_store.hpp"
-#include "../domain/date_entry.hpp"
 #include "../domain/date_entry_store.hpp"
-#include "../domain/date_group.hpp"
 #include "../domain/date_group_store.hpp"
-#include "../domain/page_setup_config.hpp"
 #include "../domain/page_setup_store.hpp"
-#include "../domain/scene_snapshot.hpp"
-#include "../domain/shape_configuration.hpp"
 #include "../domain/shape_configuration_store.hpp"
-#include "../domain/title_config.hpp"
 #include "../domain/title_config_store.hpp"
 #include "../domain/transform_date_entry.hpp"
-#include "../infrastructure/graphics/pick_id.hpp"
 #include "../presentation/calendar_panel.hpp"
 #include "../presentation/date_panel.hpp"
 #include "../presentation/font_panel.hpp"
@@ -32,16 +25,18 @@
 #include "calendar/interaction_controller.hpp"
 #include "event_bus.hpp"
 
-// Centralised wiring between domain stores, presentation panels, the
-// rendering adapter, and the GL canvas — all routed through `EventBus`.
+// Die eine Stelle, an der Stores, Panels, Rendering-Adapter und GL-Canvas
+// zusammenkommen.
 //
-// Direction conventions:
-//   * Panel edits ("upload") are connected directly to the owning store, so a
-//     store's `Receive*` is the only place that produces the canonical event.
-//   * The store's outgoing signal is forwarded into the bus topic, and every
-//     consumer (other stores, panels, the rendering adapter, the GL canvas)
-//     subscribes from the bus. This keeps the wiring symmetric and avoids
-//     feedback loops, while keeping consumer code unaware of producer identity.
+// Zwei Richtungen, zwei Regeln:
+//   * Ein Panel-Edit ist ein *Befehl* und geht direkt an den besitzenden Store.
+//     Dessen `Receive*` ist damit der einzige Ort, an dem der kanonische
+//     Zustand entsteht.
+//   * Der neue Zustand ist eine *Tatsache* und geht über den Bus: der Store
+//     veröffentlicht auf seinem Topic, jeder Konsument hängt sich dort an.
+// Würden Panels ihre Edits auf dasselbe Topic legen, das sie abonnieren, gäbe
+// es Rückkopplungen; die Trennung verhindert das und hält Produzent und
+// Konsument voneinander unabhängig.
 struct MainWindowComponents {
   DateGroupStore& date_groups_store;
   DateEntryStore& date_entry_store;
@@ -68,36 +63,28 @@ namespace main_window_binder {
 
 namespace detail {
 
+// Hängt ein Panel-Signal an ein Bus-Topic. Nötig nur dort, wo der Produzent
+// in der Presentation sitzt und deshalb kein Topic eingesetzt bekommt.
+template <typename Signal, typename Topic>
+void Forward(Signal& from, Topic& to) {
+  from.connect([&to](const auto& value) { to(value); });
+}
+
 inline void BindDateEntries(EventBus& bus, MainWindowComponents& components) {
-  // Panel -> Store (user edit)
+  // Panel -> Store (Nutzereingabe)
   components.data_table_panel.SignalTableDateEntries().connect(
       &DateEntryStore::ReceiveDateEntries, &components.date_entry_store);
 
-  // Store -> Bus
-  components.date_entry_store.SignalDateEntries().connect(
-      [&bus](const std::vector<DateEntry>& value) {
-        bus.date_entries()(value);
-      });
-
-  // Bus -> consumers
+  // Topic -> Konsumenten. Der Store veröffentlicht selbst.
   bus.date_entries().connect(&DateTablePanel::ReceiveDateEntries,
                              &components.data_table_panel);
   bus.date_entries().connect(&TransformDateEntry::ReceiveDateEntries,
                              &components.transform_date_entry);
 
-  // Transform adapter -> Bus (transformed topic). No shift: DatePeriod is
-  // uniformly half-open [begin, end), so the interval is already exclusive at
-  // the end. The previous {end_days = 1} was an inclusive->exclusive fixup left
-  // over from the old inclusive-date model; with the half-open model it widened
-  // every bar by one day (a 2-day stay rendered as 3 days). The
-  // inclusive<->half-open conversion now happens only at the user-facing
-  // boundaries (date table, CSV) via PeriodFromInclusiveDates()/Last().
-  components.transform_date_entry.SignalTransformDateEntries().connect(
-      [&bus](const std::vector<DateEntry>& value) {
-        bus.transformed_date_entries()(value);
-      });
-
-  // Bus (transformed) -> CalendarPage
+  // Der Transform-Adapter veröffentlicht auf dem eigenen Topic. Keine
+  // Verschiebung: DatePeriod ist überall halb-offen [begin, end), das Ende
+  // also bereits exklusiv. Das frühere {end_days = 1} war eine Korrektur aus
+  // dem alten inklusiven Modell und machte jeden Balken einen Tag zu lang.
   bus.transformed_date_entries().connect(&CalendarPage::ReceiveDateEntries,
                                          &components.calendar_page);
 }
@@ -106,20 +93,15 @@ inline void BindDateGroups(EventBus& bus, MainWindowComponents& components) {
   components.date_groups_table_panel.SignalTableDateGroups().connect(
       &DateGroupStore::ReceiveDateGroups, &components.date_groups_store);
 
-  components.date_groups_store.SignalDateGroups().connect(
-      [&bus](const std::vector<DateGroup>& value) {
-        bus.date_groups()(value);
-      });
-
   bus.date_groups().connect(&DateGroupsTablePanel::ReceiveDateGroups,
                             &components.date_groups_table_panel);
   bus.date_groups().connect(&DateEntryStore::ReceiveDateGroups,
                             &components.date_entry_store);
   bus.date_groups().connect(&DateTablePanel::ReceiveDateGroups,
                             &components.data_table_panel);
-  // The store synthesises the per-group shape configurations from the palette
-  // and republishes the set, so this must run before CalendarPage rebuilds the
-  // scene below (which reads the updated configurations off the bus).
+  // Der Store synthetisiert die gruppenweisen Shape-Konfigurationen aus der
+  // Palette und veröffentlicht sie neu — das muss vor dem Neuaufbau der Szene
+  // laufen, der die aktualisierten Konfigurationen vom Bus liest.
   bus.date_groups().connect(&ShapeConfigurationStore::ReceiveDateGroups,
                             &components.shape_configuration_store);
   bus.date_groups().connect(&CalendarPage::ReceiveDateGroups,
@@ -130,9 +112,6 @@ inline void BindPageSetup(EventBus& bus, MainWindowComponents& components) {
   components.page_setup_panel.SignalPageSetupConfig().connect(
       &PageSetupStore::ReceivePageSetup, &components.page_setup_store);
 
-  components.page_setup_store.SignalPageSetupConfig().connect(
-      [&bus](const PageSetupConfig& value) { bus.page_setup()(value); });
-
   bus.page_setup().connect(&PageSetupPanel::ReceivePageSetup,
                            &components.page_setup_panel);
   bus.page_setup().connect(&CalendarPage::ReceivePageSetup,
@@ -140,12 +119,11 @@ inline void BindPageSetup(EventBus& bus, MainWindowComponents& components) {
   bus.page_setup().connect(&GLCanvas::ReceivePageSetup, &components.gl_canvas);
 }
 
-// Font has no domain store — the panel value flows directly to the bus and on
-// to the renderer. If font ever needs to be persisted with a project, replace
-// this with a Panel -> FontStore -> Bus chain to match the other topics.
+// Die Schrift hat keinen Store — der Panelwert geht direkt aufs Topic und von
+// dort an den Renderer. Soll die Schrift einmal mit dem Projekt gespeichert
+// werden, tritt ein FontStore an dieselbe Stelle wie bei den anderen Themen.
 inline void BindFont(EventBus& bus, MainWindowComponents& components) {
-  components.font_panel.SignalFontFilepath().connect(
-      [&bus](const std::string& value) { bus.font_filepath()(value); });
+  Forward(components.font_panel.SignalFontFilepath(), bus.font_filepath());
 
   bus.font_filepath().connect(&CalendarPage::ReceiveFont,
                               &components.calendar_page);
@@ -155,24 +133,17 @@ inline void BindTitleConfig(EventBus& bus, MainWindowComponents& components) {
   components.title_setup_panel.SignalTitleConfig().connect(
       &TitleConfigStore::ReceiveTitleConfig, &components.title_config_store);
 
-  components.title_config_store.SignalTitleConfig().connect(
-      [&bus](const TitleConfig& value) { bus.title_config()(value); });
-
   bus.title_config().connect(&TitleSetupPanel::ReceiveTitleConfig,
                              &components.title_setup_panel);
   bus.title_config().connect(&CalendarPage::ReceiveTitleConfig,
                              &components.calendar_page);
 }
 
-inline void BindShapeConfiguration(EventBus& bus,
-                                   MainWindowComponents& components) {
-  // The scene tree edits the shape configurations from its detail grid.
+inline void BindShapeConfiguration(EventBus& bus, MainWindowComponents& components) {
+  // Der Szenenbaum bearbeitet die Shape-Konfigurationen in seinem Detailgrid.
   components.scene_tree_panel.SignalShapeConfigSet().connect(
       &ShapeConfigurationStore::ReceiveShapeConfigSet,
       &components.shape_configuration_store);
-
-  components.shape_configuration_store.SignalShapeConfigSet().connect(
-      [&bus](const ShapeConfigSet& value) { bus.shape_config_set()(value); });
 
   bus.shape_config_set().connect(&CalendarPage::ReceiveShapeConfigSet,
                                  &components.calendar_page);
@@ -180,14 +151,10 @@ inline void BindShapeConfiguration(EventBus& bus,
                                  &components.scene_tree_panel);
 }
 
-inline void BindCalendarConfig(EventBus& bus,
-                               MainWindowComponents& components) {
+inline void BindCalendarConfig(EventBus& bus, MainWindowComponents& components) {
   components.calendar_setup_panel.SignalCalendarConfig().connect(
       &CalendarConfigStore::ReceiveCalendarConfig,
       &components.calendar_configuration_store);
-
-  components.calendar_configuration_store.SignalCalendarConfig().connect(
-      [&bus](const CalendarConfig& value) { bus.calendar_config()(value); });
 
   bus.calendar_config().connect(&CalendarSetupPanel::ReceiveCalendarConfig,
                                 &components.calendar_setup_panel);
@@ -195,28 +162,21 @@ inline void BindCalendarConfig(EventBus& bus,
                                 &components.calendar_page);
 }
 
-// The rendering adapter is the producer of scene snapshots; the scene-tree
-// panel is the only consumer. Routed through the bus like every other topic so
-// neither side knows the other.
+// Der Rendering-Adapter veröffentlicht die Szenen-Momentaufnahmen selbst; das
+// Szenenbaum-Panel ist der einzige Konsument. Dessen Auswahl geht umgekehrt
+// über den Bus zurück an die Hervorhebung im Renderer.
 inline void BindSceneSnapshot(EventBus& bus, MainWindowComponents& components) {
-  components.calendar_page.SignalSceneSnapshot().connect(
-      [&bus](const SceneNodeSnapshot& value) { bus.scene_snapshot()(value); });
-
   bus.scene_snapshot().connect(&SceneTreePanel::ReceiveSceneSnapshot,
                                &components.scene_tree_panel);
 
-  // Scene-tree selection -> Bus -> renderer highlight of the node + subtree.
-  components.scene_tree_panel.SignalSelectedNode().connect(
-      [&bus](const std::optional<std::string>& path) {
-        bus.selected_node()(path);
-      });
+  Forward(components.scene_tree_panel.SignalSelectedNode(),
+          bus.selected_node());
   bus.selected_node().connect(&CalendarPage::ReceiveSelectedNode,
                               &components.calendar_page);
 }
 
-// Picking: the canvas reports pointer moves in page space, the controller
-// hit-tests them via the rendering adapter, and the resulting hover is
-// published on the bus. The visual highlight consumer is wired separately.
+// Picking: das Canvas meldet Zeigerbewegungen im Seitenraum, der Controller
+// testet sie über den Rendering-Adapter und veröffentlicht den Hover selbst.
 inline void BindInteraction(EventBus& bus, MainWindowComponents& components) {
   components.interaction_controller.SetPickSource(
       [page = &components.calendar_page](glm::vec2 point) {
@@ -227,9 +187,6 @@ inline void BindInteraction(EventBus& bus, MainWindowComponents& components) {
       [controller = &components.interaction_controller](glm::vec2 point) {
         controller->OnPointerMove(point);
       });
-
-  components.interaction_controller.SignalHovered().connect(
-      [&bus](const std::optional<PickId>& hovered) { bus.hovered()(hovered); });
 
   bus.hovered().connect(&CalendarPage::ReceiveHovered,
                         &components.calendar_page);
@@ -251,9 +208,9 @@ inline void Bind(EventBus& bus, MainWindowComponents& components) {
 
 // Gegenstück zu Bind: trennt alle Verbindungen. Nötig beim Beenden — die
 // wx-Children (Panels, GL-Canvas) sterben erst im ~wxFrame-Basisdestruktor,
-// also nach den Stores und dem EventBus, die MainWindow als Member gehören.
-// Feuert ein Control beim Zerstören noch ein Ereignis (ein offener
-// Editor-Commit etwa), liefe der Slot sonst in bereits zerstörte Objekte.
+// also nach den Stores und dem EventBus. Feuert ein Control beim Zerstören noch
+// ein Ereignis (ein offener Editor-Commit etwa), liefe der Slot sonst in
+// bereits zerstörte Objekte.
 inline void Unbind(EventBus& bus, MainWindowComponents& components) {
   // Ereignisquellen der Presentation-Schicht.
   components.data_table_panel.SignalTableDateEntries().disconnect_all();
@@ -265,21 +222,10 @@ inline void Unbind(EventBus& bus, MainWindowComponents& components) {
   components.scene_tree_panel.SignalShapeConfigSet().disconnect_all();
   components.scene_tree_panel.SignalSelectedNode().disconnect_all();
   components.gl_canvas.SetPointerMoveCallback(nullptr);
-
-  // Stores und Adapter.
-  components.date_entry_store.SignalDateEntries().disconnect_all();
-  components.date_groups_store.SignalDateGroups().disconnect_all();
-  components.transform_date_entry.SignalTransformDateEntries().disconnect_all();
-  components.page_setup_store.SignalPageSetupConfig().disconnect_all();
-  components.title_config_store.SignalTitleConfig().disconnect_all();
-  components.shape_configuration_store.SignalShapeConfigSet().disconnect_all();
-  components.calendar_configuration_store.SignalCalendarConfig()
-      .disconnect_all();
-  components.calendar_page.SignalSceneSnapshot().disconnect_all();
-  components.interaction_controller.SignalHovered().disconnect_all();
   components.interaction_controller.SetPickSource(nullptr);
 
-  // Bus-Topics: ihre Slots zeigen auf Panels und den Rendering-Adapter.
+  // Bus-Topics: ihre Slots zeigen auf Panels und den Rendering-Adapter. Die
+  // Produzenten dürfen danach weiter veröffentlichen — es hört nur niemand zu.
   bus.date_entries().disconnect_all();
   bus.transformed_date_entries().disconnect_all();
   bus.date_groups().disconnect_all();

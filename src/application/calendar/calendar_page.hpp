@@ -4,7 +4,6 @@
 #include <glm/vec2.hpp>
 #include <memory>
 #include <optional>
-#include <sigslot/signal.hpp>
 #include <string>
 #include <vector>
 
@@ -15,6 +14,7 @@
 #include "../../domain/page_setup_config.hpp"
 #include "../../domain/scene_snapshot.hpp"
 #include "../../domain/shape_configuration.hpp"
+#include "../../domain/state_topic.hpp"
 #include "../../domain/title_config.hpp"
 #include "../../infrastructure/graphics/font.hpp"
 #include "../../infrastructure/graphics/page_geometry.hpp"
@@ -31,8 +31,10 @@
 // (copyable); every incoming signal carries a value, so the slots just assign.
 class CalendarPage {
  public:
-  CalendarPage(GLCanvas& gl_canvas_in, const std::string& font_filepath)
+  CalendarPage(GLCanvas& gl_canvas_in, const std::string& font_filepath,
+               domain::StateTopic<SceneNodeSnapshot>& snapshot_topic)
       : gl_canvas_(gl_canvas_in),
+        snapshot_topic_(snapshot_topic),
         font_(std::make_shared<Font>(font_filepath)),
         scene_composer_(gl_canvas_in.Engine(), scene_, font_, page_size_,
                         page_margin_, title_config_, calendar_config_,
@@ -79,10 +81,8 @@ class CalendarPage {
     scene_composer_.Build();
     physics_world_.Rebuild(scene_composer_.BarPickBoxes());
     gl_canvas_.RefreshView();
-    signal_scene_snapshot_(scene_composer_.SceneSnapshot());
+    snapshot_topic_(scene_composer_.SceneSnapshot());
   }
-
-  [[nodiscard]] auto& SignalSceneSnapshot() { return signal_scene_snapshot_; }
 
   // Hit-tests a page-space point against the bars, returning the bar's PickId.
   [[nodiscard]] std::optional<PickId> Pick(glm::vec2 page_point) const {
@@ -104,8 +104,8 @@ class CalendarPage {
   }
 
  private:
-  sigslot::signal<const SceneNodeSnapshot&> signal_scene_snapshot_;
   GLCanvas& gl_canvas_;
+  domain::StateTopic<SceneNodeSnapshot>& snapshot_topic_;
 
   PhysicsWorld physics_world_;
 

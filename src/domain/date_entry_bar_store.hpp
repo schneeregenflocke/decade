@@ -8,23 +8,32 @@
 
 #include "bar.hpp"
 #include "date_entry.hpp"
-#include "date_entry_store.hpp"
-#include "detail/reentry_guard.hpp"
+#include "date_entry_list.hpp"
+#include "date_group.hpp"
 #include "timeline_projection.hpp"
 
-class DateEntryBarStore : public DateEntryStore {
+// Lesemodell für das Zeichnen: hält dieselbe aufbereitete Eintragsliste und
+// leitet daraus Balken und Jahressummen ab. Veröffentlicht nichts — der
+// Kalender liest es direkt, deshalb braucht es weder Topic noch Re-Entry-Guard.
+class DateEntryBarStore {
  public:
-  void ReceiveDateEntries(
-      const std::vector<DateEntry>& incoming_date_entries) override {
-    if (Emitting()) {
-      return;
-    }
-    const domain::detail::ScopedReentryFlag guard(Emitting());
-    ProcessDateEntries(incoming_date_entries);
-
+  void ReceiveDateEntries(const std::vector<DateEntry>& incoming_date_entries) {
+    date_entries_.Assign(incoming_date_entries);
     ProcessBars();
     ProcessAnnualTotals();
   }
+
+  void ReceiveDateGroups(const std::vector<DateGroup>& date_groups) {
+    date_entries_.AssignDateGroups(date_groups);
+  }
+
+  [[nodiscard]] bool is_empty() const { return date_entries_.IsEmpty(); }
+
+  [[nodiscard]] std::size_t GetSpan() const { return date_entries_.YearSpan(); }
+
+  [[nodiscard]] int GetFirstYear() const { return date_entries_.FirstYear(); }
+
+  [[nodiscard]] int GetLastYear() const { return date_entries_.LastYear(); }
 
   [[nodiscard]] size_t GetNumberBars() const { return bars_.size(); }
 
@@ -38,7 +47,7 @@ class DateEntryBarStore : public DateEntryStore {
   void ProcessBars() {
     bars_.clear();
 
-    for (const auto& entry : GetDateEntriesInternal()) {
+    for (const auto& entry : date_entries_.Items()) {
       // Stored periods are never null (filtered upstream), so the row-period
       // split is well-defined. The split rule (one bar per calendar year)
       // lives in the domain projection, not in this store.
@@ -66,6 +75,7 @@ class DateEntryBarStore : public DateEntryStore {
     }
   }
 
+  DateEntryList date_entries_;
   std::vector<Bar> bars_;
   std::vector<std::int64_t> annual_totals_;
 };

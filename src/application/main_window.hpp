@@ -143,6 +143,14 @@ inline MainWindow::MainWindow(wxWindow* parent,
     : wxFrame(parent, wxID_ANY, wxString::FromUTF8(config.title),
               config.position, config.size, config.style, config.frame_name),
       locale_date_formatter_(locale_date_formatter),
+      date_groups_store_(event_bus_.date_groups()),
+      date_entry_store_(event_bus_.date_entries()),
+      transform_date_entry_(event_bus_.transformed_date_entries()),
+      page_setup_store_(event_bus_.page_setup()),
+      title_config_store_(event_bus_.title_config()),
+      shape_configuration_store_(event_bus_.shape_config_set()),
+      calendar_configuration_store_(event_bus_.calendar_config()),
+      interaction_controller_(event_bus_.hovered()),
       exit_timer_(this),
       menu_(GLCanvas::kExportPngDpi),
       runtime_options_(std::move(runtime_options)) {
@@ -260,7 +268,8 @@ inline void MainWindow::InitializeOpenGL() {
   gl_canvas_->InitOpenGL(
       [this]() {
         calendar_page_ = std::make_unique<CalendarPage>(
-            *gl_canvas_, font_panel_->GetFontFilePath());
+            *gl_canvas_, font_panel_->GetFontFilePath(),
+            event_bus_.scene_snapshot());
         EstablishConnections();
         LoadStartupFile();
         if (runtime_options_.debug_hover_bar) {
@@ -524,7 +533,7 @@ inline void MainWindow::CallbackExportCSV(wxCommandEvent& event) {
 
   const std::string file_path = save_file_dialog.GetPath().ToStdString();
   if (const auto error = persistence::WriteDateEntriesToCsv(
-          file_path, date_entry_store_.GetDateEntries(),
+          file_path, date_entry_store_.Get().Items(),
           locale_date_formatter_)) {
     wxMessageBox(*error, "Export file", wxOK | wxICON_ERROR, this);
   }

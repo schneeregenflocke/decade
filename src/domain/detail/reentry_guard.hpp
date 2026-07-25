@@ -3,21 +3,20 @@
 
 namespace domain::detail {
 
-// RAII helper: sets `flag` to true on construction, resets to false on
-// destruction. Used by stores to break echo loops where a slot connected to a
-// store's outgoing signal feeds back into the store's `Receive*` (e.g. via
-// the EventBus).
+// RAII-Helfer: setzt `flag` beim Konstruieren auf true und beim Zerstören
+// zurück auf false. Stores brechen damit Echoschleifen, bei denen ein Slot am
+// veröffentlichten Zustand wieder in `Receive*` desselben Stores läuft.
 class ScopedReentryFlag {
  public:
-  explicit ScopedReentryFlag(bool& flag) : flag_(&flag) { *flag_ = true; }
-  ~ScopedReentryFlag() { *flag_ = false; }
+  explicit ScopedReentryFlag(bool& flag) : flag_(flag) { flag_ = true; }
+  ~ScopedReentryFlag() { flag_ = false; }
   ScopedReentryFlag(const ScopedReentryFlag&) = delete;
   ScopedReentryFlag& operator=(const ScopedReentryFlag&) = delete;
   ScopedReentryFlag(ScopedReentryFlag&&) = delete;
   ScopedReentryFlag& operator=(ScopedReentryFlag&&) = delete;
 
  private:
-  bool* flag_;
+  bool& flag_;
 };
 
 }  // namespace domain::detail

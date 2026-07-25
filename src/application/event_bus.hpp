@@ -2,7 +2,6 @@
 #define EVENT_BUS_HPP
 
 #include <optional>
-#include <sigslot/signal.hpp>
 #include <string>
 #include <vector>
 
@@ -12,17 +11,21 @@
 #include "../domain/page_setup_config.hpp"
 #include "../domain/scene_snapshot.hpp"
 #include "../domain/shape_configuration.hpp"
+#include "../domain/state_topic.hpp"
 #include "../domain/title_config.hpp"
 #include "../infrastructure/graphics/pick_id.hpp"
 
-// Central typed event bus for cross-component communication.
+// Zentraler typisierter Ereignisbus.
 //
-// One sigslot signal per domain event, reached through a same-named accessor.
-// Producers (panels, stores, file I/O) emit by calling `bus.<event>()(value)`;
-// consumers attach via `bus.<event>().connect(...)`. The signals themselves are
-// private — the accessors are the single point through which both sides reach
-// them. The `main_window_binder` namespace wires concrete components so neither
-// side has to know about the other.
+// Ein Topic je Domänenereignis, erreichbar über einen gleichnamigen Accessor.
+// Produzenten veröffentlichen mit `bus.<topic>()(wert)`, Konsumenten hängen
+// sich mit `bus.<topic>().connect(...)` an. Stores bekommen ihr Topic beim
+// Bauen eingesetzt und rufen es selbst auf — dazwischen steht keine
+// Weiterleitung mehr. Wer welchen Konsumenten anhängt, steht gesammelt in
+// `main_window_binder`, damit keine Seite die andere kennen muss.
+//
+// Die Topics sind privat; die Accessors sind der einzige Zugang für beide
+// Seiten.
 class EventBus {
  public:
   EventBus() = default;
@@ -47,17 +50,17 @@ class EventBus {
   [[nodiscard]] auto& selected_node() { return selected_node_; }
 
  private:
-  sigslot::signal<const std::vector<DateEntry>&> date_entries_;
-  sigslot::signal<const std::vector<DateEntry>&> transformed_date_entries_;
-  sigslot::signal<const std::vector<DateGroup>&> date_groups_;
-  sigslot::signal<const PageSetupConfig&> page_setup_;
-  sigslot::signal<const std::string&> font_filepath_;
-  sigslot::signal<const TitleConfig&> title_config_;
-  sigslot::signal<const ShapeConfigSet&> shape_config_set_;
-  sigslot::signal<const CalendarConfig&> calendar_config_;
-  sigslot::signal<const SceneNodeSnapshot&> scene_snapshot_;
-  sigslot::signal<const std::optional<PickId>&> hovered_;
-  sigslot::signal<const std::optional<std::string>&> selected_node_;
+  domain::StateTopic<std::vector<DateEntry>> date_entries_;
+  domain::StateTopic<std::vector<DateEntry>> transformed_date_entries_;
+  domain::StateTopic<std::vector<DateGroup>> date_groups_;
+  domain::StateTopic<PageSetupConfig> page_setup_;
+  domain::StateTopic<std::string> font_filepath_;
+  domain::StateTopic<TitleConfig> title_config_;
+  domain::StateTopic<ShapeConfigSet> shape_config_set_;
+  domain::StateTopic<CalendarConfig> calendar_config_;
+  domain::StateTopic<SceneNodeSnapshot> scene_snapshot_;
+  domain::StateTopic<std::optional<PickId>> hovered_;
+  domain::StateTopic<std::optional<std::string>> selected_node_;
 };
 
 #endif  // EVENT_BUS_HPP
