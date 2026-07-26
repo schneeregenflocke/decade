@@ -2,6 +2,7 @@
 #define FILE_COMMANDS_HPP
 
 #include <wx/filedlg.h>
+#include <wx/filename.h>
 #include <wx/msgdlg.h>
 #include <wx/string.h>
 
@@ -42,13 +43,21 @@ class FileCommands {
   }
 
  private:
-  static constexpr const char* kXmlWildcard = "XML Files (*.xml)|*.xml";
-  static constexpr const char* kCsvWildcard =
-      "CSV and TXT files (*.csv;*.txt)|*.csv;*.txt";
-  static constexpr const char* kPngWildcard = "PNG files (*.png)|*.png";
+  // Filter des Dialogs und die Endung, die beim Speichern fehlen darf.
+  struct FileType {
+    const char* wildcard;
+    const char* extension;
+  };
+  static constexpr FileType kXmlFile{.wildcard = "XML Files (*.xml)|*.xml",
+                                     .extension = "xml"};
+  static constexpr FileType kCsvFile{
+      .wildcard = "CSV and TXT files (*.csv;*.txt)|*.csv;*.txt",
+      .extension = "csv"};
+  static constexpr FileType kPngFile{.wildcard = "PNG files (*.png)|*.png",
+                                     .extension = "png"};
 
   void OpenXml() {
-    const std::string file_path = AskOpenPath("Open File", kXmlWildcard);
+    const std::string file_path = AskOpenPath("Open File", kXmlFile.wildcard);
     if (file_path.empty()) {
       return;
     }
@@ -65,7 +74,7 @@ class FileCommands {
   }
 
   void SaveXmlAs() {
-    const std::string file_path = AskSavePath("Save File", kXmlWildcard);
+    const std::string file_path = AskSavePath("Save File", kXmlFile);
     if (file_path.empty()) {
       return;
     }
@@ -73,7 +82,7 @@ class FileCommands {
   }
 
   void ImportCsv() {
-    const std::string file_path = AskOpenPath("Import file", kCsvWildcard);
+    const std::string file_path = AskOpenPath("Import file", kCsvFile.wildcard);
     if (file_path.empty()) {
       return;
     }
@@ -81,7 +90,7 @@ class FileCommands {
   }
 
   void ExportCsv() {
-    const std::string file_path = AskSavePath("Export file", kCsvWildcard);
+    const std::string file_path = AskSavePath("Export file", kCsvFile);
     if (file_path.empty()) {
       return;
     }
@@ -89,7 +98,7 @@ class FileCommands {
   }
 
   void ExportPng() {
-    const std::string file_path = AskSavePath("Export PNG file", kPngWildcard);
+    const std::string file_path = AskSavePath("Export PNG file", kPngFile);
     if (file_path.empty()) {
       return;
     }
@@ -107,14 +116,33 @@ class FileCommands {
     return dialog.GetPath().ToStdString();
   }
 
+  // wxGTK hängt die Endung des Filters nie an (wxWidgets #9917) — das holen wir
+  // nach, samt der Überschreibfrage, die der Dialog nur zum getippten Namen
+  // stellt.
   [[nodiscard]] std::string AskSavePath(const wxString& title,
-                                        const wxString& wildcard) {
-    wxFileDialog dialog(&frame_, title, wxEmptyString, wxEmptyString, wildcard,
-                        wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+                                        const FileType& type) {
+    wxFileDialog dialog(&frame_, title, wxEmptyString, wxEmptyString,
+                        type.wildcard, wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
     if (dialog.ShowModal() != wxID_OK) {
       return {};
     }
-    return dialog.GetPath().ToStdString();
+    wxFileName file_path(dialog.GetPath());
+    if (file_path.HasExt()) {
+      return file_path.GetFullPath().ToStdString();
+    }
+    file_path.SetExt(type.extension);
+    if (file_path.FileExists() && !ConfirmOverwrite(title, file_path)) {
+      return {};
+    }
+    return file_path.GetFullPath().ToStdString();
+  }
+
+  [[nodiscard]] bool ConfirmOverwrite(const wxString& title,
+                                      const wxFileName& file_path) const {
+    const wxString question = file_path.GetFullPath() +
+                              " already exists.\nDo you want to replace it?";
+    return wxMessageBox(question, title, wxYES_NO | wxICON_WARNING, &frame_) ==
+           wxYES;
   }
 
   void Report(const wxString& title,
