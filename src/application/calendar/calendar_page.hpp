@@ -79,20 +79,21 @@ class CalendarPage {
 
   void Update() {
     scene_composer_.Build();
-    physics_world_.Rebuild(scene_composer_.BarPickBoxes());
+    physics_world_.Rebuild(scene_composer_.PickBoxes());
     gl_canvas_.RefreshView();
     snapshot_topic_(scene_composer_.SceneSnapshot());
   }
 
-  // Hit-tests a page-space point against the bars, returning the bar's PickId.
+  // Hit-tests a page-space point against the pickable elements, returning the
+  // element's PickId.
   [[nodiscard]] std::optional<PickId> Pick(glm::vec2 page_point) const {
     return physics_world_.Raycast(page_point);
   }
 
-  // Highlights the hovered bar in place (no rebuild) and repaints. Only
+  // Highlights the hovered element in place (no rebuild) and repaints. Only
   // colours change, so the cheap Repaint suffices — no projection refresh.
   void ReceiveHovered(const std::optional<PickId>& hovered) {
-    scene_composer_.SetHoveredBar(hovered);
+    scene_composer_.SetHovered(hovered);
     gl_canvas_.Repaint();
   }
 

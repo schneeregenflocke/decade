@@ -10,7 +10,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../../domain/date_entry_bar_store.hpp"
 #include "../../domain/shape_configuration.hpp"
 #include "../../infrastructure/graphics/pick_id.hpp"
 #include "../../infrastructure/graphics/rect.hpp"
@@ -23,7 +22,8 @@
 // (CalendarSceneComposer / section builders). It owns the two transient
 // highlights:
 //
-//   * the hovered bar, recoloured in place via its shape; and
+//   * the hovered element (a bar or the title frame), recoloured in place via
+//     its shape; and
 //   * the scene-tree-selected node and its subtree, covered by a translucent
 //     overlay quad.
 //
@@ -34,36 +34,36 @@ class SceneHighlighter {
  public:
   SceneHighlighter(const Scene& scene,
                    const std::shared_ptr<SceneNode>& overlay_node,
-                   const ShapeConfigSet& shape_config,
-                   const DateEntryBarStore& bar_store)
+                   const std::shared_ptr<SceneNode>& title_frame_node,
+                   const ShapeConfigSet& shape_config)
       : scene_(scene),
         overlay_node_(overlay_node),
-        shape_config_(shape_config),
-        bar_store_(bar_store) {}
+        title_frame_node_(title_frame_node),
+        shape_config_(shape_config) {}
 
   // Adopts the bar nodes from the latest rebuild and re-applies the persisted
   // hover and selection highlights to the fresh geometry.
   void Refresh(
       std::unordered_map<std::size_t, std::shared_ptr<SceneNode>> bar_nodes) {
     bar_nodes_ = std::move(bar_nodes);
-    if (hovered_bar_.has_value()) {
-      ApplyBarColor(hovered_bar_->index, /*highlighted=*/true);
+    if (hovered_.has_value()) {
+      ApplyHover(*hovered_, /*highlighted=*/true);
     }
     ApplySelectionOverlay();
   }
 
-  // Highlights the hovered bar (and restores the previously hovered one) by
+  // Highlights the hovered element (and restores the previously hovered one) by
   // recolouring its shape in place — no scene rebuild. A null value clears it.
-  void SetHoveredBar(const std::optional<PickId>& hovered) {
-    if (hovered == hovered_bar_) {
+  void SetHovered(const std::optional<PickId>& hovered) {
+    if (hovered == hovered_) {
       return;
     }
-    if (hovered_bar_.has_value()) {
-      ApplyBarColor(hovered_bar_->index, /*highlighted=*/false);
+    if (hovered_.has_value()) {
+      ApplyHover(*hovered_, /*highlighted=*/false);
     }
-    hovered_bar_ = hovered;
-    if (hovered_bar_.has_value()) {
-      ApplyBarColor(hovered_bar_->index, /*highlighted=*/true);
+    hovered_ = hovered;
+    if (hovered_.has_value()) {
+      ApplyHover(*hovered_, /*highlighted=*/true);
     }
   }
 
@@ -136,29 +136,37 @@ class SceneHighlighter {
     return node->WorldBounds(parent_world);
   }
 
-  // Recolours one bar's shape: highlighted bars get a distinct outline, normal
-  // bars are restored to their group's configured colours. Fill is left as
-  // configured so the hover reads as an outline accent.
-  void ApplyBarColor(std::size_t bar_index, bool highlighted) {
-    const auto iterator = bar_nodes_.find(bar_index);
-    if (iterator == bar_nodes_.end() ||
-        bar_index >= bar_store_.GetNumberBars()) {
+  // Der Knoten, den ein Treffer meint — leer, wenn sein Index nach einem
+  // Rebuild ins Leere zeigt.
+  [[nodiscard]] std::shared_ptr<SceneNode> HoveredNode(
+      const PickId& picked) const {
+    switch (picked.kind) {
+      case PickId::Kind::kBar: {
+        const auto iterator = bar_nodes_.find(picked.index);
+        return iterator == bar_nodes_.end() ? nullptr : iterator->second;
+      }
+      case PickId::Kind::kTitle:
+        return title_frame_node_;
+    }
+    return nullptr;
+  }
+
+  // Recolours the hovered element's outline: highlighted gets the hover accent,
+  // otherwise the colours of the configuration its style id points at. Fill is
+  // left as configured so the hover reads as an outline accent.
+  void ApplyHover(const PickId& picked, bool highlighted) {
+    const auto node = HoveredNode(picked);
+    if (!node) {
       return;
     }
-    auto shape = std::dynamic_pointer_cast<RectanglesShape>(
-        iterator->second->GetShape());
+    auto shape = std::dynamic_pointer_cast<RectanglesShape>(node->GetShape());
     if (!shape) {
       return;
     }
-    const auto group =
-        static_cast<std::size_t>(bar_store_.GetBar(bar_index).GetGroup());
-    const auto config = shape_config_.GetDynamicConfiguration(group);
-    if (highlighted) {
-      const glm::vec4 hover_outline(kOne, kHoverOutlineGreen, kZero, kOne);
-      shape->SetColor({hover_outline, config.FillColor()});
-    } else {
-      shape->SetColor({config.OutlineColor(), config.FillColor()});
-    }
+    const auto config = shape_config_.GetShapeConfiguration(node->GetStyleId());
+    const glm::vec4 hover_outline(kOne, kHoverOutlineGreen, kZero, kOne);
+    shape->SetColor({highlighted ? hover_outline : config.OutlineColor(),
+                     config.FillColor()});
   }
 
   static constexpr float kZero = 0.0F;
@@ -174,13 +182,13 @@ class SceneHighlighter {
   // Borrowed (non-owning) collaborators, owned by CalendarPage / the builder.
   const Scene& scene_;
   const std::shared_ptr<SceneNode>& overlay_node_;
+  const std::shared_ptr<SceneNode>& title_frame_node_;
   const ShapeConfigSet& shape_config_;
-  const DateEntryBarStore& bar_store_;
 
   // Bar nodes by index from the latest rebuild, for the in-place hover
   // recolour.
   std::unordered_map<std::size_t, std::shared_ptr<SceneNode>> bar_nodes_;
-  std::optional<PickId> hovered_bar_;
+  std::optional<PickId> hovered_;
   // Path of the scene-tree-selected node ("root/.../name"); persists across
   // rebuilds so the overlay is re-applied to the fresh geometry.
   std::optional<std::string> selected_path_;

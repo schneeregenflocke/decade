@@ -80,7 +80,12 @@ class StartupScript {
 
   void ApplyDebugHighlights(MainFrame& frame,
                             CalendarPage& calendar_page) const {
-    if (options_.debug_hover_bar) {
+    // Gehovert ist immer höchstens ein Element, darum schliessen sich die
+    // beiden Hover-Optionen aus.
+    if (options_.debug_hover_title) {
+      calendar_page.ReceiveHovered(
+          PickId{.kind = PickId::Kind::kTitle, .index = 0});
+    } else if (options_.debug_hover_bar) {
       calendar_page.ReceiveHovered(PickId{.kind = PickId::Kind::kBar,
                                           .index = *options_.debug_hover_bar});
     }

@@ -103,20 +103,26 @@ inline void BuildPrintArea(const SectionContext& ctx) {
                          ctx.shape_config.GetShapeConfiguration("Page Margin"));
 }
 
-inline void BuildTitle(const SectionContext& ctx) {
+// Der Titel ist ein pickbares Element: seine Trefferfläche ist der Rahmen, den
+// der Text füllt. Wie bei den Bars liegt die zurückgegebene Box im Seitenraum,
+// also um den Ursprung der Druckfläche verschoben.
+[[nodiscard]] inline PickBox BuildTitle(const SectionContext& ctx) {
   detail::FillRectangles(ctx.nodes.title_frame, ctx.layout.TitleFrame(),
                          ctx.shape_config.GetShapeConfiguration("Title Frame"));
 
-  auto title_shape =
-      std::dynamic_pointer_cast<FontShape>(ctx.nodes.title_text->GetShape());
-  if (!title_shape) {
-    return;
+  if (auto title_shape = std::dynamic_pointer_cast<FontShape>(
+          ctx.nodes.title_text->GetShape())) {
+    title_shape->SetFont(ctx.font);
+    title_shape->SetColor(ctx.title_config.TextColor());
+    title_shape->SetShapeCentered(
+        ctx.title_config.TitleText(), ctx.layout.TitleFrame().getCenter(),
+        ctx.layout.TitleFrame().height() * ctx.title_config.FontSizeRatio());
   }
-  title_shape->SetFont(ctx.font);
-  title_shape->SetColor(ctx.title_config.TextColor());
-  title_shape->SetShapeCentered(
-      ctx.title_config.TitleText(), ctx.layout.TitleFrame().getCenter(),
-      ctx.layout.TitleFrame().height() * ctx.title_config.FontSizeRatio());
+
+  return PickBox{
+      .id = PickId{.kind = PickId::Kind::kTitle, .index = 0},
+      .rect = ctx.layout.TitleFrame().shift(ctx.layout.PrintAreaOrigin().x,
+                                            ctx.layout.PrintAreaOrigin().y)};
 }
 
 inline void BuildCalendarLabels(const SectionContext& ctx) {

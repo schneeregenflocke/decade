@@ -95,13 +95,15 @@ class CalendarSceneComposer {
 
     const calendar_sections::SectionContext ctx = MakeContext();
     calendar_sections::BuildPrintArea(ctx);
-    calendar_sections::BuildTitle(ctx);
+    pick_boxes_.clear();
+    pick_boxes_.push_back(calendar_sections::BuildTitle(ctx));
     calendar_sections::BuildCalendarLabels(ctx);
     calendar_sections::BuildDays(ctx);
     calendar_sections::BuildMonths(ctx);
     calendar_sections::BuildYears(ctx);
     calendar_sections::BarSceneResult bars = calendar_sections::BuildBars(ctx);
-    bar_pick_boxes_ = std::move(bars.pick_boxes);
+    pick_boxes_.insert(pick_boxes_.end(), bars.pick_boxes.begin(),
+                       bars.pick_boxes.end());
     calendar_sections::BuildYearTotals(ctx);
     calendar_sections::BuildLegend(ctx);
 
@@ -133,16 +135,16 @@ class CalendarSceneComposer {
     return BuildSceneSnapshot(scene_.Root());
   }
 
-  // Page-space rectangles of the pickable bars, produced by the last Build().
-  // Handed to the picking layer; Bullet-free.
-  [[nodiscard]] const std::vector<PickBox>& BarPickBoxes() const {
-    return bar_pick_boxes_;
+  // Page-space rectangles of the pickable elements (title, bars), produced by
+  // the last Build(). Handed to the picking layer; Bullet-free.
+  [[nodiscard]] const std::vector<PickBox>& PickBoxes() const {
+    return pick_boxes_;
   }
 
   // Hover and scene-tree selection highlighting are delegated to the
   // SceneHighlighter; the builder just forwards.
-  void SetHoveredBar(const std::optional<PickId>& hovered) {
-    highlighter_.SetHoveredBar(hovered);
+  void SetHovered(const std::optional<PickId>& hovered) {
+    highlighter_.SetHovered(hovered);
   }
 
   void SetSelectedNode(const std::optional<std::string>& path) {
@@ -181,13 +183,13 @@ class CalendarSceneComposer {
   // Transient render state, recomputed on every Build(). The page geometry now
   // lives in CalendarLayout; the builder only keeps what the sections produce.
   CalendarLayout layout_;
-  std::vector<PickBox> bar_pick_boxes_;
+  std::vector<PickBox> pick_boxes_;
 
   // Interactive hover/selection highlighting. Declared last so its borrowed
-  // references (scene_, the overlay node, shape_config_, bar_store_) are all
+  // references (scene_, the overlay and title nodes, shape_config_) are all
   // initialised first; fed the fresh bar nodes via Refresh() after each
   // Build().
-  SceneHighlighter highlighter_{scene_, nodes_.selection_overlay, shape_config_,
-                                bar_store_};
+  SceneHighlighter highlighter_{scene_, nodes_.selection_overlay,
+                                nodes_.title_frame, shape_config_};
 };
 #endif  // CALENDAR_SCENE_COMPOSER_HPP

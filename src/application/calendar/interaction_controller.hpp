@@ -40,7 +40,8 @@ class InteractionController {
 
     if (decade_debug::LogEnabled()) {
       if (hovered_.has_value()) {
-        std::cout << "hover: bar " << hovered_->index << '\n';
+        std::cout << "hover: " << PickKindName(hovered_->kind) << ' '
+                  << hovered_->index << '\n';
       } else {
         std::cout << "hover: none\n";
       }
