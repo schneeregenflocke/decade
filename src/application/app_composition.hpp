@@ -109,6 +109,7 @@ class AppComposition {
         .calendar_configuration_store = document_.CalendarConfiguration(),
         .data_table_panel = frame_->DataTable(),
         .date_groups_table_panel = frame_->DateGroupsTable(),
+        .document_setup_panel = frame_->DocumentSetup(),
         .page_setup_panel = frame_->PageSetup(),
         .title_setup_panel = frame_->TitleSetup(),
         .calendar_setup_panel = frame_->CalendarSetup(),

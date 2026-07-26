@@ -21,6 +21,7 @@ add_executable(decade_tests
 	infrastructure/graphics/test_frame_stats.cpp
 	infrastructure/graphics/test_projection.cpp
 	application/calendar/test_calendar_layout.cpp
+	application/test_project_document.cpp
 )
 
 target_compile_features(decade_tests PRIVATE cxx_std_23)

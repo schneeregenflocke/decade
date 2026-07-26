@@ -11,6 +11,7 @@
 #include "../domain/date_group_store.hpp"
 #include "../domain/page_setup_store.hpp"
 #include "../domain/shape_configuration_store.hpp"
+#include "../domain/state_topic.hpp"
 #include "../domain/title_config_store.hpp"
 #include "../domain/transform_date_entry.hpp"
 #include "../infrastructure/persistence/csv_io.hpp"
@@ -30,6 +31,7 @@ class ProjectDocument {
   explicit ProjectDocument(EventBus& bus,
                            LocaleDateFormatter& locale_date_formatter)
       : locale_date_formatter_(locale_date_formatter),
+        file_path_topic_(bus.project_file_path()),
         date_groups_store_(bus.date_groups()),
         date_entry_store_(bus.date_entries()),
         transform_date_entry_(bus.transformed_date_entries()),
@@ -53,7 +55,7 @@ class ProjectDocument {
             calendar_configuration_store_)) {
       return error;
     }
-    file_path_ = std::move(file_path);
+    SetFilePath(std::move(file_path));
     return std::nullopt;
   }
 
@@ -64,7 +66,7 @@ class ProjectDocument {
             calendar_configuration_store_)) {
       return error;
     }
-    file_path_ = std::move(file_path);
+    SetFilePath(std::move(file_path));
     return std::nullopt;
   }
 
@@ -100,7 +102,15 @@ class ProjectDocument {
   }
 
  private:
+  // Der Pfad wechselt nur mit Laden und Speichern; die Anzeige erfährt ihn wie
+  // jeden anderen Zustand über den Bus.
+  void SetFilePath(std::string file_path) {
+    file_path_ = std::move(file_path);
+    file_path_topic_(file_path_);
+  }
+
   LocaleDateFormatter& locale_date_formatter_;
+  domain::StateTopic<std::string>& file_path_topic_;
   std::string file_path_;
 
   DateGroupStore date_groups_store_;

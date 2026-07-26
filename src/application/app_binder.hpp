@@ -15,6 +15,7 @@
 #include "../domain/transform_date_entry.hpp"
 #include "../presentation/calendar_panel.hpp"
 #include "../presentation/date_panel.hpp"
+#include "../presentation/document_panel.hpp"
 #include "../presentation/font_panel.hpp"
 #include "../presentation/gl_canvas.hpp"
 #include "../presentation/groups_panel.hpp"
@@ -48,6 +49,7 @@ struct AppComponents {
 
   DateTablePanel& data_table_panel;
   DateGroupsTablePanel& date_groups_table_panel;
+  DocumentSetupPanel& document_setup_panel;
   PageSetupPanel& page_setup_panel;
   TitleSetupPanel& title_setup_panel;
   CalendarSetupPanel& calendar_setup_panel;
@@ -117,6 +119,13 @@ inline void BindPageSetup(EventBus& bus, AppComponents& components) {
   bus.page_setup().connect(&CalendarPage::ReceivePageSetup,
                            &components.calendar_page);
   bus.page_setup().connect(&GLCanvas::ReceivePageSetup, &components.gl_canvas);
+}
+
+// Der Dateipfad kommt vom Dokument, nicht von einem Store: nur Laden und
+// Speichern ändern ihn. Die Anzeige ist reiner Konsument.
+inline void BindProjectFilePath(EventBus& bus, AppComponents& components) {
+  bus.project_file_path().connect(&DocumentSetupPanel::ReceiveProjectFilePath,
+                                  &components.document_setup_panel);
 }
 
 // Die Schrift hat keinen Store — der Panelwert geht direkt aufs Topic und von
@@ -198,6 +207,7 @@ inline void Bind(EventBus& bus, AppComponents& components) {
   detail::BindDateEntries(bus, components);
   detail::BindDateGroups(bus, components);
   detail::BindPageSetup(bus, components);
+  detail::BindProjectFilePath(bus, components);
   detail::BindFont(bus, components);
   detail::BindTitleConfig(bus, components);
   detail::BindShapeConfiguration(bus, components);
@@ -230,6 +240,7 @@ inline void Unbind(EventBus& bus, AppComponents& components) {
   bus.transformed_date_entries().disconnect_all();
   bus.date_groups().disconnect_all();
   bus.page_setup().disconnect_all();
+  bus.project_file_path().disconnect_all();
   bus.font_filepath().disconnect_all();
   bus.title_config().disconnect_all();
   bus.shape_config_set().disconnect_all();

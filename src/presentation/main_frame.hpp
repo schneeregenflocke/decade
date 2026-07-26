@@ -73,6 +73,9 @@ class MainFrame : public wxFrame {
   [[nodiscard]] DateGroupsTablePanel& DateGroupsTable() {
     return *date_groups_table_panel_;
   }
+  [[nodiscard]] DocumentSetupPanel& DocumentSetup() {
+    return *document_setup_panel_;
+  }
   [[nodiscard]] PageSetupPanel& PageSetup() { return *page_setup_panel_; }
   [[nodiscard]] TitleSetupPanel& TitleSetup() { return *title_setup_panel_; }
   [[nodiscard]] CalendarSetupPanel& CalendarSetup() {
@@ -162,6 +165,7 @@ class MainFrame : public wxFrame {
     // Sammel-Panel besitzt die drei Kinder, verdrahtet werden sie einzeln über
     // die Weak-Referenzen unten.
     auto* document_setup_panel = MakeOwned<DocumentSetupPanel>(notebook);
+    document_setup_panel_ = document_setup_panel;
     page_setup_panel_ = document_setup_panel->GetPageSetupPanel();
     font_panel_ = document_setup_panel->GetFontPanel();
     title_setup_panel_ = document_setup_panel->GetTitleSetupPanel();
@@ -208,6 +212,7 @@ class MainFrame : public wxFrame {
   wxWeakRef<wxNotebook> notebook_;
 
   wxWeakRef<DateGroupsTablePanel> date_groups_table_panel_;
+  wxWeakRef<DocumentSetupPanel> document_setup_panel_;
   wxWeakRef<PageSetupPanel> page_setup_panel_;
   wxWeakRef<TitleSetupPanel> title_setup_panel_;
   wxWeakRef<CalendarSetupPanel> calendar_setup_panel_;

@@ -41,6 +41,7 @@ class EventBus {
   }
   [[nodiscard]] auto& date_groups() { return date_groups_; }
   [[nodiscard]] auto& page_setup() { return page_setup_; }
+  [[nodiscard]] auto& project_file_path() { return project_file_path_; }
   [[nodiscard]] auto& font_filepath() { return font_filepath_; }
   [[nodiscard]] auto& title_config() { return title_config_; }
   [[nodiscard]] auto& shape_config_set() { return shape_config_set_; }
@@ -54,6 +55,7 @@ class EventBus {
   domain::StateTopic<std::vector<DateEntry>> transformed_date_entries_;
   domain::StateTopic<std::vector<DateGroup>> date_groups_;
   domain::StateTopic<PageSetupConfig> page_setup_;
+  domain::StateTopic<std::string> project_file_path_;
   domain::StateTopic<std::string> font_filepath_;
   domain::StateTopic<TitleConfig> title_config_;
   domain::StateTopic<ShapeConfigSet> shape_config_set_;
