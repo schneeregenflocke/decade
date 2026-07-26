@@ -13,6 +13,7 @@ add_executable(decade_tests
 	domain/test_timeline_projection.cpp
 	domain/test_date_entry_store.cpp
 	domain/test_transform_date_entry.cpp
+	domain/test_text_edit_buffer.cpp
 	infrastructure/persistence/test_csv_io.cpp
 	infrastructure/persistence/test_project_io.cpp
 	infrastructure/persistence/test_value_serialization.cpp
