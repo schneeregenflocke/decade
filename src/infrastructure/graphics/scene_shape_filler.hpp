@@ -27,8 +27,8 @@ template <typename Shapes>
 inline void FillRectangles(const std::shared_ptr<SceneNode>& node,
                            const Shapes& shapes, const glm::vec4& outline_color,
                            const glm::vec4& fill_color, float line_width) {
-  auto shape = std::dynamic_pointer_cast<RectanglesShape>(node->GetShape());
-  if (!shape) {
+  auto* shape = dynamic_cast<RectanglesShape*>(node->GetShape());
+  if (shape == nullptr) {
     return;
   }
   shape->SetShape(shapes, line_width);
@@ -44,10 +44,10 @@ inline void AddCenteredText(const std::shared_ptr<SceneNode>& parent,
                             const glm::vec3& center, float size,
                             Shader* font_shader,
                             const std::shared_ptr<Font>& font, int draw_layer) {
-  auto shape = std::make_shared<FontShape>(font_shader);
+  auto shape = std::make_unique<FontShape>(font_shader);
   shape->SetFont(font);
   shape->SetShapeCentered(text, center, size);
-  auto node = std::make_shared<SceneNode>(name, shape);
+  auto node = std::make_shared<SceneNode>(name, std::move(shape));
   node->SetDrawLayer(draw_layer);
   parent->AddChild(node);
 }

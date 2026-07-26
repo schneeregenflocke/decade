@@ -65,9 +65,8 @@ class CalendarSceneComposer {
   }
 
   void Build() {
-    auto shape =
-        std::dynamic_pointer_cast<QuadrilateralShape>(nodes_.page->GetShape());
-    if (!shape) {
+    auto* shape = dynamic_cast<QuadrilateralShape*>(nodes_.page->GetShape());
+    if (shape == nullptr) {
       return;
     }
     shape->SetShape(page_size_);

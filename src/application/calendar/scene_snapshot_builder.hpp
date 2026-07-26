@@ -12,18 +12,17 @@
 
 // Classifies the shape carried by a node into the GL-free SnapshotShapeKind, so
 // the read model can describe it without exposing the OpenGL shape types.
-[[nodiscard]] inline SnapshotShapeKind ClassifyShape(
-    const std::shared_ptr<Shape>& shape) {
+[[nodiscard]] inline SnapshotShapeKind ClassifyShape(const Shape* shape) {
   if (shape == nullptr) {
     return SnapshotShapeKind::kNone;
   }
-  if (std::dynamic_pointer_cast<QuadrilateralShape>(shape) != nullptr) {
+  if (dynamic_cast<const QuadrilateralShape*>(shape) != nullptr) {
     return SnapshotShapeKind::kQuadrilateral;
   }
-  if (std::dynamic_pointer_cast<RectanglesShape>(shape) != nullptr) {
+  if (dynamic_cast<const RectanglesShape*>(shape) != nullptr) {
     return SnapshotShapeKind::kRectangles;
   }
-  if (std::dynamic_pointer_cast<FontShape>(shape) != nullptr) {
+  if (dynamic_cast<const FontShape*>(shape) != nullptr) {
     return SnapshotShapeKind::kFont;
   }
   return SnapshotShapeKind::kNone;

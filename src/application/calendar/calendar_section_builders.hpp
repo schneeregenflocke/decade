@@ -110,8 +110,8 @@ inline void BuildPrintArea(const SectionContext& ctx) {
   detail::FillRectangles(ctx.nodes.title_frame, ctx.layout.TitleFrame(),
                          ctx.shape_config.GetShapeConfiguration("Title Frame"));
 
-  if (auto title_shape = std::dynamic_pointer_cast<FontShape>(
-          ctx.nodes.title_text->GetShape())) {
+  if (auto* title_shape =
+          dynamic_cast<FontShape*>(ctx.nodes.title_text->GetShape())) {
     title_shape->SetFont(ctx.font);
     title_shape->SetColor(ctx.title_config.TextColor());
     title_shape->SetShapeCentered(
@@ -387,13 +387,13 @@ inline void BuildDays(const SectionContext& ctx) {
                       current_sub_cell.b() + bar_height +
                           ctx.layout.PrintAreaOrigin().y)});
 
-    auto bar_shape = std::make_shared<RectanglesShape>(ctx.rectangles_shader);
+    auto bar_shape = std::make_unique<RectanglesShape>(ctx.rectangles_shader);
     bar_shape->SetShape(
         rectf(detail::kZero, bar_width, detail::kZero, bar_height),
         current_shape_config.LineWidth());
     bar_shape->SetColor({current_shape_config.OutlineColor(),
                          current_shape_config.FillColor()});
-    bar_node->SetShape(bar_shape);
+    bar_node->SetShape(std::move(bar_shape));
     bar_node->SetDrawLayer(calendar_layers::kBars);
     group_nodes.at(current_group)->AddChild(bar_node);
     result.bar_nodes.emplace(index, bar_node);
@@ -537,12 +537,11 @@ inline void BuildLegend(const SectionContext& ctx) {
       node_entries->AddChild(node_entry);
 
       auto entry_shape =
-          std::make_shared<RectanglesShape>(ctx.rectangles_shader);
-      node_entry->SetShape(entry_shape);
-
+          std::make_unique<RectanglesShape>(ctx.rectangles_shader);
       entry_shape->SetShape(current_cell, current_shape_config.LineWidth());
       entry_shape->SetColor({current_shape_config.OutlineColor(),
                              current_shape_config.FillColor()});
+      node_entry->SetShape(std::move(entry_shape));
     }
   }
 
@@ -573,12 +572,11 @@ inline void BuildLegend(const SectionContext& ctx) {
       node_entries->AddChild(node_entry);
 
       auto entry_shape =
-          std::make_shared<RectanglesShape>(ctx.rectangles_shader);
-      node_entry->SetShape(entry_shape);
-
+          std::make_unique<RectanglesShape>(ctx.rectangles_shader);
       entry_shape->SetShape(current_cell, current_shape_config.LineWidth());
       entry_shape->SetColor({current_shape_config.OutlineColor(),
                              current_shape_config.FillColor()});
+      node_entry->SetShape(std::move(entry_shape));
     }
   }
 }

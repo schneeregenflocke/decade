@@ -23,7 +23,7 @@ class SceneNode {
     node_name_ = name;
   }
 
-  SceneNode(const std::string& name, std::shared_ptr<Shape> shape_ptr)
+  SceneNode(const std::string& name, std::unique_ptr<Shape> shape_ptr)
       : SceneNode(name) {
     shape_ = std::move(shape_ptr);
   }
@@ -39,11 +39,15 @@ class SceneNode {
 
   void RemoveChildren() { children_.clear(); }
 
-  void SetShape(std::shared_ptr<Shape> shape_ptr) {
+  void SetShape(std::unique_ptr<Shape> shape_ptr) {
     shape_ = std::move(shape_ptr);
   }
 
-  [[nodiscard]] std::shared_ptr<Shape> GetShape() const { return shape_; }
+  // Der Knoten besitzt seine Shape allein; Aufrufer beobachten sie nur, darum
+  // ein nicht-besitzender Zeiger (nie als Datenmember speichern).
+  [[nodiscard]] Shape* GetShape() { return shape_.get(); }
+
+  [[nodiscard]] const Shape* GetShape() const { return shape_.get(); }
 
   [[nodiscard]] const std::string& GetNodeName() const { return node_name_; }
 
@@ -185,7 +189,7 @@ class SceneNode {
   std::string style_id_;
   std::vector<std::shared_ptr<SceneNode>> children_;
   glm::mat4 model_matrix_;
-  std::shared_ptr<Shape> shape_;
+  std::unique_ptr<Shape> shape_;
   int draw_layer_{0};
   bool snapshot_hidden_{false};
 };
