@@ -1,7 +1,9 @@
 #ifndef CALENDAR_SCENE_COMPOSER_HPP
 #define CALENDAR_SCENE_COMPOSER_HPP
 
+#include <cstddef>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/vec2.hpp>
 #include <memory>
 #include <optional>
 #include <string>
@@ -12,11 +14,13 @@
 #include "../../domain/date_group.hpp"
 #include "../../domain/scene_snapshot.hpp"
 #include "../../domain/shape_configuration.hpp"
+#include "../../domain/text_edit_view.hpp"
 #include "../../domain/title_config.hpp"
 #include "../../infrastructure/graphics/font.hpp"
 #include "../../infrastructure/graphics/graphics_engine.hpp"
 #include "../../infrastructure/graphics/pick_id.hpp"
 #include "../../infrastructure/graphics/scene.hpp"
+#include "../../infrastructure/graphics/scene_graph.hpp"
 #include "../../infrastructure/graphics/shapes.hpp"
 #include "calendar_layout.hpp"
 #include "calendar_scene_nodes.hpp"
@@ -122,6 +126,7 @@ class CalendarSceneComposer {
         .title_config = title_config_,
         .date_groups = date_groups_,
         .bar_store = bar_store_,
+        .text_edit = text_edit_,
         .font = font_,
         .rectangles_shader = rectangles_shader_,
         .font_shader = font_shader_};
@@ -148,6 +153,30 @@ class CalendarSceneComposer {
 
   void SetSelectedNode(const std::optional<std::string>& path) {
     highlighter_.SetSelectedNode(path);
+  }
+
+  // Der Zustand der laufenden Textbearbeitung; der nächste Build() zeichnet
+  // Text, Cursor und Auswahl daraus.
+  void SetTextEdit(const std::optional<TextEditView>& text_edit) {
+    text_edit_ = text_edit;
+  }
+
+  // Pfad «root/.../name» des Knotens, den ein getroffenes Element meint — der
+  // Auswahlbegriff, den auch der Szenenbaum benutzt.
+  [[nodiscard]] std::optional<std::string> NodePathFor(
+      const PickId& picked) const {
+    const auto node = highlighter_.NodeFor(picked);
+    if (!node) {
+      return std::nullopt;
+    }
+    return FindNodePath(scene_.Root(), *node);
+  }
+
+  // Cursor-Index, den ein Klick im Seitenraum in der Titelzeile meint.
+  [[nodiscard]] std::size_t TitleCaretIndexAt(glm::vec2 page_point) const {
+    const calendar_sections::SectionContext ctx = MakeContext();
+    return calendar_sections::title_edit::CaretIndexAt(
+        ctx, calendar_sections::title_edit::Layout(ctx), page_point);
   }
 
  private:
@@ -183,6 +212,7 @@ class CalendarSceneComposer {
   // lives in CalendarLayout; the builder only keeps what the sections produce.
   CalendarLayout layout_;
   std::vector<PickBox> pick_boxes_;
+  std::optional<TextEditView> text_edit_;
 
   // Interactive hover/selection highlighting. Declared last so its borrowed
   // references (scene_, the overlay and title nodes, shape_config_) are all

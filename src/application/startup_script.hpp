@@ -10,6 +10,7 @@
 #include "../presentation/gl_canvas.hpp"
 #include "../presentation/main_frame.hpp"
 #include "calendar/calendar_page.hpp"
+#include "calendar/title_text_editor.hpp"
 #include "project_document.hpp"
 #include "runtime_options.hpp"
 
@@ -35,9 +36,10 @@ class StartupScript {
     }
   }
 
-  void RunAfterGraphics(MainFrame& frame, CalendarPage& calendar_page) const {
+  void RunAfterGraphics(MainFrame& frame, CalendarPage& calendar_page,
+                        TitleTextEditor& title_text_editor) const {
     LoadStartupFile();
-    ApplyDebugHighlights(frame, calendar_page);
+    ApplyDebugHighlights(frame, calendar_page, title_text_editor);
     WriteRequestedImages(frame);
   }
 
@@ -78,8 +80,8 @@ class StartupScript {
     document_.ImportCsv(path);
   }
 
-  void ApplyDebugHighlights(MainFrame& frame,
-                            CalendarPage& calendar_page) const {
+  void ApplyDebugHighlights(MainFrame& frame, CalendarPage& calendar_page,
+                            TitleTextEditor& title_text_editor) const {
     // Gehovert ist immer höchstens ein Element, darum schliessen sich die
     // beiden Hover-Optionen aus.
     if (options_.debug_hover_title) {
@@ -88,6 +90,12 @@ class StartupScript {
     } else if (options_.debug_hover_bar) {
       calendar_page.ReceiveHovered(PickId{.kind = PickId::Kind::kBar,
                                           .index = *options_.debug_hover_bar});
+    }
+    if (options_.debug_edit_title) {
+      title_text_editor.Begin(PickId{.kind = PickId::Kind::kTitle, .index = 0});
+      if (!options_.debug_edit_title->empty()) {
+        title_text_editor.Insert(*options_.debug_edit_title);
+      }
     }
     if (options_.debug_select_node) {
       // Über den echten Selektionspfad (Baum -> Detailgrid -> Bus ->

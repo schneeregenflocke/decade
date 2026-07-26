@@ -44,6 +44,11 @@ namespace application {
 //   --debug-hover-title       dasselbe für den Titel; schlägt
 //                             --debug-hover-bar, da nur ein Element zugleich
 //                             gehovert sein kann.
+//   --debug-edit-title=<text> öffnet nach dem Laden die Titelbearbeitung wie
+//                             ein Doppelklick und tippt <text> hinein (leer:
+//                             nur öffnen, mit allem ausgewählt). Die
+//                             Bearbeitung bleibt offen, damit Cursor und
+//                             Auswahl im Bild stehen.
 //   --debug-select-node=<p>   erzwingt nach dem Laden das Selektions-
 //                             Highlight des Scene-Tree-Knotens am Pfad `p`
 //                             («root/.../name»); Debug-/Screenshot-Hilfe.
@@ -65,6 +70,8 @@ struct RuntimeOptions {
   // Dasselbe für den Titel, der als einziges Element seiner Art keinen Index
   // braucht.
   bool debug_hover_title{false};
+  // Debug-/Screenshot-Hilfe: öffnet die Titelbearbeitung und tippt den Wert.
+  std::optional<std::string> debug_edit_title;
   // Debug-/Screenshot-Hilfe: erzwingt beim Start das Selektions-Highlight auf
   // diesem Knotenpfad, damit das Selektions-Overlay ohne Maus prüfbar ist.
   std::optional<std::string> debug_select_node;
@@ -98,6 +105,8 @@ inline void AddRuntimeOptions(wxCmdLineParser& parser) {
                        wxCMD_LINE_VAL_NUMBER);
   parser.AddLongSwitch("debug-hover-title",
                        "force the hover highlight on the title");
+  parser.AddLongOption("debug-edit-title",
+                       "open the title editor and type the given text");
   parser.AddLongOption("debug-select-node",
                        "force the scene-tree selection on node path "
                        "root/.../name");
@@ -131,6 +140,7 @@ inline RuntimeOptions RuntimeOptionsFromParser(const wxCmdLineParser& parser) {
   options.select_tab = FoundString(parser, "select-tab");
   options.debug_select_node = FoundString(parser, "debug-select-node");
   options.debug_hover_title = parser.Found("debug-hover-title");
+  options.debug_edit_title = FoundString(parser, "debug-edit-title");
   options.debug_log = parser.Found("debug-log");
 
   if (long dump_png_dpi = 0; parser.Found("dump-png-dpi", &dump_png_dpi)) {

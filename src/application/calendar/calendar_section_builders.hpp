@@ -9,6 +9,7 @@
 #include <glm/vec3.hpp>
 #include <iomanip>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -19,6 +20,7 @@
 #include "../../domain/date_entry_bar_store.hpp"
 #include "../../domain/date_group.hpp"
 #include "../../domain/shape_configuration.hpp"
+#include "../../domain/text_edit_view.hpp"
 #include "../../domain/timeline_projection.hpp"
 #include "../../domain/title_config.hpp"
 #include "../../infrastructure/graphics/font.hpp"
@@ -53,6 +55,8 @@ struct SectionContext {
   const TitleConfig& title_config;
   const DateGroups& date_groups;
   const DateEntryBarStore& bar_store;
+  // Leer, solange niemand im Canvas Text bearbeitet.
+  const std::optional<TextEditView>& text_edit;
   const std::shared_ptr<Font>& font;
   Shader* rectangles_shader;
   Shader* font_shader;
@@ -98,6 +102,95 @@ inline void AddCenteredText(const SectionContext& ctx,
 
 }  // namespace detail
 
+// Die Geometrie der Titelzeile und, solange bearbeitet wird, von Cursor und
+// Auswahl. Beides hängt an derselben Rechnung — Textbreite in Codepoints, links
+// vom zentrierten Text aus gemessen —, darum liegt es hier beieinander.
+namespace title_edit {
+
+inline constexpr float kCaretWidthRatio = 0.06F;
+inline constexpr float kSelectionRed = 0.25F;
+inline constexpr float kSelectionGreen = 0.5F;
+inline constexpr float kSelectionBlue = 1.0F;
+inline constexpr float kSelectionAlpha = 0.35F;
+
+// Der Text, der gerade zu zeichnen ist, samt Schriftgrösse und linker Kante.
+struct TextLine {
+  std::string text;
+  std::u32string code_points;
+  float font_size{0.0F};
+  float left{0.0F};
+};
+
+[[nodiscard]] inline TextLine Layout(const SectionContext& ctx) {
+  TextLine line;
+  line.text = ctx.text_edit.has_value() ? ctx.text_edit->text
+                                        : ctx.title_config.TitleText();
+  const std::vector<char32_t> decoded = DecodeUtf8(line.text);
+  line.code_points.assign(decoded.begin(), decoded.end());
+  line.font_size =
+      ctx.layout.TitleFrame().height() * ctx.title_config.FontSizeRatio();
+  line.left = ctx.layout.TitleFrame().getCenter().x -
+              (ctx.font->TextWidth(line.text, line.font_size) * detail::kHalf);
+  return line;
+}
+
+// Setzt Cursor- und Auswahlfläche, oder versteckt beide (Nullfläche), wenn
+// gerade niemand bearbeitet.
+inline void FillCaretAndSelection(const SectionContext& ctx,
+                                  const TextLine& line) {
+  auto* caret_shape =
+      dynamic_cast<QuadrilateralShape*>(ctx.nodes.title_caret->GetShape());
+  auto* selection_shape =
+      dynamic_cast<QuadrilateralShape*>(ctx.nodes.title_selection->GetShape());
+  if (caret_shape == nullptr || selection_shape == nullptr) {
+    return;
+  }
+  const rectf hidden(detail::kZero, detail::kZero, detail::kZero,
+                     detail::kZero);
+  if (!ctx.text_edit.has_value()) {
+    caret_shape->SetShape(hidden);
+    selection_shape->SetShape(hidden);
+    return;
+  }
+
+  const float text_height = ctx.font->TextHeight(line.font_size);
+  const float center_y = ctx.layout.TitleFrame().getCenter().y;
+  const float bottom = center_y - (text_height * detail::kHalf);
+  const float top = center_y + (text_height * detail::kHalf);
+  const auto offset = [&](std::size_t index) {
+    return line.left +
+           ctx.font->TextWidth(line.code_points, line.font_size, index);
+  };
+
+  const float caret_x = offset(ctx.text_edit->caret);
+  const float caret_width = line.font_size * kCaretWidthRatio;
+  caret_shape->SetShape(rectf(caret_x, caret_x + caret_width, bottom, top));
+  caret_shape->SetColor(ctx.title_config.TextColor());
+
+  if (HasSelection(*ctx.text_edit)) {
+    selection_shape->SetShape(rectf(offset(ctx.text_edit->selection_begin),
+                                    offset(ctx.text_edit->selection_end),
+                                    bottom, top));
+    selection_shape->SetColor(glm::vec4(kSelectionRed, kSelectionGreen,
+                                        kSelectionBlue, kSelectionAlpha));
+  } else {
+    selection_shape->SetShape(hidden);
+  }
+}
+
+// Umkehrung für den Zeiger: der Cursor-Index, den ein Klick im Seitenraum
+// meint. Der Punkt kommt im Seitenraum, die Titelgeometrie liegt lokal zur
+// Druckfläche — daher der Abzug ihres Ursprungs.
+[[nodiscard]] inline std::size_t CaretIndexAt(const SectionContext& ctx,
+                                              const TextLine& line,
+                                              glm::vec2 page_point) {
+  const float local_x = page_point.x - ctx.layout.PrintAreaOrigin().x;
+  return ctx.font->IndexAtOffset(line.code_points, line.font_size,
+                                 local_x - line.left);
+}
+
+}  // namespace title_edit
+
 inline void BuildPrintArea(const SectionContext& ctx) {
   detail::FillRectangles(ctx.nodes.print_area, ctx.layout.PrintArea(),
                          ctx.shape_config.GetShapeConfiguration("Page Margin"));
@@ -106,18 +199,22 @@ inline void BuildPrintArea(const SectionContext& ctx) {
 // Der Titel ist ein pickbares Element: seine Trefferfläche ist der Rahmen, den
 // der Text füllt. Wie bei den Bars liegt die zurückgegebene Box im Seitenraum,
 // also um den Ursprung der Druckfläche verschoben.
+//
+// Während einer Bearbeitung zeigt der Rahmen den Puffer statt des gespeicherten
+// Titels — kanonisch wird der erst mit Enter — und dazu Cursor und Auswahl.
 [[nodiscard]] inline PickBox BuildTitle(const SectionContext& ctx) {
   detail::FillRectangles(ctx.nodes.title_frame, ctx.layout.TitleFrame(),
                          ctx.shape_config.GetShapeConfiguration("Title Frame"));
 
+  const title_edit::TextLine line = title_edit::Layout(ctx);
   if (auto* title_shape =
           dynamic_cast<FontShape*>(ctx.nodes.title_text->GetShape())) {
     title_shape->SetFont(ctx.font);
     title_shape->SetColor(ctx.title_config.TextColor());
     title_shape->SetShapeCentered(
-        ctx.title_config.TitleText(), ctx.layout.TitleFrame().getCenter(),
-        ctx.layout.TitleFrame().height() * ctx.title_config.FontSizeRatio());
+        line.text, ctx.layout.TitleFrame().getCenter(), line.font_size);
   }
+  title_edit::FillCaretAndSelection(ctx, line);
 
   return PickBox{
       .id = PickId{.kind = PickId::Kind::kTitle, .index = 0},

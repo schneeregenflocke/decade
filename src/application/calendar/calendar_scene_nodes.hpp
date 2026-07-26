@@ -21,7 +21,9 @@ inline constexpr int kPage = 0;
 inline constexpr int kFrame = 10;
 inline constexpr int kGrid = 20;
 inline constexpr int kBars = 30;
+inline constexpr int kTextSelection = 35;
 inline constexpr int kText = 40;
+inline constexpr int kCaret = 45;
 inline constexpr int kOverlay = 50;
 }  // namespace calendar_layers
 
@@ -49,6 +51,14 @@ struct CalendarSceneNodes {
 
   static constexpr std::string_view kTitleTextName = "Title Text";
   std::shared_ptr<SceneNode> title_text;
+
+  // Cursor und Auswahlfläche der laufenden Titelbearbeitung. Reine
+  // Bedienhilfen, darum aus dem Szenenbaum des Nutzers ausgeblendet.
+  static constexpr std::string_view kTitleSelectionName = "Title Selection";
+  std::shared_ptr<SceneNode> title_selection;
+
+  static constexpr std::string_view kTitleCaretName = "Title Caret";
+  std::shared_ptr<SceneNode> title_caret;
 
   static constexpr std::string_view kRowLabelsName = "Row Labels";
   std::shared_ptr<SceneNode> row_labels;
@@ -208,6 +218,21 @@ struct CalendarSceneNodes {
       std::move(title_text_shape));
   nodes.print_area->AddChild(nodes.title_text);
 
+  auto title_selection_shape =
+      std::make_unique<QuadrilateralShape>(simple_shader);
+  nodes.title_selection = std::make_shared<SceneNode>(
+      std::string(CalendarSceneNodes::kTitleSelectionName),
+      std::move(title_selection_shape));
+  nodes.title_selection->SetSnapshotHidden(true);
+  nodes.print_area->AddChild(nodes.title_selection);
+
+  auto title_caret_shape = std::make_unique<QuadrilateralShape>(simple_shader);
+  nodes.title_caret = std::make_shared<SceneNode>(
+      std::string(CalendarSceneNodes::kTitleCaretName),
+      std::move(title_caret_shape));
+  nodes.title_caret->SetSnapshotHidden(true);
+  nodes.print_area->AddChild(nodes.title_caret);
+
   nodes.month_labels = std::make_shared<SceneNode>(
       std::string(CalendarSceneNodes::kMonthLabelsName));
   nodes.print_area->AddChild(nodes.month_labels);
@@ -232,6 +257,8 @@ struct CalendarSceneNodes {
   nodes.sunday_cells->SetDrawLayer(calendar_layers::kGrid);
   nodes.year_totals->SetDrawLayer(calendar_layers::kBars);
   nodes.title_text->SetDrawLayer(calendar_layers::kText);
+  nodes.title_selection->SetDrawLayer(calendar_layers::kTextSelection);
+  nodes.title_caret->SetDrawLayer(calendar_layers::kCaret);
   nodes.selection_overlay->SetDrawLayer(calendar_layers::kOverlay);
 
   return nodes;

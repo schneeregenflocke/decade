@@ -2,6 +2,8 @@
 #define GL_CANVAS_HPP
 
 #include <epoxy/gl.h>
+#include <wx/clipbrd.h>
+#include <wx/dataobj.h>
 #include <wx/dcclient.h>
 #include <wx/event.h>
 #include <wx/gdicmn.h>
@@ -20,8 +22,10 @@
 #include <utility>
 #include <vector>
 
+#include "../application/calendar/text_input_event.hpp"
 #include "../common/debug_log.hpp"
 #include "../domain/page_setup_config.hpp"
+#include "../domain/text_edit_buffer.hpp"
 #include "../infrastructure/graphics/frame_stats.hpp"
 #include "../infrastructure/graphics/graphics_engine.hpp"
 #include "../infrastructure/graphics/mvp_matrices.hpp"
@@ -32,6 +36,7 @@
 #include "../infrastructure/graphics/render_to_png.hpp"
 #include "gl_context_bootstrap.hpp"
 #include "mouse_interaction.hpp"
+#include "wx_owned.hpp"
 
 // Das Zeichenfenster: besitzt Kontext (über den Bootstrap), Rendering-Engine,
 // Ansicht (Projektion, Kamera) und die Zeigereingabe. Es kennt keine
@@ -45,7 +50,10 @@ class GLCanvas : public wxGLCanvas {
   static constexpr int kExportMsaaSamples = 16;
 
   explicit GLCanvas(wxWindow* parent)
-      : wxGLCanvas(parent, DisplayAttributes()),
+      // wxWANTS_CHARS: sonst fängt der Dialog Enter, Esc und die Pfeiltasten
+      // ab, bevor der Texteditor im Canvas sie sieht.
+      : wxGLCanvas(parent, DisplayAttributes(), wxID_ANY, wxDefaultPosition,
+                   wxDefaultSize, wxWANTS_CHARS),
         context_bootstrap_(*this, kRequiredGlVersion) {
     std::cout << "wxGLCanvas IsDisplaySupported " << std::boolalpha
               << wxGLCanvas::IsDisplaySupported(DisplayAttributes()) << '\n';
@@ -69,6 +77,31 @@ class GLCanvas : public wxGLCanvas {
   // ein Interaktions-Controller darauf hit-testen kann. Setzt der Binder.
   void SetPointerMoveCallback(std::function<void(glm::vec2)> callback) {
     on_pointer_move_ = std::move(callback);
+  }
+
+  // Klick und Doppelklick im Seitenraum — Auswahl und «bitte bearbeiten».
+  void SetPrimaryDownCallback(std::function<void(glm::vec2, bool)> callback) {
+    on_primary_down_ = std::move(callback);
+  }
+
+  void SetDoubleClickCallback(std::function<void(glm::vec2)> callback) {
+    on_double_click_ = std::move(callback);
+  }
+
+  // Tastatureingaben der laufenden Textbearbeitung. `editing` sagt, ob gerade
+  // bearbeitet wird — nur dann verbraucht das Canvas Tasten, sonst gibt es sie
+  // weiter. `selected_text` liefert die Auswahl für die Zwischenablage.
+  void SetTextInputCallback(
+      std::function<void(const TextInputEvent&)> callback) {
+    on_text_input_ = std::move(callback);
+  }
+
+  void SetEditingQuery(std::function<bool()> query) {
+    is_editing_ = std::move(query);
+  }
+
+  void SetSelectedTextSource(std::function<std::string()> source) {
+    selected_text_ = std::move(source);
   }
 
   void ReceivePageSetup(const PageSetupConfig& page_setup_config) {
@@ -153,6 +186,9 @@ class GLCanvas : public wxGLCanvas {
     Bind(wxEVT_LEFT_DOWN, &GLCanvas::MouseCallback, this);
     Bind(wxEVT_LEFT_UP, &GLCanvas::MouseCallback, this);
     Bind(wxEVT_MOUSEWHEEL, &GLCanvas::MouseCallback, this);
+    Bind(wxEVT_LEFT_DCLICK, &GLCanvas::DoubleClickCallback, this);
+    Bind(wxEVT_KEY_DOWN, &GLCanvas::KeyDownCallback, this);
+    Bind(wxEVT_CHAR, &GLCanvas::CharCallback, this);
   }
 
   static void ApplyInitialGlState() {
@@ -275,11 +311,159 @@ class GLCanvas : public wxGLCanvas {
 
   void SizeCallback(wxSizeEvent& /*event*/) { RefreshView(); }
 
-  void MouseCallback(wxMouseEvent& event) {
+  // Zeigerposition des Ereignisses im Seitenraum — die Einheit, in der die
+  // Szene rechnet.
+  [[nodiscard]] glm::vec2 PagePoint(const wxMouseEvent& event) const {
+    return MouseInteraction::ScreenToPage(PhysicalPosition(event), mvp_);
+  }
+
+  [[nodiscard]] wxPoint PhysicalPosition(const wxMouseEvent& event) const {
     const double scale = GetContentScaleFactor();
-    const wxPoint position_physical(
-        static_cast<int>(std::lround(event.GetPosition().x * scale)),
-        static_cast<int>(std::lround(event.GetPosition().y * scale)));
+    return {static_cast<int>(std::lround(event.GetPosition().x * scale)),
+            static_cast<int>(std::lround(event.GetPosition().y * scale))};
+  }
+
+  void DoubleClickCallback(wxMouseEvent& event) {
+    SetFocus();
+    if (on_double_click_) {
+      on_double_click_(PagePoint(event));
+    }
+    event.Skip();
+  }
+
+  // Übersetzt Steuertasten in ihre Bedeutung. Druckbare Zeichen kommen erst als
+  // wxEVT_CHAR an — dort stehen Umlaute und Akzente fertig zusammengesetzt.
+  void KeyDownCallback(wxKeyEvent& event) {
+    if (!IsEditing()) {
+      event.Skip();
+      return;
+    }
+    const auto selection = event.ShiftDown()
+                               ? TextEditBuffer::Selection::kExtend
+                               : TextEditBuffer::Selection::kReplace;
+
+    if (event.ControlDown() && HandleClipboard(event)) {
+      return;
+    }
+
+    switch (event.GetKeyCode()) {
+      case WXK_LEFT:
+        SendMove(TextEditBuffer::Direction::kLeft, selection);
+        return;
+      case WXK_RIGHT:
+        SendMove(TextEditBuffer::Direction::kRight, selection);
+        return;
+      case WXK_HOME:
+        SendMove(TextEditBuffer::Direction::kBegin, selection);
+        return;
+      case WXK_END:
+        SendMove(TextEditBuffer::Direction::kEnd, selection);
+        return;
+      case WXK_BACK:
+        Send(TextInputEvent::Command(TextInputEvent::Kind::kDeleteBefore));
+        return;
+      case WXK_DELETE:
+        Send(TextInputEvent::Command(TextInputEvent::Kind::kDeleteAfter));
+        return;
+      case WXK_RETURN:
+      case WXK_NUMPAD_ENTER:
+        Send(TextInputEvent::Command(TextInputEvent::Kind::kCommit));
+        return;
+      case WXK_ESCAPE:
+        Send(TextInputEvent::Command(TextInputEvent::Kind::kCancel));
+        return;
+      default:
+        event.Skip();
+    }
+  }
+
+  void CharCallback(wxKeyEvent& event) {
+    constexpr int kFirstPrintable = 32;
+    const wxChar character = event.GetUnicodeKey();
+    if (!IsEditing() || character == WXK_NONE || character < kFirstPrintable) {
+      event.Skip();
+      return;
+    }
+    Send(TextInputEvent::Insert(wxString(character).ToStdString(wxConvUTF8)));
+  }
+
+  // Ctrl-C/X/V: der wx-Teil der Zwischenablage bleibt hier, der Editor sieht
+  // nur Auswahl lesen und Text einfügen.
+  bool HandleClipboard(const wxKeyEvent& event) {
+    switch (event.GetKeyCode()) {
+      case 'A':
+        Send(TextInputEvent::Command(TextInputEvent::Kind::kSelectAll));
+        return true;
+      case 'C':
+        CopySelection();
+        return true;
+      case 'X':
+        CopySelection();
+        Send(TextInputEvent::Command(TextInputEvent::Kind::kDeleteBefore));
+        return true;
+      case 'V':
+        Send(TextInputEvent::Insert(ClipboardText()));
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  void CopySelection() const {
+    if (!selected_text_) {
+      return;
+    }
+    const std::string text = selected_text_();
+    if (text.empty() || !wxTheClipboard->Open()) {
+      return;
+    }
+    wxTheClipboard->SetData(
+        MakeOwned<wxTextDataObject>(wxString::FromUTF8(text)));
+    wxTheClipboard->Close();
+  }
+
+  [[nodiscard]] static std::string ClipboardText() {
+    if (!wxTheClipboard->Open()) {
+      return {};
+    }
+    wxTextDataObject data;
+    const bool available = wxTheClipboard->IsSupported(wxDF_UNICODETEXT) &&
+                           wxTheClipboard->GetData(data);
+    wxTheClipboard->Close();
+    // Zeilenumbrüche haben in einer einzeiligen Beschriftung nichts verloren.
+    return available ? SingleLine(data.GetText().ToStdString(wxConvUTF8))
+                     : std::string{};
+  }
+
+  [[nodiscard]] static std::string SingleLine(std::string text) {
+    std::erase(text, '\n');
+    std::erase(text, '\r');
+    return text;
+  }
+
+  [[nodiscard]] bool IsEditing() const { return is_editing_ && is_editing_(); }
+
+  void Send(const TextInputEvent& event) const {
+    if (on_text_input_) {
+      on_text_input_(event);
+    }
+  }
+
+  void SendMove(TextEditBuffer::Direction direction,
+                TextEditBuffer::Selection selection) const {
+    Send(TextInputEvent::Move(direction, selection));
+  }
+
+  void MouseCallback(wxMouseEvent& event) {
+    const wxPoint position_physical = PhysicalPosition(event);
+    if (event.LeftDown()) {
+      SetFocus();
+      if (on_primary_down_) {
+        on_primary_down_(
+            MouseInteraction::ScreenToPage(position_physical, mvp_),
+            event.ShiftDown());
+      }
+    }
     mouse_interaction_.Apply(mvp_, camera_, position_physical, event.Dragging(),
                              event.GetWheelRotation());
     // Den Zeiger im Seitenraum weitermelden, nach Apply, damit die eben
@@ -298,6 +482,12 @@ class GLCanvas : public wxGLCanvas {
 
   GlContextBootstrap context_bootstrap_;
   std::unique_ptr<GraphicsEngine> graphics_engine_;
+
+  std::function<void(glm::vec2, bool)> on_primary_down_;
+  std::function<void(glm::vec2)> on_double_click_;
+  std::function<void(const TextInputEvent&)> on_text_input_;
+  std::function<bool()> is_editing_;
+  std::function<std::string()> selected_text_;
 
   MouseInteraction mouse_interaction_;
   PanZoomCamera camera_;

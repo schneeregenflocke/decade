@@ -66,6 +66,7 @@ Nimm `--dump-png` für einen sauberen High-DPI-Export der Seite selbst, `--dump-
 - `--debug-log` — aktiviert OpenGL-/Runtime-Debug-Logging. Leitet ausserdem wx-**Assert-Fehler nach stderr weiter und läuft weiter** statt einen modalen Dialog zu öffnen, damit headless/screenshotte Läufe einen fehlschlagenden `wxASSERT` sichtbar machen (statt still zu blockieren) — siehe `DecadeApp::OnAssertFailure`.
 - `--debug-hover-bar=<index>` — hebt beim Start die Bar mit dem angegebenen Index hervor, als wäre sie gehovert, um den Hover-Pfad ohne Live-Cursor zu screenshotten oder zu debuggen.
 - `--debug-hover-title` — dasselbe für den Titelrahmen; schlägt `--debug-hover-bar`, weil immer höchstens ein Element gehovert ist.
+- `--debug-edit-title=<text>` — öffnet nach dem Laden die Titelbearbeitung wie ein Doppelklick und tippt `<text>` hinein; leer heisst nur öffnen, mit allem ausgewählt. Die Bearbeitung bleibt offen, damit Cursor und Auswahl im Bild stehen. Umlaute gehen auf dem Weg über die Kommandozeile verloren ([#61](https://github.com/schneeregenflocke/decade/issues/61)).
 - `--debug-select-node=<path>` — wählt beim Start den Scene-Tree-Node an `path` (`root/.../name`) aus und durchläuft damit den realen Selektionspfad (Scene-Tab-Detailgrid + Kalender-Selection-Highlight des Knotens und seines Teilbaums) ohne Zeigegerät.
 
 Typischer Smoke-Test (Sample-Daten explizit mitgeben):

@@ -23,10 +23,8 @@ class TextEditBuffer {
 
   TextEditBuffer() = default;
 
-  explicit TextEditBuffer(std::u32string text) : text_(std::move(text)) {
-    caret_ = text_.size();
-    anchor_ = caret_;
-  }
+  explicit TextEditBuffer(std::u32string text)
+      : text_(std::move(text)), caret_(text_.size()), anchor_(text_.size()) {}
 
   [[nodiscard]] const std::u32string& Text() const { return text_; }
   [[nodiscard]] std::size_t Caret() const { return caret_; }

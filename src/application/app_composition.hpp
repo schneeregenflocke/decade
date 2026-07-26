@@ -19,6 +19,7 @@
 #include "app_config.hpp"
 #include "calendar/calendar_page.hpp"
 #include "calendar/interaction_controller.hpp"
+#include "calendar/title_text_editor.hpp"
 #include "event_bus.hpp"
 #include "project_document.hpp"
 #include "runtime_options.hpp"
@@ -41,7 +42,9 @@ class AppComposition {
                  RuntimeOptions options)
       : runtime_options_(std::move(options)),
         document_(bus_, locale_date_formatter),
-        interaction_controller_(bus_.hovered()),
+        interaction_controller_(bus_.hovered(), bus_.selected_node(),
+                                bus_.edit_requested()),
+        title_text_editor_(document_.TitleConfiguration(), bus_.text_edit()),
         startup_script_(runtime_options_, document_) {
     auto* frame = MakeOwned<MainFrame>(nullptr, DefaultMainFrameConfig(),
                                        locale_date_formatter);
@@ -78,7 +81,8 @@ class AppComposition {
         frame_->Canvas(), frame_->Font().GetFontFilePath(),
         bus_.scene_snapshot());
     wiring_.emplace(bus_, Components(calendar_page));
-    startup_script_.RunAfterGraphics(*frame_, calendar_page);
+    startup_script_.RunAfterGraphics(*frame_, calendar_page,
+                                     title_text_editor_);
   }
 
   // Ohne Kontext läuft der Ready-Pfad nie: keine Verdrahtung, keine
@@ -118,6 +122,7 @@ class AppComposition {
         .calendar_page = calendar_page,
         .gl_canvas = frame_->Canvas(),
         .interaction_controller = interaction_controller_,
+        .title_text_editor = title_text_editor_,
     };
   }
 
@@ -149,6 +154,7 @@ class AppComposition {
   RuntimeOptions runtime_options_;
   ProjectDocument document_;
   InteractionController interaction_controller_;
+  TitleTextEditor title_text_editor_;
   StartupScript startup_script_;
 
   wxWeakRef<MainFrame> frame_;

@@ -12,6 +12,7 @@
 #include "../domain/scene_snapshot.hpp"
 #include "../domain/shape_configuration.hpp"
 #include "../domain/state_topic.hpp"
+#include "../domain/text_edit_view.hpp"
 #include "../domain/title_config.hpp"
 #include "../infrastructure/graphics/pick_id.hpp"
 
@@ -49,6 +50,8 @@ class EventBus {
   [[nodiscard]] auto& scene_snapshot() { return scene_snapshot_; }
   [[nodiscard]] auto& hovered() { return hovered_; }
   [[nodiscard]] auto& selected_node() { return selected_node_; }
+  [[nodiscard]] auto& edit_requested() { return edit_requested_; }
+  [[nodiscard]] auto& text_edit() { return text_edit_; }
 
  private:
   domain::StateTopic<std::vector<DateEntry>> date_entries_;
@@ -63,6 +66,10 @@ class EventBus {
   domain::StateTopic<SceneNodeSnapshot> scene_snapshot_;
   domain::StateTopic<std::optional<PickId>> hovered_;
   domain::StateTopic<std::optional<std::string>> selected_node_;
+  // Doppelklick auf ein Element: Bitte dieses bearbeiten.
+  domain::StateTopic<PickId> edit_requested_;
+  // Was von einer laufenden Bearbeitung zu sehen ist; leer heisst keine.
+  domain::StateTopic<std::optional<TextEditView>> text_edit_;
 };
 
 #endif  // EVENT_BUS_HPP

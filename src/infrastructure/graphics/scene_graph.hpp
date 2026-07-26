@@ -193,4 +193,31 @@ class SceneNode {
   int draw_layer_{0};
   bool snapshot_hidden_{false};
 };
+
+// Pfad «root/.../name» zu einem Knoten des Baums, oder leer, wenn er nicht
+// darin liegt. Gegenstück zum Auflösen eines Pfades: dieselbe Schreibweise, die
+// der Szenenbaum-Panel und das Selektions-Highlight benutzen.
+[[nodiscard]] inline std::optional<std::string> FindNodePath(
+    const SceneNode& root, const SceneNode& target) {
+  struct Entry {
+    const SceneNode* node;
+    std::string path;
+  };
+  std::vector<Entry> stack;
+  stack.push_back({.node = &root, .path = root.GetNodeName()});
+
+  while (!stack.empty()) {
+    const Entry current = stack.back();
+    stack.pop_back();
+    if (current.node == &target) {
+      return current.path;
+    }
+    for (const auto& child : current.node->GetChildren()) {
+      stack.push_back({.node = child.get(),
+                       .path = current.path + '/' + child->GetNodeName()});
+    }
+  }
+
+  return std::nullopt;
+}
 #endif  // SCENE_GRAPH_HPP

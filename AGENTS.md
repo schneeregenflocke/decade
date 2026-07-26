@@ -60,6 +60,8 @@ Die komponentenübergreifende Kommunikation läuft über einen in-process **Even
 
 Die Verdrahtung selbst ist eine Lebensdauer, kein Aufrufpaar: `AppWiring` verbindet beim Bauen und trennt beim Zerstören. In der Composition Root steht sie als letztes Mitglied und stirbt damit vor Stores und Bus.
 
+**Bearbeiten im Canvas** folgt derselben Regel, nur zeitversetzt: Der Editor (`TitleTextEditor`) hält einen Puffer und veröffentlicht bei jedem Anschlag ein GL-freies Read-Model (`TextEditView`), aus dem der Renderer Text, Cursor und Auswahl zeichnet. Kanonisch wird der Text erst mit Enter — dann geht er als *ein* Befehl an den Store; Esc verwirft den Puffer. So ist eine Bearbeitung genau ein Zustandswechsel, nicht einer je Taste. Die Tastencodes bleiben in der Presentation: das Canvas übersetzt sie in ein `TextInputEvent`, der Editor kennt nur dessen Bedeutung.
+
 ## Konventionen
 
 - C++23, keine Compiler-Erweiterungen.

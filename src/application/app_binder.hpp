@@ -24,6 +24,7 @@
 #include "../presentation/title_panel.hpp"
 #include "calendar/calendar_page.hpp"
 #include "calendar/interaction_controller.hpp"
+#include "calendar/title_text_editor.hpp"
 #include "event_bus.hpp"
 
 // Die eine Stelle, an der Stores, Panels, Rendering-Adapter und GL-Canvas
@@ -59,6 +60,7 @@ struct AppComponents {
   CalendarPage& calendar_page;
   GLCanvas& gl_canvas;
   InteractionController& interaction_controller;
+  TitleTextEditor& title_text_editor;
 };
 
 namespace app_binder {
@@ -182,23 +184,61 @@ inline void BindSceneSnapshot(EventBus& bus, AppComponents& components) {
           bus.selected_node());
   bus.selected_node().connect(&CalendarPage::ReceiveSelectedNode,
                               &components.calendar_page);
+  bus.selected_node().connect(&SceneTreePanel::ReceiveSelectedNode,
+                              &components.scene_tree_panel);
 }
 
 // Picking: das Canvas meldet Zeigerbewegungen im Seitenraum, der Controller
-// testet sie über den Rendering-Adapter und veröffentlicht den Hover selbst.
+// testet sie über den Rendering-Adapter und veröffentlicht Hover und Auswahl
+// selbst. Klick und Doppelklick gehen zuerst an den Texteditor: läuft eine
+// Bearbeitung, verbraucht er sie (Cursor setzen, Wort wählen), sonst reicht der
+// Binder sie an den Controller weiter.
 inline void BindInteraction(EventBus& bus, AppComponents& components) {
-  components.interaction_controller.SetPickSource(
-      [page = &components.calendar_page](glm::vec2 point) {
-        return page->Pick(point);
-      });
+  auto* page = &components.calendar_page;
+  auto* controller = &components.interaction_controller;
+  auto* editor = &components.title_text_editor;
+
+  const auto pick = [page](glm::vec2 point) { return page->Pick(point); };
+  controller->SetPickSource(pick);
+  controller->SetPathSource(
+      [page](const PickId& picked) { return page->NodePathFor(picked); });
+  editor->SetPickSource(pick);
+  editor->SetCaretIndexSource(
+      [page](glm::vec2 point) { return page->TitleCaretIndexAt(point); });
 
   components.gl_canvas.SetPointerMoveCallback(
-      [controller = &components.interaction_controller](glm::vec2 point) {
-        controller->OnPointerMove(point);
+      [controller](glm::vec2 point) { controller->OnPointerMove(point); });
+
+  components.gl_canvas.SetPrimaryDownCallback(
+      [controller, editor](glm::vec2 point, bool extend) {
+        const auto selection = extend ? TextEditBuffer::Selection::kExtend
+                                      : TextEditBuffer::Selection::kReplace;
+        if (editor->OnPrimaryDown(point, selection)) {
+          return;
+        }
+        controller->OnPrimaryDown(point);
       });
+
+  components.gl_canvas.SetDoubleClickCallback(
+      [controller, editor](glm::vec2 point) {
+        if (editor->OnDoubleClick(point)) {
+          return;
+        }
+        controller->OnDoubleClick(point);
+      });
+
+  components.gl_canvas.SetTextInputCallback(
+      [editor](const TextInputEvent& event) { editor->Handle(event); });
+  components.gl_canvas.SetEditingQuery(
+      [editor]() { return editor->IsEditing(); });
+  components.gl_canvas.SetSelectedTextSource(
+      [editor]() { return editor->SelectedText(); });
 
   bus.hovered().connect(&CalendarPage::ReceiveHovered,
                         &components.calendar_page);
+  bus.edit_requested().connect(&TitleTextEditor::Begin, editor);
+  bus.text_edit().connect(&CalendarPage::ReceiveTextEdit,
+                          &components.calendar_page);
 }
 
 }  // namespace detail
@@ -232,7 +272,15 @@ inline void Unbind(EventBus& bus, AppComponents& components) {
   components.scene_tree_panel.SignalShapeConfigSet().disconnect_all();
   components.scene_tree_panel.SignalSelectedNode().disconnect_all();
   components.gl_canvas.SetPointerMoveCallback(nullptr);
+  components.gl_canvas.SetPrimaryDownCallback(nullptr);
+  components.gl_canvas.SetDoubleClickCallback(nullptr);
+  components.gl_canvas.SetTextInputCallback(nullptr);
+  components.gl_canvas.SetEditingQuery(nullptr);
+  components.gl_canvas.SetSelectedTextSource(nullptr);
   components.interaction_controller.SetPickSource(nullptr);
+  components.interaction_controller.SetPathSource(nullptr);
+  components.title_text_editor.SetPickSource(nullptr);
+  components.title_text_editor.SetCaretIndexSource(nullptr);
 
   // Bus-Topics: ihre Slots zeigen auf Panels und den Rendering-Adapter. Die
   // Produzenten dürfen danach weiter veröffentlichen — es hört nur niemand zu.
@@ -248,6 +296,8 @@ inline void Unbind(EventBus& bus, AppComponents& components) {
   bus.scene_snapshot().disconnect_all();
   bus.hovered().disconnect_all();
   bus.selected_node().disconnect_all();
+  bus.edit_requested().disconnect_all();
+  bus.text_edit().disconnect_all();
 }
 
 inline void SendInitialValues(AppComponents& components) {

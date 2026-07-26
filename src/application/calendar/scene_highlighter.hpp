@@ -67,6 +67,21 @@ class SceneHighlighter {
     }
   }
 
+  // Der Szenenknoten, den ein getroffenes Element meint — leer, wenn sein
+  // Index nach einem Rebuild ins Leere zeigt. Der Highlighter führt die Knoten
+  // ohnehin; so muss sie niemand ein zweites Mal halten.
+  [[nodiscard]] std::shared_ptr<SceneNode> NodeFor(const PickId& picked) const {
+    switch (picked.kind) {
+      case PickId::Kind::kBar: {
+        const auto iterator = bar_nodes_.find(picked.index);
+        return iterator == bar_nodes_.end() ? nullptr : iterator->second;
+      }
+      case PickId::Kind::kTitle:
+        return title_frame_node_;
+    }
+    return nullptr;
+  }
+
   // Highlights the scene node identified by `path` (and its subtree) with a
   // translucent overlay — no rebuild. A null/unknown path clears the overlay.
   void SetSelectedNode(const std::optional<std::string>& path) {
@@ -135,26 +150,11 @@ class SceneHighlighter {
     return node->WorldBounds(parent_world);
   }
 
-  // Der Knoten, den ein Treffer meint — leer, wenn sein Index nach einem
-  // Rebuild ins Leere zeigt.
-  [[nodiscard]] std::shared_ptr<SceneNode> HoveredNode(
-      const PickId& picked) const {
-    switch (picked.kind) {
-      case PickId::Kind::kBar: {
-        const auto iterator = bar_nodes_.find(picked.index);
-        return iterator == bar_nodes_.end() ? nullptr : iterator->second;
-      }
-      case PickId::Kind::kTitle:
-        return title_frame_node_;
-    }
-    return nullptr;
-  }
-
   // Recolours the hovered element's outline: highlighted gets the hover accent,
   // otherwise the colours of the configuration its style id points at. Fill is
   // left as configured so the hover reads as an outline accent.
   void ApplyHover(const PickId& picked, bool highlighted) {
-    const auto node = HoveredNode(picked);
+    const auto node = NodeFor(picked);
     if (!node) {
       return;
     }

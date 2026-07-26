@@ -15,6 +15,7 @@
 #include "../../domain/scene_snapshot.hpp"
 #include "../../domain/shape_configuration.hpp"
 #include "../../domain/state_topic.hpp"
+#include "../../domain/text_edit_view.hpp"
 #include "../../domain/title_config.hpp"
 #include "../../infrastructure/graphics/font.hpp"
 #include "../../infrastructure/graphics/page_geometry.hpp"
@@ -102,6 +103,27 @@ class CalendarPage {
   void ReceiveSelectedNode(const std::optional<std::string>& path) {
     scene_composer_.SetSelectedNode(path);
     gl_canvas_.Repaint();
+  }
+
+  // Zeichnet die laufende Textbearbeitung. Der Text ändert die Geometrie, also
+  // braucht es einen Rebuild — aber keinen neuen Szenen-Schnappschuss: der Baum
+  // des Nutzers ändert sich beim Tippen nicht, und ihn je Anschlag neu
+  // aufzubauen würde die Auswahl im Panel stören.
+  void ReceiveTextEdit(const std::optional<TextEditView>& text_edit) {
+    scene_composer_.SetTextEdit(text_edit);
+    scene_composer_.Build();
+    gl_canvas_.Repaint();
+  }
+
+  // Pfad des Szenenknotens, den ein getroffenes Element meint.
+  [[nodiscard]] std::optional<std::string> NodePathFor(
+      const PickId& picked) const {
+    return scene_composer_.NodePathFor(picked);
+  }
+
+  // Cursor-Index, den ein Klick im Seitenraum in der Titelzeile meint.
+  [[nodiscard]] std::size_t TitleCaretIndexAt(glm::vec2 page_point) const {
+    return scene_composer_.TitleCaretIndexAt(page_point);
   }
 
  private:

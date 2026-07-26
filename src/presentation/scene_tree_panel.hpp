@@ -15,6 +15,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "../domain/detail/reentry_guard.hpp"
 #include "../domain/scene_snapshot.hpp"
 #include "../domain/shape_configuration.hpp"
 #include "casts.hpp"
@@ -159,6 +160,17 @@ class SceneTreePanel : public wxPanel {
     if (iterator != path_to_item_.end()) {
       tree_ctrl_->SelectItem(iterator->second);
     }
+  }
+
+  // Die Auswahl kam von aussen — heute vom Klick im Canvas. Der Baum zieht
+  // nach, ohne sie zurückzumelden: sonst liefe der Wert im Kreis.
+  void ReceiveSelectedNode(const std::optional<std::string>& path) {
+    if (!path.has_value() || *path == SelectedPath()) {
+      return;
+    }
+    const domain::detail::ScopedReentryFlag guard(rebuilding_);
+    SelectNodeByPath(*path);
+    RefreshDetail();
   }
 
  private:

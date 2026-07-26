@@ -25,75 +25,7 @@
 #include "shapes_base.hpp"
 #include "texture_object.hpp"
 #include "unicode.hpp"
-
-// Append the code points of the half-open UTF-16 range [begin, end) of an
-// ICU string to out. char32At returns the full code point at a unit index; a
-// code point above the BMP occupies two UTF-16 units, hence the variable step.
-inline void AppendCodePoints(const icu::UnicodeString& text, std::int32_t begin,
-                             std::int32_t end, std::vector<char32_t>& out) {
-  constexpr UChar32 kBmpMax = 0xFFFF;
-  for (std::int32_t index = begin; index < end;) {
-    const UChar32 code_point = text.char32At(index);
-    index += (code_point > kBmpMax) ? 2 : 1;
-    out.push_back(static_cast<char32_t>(code_point));
-  }
-}
-
-// Decode UTF-8 into a sequence of Unicode code points ready for glyph lookup.
-//
-// Strings reaching the renderer are UTF-8 (e.g. strftime month names like
-// "März", or user-entered title text). ICU does the heavy lifting:
-//   1. fromUTF8 turns the bytes into a UTF-16 string, replacing malformed
-//      sequences with U+FFFD instead of producing stray glyphs.
-//   2. NFC normalisation folds a base letter plus a combining mark (a + ◌̈)
-//      into its precomposed form (ä) where one exists, so it renders as a
-//      single glyph — FreeType has no shaping engine of its own.
-//   3. A grapheme BreakIterator walks user-perceived characters; the code
-//      points of each cluster are emitted in order. Code points that have no
-//      precomposed form (and full complex-script shaping, e.g. Arabic/Indic)
-//      would need HarfBuzz and are out of scope; they fall back to per-code
-//      point glyphs, and a code point absent from the face renders as the
-//      font's .notdef glyph.
-[[nodiscard]] inline std::vector<char32_t> DecodeUtf8(const std::string& text) {
-  std::vector<char32_t> code_points;
-  if (text.empty()) {
-    return code_points;
-  }
-
-  const icu::UnicodeString utf16 = icu::UnicodeString::fromUTF8(
-      icu::StringPiece(text.data(), static_cast<std::int32_t>(text.size())));
-
-  UErrorCode status = U_ZERO_ERROR;
-  const icu::Normalizer2* nfc = icu::Normalizer2::getNFCInstance(status);
-  // ICU's U_SUCCESS / U_FAILURE expand to UBool (signed char); compare against
-  // 0 to get a real bool rather than relying on an implicit conversion.
-  icu::UnicodeString normalized =
-      (U_SUCCESS(status) != 0) ? nfc->normalize(utf16, status) : utf16;
-  if (U_FAILURE(status) != 0) {
-    normalized = utf16;  // fall back to the unnormalised text
-  }
-
-  code_points.reserve(static_cast<std::size_t>(normalized.countChar32()));
-
-  status = U_ZERO_ERROR;
-  const std::unique_ptr<icu::BreakIterator> grapheme_breaks(
-      icu::BreakIterator::createCharacterInstance(icu::Locale::getRoot(),
-                                                  status));
-  if (U_FAILURE(status) != 0 || !grapheme_breaks) {
-    AppendCodePoints(normalized, 0, normalized.length(), code_points);
-    return code_points;
-  }
-
-  grapheme_breaks->setText(normalized);
-  std::int32_t start = grapheme_breaks->first();
-  for (std::int32_t end = grapheme_breaks->next();
-       end != icu::BreakIterator::DONE;
-       start = end, end = grapheme_breaks->next()) {
-    AppendCodePoints(normalized, start, end, code_points);
-  }
-
-  return code_points;
-}
+#include "utf8_codec.hpp"
 
 struct Letter {
   Texture texture_object;
@@ -116,6 +48,10 @@ class Font {
     float height_ratio;
     float width_ratio;
   };
+
+  // Ein Klick zählt zur nächsten Zeichenkante: bis zur halben Vorschubbreite
+  // gehört er noch vor das Zeichen.
+  static constexpr float kHalfAdvance = 0.5F;
 
   explicit Font(const std::string& filepath) {
     InitFreetype();
@@ -149,6 +85,35 @@ class Font {
     }
 
     return width;
+  }
+
+  // Breite der ersten `count` Codepoints — die Masse, in denen der Texteditor
+  // rechnet: der Cursor sitzt hinter Zeichen `count`.
+  [[nodiscard]] float TextWidth(const std::u32string& text, float size,
+                                std::size_t count) const {
+    float width = 0.0F;
+    for (std::size_t index = 0; index < std::min(count, text.size()); ++index) {
+      width += GetLetter(text[index]).advance * size;
+    }
+
+    return width;
+  }
+
+  // Umkehrung: der Cursor-Index, den ein Klick `offset` rechts vom Textanfang
+  // meint. Getroffen wird die nähere der beiden Zeichenkanten, damit ein Klick
+  // auf die linke Hälfte eines Zeichens davor landet.
+  [[nodiscard]] std::size_t IndexAtOffset(const std::u32string& text,
+                                          float size, float offset) const {
+    float left = 0.0F;
+    for (std::size_t index = 0; index < text.size(); ++index) {
+      const float advance = GetLetter(text[index]).advance * size;
+      if (offset < left + (advance * kHalfAdvance)) {
+        return index;
+      }
+      left += advance;
+    }
+
+    return text.size();
   }
 
   [[nodiscard]] float TextHeight(float size) const {
