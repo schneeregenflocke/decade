@@ -127,8 +127,7 @@ struct TextLine {
                                         : ctx.title_config.TitleText();
   const std::vector<char32_t> decoded = DecodeUtf8(line.text);
   line.code_points.assign(decoded.begin(), decoded.end());
-  line.font_size =
-      ctx.layout.TitleFrame().height() * ctx.title_config.FontSizeRatio();
+  line.font_size = ctx.title_config.FontSizeMillimetres();
   line.left = ctx.layout.TitleFrame().getCenter().x -
               (ctx.font->TextWidth(line.text, line.font_size) * detail::kHalf);
   return line;

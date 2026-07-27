@@ -164,27 +164,27 @@ void load(Archive& ar, PageSetupConfig& config, const unsigned int /*v*/) {
 template <class Archive>
 void save(Archive& ar, const TitleConfig& config, const unsigned int /*v*/) {
   const float frame_height = config.FrameHeight();
-  const float font_size_ratio = config.FontSizeRatio();
+  const float font_size_points = config.FontSizePoints();
   const std::string& title_text = config.TitleText();
   const std::array<float, 4> text_color =
       persistence::serialization_detail::ColorToArray(config.TextColor());
   ar& make_nvp("frame_height", frame_height);
-  ar& make_nvp("font_size_ratio", font_size_ratio);
+  ar& make_nvp("font_size_points", font_size_points);
   ar& make_nvp("title_text", title_text);
   ar& make_nvp("text_color", text_color);
 }
 template <class Archive>
 void load(Archive& ar, TitleConfig& config, const unsigned int /*v*/) {
   float frame_height = 0.0F;
-  float font_size_ratio = 0.0F;
+  float font_size_points = 0.0F;
   std::string title_text;
   std::array<float, 4> text_color{};
   ar& make_nvp("frame_height", frame_height);
-  ar& make_nvp("font_size_ratio", font_size_ratio);
+  ar& make_nvp("font_size_points", font_size_points);
   ar& make_nvp("title_text", title_text);
   ar& make_nvp("text_color", text_color);
   config.SetFrameHeight(frame_height);
-  config.SetFontSizeRatio(font_size_ratio);
+  config.SetFontSizePoints(font_size_points);
   config.SetTitleText(std::move(title_text));
   config.SetTextColor(persistence::serialization_detail::ColorFromArray(text_color));
 }

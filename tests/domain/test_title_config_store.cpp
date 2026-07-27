@@ -7,12 +7,13 @@
 TEST(TitleConfigTest, GettersReturnSetValues) {
   TitleConfig config;
   config.SetFrameHeight(42.0F);
-  config.SetFontSizeRatio(1.5F);
+  config.SetFontSizePoints(36.0F);
   config.SetTitleText("hello");
   config.SetTextColor({0.1F, 0.2F, 0.3F, 0.4F});
 
   EXPECT_FLOAT_EQ(config.FrameHeight(), 42.0F);
-  EXPECT_FLOAT_EQ(config.FontSizeRatio(), 1.5F);
+  EXPECT_FLOAT_EQ(config.FontSizePoints(), 36.0F);
+  EXPECT_FLOAT_EQ(config.FontSizeMillimetres(), 36.0F * 25.4F / 72.0F);
   EXPECT_EQ(config.TitleText(), "hello");
   EXPECT_FLOAT_EQ(config.TextColor()[0], 0.1F);
   EXPECT_FLOAT_EQ(config.TextColor()[3], 0.4F);

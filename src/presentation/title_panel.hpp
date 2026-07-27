@@ -14,12 +14,17 @@
 #include "casts.hpp"
 #include "wx_owned.hpp"
 
+// Rahmen, Schriftgrösse und Farbe des Titels. Der Titeltext selbst hat hier
+// kein Feld: er wird im Canvas bearbeitet (Doppelklick) und kommt nur noch als
+// Teil der empfangenen TitleConfig durch.
 class TitleSetupPanel : public wxPanel {
  public:
   explicit TitleSetupPanel(wxWindow* parent) : wxPanel(parent, wxID_ANY) {
     constexpr int kSizerBorder = 5;
     constexpr int kLabelWidth = 120;
-    constexpr double kSizeRatioIncrement = 0.05;
+    constexpr double kFontSizeIncrementPt = 1.0;
+    constexpr double kFontSizeMinPt = 1.0;
+    constexpr double kFontSizeMaxPt = 500.0;
 
     const wxSizerFlags row_flags = wxSizerFlags().Proportion(0).Expand();
     const wxSizerFlags label_flags =
@@ -36,15 +41,12 @@ class TitleSetupPanel : public wxPanel {
     AddLabelledRow(vertical_sizer, L"Frame Height", frame_height_ctrl_,
                    row_flags, label_flags, field_flags, kLabelWidth);
 
-    size_ratio_ctrl_ = MakeOwned<wxSpinCtrlDouble>(this);
-    size_ratio_ctrl_->SetDigits(2);
-    size_ratio_ctrl_->SetIncrement(kSizeRatioIncrement);
-    AddLabelledRow(vertical_sizer, L"Font Size Ratio", size_ratio_ctrl_,
+    font_size_ctrl_ = MakeOwned<wxSpinCtrlDouble>(this);
+    font_size_ctrl_->SetDigits(1);
+    font_size_ctrl_->SetRange(kFontSizeMinPt, kFontSizeMaxPt);
+    font_size_ctrl_->SetIncrement(kFontSizeIncrementPt);
+    AddLabelledRow(vertical_sizer, L"Font Size (pt)", font_size_ctrl_,
                    row_flags, label_flags, field_flags, kLabelWidth);
-
-    title_text_edit_ = MakeOwned<wxTextCtrl>(this, wxID_ANY);
-    AddLabelledRow(vertical_sizer, L"Text", title_text_edit_, row_flags,
-                   label_flags, field_flags, kLabelWidth);
 
     constexpr int kAlphaMax = 255;
     text_color_picker_ = MakeOwned<wxColourPickerCtrl>(
@@ -61,7 +63,6 @@ class TitleSetupPanel : public wxPanel {
     vertical_sizer->Layout();
 
     Bind(wxEVT_SPINCTRLDOUBLE, &TitleSetupPanel::CallbackSpinControl, this);
-    Bind(wxEVT_TEXT, &TitleSetupPanel::CallbackTextControl, this);
     Bind(wxEVT_COLOURPICKER_CHANGED,
          &TitleSetupPanel::CallbackColorPickerControl, this);
     Bind(wxEVT_SLIDER, &TitleSetupPanel::CallbackSliderControl, this);
@@ -100,10 +101,8 @@ class TitleSetupPanel : public wxPanel {
   void UpdateWidgetForSelection() {
     frame_height_ctrl_->SetValue(
         static_cast<double>(title_config_.FrameHeight()));
-    size_ratio_ctrl_->SetValue(
-        static_cast<double>(title_config_.FontSizeRatio()));
-
-    title_text_edit_->ChangeValue(title_config_.TitleText());
+    font_size_ctrl_->SetValue(
+        static_cast<double>(title_config_.FontSizePoints()));
 
     const wxColour color = ToWxColor(title_config_.TextColor());
     text_color_picker_->SetColour(color);
@@ -119,16 +118,8 @@ class TitleSetupPanel : public wxPanel {
       SendTitleConfig();
     }
 
-    if (size_ratio_ctrl_.get() == event.GetEventObject()) {
-      title_config_.SetFontSizeRatio(float_value);
-
-      SendTitleConfig();
-    }
-  }
-
-  void CallbackTextControl(wxCommandEvent& event) {
-    if (title_text_edit_.get() == event.GetEventObject()) {
-      title_config_.SetTitleText(event.GetString().ToStdString());
+    if (font_size_ctrl_.get() == event.GetEventObject()) {
+      title_config_.SetFontSizePoints(float_value);
 
       SendTitleConfig();
     }
@@ -159,9 +150,7 @@ class TitleSetupPanel : public wxPanel {
   sigslot::signal<const TitleConfig&> signal_title_config_;
 
   wxWeakRef<wxSpinCtrlDouble> frame_height_ctrl_;
-  wxWeakRef<wxSpinCtrlDouble> size_ratio_ctrl_;
-
-  wxWeakRef<wxTextCtrl> title_text_edit_;
+  wxWeakRef<wxSpinCtrlDouble> font_size_ctrl_;
 
   wxWeakRef<wxColourPickerCtrl> text_color_picker_;
   wxWeakRef<wxSlider> alpha_slider_;
