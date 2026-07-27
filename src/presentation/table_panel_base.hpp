@@ -23,6 +23,15 @@ class TablePanelBase : public wxPanel {
     table_ = MakeOwned<wxDataViewListCtrl>(this, wxID_ANY, wxDefaultPosition,
                                            wxDefaultSize, table_style,
                                            wxDefaultValidator);
+
+    // Kompakter als die Systemschrift. Die Zeilenhöhe folgt der Schrift von
+    // selbst; wxDataViewCtrl::SetRowHeight wäre hier wirkungslos, weil der
+    // GTK-Port sie nur für eigene Renderer auswertet, nicht für Textspalten.
+    constexpr double kTableFontPointSize = 11.0;
+    wxFont table_font = table_->GetFont();
+    table_font.SetFractionalPointSize(kTableFontPointSize);
+    table_->SetFont(table_font);
+
     add_button_ = MakeOwned<wxButton>(this, wxID_ADD, "Add Row");
     delete_button_ = MakeOwned<wxButton>(this, wxID_DELETE, "Delete Row");
     delete_button_->Disable();
