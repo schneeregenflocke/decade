@@ -99,8 +99,13 @@ class MainFrame : public wxFrame {
   }
 
   // Schliesst das Fenster nach N Millisekunden — für kopflose Läufe.
+  // Gebunden wird am Fenster, nicht am Timer: `exit_timer_(this)` macht das
+  // Fenster zum Owner, und der Owner bekommt das Ereignis. Ein Handler am
+  // Timer-Objekt liefe nie.
   void CloseAfter(std::int64_t milliseconds) {
-    exit_timer_.Bind(wxEVT_TIMER, [this](wxTimerEvent&) { Close(true); });
+    Bind(
+        wxEVT_TIMER, [this](wxTimerEvent&) { Close(true); },
+        exit_timer_.GetId());
     exit_timer_.StartOnce(static_cast<int>(milliseconds));
   }
 
