@@ -16,7 +16,14 @@ CMakeSettings.json
 .vscode/
 out/
 build/
+# Zweiter Baum für einen anderen Compiler (build-clang, …). Die Sanitizer-
+# Ordner liegen dagegen unter build/ und sind schon abgedeckt.
+build-*/
 .clangd/
+# Die .clangd-Datei (nicht das Verzeichnis) gleicht die Flag-Drift bei den
+# infrastructure-Headern aus. Vorerst lokal: erst bewähren lassen, dann
+# entscheiden, ob sie versioniert gehört.
+.clangd
 .cache/
 
 compile_commands.json
