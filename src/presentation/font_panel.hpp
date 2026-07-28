@@ -32,7 +32,7 @@ class FontPanel : public wxPanel {
                           kSizerBorderPx);
     auto* vertical_sizer = MakeOwned<wxBoxSizer>(wxVERTICAL);
     vertical_sizer->Add(horizontal_sizer, 0, wxEXPAND);
-    SetSizer(vertical_sizer);
+    SetSizerAndFit(vertical_sizer);
 
     Bind(wxEVT_FONTPICKER_CHANGED, &FontPanel::CallbackFontChanged, this);
     wx_font_ = wx_font_picker_->GetFont();
