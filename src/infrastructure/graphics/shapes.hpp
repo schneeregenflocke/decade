@@ -11,12 +11,15 @@
 #include "shaders.hpp"
 #include "shapes_base.hpp"
 
+// Zwei Dreiecke bilden ein Viereck — die Zahl steht einmal hier, weil beide
+// Shapes unten in dieser Einheit rechnen.
+inline constexpr size_t kVerticesPerQuad = 6;
+
 class QuadrilateralShape : public Shape {
  public:
   explicit QuadrilateralShape(Shader* shader_ptr_in) : Shape(shader_ptr_in) {}
 
   void SetShape(const rectf& rectangle) {
-    constexpr size_t kVerticesPerQuad = 6;
     std::vector<glm::vec3> vertices(kVerticesPerQuad);
 
     constexpr float kZero = 0.0F;
@@ -54,12 +57,7 @@ class RectanglesShape : public Shape {
   explicit RectanglesShape(Shader* shader_ptr_in) : Shape(shader_ptr_in) {}
 
   void SetShape(const std::vector<rectf>& rectangles, float line_width) {
-    constexpr size_t kVerticesPerQuad = 6;
-    constexpr size_t kQuadsPerRectangle = 5;
-    constexpr size_t kVerticesPerRectangle =
-        kVerticesPerQuad * kQuadsPerRectangle;
-    const size_t size = rectangles.size() * kVerticesPerRectangle;
-    vertices_.resize(size);
+    vertices_.resize(rectangles.size() * kVerticesPerRectangle);
 
     for (size_t index = 0; index < rectangles.size(); ++index) {
       SetRectangleShape(index, rectangles[index], line_width);
@@ -71,31 +69,22 @@ class RectanglesShape : public Shape {
   }
 
   void SetShape(const rectf& rectangle, float line_width) {
-    constexpr size_t kVerticesPerQuad = 6;
-    constexpr size_t kQuadsPerRectangle = 5;
-    constexpr size_t kVerticesPerRectangle =
-        kVerticesPerQuad * kQuadsPerRectangle;
-    vertices_.resize(kVerticesPerRectangle);
-
-    SetRectangleShape(0, rectangle, line_width);
-
-    SetBuffer(BufferIndex{0}, static_cast<GLsizei>(vertices_.size()),
-              vertices_.data());
-    SetLocalBounds(UnionBounds({rectangle}, line_width));
+    SetShape(std::vector<rectf>{rectangle}, line_width);
   }
 
-  void SetColor(const std::vector<glm::vec4>& new_colors) {
-    colors_ = new_colors;
+  // Rand und Füllung, benannt statt als Paar in einem Vektor: der Shader kennt
+  // genau diese zwei Uniforms.
+  void SetColors(const glm::vec4& outline_color, const glm::vec4& fill_color) {
+    outline_color_ = outline_color;
+    fill_color_ = fill_color;
   }
 
   void Draw(const glm::mat4& model) const override {
     GetShader()->UseProgram();
     GetShader()->SetUniform("model", model);
 
-    if (colors_.size() == 2) {
-      GetShader()->SetUniform("outline_color", colors_[0]);
-      GetShader()->SetUniform("fill_color", colors_[1]);
-    }
+    GetShader()->SetUniform("outline_color", outline_color_);
+    GetShader()->SetUniform("fill_color", fill_color_);
 
     VaoRef().Bind();
     glDrawArrays(GL_TRIANGLES, 0, VertexCount());
@@ -127,11 +116,6 @@ class RectanglesShape : public Shape {
 
   void SetRectangleShape(size_t index, const rectf& rectangle,
                          float line_width) {
-    constexpr size_t kVerticesPerQuad = 6;
-    constexpr size_t kQuadsPerRectangle = 5;
-    constexpr size_t kVerticesPerRectangle =
-        kVerticesPerQuad * kQuadsPerRectangle;
-
     const float half_line_thickness = line_width * 0.5F;
 
     const rectf inrectangle =
@@ -167,7 +151,6 @@ class RectanglesShape : public Shape {
   void SetRectangle(size_t offset, const glm::vec3& point0,
                     const glm::vec3& point1, const glm::vec3& point2,
                     const glm::vec3& point3) {
-    constexpr size_t kVerticesPerQuad = 6;
     vertices_[offset + 0] = point0;
     vertices_[offset + 1] = point1;
     vertices_[offset + 2] = point2;
@@ -176,7 +159,13 @@ class RectanglesShape : public Shape {
     vertices_[offset + (kVerticesPerQuad - 1)] = point1;
   }
 
+  // Füllung plus vier Randstreifen je Rechteck.
+  static constexpr size_t kQuadsPerRectangle = 5;
+  static constexpr size_t kVerticesPerRectangle =
+      kVerticesPerQuad * kQuadsPerRectangle;
+
   std::vector<glm::vec3> vertices_;
-  std::vector<glm::vec4> colors_;
+  glm::vec4 outline_color_{0.0F, 0.0F, 0.0F, 1.0F};
+  glm::vec4 fill_color_{0.0F, 0.0F, 0.0F, 1.0F};
 };
 #endif  // SHAPES_HPP

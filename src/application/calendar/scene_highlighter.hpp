@@ -164,8 +164,8 @@ class SceneHighlighter {
     }
     const auto config = shape_config_.GetShapeConfiguration(node->GetStyleId());
     const glm::vec4 hover_outline(kOne, kHoverOutlineGreen, kZero, kOne);
-    shape->SetColor({highlighted ? hover_outline : config.OutlineColor(),
-                     config.FillColor()});
+    shape->SetColors(highlighted ? hover_outline : config.OutlineColor(),
+                     config.FillColor());
   }
 
   static constexpr float kZero = 0.0F;

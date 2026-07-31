@@ -32,7 +32,7 @@ inline void FillRectangles(const std::shared_ptr<SceneNode>& node,
     return;
   }
   shape->SetShape(shapes, line_width);
-  shape->SetColor({outline_color, fill_color});
+  shape->SetColors(outline_color, fill_color);
 }
 
 // Creates a centered text node named `name` under `parent`: a FontShape on the

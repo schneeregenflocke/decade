@@ -487,8 +487,8 @@ inline void BuildDays(const SectionContext& ctx) {
     bar_shape->SetShape(
         rectf(detail::kZero, bar_width, detail::kZero, bar_height),
         current_shape_config.LineWidth());
-    bar_shape->SetColor({current_shape_config.OutlineColor(),
-                         current_shape_config.FillColor()});
+    bar_shape->SetColors(current_shape_config.OutlineColor(),
+                         current_shape_config.FillColor());
     bar_node->SetShape(std::move(bar_shape));
     bar_node->SetDrawLayer(calendar_layers::kBars);
     group_nodes.at(current_group)->AddChild(bar_node);
@@ -635,8 +635,8 @@ inline void BuildLegend(const SectionContext& ctx) {
       auto entry_shape =
           std::make_unique<RectanglesShape>(ctx.rectangles_shader);
       entry_shape->SetShape(current_cell, current_shape_config.LineWidth());
-      entry_shape->SetColor({current_shape_config.OutlineColor(),
-                             current_shape_config.FillColor()});
+      entry_shape->SetColors(current_shape_config.OutlineColor(),
+                             current_shape_config.FillColor());
       node_entry->SetShape(std::move(entry_shape));
     }
   }
@@ -670,8 +670,8 @@ inline void BuildLegend(const SectionContext& ctx) {
       auto entry_shape =
           std::make_unique<RectanglesShape>(ctx.rectangles_shader);
       entry_shape->SetShape(current_cell, current_shape_config.LineWidth());
-      entry_shape->SetColor({current_shape_config.OutlineColor(),
-                             current_shape_config.FillColor()});
+      entry_shape->SetColors(current_shape_config.OutlineColor(),
+                             current_shape_config.FillColor());
       node_entry->SetShape(std::move(entry_shape));
     }
   }
