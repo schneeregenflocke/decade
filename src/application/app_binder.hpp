@@ -151,11 +151,6 @@ inline void BindTitleConfig(EventBus& bus, AppComponents& components) {
 }
 
 inline void BindShapeConfiguration(EventBus& bus, AppComponents& components) {
-  // Der Szenenbaum bearbeitet die Shape-Konfigurationen in seinem Detailgrid.
-  components.scene_tree_panel.SignalShapeConfigSet().connect(
-      &ShapeConfigurationStore::ReceiveShapeConfigSet,
-      &components.shape_configuration_store);
-
   bus.shape_config_set().connect(&CalendarPage::ReceiveShapeConfigSet,
                                  &components.calendar_page);
   bus.shape_config_set().connect(&SceneTreePanel::ReceiveShapeConfigSet,
@@ -269,7 +264,6 @@ inline void Unbind(EventBus& bus, AppComponents& components) {
   components.title_setup_panel.SignalTitleConfig().disconnect_all();
   components.calendar_setup_panel.SignalCalendarConfig().disconnect_all();
   components.font_panel.SignalFontConfig().disconnect_all();
-  components.scene_tree_panel.SignalShapeConfigSet().disconnect_all();
   components.scene_tree_panel.SignalSelectedNode().disconnect_all();
   components.gl_canvas.SetPointerMoveCallback(nullptr);
   components.gl_canvas.SetPrimaryDownCallback(nullptr);

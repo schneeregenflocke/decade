@@ -81,9 +81,9 @@ inline constexpr float kFontScaleMax = 0.75F;
 inline constexpr float kPercentScale = 100.0F;
 inline constexpr std::size_t kMonthNameBufferSize = 100;
 
-// Calendar-specific adapter over scene_shapes::FillRectangles: maps a domain
-// ShapeConfiguration to the generic primitives and records the style id so the
-// scene tree can route an edit back to that configuration.
+// Kalenderseitiger Adapter über scene_shapes::FillRectangles: bildet eine
+// Domänen-ShapeConfiguration auf die allgemeinen Primitiven ab und vermerkt die
+// Style-ID, an der der Szenenbaum die Werte der Konfiguration anzeigt.
 template <typename Shapes>
 inline void FillRectangles(const std::shared_ptr<SceneNode>& node,
                            const Shapes& shapes,

@@ -269,8 +269,17 @@ class FontShape : public Shape {
 
   void SetColor(const glm::vec4& new_color) { color_ = new_color; }
 
+  // Der gezeichnete Text und seine Geviertgrösse in Seitenmillimetern —
+  // dieselben Werte, aus denen die Geometrie entstand. Der Szenen-Schnappschuss
+  // zeigt sie an, ohne die Vertexpuffer zurückrechnen zu müssen.
+  [[nodiscard]] const std::string& Text() const { return text_; }
+
+  [[nodiscard]] float FontSize() const { return font_size_; }
+
   void SetShape(const std::string& text, const glm::vec3& position,
                 float size) {
+    text_ = text;
+    font_size_ = size;
     const auto glyphs = DecodeUtf8(text);
     const auto glyph_count = glyphs.size();
     positions_.resize(glyph_count * kVerticesPerGlyph);
@@ -375,5 +384,7 @@ class FontShape : public Shape {
   std::vector<GLuint> text_textures_;
   std::shared_ptr<Font> font_;
   glm::vec4 color_{kZero, kZero, kZero, kOne};
+  std::string text_;
+  float font_size_{kZero};
 };
 #endif  // FONT_HPP

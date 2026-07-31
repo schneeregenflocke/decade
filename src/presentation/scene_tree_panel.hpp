@@ -8,6 +8,7 @@
 #include <wx/weakref.h>
 #include <wx/wx.h>
 
+#include <cstddef>
 #include <memory>
 #include <optional>
 #include <sigslot/signal.hpp>
@@ -18,8 +19,8 @@
 #include "../domain/detail/reentry_guard.hpp"
 #include "../domain/scene_snapshot.hpp"
 #include "../domain/shape_configuration.hpp"
+#include "../domain/typography.hpp"
 #include "casts.hpp"
-#include "rgba_colour_property.hpp"
 #include "wx_owned.hpp"
 
 // Presentation: master/detail view of the render scene graph. A collapsible
@@ -30,9 +31,10 @@
 // width, looked up in the received ShapeConfigSet. The panel never touches the
 // OpenGL `SceneNode` type, keeping the presentation layer graphics-free.
 //
-// The node-info rows are read-only; the Style rows (colours, line width,
-// visibility) are editable and committed back to the ShapeConfiguration store
-// via SignalShapeConfigSet, so the edit survives the next scene rebuild.
+// Der Baum spiegelt die Szene, er bearbeitet sie nicht: **jede** Zeile ist
+// read-only. Ein Editierfeld hier wäre ein zweiter Schreibpfad auf Zustand, den
+// der Rebuild ohnehin neu erzeugt; geändert wird dort, wo der Zustand zu Hause
+// ist (Panels der jeweiligen Konfiguration).
 class SceneTreePanel : public wxPanel {
  public:
   explicit SceneTreePanel(wxWindow* parent)
@@ -58,8 +60,6 @@ class SceneTreePanel : public wxPanel {
 
     tree_ctrl_->Bind(wxEVT_TREE_SEL_CHANGED,
                      &SceneTreePanel::CallbackTreeSelectionChanged, this);
-    property_grid_->Bind(wxEVT_PG_CHANGED,
-                         &SceneTreePanel::CallbackPropertyChanged, this);
   }
 
   void ReceiveSceneSnapshot(const SceneNodeSnapshot& snapshot) {
@@ -72,15 +72,15 @@ class SceneTreePanel : public wxPanel {
     rebuilding_ = true;
     // Remember the selected node's stable path so the rebuild can restore it.
     // Without this the selection collapses to the root on every rebuild, which
-    // happens after each property edit (edit -> scene rebuild -> snapshot) and
-    // would force the user to re-select the node after every change.
+    // happens after each state change, and would force the user to re-select
+    // the node afterwards.
     const std::string previously_selected = SelectedPath();
     tree_ctrl_->Freeze();
     tree_ctrl_->DeleteAllItems();
     path_to_item_.clear();
     const wxTreeItemId root = tree_ctrl_->AddRoot(MakeLabel(snapshot), -1, -1,
                                                   MakeItemData(snapshot, ""));
-    path_to_item_.emplace(snapshot.name, root);
+    path_to_item_.emplace(snapshot.values.name, root);
 
     // Iterative descent (no recursion): each frame pairs an already-created
     // tree item with the snapshot node whose children still need appending,
@@ -91,13 +91,14 @@ class SceneTreePanel : public wxPanel {
       std::string path;
     };
     std::vector<Frame> stack;
-    stack.push_back({.item = root, .node = &snapshot, .path = snapshot.name});
+    stack.push_back(
+        {.item = root, .node = &snapshot, .path = snapshot.values.name});
 
     while (!stack.empty()) {
       const Frame frame = stack.back();
       stack.pop_back();
       for (const auto& child : frame.node->children) {
-        const std::string child_path = frame.path + "/" + child.name;
+        const std::string child_path = frame.path + "/" + child.values.name;
         const wxTreeItemId child_item =
             tree_ctrl_->AppendItem(frame.item, MakeLabel(child), -1, -1,
                                    MakeItemData(child, child_path));
@@ -129,25 +130,12 @@ class SceneTreePanel : public wxPanel {
   // configuration changes elsewhere.
   void ReceiveShapeConfigSet(const ShapeConfigSet& shape_config_set) {
     shape_config_set_ = shape_config_set;
-    // Skip the grid rebuild when this update is the echo of our own edit: the
-    // edit is committed inside a wxEVT_PG_CHANGED handler, and clearing the
-    // grid there would destroy the property mid-event.
-    if (!emitting_) {
-      RefreshDetail();
-    }
+    RefreshDetail();
   }
 
   // Emits the path of the currently selected node (nullopt when none) so the
   // renderer can highlight that node and its subtree on the calendar.
   [[nodiscard]] auto& SignalSelectedNode() { return signal_selected_node_; }
-
-  // Emits the edited configuration set when a Style property changes, so the
-  // ShapeConfiguration store (and through it the renderer and the Layout panel)
-  // pick up the change. Routing through the domain store is what makes the edit
-  // survive the next scene rebuild.
-  [[nodiscard]] auto& SignalShapeConfigSet() {
-    return signal_shape_config_set_;
-  }
 
   // Selects the tree item at `path`, driving the normal selection path
   // (detail grid + highlight emit). A debug/screenshot aid for exercising the
@@ -180,30 +168,18 @@ class SceneTreePanel : public wxPanel {
   class NodeData : public wxTreeItemData {
    public:
     NodeData(const SceneNodeSnapshot& node, std::string path)
-        : name_(node.name),
-          style_id_(node.style_id),
+        : values_(node.values),
           path_(std::move(path)),
-          shape_kind_(node.shape_kind),
-          draw_layer_(node.draw_layer),
-          child_count_(node.children.size()),
-          has_shape_(node.has_shape) {}
+          child_count_(node.children.size()) {}
 
-    [[nodiscard]] const std::string& Name() const { return name_; }
-    [[nodiscard]] const std::string& StyleId() const { return style_id_; }
+    [[nodiscard]] const SceneNodeValues& Values() const { return values_; }
     [[nodiscard]] const std::string& Path() const { return path_; }
-    [[nodiscard]] SnapshotShapeKind ShapeKind() const { return shape_kind_; }
-    [[nodiscard]] int DrawLayer() const { return draw_layer_; }
     [[nodiscard]] std::size_t ChildCount() const { return child_count_; }
-    [[nodiscard]] bool HasShape() const { return has_shape_; }
 
    private:
-    std::string name_;
-    std::string style_id_;
+    SceneNodeValues values_;
     std::string path_;
-    SnapshotShapeKind shape_kind_;
-    int draw_layer_;
     std::size_t child_count_;
-    bool has_shape_;
   };
 
   static NodeData* MakeItemData(const SceneNodeSnapshot& node,
@@ -212,13 +188,13 @@ class SceneTreePanel : public wxPanel {
   }
 
   static wxString MakeLabel(const SceneNodeSnapshot& node) {
-    wxString label = wxString::FromUTF8(node.name);
+    wxString label = wxString::FromUTF8(node.values.name);
     if (label.empty()) {
       label = "(unnamed)";
     }
     // A node without a shape is a pure grouping/container node; mark it so the
     // tree distinguishes drawable nodes from structural ones at a glance.
-    if (!node.has_shape) {
+    if (!node.values.has_shape) {
       label << "  •";
     }
     return label;
@@ -236,6 +212,15 @@ class SceneTreePanel : public wxPanel {
         break;
     }
     return "(none)";
+  }
+
+  // Boxen und Grössen stehen in Seitenmillimetern; zwei Nachkommastellen
+  // reichen, um 0.1-mm-Unterschiede zu sehen.
+  static wxString BoundsLabel(const SnapshotBounds& bounds) {
+    return wxString::Format("l %.2f  r %.2f  b %.2f  t %.2f  (%.2f x %.2f)",
+                            bounds.left, bounds.right, bounds.bottom,
+                            bounds.top, bounds.right - bounds.left,
+                            bounds.top - bounds.bottom);
   }
 
   void CallbackTreeSelectionChanged(wxTreeEvent& /*event*/) {
@@ -273,16 +258,12 @@ class SceneTreePanel : public wxPanel {
   }
 
   // Rebuilds the detail grid from the current tree selection. Rebuilding
-  // wholesale keeps the code simple and robust to the optional style category.
+  // wholesale keeps the code simple and robust to the optional categories.
   void RefreshDetail() {
     if (property_grid_ == nullptr || tree_ctrl_ == nullptr) {
       return;
     }
     property_grid_->Clear();
-    // The grid owns the recreated properties; we keep no pointers to them and
-    // look the changed one up from the event instead. style_id_ names the
-    // configuration the Style rows edit (empty when the node has no style).
-    style_id_.clear();
 
     const wxTreeItemId selected = tree_ctrl_->GetSelection();
     if (!selected.IsOk()) {
@@ -293,25 +274,50 @@ class SceneTreePanel : public wxPanel {
     if (data == nullptr) {
       return;
     }
+    const SceneNodeValues& node = data->Values();
 
-    property_grid_->Append(MakeOwned<wxPropertyCategory>("Node", wxPG_LABEL));
-    AppendReadOnly(MakeOwned<wxStringProperty>(
-        "Name", wxPG_LABEL, wxString::FromUTF8(data->Name())));
-    AppendReadOnly(MakeOwned<wxStringProperty>(
-        "Shape", wxPG_LABEL, ShapeKindLabel(data->ShapeKind())));
-    AppendReadOnly(
-        MakeOwned<wxIntProperty>("Draw Layer", wxPG_LABEL, data->DrawLayer()));
-    AppendReadOnly(MakeOwned<wxIntProperty>(
-        "Children", wxPG_LABEL, static_cast<int>(data->ChildCount())));
-    AppendReadOnly(MakeOwned<wxStringProperty>(
-        "Style ID", wxPG_LABEL, wxString::FromUTF8(data->StyleId())));
+    AppendCategory("Node");
+    AppendText("Name", wxString::FromUTF8(node.name));
+    AppendText("Shape", ShapeKindLabel(node.shape_kind));
+    AppendInt("Draw Layer", node.draw_layer);
+    AppendInt("Children", static_cast<int>(data->ChildCount()));
+    AppendText("Style ID", wxString::FromUTF8(node.style_id));
 
-    AppendStyleCategory(data->StyleId());
+    AppendGeometryCategory(node);
+    AppendTextCategory(node);
+    AppendStyleCategory(node.style_id);
+  }
+
+  // Die eigene Geometrie des Knotens: seine Box im Knotenraum und dieselbe Box
+  // auf der Seite. Container ohne Shape haben keine.
+  void AppendGeometryCategory(const SceneNodeValues& node) {
+    if (!node.local_bounds.has_value() || !node.world_bounds.has_value()) {
+      return;
+    }
+    AppendCategory("Geometry");
+    AppendText("Local Bounds (mm)", BoundsLabel(*node.local_bounds));
+    AppendText("Page Bounds (mm)", BoundsLabel(*node.world_bounds));
+  }
+
+  // Textknoten zeigen zusätzlich, was sie zeichnen und wie gross — in Punkt,
+  // weil der Nutzer Schriftgrössen so liest, und in Millimetern daneben, weil
+  // die Seite darin rechnet.
+  void AppendTextCategory(const SceneNodeValues& node) {
+    if (!node.text_detail.has_value()) {
+      return;
+    }
+    AppendCategory("Text");
+    AppendText("Text", wxString::FromUTF8(node.text_detail->text));
+    AppendText(
+        "Font Size (pt)",
+        wxString::Format("%.2f", domain::PointsFromMillimetres(
+                                     node.text_detail->size_millimetres)));
+    AppendText("Font Size (mm)",
+               wxString::Format("%.2f", node.text_detail->size_millimetres));
   }
 
   // If the node's style_id resolves to a configuration, show its colours, line
-  // width and visibility flags as editable properties. Edits are committed to
-  // the domain ShapeConfiguration via CallbackPropertyChanged.
+  // width and visibility flags — read-only, wie alles hier.
   void AppendStyleCategory(const std::string& style_id) {
     if (style_id.empty()) {
       return;
@@ -321,34 +327,41 @@ class SceneTreePanel : public wxPanel {
     if (config.Name() != style_id) {
       return;  // not found in the set
     }
-    style_id_ = style_id;
 
-    // Two colour widgets are shown side by side per colour, on purpose: the
-    // RgbaColourProperty (custom, edits the alpha channel too) and the stock
-    // wxColourProperty (RGB only). Editing either commits; CallbackProperty
-    // Changed dispatches on the changed property so they do not clobber each
-    // other, and the next rebuild re-syncs both from the configuration. Each
-    // property is created with a stable name (used for lookup in the callback)
-    // and is owned by the grid -- we deliberately keep no pointers to them.
-    property_grid_->Append(MakeOwned<wxPropertyCategory>("Style", wxPG_LABEL));
-    property_grid_->Append(MakeOwned<wxBoolProperty>(
-        "Outline Visible", kOutlineVisibleName, config.OutlineVisible()));
-    property_grid_->Append(MakeOwned<RgbaColourProperty>(
-        "Outline Color (RGBA)", kOutlineColorRgbaName,
-        ToWxColor(config.OutlineColorDisabled())));
-    property_grid_->Append(
-        MakeOwned<wxColourProperty>("Outline Color (RGB)", kOutlineColorRgbName,
-                                    ToWxColor(config.OutlineColorDisabled())));
-    property_grid_->Append(MakeOwned<wxBoolProperty>(
-        "Fill Visible", kFillVisibleName, config.FillVisible()));
-    property_grid_->Append(
-        MakeOwned<RgbaColourProperty>("Fill Color (RGBA)", kFillColorRgbaName,
-                                      ToWxColor(config.FillColorDisabled())));
-    property_grid_->Append(
-        MakeOwned<wxColourProperty>("Fill Color (RGB)", kFillColorRgbName,
-                                    ToWxColor(config.FillColorDisabled())));
-    property_grid_->Append(MakeOwned<wxFloatProperty>(
-        "Line Width", kLineWidthName, config.LineWidthDisabled()));
+    AppendCategory("Style");
+    AppendText("Outline Visible", config.OutlineVisible() ? "true" : "false");
+    AppendColor("Outline Color", config.OutlineColorDisabled());
+    AppendText("Fill Visible", config.FillVisible() ? "true" : "false");
+    AppendColor("Fill Color", config.FillColorDisabled());
+    // Die konfigurierten Werte, nicht die um die Sichtbarkeit bereinigten:
+    // was hier steht, soll dem entsprechen, was der Nutzer eingestellt hat.
+    AppendText("Line Width",
+               wxString::Format("%.2f", config.LineWidthDisabled()));
+  }
+
+  void AppendCategory(const wxString& label) {
+    property_grid_->Append(MakeOwned<wxPropertyCategory>(label, wxPG_LABEL));
+  }
+
+  // Alle Werte stehen als Text: eine Zeilenart, keine Typ-Editoren, die aus
+  // Versehen doch schreiben könnten.
+  void AppendText(const wxString& label, const wxString& value) {
+    AppendReadOnly(MakeOwned<wxStringProperty>(label, wxPG_LABEL, value));
+  }
+
+  void AppendInt(const wxString& label, int value) {
+    AppendReadOnly(MakeOwned<wxIntProperty>(label, wxPG_LABEL, value));
+  }
+
+  // Farben mit Alpha; der wx-Farbwähler kennt keinen Alphakanal, darum die
+  // vier Kanäle als Zahl plus die Farbe als Feld daneben.
+  void AppendColor(const wxString& label, const glm::vec4& color) {
+    const wxColour wx_color = ToWxColor(color);
+    AppendReadOnly(MakeOwned<wxColourProperty>(label, wxPG_LABEL, wx_color));
+    AppendText(
+        label + " (RGBA)",
+        wxString::Format("%u, %u, %u, %u", wx_color.Red(), wx_color.Green(),
+                         wx_color.Blue(), wx_color.Alpha()));
   }
 
   void AppendReadOnly(wxPGProperty* property) {
@@ -356,109 +369,16 @@ class SceneTreePanel : public wxPanel {
     property_grid_->SetPropertyReadOnly(property);
   }
 
-  // Commits a Style-property edit into the configuration set and publishes it.
-  // Only the property the user changed (carried by the event) is applied, so no
-  // cached property handles are needed; the changed row is identified by its
-  // stable name.
-  void CallbackPropertyChanged(wxPropertyGridEvent& event) {
-    if (style_id_.empty()) {
-      return;
-    }
-    wxPGProperty* changed = event.GetProperty();
-    if (changed == nullptr) {
-      return;
-    }
-    ShapeConfigSet updated = shape_config_set_;
-    ShapeConfiguration config = updated.GetShapeConfiguration(style_id_);
-    if (config.Name() != style_id_) {
-      return;  // configuration no longer present
-    }
-    if (!ApplyChange(changed, config)) {
-      return;  // a non-Style (read-only Node) row, nothing to commit
-    }
-    updated.UpdateConfiguration(config);
-
-    shape_config_set_ = updated;
-    emitting_ = true;
-    signal_shape_config_set_(updated);
-    emitting_ = false;
-  }
-
-  // Applies the single changed Style row to `config`, identified by the
-  // property's stable name. The RGBA colour row applies the full colour; the
-  // RGB row applies red/green/blue while keeping the configured alpha. Returns
-  // false when the changed property is not one of the editable Style rows.
-  static bool ApplyChange(wxPGProperty* changed, ShapeConfiguration& config) {
-    const wxString name = changed->GetName();
-    if (name == kOutlineVisibleName) {
-      config.OutlineVisible(changed->GetValue().GetBool());
-    } else if (name == kFillVisibleName) {
-      config.FillVisible(changed->GetValue().GetBool());
-    } else if (name == kLineWidthName) {
-      config.LineWidth(static_cast<float>(changed->GetValue().GetDouble()));
-    } else if (name == kOutlineColorRgbaName) {
-      config.OutlineColor(RgbaColorOf(changed));
-    } else if (name == kFillColorRgbaName) {
-      config.FillColor(RgbaColorOf(changed));
-    } else if (name == kOutlineColorRgbName) {
-      config.OutlineColor(
-          RgbColorKeepingAlpha(changed, config.OutlineColorDisabled()));
-    } else if (name == kFillColorRgbName) {
-      config.FillColor(
-          RgbColorKeepingAlpha(changed, config.FillColorDisabled()));
-    } else {
-      return false;
-    }
-    return true;
-  }
-
-  // Full RGBA from the custom colour property (blank when the cast fails).
-  static glm::vec4 RgbaColorOf(wxPGProperty* property) {
-    const auto* rgba = dynamic_cast<RgbaColourProperty*>(property);
-    return rgba != nullptr ? ToGlmVec4(rgba->GetColour()) : glm::vec4{};
-  }
-
-  // RGB from the stock colour property, keeping `previous`' alpha.
-  static glm::vec4 RgbColorKeepingAlpha(wxPGProperty* property,
-                                        const glm::vec4& previous) {
-    const auto* rgb = dynamic_cast<wxColourProperty*>(property);
-    if (rgb == nullptr) {
-      return previous;
-    }
-    glm::vec4 color = ToGlmVec4(rgb->GetVal().m_colour);
-    color.a = previous.a;
-    return color;
-  }
-
   static constexpr int kSashPositionPx = 220;
   static constexpr int kMinPanePx = 80;
-
-  // Stable property names for the editable Style rows, shared between creation
-  // (AppendStyleCategory) and the change dispatch (ApplyChange). They are the
-  // grid's lookup keys, so no property pointers need to be cached.
-  static constexpr const char* kOutlineVisibleName = "outline_visible";
-  static constexpr const char* kOutlineColorRgbaName = "outline_color_rgba";
-  static constexpr const char* kOutlineColorRgbName = "outline_color_rgb";
-  static constexpr const char* kFillVisibleName = "fill_visible";
-  static constexpr const char* kFillColorRgbaName = "fill_color_rgba";
-  static constexpr const char* kFillColorRgbName = "fill_color_rgb";
-  static constexpr const char* kLineWidthName = "line_width";
 
   wxWeakRef<wxTreeCtrl> tree_ctrl_;
   wxWeakRef<wxPropertyGrid> property_grid_;
   std::unordered_map<std::string, wxTreeItemId> path_to_item_;
   ShapeConfigSet shape_config_set_;
   sigslot::signal<const std::optional<std::string>&> signal_selected_node_;
-  sigslot::signal<const ShapeConfigSet&> signal_shape_config_set_;
-
-  // Names the configuration the Style rows edit (empty when the selected node
-  // has no style). The Style properties themselves are owned by the grid and
-  // looked up by name, so they are not held here.
-  std::string style_id_;
 
   bool rebuilding_{false};
-  // True while emitting our own edit, to suppress the echo-driven grid rebuild.
-  bool emitting_{false};
 };
 
 #endif  // SCENE_TREE_PANEL_HPP

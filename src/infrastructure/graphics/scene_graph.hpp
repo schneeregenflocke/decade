@@ -51,12 +51,11 @@ class SceneNode {
 
   [[nodiscard]] const std::string& GetNodeName() const { return node_name_; }
 
-  // Name of the domain ShapeConfiguration this node's appearance derives from
-  // (empty when the node has no config-bound style, e.g. text or container
-  // nodes). It is the stable link from a scene node back to the domain styling
-  // that the rebuild reproduces, so the scene tree can route an edit to the
-  // right config instead of mutating the transient node. Set by the scene
-  // builder where it applies a configuration.
+  // Name der Domänen-ShapeConfiguration, aus der das Aussehen dieses Knotens
+  // stammt (leer bei Knoten ohne solche Bindung, etwa Text- und
+  // Containerknoten). Der stabile Rückverweis auf die Konfiguration, die der
+  // Rebuild reproduziert — daran zeigt der Szenenbaum die Werte zum Knoten an.
+  // Gesetzt vom Szenenbauer, wo er eine Konfiguration anwendet.
   void SetStyleId(const std::string& style_id) { style_id_ = style_id; }
 
   [[nodiscard]] const std::string& GetStyleId() const { return style_id_; }
