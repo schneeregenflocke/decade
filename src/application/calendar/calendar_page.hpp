@@ -11,6 +11,7 @@
 #include "../../domain/date_entry.hpp"
 #include "../../domain/date_entry_bar_store.hpp"
 #include "../../domain/date_group.hpp"
+#include "../../domain/font_config.hpp"
 #include "../../domain/page_setup_config.hpp"
 #include "../../domain/scene_snapshot.hpp"
 #include "../../domain/shape_configuration.hpp"
@@ -32,14 +33,16 @@
 // (copyable); every incoming signal carries a value, so the slots just assign.
 class CalendarPage {
  public:
-  CalendarPage(GLCanvas& gl_canvas_in, const std::string& font_filepath,
+  CalendarPage(GLCanvas& gl_canvas_in, const FontConfig& font_config,
                domain::StateTopic<SceneNodeSnapshot>& snapshot_topic)
       : gl_canvas_(gl_canvas_in),
         snapshot_topic_(snapshot_topic),
-        font_(std::make_shared<Font>(font_filepath)),
-        scene_composer_(gl_canvas_in.Engine(), scene_, font_, page_size_,
-                        page_margin_, title_config_, calendar_config_,
-                        shape_config_, date_groups_, bar_store_) {}
+        font_config_(font_config),
+        font_(std::make_shared<Font>(font_config.FilePath())),
+        scene_composer_(gl_canvas_in.Engine(), scene_, font_, font_config_,
+                        page_size_, page_margin_, title_config_,
+                        calendar_config_, shape_config_, date_groups_,
+                        bar_store_) {}
 
   void ReceiveDateGroups(const std::vector<DateGroup>& date_groups_in) {
     date_groups_.Assign(date_groups_in);
@@ -58,8 +61,13 @@ class CalendarPage {
     Update();
   }
 
-  void ReceiveFont(const std::string& font_filepath) {
-    font_ = std::make_shared<Font>(font_filepath);
+  // Die Schriftdatei neu zu laden lohnt nur, wenn sie sich ändert; die Grösse
+  // wirkt ohne Neuladen, weil Font geviert-normiert rastert.
+  void ReceiveFont(const FontConfig& font_config) {
+    if (font_config.FilePath() != font_config_.FilePath()) {
+      font_ = std::make_shared<Font>(font_config.FilePath());
+    }
+    font_config_ = font_config;
     Update();
   }
 
@@ -132,6 +140,7 @@ class CalendarPage {
 
   PhysicsWorld physics_world_;
 
+  FontConfig font_config_;
   std::shared_ptr<Font> font_;
   rectf page_size_;
   rectf page_margin_;

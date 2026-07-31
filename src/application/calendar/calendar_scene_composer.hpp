@@ -12,6 +12,7 @@
 #include "../../domain/calendar_config.hpp"
 #include "../../domain/date_entry_bar_store.hpp"
 #include "../../domain/date_group.hpp"
+#include "../../domain/font_config.hpp"
 #include "../../domain/scene_snapshot.hpp"
 #include "../../domain/shape_configuration.hpp"
 #include "../../domain/text_edit_view.hpp"
@@ -38,6 +39,7 @@ class CalendarSceneComposer {
  public:
   CalendarSceneComposer(GraphicsEngine& graphics_engine_in, Scene& scene_in,
                         const std::shared_ptr<Font>& font_in,
+                        const FontConfig& font_config_in,
                         const rectf& page_size_in, const rectf& page_margin_in,
                         const TitleConfig& title_config_in,
                         CalendarConfig& calendar_config_in,
@@ -47,6 +49,7 @@ class CalendarSceneComposer {
       : scene_(scene_in),
         graphics_engine_(graphics_engine_in),
         font_(font_in),
+        font_config_(font_config_in),
         page_size_(page_size_in),
         page_margin_(page_margin_in),
         title_config_(title_config_in),
@@ -128,6 +131,7 @@ class CalendarSceneComposer {
         .bar_store = bar_store_,
         .text_edit = text_edit_,
         .font = font_,
+        .font_config = font_config_,
         .rectangles_shader = rectangles_shader_,
         .font_shader = font_shader_};
   }
@@ -200,6 +204,7 @@ class CalendarSceneComposer {
   // State owned by CalendarPage, referenced here. The referenced objects stay
   // alive and stable for the builder's lifetime; only their contents change.
   const std::shared_ptr<Font>& font_;
+  const FontConfig& font_config_;
   const rectf& page_size_;
   const rectf& page_margin_;
   const TitleConfig& title_config_;

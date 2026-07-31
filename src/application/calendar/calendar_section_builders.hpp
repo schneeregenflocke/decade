@@ -19,6 +19,7 @@
 #include "../../domain/date.hpp"
 #include "../../domain/date_entry_bar_store.hpp"
 #include "../../domain/date_group.hpp"
+#include "../../domain/font_config.hpp"
 #include "../../domain/shape_configuration.hpp"
 #include "../../domain/text_edit_view.hpp"
 #include "../../domain/timeline_projection.hpp"
@@ -58,6 +59,8 @@ struct SectionContext {
   // Leer, solange niemand im Canvas Text bearbeitet.
   const std::optional<TextEditView>& text_edit;
   const std::shared_ptr<Font>& font;
+  // Die anwendungsweit gewählte Schrift samt Punktgrösse.
+  const FontConfig& font_config;
   Shader* rectangles_shader;
   Shader* font_shader;
 };
@@ -237,12 +240,10 @@ inline void BuildCalendarLabels(const SectionContext& ctx) {
   }
 
   std::vector<rectf> x_label_frames(number_months);
-  const float labels_font_size = ctx.font->AdjustTextSize(
-      rectf::from_dimension(rectf::Dimension{.width = ctx.layout.CellWidth(),
-                                             .height = ctx.layout.RowHeight()}),
-      "00000",
-      Font::TextScale{.height_ratio = detail::kFontScaleMin,
-                      .width_ratio = detail::kFontScaleMax});
+  // Monatsnamen und Jahreszahlen tragen die anwendungsweit gewählte Grösse in
+  // Punkt — sie sind Beschriftung der Seite, nicht des einzelnen Balkens, und
+  // sollen darum nicht mit der Zellgrösse wandern.
+  const float labels_font_size = ctx.font_config.SizeMillimetres();
 
   const auto& month_node = ctx.nodes.month_labels;
 

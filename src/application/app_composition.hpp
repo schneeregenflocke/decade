@@ -77,9 +77,9 @@ class AppComposition {
   // Läuft, sobald der GL-Kontext steht — erst hier darf GL-Zustand angefasst
   // werden, und erst hier gibt es etwas zu verdrahten.
   void OnGraphicsReady() {
-    CalendarPage& calendar_page = calendar_page_.emplace(
-        frame_->Canvas(), frame_->Font().GetFontFilePath(),
-        bus_.scene_snapshot());
+    CalendarPage& calendar_page =
+        calendar_page_.emplace(frame_->Canvas(), frame_->Font().GetFontConfig(),
+                               bus_.scene_snapshot());
     wiring_.emplace(bus_, Components(calendar_page));
     startup_script_.RunAfterGraphics(*frame_, calendar_page,
                                      title_text_editor_);

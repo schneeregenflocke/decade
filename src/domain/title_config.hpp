@@ -5,6 +5,8 @@
 #include <string>
 #include <utility>
 
+#include "typography.hpp"
+
 // Pure domain value. No serialization, no signal -> Rule of Zero, copyable.
 class TitleConfig {
  public:
@@ -16,11 +18,8 @@ class TitleConfig {
   [[nodiscard]] float FontSizePoints() const { return font_size_points_; }
   void SetFontSizePoints(float value) { font_size_points_ = value; }
 
-  // Die Seite rechnet in Millimetern, der Nutzer denkt in Punkt (1 pt = 1/72
-  // Zoll). Ein Punktwert ist die Höhe des Geviert-Quadrats — genau das Mass,
-  // in dem die Schrift ihre Glyphen skaliert.
   [[nodiscard]] float FontSizeMillimetres() const {
-    return font_size_points_ * kMillimetresPerPoint;
+    return domain::MillimetresFromPoints(font_size_points_);
   }
 
   [[nodiscard]] const std::string& TitleText() const { return title_text_; }
@@ -30,7 +29,6 @@ class TitleConfig {
   void SetTextColor(const glm::vec4& value) { text_color_ = value; }
 
  private:
-  static constexpr float kMillimetresPerPoint = 25.4F / 72.0F;
   static constexpr float kDefaultFrameHeight = 10.0F;
   static constexpr float kDefaultFontSizePoints = 28.0F;
   static constexpr float kDefaultTextColor = 0.0F;

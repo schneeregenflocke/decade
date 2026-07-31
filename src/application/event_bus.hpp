@@ -8,6 +8,7 @@
 #include "../domain/calendar_config.hpp"
 #include "../domain/date_entry.hpp"
 #include "../domain/date_group.hpp"
+#include "../domain/font_config.hpp"
 #include "../domain/page_setup_config.hpp"
 #include "../domain/scene_snapshot.hpp"
 #include "../domain/shape_configuration.hpp"
@@ -43,7 +44,7 @@ class EventBus {
   [[nodiscard]] auto& date_groups() { return date_groups_; }
   [[nodiscard]] auto& page_setup() { return page_setup_; }
   [[nodiscard]] auto& project_file_path() { return project_file_path_; }
-  [[nodiscard]] auto& font_filepath() { return font_filepath_; }
+  [[nodiscard]] auto& font_config() { return font_config_; }
   [[nodiscard]] auto& title_config() { return title_config_; }
   [[nodiscard]] auto& shape_config_set() { return shape_config_set_; }
   [[nodiscard]] auto& calendar_config() { return calendar_config_; }
@@ -59,7 +60,7 @@ class EventBus {
   domain::StateTopic<std::vector<DateGroup>> date_groups_;
   domain::StateTopic<PageSetupConfig> page_setup_;
   domain::StateTopic<std::string> project_file_path_;
-  domain::StateTopic<std::string> font_filepath_;
+  domain::StateTopic<FontConfig> font_config_;
   domain::StateTopic<TitleConfig> title_config_;
   domain::StateTopic<ShapeConfigSet> shape_config_set_;
   domain::StateTopic<CalendarConfig> calendar_config_;

@@ -134,10 +134,10 @@ inline void BindProjectFilePath(EventBus& bus, AppComponents& components) {
 // dort an den Renderer. Soll die Schrift einmal mit dem Projekt gespeichert
 // werden, tritt ein FontStore an dieselbe Stelle wie bei den anderen Themen.
 inline void BindFont(EventBus& bus, AppComponents& components) {
-  Forward(components.font_panel.SignalFontFilepath(), bus.font_filepath());
+  Forward(components.font_panel.SignalFontConfig(), bus.font_config());
 
-  bus.font_filepath().connect(&CalendarPage::ReceiveFont,
-                              &components.calendar_page);
+  bus.font_config().connect(&CalendarPage::ReceiveFont,
+                            &components.calendar_page);
 }
 
 inline void BindTitleConfig(EventBus& bus, AppComponents& components) {
@@ -268,7 +268,7 @@ inline void Unbind(EventBus& bus, AppComponents& components) {
   components.page_setup_panel.SignalPageSetupConfig().disconnect_all();
   components.title_setup_panel.SignalTitleConfig().disconnect_all();
   components.calendar_setup_panel.SignalCalendarConfig().disconnect_all();
-  components.font_panel.SignalFontFilepath().disconnect_all();
+  components.font_panel.SignalFontConfig().disconnect_all();
   components.scene_tree_panel.SignalShapeConfigSet().disconnect_all();
   components.scene_tree_panel.SignalSelectedNode().disconnect_all();
   components.gl_canvas.SetPointerMoveCallback(nullptr);
@@ -289,7 +289,7 @@ inline void Unbind(EventBus& bus, AppComponents& components) {
   bus.date_groups().disconnect_all();
   bus.page_setup().disconnect_all();
   bus.project_file_path().disconnect_all();
-  bus.font_filepath().disconnect_all();
+  bus.font_config().disconnect_all();
   bus.title_config().disconnect_all();
   bus.shape_config_set().disconnect_all();
   bus.calendar_config().disconnect_all();

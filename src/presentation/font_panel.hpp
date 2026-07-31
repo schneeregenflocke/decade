@@ -12,8 +12,24 @@
 #include <string>
 
 #include "../common/debug_log.hpp"
+#include "../domain/font_config.hpp"
 #include "wx_owned.hpp"
 
+// Wählt die anwendungsweite Schrift. wx beschreibt eine Schrift über Familie,
+// Grösse, Gewicht und Neigung; der GL-Renderer braucht dagegen eine
+// Schriftdatei — die Übersetzung dazwischen macht fontconfig.
+//
+// Weitergegeben wird beides: der Dateipfad (womit gerendert wird) und die
+// Punktgrösse (wie gross gerendert wird). Die Grösse ist eine reine
+// Domänenzahl: Font rastert immer bei kFontPixelHeight und skaliert die
+// geviert-normierten Metriken, die Schriftdatei hängt also nicht an ihr.
+//
+// Quellen:
+// - wxFont (https://docs.wxwidgets.org/3.2/classwx_font.html) — GetPointSize(),
+//   GetFaceName(), GetWeight(), GetStyle() als Eingaben der Abbildung.
+// - fontconfig Font Properties
+//   (https://fontconfig.pages.freedesktop.org/fontconfig/fontconfig-user.html)
+//   — Namen und Typen von FC_FAMILY, FC_WEIGHT, FC_SLANT, FC_SIZE.
 class FontPanel : public wxPanel {
  public:
   explicit FontPanel(wxWindow* parent)
@@ -43,9 +59,9 @@ class FontPanel : public wxPanel {
     ProcessFontData();
   }
 
-  const std::string& GetFontFilePath() const { return font_filepath_; }
+  [[nodiscard]] const FontConfig& GetFontConfig() const { return font_config_; }
 
-  [[nodiscard]] auto& SignalFontFilepath() { return signal_font_filepath_; }
+  [[nodiscard]] auto& SignalFontConfig() { return signal_font_config_; }
 
  private:
   // Owns the fontconfig configuration for this panel's lifetime. Loading it
@@ -57,7 +73,21 @@ class FontPanel : public wxPanel {
   };
 
   std::unique_ptr<FcConfig, FcConfigDeleter> fc_config_;
-  sigslot::signal<const std::string&> signal_font_filepath_;
+  sigslot::signal<const FontConfig&> signal_font_config_;
+  // Zwei Gewichtsskalen, von Hand aufeinander gelegt: wx zählt wie OpenType
+  // und CSS in Hundertern (THIN 100 … EXTRAHEAVY 1000), fontconfig in seiner
+  // eigenen, ungleichmässigen Skala 0…215 (fontconfig.h, FC_WEIGHT_*). Die
+  // auskommentierten Zeilen sind keine offenen Punkte, sondern Synonyme mit
+  // identischem Zahlwert (ULTRALIGHT == EXTRALIGHT, SEMILIGHT == DEMILIGHT,
+  // NORMAL == REGULAR, SEMIBOLD == DEMIBOLD, ULTRABOLD == EXTRABOLD,
+  // HEAVY == BLACK, ULTRABLACK == EXTRABLACK); sie stehen als Beleg da, dass
+  // die Wahl bewusst getroffen wurde. Einzig FC_WEIGHT_BOOK (75) ist ein
+  // eigener Wert neben REGULAR (80) — wx kennt dafür keine Stufe.
+  //
+  // Quellen:
+  // - wxFontWeight (https://docs.wxwidgets.org/3.2/font_8h.html) — die
+  //   numerischen wx-Stufen.
+  // - fontconfig.h, FC_WEIGHT_* — die fontconfig-Stufen samt Synonymen.
   void initConvertWxFontWeightToFcWeight() {
     font_weight_map_ = {{wxFONTWEIGHT_THIN, FC_WEIGHT_THIN},
                         {wxFONTWEIGHT_EXTRALIGHT, FC_WEIGHT_EXTRALIGHT},
@@ -102,6 +132,9 @@ class FontPanel : public wxPanel {
     return fc_weight;
   }
 
+  // wx kennt drei Neigungen, fontconfig dieselben drei (FC_SLANT_ROMAN /
+  // ITALIC / OBLIQUE) — hier ist die Abbildung eins zu eins. wxFONTSTYLE_MAX
+  // ist nur die Zählmarke hinter SLANT und landet auf demselben OBLIQUE.
   void initConvertWxFontStyleToFcSlant() {
     font_style_map_ = {{wxFONTSTYLE_NORMAL, FC_SLANT_ROMAN},
                        {wxFONTSTYLE_ITALIC, FC_SLANT_ITALIC},
@@ -128,7 +161,7 @@ class FontPanel : public wxPanel {
 
   void ProcessFontData() {
     wxString const face_name = wx_font_.GetFaceName();
-    int const point_size = wx_font_.GetPointSize();
+    double const point_size = wx_font_.GetFractionalPointSize();
     wxFontWeight const font_weight = wx_font_.GetWeight();
     wxFontStyle const font_style = wx_font_.GetStyle();
 
@@ -147,13 +180,26 @@ class FontPanel : public wxPanel {
         pattern, FC_FAMILY,
         reinterpret_cast<const FcChar8*>(face_name.utf8_str().data()));
 
-    FcPatternAddInteger(pattern, FC_SIZE, point_size);
+    // FC_SIZE ist laut fontconfig.h ein Double (Punktgrösse); ein Integer
+    // hier wäre ein Typbruch, den fontconfig stillschweigend schlechter
+    // matcht. Für skalierbare Schriften wählt die Grösse ohnehin keine andere
+    // Datei — sie steht im Muster, damit grössenspezifische Schnitte
+    // (Bitmap-Fonts, optische Grade) korrekt aufgelöst werden.
+    FcPatternAddDouble(pattern, FC_SIZE, point_size);
 
     int const fc_weight = convertWxFontWeightToFcWeight(font_weight);
     FcPatternAddInteger(pattern, FC_WEIGHT, fc_weight);
 
     int const fc_slant = convertWxFontStyleToFcSlant(font_style);
     FcPatternAddInteger(pattern, FC_SLANT, fc_slant);
+
+    // Pflichtvorspiel vor FcFontMatch: FcConfigSubstitute wendet die Regeln
+    // der Systemkonfiguration an (Aliase wie «sans-serif»), FcDefaultSubstitute
+    // füllt Unterspezifiziertes auf und rechnet die Punkt- in eine Pixelgrösse
+    // um. Ohne beide matcht fontconfig laut Manual falsch.
+    // https://man.archlinux.org/man/FcFontMatch.3.en
+    FcConfigSubstitute(fc_config_.get(), pattern, FcMatchPattern);
+    FcDefaultSubstitute(pattern);
 
     FcResult result = FcResultNoMatch;
     FcPattern* match = FcFontMatch(fc_config_.get(), pattern, &result);
@@ -175,9 +221,10 @@ class FontPanel : public wxPanel {
     }
 
     const size_t len = strlen(reinterpret_cast<const char*>(fc_filepath));
-    font_filepath_ = std::string(fc_filepath, fc_filepath + len);
+    font_config_.SetFilePath(std::string(fc_filepath, fc_filepath + len));
+    font_config_.SetSizePoints(static_cast<float>(point_size));
     if (decade_debug::LogEnabled()) {
-      std::cout << "font_filepath: " << font_filepath_ << '\n';
+      std::cout << "font_filepath: " << font_config_.FilePath() << '\n';
     }
 
     FcPatternDestroy(match);
@@ -188,7 +235,7 @@ class FontPanel : public wxPanel {
     try {
       wx_font_ = event.GetFont();
       ProcessFontData();
-      signal_font_filepath_(font_filepath_);
+      signal_font_config_(font_config_);
     } catch (...) {
       std::cerr << "Loading Font failed" << '\n';
     }
@@ -196,7 +243,7 @@ class FontPanel : public wxPanel {
 
   wxWeakRef<wxFontPickerCtrl> wx_font_picker_;
   wxFont wx_font_;
-  std::string font_filepath_;
+  FontConfig font_config_;
   std::map<int, int> font_weight_map_;
   std::map<int, int> font_style_map_;
 };

@@ -133,17 +133,18 @@ class Font {
     return height;
   }
 
+  // Die grösste Geviertgrösse, mit der `text` in `cell` passt: erst aus der
+  // Zellhöhe, dann bei Bedarf auf die Zellbreite zurückgenommen.
   [[nodiscard]] float AdjustTextSize(const rectf& cell, const std::string& text,
                                      TextScale scale) const {
-    float font_size = cell.height() * scale.height_ratio;
-    const auto text_width = TextWidth(text, font_size);
-    const auto ratio = font_size / text_width;
+    const float font_size = cell.height() * scale.height_ratio;
+    const float text_width = TextWidth(text, font_size);
+    const float available_width = cell.width() * scale.width_ratio;
 
-    if (text_width > cell.width() * scale.width_ratio) {
-      font_size = ratio * cell.width() * scale.width_ratio;
+    if (text_width <= available_width) {
+      return font_size;
     }
-
-    return font_size;
+    return font_size / text_width * available_width;
   }
 
  private:
