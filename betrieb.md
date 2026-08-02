@@ -2,9 +2,11 @@
 
 Build, Tests, kopflose Läufe und die Lint-Gates. Prinzipien, Architektur und Konventionen stehen in [AGENTS.md](AGENTS.md).
 
-## Build
+## Betrieb
 
-### Bauen
+### Build
+
+#### Bauen
 
 Gebaut wird mit CMake (https://cmake.org/cmake/help/latest/) und dem Ninja-Generator (https://ninja-build.org/manual.html). Das Build-Verzeichnis ist `build/`; `compile_commands.json` wird für clangd/clang-tidy exportiert.
 
@@ -32,15 +34,13 @@ GUI starten:
 ./build/decade
 ```
 
-### Tests
+#### Tests
 
 `tests/` spiegelt die `src/`-Struktur; die wx-freien Header sind direkt unit-getestet. Nach dem Bauen:
 
 ```bash
 ctest --test-dir build
 ```
-
-## Betrieb
 
 ### Startdatei
 
