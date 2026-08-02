@@ -112,7 +112,8 @@ inline bool WriteRgbaPng(const char* file_name,
 
   // The one construct libpng's contract forces on us and that has no in-code
   // fix: its default error handler longjmps back here. Suppression is scoped
-  // to exactly these two checks (see "Build hygiene" in CLAUDE.md).
+  // to exactly these two checks (siehe AGENTS.md, «Warnings, clang-tidy- und
+  // Sanitizer-Gate»).
   // NOLINTNEXTLINE(cert-err52-cpp,modernize-avoid-setjmp-longjmp)
   if (setjmp(png_jmpbuf(png)) != 0) {
     png_destroy_write_struct(&png, &info);

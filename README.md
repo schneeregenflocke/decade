@@ -6,13 +6,15 @@ Alpha-Stand, aus einem Übungsprojekt gewachsen. C++23, wxWidgets, OpenGL, ICU.
 
 Bauen, starten, Tests und die kopflosen Läufe stehen in [betrieb.md](betrieb.md); Architektur und Konventionen in [AGENTS.md](AGENTS.md).
 
-## Oberfläche
+## Zweck
+
+### Oberfläche
 
 Links die Eingabetabellen und Einstellungen, rechts die gerenderte Seite:
 
 ![Hauptfenster mit Datentabelle und Kalendervorschau](assets/screenshot.png)
 
-## Export
+### Export
 
 Dieselbe Seite als PNG-Export in Druckauflösung:
 

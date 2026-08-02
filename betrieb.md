@@ -4,6 +4,8 @@ Build, Tests, kopflose Läufe und die Lint-Gates. Prinzipien, Architektur und Ko
 
 ## Build
 
+### Bauen
+
 Gebaut wird mit CMake (https://cmake.org/cmake/help/latest/) und dem Ninja-Generator (https://ninja-build.org/manual.html). Das Build-Verzeichnis ist `build/`; `compile_commands.json` wird für clangd/clang-tidy exportiert.
 
 Untermodule einmalig nach dem Klonen initialisieren (Stand jederzeit via `git submodule status`):
@@ -30,7 +32,7 @@ GUI starten:
 ./build/decade
 ```
 
-## Tests
+### Tests
 
 `tests/` spiegelt die `src/`-Struktur; die wx-freien Header sind direkt unit-getestet. Nach dem Bauen:
 
@@ -38,7 +40,9 @@ GUI starten:
 ctest --test-dir build
 ```
 
-## Startdatei
+## Betrieb
+
+### Startdatei
 
 Eine Startdatei (CSV oder XML) wird ausschliesslich als Positionsargument übergeben; ohne Angabe startet ein leeres Projekt.
 
@@ -47,7 +51,7 @@ Eine Startdatei (CSV oder XML) wird ausschliesslich als Positionsargument überg
 ./build/decade examples/sample_dates.csv
 ```
 
-## Kopflose Läufe
+### Kopflose Läufe
 
 Das Binary beachtet mehrere Kommandozeilen-Optionen in GNU-Syntax (`--name=wert` oder `--name wert`; `--help` zeigt alle) für nicht-interaktive Nutzung — CI, Screenshots, Smoke-Tests. Das Options-Vokabular ist an genau einer Stelle definiert und geparst (`AddRuntimeOptions` / `RuntimeOptionsFromParser` in `src/application/runtime_options.hpp`); Umgebungsvariablen liest das Binary keine mehr.
 
@@ -85,7 +89,7 @@ xvfb-run -a -s "-screen 0 1600x1000x24" \
   --dump-frame-png=/tmp/decade_ui.png --exit-after-ms=3000 examples/sample_dates.csv
 ```
 
-## Build-Prüfungen
+### Build-Prüfungen
 
 Die Regel dahinter — **Warnings brechen den Build, nie unterdrücken** — steht in [AGENTS.md](AGENTS.md), Abschnitt Konventionen. Hier die Befehle.
 
@@ -124,7 +128,7 @@ Warum die Extra-Args:
 
 `src/**/*.cpp src/**/*.hpp` setzt voraus, dass die Shell rekursive Globs unterstützt (zsh standardmässig; bash erst nach `shopt -s globstar`).
 
-### Sanitizer
+#### Sanitizer
 
 Das zweite Gate neben clang-tidy: der Code läuft instrumentiert, statt nur gelesen zu werden. Beide Targets konfigurieren einen eigenen Build-Ordner unter `build/`, bauen alles darin neu und lassen `ctest` darin laufen — nur ein Lauf findet Fehler, ein Bau allein nicht. Flags: [GCC, Instrumentation Options](https://gcc.gnu.org/onlinedocs/gcc-9.2.0/gcc/Instrumentation-Options.html).
 
@@ -138,7 +142,7 @@ cmake --build build --target sanitize-memory    # memory (clang) — Diagnose, s
 - `embed-resource` läuft während des Builds und ist per `-fno-sanitize=all` ausgenommen: ein Befund im Werkzeug würde den Bau abbrechen, statt das Programm zu prüfen.
 - Das GUI-Binary im Sanitizer-Ordner (`build/san-address/decade`) lässt sich wie üblich unter Xvfb starten; die GL-Treiber halten beim Beenden Speicher, ein Leak-Report daraus sagt wenig.
 
-### clang-format
+#### clang-format
 
 `.clang-format` ist die verbindliche Quelle für das Formatting (ClangFormat-Doku (https://clang.llvm.org/docs/ClangFormat.html)).
 
@@ -146,7 +150,7 @@ cmake --build build --target sanitize-memory    # memory (clang) — Diagnose, s
 find . -regex '.*\.\(cpp\|cxx\|hpp\|cc\|h\)' -not -path './build/*' -not -path './external/*' -exec clang-format -style=file -i {} +
 ```
 
-### CI
+#### CI
 
 CI läuft auf der eigenen Forgejo-Instanz (https://git.blem.ch/), nicht auf GitHub Actions. Die alte Workflow-Datei `.github/workflows/cmake.yml` läuft nur noch auf Anforderung (`on: workflow_dispatch`, also `gh workflow run cmake.yml`) und ist an keinem Push beteiligt. Die Kette, analog zu `blem-website`:
 

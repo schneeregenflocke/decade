@@ -12,49 +12,14 @@
 
 namespace application {
 
-// Bündelt die Laufzeit-Optionen, die die Anwendung beim Start liest. Sie
-// steuern die nicht-interaktive Nutzung (CI, Screenshots, Smoke-Tests) plus
-// die optionale Startdatei. Alle Optionen sind Kommandozeilen-Argumente in
-// GNU-Syntax (`--name=wert` oder `--name wert`); `AddRuntimeOptions` und
-// `RuntimeOptionsFromParser` unten sind die einzige Stelle, die dieses
-// Vokabular definiert und parst.
+// Die Laufzeit-Optionen für nicht-interaktive Läufe (CI, Screenshots,
+// Smoke-Tests) plus die Startdatei. `AddRuntimeOptions` unten definiert das
+// Vokabular samt --help-Text; was eine Option tut, steht dort.
 //
-// Erkannte Argumente:
-//   <file>                    optionales Positionsargument: Projekt-/Daten-
-//                             datei (CSV oder XML), die beim Start geladen
-//                             wird; ohne Angabe startet ein leeres Projekt.
-//   --dump-png=<path>         rendert die Kalenderseite via Off-Screen-FBO
-//                             als PNG.
-//   --dump-png-dpi=<dpi>      Export-DPI für --dump-png; ohne Angabe gilt
-//                             GLCanvas::kExportPngDpi.
-//   --dump-frame-png=<path>   schreibt das gesamte Hauptfenster (Tabs +
-//                             Panels + Canvas) via wxDC als PNG, mit dem GL-
-//                             Back-Buffer obenauf komponiert. Der Widget-
-//                             Read-back braucht das X11-Backend (ein
-//                             wxClientDC-Blit liefert unter Wayland schwarz),
-//                             also unter Xvfb ausführen (siehe betrieb.md,
-//                             «Kopflose Läufe»).
-//   --select-tab=<label>      wählt beim Start einen Notebook-Tab per Label
-//                             vor (case-insensitive), z. B. zum Screenshotten
-//                             eines bestimmten Tabs.
-//   --exit-after-ms=<ms>      schliesst das Hauptfenster nach N ms.
-//   --debug-hover-bar=<n>     erzwingt nach dem Laden das Hover-Highlight auf
-//                             Bar N (Debug-/Screenshot-Hilfe fürs Picking,
-//                             ohne Maus).
-//   --debug-hover-title       dasselbe für den Titel; schlägt
-//                             --debug-hover-bar, da nur ein Element zugleich
-//                             gehovert sein kann.
-//   --debug-edit-title=<text> öffnet nach dem Laden die Titelbearbeitung wie
-//                             ein Doppelklick und tippt <text> hinein (leer:
-//                             nur öffnen, mit allem ausgewählt). Die
-//                             Bearbeitung bleibt offen, damit Cursor und
-//                             Auswahl im Bild stehen.
-//   --debug-select-node=<p>   erzwingt nach dem Laden das Selektions-
-//                             Highlight des Scene-Tree-Knotens am Pfad `p`
-//                             («root/.../name»); Debug-/Screenshot-Hilfe.
-//   --debug-log               aktiviert OpenGL-/Runtime-Debug-Logging und
-//                             leitet wx-Assert-Fehler nach stderr um (siehe
-//                             `DecadeApp::OnAssertFailure`).
+// Zwei Dinge, die der Parser nicht zeigt: `--dump-frame-png` braucht das
+// X11-Backend, weil ein wxClientDC-Blit unter Wayland schwarz liefert (darum
+// unter Xvfb, siehe betrieb.md, «Kopflose Läufe»); `--debug-hover-title`
+// schlägt `--debug-hover-bar`, weil nur ein Element zugleich gehovert ist.
 struct RuntimeOptions {
   // Beim Start zu ladende Datei. Opt-in: leer heisst «leeres Projekt».
   std::optional<std::string> startup_file;

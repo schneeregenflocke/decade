@@ -62,7 +62,9 @@ Die Verdrahtung selbst ist eine Lebensdauer, kein Aufrufpaar: `AppWiring` verbin
 
 **Bearbeiten im Canvas** folgt derselben Regel, nur zeitversetzt: Der Editor (`TitleTextEditor`) hält einen Puffer und veröffentlicht bei jedem Anschlag ein GL-freies Read-Model (`TextEditView`), aus dem der Renderer Text, Cursor und Auswahl zeichnet. Kanonisch wird der Text erst mit Enter — dann geht er als *ein* Befehl an den Store; Esc verwirft den Puffer. So ist eine Bearbeitung genau ein Zustandswechsel, nicht einer je Taste. Die Tastencodes bleiben in der Presentation: das Canvas übersetzt sie in ein `TextInputEvent`, der Editor kennt nur dessen Bedeutung.
 
-## Konventionen
+## Entscheide
+
+### Sprachstand und Header-Guards
 
 - C++23, keine Compiler-Erweiterungen.
 - Header-Guards benutzen den Dateinamenstil: der grossgeschriebene Dateiname mit dem Punkt vor dem Suffix als `_`, z. B. `main_window.hpp` → `MAIN_WINDOW_HPP`, `gl_canvas.hpp` → `GL_CANVAS_HPP`. Kein Verzeichnispfadpräfix. Das konsequent in `#ifndef`, `#define` und dem abschliessenden `#endif  // <GUARD>`-Kommentar anwenden. (Die clang-tidy-Prüfung `llvm-header-guard`, die sonst einen Full-Path-Stil erzwingen würde, ist in `.clang-tidy` deaktiviert — so lassen.)
@@ -97,12 +99,9 @@ Ziel ist selbsterklärender Code; Refactoring bringt ihn schrittweise dorthin.
 - Wenn etwas nicht sofort geändert werden kann, wird es ein Issue (siehe [Offene Punkte](#offene-punkte)), damit es nicht verloren geht.
 - Beim Arbeiten mit einer Datei aufgefallene Verstösse gegen die Konventionen dieser Datei werden — auch wenn sie nicht Teil der Aufgabe sind — als Issue angelegt.
 
-### Stil (Sprache & Doku)
+### Stil
 
-- Kommentare und Doku: knappes, aktives Deutsch (Wolf Schneider (https://de.wikipedia.org/wiki/Wolf_Schneider)). So wenige Zeilen wie möglich; nur Nicht-Offensichtliches kommentieren.
-- Echte Umlaute schreiben (ä/ö/ü), nie ae/oe/ue. Schweizer Rechtschreibung: `ss` statt `ß`.
-- In Markdown-Dateien keine Tabellen verwenden; stattdessen mehrzeilige Listen. Sie sind leichter lesbar, leichter zu schreiben und oft kürzer.
-- Soft-wrap: keine harten Zeilenumbrüche, der Editor bricht um. Ein Absatz ist eine Zeile, ein Listenpunkt ist eine Zeile. Nur Code und bedeutungstragende Umbrüche ausgenommen.
+Sprache und Doku-Regeln stehen im Superproject (`~/homelab-superproject/AGENTS.md`). Hier gilt zusätzlich: Kommentare auf Deutsch, Code-Identifier englisch.
 
 ### Ownership & Lifetimes
 
