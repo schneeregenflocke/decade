@@ -6,24 +6,23 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <limits>
 
-// 2D-Kamera der Seitenansicht: hält den Pan-/Zoom-Zustand und leitet daraus
-// die View-Matrix ab. GL- und UI-frei, damit unit-testbar; die Maus-Seite
-// (Pixel → Weltraum) liegt in presentation/mouse_interaction.hpp.
+// The 2D camera of the page view: it holds the pan and zoom state and derives
+// the view matrix from it. Free of GL and UI, hence unit-testable; the mouse
+// side (pixels → world space) sits in presentation/mouse_interaction.hpp.
 class PanZoomCamera {
  public:
-  // Erlaubter Bereich des Skalierungsfaktors; siehe ComputeZoomLimits.
+  // The permitted range of the scale factor; see ComputeZoomLimits.
   struct ScaleLimits {
     float min_scale{0.F};
     float max_scale{std::numeric_limits<float>::max()};
   };
 
-  // Verschiebt die Ansicht um ein Delta im Weltraum.
+  // Shifts the view by a delta in world space.
   void Pan(const glm::vec3& world_delta) { translate_pre_scaled_ += world_delta; }
 
-  // Skaliert um factor (> 1 vergrössert), begrenzt durch die ScaleLimits.
-  // Der Weltpunkt world_pos (typisch: der Mauszeiger) bleibt dabei auf
-  // derselben Bildposition, indem die durch die Skalierung entstandene
-  // Verschiebung zurückkorrigiert wird.
+  // Scales by factor (> 1 enlarges), bounded by the ScaleLimits. The world point
+  // world_pos (typically the mouse pointer) stays at the same image position,
+  // by correcting back the shift the scaling produced.
   void ZoomAround(const glm::vec3& world_pos, float factor) {
     const float target_scale = std::clamp(scale_factor_ * factor,
                                           limits_.min_scale, limits_.max_scale);
@@ -35,8 +34,8 @@ class PanZoomCamera {
     translate_post_scaled_ += post_scale_page_pos - pre_scale_page_pos;
   }
 
-  // Greift erst beim nächsten ZoomAround; ein bereits ausserhalb liegender
-  // Zustand wird nicht zurückgeschnappt.
+  // Takes hold at the next ZoomAround alone; a state already outside does not
+  // get snapped back.
   void SetScaleLimits(const ScaleLimits& limits) { limits_ = limits; }
 
   [[nodiscard]] float ScaleFactor() const { return scale_factor_; }
@@ -49,7 +48,7 @@ class PanZoomCamera {
     return glm::translate(scaled, translate_post_scaled_);
   }
 
-  // Rechnet einen Weltpunkt in den Seitenraum zurück (inverse View-Matrix).
+  // Converts a world point back into page space (the inverse view matrix).
   [[nodiscard]] glm::vec3 PagePos(const glm::vec3& world_pos) const {
     const auto page_pos = glm::inverse(ViewMatrix()) * glm::vec4(world_pos, 1.F);
     return {page_pos.x, page_pos.y, 0.F};
@@ -62,17 +61,17 @@ class PanZoomCamera {
   ScaleLimits limits_;
 };
 
-// Leitet die Zoom-Grenzen aus der Ortho-Projektion, der Seitengrösse (mm) und
-// der Export-Auflösung ab:
-// - max_scale: Hineinzoomen endet, wenn vom Export-Bild (export_dpi) in jeder
-//   Richtung mindestens noch 2 Pixel sichtbar sind.
-// - min_scale: Herauszoomen endet, wenn in Breite und Höhe je 2 Seiten plus
-//   25 % Seitenmass sichtbar sind.
+// Derives the zoom bounds from the ortho projection, the page size (mm) and the
+// export resolution:
+// - max_scale: zooming in ends once at least 2 pixels of the export image
+//   (export_dpi) stay visible in each direction.
+// - min_scale: zooming out ends once 2 pages plus 25 % of the page measure are
+//   visible in width and height each.
 inline PanZoomCamera::ScaleLimits ComputeZoomLimits(
     const glm::mat4& ortho_projection, const glm::vec2& page_size_mm,
     float export_dpi) {
-  // glm::ortho legt 2/(right-left) in [0][0] und 2/(top-bottom) in [1][1] ab —
-  // daraus die bei Skalierung 1 sichtbare Weltausdehnung zurückrechnen.
+  // glm::ortho puts 2/(right-left) into [0][0] and 2/(top-bottom) into [1][1] —
+  // from those, compute back the world extent visible at scale 1.
   const float visible_width = 2.F / ortho_projection[0][0];
   const float visible_height = 2.F / ortho_projection[1][1];
 
@@ -86,8 +85,8 @@ inline PanZoomCamera::ScaleLimits ComputeZoomLimits(
       std::min(visible_width / (kMaxVisiblePages * page_size_mm.x),
                visible_height / (kMaxVisiblePages * page_size_mm.y));
 
-  // Degenerierte Geometrie (winziges Fenster) darf kein invertiertes
-  // Intervall liefern — std::clamp verlangt min <= max.
+  // Degenerate geometry (a tiny window) must not deliver an inverted interval —
+  // std::clamp demands min <= max.
   return {.min_scale = min_scale, .max_scale = std::max(max_scale, min_scale)};
 }
 

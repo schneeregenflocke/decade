@@ -56,10 +56,10 @@ struct SectionContext {
   const TitleConfig& title_config;
   const DateGroups& date_groups;
   const DateEntryBarStore& bar_store;
-  // Leer, solange niemand im Canvas Text bearbeitet.
+  // Empty while nobody edits text in the canvas.
   const std::optional<TextEditView>& text_edit;
   const std::shared_ptr<Font>& font;
-  // Die anwendungsweit gewählte Schrift samt Punktgrösse.
+  // The application-wide chosen font including its point size.
   const FontConfig& font_config;
   Shader* rectangles_shader;
   Shader* font_shader;
@@ -81,9 +81,9 @@ inline constexpr float kFontScaleMax = 0.75F;
 inline constexpr float kPercentScale = 100.0F;
 inline constexpr std::size_t kMonthNameBufferSize = 100;
 
-// Kalenderseitiger Adapter über scene_shapes::FillRectangles: bildet eine
-// Domänen-ShapeConfiguration auf die allgemeinen Primitiven ab und vermerkt die
-// Style-ID, an der der Szenenbaum die Werte der Konfiguration anzeigt.
+// A calendar-side adapter over scene_shapes::FillRectangles: it maps a domain
+// ShapeConfiguration onto the general primitives and notes the style ID at which
+// the scene tree shows the values of the configuration.
 template <typename Shapes>
 inline void FillRectangles(const std::shared_ptr<SceneNode>& node,
                            const Shapes& shapes,
@@ -105,9 +105,9 @@ inline void AddCenteredText(const SectionContext& ctx,
 
 }  // namespace detail
 
-// Die Geometrie der Titelzeile und, solange bearbeitet wird, von Cursor und
-// Auswahl. Beides hängt an derselben Rechnung — Textbreite in Codepoints, links
-// vom zentrierten Text aus gemessen —, darum liegt es hier beieinander.
+// The geometry of the title line and, while editing, of cursor and selection.
+// Both hang on the same computation — text width in code points, measured from
+// the left of the centred text — which is why they sit together here.
 namespace title_edit {
 
 inline constexpr float kCaretWidthRatio = 0.06F;
@@ -116,7 +116,7 @@ inline constexpr float kSelectionGreen = 0.5F;
 inline constexpr float kSelectionBlue = 1.0F;
 inline constexpr float kSelectionAlpha = 0.35F;
 
-// Der Text, der gerade zu zeichnen ist, samt Schriftgrösse und linker Kante.
+// The text to draw right now, with its font size and left edge.
 struct TextLine {
   std::string text;
   std::u32string code_points;
@@ -136,8 +136,8 @@ struct TextLine {
   return line;
 }
 
-// Setzt Cursor- und Auswahlfläche, oder versteckt beide (Nullfläche), wenn
-// gerade niemand bearbeitet.
+// Sets the cursor and selection areas, or hides both (a null area) when nobody
+// is editing.
 inline void FillCaretAndSelection(const SectionContext& ctx,
                                   const TextLine& line) {
   auto* caret_shape =
@@ -180,9 +180,9 @@ inline void FillCaretAndSelection(const SectionContext& ctx,
   }
 }
 
-// Umkehrung für den Zeiger: der Cursor-Index, den ein Klick im Seitenraum
-// meint. Der Punkt kommt im Seitenraum, die Titelgeometrie liegt lokal zur
-// Druckfläche — daher der Abzug ihres Ursprungs.
+// The inverse for the pointer: the cursor index a click in page space means.
+// The point arrives in page space while the title geometry sits local to the
+// print area — hence subtracting its origin.
 [[nodiscard]] inline std::size_t CaretIndexAt(const SectionContext& ctx,
                                               const TextLine& line,
                                               glm::vec2 page_point) {
@@ -198,12 +198,12 @@ inline void BuildPrintArea(const SectionContext& ctx) {
                          ctx.shape_config.GetShapeConfiguration("Page Margin"));
 }
 
-// Der Titel ist ein pickbares Element: seine Trefferfläche ist der Rahmen, den
-// der Text füllt. Wie bei den Bars liegt die zurückgegebene Box im Seitenraum,
-// also um den Ursprung der Druckfläche verschoben.
+// The title is a pickable element: its hit area is the frame the text fills. As
+// with the bars, the returned box lies in page space, so shifted by the origin
+// of the print area.
 //
-// Während einer Bearbeitung zeigt der Rahmen den Puffer statt des gespeicherten
-// Titels — kanonisch wird der erst mit Enter — und dazu Cursor und Auswahl.
+// During an edit the frame shows the buffer instead of the stored title — that
+// becomes canonical with Enter alone — and cursor and selection alongside.
 [[nodiscard]] inline PickBox BuildTitle(const SectionContext& ctx) {
   detail::FillRectangles(ctx.nodes.title_frame, ctx.layout.TitleFrame(),
                          ctx.shape_config.GetShapeConfiguration("Title Frame"));
@@ -240,9 +240,9 @@ inline void BuildCalendarLabels(const SectionContext& ctx) {
   }
 
   std::vector<rectf> x_label_frames(number_months);
-  // Monatsnamen und Jahreszahlen tragen die anwendungsweit gewählte Grösse in
-  // Punkt — sie sind Beschriftung der Seite, nicht des einzelnen Balkens, und
-  // sollen darum nicht mit der Zellgrösse wandern.
+  // Month names and year numbers carry the application-wide chosen size in
+  // points — they label the page, not the individual bar, and should therefore
+  // not travel with the cell size.
   const float labels_font_size = ctx.font_config.SizeMillimetres();
 
   const auto& month_node = ctx.nodes.month_labels;

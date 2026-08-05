@@ -27,18 +27,17 @@
 #include "calendar/title_text_editor.hpp"
 #include "event_bus.hpp"
 
-// Die eine Stelle, an der Stores, Panels, Rendering-Adapter und GL-Canvas
-// zusammenkommen.
+// The one place where stores, panels, rendering adapter and GL canvas come
+// together.
 //
-// Zwei Richtungen, zwei Regeln:
-//   * Ein Panel-Edit ist ein *Befehl* und geht direkt an den besitzenden Store.
-//     Dessen `Receive*` ist damit der einzige Ort, an dem der kanonische
-//     Zustand entsteht.
-//   * Der neue Zustand ist eine *Tatsache* und geht über den Bus: der Store
-//     veröffentlicht auf seinem Topic, jeder Konsument hängt sich dort an.
-// Würden Panels ihre Edits auf dasselbe Topic legen, das sie abonnieren, gäbe
-// es Rückkopplungen; die Trennung verhindert das und hält Produzent und
-// Konsument voneinander unabhängig.
+// Two directions, two rules:
+//   * A panel edit is a *command* and goes straight to the owning store. Its
+//     `Receive*` is thereby the only place canonical state comes into being.
+//   * The new state is a *fact* and goes over the bus: the store publishes on
+//     its topic, and every consumer attaches there.
+// Were panels to put their edits onto the same topic they subscribe to, there
+// would be feedback loops; the separation prevents that and keeps producer and
+// consumer independent of each other.
 struct AppComponents {
   DateGroupStore& date_groups_store;
   DateEntryStore& date_entry_store;
@@ -67,28 +66,28 @@ namespace app_binder {
 
 namespace detail {
 
-// Hängt ein Panel-Signal an ein Bus-Topic. Nötig nur dort, wo der Produzent
-// in der Presentation sitzt und deshalb kein Topic eingesetzt bekommt.
+// Hangs a panel signal onto a bus topic. Needed only where the producer sits in
+// presentation and therefore gets no topic injected.
 template <typename Signal, typename Topic>
 void Forward(Signal& from, Topic& to) {
   from.connect([&to](const auto& value) { to(value); });
 }
 
 inline void BindDateEntries(EventBus& bus, AppComponents& components) {
-  // Panel -> Store (Nutzereingabe)
+  // Panel -> store (user input)
   components.data_table_panel.SignalTableDateEntries().connect(
       &DateEntryStore::ReceiveDateEntries, &components.date_entry_store);
 
-  // Topic -> Konsumenten. Der Store veröffentlicht selbst.
+  // Topic -> consumers. The store publishes itself.
   bus.date_entries().connect(&DateTablePanel::ReceiveDateEntries,
                              &components.data_table_panel);
   bus.date_entries().connect(&TransformDateEntry::ReceiveDateEntries,
                              &components.transform_date_entry);
 
-  // Der Transform-Adapter veröffentlicht auf dem eigenen Topic. Keine
-  // Verschiebung: DatePeriod ist überall halb-offen [begin, end), das Ende
-  // also bereits exklusiv. Das frühere {end_days = 1} war eine Korrektur aus
-  // dem alten inklusiven Modell und machte jeden Balken einen Tag zu lang.
+  // The transform adapter publishes on its own topic. No shift: DatePeriod is
+  // half-open [begin, end) everywhere, so the end is exclusive already. The
+  // earlier {end_days = 1} was a correction out of the old inclusive model and
+  // made every bar one day too long.
   bus.transformed_date_entries().connect(&CalendarPage::ReceiveDateEntries,
                                          &components.calendar_page);
 }
@@ -103,9 +102,9 @@ inline void BindDateGroups(EventBus& bus, AppComponents& components) {
                             &components.date_entry_store);
   bus.date_groups().connect(&DateTablePanel::ReceiveDateGroups,
                             &components.data_table_panel);
-  // Der Store synthetisiert die gruppenweisen Shape-Konfigurationen aus der
-  // Palette und veröffentlicht sie neu — das muss vor dem Neuaufbau der Szene
-  // laufen, der die aktualisierten Konfigurationen vom Bus liest.
+  // The store synthesises the per-group shape configurations out of the palette
+  // and publishes them anew — that must run before the scene rebuild, which
+  // reads the updated configurations off the bus.
   bus.date_groups().connect(&ShapeConfigurationStore::ReceiveDateGroups,
                             &components.shape_configuration_store);
   bus.date_groups().connect(&CalendarPage::ReceiveDateGroups,
@@ -123,16 +122,16 @@ inline void BindPageSetup(EventBus& bus, AppComponents& components) {
   bus.page_setup().connect(&GLCanvas::ReceivePageSetup, &components.gl_canvas);
 }
 
-// Der Dateipfad kommt vom Dokument, nicht von einem Store: nur Laden und
-// Speichern ändern ihn. Die Anzeige ist reiner Konsument.
+// The file path comes from the document, not from a store: loading and saving
+// alone change it. The display is a pure consumer.
 inline void BindProjectFilePath(EventBus& bus, AppComponents& components) {
   bus.project_file_path().connect(&DocumentSetupPanel::ReceiveProjectFilePath,
                                   &components.document_setup_panel);
 }
 
-// Die Schrift hat keinen Store — der Panelwert geht direkt aufs Topic und von
-// dort an den Renderer. Soll die Schrift einmal mit dem Projekt gespeichert
-// werden, tritt ein FontStore an dieselbe Stelle wie bei den anderen Themen.
+// The font has no store — the panel value goes straight onto the topic and from
+// there to the renderer. Should the font ever get saved with the project, a
+// FontStore steps into the same place as with the other topics.
 inline void BindFont(EventBus& bus, AppComponents& components) {
   Forward(components.font_panel.SignalFontConfig(), bus.font_config());
 
@@ -168,9 +167,9 @@ inline void BindCalendarConfig(EventBus& bus, AppComponents& components) {
                                 &components.calendar_page);
 }
 
-// Der Rendering-Adapter veröffentlicht die Szenen-Momentaufnahmen selbst; das
-// Szenenbaum-Panel ist der einzige Konsument. Dessen Auswahl geht umgekehrt
-// über den Bus zurück an die Hervorhebung im Renderer.
+// The rendering adapter publishes the scene snapshots itself; the scene tree
+// panel is the only consumer. Its selection goes back the other way over the bus
+// to the highlight in the renderer.
 inline void BindSceneSnapshot(EventBus& bus, AppComponents& components) {
   bus.scene_snapshot().connect(&SceneTreePanel::ReceiveSceneSnapshot,
                                &components.scene_tree_panel);
@@ -183,11 +182,11 @@ inline void BindSceneSnapshot(EventBus& bus, AppComponents& components) {
                               &components.scene_tree_panel);
 }
 
-// Picking: das Canvas meldet Zeigerbewegungen im Seitenraum, der Controller
-// testet sie über den Rendering-Adapter und veröffentlicht Hover und Auswahl
-// selbst. Klick und Doppelklick gehen zuerst an den Texteditor: läuft eine
-// Bearbeitung, verbraucht er sie (Cursor setzen, Wort wählen), sonst reicht der
-// Binder sie an den Controller weiter.
+// Picking: the canvas reports pointer movements in page space, the controller
+// tests them through the rendering adapter and publishes hover and selection
+// itself. Click and double click go to the text editor first: while an edit is
+// running it consumes them (set the cursor, select a word), otherwise the binder
+// passes them on to the controller.
 inline void BindInteraction(EventBus& bus, AppComponents& components) {
   auto* page = &components.calendar_page;
   auto* controller = &components.interaction_controller;
@@ -251,13 +250,13 @@ inline void Bind(EventBus& bus, AppComponents& components) {
   detail::BindInteraction(bus, components);
 }
 
-// Gegenstück zu Bind: trennt alle Verbindungen. Nötig beim Beenden — die
-// wx-Children (Panels, GL-Canvas) sterben erst im ~wxFrame-Basisdestruktor,
-// also nach den Stores und dem EventBus. Feuert ein Control beim Zerstören noch
-// ein Ereignis (ein offener Editor-Commit etwa), liefe der Slot sonst in
-// bereits zerstörte Objekte.
+// The counterpart to Bind: it disconnects everything. Needed on shutdown — the
+// wx children (panels, GL canvas) die in the ~wxFrame base destructor alone, so
+// after the stores and the event bus. Should a control still fire an event while
+// being destroyed (an open editor commit, say), the slot would otherwise run
+// into objects already destroyed.
 inline void Unbind(EventBus& bus, AppComponents& components) {
-  // Ereignisquellen der Presentation-Schicht.
+  // The event sources of the presentation layer.
   components.data_table_panel.SignalTableDateEntries().disconnect_all();
   components.date_groups_table_panel.SignalTableDateGroups().disconnect_all();
   components.page_setup_panel.SignalPageSetupConfig().disconnect_all();
@@ -276,8 +275,8 @@ inline void Unbind(EventBus& bus, AppComponents& components) {
   components.title_text_editor.SetPickSource(nullptr);
   components.title_text_editor.SetCaretIndexSource(nullptr);
 
-  // Bus-Topics: ihre Slots zeigen auf Panels und den Rendering-Adapter. Die
-  // Produzenten dürfen danach weiter veröffentlichen — es hört nur niemand zu.
+  // Bus topics: their slots point at panels and the rendering adapter. The
+  // producers may keep publishing afterwards — only nobody listens.
   bus.date_entries().disconnect_all();
   bus.transformed_date_entries().disconnect_all();
   bus.date_groups().disconnect_all();
@@ -304,10 +303,9 @@ inline void SendInitialValues(AppComponents& components) {
 
 }  // namespace app_binder
 
-// Die Verdrahtung als Lebensdauer statt als zwei von Hand gepaarte Aufrufe:
-// verbinden beim Bauen, trennen beim Zerstören. Als letztes Mitglied deklariert
-// stirbt sie vor Stores und Bus — genau die Reihenfolge, die das Trennen
-// braucht.
+// The wiring as a lifetime instead of two calls paired by hand: connect on
+// construction, disconnect on destruction. Declared as the last member it dies
+// before stores and bus — exactly the order the disconnect needs.
 class AppWiring {
  public:
   AppWiring(EventBus& bus, AppComponents components)

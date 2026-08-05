@@ -99,6 +99,10 @@ The goal is self-documenting code; refactoring brings it there step by step.
 - Whatever cannot be changed at once becomes an issue, so it does not get lost.
 - Violations of this file's conventions that you notice while working on a file become an issue too — even when they are no part of the task.
 
+### Style
+
+Language and documentation rules live in the superproject (`~/homelab-superproject/AGENTS.md`).
+
 ### Ownership and lifetimes
 
 - Never use raw `new`/`delete`. Always express ownership through a smart pointer, so the lifetime is encoded in the type system, exceptions leak no resources and ownership handovers are explicit at call sites (compare the C++ Core Guidelines, [resource management](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#S-resource)). wx widgets typically get handed to wx-owned parents through `.release()` (wx then owns the lifetime).

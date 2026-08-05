@@ -14,13 +14,13 @@
 #include <string>
 #include <utility>
 
-// Beschafft dem Canvas seinen OpenGL-Kontext — der einzige Ort, der das tut.
+// Procures the canvas its OpenGL context — the only place that does so.
 //
-// Der Aufbau ist verzögert, weil wxGLCanvas erst beim ersten Paint auf dem
-// Bildschirm liegt; vorher lässt sich kein Kontext erzeugen. Der Bootstrap
-// hängt sich dafür einmalig an wxEVT_PAINT, versucht es bei jedem Paint erneut
-// und meldet genau einmal Erfolg oder Scheitern. Danach hängt er sich wieder
-// ab und das Canvas zeichnet.
+// The setup is deferred, because a wxGLCanvas lies on the screen at the first
+// paint alone; before that no context can be created. For that the bootstrap
+// attaches itself once to wxEVT_PAINT, tries again on every paint and reports
+// success or failure exactly once. Afterwards it detaches again and the canvas
+// draws.
 class GlContextBootstrap {
  public:
   struct Version {
@@ -36,8 +36,8 @@ class GlContextBootstrap {
   GlContextBootstrap(GlContextBootstrap&&) = delete;
   GlContextBootstrap& operator=(GlContextBootstrap&&) = delete;
 
-  // `on_failed` ist Pflicht: ohne Kontext bleibt die Verdrahtung aus, und ein
-  // bedienbares, aber unverdrahtetes Fenster stürzt beim ersten Klick ab.
+  // `on_failed` is mandatory: without a context the wiring stays out, and an
+  // operable but unwired window crashes on the first click.
   void Start(std::function<void()> on_ready,
              std::function<void(const std::string&)> on_failed) {
     on_ready_ = std::move(on_ready);
@@ -90,9 +90,9 @@ class GlContextBootstrap {
         std::make_unique<wxGLContext>(&canvas_, nullptr, &context_attributes);
     std::cout << "context IsOK " << context_->IsOK() << '\n';
 
-    // Ohne gültigen Kontext darf keine GL-Funktion mehr laufen: glGetString
-    // gäbe nullptr zurück, und ein neuer Versuch pro Paint wäre eine
-    // Endlosschleife ohne jede Meldung.
+    // Without a valid context no GL function may run any more: glGetString
+    // would return nullptr, and one more attempt per paint would be an endless
+    // loop without a single message.
     if (!context_->IsOK()) {
       context_.reset();
       status_ = Status::kFailed;
@@ -112,8 +112,8 @@ class GlContextBootstrap {
            "cannot continue.";
   }
 
-  // Nur mit aktuellem Kontext gültig; ohne einen gibt glGetString nullptr
-  // zurück, deshalb der Fallback statt eines Casts ins Leere.
+  // Valid with a current context alone; without one glGetString returns
+  // nullptr, hence the fallback instead of a cast into the void.
   [[nodiscard]] static std::string DescribeDriver() {
     return "GL_VERSION " + DriverString(GL_VERSION) + "\nGL_VENDOR " +
            DriverString(GL_VENDOR) + "\nGL_RENDERER " +

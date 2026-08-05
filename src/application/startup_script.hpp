@@ -16,13 +16,13 @@
 
 namespace application {
 
-// Setzt die Kommandozeile in Handlungen um — Startdatei laden, Tab vorwählen,
-// Bild schreiben, nach N Millisekunden schliessen. Vorher lagen diese Schritte
-// als sechs Methoden quer über das Hauptfenster verstreut; hier stehen sie
-// beisammen, und das Fenster weiss nichts mehr von Laufzeitoptionen.
+// Turns the command line into actions — load the startup file, preselect a tab,
+// write an image, close after N milliseconds. These steps used to sit scattered
+// across the main window as six methods; here they stand together, and the
+// window knows nothing of runtime options any more.
 //
-// Zwei Zeitpunkte, weil OpenGL verzögert bereitsteht: was ohne Kontext geht,
-// läuft sofort, der Rest erst danach.
+// Two moments, because OpenGL stands ready with a delay: whatever works without
+// a context runs at once, the rest afterwards.
 class StartupScript {
  public:
   StartupScript(const RuntimeOptions& options, ProjectDocument& document)
@@ -54,9 +54,9 @@ class StartupScript {
     }
   }
 
-  // Opt-in: geladen wird nur, was als Positionsargument kam. Ohne Angabe
-  // startet ein leeres Projekt; einen Vorgabepfad relativ zum
-  // Arbeitsverzeichnis gibt es bewusst nicht.
+  // Opt-in: what came as a positional argument gets loaded, and nothing else.
+  // Without one an empty project starts; a default path relative to the working
+  // directory deliberately does not exist.
   void LoadStartupFile() const {
     if (!options_.startup_file) {
       return;
@@ -70,8 +70,8 @@ class StartupScript {
 
     std::cout << "LoadStartupFile: loading " << path << '\n';
     if (path.ends_with(".xml")) {
-      // Kopflose Läufe: Fehler auf die Konsole statt in einen modalen Dialog,
-      // der einen --exit-after-ms-Lauf blockieren würde.
+      // Headless runs: errors to the console instead of into a modal dialogue,
+      // which would block an --exit-after-ms run.
       if (const auto error = document_.LoadXml(path)) {
         std::cout << "LoadStartupFile: " << *error << '\n';
       }
@@ -82,8 +82,8 @@ class StartupScript {
 
   void ApplyDebugHighlights(MainFrame& frame, CalendarPage& calendar_page,
                             TitleTextEditor& title_text_editor) const {
-    // Gehovert ist immer höchstens ein Element, darum schliessen sich die
-    // beiden Hover-Optionen aus.
+    // At most one element is ever hovered, so the two hover options exclude
+    // each other.
     if (options_.debug_hover_title) {
       calendar_page.ReceiveHovered(
           PickId{.kind = PickId::Kind::kTitle, .index = 0});
@@ -98,8 +98,8 @@ class StartupScript {
       }
     }
     if (options_.debug_select_node) {
-      // Über den echten Selektionspfad (Baum -> Detailgrid -> Bus ->
-      // Highlight), damit dies das Panel genau wie ein Klick durchläuft.
+      // Over the real selection path (tree -> detail grid -> bus -> highlight),
+      // so this walks the panel exactly as a click would.
       frame.SceneTree().SelectNodeByPath(*options_.debug_select_node);
     }
   }
@@ -113,7 +113,7 @@ class StartupScript {
     }
     if (options_.dump_frame_png_path) {
       const std::string path = *options_.dump_frame_png_path;
-      // Erst nach dem ersten echten Paint, damit jedes Panel gezeichnet ist.
+      // After the first real paint alone, so every panel is drawn.
       frame.CallAfter([&frame, path]() {
         std::cout << "--dump-frame-png: writing " << path << '\n';
         if (!frame.SaveFrameScreenshot(path)) {

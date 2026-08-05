@@ -27,15 +27,15 @@
 
 namespace application {
 
-// Composition Root: baut alle langlebigen Teile, besitzt sie und hält sie
-// zusammen. Sie enthält selbst keine Fach- und keine Widget-Logik — sie
-// entscheidet nur, was es gibt und wie lange.
+// The composition root: it builds every long-lived part, owns them and holds
+// them together. It carries neither domain nor widget logic itself — it decides
+// what exists and for how long, and nothing more.
 //
-// Zwei Teile entstehen erst später, weil OpenGL verzögert bereitsteht: der
-// Rendering-Adapter und die Verdrahtung. Beide liegen in einem `optional` und
-// werden beim Zerstören des Fensters wieder aufgelöst — solange Panels und
-// Canvas noch leben. Ohne das liefe ein beim Beenden noch gefeuertes
-// Panel-Ereignis in bereits zerstörte Objekte.
+// Two parts come into being later, because OpenGL stands ready with a delay: the
+// rendering adapter and the wiring. Both sit in an `optional` and get dissolved
+// again when the window is destroyed — while panels and canvas are still alive.
+// Without that, a panel event still firing on shutdown would run into objects
+// already destroyed.
 class AppComposition {
  public:
   AppComposition(LocaleDateFormatter& locale_date_formatter,
@@ -74,8 +74,8 @@ class AppComposition {
   [[nodiscard]] MainFrame& Frame() { return *frame_; }
 
  private:
-  // Läuft, sobald der GL-Kontext steht — erst hier darf GL-Zustand angefasst
-  // werden, und erst hier gibt es etwas zu verdrahten.
+  // Runs as soon as the GL context stands — only here may GL state be touched,
+  // and only here is there anything to wire.
   void OnGraphicsReady() {
     CalendarPage& calendar_page =
         calendar_page_.emplace(frame_->Canvas(), frame_->Font().GetFontConfig(),
@@ -85,13 +85,13 @@ class AppComposition {
                                      title_text_editor_);
   }
 
-  // Ohne Kontext läuft der Ready-Pfad nie: keine Verdrahtung, keine
-  // Startwerte. Ein bedienbares Fenster in diesem Zustand stürzt beim ersten
-  // Klick ab — deshalb melden und schliessen.
+  // Without a context the ready path never runs: no wiring, no initial values.
+  // An operable window in that state crashes on the first click — hence report
+  // and close.
   //
-  // Über CallAfter, weil der erste Paint noch vor der Event-Loop eintreffen
-  // kann: ein Close() von dort verpufft, und ein modaler Dialog stünde vor der
-  // Loop.
+  // Through CallAfter, because the first paint can arrive before the event loop:
+  // a Close() from there fizzles out, and a modal dialogue would stand in front
+  // of the loop.
   void OnGraphicsFailed(const std::string& message) {
     std::cerr << message << '\n';
     frame_->CallAfter([this, message]() {
@@ -131,8 +131,8 @@ class AppComposition {
     event.Skip();
   }
 
-  // Zweiter Ausgang: ein Fenster kann auch ohne Close-Ereignis sterben. Der
-  // Destroy-Event kommt, bevor der Basisdestruktor die Kinder abräumt.
+  // A second exit: a window can die without a close event too. The destroy event
+  // arrives before the base destructor clears the children away.
   void OnFrameDestroy(wxWindowDestroyEvent& event) {
     if (event.GetEventObject() == frame_.get()) {
       ReleaseGraphics();
@@ -140,15 +140,15 @@ class AppComposition {
     event.Skip();
   }
 
-  // Idempotent: löst die Verdrahtung, solange beide Enden noch leben.
+  // Idempotent: it dissolves the wiring while both ends are still alive.
   void ReleaseGraphics() {
     wiring_.reset();
     calendar_page_.reset();
     file_commands_.reset();
   }
 
-  // Zuerst deklariert, also zuletzt zerstört: jeder Produzent veröffentlicht
-  // über den Bus, und beim Abräumen kann noch etwas feuern.
+  // Declared first, so destroyed last: every producer publishes over the bus,
+  // and something can still fire while clearing away.
   EventBus bus_;
 
   RuntimeOptions runtime_options_;

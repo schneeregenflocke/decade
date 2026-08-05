@@ -31,10 +31,10 @@
 // width, looked up in the received ShapeConfigSet. The panel never touches the
 // OpenGL `SceneNode` type, keeping the presentation layer graphics-free.
 //
-// Der Baum spiegelt die Szene, er bearbeitet sie nicht: **jede** Zeile ist
-// read-only. Ein Editierfeld hier wäre ein zweiter Schreibpfad auf Zustand, den
-// der Rebuild ohnehin neu erzeugt; geändert wird dort, wo der Zustand zu Hause
-// ist (Panels der jeweiligen Konfiguration).
+// The tree mirrors the scene, it does not edit it: **every** row is read-only.
+// An edit field here would be a second write path onto state the rebuild
+// recreates anyway; changes happen where the state is at home (the panel of the
+// respective configuration).
 class SceneTreePanel : public wxPanel {
  public:
   explicit SceneTreePanel(wxWindow* parent)
@@ -150,8 +150,9 @@ class SceneTreePanel : public wxPanel {
     }
   }
 
-  // Die Auswahl kam von aussen — heute vom Klick im Canvas. Der Baum zieht
-  // nach, ohne sie zurückzumelden: sonst liefe der Wert im Kreis.
+  // The selection came from outside — from a click in the canvas today. The
+  // tree follows without reporting it back: otherwise the value would run in a
+  // circle.
   void ReceiveSelectedNode(const std::optional<std::string>& path) {
     if (!path.has_value() || *path == SelectedPath()) {
       return;
@@ -214,8 +215,8 @@ class SceneTreePanel : public wxPanel {
     return "(none)";
   }
 
-  // Boxen und Grössen stehen in Seitenmillimetern; zwei Nachkommastellen
-  // reichen, um 0.1-mm-Unterschiede zu sehen.
+  // Boxes and sizes stand in page millimetres; two decimals suffice to see
+  // differences of 0.1 mm.
   static wxString BoundsLabel(const SnapshotBounds& bounds) {
     return wxString::Format("l %.2f  r %.2f  b %.2f  t %.2f  (%.2f x %.2f)",
                             bounds.left, bounds.right, bounds.bottom,
@@ -288,8 +289,8 @@ class SceneTreePanel : public wxPanel {
     AppendStyleCategory(node.style_id);
   }
 
-  // Die eigene Geometrie des Knotens: seine Box im Knotenraum und dieselbe Box
-  // auf der Seite. Container ohne Shape haben keine.
+  // The node's own geometry: its box in node space and the same box on the
+  // page. Containers without a shape have none.
   void AppendGeometryCategory(const SceneNodeValues& node) {
     if (!node.local_bounds.has_value() || !node.world_bounds.has_value()) {
       return;
@@ -299,9 +300,9 @@ class SceneTreePanel : public wxPanel {
     AppendText("Page Bounds (mm)", BoundsLabel(*node.world_bounds));
   }
 
-  // Textknoten zeigen zusätzlich, was sie zeichnen und wie gross — in Punkt,
-  // weil der Nutzer Schriftgrössen so liest, und in Millimetern daneben, weil
-  // die Seite darin rechnet.
+  // Text nodes additionally show what they draw and how large — in points,
+  // because that is how a user reads font sizes, and in millimetres beside it,
+  // because the page computes in those.
   void AppendTextCategory(const SceneNodeValues& node) {
     if (!node.text_detail.has_value()) {
       return;
@@ -317,7 +318,7 @@ class SceneTreePanel : public wxPanel {
   }
 
   // If the node's style_id resolves to a configuration, show its colours, line
-  // width and visibility flags — read-only, wie alles hier.
+  // width and visibility flags — read-only, like everything here.
   void AppendStyleCategory(const std::string& style_id) {
     if (style_id.empty()) {
       return;
@@ -333,8 +334,8 @@ class SceneTreePanel : public wxPanel {
     AppendColor("Outline Color", config.OutlineColorDisabled());
     AppendText("Fill Visible", config.FillVisible() ? "true" : "false");
     AppendColor("Fill Color", config.FillColorDisabled());
-    // Die konfigurierten Werte, nicht die um die Sichtbarkeit bereinigten:
-    // was hier steht, soll dem entsprechen, was der Nutzer eingestellt hat.
+    // The configured values, not those cleaned up by visibility: what stands
+    // here should match what the user set.
     AppendText("Line Width",
                wxString::Format("%.2f", config.LineWidthDisabled()));
   }
@@ -343,8 +344,8 @@ class SceneTreePanel : public wxPanel {
     property_grid_->Append(MakeOwned<wxPropertyCategory>(label, wxPG_LABEL));
   }
 
-  // Alle Werte stehen als Text: eine Zeilenart, keine Typ-Editoren, die aus
-  // Versehen doch schreiben könnten.
+  // Every value stands as text: one kind of row, no typed editors that could
+  // write after all by accident.
   void AppendText(const wxString& label, const wxString& value) {
     AppendReadOnly(MakeOwned<wxStringProperty>(label, wxPG_LABEL, value));
   }
@@ -353,8 +354,8 @@ class SceneTreePanel : public wxPanel {
     AppendReadOnly(MakeOwned<wxIntProperty>(label, wxPG_LABEL, value));
   }
 
-  // Farben mit Alpha; der wx-Farbwähler kennt keinen Alphakanal, darum die
-  // vier Kanäle als Zahl plus die Farbe als Feld daneben.
+  // Colours with alpha; the wx colour picker knows no alpha channel, hence the
+  // four channels as numbers plus the colour as a field beside them.
   void AppendColor(const wxString& label, const glm::vec4& color) {
     const wxColour wx_color = ToWxColor(color);
     AppendReadOnly(MakeOwned<wxColourProperty>(label, wxPG_LABEL, wx_color));

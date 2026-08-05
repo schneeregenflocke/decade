@@ -15,21 +15,21 @@
 #include "../domain/font_config.hpp"
 #include "wx_owned.hpp"
 
-// Wählt die anwendungsweite Schrift. wx beschreibt eine Schrift über Familie,
-// Grösse, Gewicht und Neigung; der GL-Renderer braucht dagegen eine
-// Schriftdatei — die Übersetzung dazwischen macht fontconfig.
+// Chooses the application-wide font. wx describes a font through family, size,
+// weight and slant; the GL renderer, by contrast, needs a font file — fontconfig
+// does the translation between them.
 //
-// Weitergegeben wird beides: der Dateipfad (womit gerendert wird) und die
-// Punktgrösse (wie gross gerendert wird). Die Grösse ist eine reine
-// Domänenzahl: Font rastert immer bei kFontPixelHeight und skaliert die
-// geviert-normierten Metriken, die Schriftdatei hängt also nicht an ihr.
+// Both get passed on: the file path (what to render with) and the point size
+// (how large to render). The size is a pure domain number: Font always rasters
+// at kFontPixelHeight and scales the em-normalised metrics, so the font file
+// does not hang on it.
 //
-// Quellen:
+// Sources:
 // - wxFont (https://docs.wxwidgets.org/3.2/classwx_font.html) — GetPointSize(),
-//   GetFaceName(), GetWeight(), GetStyle() als Eingaben der Abbildung.
-// - fontconfig Font Properties
+//   GetFaceName(), GetWeight(), GetStyle() as the inputs of the mapping.
+// - fontconfig font properties
 //   (https://fontconfig.pages.freedesktop.org/fontconfig/fontconfig-user.html)
-//   — Namen und Typen von FC_FAMILY, FC_WEIGHT, FC_SLANT, FC_SIZE.
+//   — names and types of FC_FAMILY, FC_WEIGHT, FC_SLANT, FC_SIZE.
 class FontPanel : public wxPanel {
  public:
   explicit FontPanel(wxWindow* parent)
@@ -74,20 +74,20 @@ class FontPanel : public wxPanel {
 
   std::unique_ptr<FcConfig, FcConfigDeleter> fc_config_;
   sigslot::signal<const FontConfig&> signal_font_config_;
-  // Zwei Gewichtsskalen, von Hand aufeinander gelegt: wx zählt wie OpenType
-  // und CSS in Hundertern (THIN 100 … EXTRAHEAVY 1000), fontconfig in seiner
-  // eigenen, ungleichmässigen Skala 0…215 (fontconfig.h, FC_WEIGHT_*). Die
-  // auskommentierten Zeilen sind keine offenen Punkte, sondern Synonyme mit
-  // identischem Zahlwert (ULTRALIGHT == EXTRALIGHT, SEMILIGHT == DEMILIGHT,
-  // NORMAL == REGULAR, SEMIBOLD == DEMIBOLD, ULTRABOLD == EXTRABOLD,
-  // HEAVY == BLACK, ULTRABLACK == EXTRABLACK); sie stehen als Beleg da, dass
-  // die Wahl bewusst getroffen wurde. Einzig FC_WEIGHT_BOOK (75) ist ein
-  // eigener Wert neben REGULAR (80) — wx kennt dafür keine Stufe.
+  // Two weight scales, laid onto each other by hand: wx counts in hundreds like
+  // OpenType and CSS (THIN 100 … EXTRAHEAVY 1000), fontconfig in its own uneven
+  // scale 0…215 (fontconfig.h, FC_WEIGHT_*). The commented-out lines are no open
+  // points but synonyms with an identical numeric value (ULTRALIGHT ==
+  // EXTRALIGHT, SEMILIGHT == DEMILIGHT, NORMAL == REGULAR, SEMIBOLD ==
+  // DEMIBOLD, ULTRABOLD == EXTRABOLD, HEAVY == BLACK, ULTRABLACK ==
+  // EXTRABLACK); they stand there as evidence that the choice was made
+  // deliberately. FC_WEIGHT_BOOK (75) alone is a value of its own beside REGULAR
+  // (80) — wx knows no step for it.
   //
-  // Quellen:
-  // - wxFontWeight (https://docs.wxwidgets.org/3.2/font_8h.html) — die
-  //   numerischen wx-Stufen.
-  // - fontconfig.h, FC_WEIGHT_* — die fontconfig-Stufen samt Synonymen.
+  // Sources:
+  // - wxFontWeight (https://docs.wxwidgets.org/3.2/font_8h.html) — the numeric
+  //   wx steps.
+  // - fontconfig.h, FC_WEIGHT_* — the fontconfig steps including synonyms.
   void initConvertWxFontWeightToFcWeight() {
     font_weight_map_ = {{wxFONTWEIGHT_THIN, FC_WEIGHT_THIN},
                         {wxFONTWEIGHT_EXTRALIGHT, FC_WEIGHT_EXTRALIGHT},
@@ -132,9 +132,9 @@ class FontPanel : public wxPanel {
     return fc_weight;
   }
 
-  // wx kennt drei Neigungen, fontconfig dieselben drei (FC_SLANT_ROMAN /
-  // ITALIC / OBLIQUE) — hier ist die Abbildung eins zu eins. wxFONTSTYLE_MAX
-  // ist nur die Zählmarke hinter SLANT und landet auf demselben OBLIQUE.
+  // wx knows three slants, fontconfig the same three (FC_SLANT_ROMAN, ITALIC,
+  // OBLIQUE) — the mapping is one to one here. wxFONTSTYLE_MAX is merely the
+  // count marker behind SLANT and lands on the same OBLIQUE.
   void initConvertWxFontStyleToFcSlant() {
     font_style_map_ = {{wxFONTSTYLE_NORMAL, FC_SLANT_ROMAN},
                        {wxFONTSTYLE_ITALIC, FC_SLANT_ITALIC},
@@ -180,11 +180,11 @@ class FontPanel : public wxPanel {
         pattern, FC_FAMILY,
         reinterpret_cast<const FcChar8*>(face_name.utf8_str().data()));
 
-    // FC_SIZE ist laut fontconfig.h ein Double (Punktgrösse); ein Integer
-    // hier wäre ein Typbruch, den fontconfig stillschweigend schlechter
-    // matcht. Für skalierbare Schriften wählt die Grösse ohnehin keine andere
-    // Datei — sie steht im Muster, damit grössenspezifische Schnitte
-    // (Bitmap-Fonts, optische Grade) korrekt aufgelöst werden.
+    // FC_SIZE is a double according to fontconfig.h (the point size); an
+    // integer here would be a type break that fontconfig matches worse in
+    // silence. For scalable fonts the size chooses no other file anyway — it
+    // stands in the pattern so that size-specific cuts (bitmap fonts, optical
+    // grades) resolve correctly.
     FcPatternAddDouble(pattern, FC_SIZE, point_size);
 
     int const fc_weight = convertWxFontWeightToFcWeight(font_weight);
@@ -193,10 +193,11 @@ class FontPanel : public wxPanel {
     int const fc_slant = convertWxFontStyleToFcSlant(font_style);
     FcPatternAddInteger(pattern, FC_SLANT, fc_slant);
 
-    // Pflichtvorspiel vor FcFontMatch: FcConfigSubstitute wendet die Regeln
-    // der Systemkonfiguration an (Aliase wie «sans-serif»), FcDefaultSubstitute
-    // füllt Unterspezifiziertes auf und rechnet die Punkt- in eine Pixelgrösse
-    // um. Ohne beide matcht fontconfig laut Manual falsch.
+    // The mandatory prelude to FcFontMatch: FcConfigSubstitute applies the
+    // rules of the system configuration (aliases such as "sans-serif"),
+    // FcDefaultSubstitute fills in the underspecified and converts the point
+    // size into a pixel size. Without both, fontconfig matches wrongly according
+    // to the manual.
     // https://man.archlinux.org/man/FcFontMatch.3.en
     FcConfigSubstitute(fc_config_.get(), pattern, FcMatchPattern);
     FcDefaultSubstitute(pattern);

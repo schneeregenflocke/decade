@@ -49,8 +49,8 @@ class Font {
     float width_ratio;
   };
 
-  // Ein Klick zählt zur nächsten Zeichenkante: bis zur halben Vorschubbreite
-  // gehört er noch vor das Zeichen.
+  // A click counts to the nearer character edge: up to half the advance width
+  // it still belongs before the character.
   static constexpr float kHalfAdvance = 0.5F;
 
   explicit Font(const std::string& filepath) {
@@ -87,8 +87,8 @@ class Font {
     return width;
   }
 
-  // Breite der ersten `count` Codepoints — die Masse, in denen der Texteditor
-  // rechnet: der Cursor sitzt hinter Zeichen `count`.
+  // The width of the first `count` code points — the measure the text editor
+  // computes in: the cursor sits behind character `count`.
   [[nodiscard]] float TextWidth(const std::u32string& text, float size,
                                 std::size_t count) const {
     float width = 0.0F;
@@ -99,9 +99,9 @@ class Font {
     return width;
   }
 
-  // Umkehrung: der Cursor-Index, den ein Klick `offset` rechts vom Textanfang
-  // meint. Getroffen wird die nähere der beiden Zeichenkanten, damit ein Klick
-  // auf die linke Hälfte eines Zeichens davor landet.
+  // The inverse: the cursor index a click `offset` right of the text start
+  // means. The nearer of the two character edges wins, so a click on the left
+  // half of a character lands before it.
   [[nodiscard]] std::size_t IndexAtOffset(const std::u32string& text,
                                           float size, float offset) const {
     float left = 0.0F;
@@ -133,8 +133,8 @@ class Font {
     return height;
   }
 
-  // Die grösste Geviertgrösse, mit der `text` in `cell` passt: erst aus der
-  // Zellhöhe, dann bei Bedarf auf die Zellbreite zurückgenommen.
+  // The largest em size at which `text` fits into `cell`: from the cell height
+  // first, then taken back to the cell width where needed.
   [[nodiscard]] float AdjustTextSize(const rectf& cell, const std::string& text,
                                      TextScale scale) const {
     const float font_size = cell.height() * scale.height_ratio;
@@ -269,9 +269,9 @@ class FontShape : public Shape {
 
   void SetColor(const glm::vec4& new_color) { color_ = new_color; }
 
-  // Der gezeichnete Text und seine Geviertgrösse in Seitenmillimetern —
-  // dieselben Werte, aus denen die Geometrie entstand. Der Szenen-Schnappschuss
-  // zeigt sie an, ohne die Vertexpuffer zurückrechnen zu müssen.
+  // The drawn text and its em size in page millimetres — the same values the
+  // geometry came out of. The scene snapshot shows them without having to
+  // compute back from the vertex buffers.
   [[nodiscard]] const std::string& Text() const { return text_; }
 
   [[nodiscard]] float FontSize() const { return font_size_; }

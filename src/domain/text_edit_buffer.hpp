@@ -7,16 +7,16 @@
 #include <string>
 #include <utility>
 
-// Pure domain value: ein einzeiliger Textpuffer mit Cursor und Auswahl — die
-// Editierlogik hinter dem Bearbeiten im Canvas, ohne wx, GL oder Schriftmasse.
-// Positionen zählen Codepoints, nicht Bytes, darum `std::u32string`: so ist ein
-// Umlaut ein Schritt, und der Renderer misst dieselben Einheiten.
+// A pure domain value: a single-line text buffer with cursor and selection —
+// the editing logic behind editing in the canvas, without wx, GL or font
+// metrics. Positions count code points, not bytes, hence `std::u32string`: that
+// way an umlaut is one step, and the renderer measures the same units.
 //
-// Cursor und Anker spannen die Auswahl auf. Ohne Auswahl liegen beide
-// aufeinander; jedes Einfügen und Löschen ersetzt zuerst die Auswahl.
+// Cursor and anchor span the selection. Without a selection both sit on each
+// other; every insert and delete replaces the selection first.
 class TextEditBuffer {
  public:
-  // Ob eine Bewegung die Auswahl aufspannt (Shift gedrückt) oder aufhebt.
+  // Whether a movement spans the selection (Shift held) or cancels it.
   enum class Selection : std::uint8_t { kReplace, kExtend };
 
   enum class Direction : std::uint8_t { kLeft, kRight, kBegin, kEnd };
@@ -49,7 +49,7 @@ class TextEditBuffer {
     SetCaret(caret_ + text.size(), Selection::kReplace);
   }
 
-  // Rücktaste: löscht die Auswahl, sonst das Zeichen vor dem Cursor.
+  // Backspace: it deletes the selection, otherwise the character before the cursor.
   void DeleteBefore() {
     if (HasSelection()) {
       EraseSelection();
@@ -62,7 +62,7 @@ class TextEditBuffer {
     SetCaret(caret_ - 1, Selection::kReplace);
   }
 
-  // Entf-Taste: löscht die Auswahl, sonst das Zeichen hinter dem Cursor.
+  // Delete: it removes the selection, otherwise the character after the cursor.
   void DeleteAfter() {
     if (HasSelection()) {
       EraseSelection();
@@ -81,8 +81,8 @@ class TextEditBuffer {
     }
   }
 
-  // Eine Bewegung ohne Shift hebt eine bestehende Auswahl auf und setzt den
-  // Cursor an deren Rand — wie in jedem Textfeld.
+  // A movement without Shift cancels an existing selection and puts the cursor
+  // at its edge — as in every text field.
   void MoveCaret(Direction direction, Selection selection) {
     if (selection == Selection::kReplace && HasSelection() &&
         (direction == Direction::kLeft || direction == Direction::kRight)) {
@@ -99,9 +99,9 @@ class TextEditBuffer {
     caret_ = text_.size();
   }
 
-  // Wählt das Wort um `index`; auf Leerraum die zusammenhängende Lücke. Wörter
-  // sind hier Folgen von Nicht-Leerraum — für einen einzeiligen Titel genügt
-  // das, ICU-Wortgrenzen wären hier Aufwand ohne sichtbaren Gewinn.
+  // Selects the word around `index`; on whitespace the contiguous gap. Words
+  // are runs of non-whitespace here — enough for a single-line title, where ICU
+  // word boundaries would be effort without a visible gain.
   void SelectWordAt(std::size_t index) {
     if (text_.empty()) {
       return;

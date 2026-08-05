@@ -18,19 +18,19 @@
 #include "../../infrastructure/graphics/utf8_codec.hpp"
 #include "text_input_event.hpp"
 
-// Application: das Bearbeiten des Titels direkt im Canvas. Der Editor hält den
-// Puffer, solange bearbeitet wird, und veröffentlicht bei jeder Änderung, was
-// zu sehen ist (Text, Cursor, Auswahl) — der Renderer zeichnet daraus, ohne den
-// Editor zu kennen.
+// Application: editing the title straight in the canvas. The editor holds the
+// buffer while the edit runs and publishes what is to be seen on every change
+// (text, cursor, selection) — the renderer draws from that without knowing the
+// editor.
 //
-// Kanonisch wird der Text erst mit Enter: dann geht er als ein Befehl an den
-// Store, der ihn als Tatsache auf seinem Topic bekanntgibt. Esc verwirft den
-// Puffer, der Store bleibt unberührt. Damit ist eine Bearbeitung genau ein
-// Zustandswechsel — nicht einer je Tastenanschlag.
+// The text becomes canonical with Enter alone: then it goes to the store as one
+// command, which announces it as a fact on its topic. Esc discards the buffer
+// and leaves the store untouched. An edit is thereby exactly one state change —
+// not one per keystroke.
 class TitleTextEditor {
  public:
-  // Was am Zeigerpunkt liegt und welcher Cursor-Index dort gemeint ist. Beides
-  // weiss der Rendering-Adapter; eingesetzt bleibt der Editor von ihm frei.
+  // What lies at the pointer and which cursor index is meant there. The
+  // rendering adapter knows both; injected, the editor stays free of it.
   using PickSource = std::function<std::optional<PickId>(glm::vec2)>;
   using CaretIndexSource = std::function<std::size_t(glm::vec2)>;
 
@@ -48,8 +48,8 @@ class TitleTextEditor {
 
   [[nodiscard]] bool IsEditing() const { return buffer_.has_value(); }
 
-  // Eine Tastatureingabe, schon in ihrer Bedeutung. Ohne laufende Bearbeitung
-  // verpufft sie.
+  // A keyboard input, already in its meaning. Without a running edit it fizzles
+  // out.
   void Handle(const TextInputEvent& event) {
     switch (event.kind) {
       case TextInputEvent::Kind::kInsert:
@@ -76,9 +76,9 @@ class TitleTextEditor {
     }
   }
 
-  // Ein Klick während der Bearbeitung: im Titel setzt er den Cursor, ausserhalb
-  // beendet er die Bearbeitung wie Enter — was getippt war, bleibt erhalten.
-  // Der Rückgabewert sagt, ob der Klick verbraucht ist.
+  // A click during the edit: inside the title it sets the cursor, outside it
+  // ends the edit like Enter — whatever was typed stays. The return value says
+  // whether the click is consumed.
   bool OnPrimaryDown(glm::vec2 page_point,
                      TextEditBuffer::Selection selection) {
     if (!buffer_) {
@@ -92,7 +92,7 @@ class TitleTextEditor {
     return true;
   }
 
-  // Ein Doppelklick in der laufenden Bearbeitung wählt das Wort darunter.
+  // A double click in the running edit selects the word beneath it.
   bool OnDoubleClick(glm::vec2 page_point) {
     if (!buffer_ || !HitsTitle(page_point)) {
       return false;
@@ -101,8 +101,8 @@ class TitleTextEditor {
     return true;
   }
 
-  // Startet das Bearbeiten des getroffenen Elements. Nur der Titel ist
-  // bearbeitbar; alles andere lässt den Editor ruhen.
+  // Starts editing the element that was hit. The title alone is editable;
+  // everything else leaves the editor at rest.
   void Begin(const PickId& picked) {
     if (picked.kind != PickId::Kind::kTitle) {
       return;
@@ -113,7 +113,7 @@ class TitleTextEditor {
     Publish(buffer);
   }
 
-  // Eingefügt wird UTF-8 — so liefert es die Tastatur wie die Zwischenablage.
+  // What gets inserted is UTF-8 — as keyboard and clipboard both deliver it.
   void Insert(const std::string& text) {
     const std::u32string code_points = ToCodePoints(text);
     Apply(
@@ -149,7 +149,7 @@ class TitleTextEditor {
     Apply([](TextEditBuffer& buffer) { buffer.SelectAll(); });
   }
 
-  // Der ausgewählte Text als UTF-8, für die Zwischenablage der Presentation.
+  // The selected text as UTF-8, for the clipboard in presentation.
   [[nodiscard]] std::string SelectedText() const {
     if (!buffer_) {
       return {};
@@ -161,8 +161,8 @@ class TitleTextEditor {
     return buffer_ ? buffer_->Caret() : 0;
   }
 
-  // Enter: der Puffer wird kanonisch. Der Store veröffentlicht die Tatsache,
-  // der Editor endet.
+  // Enter: the buffer becomes canonical. The store publishes the fact, the
+  // editor ends.
   void Commit() {
     if (!buffer_) {
       return;
@@ -173,7 +173,7 @@ class TitleTextEditor {
     title_store_.ReceiveTitleConfig(config);
   }
 
-  // Esc: Puffer weg, Store unberührt.
+  // Esc: the buffer goes, the store stays untouched.
   void Cancel() { End(); }
 
  private:
@@ -182,8 +182,7 @@ class TitleTextEditor {
     return {decoded.begin(), decoded.end()};
   }
 
-  // Jede Änderung läuft über denselben Pfad: nur wenn bearbeitet wird, und
-  // danach ist neu zu zeichnen.
+  // Every change runs the same path: only while editing, and a repaint follows.
   template <typename Operation>
   void Apply(Operation operation) {
     if (!buffer_) {

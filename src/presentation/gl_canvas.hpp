@@ -38,20 +38,20 @@
 #include "mouse_interaction.hpp"
 #include "wx_owned.hpp"
 
-// Das Zeichenfenster: besitzt Kontext (über den Bootstrap), Rendering-Engine,
-// Ansicht (Projektion, Kamera) und die Zeigereingabe. Es kennt keine
-// Domänenlogik — es empfängt die Seitengrösse und meldet Zeigerpositionen im
-// Seitenraum weiter.
+// The drawing window: it owns the context (through the bootstrap), the
+// rendering engine, the view (projection, camera) and the pointer input. It
+// knows no domain logic — it receives the page size and reports pointer
+// positions in page space onwards.
 class GLCanvas : public wxGLCanvas {
  public:
-  // Auflösung und Multisampling des PNG-Exports (SavePNG). Öffentlich, damit
-  // die Menübeschriftung denselben Wert nutzt statt einer zweiten Zahl im Text.
+  // Resolution and multisampling of the PNG export (SavePNG). Public, so the
+  // menu caption uses the same value instead of a second number in its text.
   static constexpr int kExportPngDpi = 200;
   static constexpr int kExportMsaaSamples = 16;
 
   explicit GLCanvas(wxWindow* parent)
-      // wxWANTS_CHARS: sonst fängt der Dialog Enter, Esc und die Pfeiltasten
-      // ab, bevor der Texteditor im Canvas sie sieht.
+      // wxWANTS_CHARS: otherwise the dialogue catches Enter, Esc and the arrow
+      // keys before the text editor in the canvas sees them.
       : wxGLCanvas(parent, DisplayAttributes(), wxID_ANY, wxDefaultPosition,
                    wxDefaultSize, wxWANTS_CHARS),
         context_bootstrap_(*this, kRequiredGlVersion) {
@@ -59,8 +59,8 @@ class GLCanvas : public wxGLCanvas {
               << wxGLCanvas::IsDisplaySupported(DisplayAttributes()) << '\n';
   }
 
-  // Startet den verzögerten GL-Aufbau. Genau einer der beiden Callbacks läuft;
-  // im Erfolgsfall steht danach die Engine bereit.
+  // Starts the deferred GL setup. Exactly one of the two callbacks runs; on
+  // success the engine stands ready afterwards.
   void InitOpenGL(std::function<void()> on_ready,
                   std::function<void(const std::string&)> on_failed) {
     context_bootstrap_.Start(
@@ -73,13 +73,13 @@ class GLCanvas : public wxGLCanvas {
 
   [[nodiscard]] GraphicsEngine& Engine() { return *graphics_engine_; }
 
-  // Wird bei jeder Mausbewegung mit dem Zeiger im Seitenraum aufgerufen, damit
-  // ein Interaktions-Controller darauf hit-testen kann. Setzt der Binder.
+  // Called on every mouse movement with the pointer in page space, so an
+  // interaction controller can hit-test on it. The binder sets it.
   void SetPointerMoveCallback(std::function<void(glm::vec2)> callback) {
     on_pointer_move_ = std::move(callback);
   }
 
-  // Klick und Doppelklick im Seitenraum — Auswahl und «bitte bearbeiten».
+  // Click and double click in page space — selection and "please edit".
   void SetPrimaryDownCallback(std::function<void(glm::vec2, bool)> callback) {
     on_primary_down_ = std::move(callback);
   }
@@ -88,9 +88,9 @@ class GLCanvas : public wxGLCanvas {
     on_double_click_ = std::move(callback);
   }
 
-  // Tastatureingaben der laufenden Textbearbeitung. `editing` sagt, ob gerade
-  // bearbeitet wird — nur dann verbraucht das Canvas Tasten, sonst gibt es sie
-  // weiter. `selected_text` liefert die Auswahl für die Zwischenablage.
+  // Keyboard input of the running text edit. `editing` says whether an edit is
+  // under way — only then does the canvas consume keys, otherwise it passes them
+  // on. `selected_text` delivers the selection for the clipboard.
   void SetTextInputCallback(
       std::function<void(const TextInputEvent&)> callback) {
     on_text_input_ = std::move(callback);
@@ -117,9 +117,9 @@ class GLCanvas : public wxGLCanvas {
     }
   }
 
-  // Passt Viewport, Projektion und Zoom-Grenzen an die aktuelle Fenster- und
-  // Seitengrösse an und fordert einen Repaint an. Nötig, wenn sich Seite oder
-  // Canvasgrösse ändern.
+  // Fits viewport, projection and zoom bounds to the current window and page
+  // size and asks for a repaint. Needed when the page or the canvas size
+  // changes.
   void RefreshView() {
     UpdateViewport();
     if (page_size_.width() <= 0.0F || page_size_.height() <= 0.0F) {
@@ -132,13 +132,12 @@ class GLCanvas : public wxGLCanvas {
     Refresh(false);
   }
 
-  // Stösst nur einen Repaint an — für Änderungen, die weder Projektion noch
-  // Zoom-Grenzen berühren (Hover-/Selektionsfarben). Deutlich billiger als
-  // RefreshView.
+  // Triggers a repaint alone — for changes touching neither projection nor zoom
+  // bounds (hover and selection colours). Markedly cheaper than RefreshView.
   void Repaint() { Refresh(false); }
 
-  // Bildrate im Sekundenfenster des jüngsten Frames; da nur ereignisgesteuert
-  // gezeichnet wird, ist der Wert während einer Interaktion aussagekräftig.
+  // The frame rate in the one-second window of the newest frame; since drawing
+  // happens event-driven alone, the value carries meaning during an interaction.
   [[nodiscard]] double CurrentFps() const { return frame_stats_.Fps(); }
 
   void SavePNG(const std::string& file_path, int dpi = kExportPngDpi) {
@@ -146,9 +145,9 @@ class GLCanvas : public wxGLCanvas {
                    *graphics_engine_, kExportMsaaSamples);
   }
 
-  // Gibt den aktuellen GL-Backbuffer als RGB-wxImage mit Ursprung links oben
-  // zurück, damit er in einen Gesamtfenster-Screenshot montiert werden kann:
-  // ein wxDC sieht die GL-Fläche nicht. Ohne Fläche kommt ein ungültiges Bild.
+  // Returns the current GL back buffer as an RGB wxImage with its origin top
+  // left, so it can be mounted into a whole-window screenshot: a wxDC does not
+  // see the GL surface. Without a surface an invalid image comes back.
   wxImage CaptureBackBufferImage() {
     const BackBuffer back = ReadBackBuffer();
     if (back.pixels.empty()) {
@@ -164,7 +163,7 @@ class GLCanvas : public wxGLCanvas {
                                                                   .minor = 6};
 
   struct BackBuffer {
-    std::vector<unsigned char> pixels;  // Ursprung links oben, Zeilen gedreht
+    std::vector<unsigned char> pixels;  // origin top left, rows flipped
     std::size_t width{0};
     std::size_t height{0};
   };
@@ -174,8 +173,8 @@ class GLCanvas : public wxGLCanvas {
     GLsizei height{0};
   };
 
-  // Läuft genau einmal, sobald der Kontext steht: GL-Grundzustand setzen,
-  // Engine bauen, Zeichen- und Eingabeereignisse anhängen.
+  // Runs exactly once, as soon as the context stands: set the GL base state,
+  // build the engine, attach the draw and input events.
   void StartRendering() {
     ApplyInitialGlState();
     graphics_engine_ = std::make_unique<GraphicsEngine>();
@@ -197,8 +196,8 @@ class GLCanvas : public wxGLCanvas {
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    // wxGLAttributes::Defaults() fordert unter GLX 4x MSAA an
-    // (SampleBuffers(1).Samplers(4)), deshalb greift das Enable hier.
+    // wxGLAttributes::Defaults() asks for 4x MSAA under GLX
+    // (SampleBuffers(1).Samplers(4)), which is why the enable takes hold here.
     glEnable(GL_MULTISAMPLE);
 
     GLint msaa_samples = 0;
@@ -212,7 +211,7 @@ class GLCanvas : public wxGLCanvas {
     return attributes;
   }
 
-  // Fenstergrösse in Gerätepixeln — auf HiDPI-Anzeigen mehr als die logische.
+  // The window size in device pixels — more than the logical one on HiDPI displays.
   [[nodiscard]] FramebufferSize CurrentFramebufferSize() const {
     const wxSize logical_size = GetClientSize();
     const double scale = GetContentScaleFactor();
@@ -252,9 +251,9 @@ class GLCanvas : public wxGLCanvas {
     }
   }
 
-  // Zeichnet die Szene in den Backbuffer und liest ihn als RGB-Puffer mit
-  // Ursprung links oben zurück. OpenGL zählt von unten, deshalb das Drehen der
-  // Zeilen. Ohne Fläche kommt ein leerer Puffer.
+  // Draws the scene into the back buffer and reads it back as an RGB buffer
+  // with its origin top left. OpenGL counts from below, hence the row flip.
+  // Without a surface an empty buffer comes back.
   BackBuffer ReadBackBuffer() {
     constexpr std::size_t kBytesPerPixel = 3;
     context_bootstrap_.MakeCurrent();
@@ -296,7 +295,7 @@ class GLCanvas : public wxGLCanvas {
     LogFrameStats(render_end);
   }
 
-  // Loggt FPS und Renderdauer höchstens einmal pro Sekunde (Debug-Modus).
+  // Logs FPS and render duration at most once a second (debug mode).
   void LogFrameStats(FrameStats::Clock::time_point now) {
     if (!decade_debug::LogEnabled()) {
       return;
@@ -311,8 +310,8 @@ class GLCanvas : public wxGLCanvas {
 
   void SizeCallback(wxSizeEvent& /*event*/) { RefreshView(); }
 
-  // Zeigerposition des Ereignisses im Seitenraum — die Einheit, in der die
-  // Szene rechnet.
+  // The pointer position of the event in page space — the unit the scene
+  // computes in.
   [[nodiscard]] glm::vec2 PagePoint(const wxMouseEvent& event) const {
     return MouseInteraction::ScreenToPage(PhysicalPosition(event), mvp_);
   }
@@ -331,8 +330,8 @@ class GLCanvas : public wxGLCanvas {
     event.Skip();
   }
 
-  // Übersetzt Steuertasten in ihre Bedeutung. Druckbare Zeichen kommen erst als
-  // wxEVT_CHAR an — dort stehen Umlaute und Akzente fertig zusammengesetzt.
+  // Translates control keys into their meaning. Printable characters arrive as
+  // wxEVT_CHAR alone — there umlauts and accents stand fully composed.
   void KeyDownCallback(wxKeyEvent& event) {
     if (!IsEditing()) {
       event.Skip();
@@ -387,8 +386,8 @@ class GLCanvas : public wxGLCanvas {
     Send(TextInputEvent::Insert(wxString(character).ToStdString(wxConvUTF8)));
   }
 
-  // Ctrl-C/X/V: der wx-Teil der Zwischenablage bleibt hier, der Editor sieht
-  // nur Auswahl lesen und Text einfügen.
+  // Ctrl-C, X and V: the wx part of the clipboard stays here, the editor sees
+  // reading the selection and inserting text alone.
   bool HandleClipboard(const wxKeyEvent& event) {
     switch (event.GetKeyCode()) {
       case 'A':
@@ -430,7 +429,7 @@ class GLCanvas : public wxGLCanvas {
     const bool available = wxTheClipboard->IsSupported(wxDF_UNICODETEXT) &&
                            wxTheClipboard->GetData(data);
     wxTheClipboard->Close();
-    // Zeilenumbrüche haben in einer einzeiligen Beschriftung nichts verloren.
+    // Line breaks have no business in a single-line caption.
     return available ? SingleLine(data.GetText().ToStdString(wxConvUTF8))
                      : std::string{};
   }
@@ -466,15 +465,15 @@ class GLCanvas : public wxGLCanvas {
     }
     mouse_interaction_.Apply(mvp_, camera_, position_physical, event.Dragging(),
                              event.GetWheelRotation());
-    // Den Zeiger im Seitenraum weitermelden, nach Apply, damit die eben
-    // verschobene oder gezoomte Ansicht zählt.
+    // Report the pointer in page space onwards, after Apply, so the view just
+    // panned or zoomed is the one that counts.
     if (on_pointer_move_) {
       on_pointer_move_(MouseInteraction::ScreenToPage(position_physical, mvp_));
     }
-    // Nur Ziehen und Mausrad ändern die Ansicht; blosse Zeigerbewegung löst
-    // keinen Repaint aus — ein Hover-Wechsel stösst seinen eigenen über
-    // CalendarPage::ReceiveHovered an. Projektion und Zoom-Grenzen bleiben
-    // unberührt, RefreshView ist hier nicht nötig.
+    // Dragging and the mouse wheel alone change the view; a bare pointer
+    // movement triggers no repaint — a hover change triggers its own through
+    // CalendarPage::ReceiveHovered. Projection and zoom bounds stay untouched,
+    // so RefreshView is not needed here.
     if (event.Dragging() || event.GetWheelRotation() != 0) {
       Repaint();
     }

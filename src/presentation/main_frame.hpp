@@ -33,9 +33,9 @@
 #include "window_screenshot.hpp"
 #include "wx_owned.hpp"
 
-// Menübefehle, die ausserhalb des Fensters bearbeitet werden, weil sie das
-// Projekt betreffen. Beenden und Lizenztext bleiben hier — sie brauchen
-// niemanden ausser dem Fenster selbst.
+// Menu commands handled outside the window, because they concern the project.
+// Quit and the licence text stay here — they need nobody but the window
+// itself.
 enum class FileCommand : std::uint8_t {
   kOpenXml,
   kSaveXml,
@@ -45,9 +45,9 @@ enum class FileCommand : std::uint8_t {
   kExportPng,
 };
 
-// Das Hauptfenster: baut das Layout, besitzt Panels, Canvas und Menü und
-// meldet Menübefehle als Signal. Es kennt weder Stores noch Bus — wer die
-// Panels verdrahtet, holt sie sich über die Accessors.
+// The main window: it builds the layout, owns panels, canvas and menu and
+// reports menu commands as a signal. It knows neither stores nor bus — whoever
+// wires the panels fetches them through the accessors.
 class MainFrame : public wxFrame {
  public:
   MainFrame(wxWindow* parent, const application::MainFrameConfig& config,
@@ -85,8 +85,8 @@ class MainFrame : public wxFrame {
   [[nodiscard]] SceneTreePanel& SceneTree() { return *scene_tree_panel_; }
   [[nodiscard]] GLCanvas& Canvas() { return *gl_canvas_; }
 
-  // Wählt den Tab mit dieser Beschriftung vor (ohne Beachtung der Gross- und
-  // Kleinschreibung). Meldet, ob es ihn gibt.
+  // Preselects the tab with this caption (case-insensitively). It reports
+  // whether the tab exists.
   [[nodiscard]] bool SelectTab(const std::string& label) {
     const wxString wanted = wxString::FromUTF8(label);
     for (size_t index = 0; index < notebook_->GetPageCount(); ++index) {
@@ -98,10 +98,10 @@ class MainFrame : public wxFrame {
     return false;
   }
 
-  // Schliesst das Fenster nach N Millisekunden — für kopflose Läufe.
-  // Gebunden wird am Fenster, nicht am Timer: `exit_timer_(this)` macht das
-  // Fenster zum Owner, und der Owner bekommt das Ereignis. Ein Handler am
-  // Timer-Objekt liefe nie.
+  // Closes the window after N milliseconds — for headless runs. The binding
+  // happens at the window, not at the timer: `exit_timer_(this)` makes the
+  // window the owner, and the owner gets the event. A handler on the timer
+  // object would never run.
   void CloseAfter(std::int64_t milliseconds) {
     Bind(
         wxEVT_TIMER, [this](wxTimerEvent&) { Close(true); },
@@ -109,8 +109,8 @@ class MainFrame : public wxFrame {
     exit_timer_.StartOnce(static_cast<int>(milliseconds));
   }
 
-  // Schreibt das gesamte Fenster als PNG: Widget-Abzug plus einmontierter
-  // GL-Backbuffer, den ein wxDC nicht sieht.
+  // Writes the whole window as a PNG: the widget capture plus the mounted-in GL
+  // back buffer, which a wxDC does not see.
   [[nodiscard]] bool SaveFrameScreenshot(const std::string& file_path) {
     const window_screenshot::Overlay overlay{
         .image = gl_canvas_->CaptureBackBufferImage(),
@@ -166,9 +166,9 @@ class MainFrame : public wxFrame {
     calendar_setup_panel_ = MakeOwned<CalendarSetupPanel>(notebook);
     scene_tree_panel_ = MakeOwned<SceneTreePanel>(notebook);
 
-    // Seite, Schrift und Titel teilen sich den Tab «Document»; das
-    // Sammel-Panel besitzt die drei Kinder, verdrahtet werden sie einzeln über
-    // die Weak-Referenzen unten.
+    // Page, font and title share the tab "Document"; the collecting panel owns
+    // the three children, and they get wired one by one through the weak
+    // references below.
     auto* document_setup_panel = MakeOwned<DocumentSetupPanel>(notebook);
     document_setup_panel_ = document_setup_panel;
     page_setup_panel_ = document_setup_panel->GetPageSetupPanel();

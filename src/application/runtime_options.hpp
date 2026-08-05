@@ -12,49 +12,50 @@
 
 namespace application {
 
-// Die Laufzeit-Optionen für nicht-interaktive Läufe (CI, Screenshots,
-// Smoke-Tests) plus die Startdatei. `AddRuntimeOptions` unten definiert das
-// Vokabular samt --help-Text; was eine Option tut, steht dort.
+// The runtime options for non-interactive runs (CI, screenshots, smoke tests)
+// plus the startup file. `AddRuntimeOptions` below defines the vocabulary
+// including the --help text; what an option does stands there.
 //
-// Zwei Dinge, die der Parser nicht zeigt: `--dump-frame-png` braucht das
-// X11-Backend, weil ein wxClientDC-Blit unter Wayland schwarz liefert (darum
-// unter Xvfb, siehe betrieb.md, «Kopflose Läufe»); `--debug-hover-title`
-// schlägt `--debug-hover-bar`, weil nur ein Element zugleich gehovert ist.
+// Two things the parser does not show: `--dump-frame-png` needs the X11 backend,
+// because a wxClientDC blit delivers black under Wayland (hence under Xvfb, see
+// operations.md, "Headless runs"); `--debug-hover-title` beats
+// `--debug-hover-bar`, because only one element is hovered at a time.
 struct RuntimeOptions {
-  // Beim Start zu ladende Datei. Opt-in: leer heisst «leeres Projekt».
+  // The file to load at start. Opt-in: empty means "an empty project".
   std::optional<std::string> startup_file;
   std::optional<std::string> dump_png_path;
-  // Export-DPI für dump_png_path; Fallback ist GLCanvas::kExportPngDpi.
+  // The export DPI for dump_png_path; the fallback is GLCanvas::kExportPngDpi.
   std::optional<int> dump_png_dpi;
   std::optional<std::string> dump_frame_png_path;
   std::optional<std::string> select_tab;
   std::optional<std::int64_t> exit_after_ms;
-  // Debug-/Screenshot-Hilfe: erzwingt beim Start das Hover-Highlight auf
-  // diesem Bar-Index, damit das Picking-Highlight ohne Zeigegerät prüfbar ist.
+  // A debug and screenshot aid: it forces the hover highlight onto this bar
+  // index at start, so the picking highlight is checkable without a pointing
+  // device.
   std::optional<std::size_t> debug_hover_bar;
-  // Dasselbe für den Titel, der als einziges Element seiner Art keinen Index
-  // braucht.
+  // The same for the title, which as the only element of its kind needs no
+  // index.
   bool debug_hover_title{false};
-  // Debug-/Screenshot-Hilfe: öffnet die Titelbearbeitung und tippt den Wert.
+  // A debug and screenshot aid: it opens the title edit and types the value.
   std::optional<std::string> debug_edit_title;
-  // Debug-/Screenshot-Hilfe: erzwingt beim Start das Selektions-Highlight auf
-  // diesem Knotenpfad, damit das Selektions-Overlay ohne Maus prüfbar ist.
+  // A debug and screenshot aid: it forces the selection highlight onto this
+  // node path at start, so the selection overlay is checkable without a mouse.
   std::optional<std::string> debug_select_node;
   bool debug_log{false};
 };
 
-// Kennzeichen eines nicht-interaktiven Laufs: eine Bildaufnahme oder ein
-// Auto-Exit ist angefordert. Dort darf kein modaler Dialog stehen bleiben — er
-// blockiert den Lauf bis zum Timeout, statt zu melden. Ein Display braucht auch
-// dieser Lauf; headless im Wortsinn ist er nicht.
+// The mark of a non-interactive run: an image capture or an auto exit is asked
+// for. No modal dialogue may stand there — it blocks the run until the timeout
+// instead of reporting. This run needs a display too; headless in the literal
+// sense it is not.
 [[nodiscard]] inline bool IsNonInteractiveRun(const RuntimeOptions& options) {
   return options.dump_png_path.has_value() ||
          options.dump_frame_png_path.has_value() ||
          options.exit_after_ms.has_value();
 }
 
-// Registriert alle Laufzeit-Optionen am Parser. Die Beschreibungen erscheinen
-// in der --help-Ausgabe.
+// Registers every runtime option at the parser. The descriptions turn up in the
+// --help output.
 inline void AddRuntimeOptions(wxCmdLineParser& parser) {
   parser.AddLongOption("dump-png",
                        "render the calendar page to PNG (off-screen FBO)");
@@ -91,8 +92,8 @@ inline std::optional<std::string> FoundString(const wxCmdLineParser& parser,
 }
 }  // namespace runtime_options_detail
 
-// Baut die Optionen aus dem geparsten Kommandozeilen-Parser. Nicht plausible
-// Zahlenwerte werden mit einer stderr-Warnung ignoriert.
+// Builds the options out of the parsed command line parser. Implausible numeric
+// values get ignored with a warning on stderr.
 inline RuntimeOptions RuntimeOptionsFromParser(const wxCmdLineParser& parser) {
   using runtime_options_detail::FoundString;
 
