@@ -41,9 +41,9 @@
                         .top = bounds.t()};
 }
 
-// Die eigene Box des Knotens in Seitenkoordinaten. Alle vier Ecken werden
-// transformiert und neu umschlossen, damit die Box auch dann stimmt, wenn eine
-// Transformation je Achse unterschiedlich skaliert.
+// The node's own box in page coordinates. All four corners get transformed and
+// re-enclosed, so the box holds even when a transformation scales differently
+// per axis.
 [[nodiscard]] inline SnapshotBounds ToWorldBounds(const rectf& local,
                                                   const glm::mat4& world) {
   const std::array<glm::vec4, 4> corners = {
@@ -65,7 +65,7 @@
   return bounds;
 }
 
-// Der Text eines Font-Knotens; für jede andere Shape leer.
+// The text of a font node; empty for every other shape.
 [[nodiscard]] inline std::optional<SnapshotTextDetail> TextDetailOf(
     const Shape* shape) {
   const auto* font_shape = dynamic_cast<const FontShape*>(shape);
@@ -77,8 +77,8 @@
 }
 
 // Fills a node's own values (everything but the children) from a scene node.
-// `world` ist die aufsummierte Transformation bis einschliesslich dieses
-// Knotens — dieselbe, mit der Draw() zeichnet.
+// `world` is the accumulated transformation down to and including this node —
+// the same one Draw() draws with.
 inline void FillSnapshotValues(SceneNodeValues& destination,
                                const SceneNode& source,
                                const glm::mat4& world) {

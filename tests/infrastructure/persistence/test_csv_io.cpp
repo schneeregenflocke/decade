@@ -127,8 +127,8 @@ TEST(CsvIoTest, WriteReadRoundTripPreservesPeriods) {
   }
 }
 
-// Regression: ein Export auf einen unbeschreibbaren Pfad scheiterte still —
-// der Nutzer sah einen gelungenen Export ohne Datei.
+// Regression: an export to an unwritable path failed in silence — the user saw
+// a successful export without a file.
 TEST(CsvIoTest, UnwritablePathReportsError) {
   std::vector<DateEntry> entries(1);
   entries[0].SetDateInterval(

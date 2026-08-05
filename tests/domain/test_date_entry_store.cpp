@@ -174,10 +174,10 @@ TEST(DateEntryBarStoreTest, SingleDayOnJanuaryFirstProducesOneBar) {
   EXPECT_EQ(store.GetAnnualTotal(0), 1);
 }
 
-// Regression: Der Eintrag mit dem spätesten Begin() hat nicht zwingend das
-// späteste End(). GetLastYear()/GetSpan() müssen über alle Einträge
-// maximieren, sonst schreibt ProcessAnnualTotals für die Jahres-Bars des
-// mehrjährigen Eintrags über das Ende von annual_totals_ hinaus.
+// Regression: the entry with the latest Begin() does not necessarily have the
+// latest End(). GetLastYear() and GetSpan() must maximise across every entry, or
+// ProcessAnnualTotals writes past the end of annual_totals_ for the yearly bars
+// of the multi-year entry.
 TEST(DateEntryBarStoreTest, LastYearComesFromLatestEndNotLatestBegin) {
   DateEntryBarStore store;
   SeedDefaultGroup(store);

@@ -17,8 +17,9 @@ void main()
 
   worldposition = vec3(model * vec4(position, 1.0));
 
-  // Normalenmatrix statt model: bei nicht-uniformer Skalierung stünde die
-  // Normale sonst schief zur Fläche. Sobald der 3D-Pfad läuft, gehört sie als
-  // Uniform von der CPU — ein inverse() pro Vertex ist teuer.
+  // The normal matrix instead of model: under non-uniform scaling the normal
+  // would otherwise stand skewed to the surface. Once the 3D path runs, it
+  // belongs here as a uniform from the CPU — an inverse() per vertex is
+  // expensive.
   worldnormal = mat3(transpose(inverse(model))) * normal;
 }

@@ -14,7 +14,7 @@ constexpr FrameStats::Clock::time_point kStart{};
 
 TEST(FrameStatsTest, SteadyCadenceYieldsMatchingFps) {
   FrameStats stats;
-  // 2 Sekunden lang alle 10 ms ein Frame → 100 Frames im Sekundenfenster.
+  // One frame every 10 ms for 2 seconds → 100 frames in the one-second window.
   for (int frame = 0; frame < 200; ++frame) {
     stats.AddFrame(kStart + frame * 10ms, 2ms);
   }
@@ -26,7 +26,7 @@ TEST(FrameStatsTest, WindowSlidesWithNewestFrame) {
   for (int frame = 0; frame < 50; ++frame) {
     stats.AddFrame(kStart + frame * 10ms, 2ms);
   }
-  // Langer Stillstand: der nächste Frame ist allein in seinem Fenster.
+  // A long standstill: the next frame stands alone in its window.
   stats.AddFrame(kStart + 10s, 2ms);
   EXPECT_NEAR(stats.Fps(), 1.0, 1e-9);
 }

@@ -28,8 +28,8 @@
 // on display) and nowhere else.
 class DateTablePanel : public TablePanelBase {
  public:
-  // `date_format` gehört der Composition Root, damit die ganze Anwendung
-  // eine Locale-Konfiguration teilt.
+  // `date_format` belongs to the composition root, so the whole application
+  // shares one locale configuration.
   DateTablePanel(wxWindow* parent, LocaleDateFormatter& date_format)
       : TablePanelBase(parent,
                        wxDV_MULTIPLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES),
@@ -308,10 +308,10 @@ class DateTablePanel : public TablePanelBase {
       if (!event.IsEditCancelled()) {
         auto edited_string = event.GetValue().GetString().ToStdString();
 
-        // Die Zeile kommt aus dem Ereignis, nicht aus der Selektion: die
-        // Tabelle ist wxDV_MULTIPLE, und dort liefert GetSelectedRow() über
-        // GetSelection() wxNOT_FOUND, sobald nicht genau eine Zeile selektiert
-        // ist — als unsigned wäre das Zeile 4294967295.
+        // The row comes from the event, not from the selection: the table is
+        // wxDV_MULTIPLE, and there GetSelectedRow() returns wxNOT_FOUND through
+        // GetSelection() as soon as not exactly one row is selected — as an
+        // unsigned that would be row 4294967295.
         const int edited_row = table()->ItemToRow(event.GetItem());
         if (edited_row == wxNOT_FOUND) {
           return;

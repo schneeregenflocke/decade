@@ -2,9 +2,9 @@
 
 #include "infrastructure/graphics/projection.hpp"
 
-// Regression: ein entartetes Viewport darf kein inf/NaN in die Matrizen
-// tragen. Höhe 0 entsteht durch ein extrem flach gezogenes Fenster — der
-// Splitter schützt nur die Breite.
+// Regression: a degenerate viewport must carry no inf or NaN into the matrices.
+// A height of 0 arises from a window pulled extremely flat — the splitter
+// protects the width alone.
 TEST(ProjectionTest, DegenerateViewportYieldsFiniteAspectRatio) {
   EXPECT_FLOAT_EQ(Projection::AspectRatioOf(1600, 0), 1.0F);
   EXPECT_FLOAT_EQ(Projection::AspectRatioOf(0, 900), 1.0F);

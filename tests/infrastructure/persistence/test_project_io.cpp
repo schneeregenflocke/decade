@@ -20,9 +20,9 @@
 
 namespace {
 
-// Bündelt die sechs Stores, die Load/Save verlangen, samt ihren Topics — jeder
-// Store veröffentlicht auf einem eingesetzten Kanal. Die Topics sind zuerst
-// deklariert, damit sie die Stores überleben.
+// Bundles the six stores Load and Save demand together with their topics —
+// every store publishes on an injected channel. The topics are declared first,
+// so they outlive the stores.
 struct ProjectStores {
   domain::StateTopic<std::vector<DateGroup>> date_groups_topic;
   domain::StateTopic<std::vector<DateEntry>> date_entries_topic;
@@ -77,9 +77,9 @@ void WriteFile(const std::string& path, const std::string& content) {
 
 }  // namespace
 
-// Regression: Eine kaputte Projektdatei (oder das alte, bewusst nicht mehr
-// lesbare Format) darf weder eine Exception in den Aufrufer werfen noch die
-// Stores halb überschreiben — der Fehler wird gemeldet, der Zustand bleibt.
+// Regression: a broken project file (or the old format deliberately no longer
+// readable) must neither throw an exception into the caller nor half-overwrite
+// the stores — the error gets reported, the state stays.
 TEST(ProjectIoTest, CorruptFileReportsErrorAndLeavesStoresUntouched) {
   ProjectStores stores;
   SeedProject(stores);

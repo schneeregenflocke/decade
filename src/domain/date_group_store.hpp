@@ -7,9 +7,8 @@
 #include "detail/reentry_guard.hpp"
 #include "state_topic.hpp"
 
-// Besitzt einen DateGroups-Wert und veröffentlicht jede Änderung auf dem
-// eingesetzten Topic. Hat Identität -> nicht kopierbar. Trägt keinen
-// Serialisierungscode.
+// Owns a DateGroups value and publishes every change on the injected topic. It
+// has identity -> not copyable. It carries no serialisation code.
 class DateGroupStore {
  public:
   explicit DateGroupStore(domain::StateTopic<std::vector<DateGroup>>& topic)
@@ -31,8 +30,8 @@ class DateGroupStore {
 
   [[nodiscard]] const DateGroups& Get() const { return date_groups_; }
 
-  // Nach dem Verdrahten aufrufen: setzt die eine Vorgabegruppe und
-  // veröffentlicht sie, damit alle Konsumenten einen Startwert haben.
+  // Call after wiring: it sets the one default group and publishes it, so every
+  // consumer holds an initial value.
   void SendDefaultValues() {
     std::vector<DateGroup> temporary_date_groups;
     temporary_date_groups.emplace_back("Default");

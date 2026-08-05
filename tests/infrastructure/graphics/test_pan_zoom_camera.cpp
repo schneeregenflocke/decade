@@ -7,8 +7,8 @@
 
 namespace {
 
-// Ortho wie in Projection::OrthoMatrix: um den Ursprung zentrierte, sichtbare
-// Weltausdehnung width × height.
+// Ortho as in Projection::OrthoMatrix: a visible world extent width × height,
+// centred on the origin.
 glm::mat4 OrthoFor(float width, float height) {
   constexpr float kHalf = 0.5F;
   return glm::ortho(-width * kHalf, width * kHalf, -height * kHalf,
@@ -22,8 +22,8 @@ void ExpectNearVec3(const glm::vec3& actual, const glm::vec3& expected,
   EXPECT_NEAR(actual.z, expected.z, tolerance);
 }
 
-// A4 hochkant in mm; die Ansicht zeigt wie in GLCanvas::RefreshMVP das
-// 1.1-fache der Seite.
+// A4 portrait in mm; the view shows 1.1 times the page, as GLCanvas::RefreshMVP
+// does.
 constexpr float kPageWidth = 210.0F;
 constexpr float kPageHeight = 297.0F;
 constexpr float kViewScale = 1.1F;
@@ -71,7 +71,7 @@ TEST(PanZoomCameraTest, ZoomClampsAtMaxAndKeepsAnchor) {
   EXPECT_NEAR(camera.ScaleFactor(), 4.0F, 1e-6F);
   ExpectNearVec3(camera.PagePos(anchor), page_before, 1e-4F);
 
-  // Am Anschlag ändert weiteres Hineinzoomen nichts mehr.
+  // At the stop, zooming in further changes nothing.
   camera.ZoomAround(anchor, 2.0F);
   EXPECT_NEAR(camera.ScaleFactor(), 4.0F, 1e-6F);
 }
@@ -90,11 +90,11 @@ TEST(ComputeZoomLimitsTest, MaxScaleLeavesTwoExportPixelsVisibleAt200Dpi) {
   const auto limits =
       ComputeZoomLimits(projection, {kPageWidth, kPageHeight}, 200.0F);
 
-  // 2 Pixel bei 200 dpi = 0.254 mm; massgeblich ist das kleinere Sichtmass
-  // (die Breite, 231 mm): 231 / 0.254.
+  // 2 pixels at 200 dpi = 0.254 mm; the smaller view measure decides (the
+  // width, 231 mm): 231 / 0.254.
   EXPECT_NEAR(limits.max_scale, 231.0F / 0.254F, 0.5F);
 
-  // Am Anschlag ist das kleinere Sichtmass genau 2 Export-Pixel gross.
+  // At the stop the smaller view measure is exactly 2 export pixels wide.
   const float visible_width_at_max = kPageWidth * kViewScale / limits.max_scale;
   EXPECT_NEAR(visible_width_at_max, 0.254F, 1e-4F);
 }
@@ -107,7 +107,7 @@ TEST(ComputeZoomLimitsTest, MaxScaleAt600DpiIsThreeTimesTighter) {
   const auto limits_600 =
       ComputeZoomLimits(projection, {kPageWidth, kPageHeight}, 600.0F);
 
-  // Feinere Export-Auflösung → kleinere Pixel → man darf 3x weiter hinein.
+  // A finer export resolution → smaller pixels → one may go 3x further in.
   EXPECT_NEAR(limits_600.max_scale / limits_200.max_scale, 3.0F, 1e-3F);
   EXPECT_NEAR(limits_600.min_scale, limits_200.min_scale, 1e-6F);
 }
@@ -118,7 +118,7 @@ TEST(ComputeZoomLimitsTest, MinScaleShowsTwoPagesPlusQuarter) {
   const auto limits =
       ComputeZoomLimits(projection, {kPageWidth, kPageHeight}, 200.0F);
 
-  // Sichtausdehnung ist 1.1 Seiten; 2.25 Seiten sichtbar → 1.1 / 2.25.
+  // The view extent is 1.1 pages; 2.25 pages visible → 1.1 / 2.25.
   EXPECT_NEAR(limits.min_scale, kViewScale / 2.25F, 1e-5F);
 
   const float visible_pages_wide =
@@ -127,13 +127,13 @@ TEST(ComputeZoomLimitsTest, MinScaleShowsTwoPagesPlusQuarter) {
 }
 
 TEST(ComputeZoomLimitsTest, LetterboxedViewportStopsWhenBothAxesShowTwoPages) {
-  // Breites Fenster: sichtbare Breite deutlich grösser als die Seitenbreite.
+  // A wide window: the visible width is markedly larger than the page width.
   const auto projection = OrthoFor(500.0F, kPageHeight * kViewScale);
   const auto limits =
       ComputeZoomLimits(projection, {kPageWidth, kPageHeight}, 200.0F);
 
-  // Die Höhe ist die knappere Achse; erst wenn auch sie 2.25 Seiten zeigt,
-  // stoppt das Herauszoomen.
+  // The height is the tighter axis; zooming out stops once it too shows 2.25
+  // pages.
   EXPECT_NEAR(limits.min_scale, kPageHeight * kViewScale / (2.25F * kPageHeight),
               1e-5F);
 

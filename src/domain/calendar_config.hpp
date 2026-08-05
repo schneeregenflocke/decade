@@ -26,10 +26,10 @@ class CalendarSpan {
               Date::FromYmd(kDefaultEndYear, 1, 1)) {}
 
   void SetSpan(YearSpan span_years) {
-    // Erzeugt nie einen null Span: das halb-offene Ende Jan 1 (last + 1)
-    // braucht ein darstellbares Jahr — das letzte wählbare Kalenderjahr ist
-    // deshalb kMaxYear - 1, und ein Last Year vor dem First Year wird auf das
-    // First Year angehoben (Span von genau einem Jahr).
+    // It never produces a null span: the half-open end Jan 1 (last + 1) needs a
+    // representable year — the last selectable calendar year is therefore
+    // kMaxYear - 1, and a last year before the first year gets raised to the
+    // first year (a span of exactly one year).
     const int first_year =
         std::clamp(span_years.first_year, Date::kMinYear, Date::kMaxYear - 1);
     const int last_year =

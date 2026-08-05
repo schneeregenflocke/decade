@@ -21,9 +21,9 @@ TEST(CalendarSpanTest, SetSpanClampsAndStores) {
   EXPECT_EQ(limits[1], 2025);
 }
 
-// Regression: SetSpan darf nie einen null Span erzeugen — GetSpanLengthYears()
-// würde sonst werfen und der Fehler entweicht ungefangen dem wx-Event-Handler
-// (First Year > Last Year im Timeframe-Tab, oder beide Jahre = kMaxYear).
+// Regression: SetSpan must never produce a null span — GetSpanLengthYears()
+// would otherwise throw and the error escapes the wx event handler uncaught
+// (First Year > Last Year in the Timeframe tab, or both years = kMaxYear).
 TEST(CalendarSpanTest, SetSpanNormalizesReversedYears) {
   CalendarSpan span;
   span.SetSpan({.first_year = 2030, .last_year = 2020});

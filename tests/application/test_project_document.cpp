@@ -9,7 +9,7 @@
 
 namespace {
 
-// Sammelt, was das Dokument über seinen Dateipfad veröffentlicht.
+// Collects what the document publishes about its file path.
 struct PathRecorder {
   std::vector<std::string> published;
 
@@ -25,8 +25,8 @@ std::string TempXmlPath(const std::string& name) {
 
 }  // namespace
 
-// Der Dateipfad hat keinen Store: nur Laden und Speichern setzen ihn, und die
-// Anzeige erfährt ihn allein über das Topic.
+// The file path has no store: loading and saving alone set it, and the display
+// learns it over the topic alone.
 TEST(ProjectDocumentTest, SavePublishesFilePath) {
   EventBus bus;
   LocaleDateFormatter formatter;
@@ -54,7 +54,7 @@ TEST(ProjectDocumentTest, LoadPublishesFilePath) {
   EXPECT_EQ(recorder.published, std::vector<std::string>{path});
 }
 
-// Ein gescheitertes Laden darf weder den Pfad noch die Anzeige verstellen.
+// A failed load must misplace neither the path nor the display.
 TEST(ProjectDocumentTest, FailedLoadKeepsFilePath) {
   EventBus bus;
   LocaleDateFormatter formatter;

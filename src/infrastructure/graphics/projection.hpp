@@ -12,10 +12,10 @@
 
 class Projection {
  public:
-  // Ein entartetes Viewport (Höhe oder Breite 0 bei einem extrem flach
-  // gezogenen Fenster) trüge sonst inf/NaN über OrthoMatrix und
-  // ComputeZoomLimits in die gesamte Darstellung — und bliebe dort bis zum
-  // nächsten gültigen Resize. 1:1 hält die Matrizen endlich.
+  // A degenerate viewport (height or width 0 on a window pulled extremely flat)
+  // would otherwise carry inf or NaN through OrthoMatrix and ComputeZoomLimits
+  // into the whole rendering — and stay there until the next valid resize. 1:1
+  // keeps the matrices finite.
   static constexpr float kDegenerateAspectRatio = 1.0F;
 
   [[nodiscard]] static constexpr float AspectRatioOf(GLint width,
@@ -47,7 +47,7 @@ class Projection {
     return ortho_matrix;
   }
 
-  // Gehört wie die Lambert-Shader zum ungenutzten 3D-Pfad.
+  // Belongs to the unused 3D path, like the Lambert shaders.
   static glm::mat4 PerspectiveMatrix(const float fovy, const float z_near,
                                      const float z_far) {
     return glm::perspective(fovy, AspectRatio(), z_near, z_far);

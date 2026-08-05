@@ -30,11 +30,11 @@ class DecadeApp : public wxApp {
     return true;
   }
 
-  // Runtime-Debughilfe: mit --debug-log gehen wx-Assert-Fehler nach stderr
-  // und die App läuft weiter, statt einen modalen Dialog zu öffnen. Der Dialog
-  // blockiert headless/Screenshot-Läufe (und CI) — eine echte Assertion würde
-  // sonst still per Timeout enden statt gemeldet zu werden. So landet der
-  // Assertion-Text auf stderr und der Lauf geht weiter.
+  // A runtime debug aid: with --debug-log, wx assert failures go to stderr and
+  // the app keeps running instead of opening a modal dialogue. The dialogue
+  // blocks headless and screenshot runs (and CI) — a real assertion would
+  // otherwise end silently by timeout instead of being reported. This way the
+  // assertion text lands on stderr and the run carries on.
   void OnAssertFailure(const wxChar* file, int line, const wxChar* func,
                        const wxChar* cond, const wxChar* msg) override {
     if (!runtime_options_.debug_log) {

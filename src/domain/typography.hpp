@@ -1,13 +1,13 @@
 #ifndef TYPOGRAPHY_HPP
 #define TYPOGRAPHY_HPP
 
-// Punkt und Millimeter, die einzige Stelle mit dem Umrechnungsfaktor.
+// Points and millimetres, the only place carrying the conversion factor.
 //
-// Die Seite rechnet in Millimetern (die Papiergrösse kommt in mm herein). Der
-// Nutzer denkt in Punkt: 1 pt = 1/72 Zoll. Eine Punktgrösse ist die Höhe des
-// Gevierts — genau das Mass, in dem die Schrift ihre Glyphen skaliert (Font
-// normiert alle Metriken auf Geviert = 1), also ist die Umrechnung ein reiner
-// Faktor und kein Rendering-Thema.
+// The page computes in millimetres (the paper size arrives in mm). The user
+// thinks in points: 1 pt = 1/72 inch. A point size is the height of the em —
+// exactly the measure the font scales its glyphs by (Font normalises every
+// metric to em = 1), so the conversion is a pure factor and no rendering
+// matter.
 namespace domain {
 
 inline constexpr float kMillimetresPerPoint = 25.4F / 72.0F;

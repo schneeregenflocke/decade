@@ -10,9 +10,9 @@ out vec4 color;
 
 void main()
 {
-	// Die Interpolation über das Dreieck verkürzt die Normale; ohne normalize
-	// wäre das dot() falsch skaliert. Genau diese Rechnung pro Fragment macht
-	// den Unterschied zu Gouraud-Shading aus.
+	// The interpolation across the triangle shortens the normal; without
+	// normalize the dot() would be scaled wrongly. Exactly this computation per
+	// fragment is what sets it apart from Gouraud shading.
 	vec3 normal = normalize(worldnormal);
 	vec3 lightdir = normalize(lightposition - worldposition);
 
