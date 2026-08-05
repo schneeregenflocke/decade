@@ -16,9 +16,9 @@ enum class SnapshotShapeKind : std::uint8_t {
   kFont,
 };
 
-// Achsenparallele Box in Seitenmillimetern. Eigener Typ statt des rectf aus
-// `infrastructure/graphics/`, damit das Lesemodell dort keine Abhängigkeit
-// hinterlässt.
+// An axis-aligned box in page millimetres. A type of its own instead of the
+// rectf from `infrastructure/graphics/`, so the read model leaves no dependency
+// there.
 struct SnapshotBounds {
   float left{0.0F};
   float right{0.0F};
@@ -26,9 +26,9 @@ struct SnapshotBounds {
   float top{0.0F};
 };
 
-// Was ein Textknoten über seinen Inhalt hinaus zeigt: der gezeichnete Text und
-// die Geviertgrösse, mit der er gesetzt wurde. Kindspezifisch, aber nicht
-// knotenspezifisch — jeder Font-Knoten trägt es.
+// What a text node shows beyond its content: the drawn text and the em size it
+// was set at. Specific to the kind, not to the node — every font node carries
+// it.
 struct SnapshotTextDetail {
   std::string text;
   float size_millimetres{0.0F};
@@ -45,18 +45,18 @@ struct SnapshotTextDetail {
 // derives from (empty when none). It is the link the detail pane uses to look
 // up the node's colours/line width in the ShapeConfigSet.
 
-// Die Werte eines Knotens ohne seine Kinder. Eigener Typ, weil beides
-// verschieden benutzt wird: die Werte wandern einzeln weiter (der Baum hängt
-// sie an sein Item), die Hierarchie wird nur durchlaufen. So kopiert niemand
-// versehentlich einen ganzen Teilbaum mit.
+// The values of a node without its children. A type of its own, because the two
+// get used differently: the values travel on one by one (the tree hangs them
+// onto its item) while the hierarchy merely gets walked. That way nobody copies
+// a whole subtree along by accident.
 struct SceneNodeValues {
   std::string name;
   std::string style_id;
   bool has_shape{false};
   SnapshotShapeKind shape_kind{SnapshotShapeKind::kNone};
   int draw_layer{0};
-  // Die Box der eigenen Geometrie, im Knotenraum und in Seitenkoordinaten;
-  // leer, wenn der Knoten keine Geometrie trägt.
+  // The box of its own geometry, in node space and in page coordinates; empty
+  // when the node carries no geometry.
   std::optional<SnapshotBounds> local_bounds;
   std::optional<SnapshotBounds> world_bounds;
   std::optional<SnapshotTextDetail> text_detail;

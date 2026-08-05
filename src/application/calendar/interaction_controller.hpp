@@ -12,16 +12,16 @@
 #include "../../domain/state_topic.hpp"
 #include "../../infrastructure/graphics/pick_id.hpp"
 
-// Application: macht aus Zeigereingaben Ereignisse an der Szene. Das Canvas
-// liefert Punkte im Seitenraum, der Controller testet sie über eine einsetzbare
-// Pick-Quelle (er kennt damit weder CalendarPage noch PhysicsWorld) und meldet:
+// Application: it turns pointer input into events on the scene. The canvas
+// delivers points in page space, the controller tests them through an injectable
+// pick source (so it knows neither CalendarPage nor PhysicsWorld) and reports:
 //
-//   * Bewegung -> Hover, nur bei echtem Wechsel;
-//   * Klick    -> Auswahl, als Knotenpfad — derselbe Auswahlbegriff, den auch
-//                 der Szenenbaum benutzt;
-//   * Doppelklick -> Bitte bearbeiten.
+//   * movement     -> hover, on a real change alone;
+//   * click        -> selection, as a node path — the same notion of selection
+//                     the scene tree uses;
+//   * double click -> please edit.
 //
-// Ziehen kommt später an denselben Controller.
+// Dragging will come to the same controller later.
 class InteractionController {
  public:
   using PickSource = std::function<std::optional<PickId>(glm::vec2)>;
@@ -39,7 +39,7 @@ class InteractionController {
     pick_source_ = std::move(pick_source);
   }
 
-  // Übersetzt ein getroffenes Element in den Pfad seines Szenenknotens.
+  // Translates a hit element into the path of its scene node.
   void SetPathSource(PathSource path_source) {
     path_source_ = std::move(path_source);
   }
@@ -63,7 +63,7 @@ class InteractionController {
     hovered_topic_(hovered_);
   }
 
-  // Ein Klick wählt das getroffene Element; ins Leere hebt die Auswahl auf.
+  // A click selects the hit element; into the void it cancels the selection.
   void OnPrimaryDown(glm::vec2 page_point) {
     const std::optional<PickId> hit = Pick(page_point);
     if (!hit.has_value() || !path_source_) {

@@ -11,9 +11,9 @@
 #include "../application/project_document.hpp"
 #include "main_frame.hpp"
 
-// Führt die Menübefehle rund um Dateien aus: Dialog zeigen, Pfad holen, das
-// Projekt laden oder schreiben lassen, Fehler melden. Die Dialoge sind der
-// Grund, warum das in der Presentation liegt — gerechnet wird nichts hier.
+// Carries out the menu commands around files: show the dialogue, fetch the
+// path, have the project loaded or written, report errors. The dialogues are the
+// reason this sits in presentation — nothing gets computed here.
 class FileCommands {
  public:
   FileCommands(MainFrame& frame, application::ProjectDocument& document)
@@ -43,7 +43,7 @@ class FileCommands {
   }
 
  private:
-  // Filter des Dialogs und die Endung, die beim Speichern fehlen darf.
+  // The dialogue filter and the suffix that may be missing when saving.
   struct FileType {
     const char* wildcard;
     const char* extension;
@@ -64,7 +64,7 @@ class FileCommands {
     Report("Open File", document_.LoadXml(file_path));
   }
 
-  // Speichern ohne bekannten Pfad fragt genau wie «Speichern unter».
+  // Saving without a known path asks exactly as "save as" does.
   void SaveXml() {
     if (!document_.HasFilePath()) {
       SaveXmlAs();
@@ -105,7 +105,7 @@ class FileCommands {
     frame_.Canvas().SavePNG(file_path);
   }
 
-  // Leerer Rückgabewert heisst: abgebrochen.
+  // An empty return value means: cancelled.
   [[nodiscard]] std::string AskOpenPath(const wxString& title,
                                         const wxString& wildcard) {
     wxFileDialog dialog(&frame_, title, wxEmptyString, wxEmptyString, wildcard,
@@ -116,9 +116,9 @@ class FileCommands {
     return dialog.GetPath().ToStdString();
   }
 
-  // wxGTK hängt die Endung des Filters nie an (wxWidgets #9917) — das holen wir
-  // nach, samt der Überschreibfrage, die der Dialog nur zum getippten Namen
-  // stellt.
+  // wxGTK never appends the filter's suffix (wxWidgets #9917) — we do that
+  // afterwards, together with the overwrite question the dialogue asks about the
+  // typed name alone.
   [[nodiscard]] std::string AskSavePath(const wxString& title,
                                         const FileType& type) {
     wxFileDialog dialog(&frame_, title, wxEmptyString, wxEmptyString,

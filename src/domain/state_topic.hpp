@@ -5,16 +5,16 @@
 
 namespace domain {
 
-// Der Kanal, auf dem ein Store seinen Zustand veröffentlicht — der Port im
-// Sinn von Ports & Adapters. Ein Store bekommt sein Topic per Referenz
-// eingesetzt und ruft es auf, statt ein eigenes Signal zu besitzen; wer das
-// Topic besitzt, entscheidet die äussere Schicht (in der Anwendung: EventBus).
+// The channel a store publishes its state on — the port in the sense of ports
+// and adapters. A store gets its topic injected by reference and calls it,
+// instead of owning a signal of its own; who owns the topic is the outer layer's
+// decision (the EventBus in the application).
 //
-// Warum nicht der EventBus selbst: die Domain darf nichts aus der Application
-// kennen. Ein Topic ist nur ein typisiertes Signal — die Domain hängt damit
-// weiterhin bloss an sigslot, kennt aber weder den Bus noch dessen übrige
-// Themen. Nebenbei bleibt die Kopplung minimal: ein Store sieht genau den
-// einen Kanal, den er bedient.
+// Why not the event bus itself: the domain may know nothing from the
+// application. A topic is merely a typed signal — the domain thereby still hangs
+// on sigslot alone and knows neither the bus nor its remaining topics. The
+// coupling stays minimal along the way: a store sees exactly the one channel it
+// serves.
 template <typename Value>
 using StateTopic = sigslot::signal<const Value&>;
 

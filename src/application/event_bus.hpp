@@ -17,17 +17,16 @@
 #include "../domain/title_config.hpp"
 #include "../infrastructure/graphics/pick_id.hpp"
 
-// Zentraler typisierter Ereignisbus.
+// The central typed event bus.
 //
-// Ein Topic je Domänenereignis, erreichbar über einen gleichnamigen Accessor.
-// Produzenten veröffentlichen mit `bus.<topic>()(wert)`, Konsumenten hängen
-// sich mit `bus.<topic>().connect(...)` an. Stores bekommen ihr Topic beim
-// Bauen eingesetzt und rufen es selbst auf — dazwischen steht keine
-// Weiterleitung mehr. Wer welchen Konsumenten anhängt, steht gesammelt in
-// `main_window_binder`, damit keine Seite die andere kennen muss.
+// One topic per domain event, reachable through an accessor of the same name.
+// Producers publish with `bus.<topic>()(value)`, consumers attach with
+// `bus.<topic>().connect(...)`. Stores get their topic injected on construction
+// and call it themselves — no forwarding stands between any more. Who attaches
+// which consumer sits collected in `main_window_binder`, so neither side needs
+// to know the other.
 //
-// Die Topics sind privat; die Accessors sind der einzige Zugang für beide
-// Seiten.
+// The topics are private; the accessors are the only way in for both sides.
 class EventBus {
  public:
   EventBus() = default;
@@ -67,9 +66,9 @@ class EventBus {
   domain::StateTopic<SceneNodeSnapshot> scene_snapshot_;
   domain::StateTopic<std::optional<PickId>> hovered_;
   domain::StateTopic<std::optional<std::string>> selected_node_;
-  // Doppelklick auf ein Element: Bitte dieses bearbeiten.
+  // A double click on an element: please edit this one.
   domain::StateTopic<PickId> edit_requested_;
-  // Was von einer laufenden Bearbeitung zu sehen ist; leer heisst keine.
+  // What is to be seen of a running edit; empty means none.
   domain::StateTopic<std::optional<TextEditView>> text_edit_;
 };
 

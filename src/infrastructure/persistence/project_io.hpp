@@ -29,9 +29,9 @@
 
 namespace persistence {
 
-// Rückgabe: leer bei Erfolg, sonst die anzeigefertige Fehlermeldung. Weder
-// Load noch Save lassen eine Exception entweichen — die Aufrufer sitzen in
-// wx-Event-Handlern, wo ein Wurf die Anwendung abreissen würde.
+// The return: empty on success, otherwise the display-ready error message.
+// Neither Load nor Save lets an exception escape — the callers sit in wx event
+// handlers, where a throw would tear the application down.
 [[nodiscard]] inline std::optional<std::string> LoadProjectXml(
     const std::string& file_path, DateGroupStore& date_groups_store,
     DateEntryStore& date_entry_store, PageSetupStore& page_setup_store,
@@ -43,9 +43,9 @@ namespace persistence {
     return "Cannot open project file: " + file_path;
   }
 
-  // Erst die ganze Datei in lokale Werte lesen: ein Lesefehler (kaputte Datei,
-  // altes, bewusst nicht mehr lesbares Format) lässt den Projektzustand so
-  // unangetastet, statt die Stores halb zu überschreiben.
+  // Read the whole file into local values first: that way a read error (a
+  // broken file, an old format deliberately no longer readable) leaves the
+  // project state untouched instead of half-overwriting the stores.
   std::vector<DateGroup> date_groups;
   std::vector<DateEntry> date_entries;
   PageSetupConfig page_setup_config{};
@@ -66,10 +66,9 @@ namespace persistence {
     return "Loading the project file failed: " + std::string(read_error.what());
   }
 
-  // Die Werte über die Receive*-Eingänge in die Stores schieben, damit die
-  // Änderungssignale genau wie bei einer Nutzereingabe feuern. Die Reihenfolge
-  // zählt: Gruppen vor Einträgen, weil der Entry-Store beim Empfang
-  // gruppenabhängigen Zustand ableitet.
+  // Push the values into the stores through the Receive* inputs, so the change
+  // signals fire exactly as on user input. The order counts: groups before
+  // entries, because the entry store derives group-dependent state on receipt.
   date_groups_store.ReceiveDateGroups(date_groups);
   date_entry_store.ReceiveDateEntries(date_entries);
   page_setup_store.ReceivePageSetup(page_setup_config);
@@ -92,9 +91,9 @@ namespace persistence {
   }
 
   try {
-    // Der Archiv-Destruktor schreibt den XML-Abschluss — deshalb der eigene
-    // Scope vor der Stream-Prüfung. Die Stores selbst tragen keinen
-    // Serialisierungscode; persistiert werden ihre Domain-Werte.
+    // The archive destructor writes the XML closing — hence the scope of its
+    // own before the stream check. The stores carry no serialisation code
+    // themselves; what gets persisted are their domain values.
     boost::archive::xml_oarchive oarchive(filestream);
     oarchive << boost::serialization::make_nvp("date_groups",
                                                date_groups_store.Get().Items());

@@ -20,12 +20,12 @@
 
 namespace application {
 
-// Das geöffnete Projekt: besitzt alle Stores, kennt seinen Dateipfad und ist
-// der einzige Ort, an dem Laden und Speichern angestossen werden. Die Stores
-// bekommen beim Bauen ihr Bus-Topic eingesetzt und veröffentlichen selbst.
+// The open project: it owns every store, knows its file path and is the only
+// place loading and saving get triggered from. The stores get their bus topic
+// injected on construction and publish themselves.
 //
-// Ohne dieses Objekt reichte jede Lade- und Speicherstelle sechs Stores von
-// Hand durch; jetzt steht diese Liste genau einmal hier.
+// Without this object every load and save site passed six stores through by
+// hand; now that list stands exactly once, here.
 class ProjectDocument {
  public:
   explicit ProjectDocument(EventBus& bus,
@@ -46,8 +46,8 @@ class ProjectDocument {
   ProjectDocument(ProjectDocument&&) = delete;
   ProjectDocument& operator=(ProjectDocument&&) = delete;
 
-  // Lädt ein XML-Projekt. Der Pfad wird nur bei Erfolg übernommen, damit ein
-  // gescheitertes Laden nicht das Ziel des nächsten Speicherns verstellt.
+  // Loads an XML project. The path gets taken over on success alone, so a
+  // failed load does not misplace the target of the next save.
   [[nodiscard]] std::optional<std::string> LoadXml(std::string file_path) {
     if (auto error = persistence::LoadProjectXml(
             file_path, date_groups_store_, date_entry_store_, page_setup_store_,
@@ -84,7 +84,7 @@ class ProjectDocument {
   [[nodiscard]] bool HasFilePath() const { return !file_path_.empty(); }
   [[nodiscard]] const std::string& FilePath() const { return file_path_; }
 
-  // Zugriff für die Composition Root, die daraus die Verdrahtung baut.
+  // Access for the composition root, which builds the wiring out of it.
   [[nodiscard]] DateGroupStore& DateGroups() { return date_groups_store_; }
   [[nodiscard]] DateEntryStore& DateEntries() { return date_entry_store_; }
   [[nodiscard]] TransformDateEntry& Transform() {
@@ -102,8 +102,8 @@ class ProjectDocument {
   }
 
  private:
-  // Der Pfad wechselt nur mit Laden und Speichern; die Anzeige erfährt ihn wie
-  // jeden anderen Zustand über den Bus.
+  // The path changes with loading and saving alone; the display learns it over
+  // the bus like any other state.
   void SetFilePath(std::string file_path) {
     file_path_ = std::move(file_path);
     file_path_topic_(file_path_);

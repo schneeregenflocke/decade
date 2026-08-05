@@ -43,19 +43,19 @@ class SceneNode {
     shape_ = std::move(shape_ptr);
   }
 
-  // Der Knoten besitzt seine Shape allein; Aufrufer beobachten sie nur, darum
-  // ein nicht-besitzender Zeiger (nie als Datenmember speichern).
+  // The node owns its shape alone; callers merely observe it, hence a
+  // non-owning pointer (never store it as a data member).
   [[nodiscard]] Shape* GetShape() { return shape_.get(); }
 
   [[nodiscard]] const Shape* GetShape() const { return shape_.get(); }
 
   [[nodiscard]] const std::string& GetNodeName() const { return node_name_; }
 
-  // Name der Domänen-ShapeConfiguration, aus der das Aussehen dieses Knotens
-  // stammt (leer bei Knoten ohne solche Bindung, etwa Text- und
-  // Containerknoten). Der stabile Rückverweis auf die Konfiguration, die der
-  // Rebuild reproduziert — daran zeigt der Szenenbaum die Werte zum Knoten an.
-  // Gesetzt vom Szenenbauer, wo er eine Konfiguration anwendet.
+  // The name of the domain ShapeConfiguration this node's appearance comes from
+  // (empty on nodes without such a binding, text and container nodes for
+  // instance). The stable back reference to the configuration the rebuild
+  // reproduces — the scene tree shows the node's values by it. Set by the scene
+  // builder wherever it applies a configuration.
   void SetStyleId(const std::string& style_id) { style_id_ = style_id; }
 
   [[nodiscard]] const std::string& GetStyleId() const { return style_id_; }
@@ -193,9 +193,9 @@ class SceneNode {
   bool snapshot_hidden_{false};
 };
 
-// Pfad «root/.../name» zu einem Knoten des Baums, oder leer, wenn er nicht
-// darin liegt. Gegenstück zum Auflösen eines Pfades: dieselbe Schreibweise, die
-// der Szenenbaum-Panel und das Selektions-Highlight benutzen.
+// The path "root/.../name" to a node of the tree, or empty when it does not lie
+// in it. The counterpart to resolving a path: the same notation the scene tree
+// panel and the selection highlight use.
 [[nodiscard]] inline std::optional<std::string> FindNodePath(
     const SceneNode& root, const SceneNode& target) {
   struct Entry {

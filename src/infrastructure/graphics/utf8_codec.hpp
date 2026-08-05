@@ -8,10 +8,10 @@
 
 #include "unicode.hpp"
 
-// Infrastructure: die Umrechnung zwischen UTF-8 und Codepoints, an einem Ort.
-// Zwei Seiten brauchen sie: der Textrenderer, der je Codepoint eine Glyphe
-// holt, und der Texteditor, der in Codepoints rechnet (ein Umlaut = ein
-// Schritt). ICU trägt die Unicode-Arbeit.
+// Infrastructure: the conversion between UTF-8 and code points, in one place.
+// Two sides need it: the text renderer, which fetches a glyph per code point,
+// and the text editor, which computes in code points (an umlaut = one step). ICU
+// carries the Unicode work.
 
 // Append the code points of the half-open UTF-16 range [begin, end) of an
 // ICU string to out. char32At returns the full code point at a unit index; a
@@ -82,8 +82,8 @@ inline void AppendCodePoints(const icu::UnicodeString& text, std::int32_t begin,
   return code_points;
 }
 
-// Gegenstück zu DecodeUtf8 für den Rückweg: Der Texteditor rechnet in
-// Codepoints, gespeichert und gezeichnet wird UTF-8.
+// The counterpart to DecodeUtf8 for the way back: the text editor computes in
+// code points, while what gets stored and drawn is UTF-8.
 [[nodiscard]] inline std::string EncodeUtf8(const std::u32string& code_points) {
   icu::UnicodeString utf16;
   for (const char32_t code_point : code_points) {

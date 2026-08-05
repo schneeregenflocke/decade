@@ -10,15 +10,15 @@
 #include "date_group.hpp"
 #include "date_period.hpp"
 
-// Value Object: die Einträge eines Projekts in kanonischer Form. `Assign`
-// verwirft null Zeiträume, sortiert nach Beginn und leitet alles Abgeleitete
-// neu her — laufende Nummer, Zwischenzeitraum bis zum nächsten Eintrag,
-// Nummer innerhalb der Gruppe — und kappt Gruppen, die es nicht mehr gibt.
+// A value object: the entries of a project in canonical form. `Assign` discards
+// null periods, sorts by begin and derives everything derived anew — the running
+// number, the gap period to the next entry, the number within the group — and
+// cuts groups that no longer exist.
 //
-// Getrennt vom Store, weil zwei Halter dieselbe Aufbereitung brauchen, aber
-// nur einer davon publiziert: DateEntryStore veröffentlicht, DateEntryBarStore
-// rechnet daraus Balken. Früher teilten sie sich das über Vererbung samt
-// protected-Zugriffen; Komposition kommt ohne beides aus.
+// Separate from the store, because two holders need the same preparation but
+// only one of them publishes: DateEntryStore publishes, DateEntryBarStore
+// computes bars out of it. They used to share this through inheritance with
+// protected access; composition manages without both.
 class DateEntryList {
  public:
   void Assign(const std::vector<DateEntry>& incoming_date_entries) {
@@ -71,8 +71,8 @@ class DateEntryList {
     if (date_entries_.empty()) {
       return 0;
     }
-    // Sortiert ist nach Begin(); das späteste End() kann bei einem früher
-    // beginnenden, mehrjährigen Eintrag liegen — über alle Einträge maximieren.
+    // The sort is by Begin(); the latest End() can sit on an earlier-beginning,
+    // multi-year entry — so maximise across every entry.
     const auto& latest = std::ranges::max(
         date_entries_, {},
         [](const DateEntry& entry) { return entry.GetDateInterval().Last(); });

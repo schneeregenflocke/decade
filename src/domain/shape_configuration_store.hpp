@@ -8,9 +8,9 @@
 #include "shape_configuration.hpp"
 #include "state_topic.hpp"
 
-// Besitzt einen ShapeConfigSet-Wert und veröffentlicht ihn auf dem
-// eingesetzten Topic. Hat Identität -> nicht kopierbar. Das Topic trägt den
-// Wert, deshalb braucht der Store keine Query-Delegation.
+// Owns a ShapeConfigSet value and publishes it on the injected topic. It has
+// identity -> not copyable. The topic carries the value, so the store needs no
+// query delegation.
 class ShapeConfigurationStore {
  public:
   explicit ShapeConfigurationStore(domain::StateTopic<ShapeConfigSet>& topic)
@@ -30,10 +30,10 @@ class ShapeConfigurationStore {
     topic_(shape_config_set_);
   }
 
-  // Gleicht die gruppenweisen Konfigurationen an die aktuellen Datumsgruppen
-  // an (neue aus der Palette ergänzen, verwaiste verwerfen) und veröffentlicht
-  // den Satz neu. Diese Palettenlogik ist Domänenwissen und gehört deshalb in
-  // den Store, nicht in ein Panel.
+  // Aligns the per-group configurations to the current date groups (add new
+  // ones from the palette, discard orphans) and publishes the set anew. This
+  // palette logic is domain knowledge and therefore belongs in the store, not in
+  // a panel.
   void ReceiveDateGroups(const std::vector<DateGroup>& date_groups) {
     if (emitting_) {
       return;

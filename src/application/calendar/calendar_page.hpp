@@ -61,8 +61,8 @@ class CalendarPage {
     Update();
   }
 
-  // Die Schriftdatei neu zu laden lohnt nur, wenn sie sich ändert; die Grösse
-  // wirkt ohne Neuladen, weil Font geviert-normiert rastert.
+  // Reloading the font file pays off only when it changes; the size takes hold
+  // without a reload, because Font rasters em-normalised.
   void ReceiveFont(const FontConfig& font_config) {
     if (font_config.FilePath() != font_config_.FilePath()) {
       font_ = std::make_shared<Font>(font_config.FilePath());
@@ -113,23 +113,23 @@ class CalendarPage {
     gl_canvas_.Repaint();
   }
 
-  // Zeichnet die laufende Textbearbeitung. Der Text ändert die Geometrie, also
-  // braucht es einen Rebuild — aber keinen neuen Szenen-Schnappschuss: der Baum
-  // des Nutzers ändert sich beim Tippen nicht, und ihn je Anschlag neu
-  // aufzubauen würde die Auswahl im Panel stören.
+  // Draws the running text edit. The text changes the geometry, so a rebuild is
+  // needed — but no new scene snapshot: the user's tree does not change while
+  // typing, and rebuilding it per keystroke would disturb the selection in the
+  // panel.
   void ReceiveTextEdit(const std::optional<TextEditView>& text_edit) {
     scene_composer_.SetTextEdit(text_edit);
     scene_composer_.Build();
     gl_canvas_.Repaint();
   }
 
-  // Pfad des Szenenknotens, den ein getroffenes Element meint.
+  // The path of the scene node a hit element means.
   [[nodiscard]] std::optional<std::string> NodePathFor(
       const PickId& picked) const {
     return scene_composer_.NodePathFor(picked);
   }
 
-  // Cursor-Index, den ein Klick im Seitenraum in der Titelzeile meint.
+  // The cursor index a click in page space means within the title line.
   [[nodiscard]] std::size_t TitleCaretIndexAt(glm::vec2 page_point) const {
     return scene_composer_.TitleCaretIndexAt(page_point);
   }

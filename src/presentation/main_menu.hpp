@@ -21,11 +21,10 @@ struct MainMenuIds {
   int license_info{wxWindow::NewControlId()};
 };
 
-// Presentation: besitzt nur das Menü-*Layout* (File + Help). Was ein Befehl
-// bewirkt, entscheidet das Fenster; diese Klasse baut die wxMenuBar, hängt sie
-// an einen Frame und veröffentlicht die IDs, gegen die der Frame bindet. Das
-// Menü ändert sich, wenn sich das Menü ändert — unabhängig von Verdrahtung und
-// Befehlen.
+// Presentation: it owns the menu *layout* alone (File plus Help). What a command
+// does is the window's decision; this class builds the wxMenuBar, hangs it onto
+// a frame and publishes the IDs the frame binds against. The menu changes when
+// the menu changes — independently of wiring and commands.
 class MainMenu {
  public:
   explicit MainMenu(int export_png_dpi) : export_png_dpi_(export_png_dpi) {}

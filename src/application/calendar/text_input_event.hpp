@@ -7,14 +7,14 @@
 
 #include "../../domain/text_edit_buffer.hpp"
 
-// Application: eine Tastatureingabe, bereits von wx-Tastencodes in ihre
-// Bedeutung übersetzt. Das Canvas kennt die Tasten, der Editor die Bedeutung —
-// dieses Ereignis ist die Naht dazwischen, damit weder wx-Codes in die
-// Application wandern noch Editierlogik in die Presentation.
+// Application: a keyboard input, already translated from wx key codes into its
+// meaning. The canvas knows the keys, the editor the meaning — this event is the
+// seam between them, so that neither wx codes travel into the application nor
+// editing logic into presentation.
 //
-// Die Zwischenablage kommt hier nicht vor: Kopieren ist Auswahl lesen (der
-// Editor gibt sie als UTF-8 heraus), Einfügen ist ein kInsert. Der wx-Teil
-// bleibt damit in der Presentation.
+// The clipboard does not turn up here: copying is reading the selection (the
+// editor hands it out as UTF-8), pasting is a kInsert. The wx part thereby stays
+// in presentation.
 struct TextInputEvent {
   enum class Kind : std::uint8_t {
     kInsert,
@@ -27,12 +27,12 @@ struct TextInputEvent {
   };
 
   Kind kind{Kind::kInsert};
-  std::string text;  // UTF-8, nur bei kInsert
+  std::string text;  // UTF-8, on kInsert alone
   TextEditBuffer::Direction direction{TextEditBuffer::Direction::kLeft};
   TextEditBuffer::Selection selection{TextEditBuffer::Selection::kReplace};
 
-  // Benannte Fabriken statt Feld-für-Feld-Initialisierung: sie sagen, was
-  // gemeint ist, und lassen die unbeteiligten Felder auf ihrem Vorgabewert.
+  // Named factories instead of field-by-field initialisation: they say what is
+  // meant and leave the uninvolved fields at their default.
   [[nodiscard]] static TextInputEvent Insert(std::string text) {
     return {.kind = Kind::kInsert, .text = std::move(text)};
   }

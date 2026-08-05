@@ -15,20 +15,20 @@
 
 namespace window_screenshot {
 
-// Ein Bild, das über den Widget-Abzug gelegt wird, samt Platz im Fenster.
-// Nötig für die GL-Fläche: ein wxDC sieht sie nicht, ihr Inhalt muss separat
-// geliefert und einmontiert werden.
+// An image laid over the widget capture, together with its place in the window.
+// Needed for the GL surface: a wxDC does not see it, so its content must be
+// delivered separately and mounted in.
 struct Overlay {
   wxImage image;
   wxPoint origin;
   wxSize size;
 };
 
-// Nimmt den Widget-Baum eines Fensters über einen wxClientDC ab, montiert das
-// Overlay darauf und schreibt das Ganze als PNG. Meldet Erfolg.
+// Captures the widget tree of a window through a wxClientDC, mounts the overlay
+// onto it and writes the whole as a PNG. It reports success.
 //
-// Der Widget-Abzug gelingt nur unter X11/Xvfb; unter Wayland liefert der Blit
-// Schwarz. Siehe betrieb.md, Kopflose Läufe.
+// The widget capture succeeds under X11 and Xvfb alone; under Wayland the blit
+// delivers black. See operations.md, Headless runs.
 [[nodiscard]] inline bool SaveWindowPng(wxWindow& window,
                                         const Overlay& overlay,
                                         const std::string& file_path) {

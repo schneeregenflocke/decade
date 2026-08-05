@@ -4,10 +4,11 @@
 #include <chrono>
 #include <deque>
 
-// Misst die Bildrate des ereignisgesteuerten Renderings: AddFrame registriert
-// jeden gezeichneten Frame samt seiner CPU-Renderdauer; Fps zählt die Frames
-// im Sekundenfenster, das mit dem jüngsten Frame endet. Zeitpunkte kommen von
-// aussen, damit die Klasse ohne eigene Uhr (und ohne GL) testbar bleibt.
+// Measures the frame rate of the event-driven rendering: AddFrame registers
+// every drawn frame together with its CPU render duration; Fps counts the frames
+// in the one-second window ending with the newest frame. The timestamps come
+// from outside, so the class stays testable without a clock of its own (and
+// without GL).
 class FrameStats {
  public:
   using Clock = std::chrono::steady_clock;
@@ -21,15 +22,15 @@ class FrameStats {
     }
   }
 
-  // Frames pro Sekunde im Fenster, das mit dem jüngsten Frame endet. Da die
-  // App nur ereignisgesteuert zeichnet, ist der Wert während einer
-  // Interaktion aussagekräftig, im Leerlauf bleibt er beim letzten Stand.
+  // Frames per second in the window ending with the newest frame. Since the app
+  // draws event-driven alone, the value carries meaning during an interaction;
+  // when idle it stays at its last reading.
   [[nodiscard]] double Fps() const {
     return static_cast<double>(frame_times_.size()) /
            std::chrono::duration<double>(kWindow).count();
   }
 
-  // CPU-Dauer des zuletzt gezeichneten Frames (Render + Buffer-Swap).
+  // The CPU duration of the last drawn frame (render plus buffer swap).
   [[nodiscard]] double LastRenderMillis() const {
     return std::chrono::duration<double, std::milli>(last_render_time_)
         .count();
