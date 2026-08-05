@@ -1,21 +1,21 @@
 # decade
 
-Desktopanwendung, die Zeiträume über mehrere Jahre auf einer Kalenderseite darstellt — eine Zeile pro Jahr, darunter die Jahressumme. Die Seite lässt sich als PNG exportieren; Daten kommen aus CSV, ganze Projekte aus XML.
+A desktop application that shows periods across several years on one calendar page — one row per year, the yearly total beneath. The page exports as a PNG; data comes from CSV, whole projects from XML.
 
-Alpha-Stand, aus einem Übungsprojekt gewachsen. C++23, wxWidgets, OpenGL, ICU.
+Alpha state, grown out of a practice project. C++23, wxWidgets, OpenGL, ICU.
 
-Bauen, starten, Tests und die kopflosen Läufe stehen in [betrieb.md](betrieb.md); Architektur und Konventionen in [AGENTS.md](AGENTS.md).
+Building, starting, tests and the headless runs stand in [operations.md](operations.md); architecture and conventions in [AGENTS.md](AGENTS.md).
 
-## Zweck
+## Purpose
 
-### Oberfläche
+### The interface
 
-Links die Eingabetabellen und Einstellungen, rechts die gerenderte Seite:
+The input tables and settings on the left, the rendered page on the right:
 
-![Hauptfenster mit Datentabelle und Kalendervorschau](assets/screenshot.png)
+![The main window with the data table and the calendar preview](assets/screenshot.png)
 
 ### Export
 
-Dieselbe Seite als PNG-Export in Druckauflösung:
+The same page as a PNG export at print resolution:
 
-![Als PNG exportierte Kalenderseite](assets/render.png)
+![The calendar page exported as a PNG](assets/render.png)
