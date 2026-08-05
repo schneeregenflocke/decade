@@ -67,9 +67,9 @@ class SceneHighlighter {
     }
   }
 
-  // Der Szenenknoten, den ein getroffenes Element meint — leer, wenn sein
-  // Index nach einem Rebuild ins Leere zeigt. Der Highlighter führt die Knoten
-  // ohnehin; so muss sie niemand ein zweites Mal halten.
+  // The scene node a hit element means — empty when its index points into the
+  // void after a rebuild. The highlighter keeps the nodes anyway, so nobody has
+  // to hold them a second time.
   [[nodiscard]] std::shared_ptr<SceneNode> NodeFor(const PickId& picked) const {
     switch (picked.kind) {
       case PickId::Kind::kBar: {

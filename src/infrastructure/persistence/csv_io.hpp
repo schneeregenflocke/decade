@@ -80,9 +80,9 @@ inline std::vector<DateEntry> ReadDateEntriesFromCsv(
   return date_entries;
 }
 
-// Rückgabe: leer bei Erfolg, sonst die anzeigefertige Fehlermeldung — wie beim
-// Projekt-I/O. Ein unbemerkt fehlgeschlagener Export sähe für den Nutzer aus
-// wie ein gelungener.
+// The return: empty on success, otherwise the display-ready error message — as
+// with the project I/O. An export that failed unnoticed would look to the user
+// like a successful one.
 [[nodiscard]] inline std::optional<std::string> WriteDateEntriesToCsv(
     const std::string& file_path, const std::vector<DateEntry>& date_entries,
     LocaleDateFormatter& date_format) {
@@ -92,8 +92,8 @@ inline std::vector<DateEntry> ReadDateEntriesFromCsv(
   }
 
   {
-    // csv2::Writer schliesst den Stream in seinem Destruktor — deshalb der
-    // eigene Scope vor der Zustandsprüfung.
+    // csv2::Writer closes the stream in its destructor — hence the scope of its
+    // own before the state check.
     csv2::Writer<csv2::delimiter<','>> csv_writer(file_stream);
 
     for (const auto& date_entry : date_entries) {

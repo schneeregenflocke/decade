@@ -3,9 +3,9 @@
 
 namespace domain::detail {
 
-// RAII-Helfer: setzt `flag` beim Konstruieren auf true und beim Zerstören
-// zurück auf false. Stores brechen damit Echoschleifen, bei denen ein Slot am
-// veröffentlichten Zustand wieder in `Receive*` desselben Stores läuft.
+// An RAII helper: it sets `flag` to true on construction and back to false on
+// destruction. Stores break echo loops with it, where a slot on the published
+// state runs back into `Receive*` of the same store.
 class ScopedReentryFlag {
  public:
   explicit ScopedReentryFlag(bool& flag) : flag_(flag) { flag_ = true; }

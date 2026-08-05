@@ -74,8 +74,9 @@ class Shader {
     GLuint fragment;
   };
 
-  // Uniform-Locations sind nach dem Linken stabil; der Cache erspart den
-  // glGetUniformLocation-String-Lookup, der sonst pro Shape und Frame anfällt.
+  // Uniform locations are stable after linking; the cache spares the
+  // glGetUniformLocation string lookup that would otherwise fall due per shape
+  // and frame.
   GLint UniformLocation(const std::string& uniform_name) const {
     auto found = uniform_locations_.find(uniform_name);
     if (found == uniform_locations_.end()) {
@@ -168,9 +169,9 @@ class Shaders {
     auto font_fragment_shader_resource =
         LOAD_RESOURCE(shader_font_fragment_shader);
 
-    // Die Lambert-Shader (diffuse Beleuchtung pro Fragment) sind als Ressource
-    // eingebettet, aber bewusst nicht geladen: sie gehören zum 3D-Pfad, den
-    // die Kalenderdarstellung nicht benutzt.
+    // The Lambert shaders (diffuse lighting per fragment) are embedded as a
+    // resource but deliberately not loaded: they belong to the 3D path, which
+    // the calendar rendering does not use.
 
     shaders_.emplace_back(
         Shader::ShaderSources{

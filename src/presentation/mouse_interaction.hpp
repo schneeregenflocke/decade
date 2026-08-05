@@ -13,9 +13,9 @@
 #include "../infrastructure/graphics/mvp_matrices.hpp"
 #include "../infrastructure/graphics/pan_zoom_camera.hpp"
 
-// Übersetzt Mausereignisse in Kamera-Befehle: Ziehen wird zum Pan-Delta im
-// Weltraum, das Mausrad zum Zoom-Faktor um den Zeiger. Der Pan-/Zoom-Zustand
-// selbst lebt in PanZoomCamera.
+// Translates mouse events into camera commands: dragging becomes a pan delta in
+// world space, the mouse wheel a zoom factor around the pointer. The pan and
+// zoom state itself lives in PanZoomCamera.
 class MouseInteraction {
  public:
   void Apply(MVP& mvp, PanZoomCamera& camera, wxPoint mouse_position,
@@ -24,8 +24,8 @@ class MouseInteraction {
     LogPointerInput(mouse_position, dragging, wheel_rotation,
                     current_mouse_pos);
 
-    // Reihenfolge tragend: der Zoom korrigiert über die View-Matrix, die den
-    // aktuellen Pan-Zustand enthält — Pan muss also zuerst laufen.
+    // The order is load-bearing: the zoom corrects through the view matrix,
+    // which holds the current pan state — so the pan must run first.
     if (dragging) {
       camera.Pan(current_mouse_pos - persistent_mouse_pos_);
     }

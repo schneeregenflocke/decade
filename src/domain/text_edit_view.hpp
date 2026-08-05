@@ -4,11 +4,11 @@
 #include <cstddef>
 #include <string>
 
-// Pure domain value: was von einer laufenden Textbearbeitung zu sehen ist.
-// Der Renderer zeichnet daraus Text, Cursor und Auswahl, ohne den Editor selbst
-// zu kennen; ein leeres `optional` beim Konsumenten heisst «niemand editiert».
-// Der Text ist UTF-8 (so zeichnet ihn die Schrift), die Positionen zählen
-// Codepoints (so rechnet der TextEditBuffer).
+// A pure domain value: what is to be seen of a running text edit. The renderer
+// draws text, cursor and selection from it without knowing the editor itself; an
+// empty `optional` at the consumer means "nobody is editing". The text is UTF-8
+// (that is how the font draws it), the positions count code points (that is how
+// TextEditBuffer computes).
 struct TextEditView {
   std::string text;
   std::size_t caret{0};

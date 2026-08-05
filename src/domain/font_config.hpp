@@ -6,8 +6,8 @@
 
 #include "typography.hpp"
 
-// Die anwendungsweit gewählte Schrift: Datei und Grösse in Punkt. Reiner
-// Domänenwert, keine Serialisierung, kein Signal -> Rule of Zero, kopierbar.
+// The application-wide chosen font: the file and the size in points. A pure
+// domain value, no serialisation, no signal -> rule of zero, copyable.
 class FontConfig {
  public:
   FontConfig() = default;

@@ -4,10 +4,9 @@
 #include <glm/glm.hpp>
 #include <iostream>
 
-// Laufzeit-Debugausgaben, aktiviert über das CLI-Flag --debug-log; die App
-// setzt den Schalter beim Start via SetLogEnabled. Wird sowohl vom
-// OpenGL-Canvas als auch von der Maus-Interaktion genutzt, daher in einem
-// eigenen Header.
+// Runtime debug output, switched on through the CLI flag --debug-log; the app
+// sets the switch at start through SetLogEnabled. Both the OpenGL canvas and the
+// mouse interaction use it, hence a header of its own.
 namespace decade_debug {
 
 namespace debug_log_detail {

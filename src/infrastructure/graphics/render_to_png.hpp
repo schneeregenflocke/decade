@@ -291,10 +291,10 @@ namespace render_to_png_detail {
 
 }  // namespace render_to_png_detail
 
-// Zeichnet die Kalenderseite in der gewünschten Auflösung als PNG. Rechnet die
-// Millimeter-Ausdehnung der Seite über die dpi in eine Pixelgrösse um, lässt
-// ImageComposer gekachelt rendern und png_io schreiben. Tut nichts, wenn die
-// Bildgrösse die PNG-Grenzen sprengt.
+// Draws the calendar page as a PNG at the wanted resolution. It converts the
+// page's millimetre extent into a pixel size through the dpi, has ImageComposer
+// render it in tiles and png_io write it. It does nothing when the image size
+// bursts the PNG limits.
 inline void WritePageToPng(const std::string& file_path,
                            const rectf& ortho_region, float dpi,
                            GraphicsEngine& graphics_engine, int msaa_samples) {

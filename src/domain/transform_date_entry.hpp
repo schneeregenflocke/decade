@@ -8,10 +8,9 @@
 #include "detail/reentry_guard.hpp"
 #include "state_topic.hpp"
 
-// Verschiebt Beginn und Ende jedes Eintrags um eine feste Tageszahl und
-// veröffentlicht das Ergebnis auf dem eingesetzten Topic. Die Verschiebung ist
-// heute überall null; der Weg bleibt, weil er die Darstellung von den
-// gespeicherten Daten trennt.
+// Shifts the begin and end of every entry by a fixed number of days and
+// publishes the result on the injected topic. The shift is zero everywhere
+// today; the path stays because it separates the display from the stored data.
 class TransformDateEntry {
  public:
   struct DateShift {

@@ -63,16 +63,16 @@ class DocumentSetupPanel : public wxPanel {
   }
 
  private:
-  // Ein Label statt eines Eingabefelds: der Pfad wird nie getippt. Kopiert
-  // wird er über den Knopf daneben.
+  // A label instead of an input field: the path never gets typed. Copying runs
+  // over the button beside it.
   wxSizer* CreateFilePathRow(int border_px) {
     auto* row_sizer = MakeOwned<wxBoxSizer>(wxHORIZONTAL);
 
     auto* label = MakeOwned<wxStaticText>(
         this, wxID_ANY, L"unsaved project", wxDefaultPosition, wxDefaultSize,
         wxST_ELLIPSIZE_START | wxST_NO_AUTORESIZE);
-    // Der Pfad darf die Spaltenbreite nicht diktieren; gekürzt wird vorne,
-    // damit der Dateiname sichtbar bleibt.
+    // The path must not dictate the column width; the shortening happens at the
+    // front, so the file name stays visible.
     label->SetMinSize(wxSize(1, -1));
     file_path_label_ = label;
 

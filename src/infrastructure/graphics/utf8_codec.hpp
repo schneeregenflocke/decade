@@ -28,12 +28,13 @@ inline void AppendCodePoints(const icu::UnicodeString& text, std::int32_t begin,
 
 // Decode UTF-8 into a sequence of Unicode code points ready for glyph lookup.
 //
-// Strings reaching the renderer are UTF-8 (e.g. strftime month names like
-// "März", or user-entered title text). ICU does the heavy lifting:
+// Strings reaching the renderer are UTF-8 (strftime month names, which carry
+// accents in many locales, or user-entered title text). ICU does the heavy
+// lifting:
 //   1. fromUTF8 turns the bytes into a UTF-16 string, replacing malformed
 //      sequences with U+FFFD instead of producing stray glyphs.
-//   2. NFC normalisation folds a base letter plus a combining mark (a + ◌̈)
-//      into its precomposed form (ä) where one exists, so it renders as a
+//   2. NFC normalisation folds a base letter plus a combining mark (e + ◌́)
+//      into its precomposed form (é) where one exists, so it renders as a
 //      single glyph — FreeType has no shaping engine of its own.
 //   3. A grapheme BreakIterator walks user-perceived characters; the code
 //      points of each cluster are emitted in order. Code points that have no

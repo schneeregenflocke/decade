@@ -7,9 +7,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_executable(decade)
 target_compile_features(decade PUBLIC cxx_std_23)
 
-# Einzige Translation Unit; alles andere sind Header (siehe AGENTS.md). Sie werden
-# nur fürs IDE-Listing eingesammelt, nicht kompiliert — darum Glob statt Handliste:
-# eine vergessene Zeile bricht nichts, sie fehlt bloss still im Baum.
+# The single translation unit; everything else is a header (see AGENTS.md). They
+# get collected for the IDE listing alone, not compiled — hence a glob instead of
+# a hand-kept list: a forgotten line breaks nothing, it merely goes missing from
+# the tree in silence.
 file(GLOB_RECURSE decade_headers CONFIGURE_DEPENDS src/*.hpp)
 target_sources(decade PRIVATE src/application/main.cpp ${decade_headers})
 
@@ -50,32 +51,33 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang"
 	endif()
 endif()
 
-# --- Systemabhängigkeiten -----------------------------------------------------
-# Fremde Header überall als SYSTEM: ihre Warnungen und clang-tidy-Befunde sollen
-# das -Werror-Gate nicht brechen.
+# --- System dependencies ------------------------------------------------------
+# Foreign headers everywhere as SYSTEM: their warnings and clang-tidy findings
+# must not break the -Werror gate.
 
 find_package(Boost CONFIG REQUIRED COMPONENTS serialization wserialization)
 target_link_libraries(decade PRIVATE Boost::serialization Boost::wserialization)
 
 find_package(PkgConfig REQUIRED)
 
-# GL zieht libepoxy zur Laufzeit selbst nach; zu linken ist nichts.
+# GL pulls libepoxy in itself at runtime; there is nothing to link.
 pkg_check_modules(EPOXY REQUIRED epoxy)
 target_include_directories(decade SYSTEM PRIVATE ${EPOXY_INCLUDE_DIRS})
 target_link_libraries(decade PRIVATE ${EPOXY_LIBRARIES})
 
-# ICU: Unicode-Textbehandlung (UTF-8, NFC, Graphem-Segmentierung) in font.hpp und
-# das Datums-Backend. icu-uc = Unicode/common, icu-i18n = BreakIterator/Kalender.
-# Nicht jede Distribution liefert eine CMake-Config, also via pkg-config wie epoxy.
+# ICU: Unicode text handling (UTF-8, NFC, grapheme segmentation) in font.hpp plus
+# the date backend. icu-uc = Unicode and common, icu-i18n = BreakIterator and
+# calendar. Not every distribution ships a CMake config, so through pkg-config
+# like epoxy.
 pkg_check_modules(ICU REQUIRED icu-uc icu-i18n)
 target_include_directories(decade SYSTEM PRIVATE ${ICU_INCLUDE_DIRS})
 target_link_libraries(decade PRIVATE ${ICU_LIBRARIES})
 
 find_package(wxWidgets CONFIG COMPONENTS propgrid gl core base)
 if(NOT wxWidgets_FOUND)
-	# Debian/Ubuntu bauen wx mit autotools und liefern keine CMake-Config:
-	# Module-Mode via wx-config. Im CONFIG-Mode erledigen die imported Targets
-	# Includes und Flags selbst.
+	# Debian and Ubuntu build wx with autotools and ship no CMake config: module
+	# mode through wx-config. In CONFIG mode the imported targets handle includes
+	# and flags themselves.
 	find_package(wxWidgets REQUIRED COMPONENTS propgrid gl core base)
 	target_include_directories(decade SYSTEM PRIVATE ${wxWidgets_INCLUDE_DIRS})
 	target_compile_definitions(decade PRIVATE ${wxWidgets_DEFINITIONS})
@@ -100,11 +102,11 @@ target_link_libraries(decade PRIVATE
 )
 target_compile_definitions(decade PRIVATE GLM_ENABLE_EXPERIMENTAL)
 
-# --- Untermodule aus external/ ------------------------------------------------
+# --- Submodules out of external/ ----------------------------------------------
 
 function(decade_require_submodule name probe_file)
 	if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/${name}/${probe_file}")
-		message(FATAL_ERROR "${name} fehlt. Untermodul holen: git submodule update --init --recursive")
+		message(FATAL_ERROR "${name} is missing. Fetch the submodule: git submodule update --init --recursive")
 	endif()
 endfunction()
 
@@ -122,9 +124,9 @@ target_include_directories(decade SYSTEM PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/external/bullet3/src
 )
 
-# Bullet aus der Quelle, alles Überflüssige aus. Picking braucht nur die Bullet-2-
-# Kollisionswelt (BulletCollision + LinearMath); EXCLUDE_FROM_ALL hält den Rest aus
-# dem Standard-Build.
+# Bullet from source, everything superfluous off. Picking needs the Bullet 2
+# collision world alone (BulletCollision plus LinearMath); EXCLUDE_FROM_ALL keeps
+# the rest out of the standard build.
 set(BUILD_BULLET2_DEMOS OFF CACHE BOOL "" FORCE)
 set(BUILD_CPU_DEMOS OFF CACHE BOOL "" FORCE)
 set(BUILD_BULLET3 OFF CACHE BOOL "" FORCE)
@@ -137,7 +139,7 @@ set(USE_GRAPHICAL_BENCHMARK OFF CACHE BOOL "" FORCE)
 set(ENABLE_VHACD OFF CACHE BOOL "" FORCE)
 set(INSTALL_CMAKE_FILES OFF CACHE BOOL "" FORCE)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-# Bullet 3.25 deklariert noch cmake_minimum_required < 3.5, was CMake 4.x ablehnt.
+# Bullet 3.25 still declares cmake_minimum_required < 3.5, which CMake 4.x rejects.
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 add_subdirectory(external/bullet3 EXCLUDE_FROM_ALL)
 target_link_libraries(decade PRIVATE BulletCollision LinearMath)
@@ -145,12 +147,12 @@ set_target_properties(BulletCollision LinearMath PROPERTIES SYSTEM TRUE)
 
 add_subdirectory(external/embed-resource)
 target_include_directories(decade SYSTEM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)
-# embed-resource läuft während des Builds. Instrumentiert würde ein Befund darin
-# den Build abbrechen, statt das Programm zu prüfen — also vom Sanitizer ausnehmen.
+# embed-resource runs during the build. Instrumented, a finding in it would break
+# the build instead of checking the program — so exempt it from the sanitizer.
 target_compile_options(embed-resource PRIVATE -fno-sanitize=all)
 target_link_options(embed-resource PRIVATE -fno-sanitize=all)
 
-# --- Eingebettete Ressourcen (Name hinter der Datei = Zugriffsname im Code) ----
+# --- Embedded resources (the name after the file = the access name in code) ---
 
 embed_resources(decade_resources
 	shaders/font_fragment_shader.glsl shader
@@ -171,19 +173,20 @@ embed_resources(decade_resources
 )
 target_sources(decade PRIVATE ${decade_resources})
 
-option(DECADE_BUILD_TESTS "Unit-Tests bauen (tests/ spiegelt src/)" ON)
+option(DECADE_BUILD_TESTS "Build the unit tests (tests/ mirrors src/)" ON)
 if(DECADE_BUILD_TESTS)
 	enable_testing()
 	add_subdirectory(tests)
 endif()
 
 # --- Gates --------------------------------------------------------------------
-# Absichtlich nicht Teil des Standard-Builds, damit normale Compiles schnell
-# bleiben; explizit oder in CI aufrufen. Befehle in betrieb.md.
+# Deliberately no part of the standard build, so normal compiles stay fast; call
+# them explicitly or in CI. The commands sit in operations.md.
 
-# clang-tidy auf der einzigen Translation Unit — sie deckt via HeaderFilterRegex
-# alle src/-Header ab. --extra-arg: -include type_traits umgeht einen Include-Bug
-# in wx/meta/convertible.h, die -Wno-* entschärfen GCC-Flags aus compile_commands.json.
+# clang-tidy on the single translation unit — it covers every src/ header through
+# HeaderFilterRegex. --extra-arg: -include type_traits works around an include bug
+# in wx/meta/convertible.h, and the -Wno-* defuse GCC flags out of
+# compile_commands.json.
 add_custom_target(clang-tidy
 	COMMAND clang-tidy -p ${CMAKE_BINARY_DIR}
 		--warnings-as-errors=*
@@ -191,18 +194,19 @@ add_custom_target(clang-tidy
 		--extra-arg=-Wno-error --extra-arg=-Wno-unknown-warning-option
 		src/application/main.cpp
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-	COMMENT "clang-tidy-Gate (jeder Befund = Fehler) auf src/application/main.cpp"
+	COMMENT "clang-tidy gate (every finding = an error) on src/application/main.cpp"
 	VERBATIM USES_TERMINAL)
 
-# Sanitizer verlangen andere Compile-Flags als der Normalbau, also konfiguriert
-# jedes Gate einen eigenen Build-Ordner, baut alles darin neu und lässt die
-# Testsuite laufen — nur ein Lauf findet Fehler, ein Bau allein nicht. Schlägt ein
-# Sanitizer an, endet der Prozess ungleich null und ctest bricht. Die Flags stehen
-# in CMAKE_CXX_FLAGS, damit sie jedes Target im Ordner treffen, auch Bullet.
-# UBSan meldet sonst nur und läuft weiter — ohne -fno-sanitize-recover bliebe das
-# Gate grün; -fno-omit-frame-pointer rettet die Stacktraces.
+# Sanitizers demand other compile flags than the normal build, so every gate
+# configures a build folder of its own, rebuilds everything in it and runs the
+# test suite — a run finds errors, a build alone does not. Should a sanitizer
+# fire, the process ends non-zero and ctest breaks off. The flags sit in
+# CMAKE_CXX_FLAGS, so they hit every target in the folder, Bullet included.
+# UBSan would otherwise merely report and carry on — without
+# -fno-sanitize-recover the gate would stay green; -fno-omit-frame-pointer saves
+# the stack traces.
 # https://gcc.gnu.org/onlinedocs/gcc-9.2.0/gcc/Instrumentation-Options.html
-# LeakSanitizer steckt unter Linux schon in AddressSanitizer; hier trotzdem genannt.
+# LeakSanitizer already sits inside AddressSanitizer on Linux; named here anyway.
 add_custom_target(sanitize-address
 	COMMAND ${CMAKE_COMMAND} -S ${CMAKE_SOURCE_DIR} -B ${CMAKE_BINARY_DIR}/san-address -G ${CMAKE_GENERATOR}
 		-DCMAKE_BUILD_TYPE=RelWithDebInfo
@@ -210,13 +214,14 @@ add_custom_target(sanitize-address
 	COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}/san-address
 	COMMAND ${CMAKE_COMMAND} -E env UBSAN_OPTIONS=print_stacktrace=1
 		${CMAKE_CTEST_COMMAND} --test-dir ${CMAKE_BINARY_DIR}/san-address --output-on-failure
-	COMMENT "Sanitizer-Gate -fsanitize=address,leak,undefined (Bau + Testlauf)"
+	COMMENT "Sanitizer gate -fsanitize=address,leak,undefined (build plus test run)"
 	VERBATIM USES_TERMINAL)
 
-# MemorySanitizer schliesst AddressSanitizer aus (der Compiler weist die Kombination
-# ab) und kennt nur clang — darum ein zweites Gate. Er verlangt, dass ALLE
-# Abhängigkeiten instrumentiert sind; mit dem System-libstdc++ und -gtest meldet er
-# Fehlalarme aus fremdem Code. Diagnosewerkzeug, kein CI-Gate — siehe betrieb.md.
+# MemorySanitizer excludes AddressSanitizer (the compiler rejects the
+# combination) and clang alone knows it — hence a second gate. It demands that
+# ALL dependencies be instrumented; with the system libstdc++ and gtest it reports
+# false alarms out of foreign code. A diagnostic tool, no CI gate — see
+# operations.md.
 add_custom_target(sanitize-memory
 	COMMAND ${CMAKE_COMMAND} -S ${CMAKE_SOURCE_DIR} -B ${CMAKE_BINARY_DIR}/san-memory -G ${CMAKE_GENERATOR}
 		-DCMAKE_BUILD_TYPE=RelWithDebInfo
@@ -224,5 +229,5 @@ add_custom_target(sanitize-memory
 		"-DCMAKE_CXX_FLAGS=-fsanitize=memory -fno-omit-frame-pointer"
 	COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}/san-memory
 	COMMAND ${CMAKE_CTEST_COMMAND} --test-dir ${CMAKE_BINARY_DIR}/san-memory --output-on-failure
-	COMMENT "Sanitizer-Gate -fsanitize=memory (Bau + Testlauf, clang)"
+	COMMENT "Sanitizer gate -fsanitize=memory (build plus test run, clang)"
 	VERBATIM USES_TERMINAL)

@@ -12,9 +12,9 @@
 #include "date_group.hpp"
 #include "timeline_projection.hpp"
 
-// Lesemodell für das Zeichnen: hält dieselbe aufbereitete Eintragsliste und
-// leitet daraus Balken und Jahressummen ab. Veröffentlicht nichts — der
-// Kalender liest es direkt, deshalb braucht es weder Topic noch Re-Entry-Guard.
+// A read model for the drawing: it holds the same prepared entry list and
+// derives bars and yearly totals from it. It publishes nothing — the calendar
+// reads it directly, so it needs neither a topic nor a re-entry guard.
 class DateEntryBarStore {
  public:
   void ReceiveDateEntries(const std::vector<DateEntry>& incoming_date_entries) {

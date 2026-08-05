@@ -5,9 +5,9 @@
 #include "page_setup_config.hpp"
 #include "state_topic.hpp"
 
-// Besitzt einen PageSetupConfig-Wert und veröffentlicht ihn auf dem
-// eingesetzten Topic. Nicht kopierbar, kein Serialisierungscode (der liegt
-// nicht-intrusiv in der Infrastructure).
+// Owns a PageSetupConfig value and publishes it on the injected topic. Not
+// copyable, no serialisation code (that sits non-intrusively in the
+// infrastructure).
 class PageSetupStore {
  public:
   explicit PageSetupStore(domain::StateTopic<PageSetupConfig>& topic)

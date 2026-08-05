@@ -5,9 +5,9 @@
 #include "detail/reentry_guard.hpp"
 #include "state_topic.hpp"
 
-// Besitzt einen CalendarConfig-Wert und veröffentlicht ihn auf dem
-// eingesetzten Topic. Hat Identität -> nicht kopierbar. Das Topic trägt den
-// Wert, deshalb braucht der Store keine Query-Delegation.
+// Owns a CalendarConfig value and publishes it on the injected topic. It has
+// identity -> not copyable. The topic carries the value, so the store needs no
+// query delegation.
 class CalendarConfigStore {
  public:
   explicit CalendarConfigStore(domain::StateTopic<CalendarConfig>& topic)

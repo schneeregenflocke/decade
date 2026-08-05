@@ -21,7 +21,7 @@ struct PickId {
   friend bool operator==(const PickId&, const PickId&) = default;
 };
 
-// Klarname der Art, nur für Diagnoseausgaben.
+// The plain name of the kind, for diagnostic output alone.
 [[nodiscard]] inline std::string_view PickKindName(PickId::Kind kind) {
   switch (kind) {
     case PickId::Kind::kBar:

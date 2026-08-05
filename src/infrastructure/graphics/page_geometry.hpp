@@ -4,9 +4,9 @@
 #include "../../domain/page_setup_config.hpp"
 #include "rect.hpp"
 
-// Die eine Stelle, die aus der Seitenkonfiguration Geometrie macht. Vorher
-// stand dieselbe Umrechnung im GL-Canvas und in der CalendarPage; dasselbe
-// Wissen an zwei Orten wäre irgendwann auseinandergelaufen.
+// The one place that turns the page configuration into geometry. The same
+// conversion used to stand in the GL canvas and in CalendarPage; the same
+// knowledge in two places would have drifted apart eventually.
 
 [[nodiscard]] inline rectf PageRect(const PageSetupConfig& page_setup_config) {
   return rectf::from_dimension(

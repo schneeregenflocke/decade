@@ -9,8 +9,8 @@
 #include "detail/reentry_guard.hpp"
 #include "state_topic.hpp"
 
-// Besitzt die Einträge eines Projekts und veröffentlicht jede Änderung auf dem
-// eingesetzten Topic. Hat Identität -> nicht kopierbar.
+// Owns the entries of a project and publishes every change on the injected
+// topic. It has identity -> not copyable.
 class DateEntryStore {
  public:
   explicit DateEntryStore(domain::StateTopic<std::vector<DateEntry>>& topic)

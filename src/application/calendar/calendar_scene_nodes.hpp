@@ -52,8 +52,8 @@ struct CalendarSceneNodes {
   static constexpr std::string_view kTitleTextName = "Title Text";
   std::shared_ptr<SceneNode> title_text;
 
-  // Cursor und Auswahlfläche der laufenden Titelbearbeitung. Reine
-  // Bedienhilfen, darum aus dem Szenenbaum des Nutzers ausgeblendet.
+  // The cursor and selection area of the running title edit. Pure operating
+  // aids, and therefore hidden from the user's scene tree.
   static constexpr std::string_view kTitleSelectionName = "Title Selection";
   std::shared_ptr<SceneNode> title_selection;
 

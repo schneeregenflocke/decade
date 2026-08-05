@@ -16,13 +16,13 @@ CMakeSettings.json
 .vscode/
 out/
 build/
-# Zweiter Baum für einen anderen Compiler (build-clang, …). Die Sanitizer-
-# Ordner liegen dagegen unter build/ und sind schon abgedeckt.
+# A second tree for another compiler (build-clang, …). The sanitizer folders, by
+# contrast, sit under build/ and are covered already.
 build-*/
 .clangd/
-# Die .clangd-Datei (nicht das Verzeichnis) gleicht die Flag-Drift bei den
-# infrastructure-Headern aus. Vorerst lokal: erst bewähren lassen, dann
-# entscheiden, ob sie versioniert gehört.
+# The .clangd file (not the directory) balances the flag drift on the
+# infrastructure headers. Local for now: let it prove itself first, then decide
+# whether it belongs versioned.
 .clangd
 .cache/
 
@@ -36,5 +36,5 @@ CMakePresets.json
 
 TODO.txt
 TODO.md
-# Echtdaten (Datenschutz), gehören nie ins Repo
+# Real data (privacy), never belongs in the repo
 /Aufenthaltsdaten*

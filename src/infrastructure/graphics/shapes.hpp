@@ -11,8 +11,8 @@
 #include "shaders.hpp"
 #include "shapes_base.hpp"
 
-// Zwei Dreiecke bilden ein Viereck — die Zahl steht einmal hier, weil beide
-// Shapes unten in dieser Einheit rechnen.
+// Two triangles form a quad — the number stands here once, because both shapes
+// below compute in that unit.
 inline constexpr size_t kVerticesPerQuad = 6;
 
 class QuadrilateralShape : public Shape {
@@ -72,8 +72,8 @@ class RectanglesShape : public Shape {
     SetShape(std::vector<rectf>{rectangle}, line_width);
   }
 
-  // Rand und Füllung, benannt statt als Paar in einem Vektor: der Shader kennt
-  // genau diese zwei Uniforms.
+  // Outline and fill, named instead of sitting as a pair in a vector: the shader
+  // knows exactly these two uniforms.
   void SetColors(const glm::vec4& outline_color, const glm::vec4& fill_color) {
     outline_color_ = outline_color;
     fill_color_ = fill_color;
@@ -159,7 +159,7 @@ class RectanglesShape : public Shape {
     vertices_[offset + (kVerticesPerQuad - 1)] = point1;
   }
 
-  // Füllung plus vier Randstreifen je Rechteck.
+  // The fill plus four outline strips per rectangle.
   static constexpr size_t kQuadsPerRectangle = 5;
   static constexpr size_t kVerticesPerRectangle =
       kVerticesPerQuad * kQuadsPerRectangle;
