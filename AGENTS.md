@@ -24,7 +24,7 @@ Rules:
 1. The process entry point holds no business or UI wiring logic.
 2. The app lifecycle constructs high-level objects but knows no panel or store internals.
 3. The composition root owns every lifetime. The wiring lives apart from it in the binder (free functions) — components do not know each other directly. Whatever comes into being only with the GL context (rendering adapter, wiring) sits in an `optional` and gets dissolved when the window is destroyed, while panels and canvas are still alive.
-4. The domain stays UI-agnostic — no wx, no GL, no Boost.
+4. The domain stays UI-agnostic — no wx, no GL, no Boost. The test asks what a library binds to, not its name: a dependency drops out when it ties the domain to an outer layer — a widget toolkit, a graphics context, a file format. That admits glm, which carries the domain colours as `glm::vec4`: header-only maths, no GL header anywhere underneath it, nothing to link, so the domain still builds and runs without a window. The reasoning stands in [#58](https://github.com/schneeregenflocke/decade/issues/58).
 5. Stores publish their state themselves on an injected topic; consumers subscribe through the bus. No store owns a signal of its own, and nobody attaches to a store instead of to the bus.
 6. Infrastructure takes domain types by reference; it must not depend on presentation.
 7. The command line gets read in exactly one place and translated into an options object (`src/application/runtime_options.hpp`); the application reads no environment variables.
@@ -97,6 +97,10 @@ Language and documentation rules live in the superproject (`~/homelab-superproje
 ### Designed as header-only
 
 The codebase is **deliberately designed as header-only** (`main.cpp` is the single translation unit). When adding code, extend an existing header rather than splitting into a `.cpp`. Keep that convention through refactorings too. Definitions living in a header must be [`inline`](https://en.cppreference.com/w/cpp/language/inline) (free functions and out-of-class member definitions), so the single-TU rule does not quietly hide ODR violations should a header ever get included from elsewhere (tests, for instance).
+
+That rule holds hard — a decision, not a habit, so the price stands beside it ([#41](https://github.com/schneeregenflocke/decade/issues/41)). One translation unit compiles on one core, so a change anywhere costs the whole run: measured on 2026-08-06 over 12'553 lines of header, 22 s for the app and 42 s for a clean build including the tests. Bought for it: the clang-tidy gate reads the program as the compiler does, in one pass, and no header carries a build order. Cutting one header into smaller headers changes nothing here and stays welcome; a `.cpp` changes it.
+
+Decide anew when the price shows itself — when a single edit interrupts the work, or a clean build outgrows a coffee break. Until then the answer stands and needs no re-discussion.
 
 ### Warnings, the clang-tidy and the sanitizer gate
 
