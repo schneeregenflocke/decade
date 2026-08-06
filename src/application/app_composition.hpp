@@ -31,11 +31,11 @@ namespace application {
 // them together. It carries neither domain nor widget logic itself — it decides
 // what exists and for how long, and nothing more.
 //
-// Two parts come into being later, because OpenGL stands ready with a delay: the
-// rendering adapter and the wiring. Both sit in an `optional` and get dissolved
-// again when the window is destroyed — while panels and canvas are still alive.
-// Without that, a panel event still firing on shutdown would run into objects
-// already destroyed.
+// Two parts come into being later, because OpenGL stands ready with a delay:
+// the rendering adapter and the wiring. Both sit in an `optional` and get
+// dissolved again when the window is destroyed — while panels and canvas are
+// still alive. Without that, a panel event still firing on shutdown would run
+// into objects already destroyed.
 class AppComposition {
  public:
   AppComposition(LocaleDateFormatter& locale_date_formatter,
@@ -89,9 +89,9 @@ class AppComposition {
   // An operable window in that state crashes on the first click — hence report
   // and close.
   //
-  // Through CallAfter, because the first paint can arrive before the event loop:
-  // a Close() from there fizzles out, and a modal dialogue would stand in front
-  // of the loop.
+  // Through CallAfter, because the first paint can arrive before the event
+  // loop: a Close() from there fizzles out, and a modal dialogue would stand in
+  // front of the loop.
   void OnGraphicsFailed(const std::string& message) {
     std::cerr << message << '\n';
     frame_->CallAfter([this, message]() {
@@ -131,8 +131,8 @@ class AppComposition {
     event.Skip();
   }
 
-  // A second exit: a window can die without a close event too. The destroy event
-  // arrives before the base destructor clears the children away.
+  // A second exit: a window can die without a close event too. The destroy
+  // event arrives before the base destructor clears the children away.
   void OnFrameDestroy(wxWindowDestroyEvent& event) {
     if (event.GetEventObject() == frame_.get()) {
       ReleaseGraphics();

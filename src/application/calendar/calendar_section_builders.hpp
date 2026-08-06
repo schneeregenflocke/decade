@@ -82,8 +82,8 @@ inline constexpr float kPercentScale = 100.0F;
 inline constexpr std::size_t kMonthNameBufferSize = 100;
 
 // A calendar-side adapter over scene_shapes::FillRectangles: it maps a domain
-// ShapeConfiguration onto the general primitives and notes the style ID at which
-// the scene tree shows the values of the configuration.
+// ShapeConfiguration onto the general primitives and notes the style ID at
+// which the scene tree shows the values of the configuration.
 template <typename Shapes>
 inline void FillRectangles(const std::shared_ptr<SceneNode>& node,
                            const Shapes& shapes,

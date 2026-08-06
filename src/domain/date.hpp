@@ -78,16 +78,15 @@ class Date {
   // Invalid stays invalid; a result outside the supported year range is
   // invalid as well.
   [[nodiscard]] Date AddDays(int days) const {
-    return ShiftedDate(domain::detail::IcuCalendarBackend::Instance().AddDays(
-        ToYmd(), days));
+    return ShiftedDate(
+        domain::detail::IcuCalendarBackend::Instance().AddDays(ToYmd(), days));
   }
 
   // Day-of-month is pinned to the target month's length (Jan 31 + 1 month ->
   // Feb 28/29), matching the previous Boost.DateTime behavior.
   [[nodiscard]] Date AddMonths(int months) const {
-    return ShiftedDate(
-        domain::detail::IcuCalendarBackend::Instance().AddMonths(ToYmd(),
-                                                                   months));
+    return ShiftedDate(domain::detail::IcuCalendarBackend::Instance().AddMonths(
+        ToYmd(), months));
   }
 
   // Signed day distance `to - from`; 0 if either date is invalid.

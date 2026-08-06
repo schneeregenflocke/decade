@@ -11,9 +11,9 @@
 #include "date_period.hpp"
 
 // A value object: the entries of a project in canonical form. `Assign` discards
-// null periods, sorts by begin and derives everything derived anew — the running
-// number, the gap period to the next entry, the number within the group — and
-// cuts groups that no longer exist.
+// null periods, sorts by begin and derives everything derived anew — the
+// running number, the gap period to the next entry, the number within the group
+// — and cuts groups that no longer exist.
 //
 // Separate from the store, because two holders need the same preparation but
 // only one of them publishes: DateEntryStore publishes, DateEntryBarStore

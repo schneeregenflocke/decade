@@ -35,8 +35,7 @@ TEST(PanZoomCameraTest, PanShiftsWorldOrigin) {
   camera.Pan({5.0F, -3.0F, 0.0F});
 
   const auto shifted = camera.ViewMatrix() * glm::vec4(0.0F, 0.0F, 0.0F, 1.0F);
-  ExpectNearVec3({shifted.x, shifted.y, shifted.z}, {5.0F, -3.0F, 0.0F},
-                 1e-5F);
+  ExpectNearVec3({shifted.x, shifted.y, shifted.z}, {5.0F, -3.0F, 0.0F}, 1e-5F);
 }
 
 TEST(PanZoomCameraTest, ZoomAroundMultipliesScaleFactor) {
@@ -134,8 +133,8 @@ TEST(ComputeZoomLimitsTest, LetterboxedViewportStopsWhenBothAxesShowTwoPages) {
 
   // The height is the tighter axis; zooming out stops once it too shows 2.25
   // pages.
-  EXPECT_NEAR(limits.min_scale, kPageHeight * kViewScale / (2.25F * kPageHeight),
-              1e-5F);
+  EXPECT_NEAR(limits.min_scale,
+              kPageHeight * kViewScale / (2.25F * kPageHeight), 1e-5F);
 
   const float visible_pages_high =
       kPageHeight * kViewScale / limits.min_scale / kPageHeight;

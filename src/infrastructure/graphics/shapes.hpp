@@ -72,8 +72,8 @@ class RectanglesShape : public Shape {
     SetShape(std::vector<rectf>{rectangle}, line_width);
   }
 
-  // Outline and fill, named instead of sitting as a pair in a vector: the shader
-  // knows exactly these two uniforms.
+  // Outline and fill, named instead of sitting as a pair in a vector: the
+  // shader knows exactly these two uniforms.
   void SetColors(const glm::vec4& outline_color, const glm::vec4& fill_color) {
     outline_color_ = outline_color;
     fill_color_ = fill_color;

@@ -25,8 +25,9 @@ class TablePanelBase : public wxPanel {
                                            wxDefaultValidator);
 
     // More compact than the system font. The row height follows the font by
-    // itself; wxDataViewCtrl::SetRowHeight would have no effect here, because the
-    // GTK port evaluates it for custom renderers alone, not for text columns.
+    // itself; wxDataViewCtrl::SetRowHeight would have no effect here, because
+    // the GTK port evaluates it for custom renderers alone, not for text
+    // columns.
     constexpr double kTableFontPointSize = 11.0;
     wxFont table_font = table_->GetFont();
     table_font.SetFractionalPointSize(kTableFontPointSize);

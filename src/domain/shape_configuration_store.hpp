@@ -32,8 +32,8 @@ class ShapeConfigurationStore {
 
   // Aligns the per-group configurations to the current date groups (add new
   // ones from the palette, discard orphans) and publishes the set anew. This
-  // palette logic is domain knowledge and therefore belongs in the store, not in
-  // a panel.
+  // palette logic is domain knowledge and therefore belongs in the store, not
+  // in a panel.
   void ReceiveDateGroups(const std::vector<DateGroup>& date_groups) {
     if (emitting_) {
       return;

@@ -5,8 +5,8 @@
 #include <iostream>
 
 // Runtime debug output, switched on through the CLI flag --debug-log; the app
-// sets the switch at start through SetLogEnabled. Both the OpenGL canvas and the
-// mouse interaction use it, hence a header of its own.
+// sets the switch at start through SetLogEnabled. Both the OpenGL canvas and
+// the mouse interaction use it, hence a header of its own.
 namespace decade_debug {
 
 namespace debug_log_detail {

@@ -8,12 +8,12 @@
 #include <string>
 #include <vector>
 
-#include "infrastructure/persistence/value_serialization.hpp"
 #include "domain/calendar_config.hpp"
 #include "domain/date.hpp"
 #include "domain/date_entry.hpp"
 #include "domain/date_group.hpp"
 #include "domain/date_period.hpp"
+#include "infrastructure/persistence/value_serialization.hpp"
 
 namespace {
 
@@ -37,17 +37,21 @@ Value XmlRoundTrip(const Value& value) {
 
 TEST(ValueSerializationTest, DateIsoStringRoundTrip) {
   const Date date = Date::FromYmd(1998, 9, 23);
-  EXPECT_EQ(persistence::serialization_detail::DateToIsoString(date), "1998-09-23");
-  EXPECT_EQ(persistence::serialization_detail::DateFromIsoString("1998-09-23"), date);
+  EXPECT_EQ(persistence::serialization_detail::DateToIsoString(date),
+            "1998-09-23");
+  EXPECT_EQ(persistence::serialization_detail::DateFromIsoString("1998-09-23"),
+            date);
 }
 
 TEST(ValueSerializationTest, InvalidDateIsEmptyString) {
   EXPECT_EQ(persistence::serialization_detail::DateToIsoString(Date()), "");
-  EXPECT_FALSE(persistence::serialization_detail::DateFromIsoString("").IsValid());
   EXPECT_FALSE(
-      persistence::serialization_detail::DateFromIsoString("garbage").IsValid());
+      persistence::serialization_detail::DateFromIsoString("").IsValid());
+  EXPECT_FALSE(persistence::serialization_detail::DateFromIsoString("garbage")
+                   .IsValid());
   EXPECT_FALSE(
-      persistence::serialization_detail::DateFromIsoString("1998/09/23").IsValid());
+      persistence::serialization_detail::DateFromIsoString("1998/09/23")
+          .IsValid());
 }
 
 TEST(ValueSerializationTest, DateEntriesRoundTrip) {

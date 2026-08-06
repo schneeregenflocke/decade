@@ -168,8 +168,8 @@ inline void BindCalendarConfig(EventBus& bus, AppComponents& components) {
 }
 
 // The rendering adapter publishes the scene snapshots itself; the scene tree
-// panel is the only consumer. Its selection goes back the other way over the bus
-// to the highlight in the renderer.
+// panel is the only consumer. Its selection goes back the other way over the
+// bus to the highlight in the renderer.
 inline void BindSceneSnapshot(EventBus& bus, AppComponents& components) {
   bus.scene_snapshot().connect(&SceneTreePanel::ReceiveSceneSnapshot,
                                &components.scene_tree_panel);
@@ -185,8 +185,8 @@ inline void BindSceneSnapshot(EventBus& bus, AppComponents& components) {
 // Picking: the canvas reports pointer movements in page space, the controller
 // tests them through the rendering adapter and publishes hover and selection
 // itself. Click and double click go to the text editor first: while an edit is
-// running it consumes them (set the cursor, select a word), otherwise the binder
-// passes them on to the controller.
+// running it consumes them (set the cursor, select a word), otherwise the
+// binder passes them on to the controller.
 inline void BindInteraction(EventBus& bus, AppComponents& components) {
   auto* page = &components.calendar_page;
   auto* controller = &components.interaction_controller;
@@ -252,9 +252,9 @@ inline void Bind(EventBus& bus, AppComponents& components) {
 
 // The counterpart to Bind: it disconnects everything. Needed on shutdown — the
 // wx children (panels, GL canvas) die in the ~wxFrame base destructor alone, so
-// after the stores and the event bus. Should a control still fire an event while
-// being destroyed (an open editor commit, say), the slot would otherwise run
-// into objects already destroyed.
+// after the stores and the event bus. Should a control still fire an event
+// while being destroyed (an open editor commit, say), the slot would otherwise
+// run into objects already destroyed.
 inline void Unbind(EventBus& bus, AppComponents& components) {
   // The event sources of the presentation layer.
   components.data_table_panel.SignalTableDateEntries().disconnect_all();

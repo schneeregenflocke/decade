@@ -49,7 +49,8 @@ class TextEditBuffer {
     SetCaret(caret_ + text.size(), Selection::kReplace);
   }
 
-  // Backspace: it deletes the selection, otherwise the character before the cursor.
+  // Backspace: it deletes the selection, otherwise the character before the
+  // cursor.
   void DeleteBefore() {
     if (HasSelection()) {
       EraseSelection();

@@ -12,8 +12,8 @@
 #include "main_frame.hpp"
 
 // Carries out the menu commands around files: show the dialogue, fetch the
-// path, have the project loaded or written, report errors. The dialogues are the
-// reason this sits in presentation — nothing gets computed here.
+// path, have the project loaded or written, report errors. The dialogues are
+// the reason this sits in presentation — nothing gets computed here.
 class FileCommands {
  public:
   FileCommands(MainFrame& frame, application::ProjectDocument& document)
@@ -117,8 +117,8 @@ class FileCommands {
   }
 
   // wxGTK never appends the filter's suffix (wxWidgets #9917) — we do that
-  // afterwards, together with the overwrite question the dialogue asks about the
-  // typed name alone.
+  // afterwards, together with the overwrite question the dialogue asks about
+  // the typed name alone.
   [[nodiscard]] std::string AskSavePath(const wxString& title,
                                         const FileType& type) {
     wxFileDialog dialog(&frame_, title, wxEmptyString, wxEmptyString,

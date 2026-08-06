@@ -10,8 +10,8 @@
 
 // Infrastructure: the conversion between UTF-8 and code points, in one place.
 // Two sides need it: the text renderer, which fetches a glyph per code point,
-// and the text editor, which computes in code points (an umlaut = one step). ICU
-// carries the Unicode work.
+// and the text editor, which computes in code points (an umlaut = one step).
+// ICU carries the Unicode work.
 
 // Append the code points of the half-open UTF-16 range [begin, end) of an
 // ICU string to out. char32At returns the full code point at a unit index; a

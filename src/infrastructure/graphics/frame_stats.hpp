@@ -5,10 +5,10 @@
 #include <deque>
 
 // Measures the frame rate of the event-driven rendering: AddFrame registers
-// every drawn frame together with its CPU render duration; Fps counts the frames
-// in the one-second window ending with the newest frame. The timestamps come
-// from outside, so the class stays testable without a clock of its own (and
-// without GL).
+// every drawn frame together with its CPU render duration; Fps counts the
+// frames in the one-second window ending with the newest frame. The timestamps
+// come from outside, so the class stays testable without a clock of its own
+// (and without GL).
 class FrameStats {
  public:
   using Clock = std::chrono::steady_clock;
@@ -32,8 +32,7 @@ class FrameStats {
 
   // The CPU duration of the last drawn frame (render plus buffer swap).
   [[nodiscard]] double LastRenderMillis() const {
-    return std::chrono::duration<double, std::milli>(last_render_time_)
-        .count();
+    return std::chrono::duration<double, std::milli>(last_render_time_).count();
   }
 
  private:

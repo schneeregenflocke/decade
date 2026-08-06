@@ -112,10 +112,12 @@ void load(Archive& ar, DateGroup& group, const unsigned int /*v*/) {
 // loaded entries are pushed back into the store.
 template <class Archive>
 void save(Archive& ar, const DateEntry& entry, const unsigned int /*v*/) {
-  const std::string interval_begin = persistence::serialization_detail::DateToIsoString(
-      entry.GetDateInterval().Begin());
+  const std::string interval_begin =
+      persistence::serialization_detail::DateToIsoString(
+          entry.GetDateInterval().Begin());
   const std::string interval_end =
-      persistence::serialization_detail::DateToIsoString(entry.GetDateInterval().End());
+      persistence::serialization_detail::DateToIsoString(
+          entry.GetDateInterval().End());
   const int group = entry.GetGroup();
   ar& make_nvp("interval_begin", interval_begin);
   ar& make_nvp("interval_end", interval_end);
@@ -129,9 +131,9 @@ void load(Archive& ar, DateEntry& entry, const unsigned int /*v*/) {
   ar& make_nvp("interval_begin", interval_begin);
   ar& make_nvp("interval_end", interval_end);
   ar& make_nvp("group", group);
-  entry.SetDateInterval(
-      DatePeriod(persistence::serialization_detail::DateFromIsoString(interval_begin),
-                 persistence::serialization_detail::DateFromIsoString(interval_end)));
+  entry.SetDateInterval(DatePeriod(
+      persistence::serialization_detail::DateFromIsoString(interval_begin),
+      persistence::serialization_detail::DateFromIsoString(interval_end)));
   entry.SetGroup(group);
 }
 
@@ -186,7 +188,8 @@ void load(Archive& ar, TitleConfig& config, const unsigned int /*v*/) {
   config.SetFrameHeight(frame_height);
   config.SetFontSizePoints(font_size_points);
   config.SetTitleText(std::move(title_text));
-  config.SetTextColor(persistence::serialization_detail::ColorFromArray(text_color));
+  config.SetTextColor(
+      persistence::serialization_detail::ColorFromArray(text_color));
 }
 
 // --- ShapeConfiguration ---
@@ -198,9 +201,11 @@ void save(Archive& ar, const ShapeConfiguration& config,
   const bool fill_visible = config.FillVisible();
   const float line_width = config.LineWidthDisabled();
   const std::array<float, 4> outline_color =
-      persistence::serialization_detail::ColorToArray(config.OutlineColorDisabled());
+      persistence::serialization_detail::ColorToArray(
+          config.OutlineColorDisabled());
   const std::array<float, 4> fill_color =
-      persistence::serialization_detail::ColorToArray(config.FillColorDisabled());
+      persistence::serialization_detail::ColorToArray(
+          config.FillColorDisabled());
   ar& make_nvp("name", name);
   ar& make_nvp("outline_visible", outline_visible);
   ar& make_nvp("fill_visible", fill_visible);

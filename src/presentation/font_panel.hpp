@@ -16,8 +16,8 @@
 #include "wx_owned.hpp"
 
 // Chooses the application-wide font. wx describes a font through family, size,
-// weight and slant; the GL renderer, by contrast, needs a font file — fontconfig
-// does the translation between them.
+// weight and slant; the GL renderer, by contrast, needs a font file —
+// fontconfig does the translation between them.
 //
 // Both get passed on: the file path (what to render with) and the point size
 // (how large to render). The size is a pure domain number: Font always rasters
@@ -76,13 +76,13 @@ class FontPanel : public wxPanel {
   sigslot::signal<const FontConfig&> signal_font_config_;
   // Two weight scales, laid onto each other by hand: wx counts in hundreds like
   // OpenType and CSS (THIN 100 … EXTRAHEAVY 1000), fontconfig in its own uneven
-  // scale 0…215 (fontconfig.h, FC_WEIGHT_*). The commented-out lines are no open
-  // points but synonyms with an identical numeric value (ULTRALIGHT ==
+  // scale 0…215 (fontconfig.h, FC_WEIGHT_*). The commented-out lines are no
+  // open points but synonyms with an identical numeric value (ULTRALIGHT ==
   // EXTRALIGHT, SEMILIGHT == DEMILIGHT, NORMAL == REGULAR, SEMIBOLD ==
   // DEMIBOLD, ULTRABOLD == EXTRABOLD, HEAVY == BLACK, ULTRABLACK ==
   // EXTRABLACK); they stand there as evidence that the choice was made
-  // deliberately. FC_WEIGHT_BOOK (75) alone is a value of its own beside REGULAR
-  // (80) — wx knows no step for it.
+  // deliberately. FC_WEIGHT_BOOK (75) alone is a value of its own beside
+  // REGULAR (80) — wx knows no step for it.
   //
   // Sources:
   // - wxFontWeight (https://docs.wxwidgets.org/3.2/font_8h.html) — the numeric
@@ -196,9 +196,8 @@ class FontPanel : public wxPanel {
     // The mandatory prelude to FcFontMatch: FcConfigSubstitute applies the
     // rules of the system configuration (aliases such as "sans-serif"),
     // FcDefaultSubstitute fills in the underspecified and converts the point
-    // size into a pixel size. Without both, fontconfig matches wrongly according
-    // to the manual.
-    // https://man.archlinux.org/man/FcFontMatch.3.en
+    // size into a pixel size. Without both, fontconfig matches wrongly
+    // according to the manual. https://man.archlinux.org/man/FcFontMatch.3.en
     FcConfigSubstitute(fc_config_.get(), pattern, FcMatchPattern);
     FcDefaultSubstitute(pattern);
 

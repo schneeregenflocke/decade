@@ -89,8 +89,8 @@ class GLCanvas : public wxGLCanvas {
   }
 
   // Keyboard input of the running text edit. `editing` says whether an edit is
-  // under way — only then does the canvas consume keys, otherwise it passes them
-  // on. `selected_text` delivers the selection for the clipboard.
+  // under way — only then does the canvas consume keys, otherwise it passes
+  // them on. `selected_text` delivers the selection for the clipboard.
   void SetTextInputCallback(
       std::function<void(const TextInputEvent&)> callback) {
     on_text_input_ = std::move(callback);
@@ -137,7 +137,8 @@ class GLCanvas : public wxGLCanvas {
   void Repaint() { Refresh(false); }
 
   // The frame rate in the one-second window of the newest frame; since drawing
-  // happens event-driven alone, the value carries meaning during an interaction.
+  // happens event-driven alone, the value carries meaning during an
+  // interaction.
   [[nodiscard]] double CurrentFps() const { return frame_stats_.Fps(); }
 
   void SavePNG(const std::string& file_path, int dpi = kExportPngDpi) {
@@ -211,7 +212,8 @@ class GLCanvas : public wxGLCanvas {
     return attributes;
   }
 
-  // The window size in device pixels — more than the logical one on HiDPI displays.
+  // The window size in device pixels — more than the logical one on HiDPI
+  // displays.
   [[nodiscard]] FramebufferSize CurrentFramebufferSize() const {
     const wxSize logical_size = GetClientSize();
     const double scale = GetContentScaleFactor();

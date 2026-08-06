@@ -16,9 +16,9 @@ namespace application {
 // plus the startup file. `AddRuntimeOptions` below defines the vocabulary
 // including the --help text; what an option does stands there.
 //
-// Two things the parser does not show: `--dump-frame-png` needs the X11 backend,
-// because a wxClientDC blit delivers black under Wayland (hence under Xvfb, see
-// operations.md, "Headless runs"); `--debug-hover-title` beats
+// Two things the parser does not show: `--dump-frame-png` needs the X11
+// backend, because a wxClientDC blit delivers black under Wayland (hence under
+// Xvfb, see operations.md, "Headless runs"); `--debug-hover-title` beats
 // `--debug-hover-bar`, because only one element is hovered at a time.
 struct RuntimeOptions {
   // The file to load at start. Opt-in: empty means "an empty project".

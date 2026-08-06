@@ -15,8 +15,8 @@
 #include "wx_owned.hpp"
 
 // The frame, font size and colour of the title. The title text itself has no
-// field here: it gets edited in the canvas (a double click) and comes through as
-// part of the received TitleConfig alone.
+// field here: it gets edited in the canvas (a double click) and comes through
+// as part of the received TitleConfig alone.
 class TitleSetupPanel : public wxPanel {
  public:
   explicit TitleSetupPanel(wxWindow* parent) : wxPanel(parent, wxID_ANY) {

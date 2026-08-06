@@ -18,11 +18,13 @@ class PanZoomCamera {
   };
 
   // Shifts the view by a delta in world space.
-  void Pan(const glm::vec3& world_delta) { translate_pre_scaled_ += world_delta; }
+  void Pan(const glm::vec3& world_delta) {
+    translate_pre_scaled_ += world_delta;
+  }
 
-  // Scales by factor (> 1 enlarges), bounded by the ScaleLimits. The world point
-  // world_pos (typically the mouse pointer) stays at the same image position,
-  // by correcting back the shift the scaling produced.
+  // Scales by factor (> 1 enlarges), bounded by the ScaleLimits. The world
+  // point world_pos (typically the mouse pointer) stays at the same image
+  // position, by correcting back the shift the scaling produced.
   void ZoomAround(const glm::vec3& world_pos, float factor) {
     const float target_scale = std::clamp(scale_factor_ * factor,
                                           limits_.min_scale, limits_.max_scale);
@@ -50,7 +52,8 @@ class PanZoomCamera {
 
   // Converts a world point back into page space (the inverse view matrix).
   [[nodiscard]] glm::vec3 PagePos(const glm::vec3& world_pos) const {
-    const auto page_pos = glm::inverse(ViewMatrix()) * glm::vec4(world_pos, 1.F);
+    const auto page_pos =
+        glm::inverse(ViewMatrix()) * glm::vec4(world_pos, 1.F);
     return {page_pos.x, page_pos.y, 0.F};
   }
 
@@ -77,8 +80,10 @@ inline PanZoomCamera::ScaleLimits ComputeZoomLimits(
 
   constexpr float kMinVisibleExportPixels = 2.F;
   constexpr float kMmPerInch = 25.4F;
-  const float min_visible_mm = kMinVisibleExportPixels * kMmPerInch / export_dpi;
-  const float max_scale = std::min(visible_width, visible_height) / min_visible_mm;
+  const float min_visible_mm =
+      kMinVisibleExportPixels * kMmPerInch / export_dpi;
+  const float max_scale =
+      std::min(visible_width, visible_height) / min_visible_mm;
 
   constexpr float kMaxVisiblePages = 2.25F;
   const float min_scale =

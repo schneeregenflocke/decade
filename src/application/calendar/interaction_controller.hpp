@@ -13,8 +13,9 @@
 #include "../../infrastructure/graphics/pick_id.hpp"
 
 // Application: it turns pointer input into events on the scene. The canvas
-// delivers points in page space, the controller tests them through an injectable
-// pick source (so it knows neither CalendarPage nor PhysicsWorld) and reports:
+// delivers points in page space, the controller tests them through an
+// injectable pick source (so it knows neither CalendarPage nor PhysicsWorld)
+// and reports:
 //
 //   * movement     -> hover, on a real change alone;
 //   * click        -> selection, as a node path — the same notion of selection

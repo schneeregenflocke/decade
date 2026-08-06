@@ -175,9 +175,9 @@ TEST(DateEntryBarStoreTest, SingleDayOnJanuaryFirstProducesOneBar) {
 }
 
 // Regression: the entry with the latest Begin() does not necessarily have the
-// latest End(). GetLastYear() and GetSpan() must maximise across every entry, or
-// ProcessAnnualTotals writes past the end of annual_totals_ for the yearly bars
-// of the multi-year entry.
+// latest End(). GetLastYear() and GetSpan() must maximise across every entry,
+// or ProcessAnnualTotals writes past the end of annual_totals_ for the yearly
+// bars of the multi-year entry.
 TEST(DateEntryBarStoreTest, LastYearComesFromLatestEndNotLatestBegin) {
   DateEntryBarStore store;
   SeedDefaultGroup(store);
