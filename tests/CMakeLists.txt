@@ -12,6 +12,7 @@ add_executable(decade_tests
 	domain/test_calendar_config.cpp
 	domain/test_timeline_projection.cpp
 	domain/test_date_entry_store.cpp
+	domain/test_date_entry_list.cpp
 	domain/test_transform_date_entry.cpp
 	domain/test_text_edit_buffer.cpp
 	infrastructure/persistence/test_csv_io.cpp
