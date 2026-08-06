@@ -42,8 +42,13 @@ class DateEntryList {
     AssignGroupNumbers();
   }
 
+  // Changing the groups re-clamps the stored entries: deleting a group must not
+  // leave an entry pointing at it. The scene builder addresses its group nodes
+  // by that index (`group_nodes.at(...)`), so a stale one takes the whole
+  // rebuild down.
   void AssignDateGroups(const std::vector<DateGroup>& incoming_date_groups) {
     date_groups_.Assign(incoming_date_groups);
+    ClampGroupsToKnownRange();
   }
 
   [[nodiscard]] const std::vector<DateEntry>& Items() const {
@@ -122,9 +127,18 @@ class DateEntryList {
     }
   }
 
+  // The invariant every consumer relies on: an entry's group indexes a group
+  // that exists. Both ends are guarded — a project file carries the number
+  // unchecked, so a negative one arrives just as a too-large one does.
+  //
+  // Group 0 is the fallback because there is always one: DateGroupStore seeds a
+  // `Default` group, and the groups panel refuses to delete row 0. Without a
+  // single group the invariant has nothing to hold to, and no entry could be
+  // drawn anyway.
   void ClampGroupsToKnownRange() {
+    const int group_max = date_groups_.GetGroupMax();
     for (auto& date_entry : date_entries_) {
-      if (date_entry.GetGroup() > date_groups_.GetGroupMax()) {
+      if (date_entry.GetGroup() < 0 || date_entry.GetGroup() > group_max) {
         date_entry.SetGroup(0);
       }
     }

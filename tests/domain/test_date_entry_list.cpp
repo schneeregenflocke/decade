@@ -175,26 +175,26 @@ TEST(DateEntryListCharacterisation, GroupBeyondTheLastOneFallsToZero) {
   EXPECT_EQ(list.Items()[1].GetGroup(), 0);
 }
 
-// The gap of #26, frozen as it stands: the clamp tests the upper bound alone,
-// so a negative group walks through untouched. It then reaches
-// group_nodes.at(current_group) in calendar_section_builders.hpp and throws
-// std::out_of_range, which nobody catches. Whoever closes #26 turns this
-// expectation into GetGroup() == 0.
-TEST(DateEntryListCharacterisation, NegativeGroupSurvivesTheClamp) {
+// A project file carries the group number unchecked, so a negative one arrives
+// just as a too-large one does. Both ends fall back to group 0 (#26); before
+// the fix the negative one walked through and reached
+// group_nodes.at(current_group) in calendar_section_builders.hpp as a huge
+// size_t, throwing std::out_of_range that nobody catches.
+TEST(DateEntryListCharacterisation, NegativeGroupFallsToZero) {
   DateEntryList list;
   list.AssignDateGroups(MakeGroups(2));
   list.Assign({MakeEntry(2030, 1, 1, 2030, 1, 5, /*group=*/-3)});
 
   ASSERT_EQ(list.Items().size(), 1U);
-  EXPECT_EQ(list.Items()[0].GetGroup(), -3);
+  EXPECT_EQ(list.Items()[0].GetGroup(), 0);
 }
 
-// The clamp reads the groups known at that moment: a group assignment after
-// Assign does not reach the entries already stored. That is the second half of
-// #26 — DateEntryStore::ReceiveDateGroups does exactly this and re-runs no
-// Assign, so shrinking the groups leaves stale group numbers behind until the
-// next entry change.
-TEST(DateEntryListCharacterisation, LaterGroupsDoNotReclampStoredEntries) {
+// Deleting a group re-clamps what is already stored — the second half of #26
+// and the path a user actually walks: the groups panel deletes a row, the bus
+// carries the shrunk list to DateEntryStore and DateEntryBarStore, and both
+// hold entries pointing at the group that just went. The scene builder sizes
+// group_nodes by the new group count, so a stale index took the rebuild down.
+TEST(DateEntryListCharacterisation, DeletingAGroupReclampsStoredEntries) {
   DateEntryList list;
   list.AssignDateGroups(MakeGroups(4));
   list.Assign({MakeEntry(2030, 1, 1, 2030, 1, 5, /*group=*/3)});
@@ -202,7 +202,18 @@ TEST(DateEntryListCharacterisation, LaterGroupsDoNotReclampStoredEntries) {
 
   list.AssignDateGroups(MakeGroups(1));  // group 3 no longer exists
 
-  EXPECT_EQ(list.Items()[0].GetGroup(), 3);
+  EXPECT_EQ(list.Items()[0].GetGroup(), 0);
+}
+
+// Groups the other way round: growing the list leaves a valid group alone.
+TEST(DateEntryListCharacterisation, AddingAGroupLeavesValidEntriesAlone) {
+  DateEntryList list;
+  list.AssignDateGroups(MakeGroups(2));
+  list.Assign({MakeEntry(2030, 1, 1, 2030, 1, 5, /*group=*/1)});
+
+  list.AssignDateGroups(MakeGroups(5));
+
+  EXPECT_EQ(list.Items()[0].GetGroup(), 1);
 }
 
 // --- The year span ---
