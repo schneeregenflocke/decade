@@ -9,7 +9,7 @@
 // `std::make_unique<T>(...).release()` idiom the panels repeat for every child
 // widget and sizer: the object is constructed through a unique_ptr (so a
 // throwing constructor cannot leak) and then released to the wx parent, which
-// owns the lifetime from there. Siehe AGENTS.md, «Ownership & Lifetimes».
+// owns the lifetime from there. See AGENTS.md, "Ownership and lifetimes".
 template <typename Widget, typename... Args>
 Widget* MakeOwned(Args&&... args) {
   return std::make_unique<Widget>(std::forward<Args>(args)...).release();
