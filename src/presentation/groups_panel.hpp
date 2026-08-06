@@ -4,6 +4,7 @@
 #include <wx/dataview.h>
 #include <wx/wx.h>
 
+#include <cstddef>
 #include <limits>
 #include <sigslot/signal.hpp>
 #include <string>
@@ -149,12 +150,28 @@ class DateGroupsTablePanel : public TablePanelBase {
       if (!event.IsEditCancelled()) {
         if (event.GetColumn() == 1) {
           auto edited_string = event.GetValue().GetString().ToStdString();
-          const auto selected_row =
-              static_cast<unsigned int>(table()->GetSelectedRow());
+
+          // The row comes from the event, not from the selection. This table is
+          // wxDV_SINGLE, so the multi-select trap of DateTablePanel does not
+          // apply — but a rebuild does: ReceiveDateGroups inserts and deletes
+          // rows while an edit can stand open, and the editing-done event then
+          // arrives with nothing selected. GetSelectedRow() answers
+          // wxNOT_FOUND, and as an unsigned that reads as row 4294967295.
+          //
+          // The event is the truthful source anyway: it names the row the user
+          // edited, while the selection can have moved on.
+          const int edited_row = table()->ItemToRow(event.GetItem());
+          if (edited_row == wxNOT_FOUND ||
+              static_cast<std::size_t>(edited_row) >= date_groups_.size()) {
+            return;
+          }
+          const auto selected_row = static_cast<unsigned int>(edited_row);
+
           table()->SetValue(edited_string.c_str(), selected_row,
                             static_cast<unsigned int>(event.GetColumn()));
 
-          date_groups_[selected_row].SetName(edited_string);
+          date_groups_[static_cast<std::size_t>(edited_row)].SetName(
+              edited_string);
 
           signal_table_date_groups_(date_groups_);
         }
