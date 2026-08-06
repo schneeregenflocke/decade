@@ -1,6 +1,7 @@
 #ifndef GRAPHICS_ENGINE_HPP
 #define GRAPHICS_ENGINE_HPP
 
+#include <functional>
 #include <optional>
 #include <string>
 #include <tinycolormap.hpp>
@@ -24,7 +25,7 @@ class GraphicsEngine {
     // shader; the per-node model matrix is applied by each Shape during the
     // scene-graph traversal below.
     for (size_t index = 0; index < shaders_.GetNumberShaders(); ++index) {
-      auto& shader = *shaders_.GetShader(index);
+      auto& shader = shaders_.GetShader(index);
 
       shader.UseProgram();
       shader.SetUniform("projection", mvp_.GetProjection());
@@ -43,7 +44,8 @@ class GraphicsEngine {
   // truth for the scene's lifetime.
   void SetScene(Scene& scene) { scene_ = &scene; }
 
-  std::optional<Shader*> SearchShader(const std::string& search_name) {
+  std::optional<std::reference_wrapper<Shader>> SearchShader(
+      const std::string& search_name) {
     return shaders_.SearchShader(search_name);
   }
 

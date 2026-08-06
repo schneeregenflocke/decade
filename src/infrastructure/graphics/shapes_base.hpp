@@ -86,7 +86,9 @@ class Shape : public Drawable {
     size_t value;
   };
 
-  explicit Shape(Shader* shader_ptr_in) { SetShader(shader_ptr_in); }
+  // A shape without a shader cannot exist — SetShader dereferences at once —
+  // so the type says it instead of a null check that nobody would reach.
+  explicit Shape(Shader& shader_in) : shader_(shader_in) { SetUpBuffers(); }
 
   // The vertices arrive as one span rather than as a pointer beside a count,
   // so the two cannot disagree at a call site. The byte size still comes from
@@ -113,8 +115,8 @@ class Shape : public Drawable {
   }
 
   void Draw(const glm::mat4& model) const override {
-    shader_ptr_->UseProgram();
-    shader_ptr_->SetUniform("model", model);
+    shader_.UseProgram();
+    shader_.SetUniform("model", model);
     vao_.Bind();
     glDrawArrays(GL_TRIANGLES, 0, number_vertices_);
     VertexArrayObject::Unbind();
@@ -128,15 +130,14 @@ class Shape : public Drawable {
 
  protected:
   [[nodiscard]] GLsizei VertexCount() const { return number_vertices_; }
-  [[nodiscard]] Shader* GetShader() const { return shader_ptr_; }
+  [[nodiscard]] Shader& GetShader() const { return shader_; }
   [[nodiscard]] VertexArrayObject& VaoRef() { return vao_; }
   [[nodiscard]] const VertexArrayObject& VaoRef() const { return vao_; }
   void SetLocalBounds(const rectf& bounds) { local_bounds_ = bounds; }
 
  private:
-  void SetShader(Shader* new_shader_ptr) {
-    shader_ptr_ = new_shader_ptr;
-    attributes_infos_ = new_shader_ptr->GetShaderAttributesInfos();
+  void SetUpBuffers() {
+    attributes_infos_ = shader_.GetShaderAttributesInfos();
 
     vao_.Bind();
 
@@ -169,9 +170,9 @@ class Shape : public Drawable {
     VertexArrayObject::Unbind();
   }
 
+  Shader& shader_;
   GLsizei number_vertices_{0};
   VertexArrayObject vao_;
-  Shader* shader_ptr_{nullptr};
   std::vector<VertexBufferObject> vbos_;
   std::vector<ShaderInfo> attributes_infos_;
   rectf local_bounds_;

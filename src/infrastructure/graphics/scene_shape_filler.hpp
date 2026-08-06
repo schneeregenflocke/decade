@@ -42,7 +42,7 @@ inline void FillRectangles(const std::shared_ptr<SceneNode>& node,
 inline void AddCenteredText(const std::shared_ptr<SceneNode>& parent,
                             const std::string& name, const std::string& text,
                             const glm::vec3& center, float size,
-                            Shader* font_shader,
+                            Shader& font_shader,
                             const std::shared_ptr<Font>& font, int draw_layer) {
   auto shape = std::make_unique<FontShape>(font_shader);
   shape->SetFont(font);

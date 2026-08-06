@@ -112,8 +112,8 @@ struct CalendarSceneNodes {
 // section builders. The hierarchy is page -> print area -> (the calendar's
 // areas), with the selection overlay as a hidden top-layer sibling of the page.
 [[nodiscard]] inline CalendarSceneNodes BuildCalendarSceneNodes(
-    Scene& scene, Shader* simple_shader, Shader* rectangles_shader,
-    Shader* font_shader, const std::shared_ptr<Font>& font) {
+    Scene& scene, Shader& simple_shader, Shader& rectangles_shader,
+    Shader& font_shader, const std::shared_ptr<Font>& font) {
   CalendarSceneNodes nodes;
 
   auto page_shape = std::make_unique<QuadrilateralShape>(simple_shader);

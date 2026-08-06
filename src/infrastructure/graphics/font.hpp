@@ -269,7 +269,7 @@ class Font {
 
 class FontShape : public Shape {
  public:
-  explicit FontShape(Shader* shader_ptr_in) : Shape(shader_ptr_in) {}
+  explicit FontShape(Shader& shader_in) : Shape(shader_in) {}
 
   void SetFont(std::shared_ptr<Font> font_ptr) { font_ = std::move(font_ptr); }
 
@@ -357,10 +357,10 @@ class FontShape : public Shape {
   }
 
   void Draw(const glm::mat4& model) const override {
-    GetShader()->UseProgram();
-    GetShader()->SetUniform("model", model);
+    GetShader().UseProgram();
+    GetShader().SetUniform("model", model);
 
-    GetShader()->SetUniform("texture_color", color_);
+    GetShader().SetUniform("texture_color", color_);
 
     VaoRef().Bind();
 

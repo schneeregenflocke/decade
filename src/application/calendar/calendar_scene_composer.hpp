@@ -66,8 +66,8 @@ class CalendarSceneComposer {
 
     // The fixed scene skeleton (named nodes, their painter layers and parent
     // attachments) is built once here; the handles drive the section builders.
-    nodes_ = BuildCalendarSceneNodes(scene_, &simple_shader,
-                                     &rectangles_shader_, &font_shader_, font_);
+    nodes_ = BuildCalendarSceneNodes(scene_, simple_shader, rectangles_shader_,
+                                     font_shader_, font_);
   }
 
   void Build() {
@@ -202,11 +202,11 @@ class CalendarSceneComposer {
   // already uses when the GL context fails to come up ([#53]).
   [[nodiscard]] static Shader& RequireShader(GraphicsEngine& graphics_engine,
                                              const std::string& name) {
-    const std::optional<Shader*> found = graphics_engine.SearchShader(name);
-    if (!found.has_value() || *found == nullptr) {
+    const auto found = graphics_engine.SearchShader(name);
+    if (!found.has_value()) {
       throw std::runtime_error("shader not found: " + name);
     }
-    return **found;
+    return found->get();
   }
 
   Shader& rectangles_shader_;

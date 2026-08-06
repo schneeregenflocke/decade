@@ -99,7 +99,7 @@ inline void AddCenteredText(const SectionContext& ctx,
                             const std::string& name, const std::string& text,
                             const glm::vec3& center, float size) {
   scene_shapes::AddCenteredText(parent, name, text, center, size,
-                                &ctx.font_shader, ctx.font,
+                                ctx.font_shader, ctx.font,
                                 calendar_layers::kText);
 }
 
@@ -488,7 +488,7 @@ inline void BuildDays(const SectionContext& ctx) {
                       current_sub_cell.b() + bar_height +
                           ctx.layout.PrintAreaOrigin().y)});
 
-    auto bar_shape = std::make_unique<RectanglesShape>(&ctx.rectangles_shader);
+    auto bar_shape = std::make_unique<RectanglesShape>(ctx.rectangles_shader);
     bar_shape->SetShape(
         rectf(detail::kZero, bar_width, detail::kZero, bar_height),
         current_shape_config.LineWidth());
@@ -638,7 +638,7 @@ inline void BuildLegend(const SectionContext& ctx) {
       node_entries->AddChild(node_entry);
 
       auto entry_shape =
-          std::make_unique<RectanglesShape>(&ctx.rectangles_shader);
+          std::make_unique<RectanglesShape>(ctx.rectangles_shader);
       entry_shape->SetShape(current_cell, current_shape_config.LineWidth());
       entry_shape->SetColors(current_shape_config.OutlineColor(),
                              current_shape_config.FillColor());
@@ -673,7 +673,7 @@ inline void BuildLegend(const SectionContext& ctx) {
       node_entries->AddChild(node_entry);
 
       auto entry_shape =
-          std::make_unique<RectanglesShape>(&ctx.rectangles_shader);
+          std::make_unique<RectanglesShape>(ctx.rectangles_shader);
       entry_shape->SetShape(current_cell, current_shape_config.LineWidth());
       entry_shape->SetColors(current_shape_config.OutlineColor(),
                              current_shape_config.FillColor());

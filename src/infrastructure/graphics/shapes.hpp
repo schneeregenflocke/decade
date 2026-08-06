@@ -18,7 +18,7 @@ inline constexpr size_t kVerticesPerQuad = 6;
 
 class QuadrilateralShape : public Shape {
  public:
-  explicit QuadrilateralShape(Shader* shader_ptr_in) : Shape(shader_ptr_in) {}
+  explicit QuadrilateralShape(Shader& shader_in) : Shape(shader_in) {}
 
   void SetShape(const rectf& rectangle) {
     std::vector<glm::vec3> vertices(kVerticesPerQuad);
@@ -39,9 +39,9 @@ class QuadrilateralShape : public Shape {
   void SetColor(const glm::vec4& new_color) { color_ = new_color; }
 
   void Draw(const glm::mat4& model) const override {
-    GetShader()->UseProgram();
-    GetShader()->SetUniform("model", model);
-    GetShader()->SetUniform("color", color_);
+    GetShader().UseProgram();
+    GetShader().SetUniform("model", model);
+    GetShader().SetUniform("color", color_);
 
     VaoRef().Bind();
     glDrawArrays(GL_TRIANGLES, 0, VertexCount());
@@ -54,7 +54,7 @@ class QuadrilateralShape : public Shape {
 
 class RectanglesShape : public Shape {
  public:
-  explicit RectanglesShape(Shader* shader_ptr_in) : Shape(shader_ptr_in) {}
+  explicit RectanglesShape(Shader& shader_in) : Shape(shader_in) {}
 
   void SetShape(const std::vector<rectf>& rectangles, float line_width) {
     vertices_.resize(rectangles.size() * kVerticesPerRectangle);
@@ -79,11 +79,11 @@ class RectanglesShape : public Shape {
   }
 
   void Draw(const glm::mat4& model) const override {
-    GetShader()->UseProgram();
-    GetShader()->SetUniform("model", model);
+    GetShader().UseProgram();
+    GetShader().SetUniform("model", model);
 
-    GetShader()->SetUniform("outline_color", outline_color_);
-    GetShader()->SetUniform("fill_color", fill_color_);
+    GetShader().SetUniform("outline_color", outline_color_);
+    GetShader().SetUniform("fill_color", fill_color_);
 
     VaoRef().Bind();
     glDrawArrays(GL_TRIANGLES, 0, VertexCount());

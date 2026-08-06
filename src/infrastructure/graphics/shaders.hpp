@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <functional>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/vec4.hpp>
@@ -223,17 +224,22 @@ class Shaders {
     }
   }
 
-  Shader* GetShader(size_t index) {
-    if (index < shaders_.size()) {
-      return &shaders_[index];
+  // A reference, because the only failure is the out-of-range one and that
+  // throws — there is no null to hand back.
+  Shader& GetShader(size_t index) {
+    if (index >= shaders_.size()) {
+      throw std::invalid_argument("Shader index out of bounds");
     }
-    throw std::invalid_argument("Shader index out of bounds");
+    return shaders_[index];
   }
 
-  std::optional<Shader*> SearchShader(const std::string& search_name) {
+  // A reference_wrapper and not a pointer: the optional already carries the
+  // absence, so a pointer inside it would be nullable twice over.
+  std::optional<std::reference_wrapper<Shader>> SearchShader(
+      const std::string& search_name) {
     for (auto& shader : shaders_) {
       if (shader.GetName() == search_name) {
-        return std::optional<Shader*>{&shader};
+        return std::ref(shader);
       }
     }
     return std::nullopt;
