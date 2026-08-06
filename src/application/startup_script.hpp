@@ -6,6 +6,7 @@
 #include <iostream>
 #include <string>
 
+#include "../common/debug_log.hpp"
 #include "../infrastructure/graphics/pick_id.hpp"
 #include "../presentation/gl_canvas.hpp"
 #include "../presentation/main_frame.hpp"
@@ -31,7 +32,9 @@ class StartupScript {
   void RunBeforeGraphics(MainFrame& frame) const {
     SelectStartupTab(frame);
     if (options_.exit_after_ms) {
-      std::cout << "Auto-exit in ms: " << *options_.exit_after_ms << '\n';
+      if (decade_debug::LogEnabled()) {
+        std::cout << "Auto-exit in ms: " << *options_.exit_after_ms << '\n';
+      }
       frame.CloseAfter(*options_.exit_after_ms);
     }
   }
@@ -64,16 +67,18 @@ class StartupScript {
     const std::string& path = *options_.startup_file;
 
     if (!wxFileExists(path)) {
-      std::cout << "LoadStartupFile: " << path << " not found, skipping\n";
+      std::cerr << "LoadStartupFile: " << path << " not found, skipping\n";
       return;
     }
 
-    std::cout << "LoadStartupFile: loading " << path << '\n';
+    if (decade_debug::LogEnabled()) {
+      std::cout << "LoadStartupFile: loading " << path << '\n';
+    }
     if (path.ends_with(".xml")) {
       // Headless runs: errors to the console instead of into a modal dialogue,
       // which would block an --exit-after-ms run.
       if (const auto error = document_.LoadXml(path)) {
-        std::cout << "LoadStartupFile: " << *error << '\n';
+        std::cerr << "LoadStartupFile: " << *error << '\n';
       }
       return;
     }
@@ -107,15 +112,19 @@ class StartupScript {
   void WriteRequestedImages(MainFrame& frame) const {
     if (options_.dump_png_path) {
       const int dpi = options_.dump_png_dpi.value_or(GLCanvas::kExportPngDpi);
-      std::cout << "--dump-png: writing " << *options_.dump_png_path << " at "
-                << dpi << " dpi\n";
+      if (decade_debug::LogEnabled()) {
+        std::cout << "--dump-png: writing " << *options_.dump_png_path << " at "
+                  << dpi << " dpi\n";
+      }
       frame.Canvas().SavePNG(*options_.dump_png_path, dpi);
     }
     if (options_.dump_frame_png_path) {
       const std::string path = *options_.dump_frame_png_path;
       // After the first real paint alone, so every panel is drawn.
       frame.CallAfter([&frame, path]() {
-        std::cout << "--dump-frame-png: writing " << path << '\n';
+        if (decade_debug::LogEnabled()) {
+          std::cout << "--dump-frame-png: writing " << path << '\n';
+        }
         if (!frame.SaveFrameScreenshot(path)) {
           std::cerr << "--dump-frame-png: failed to write " << path << '\n';
         }

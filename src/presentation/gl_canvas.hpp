@@ -55,8 +55,10 @@ class GLCanvas : public wxGLCanvas {
       : wxGLCanvas(parent, DisplayAttributes(), wxID_ANY, wxDefaultPosition,
                    wxDefaultSize, wxWANTS_CHARS),
         context_bootstrap_(*this, kRequiredGlVersion) {
-    std::cout << "wxGLCanvas IsDisplaySupported " << std::boolalpha
-              << wxGLCanvas::IsDisplaySupported(DisplayAttributes()) << '\n';
+    if (decade_debug::LogEnabled()) {
+      std::cout << "wxGLCanvas IsDisplaySupported " << std::boolalpha
+                << wxGLCanvas::IsDisplaySupported(DisplayAttributes()) << '\n';
+    }
   }
 
   // Starts the deferred GL setup. Exactly one of the two callbacks runs; on
@@ -203,7 +205,9 @@ class GLCanvas : public wxGLCanvas {
 
     GLint msaa_samples = 0;
     glGetIntegerv(GL_SAMPLES, &msaa_samples);
-    std::cout << "msaa_samples " << msaa_samples << '\n';
+    if (decade_debug::LogEnabled()) {
+      std::cout << "msaa_samples " << msaa_samples << '\n';
+    }
   }
 
   static wxGLAttributes DisplayAttributes() {

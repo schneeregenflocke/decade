@@ -68,7 +68,9 @@ class DecadeApp : public wxApp {
       return false;
     }
 
-    application::PrintRuntimeInfo(std::cout);
+    if (decade_debug::LogEnabled()) {
+      application::PrintRuntimeInfo(std::cout);
+    }
 
     composition_ = std::make_unique<application::AppComposition>(
         locale_services_->date_formatter(), runtime_options_);

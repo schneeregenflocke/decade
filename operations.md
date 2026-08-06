@@ -62,6 +62,8 @@ The binary honours several command line options in GNU syntax (`--name=value` or
 
 Take `--dump-png` for a clean high-DPI export of the page itself, `--dump-frame-png` for the real GUI including chrome. `--dump-frame-png` gets delayed through `CallAfter`, so the first paint has already happened.
 
+**The two channels.** A run without `--debug-log` writes **nothing** on stdout, and on stderr only what the user has to act on: a startup file that would not load, an option value that got ignored, a shader that would not compile, a device that failed. Everything else — progress, versions, sizes, frame rates, the shader inventory — is diagnosis and hangs on `--debug-log`. A silent run therefore means "nothing to report", and any line at all is worth reading. The switch itself lives in `decade_debug::LogEnabled()` (`src/common/debug_log.hpp`), which `DecadeApp::OnInit` sets from the option.
+
 **Steering:**
 
 - `--dump-png-dpi=<dpi>` — the export DPI for `--dump-png`; `GLCanvas::kExportPngDpi` (200) when unset. Used for high-resolution README renderings, for instance.

@@ -19,6 +19,7 @@
 #include <utility>
 #include <vector>
 
+#include "../../common/debug_log.hpp"
 #include "freetype.hpp"
 #include "rect.hpp"
 #include "shaders.hpp"
@@ -183,15 +184,19 @@ class Font {
     FT_Int minor = 0;
     FT_Int patch = 0;
     FT_Library_Version(ft_library_, &major, &minor, &patch);
-    std::cout << "FreeType Version " << major << "." << minor << "." << patch
-              << '\n';
+    if (decade_debug::LogEnabled()) {
+      std::cout << "FreeType Version " << major << "." << minor << "." << patch
+                << '\n';
+    }
   }
 
   void LoadFont(const std::string& file_path) {
     const FT_Error ft_error =
         FT_New_Face(ft_library_, file_path.c_str(), 0, &ft_face_);
     if (ft_error == FT_Err_Ok) {
-      std::cout << "ft_face->family_name " << ft_face_->family_name << '\n';
+      if (decade_debug::LogEnabled()) {
+        std::cout << "ft_face->family_name " << ft_face_->family_name << '\n';
+      }
     } else {
       throw std::runtime_error(std::string("Freetype FT_New_Face failed ") +
                                std::to_string(ft_error));

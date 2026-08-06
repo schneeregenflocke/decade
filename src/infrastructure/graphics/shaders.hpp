@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "../../common/debug_log.hpp"
 #include "Resource.h"
 #include "shaders_info.hpp"
 
@@ -108,15 +109,21 @@ class Shader {
 
     GLint status = 0;
     glGetProgramiv(program_, GL_LINK_STATUS, &status);
-    std::cout << "GL_LINK_STATUS: " << program_ << " " << std::boolalpha
-              << static_cast<bool>(status) << std::noboolalpha << '\n';
+    if (decade_debug::LogEnabled()) {
+      std::cout << "GL_LINK_STATUS: " << program_ << " " << std::boolalpha
+                << static_cast<bool>(status) << std::noboolalpha << '\n';
+    }
 
+    // The driver's log, on the other hand, is not diagnosis: a shader that
+    // failed to link leaves nothing to draw with, so the reason goes to stderr
+    // whether or not anybody asked for logging. A log on a successful link is
+    // a mere note and stays behind the flag.
     GLint info_length = 0;
     glGetProgramiv(program_, GL_INFO_LOG_LENGTH, &info_length);
-    if (info_length > 0) {
+    if (info_length > 0 && (status == GL_FALSE || decade_debug::LogEnabled())) {
       std::vector<char> info_log(static_cast<size_t>(info_length));
       glGetProgramInfoLog(program_, info_length, nullptr, info_log.data());
-      std::cout << info_log.data();
+      (status == GL_FALSE ? std::cerr : std::cout) << info_log.data();
     }
 
     glDetachShader(program_, handles.vertex);
@@ -134,15 +141,18 @@ class Shader {
 
     GLint status = 0;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
-    std::cout << "GL_COMPILE_STATUS: " << shader << " " << std::boolalpha
-              << static_cast<bool>(status) << std::noboolalpha << '\n';
+    if (decade_debug::LogEnabled()) {
+      std::cout << "GL_COMPILE_STATUS: " << shader << " " << std::boolalpha
+                << static_cast<bool>(status) << std::noboolalpha << '\n';
+    }
 
+    // Same rule as when linking: a compile error names itself on stderr.
     GLint info_length = 0;
     glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &info_length);
-    if (info_length > 0) {
+    if (info_length > 0 && (status == GL_FALSE || decade_debug::LogEnabled())) {
       std::vector<char> info_log(static_cast<size_t>(info_length));
       glGetShaderInfoLog(shader, info_length, nullptr, info_log.data());
-      std::cout << info_log.data();
+      (status == GL_FALSE ? std::cerr : std::cout) << info_log.data();
     }
 
     return shader;
@@ -191,7 +201,13 @@ class Shaders {
     PrintInfo();
   }
 
+  // Every shader with its attributes and uniforms — diagnosis, so it hangs on
+  // --debug-log. One guard for the whole chain: PrintShaderInfo and the
+  // ShaderInfo printers below it have no other caller.
   void PrintInfo() const {
+    if (!decade_debug::LogEnabled()) {
+      return;
+    }
     for (const auto& shader : shaders_) {
       shader.PrintShaderInfo();
     }

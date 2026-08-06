@@ -14,6 +14,8 @@
 #include <string>
 #include <utility>
 
+#include "../common/debug_log.hpp"
+
 // Procures the canvas its OpenGL context — the only place that does so.
 //
 // The setup is deferred, because a wxGLCanvas lies on the screen at the first
@@ -77,7 +79,9 @@ class GlContextBootstrap {
       return status_;
     }
     if (!canvas_.IsShownOnScreen()) {
-      std::cout << "!canvas_shown_on_screen\n";
+      if (decade_debug::LogEnabled()) {
+        std::cout << "!canvas_shown_on_screen\n";
+      }
       return status_;
     }
 
@@ -88,7 +92,9 @@ class GlContextBootstrap {
         .EndList();
     context_ =
         std::make_unique<wxGLContext>(&canvas_, nullptr, &context_attributes);
-    std::cout << "context IsOK " << context_->IsOK() << '\n';
+    if (decade_debug::LogEnabled()) {
+      std::cout << "context IsOK " << context_->IsOK() << '\n';
+    }
 
     // Without a valid context no GL function may run any more: glGetString
     // would return nullptr, and one more attempt per paint would be an endless
@@ -101,7 +107,9 @@ class GlContextBootstrap {
 
     MakeCurrent();
     status_ = Status::kReady;
-    std::cout << "OpenGL ready, version: " << DescribeDriver() << '\n';
+    if (decade_debug::LogEnabled()) {
+      std::cout << "OpenGL ready, version: " << DescribeDriver() << '\n';
+    }
     return status_;
   }
 
