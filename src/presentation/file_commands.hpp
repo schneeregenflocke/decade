@@ -44,6 +44,13 @@ class FileCommands {
 
  private:
   // The dialogue filter and the suffix that may be missing when saving.
+  //
+  // `const char*` and not `std::string_view`, against the usual preference:
+  // these are string literals in a `static constexpr` member, so they have
+  // static storage duration and encode neither ownership nor a dangling risk —
+  // and every consumer is a wxString, which takes a `const char*` and no
+  // string_view. A view would buy nothing and cost a `.data()` at each call,
+  // where null termination would hold only by accident.
   struct FileType {
     const char* wildcard;
     const char* extension;

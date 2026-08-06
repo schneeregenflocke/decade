@@ -25,11 +25,7 @@ class CalendarPropertyGrid : public wxPropertyGrid {
  public:
   explicit CalendarPropertyGrid(wxWindow* parent)
       : wxPropertyGrid(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                       wxPG_SPLITTER_AUTO_CENTER),
-        auto_span_property_(MakeOwned<wxBoolProperty>("Auto Span", wxPG_LABEL)),
-        first_year_property_(
-            MakeOwned<wxIntProperty>("First Year", wxPG_LABEL)),
-        last_year_property_(MakeOwned<wxIntProperty>("Last Year", wxPG_LABEL)) {
+                       wxPG_SPLITTER_AUTO_CENTER) {
     auto* box_sizer = MakeOwned<wxBoxSizer>(wxHORIZONTAL);
     const auto sizer_flags = wxSizerFlags().Proportion(1).Expand();
     parent->GetSizer()->Add(box_sizer, sizer_flags);
@@ -40,9 +36,9 @@ class CalendarPropertyGrid : public wxPropertyGrid {
     // The Append() order defines the grid's top-to-bottom layout; the dynamic
     // spacing rows are appended below the category by SyncSpacingRows().
     Append(MakeOwned<wxPropertyCategory>("Calendar Span (Years)", wxPG_LABEL));
-    Append(auto_span_property_);
-    Append(first_year_property_);
-    Append(last_year_property_);
+    Append(MakeOwned<wxBoolProperty>(kAutoSpanName, wxPG_LABEL));
+    Append(MakeOwned<wxIntProperty>(kFirstYearName, wxPG_LABEL));
+    Append(MakeOwned<wxIntProperty>(kLastYearName, wxPG_LABEL));
 
     Append(
         MakeOwned<wxPropertyCategory>("Row Spacing Proportions", wxPG_LABEL));
@@ -56,13 +52,13 @@ class CalendarPropertyGrid : public wxPropertyGrid {
 
     SyncSpacingRows(proportions.size());
     for (std::size_t index = 0; index < proportions.size(); ++index) {
-      SetPropertyValue(spacing_properties_[index],
+      SetPropertyValue(SpacingLabel(index),
                        static_cast<double>(proportions[index]));
     }
 
-    SetPropertyValue(auto_span_property_, config.IsAutoCalendarSpan());
-    SetPropertyValue(first_year_property_, config.GetSpanLimitsYears()[0]);
-    SetPropertyValue(last_year_property_, config.GetSpanLimitsYears()[1]);
+    SetPropertyValue(kAutoSpanName, config.IsAutoCalendarSpan());
+    SetPropertyValue(kFirstYearName, config.GetSpanLimitsYears()[0]);
+    SetPropertyValue(kLastYearName, config.GetSpanLimitsYears()[1]);
 
     RefreshSpanLimitsState();
   }
@@ -76,19 +72,19 @@ class CalendarPropertyGrid : public wxPropertyGrid {
 
     CalendarConfig config;
 
-    std::vector<float> proportions(spacing_properties_.size());
+    std::vector<float> proportions(spacing_count_);
     for (std::size_t index = 0; index < proportions.size(); ++index) {
-      proportions[index] = static_cast<float>(
-          GetPropertyValue(spacing_properties_[index]).GetDouble());
+      proportions[index] =
+          static_cast<float>(GetPropertyValue(SpacingLabel(index)).GetDouble());
     }
     config.SetSpacingProportions(proportions);
 
-    config.SetAutoCalendarSpan(GetPropertyValue(auto_span_property_).GetBool());
+    config.SetAutoCalendarSpan(GetPropertyValue(kAutoSpanName).GetBool());
     config.SetSpan(CalendarSpan::YearSpan{
-        .first_year = static_cast<int>(
-            GetPropertyValue(first_year_property_).GetInteger()),
-        .last_year = static_cast<int>(
-            GetPropertyValue(last_year_property_).GetInteger())});
+        .first_year =
+            static_cast<int>(GetPropertyValue(kFirstYearName).GetInteger()),
+        .last_year =
+            static_cast<int>(GetPropertyValue(kLastYearName).GetInteger())});
 
     return config;
   }
@@ -106,13 +102,13 @@ class CalendarPropertyGrid : public wxPropertyGrid {
 
   // Enables the explicit year limits only while the span is not automatic.
   void RefreshSpanLimitsState() {
-    const bool auto_span = GetPropertyValue(auto_span_property_).GetBool();
+    const bool auto_span = GetPropertyValue(kAutoSpanName).GetBool();
     if (auto_span) {
-      DisableProperty(first_year_property_);
-      DisableProperty(last_year_property_);
+      DisableProperty(kFirstYearName);
+      DisableProperty(kLastYearName);
     } else {
-      EnableProperty(first_year_property_);
-      EnableProperty(last_year_property_);
+      EnableProperty(kFirstYearName);
+      EnableProperty(kLastYearName);
     }
   }
 
@@ -120,28 +116,35 @@ class CalendarPropertyGrid : public wxPropertyGrid {
   // Appending from the highest index down lays them out so the grid's top
   // matches the page's top.
   void SyncSpacingRows(std::size_t count) {
-    if (count == spacing_properties_.size()) {
+    if (count == spacing_count_) {
       return;
     }
 
-    for (auto* property : spacing_properties_) {
-      DeleteProperty(property);
+    for (std::size_t index = 0; index < spacing_count_; ++index) {
+      DeleteProperty(SpacingLabel(index));
     }
-    spacing_properties_.assign(count, nullptr);
+    spacing_count_ = count;
 
     for (std::size_t index = count; index-- > 0;) {
-      auto* property = MakeOwned<wxFloatProperty>(SpacingLabel(index),
-                                                  wxPG_LABEL, kDefaultSpacing);
-      Append(property);
-      spacing_properties_[index] = property;
+      Append(MakeOwned<wxFloatProperty>(SpacingLabel(index), wxPG_LABEL,
+                                        kDefaultSpacing));
     }
   }
 
-  wxBoolProperty* auto_span_property_;
-  wxIntProperty* first_year_property_;
-  wxIntProperty* last_year_property_;
-  // Indexed by proportion index (rising y-axis), independent of grid order.
-  std::vector<wxFloatProperty*> spacing_properties_;
+  // The grid is addressed by name, never through a cached pointer. wxPGProperty
+  // derives from wxObject and not from wxTrackable, so wxWeakRef does not
+  // compile for it and a raw pointer member would be the classic dangling trap
+  // — the grid owns them and deletes them under us (SyncSpacingRows does
+  // exactly that). Creation and lookup share these constants, and the spacing
+  // rows share SpacingLabel(index), so a name cannot drift between the two.
+  static constexpr const char* kAutoSpanName = "Auto Span";
+  static constexpr const char* kFirstYearName = "First Year";
+  static constexpr const char* kLastYearName = "Last Year";
+
+  // How many spacing rows stand in the grid; their names come from
+  // SpacingLabel. Indexed by proportion index (rising y-axis), independent of
+  // grid order.
+  std::size_t spacing_count_{0};
 };
 
 class CalendarSetupPanel : public wxPanel {
