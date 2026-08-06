@@ -6,6 +6,7 @@
 #include <glm/vec2.hpp>
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -48,6 +49,9 @@ class CalendarSceneComposer {
                         const DateEntryBarStore& bar_store_in)
       : scene_(scene_in),
         graphics_engine_(graphics_engine_in),
+        rectangles_shader_(
+            RequireShader(graphics_engine_in, "Rectangles Shader")),
+        font_shader_(RequireShader(graphics_engine_in, "Font Shader")),
         font_(font_in),
         font_config_(font_config_in),
         page_size_(page_size_in),
@@ -58,17 +62,12 @@ class CalendarSceneComposer {
         date_groups_(date_groups_in),
         bar_store_(bar_store_in) {
     graphics_engine_.SetScene(scene_);
-    auto* simple_shader =
-        graphics_engine_.SearchShader("Simple Shader").value_or(nullptr);
-    rectangles_shader_ =
-        graphics_engine_.SearchShader("Rectangles Shader").value_or(nullptr);
-    font_shader_ =
-        graphics_engine_.SearchShader("Font Shader").value_or(nullptr);
+    Shader& simple_shader = RequireShader(graphics_engine_, "Simple Shader");
 
     // The fixed scene skeleton (named nodes, their painter layers and parent
     // attachments) is built once here; the handles drive the section builders.
-    nodes_ = BuildCalendarSceneNodes(scene_, simple_shader, rectangles_shader_,
-                                     font_shader_, font_);
+    nodes_ = BuildCalendarSceneNodes(scene_, &simple_shader,
+                                     &rectangles_shader_, &font_shader_, font_);
   }
 
   void Build() {
@@ -194,8 +193,24 @@ class CalendarSceneComposer {
   // Cached shader handles, looked up once in the constructor. The shaders live
   // in the GraphicsEngine for the builder's whole lifetime; they are forwarded
   // to the section builders via the SectionContext.
-  Shader* rectangles_shader_{nullptr};
-  Shader* font_shader_{nullptr};
+  // The three shaders the calendar draws with are built unconditionally by
+  // `Shaders` out of embedded resources, so a miss here means a typo in the
+  // name or a resource that went away — a fault, not a state to carry. It used
+  // to fall to nullptr through `value_or`, and the null then died inside
+  // Shape::SetShader without a word about which shader was missing. Naming it
+  // and throwing lets AppComposition report and close down the same path it
+  // already uses when the GL context fails to come up ([#53]).
+  [[nodiscard]] static Shader& RequireShader(GraphicsEngine& graphics_engine,
+                                             const std::string& name) {
+    const std::optional<Shader*> found = graphics_engine.SearchShader(name);
+    if (!found.has_value() || *found == nullptr) {
+      throw std::runtime_error("shader not found: " + name);
+    }
+    return **found;
+  }
+
+  Shader& rectangles_shader_;
+  Shader& font_shader_;
 
   // Stable handles to the fixed scene-skeleton nodes, built once by
   // BuildCalendarSceneNodes and forwarded to the section builders.

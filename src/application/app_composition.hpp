@@ -6,6 +6,7 @@
 #include <wx/weakref.h>
 #include <wx/window.h>
 
+#include <exception>
 #include <iostream>
 #include <optional>
 #include <string>
@@ -76,13 +77,26 @@ class AppComposition {
  private:
   // Runs as soon as the GL context stands — only here may GL state be touched,
   // and only here is there anything to wire.
+  //
+  // A scene that cannot be built lands in the same place as a context that
+  // never came up: the window would stand there operable and die on the first
+  // interaction. Building it needs GL resources that exist by then or not at
+  // all — a missing shader, for instance — so the failure is final and gets
+  // reported rather than retried. Whatever came into being before the throw
+  // gets dissolved first, so no half-built page survives.
   void OnGraphicsReady() {
-    CalendarPage& calendar_page =
-        calendar_page_.emplace(frame_->Canvas(), frame_->Font().GetFontConfig(),
-                               bus_.scene_snapshot());
-    wiring_.emplace(bus_, Components(calendar_page));
-    startup_script_.RunAfterGraphics(*frame_, calendar_page,
-                                     title_text_editor_);
+    try {
+      CalendarPage& calendar_page = calendar_page_.emplace(
+          frame_->Canvas(), frame_->Font().GetFontConfig(),
+          bus_.scene_snapshot());
+      wiring_.emplace(bus_, Components(calendar_page));
+      startup_script_.RunAfterGraphics(*frame_, calendar_page,
+                                       title_text_editor_);
+    } catch (const std::exception& error) {
+      wiring_.reset();
+      calendar_page_.reset();
+      OnGraphicsFailed(std::string("scene setup failed: ") + error.what());
+    }
   }
 
   // Without a context the ready path never runs: no wiring, no initial values.
