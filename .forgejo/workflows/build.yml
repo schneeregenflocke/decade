@@ -47,10 +47,11 @@ jobs:
         run: cmake --build build --target clang-tidy
       # Rebuilds the tree instrumented and runs the tests underneath — a run
       # finds errors, a build alone does not. The tree gets held at zero
-      # findings, and a hit breaks the job.
+      # findings, and a hit breaks the job. Around 195 s from scratch on twelve
+      # cores, so it stays on every push rather than on a schedule.
       # sanitize-memory deliberately does not run along: MemorySanitizer demands
       # that ALL dependencies be instrumented, and with the system libstdc++ and
       # gtest it reports false alarms out of foreign code — during gtest
       # discovery already. It stays a local diagnostic tool, see operations.md.
-      - name: Sanitizer gate (address, leak, undefined)
+      - name: Sanitizer gate (address, leak, undefined, float checks)
         run: cmake --build build --target sanitize-address
