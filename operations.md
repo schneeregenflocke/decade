@@ -133,11 +133,12 @@ Why the extra args:
 The second gate beside clang-tidy: the code runs instrumented instead of merely being read. Both targets configure a build folder of their own under `build/`, rebuild everything in it and run `ctest` there — a run finds errors, a build alone does not. Flags: [GCC, instrumentation options](https://gcc.gnu.org/onlinedocs/gcc-9.2.0/gcc/Instrumentation-Options.html).
 
 ```bash
-cmake --build build --target sanitize-address   # address,leak,undefined + the float checks
+cmake --build build --target sanitize-address   # the gate run, see below
 cmake --build build --target sanitize-memory    # memory (clang) — diagnosis, see below
 ```
 
 - **`sanitize-address`** is the gate. It combines AddressSanitizer (buffer overruns, use-after-free), LeakSanitizer and UndefinedBehaviorSanitizer. The tree gets held at **zero findings**. `-fno-sanitize-recover=undefined` is needed, because UBSan would otherwise merely report and carry on — the gate would stay green. LeakSanitizer already sits inside AddressSanitizer on Linux; it is named anyway, so the intent stands in the target.
+- `_GLIBCXX_ASSERTIONS` rides along. It is no sanitizer, but it closes a hole they leave: reading past a container's size while it still has capacity stays inside the allocation, so AddressSanitizer sees nothing — `v.front()` on an empty vector after `reserve()` hands back garbage and runs on.
 - `float-cast-overflow` and `float-divide-by-zero` stand **beside** `undefined`, because GCC folds neither into it (checked against GCC 16 on 2026-08-06 — a cast of 7.87e30 to `size_t` passes unremarked under plain `-fsanitize=undefined`). Whoever extends the flag list checks the same way: write the smallest program that triggers the class, compile it with the gate's flags and see whether it fires. A flag nobody has seen fire buys nothing.
 - **`sanitize-memory`** is a diagnostic tool, not a gate. MemorySanitizer (uninitialised reads) excludes AddressSanitizer — the compiler rejects the combination — and clang alone knows it, hence a second target. It demands that **every** dependency be instrumented; with the system libstdc++ and gtest it reports false alarms out of foreign code and breaks off during test discovery already. It would become usable only with a self-built, instrumented libc++ plus a rebuilt gtest, ICU and Boost.
 - `embed-resource` runs during the build and is exempt through `-fno-sanitize=all`: a finding in the tool would break the build instead of checking the program.
