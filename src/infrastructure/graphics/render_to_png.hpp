@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <glm/gtx/transform.hpp>
 #include <glm/vec3.hpp>
+#include <limits>
 #include <memory>
 #include <string>
 #include <utility>
@@ -289,6 +290,21 @@ namespace render_to_png_detail {
   return dpi / kInchInMillimeters;
 }
 
+// Whether `value` survives a static_cast to size_t. That cast is undefined for
+// anything outside the target's range, so the range gets tested while the value
+// is still a float — FitsPngLimits sees the number after the cast and therefore
+// too late. The page size comes out of a project file unvalidated
+// (`value_serialization.hpp`, no clamp in `SetSize`), so an absurd extent times
+// the dpi does reach here.
+//
+// 2^64 is the first value a 64-bit size_t cannot hold; NaN fails the lower
+// test, which is the point of writing it as `>= 0` rather than `!(< 0)`.
+[[nodiscard]] inline bool FitsSizeT(float value) {
+  const float limit =
+      std::ldexp(1.0F, std::numeric_limits<std::size_t>::digits);
+  return value >= 0.0F && value < limit;
+}
+
 }  // namespace render_to_png_detail
 
 // Draws the calendar page as a PNG at the wanted resolution. It converts the
@@ -300,10 +316,17 @@ inline void WritePageToPng(const std::string& file_path,
                            GraphicsEngine& graphics_engine, int msaa_samples) {
   const float dots_per_millimeter =
       render_to_png_detail::DotsPerInchToDotsPerMillimeter(dpi);
-  const auto image_width = static_cast<size_t>(
-      std::max(0.0F, std::round(ortho_region.width() * dots_per_millimeter)));
-  const auto image_height = static_cast<size_t>(
-      std::max(0.0F, std::round(ortho_region.height() * dots_per_millimeter)));
+  const float width_pixels =
+      std::round(ortho_region.width() * dots_per_millimeter);
+  const float height_pixels =
+      std::round(ortho_region.height() * dots_per_millimeter);
+  if (!render_to_png_detail::FitsSizeT(width_pixels) ||
+      !render_to_png_detail::FitsSizeT(height_pixels)) {
+    return;
+  }
+
+  const auto image_width = static_cast<size_t>(width_pixels);
+  const auto image_height = static_cast<size_t>(height_pixels);
 
   if (!png_io::FitsPngLimits(image_width, image_height)) {
     return;

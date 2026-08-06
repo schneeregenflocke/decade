@@ -207,14 +207,18 @@ add_custom_target(clang-tidy
 # the stack traces.
 # https://gcc.gnu.org/onlinedocs/gcc-9.2.0/gcc/Instrumentation-Options.html
 # LeakSanitizer already sits inside AddressSanitizer on Linux; named here anyway.
+# float-cast-overflow stands beside `undefined` because GCC does not fold it
+# in: a float too large for the integer it gets cast to is undefined, and
+# without this flag the gate reads that cast as sound (verified against GCC 16
+# on 2026-08-06). That is the shape of #28.
 add_custom_target(sanitize-address
 	COMMAND ${CMAKE_COMMAND} -S ${CMAKE_SOURCE_DIR} -B ${CMAKE_BINARY_DIR}/san-address -G ${CMAKE_GENERATOR}
 		-DCMAKE_BUILD_TYPE=RelWithDebInfo
-		"-DCMAKE_CXX_FLAGS=-fsanitize=address,leak,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer"
+		"-DCMAKE_CXX_FLAGS=-fsanitize=address,leak,undefined,float-cast-overflow,float-divide-by-zero -fno-sanitize-recover=undefined -fno-omit-frame-pointer"
 	COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}/san-address
 	COMMAND ${CMAKE_COMMAND} -E env UBSAN_OPTIONS=print_stacktrace=1
 		${CMAKE_CTEST_COMMAND} --test-dir ${CMAKE_BINARY_DIR}/san-address --output-on-failure
-	COMMENT "Sanitizer gate -fsanitize=address,leak,undefined (build plus test run)"
+	COMMENT "Sanitizer gate -fsanitize=address,leak,undefined,float-cast-overflow,float-divide-by-zero (build plus test run)"
 	VERBATIM USES_TERMINAL)
 
 # MemorySanitizer excludes AddressSanitizer (the compiler rejects the
