@@ -6,7 +6,7 @@
 #include <wx/string.h>
 #include <wx/window.h>
 
-#include <memory>
+#include "wx_owned.hpp"
 
 // Command identifiers for the application's main menu. Generated once with
 // wxWindow::NewControlId so they never clash with framework-reserved IDs. The
@@ -32,12 +32,10 @@ class MainMenu {
   [[nodiscard]] const MainMenuIds& Ids() const { return ids_; }
 
   void AttachTo(wxFrame& frame) const {
-    auto menu_bar = std::make_unique<wxMenuBar>();
-    auto* menu_bar_ptr = menu_bar.release();
+    auto* menu_bar_ptr = MakeOwned<wxMenuBar>();
     frame.SetMenuBar(menu_bar_ptr);
 
-    auto menu_file = std::make_unique<wxMenu>();
-    auto* menu_file_ptr = menu_file.release();
+    auto* menu_file_ptr = MakeOwned<wxMenu>();
     menu_bar_ptr->Append(menu_file_ptr, "&File");
     menu_file_ptr->Append(ids_.open_xml, L"&Open...");
     menu_file_ptr->AppendSeparator();
@@ -51,8 +49,7 @@ class MainMenu {
     menu_file_ptr->AppendSeparator();
     menu_file_ptr->Append(wxID_EXIT);
 
-    auto menu_help = std::make_unique<wxMenu>();
-    auto* menu_help_ptr = menu_help.release();
+    auto* menu_help_ptr = MakeOwned<wxMenu>();
     menu_bar_ptr->Append(menu_help_ptr, "&Help");
     menu_help_ptr->Append(ids_.license_info, L"&Open Source Licenses");
   }
