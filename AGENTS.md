@@ -96,11 +96,9 @@ Language and documentation rules live in the superproject (`~/homelab-superproje
 
 ### Designed as header-only
 
-The codebase is **deliberately designed as header-only** (`main.cpp` is the single translation unit). When adding code, extend an existing header rather than splitting into a `.cpp`. Keep that convention through refactorings too. Definitions living in a header must be [`inline`](https://en.cppreference.com/w/cpp/language/inline) (free functions and out-of-class member definitions), so the single-TU rule does not quietly hide ODR violations should a header ever get included from elsewhere (tests, for instance).
+The codebase is **deliberately designed as header-only** (`main.cpp` is the single translation unit). When adding code, extend an existing header rather than splitting into a `.cpp`. Keep that convention through refactorings too. Cutting one header into smaller headers leaves the design untouched and stays welcome; a `.cpp` does not.
 
-That rule holds hard — a decision, not a habit, so the price stands beside it ([#41](https://github.com/schneeregenflocke/decade/issues/41)). One translation unit compiles on one core, so a change anywhere costs the whole run: measured on 2026-08-06 over 12'553 lines of header, 22 s for the app and 42 s for a clean build including the tests. Bought for it: the clang-tidy gate reads the program as the compiler does, in one pass, and no header carries a build order. Cutting one header into smaller headers changes nothing here and stays welcome; a `.cpp` changes it.
-
-Decide anew when the price shows itself — when a single edit interrupts the work, or a clean build outgrows a coffee break. Until then the answer stands and needs no re-discussion.
+A member gets defined **in the class body**, never out of line — the body makes it [implicitly `inline`](https://en.cppreference.com/w/cpp/language/inline), so there is no keyword to forget and no second place naming the same function. Only a free function at namespace scope carries `inline` itself. Both keep the single-TU rule from quietly hiding ODR violations should a header ever get included from elsewhere (tests, for instance).
 
 ### Warnings, the clang-tidy and the sanitizer gate
 
