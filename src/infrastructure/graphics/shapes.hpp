@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
+#include <span>
 #include <vector>
 
 #include "rect.hpp"
@@ -31,8 +32,7 @@ class QuadrilateralShape : public Shape {
     vertices[kVerticesPerQuad - 1] =
         glm::vec3(rectangle.r(), rectangle.b(), kZero);
 
-    SetBuffer(BufferIndex{0}, static_cast<GLsizei>(vertices.size()),
-              vertices.data());
+    SetBuffer(BufferIndex{0}, std::span<const glm::vec3>(vertices));
     SetLocalBounds(rectangle);
   }
 
@@ -63,8 +63,7 @@ class RectanglesShape : public Shape {
       SetRectangleShape(index, rectangles[index], line_width);
     }
 
-    SetBuffer(BufferIndex{0}, static_cast<GLsizei>(vertices_.size()),
-              vertices_.data());
+    SetBuffer(BufferIndex{0}, std::span<const glm::vec3>(vertices_));
     SetLocalBounds(UnionBounds(rectangles, line_width));
   }
 

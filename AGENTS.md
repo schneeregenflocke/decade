@@ -93,6 +93,7 @@ Language and documentation rules live in the superproject (`~/homelab-superproje
 
 - [const-correctness](https://isocpp.org/wiki/faq/const-correctness) throughout: SSOT for mutability — whatever does not get changed is `const`.
 - Include discipline: dissolve include thickets (forward declarations, minimal includes, [include-what-you-use](https://include-what-you-use.org/)). A bigger structural lever than reformatting, and it lowers compile times along the way.
+- A contiguous sequence travels as a [`std::span`](https://en.cppreference.com/w/cpp/container/span), never as a pointer beside a count — two parameters that can disagree at a call site are one parameter too many. That is the whole of the hardening we do ([#42](https://github.com/schneeregenflocke/decade/issues/42)): no sweep with `gsl::not_null` across every pointer parameter. The lifetime question was already answered by banning raw pointer data members, and annotating every remaining pointer would cost many signatures to say what the ban says once.
 
 ### Designed as header-only
 

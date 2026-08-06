@@ -13,6 +13,7 @@
 #include <glm/vec4.hpp>
 #include <iostream>
 #include <memory>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -327,10 +328,8 @@ class FontShape : public Shape {
       current_x += letter.advance * size;
     }
 
-    SetBuffer(BufferIndex{0}, static_cast<GLsizei>(positions_.size()),
-              positions_.data());
-    SetBuffer(BufferIndex{1}, static_cast<GLsizei>(texture_positions_.size()),
-              texture_positions_.data());
+    SetBuffer(BufferIndex{0}, std::span<const glm::vec3>(positions_));
+    SetBuffer(BufferIndex{1}, std::span<const glm::vec2>(texture_positions_));
 
     if (positions_.empty()) {
       SetLocalBounds({});

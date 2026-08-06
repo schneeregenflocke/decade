@@ -9,6 +9,7 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
+#include <span>
 #include <utility>
 #include <vector>
 
@@ -92,13 +93,20 @@ class Shape {
   Shape(Shape&&) = delete;
   Shape& operator=(Shape&&) = delete;
 
-  void SetBuffer(BufferIndex index, GLsizei vertex_count, const void* data) {
-    number_vertices_ = vertex_count;
+  // The vertices arrive as one span rather than as a pointer beside a count,
+  // so the two cannot disagree at a call site. The byte size still comes from
+  // the shader attribute and not from `sizeof(T)`: the attribute decides how
+  // wide a vertex is on the GL side, and that is what glBufferData is told.
+  template <typename Vertex>
+  void SetBuffer(BufferIndex index, std::span<const Vertex> vertices) {
+    number_vertices_ = static_cast<GLsizei>(vertices.size());
 
     const auto& attribute_info = attributes_infos_.at(index.value);
     const auto type_size =
         static_cast<GLsizeiptr>(attribute_info.GetTypeSize());
-    const auto buffer_size = static_cast<GLsizeiptr>(vertex_count) * type_size;
+    const auto buffer_size =
+        static_cast<GLsizeiptr>(vertices.size()) * type_size;
+    const void* data = vertices.data();
 
     vao_.Bind();
     vbos_.at(index.value).Bind();
