@@ -191,7 +191,7 @@ TEST(DateEntryListCharacterisation, NegativeGroupFallsToZero) {
 
 // Deleting a group re-clamps what is already stored — the second half of #26
 // and the path a user actually walks: the groups panel deletes a row, the bus
-// carries the shrunk list to DateEntryStore and DateEntryBarStore, and both
+// carries the shrunk list to DateEntryStore and DateEntryBars, and both
 // hold entries pointing at the group that just went. The scene builder sizes
 // group_nodes by the new group count, so a stale index took the rebuild down.
 TEST(DateEntryListCharacterisation, DeletingAGroupReclampsStoredEntries) {

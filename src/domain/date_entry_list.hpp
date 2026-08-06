@@ -16,7 +16,7 @@
 // — and cuts groups that no longer exist.
 //
 // Separate from the store, because two holders need the same preparation but
-// only one of them publishes: DateEntryStore publishes, DateEntryBarStore
+// only one of them publishes: DateEntryStore publishes, DateEntryBars
 // computes bars out of it. They used to share this through inheritance with
 // protected access; composition manages without both.
 class DateEntryList {

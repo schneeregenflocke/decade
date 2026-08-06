@@ -1,5 +1,5 @@
-#ifndef DATE_ENTRY_BAR_STORE_HPP
-#define DATE_ENTRY_BAR_STORE_HPP
+#ifndef DATE_ENTRY_BARS_HPP
+#define DATE_ENTRY_BARS_HPP
 
 #include <cstddef>
 #include <cstdint>
@@ -15,7 +15,7 @@
 // A read model for the drawing: it holds the same prepared entry list and
 // derives bars and yearly totals from it. It publishes nothing — the calendar
 // reads it directly, so it needs neither a topic nor a re-entry guard.
-class DateEntryBarStore {
+class DateEntryBars {
  public:
   void ReceiveDateEntries(const std::vector<DateEntry>& incoming_date_entries) {
     date_entries_.Assign(incoming_date_entries);
@@ -79,4 +79,4 @@ class DateEntryBarStore {
   std::vector<Bar> bars_;
   std::vector<std::int64_t> annual_totals_;
 };
-#endif  // DATE_ENTRY_BAR_STORE_HPP
+#endif  // DATE_ENTRY_BARS_HPP

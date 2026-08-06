@@ -6,7 +6,7 @@
 
 #include "domain/date.hpp"
 #include "domain/date_entry.hpp"
-#include "domain/date_entry_bar_store.hpp"
+#include "domain/date_entry_bars.hpp"
 #include "domain/date_entry_store.hpp"
 #include "domain/date_group.hpp"
 #include "domain/date_period.hpp"
@@ -23,13 +23,13 @@ DateEntry MakeEntry(int year, int month_begin, int day_begin, int month_end,
 }
 
 // In production the wiring guarantees a `Default` group is delivered before any
-// entry; seeding it here mirrors that setup so the store sees the same initial
-// state it does at runtime.
-template <typename Store>
-void SeedDefaultGroup(Store& store) {
+// entry; seeding it here mirrors that setup so the holder sees the same initial
+// state it does at runtime. Serves both the store and the bar read model.
+template <typename Holder>
+void SeedDefaultGroup(Holder& holder) {
   std::vector<DateGroup> groups;
   groups.emplace_back("Default");
-  store.ReceiveDateGroups(groups);
+  holder.ReceiveDateGroups(groups);
 }
 
 }  // namespace
@@ -122,33 +122,33 @@ TEST(DateEntryStoreTest, ReentryGuardBlocksRecursiveReceive) {
   EXPECT_EQ(store.Get().Items()[0].GetDateInterval().Begin().Year(), 2030);
 }
 
-TEST(DateEntryBarStoreTest, ProducesOneBarPerIntervalWithinYear) {
-  DateEntryBarStore store;
-  SeedDefaultGroup(store);
+TEST(DateEntryBarsTest, ProducesOneBarPerIntervalWithinYear) {
+  DateEntryBars bars;
+  SeedDefaultGroup(bars);
   std::vector<DateEntry> input;
   input.push_back(MakeEntry(2030, 1, 1, 1, 10));
   input.push_back(MakeEntry(2030, 2, 1, 2, 10));
 
-  store.ReceiveDateEntries(input);
+  bars.ReceiveDateEntries(input);
 
-  EXPECT_EQ(store.GetNumberBars(), 2U);
+  EXPECT_EQ(bars.GetNumberBars(), 2U);
 }
 
-TEST(DateEntryBarStoreTest, SplitsYearSpanningIntervalAtYearBoundary) {
-  DateEntryBarStore store;
-  SeedDefaultGroup(store);
+TEST(DateEntryBarsTest, SplitsYearSpanningIntervalAtYearBoundary) {
+  DateEntryBars bars;
+  SeedDefaultGroup(bars);
   DateEntry entry;
   entry.SetDateInterval(
       DatePeriod(Date::FromYmd(2030, 12, 20), Date::FromYmd(2031, 1, 10)));
   std::vector<DateEntry> input;
   input.push_back(entry);
 
-  store.ReceiveDateEntries(input);
+  bars.ReceiveDateEntries(input);
 
-  ASSERT_EQ(store.GetNumberBars(), 2U);
-  EXPECT_EQ(store.GetBar(0).GetYear(), 2030);
-  EXPECT_EQ(store.GetBar(1).GetYear(), 2031);
-  EXPECT_EQ(store.GetBar(0).GetLength() + store.GetBar(1).GetLength(),
+  ASSERT_EQ(bars.GetNumberBars(), 2U);
+  EXPECT_EQ(bars.GetBar(0).GetYear(), 2030);
+  EXPECT_EQ(bars.GetBar(1).GetYear(), 2031);
+  EXPECT_EQ(bars.GetBar(0).GetLength() + bars.GetBar(1).GetLength(),
             Date::DaysBetween(Date::FromYmd(2030, 12, 20),
                               Date::FromYmd(2031, 1, 10)));
 }
@@ -157,30 +157,30 @@ TEST(DateEntryBarStoreTest, SplitsYearSpanningIntervalAtYearBoundary) {
 // bar of length 1, entirely inside its year. (Under the old inclusive-end
 // model this input was the null period (d, d) whose Last() fell into the
 // previous year and broke the split loop.)
-TEST(DateEntryBarStoreTest, SingleDayOnJanuaryFirstProducesOneBar) {
-  DateEntryBarStore store;
-  SeedDefaultGroup(store);
+TEST(DateEntryBarsTest, SingleDayOnJanuaryFirstProducesOneBar) {
+  DateEntryBars bars;
+  SeedDefaultGroup(bars);
   DateEntry entry;
   entry.SetDateInterval(
       DatePeriod(Date::FromYmd(2030, 1, 1), Date::FromYmd(2030, 1, 2)));
   std::vector<DateEntry> input;
   input.push_back(entry);
 
-  store.ReceiveDateEntries(input);
+  bars.ReceiveDateEntries(input);
 
-  ASSERT_EQ(store.GetNumberBars(), 1U);
-  EXPECT_EQ(store.GetBar(0).GetYear(), 2030);
-  EXPECT_EQ(store.GetBar(0).GetLength(), 1);
-  EXPECT_EQ(store.GetAnnualTotal(0), 1);
+  ASSERT_EQ(bars.GetNumberBars(), 1U);
+  EXPECT_EQ(bars.GetBar(0).GetYear(), 2030);
+  EXPECT_EQ(bars.GetBar(0).GetLength(), 1);
+  EXPECT_EQ(bars.GetAnnualTotal(0), 1);
 }
 
 // Regression: the entry with the latest Begin() does not necessarily have the
 // latest End(). GetLastYear() and GetSpan() must maximise across every entry,
 // or ProcessAnnualTotals writes past the end of annual_totals_ for the yearly
 // bars of the multi-year entry.
-TEST(DateEntryBarStoreTest, LastYearComesFromLatestEndNotLatestBegin) {
-  DateEntryBarStore store;
-  SeedDefaultGroup(store);
+TEST(DateEntryBarsTest, LastYearComesFromLatestEndNotLatestBegin) {
+  DateEntryBars bars;
+  SeedDefaultGroup(bars);
   DateEntry long_entry;
   long_entry.SetDateInterval(
       DatePeriod(Date::FromYmd(2000, 1, 1), Date::FromYmd(2010, 1, 1)));
@@ -188,15 +188,15 @@ TEST(DateEntryBarStoreTest, LastYearComesFromLatestEndNotLatestBegin) {
   input.push_back(long_entry);
   input.push_back(MakeEntry(2001, 6, 1, 6, 10));
 
-  store.ReceiveDateEntries(input);
+  bars.ReceiveDateEntries(input);
 
-  EXPECT_EQ(store.GetFirstYear(), 2000);
-  EXPECT_EQ(store.GetLastYear(), 2009);
-  ASSERT_EQ(store.GetSpan(), 10U);
+  EXPECT_EQ(bars.GetFirstYear(), 2000);
+  EXPECT_EQ(bars.GetLastYear(), 2009);
+  ASSERT_EQ(bars.GetSpan(), 10U);
 
   std::int64_t total = 0;
-  for (size_t index = 0; index < store.GetSpan(); ++index) {
-    total += store.GetAnnualTotal(index);
+  for (size_t index = 0; index < bars.GetSpan(); ++index) {
+    total += bars.GetAnnualTotal(index);
   }
   const auto expected =
       Date::DaysBetween(Date::FromYmd(2000, 1, 1), Date::FromYmd(2010, 1, 1)) +

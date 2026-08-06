@@ -17,7 +17,7 @@
 
 #include "../../domain/calendar_config.hpp"
 #include "../../domain/date.hpp"
-#include "../../domain/date_entry_bar_store.hpp"
+#include "../../domain/date_entry_bars.hpp"
 #include "../../domain/date_group.hpp"
 #include "../../domain/font_config.hpp"
 #include "../../domain/shape_configuration.hpp"
@@ -55,7 +55,7 @@ struct SectionContext {
   const CalendarConfig& calendar_config;
   const TitleConfig& title_config;
   const DateGroups& date_groups;
-  const DateEntryBarStore& bar_store;
+  const DateEntryBars& date_entry_bars;
   // Empty while nobody edits text in the canvas.
   const std::optional<TextEditView>& text_edit;
   const std::shared_ptr<Font>& font;
@@ -446,9 +446,9 @@ inline void BuildDays(const SectionContext& ctx) {
   node_labels->RemoveChildren();
 
   const TimelineProjection projection(ctx.calendar_config);
-  const auto number_bars = ctx.bar_store.GetNumberBars();
+  const auto number_bars = ctx.date_entry_bars.GetNumberBars();
   for (size_t index = 0; index < number_bars; ++index) {
-    const auto& bar = ctx.bar_store.GetBar(index);
+    const auto& bar = ctx.date_entry_bars.GetBar(index);
     if (!ctx.calendar_config.IsInSpan(bar.GetYear())) {
       continue;
     }
@@ -517,7 +517,7 @@ inline void BuildYearTotals(const SectionContext& ctx) {
   const auto& node_text = ctx.nodes.year_total_labels;
   node_text->RemoveChildren();
 
-  const std::size_t span_years = ctx.bar_store.GetSpan();
+  const std::size_t span_years = ctx.date_entry_bars.GetSpan();
   if (span_years == 0) {
     return;
   }
@@ -527,14 +527,14 @@ inline void BuildYearTotals(const SectionContext& ctx) {
 
   for (std::size_t index = 0; index < span_years; ++index) {
     const int current_year =
-        ctx.bar_store.GetFirstYear() + static_cast<int>(index);
+        ctx.date_entry_bars.GetFirstYear() + static_cast<int>(index);
     if (ctx.calendar_config.IsInSpan(current_year)) {
       const auto row = projection.RowForYear(current_year);
       const auto current_cell = ctx.layout.GetSubFrame(row, 0);
 
       rectf year_total_cell = current_cell;
       const auto year_total_width =
-          static_cast<float>(ctx.bar_store.GetAnnualTotal(index)) *
+          static_cast<float>(ctx.date_entry_bars.GetAnnualTotal(index)) *
           ctx.layout.DayWidth();
       year_total_cell.setR(current_cell.l() + year_total_width);
       year_totals_cells.at(index) = year_total_cell;
@@ -542,7 +542,7 @@ inline void BuildYearTotals(const SectionContext& ctx) {
       const auto number_days = DaysInYear(current_year);
 
       const float percent =
-          static_cast<float>(ctx.bar_store.GetAnnualTotal(index)) /
+          static_cast<float>(ctx.date_entry_bars.GetAnnualTotal(index)) /
           static_cast<float>(number_days);
 
       std::ostringstream year_total_stream;

@@ -12,7 +12,7 @@
 //
 // SplitAtYearBoundaries is the companion period operation: a half-open period
 // that crosses one or more New Year boundaries is cut into per-year segments.
-// It was previously inlined in DateEntryBarStore::ProcessBars, where it mixed
+// It was previously inlined in DateEntryBars::ProcessBars, where it mixed
 // layout knowledge into a domain store; it lives here now as the row-period
 // split rule (currently: one calendar year).
 

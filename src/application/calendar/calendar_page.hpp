@@ -9,7 +9,7 @@
 
 #include "../../domain/calendar_config.hpp"
 #include "../../domain/date_entry.hpp"
-#include "../../domain/date_entry_bar_store.hpp"
+#include "../../domain/date_entry_bars.hpp"
 #include "../../domain/date_group.hpp"
 #include "../../domain/font_config.hpp"
 #include "../../domain/page_setup_config.hpp"
@@ -42,16 +42,16 @@ class CalendarPage {
         scene_composer_(gl_canvas_in.Engine(), scene_, font_, font_config_,
                         page_size_, page_margin_, title_config_,
                         calendar_config_, shape_config_, date_groups_,
-                        bar_store_) {}
+                        date_entry_bars_) {}
 
   void ReceiveDateGroups(const std::vector<DateGroup>& date_groups_in) {
     date_groups_.Assign(date_groups_in);
-    bar_store_.ReceiveDateGroups(date_groups_in);
+    date_entry_bars_.ReceiveDateGroups(date_groups_in);
     Update();
   }
 
   void ReceiveDateEntries(const std::vector<DateEntry>& date_entries) {
-    bar_store_.ReceiveDateEntries(date_entries);
+    date_entry_bars_.ReceiveDateEntries(date_entries);
     Update();
   }
 
@@ -145,7 +145,7 @@ class CalendarPage {
   rectf page_size_;
   rectf page_margin_;
 
-  DateEntryBarStore bar_store_;
+  DateEntryBars date_entry_bars_;
   DateGroups date_groups_;
   CalendarConfig calendar_config_;
   ShapeConfigSet shape_config_;

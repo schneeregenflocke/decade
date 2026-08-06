@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "../../domain/calendar_config.hpp"
-#include "../../domain/date_entry_bar_store.hpp"
+#include "../../domain/date_entry_bars.hpp"
 #include "../../domain/date_group.hpp"
 #include "../../domain/font_config.hpp"
 #include "../../domain/scene_snapshot.hpp"
@@ -46,7 +46,7 @@ class CalendarSceneComposer {
                         CalendarConfig& calendar_config_in,
                         const ShapeConfigSet& shape_config_in,
                         const DateGroups& date_groups_in,
-                        const DateEntryBarStore& bar_store_in)
+                        const DateEntryBars& date_entry_bars_in)
       : scene_(scene_in),
         graphics_engine_(graphics_engine_in),
         rectangles_shader_(
@@ -60,7 +60,7 @@ class CalendarSceneComposer {
         calendar_config_(calendar_config_in),
         shape_config_(shape_config_in),
         date_groups_(date_groups_in),
-        bar_store_(bar_store_in) {
+        date_entry_bars_(date_entry_bars_in) {
     graphics_engine_.SetScene(scene_);
     Shader& simple_shader = RequireShader(graphics_engine_, "Simple Shader");
 
@@ -80,10 +80,10 @@ class CalendarSceneComposer {
 
     // The auto span derives the calendar's year range from the data; it must
     // run before the layout, which sizes the rows from the span length.
-    if (calendar_config_.IsAutoCalendarSpan() && !bar_store_.is_empty()) {
+    if (calendar_config_.IsAutoCalendarSpan() && !date_entry_bars_.is_empty()) {
       calendar_config_.SetSpan(
-          CalendarSpan::YearSpan{.first_year = bar_store_.GetFirstYear(),
-                                 .last_year = bar_store_.GetLastYear()});
+          CalendarSpan::YearSpan{.first_year = date_entry_bars_.GetFirstYear(),
+                                 .last_year = date_entry_bars_.GetLastYear()});
     }
 
     layout_ =
@@ -127,7 +127,7 @@ class CalendarSceneComposer {
         .calendar_config = calendar_config_,
         .title_config = title_config_,
         .date_groups = date_groups_,
-        .bar_store = bar_store_,
+        .date_entry_bars = date_entry_bars_,
         .text_edit = text_edit_,
         .font = font_,
         .font_config = font_config_,
@@ -226,7 +226,7 @@ class CalendarSceneComposer {
   CalendarConfig& calendar_config_;
   const ShapeConfigSet& shape_config_;
   const DateGroups& date_groups_;
-  const DateEntryBarStore& bar_store_;
+  const DateEntryBars& date_entry_bars_;
 
   // Transient render state, recomputed on every Build(). The page geometry now
   // lives in CalendarLayout; the builder only keeps what the sections produce.
