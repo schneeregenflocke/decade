@@ -5,6 +5,7 @@
 #include <glm/vec4.hpp>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -106,7 +107,7 @@ class ShapeConfigSet {
   // Replaces the configuration that shares `config`'s name, in whichever
   // container holds it. Returns false when no such configuration exists.
   bool UpdateConfiguration(const ShapeConfiguration& config) {
-    ShapeConfiguration* found = FindMutable(config.Name());
+    ShapeConfiguration* found = Find(config.Name());
     if (found == nullptr) {
       return false;
     }
@@ -180,29 +181,31 @@ class ShapeConfigSet {
 
   // Locates the configuration with the given name across both containers
   // (fixed first, then group), or nullptr when absent.
-  [[nodiscard]] const ShapeConfiguration* Find(const std::string& name) const {
-    for (const std::vector<ShapeConfiguration>* container :
-         {&fixed_configurations_, &group_configurations_}) {
+  //
+  // One body for both constnesses through [deducing this]
+  // (https://en.cppreference.com/w/cpp/language/member_functions): a const set
+  // hands out a const pointer, a mutable one a mutable pointer. The return type
+  // reads that off the iterator rather than off `Self`, so the constness comes
+  // from the container the search actually walks. It has to be spelled out
+  // rather than deduced, because the callers above stand before this
+  // definition. `Self&` and not `Self&&`: the search reads alone, and a
+  // forwarding reference would promise a move that never happens.
+  template <typename Self>
+  [[nodiscard]] auto Find(this Self& self, const std::string& name)
+      -> std::remove_reference_t<
+          decltype(*self.fixed_configurations_.begin())>* {
+    using Config =
+        std::remove_reference_t<decltype(*self.fixed_configurations_.begin())>;
+    for (auto* container :
+         {&self.fixed_configurations_, &self.group_configurations_}) {
       const auto found = std::ranges::find_if(
           *container,
           [&](const ShapeConfiguration& config) { return config == name; });
       if (found != container->end()) {
-        return &*found;
+        return static_cast<Config*>(&*found);
       }
     }
-    return nullptr;
-  }
-  ShapeConfiguration* FindMutable(const std::string& name) {
-    for (std::vector<ShapeConfiguration>* container :
-         {&fixed_configurations_, &group_configurations_}) {
-      const auto found = std::ranges::find_if(
-          *container,
-          [&](const ShapeConfiguration& config) { return config == name; });
-      if (found != container->end()) {
-        return &*found;
-      }
-    }
-    return nullptr;
+    return static_cast<Config*>(nullptr);
   }
 
   // Builds a categorical shape configuration: the colour comes from the shared
@@ -238,7 +241,7 @@ class ShapeConfigSet {
   // right past the last group, so it is coloured and styled exactly like a bar
   // group and stays consistent if the palette is ever changed.
   void RefreshAnnualSumConfiguration(size_t group_count) {
-    ShapeConfiguration* found = FindMutable(AnnualSumConfigurationName());
+    ShapeConfiguration* found = Find(AnnualSumConfigurationName());
     if (found != nullptr) {
       *found = MakeCategoricalConfiguration(AnnualSumConfigurationName(),
                                             group_count);
