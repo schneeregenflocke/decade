@@ -18,7 +18,7 @@
 
 // Classifies the shape carried by a node into the GL-free SnapshotShapeKind, so
 // the read model can describe it without exposing the OpenGL shape types.
-[[nodiscard]] inline SnapshotShapeKind ClassifyShape(const Shape* shape) {
+[[nodiscard]] inline SnapshotShapeKind ClassifyShape(const Drawable* shape) {
   if (shape == nullptr) {
     return SnapshotShapeKind::kNone;
   }
@@ -67,7 +67,7 @@
 
 // The text of a font node; empty for every other shape.
 [[nodiscard]] inline std::optional<SnapshotTextDetail> TextDetailOf(
-    const Shape* shape) {
+    const Drawable* shape) {
   const auto* font_shape = dynamic_cast<const FontShape*>(shape);
   if (font_shape == nullptr) {
     return std::nullopt;
@@ -84,7 +84,7 @@ inline void FillSnapshotValues(SceneNodeValues& destination,
                                const glm::mat4& world) {
   destination.name = source.GetNodeName();
   destination.style_id = source.GetStyleId();
-  const Shape* shape = source.GetShape();
+  const Drawable* shape = source.GetShape();
   destination.has_shape = shape != nullptr;
   destination.shape_kind = ClassifyShape(shape);
   destination.draw_layer = source.GetDrawLayer();

@@ -12,8 +12,8 @@
 #include <utility>
 #include <vector>
 
+#include "drawable.hpp"
 #include "rect.hpp"
-#include "shapes.hpp"
 
 class SceneNode {
  public:
@@ -23,7 +23,7 @@ class SceneNode {
     node_name_ = name;
   }
 
-  SceneNode(const std::string& name, std::unique_ptr<Shape> shape_ptr)
+  SceneNode(const std::string& name, std::unique_ptr<Drawable> shape_ptr)
       : SceneNode(name) {
     shape_ = std::move(shape_ptr);
   }
@@ -39,15 +39,15 @@ class SceneNode {
 
   void RemoveChildren() { children_.clear(); }
 
-  void SetShape(std::unique_ptr<Shape> shape_ptr) {
+  void SetShape(std::unique_ptr<Drawable> shape_ptr) {
     shape_ = std::move(shape_ptr);
   }
 
   // The node owns its shape alone; callers merely observe it, hence a
   // non-owning pointer (never store it as a data member).
-  [[nodiscard]] Shape* GetShape() { return shape_.get(); }
+  [[nodiscard]] Drawable* GetShape() { return shape_.get(); }
 
-  [[nodiscard]] const Shape* GetShape() const { return shape_.get(); }
+  [[nodiscard]] const Drawable* GetShape() const { return shape_.get(); }
 
   [[nodiscard]] const std::string& GetNodeName() const { return node_name_; }
 
@@ -145,12 +145,12 @@ class SceneNode {
   // previous traversal Draw order exactly; assigning layers lets the overlap
   // order be controlled independently of the tree structure.
   void Draw(const glm::mat4& parent_world = glm::mat4(1.0F)) {
-    struct Drawable {
-      Shape* shape;
+    struct DrawCall {
+      Drawable* shape;
       glm::mat4 world;
       int layer;
     };
-    std::vector<Drawable> drawables;
+    std::vector<DrawCall> draw_calls;
 
     struct Entry {
       SceneNode* node;
@@ -163,9 +163,9 @@ class SceneNode {
       const Entry current = stack.back();
       stack.pop_back();
       if (current.node->shape_ != nullptr) {
-        drawables.push_back({.shape = current.node->shape_.get(),
-                             .world = current.world,
-                             .layer = current.node->draw_layer_});
+        draw_calls.push_back({.shape = current.node->shape_.get(),
+                              .world = current.world,
+                              .layer = current.node->draw_layer_});
       }
       for (const auto& child : current.node->children_) {
         stack.push_back({.node = child.get(),
@@ -173,13 +173,13 @@ class SceneNode {
       }
     }
 
-    std::ranges::stable_sort(drawables,
-                             [](const Drawable& lhs, const Drawable& rhs) {
+    std::ranges::stable_sort(draw_calls,
+                             [](const DrawCall& lhs, const DrawCall& rhs) {
                                return lhs.layer < rhs.layer;
                              });
 
-    for (const auto& drawable : drawables) {
-      drawable.shape->Draw(drawable.world);
+    for (const auto& draw_call : draw_calls) {
+      draw_call.shape->Draw(draw_call.world);
     }
   }
 
@@ -188,7 +188,7 @@ class SceneNode {
   std::string style_id_;
   std::vector<std::shared_ptr<SceneNode>> children_;
   glm::mat4 model_matrix_;
-  std::unique_ptr<Shape> shape_;
+  std::unique_ptr<Drawable> shape_;
   int draw_layer_{0};
   bool snapshot_hidden_{false};
 };

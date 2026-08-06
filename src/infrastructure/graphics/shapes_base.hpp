@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include "drawable.hpp"
 #include "rect.hpp"
 #include "shaders.hpp"
 #include "shaders_info.hpp"
@@ -79,19 +80,13 @@ class VertexBufferObject {
   GLuint vbo_{0};
 };
 
-class Shape {
+class Shape : public Drawable {
  public:
   struct BufferIndex {
     size_t value;
   };
 
   explicit Shape(Shader* shader_ptr_in) { SetShader(shader_ptr_in); }
-  virtual ~Shape() = default;
-
-  Shape(const Shape&) = delete;
-  Shape& operator=(const Shape&) = delete;
-  Shape(Shape&&) = delete;
-  Shape& operator=(Shape&&) = delete;
 
   // The vertices arrive as one span rather than as a pointer beside a count,
   // so the two cannot disagree at a call site. The byte size still comes from
@@ -117,7 +112,7 @@ class Shape {
     VertexArrayObject::Unbind();
   }
 
-  virtual void Draw(const glm::mat4& model) const {
+  void Draw(const glm::mat4& model) const override {
     shader_ptr_->UseProgram();
     shader_ptr_->SetUniform("model", model);
     vao_.Bind();
@@ -125,11 +120,11 @@ class Shape {
     VertexArrayObject::Unbind();
   }
 
-  // Axis-aligned bounding box of the shape's geometry in its own local space.
-  // Each concrete shape records it when its geometry is set; a shape with no
-  // geometry reports a zero-extent box. Used for spatial queries (e.g. the
-  // scene-tree selection highlight) without exposing the vertex buffers.
-  [[nodiscard]] const rectf& LocalBounds() const { return local_bounds_; }
+  // Recorded by each concrete shape when its geometry is set. Used for spatial
+  // queries (the scene-tree selection highlight) without exposing the buffers.
+  [[nodiscard]] const rectf& LocalBounds() const override {
+    return local_bounds_;
+  }
 
  protected:
   [[nodiscard]] GLsizei VertexCount() const { return number_vertices_; }
