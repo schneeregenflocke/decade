@@ -53,7 +53,6 @@ class FontPanel : public wxPanel {
     Bind(wxEVT_FONTPICKER_CHANGED, &FontPanel::CallbackFontChanged, this);
     wx_font_ = wx_font_picker_->GetFont();
 
-    BuildWeightTable();
     BuildSlantTable();
 
     ProcessFontData();
@@ -74,55 +73,26 @@ class FontPanel : public wxPanel {
 
   std::unique_ptr<FcConfig, FcConfigDeleter> fc_config_;
   sigslot::signal<const FontConfig&> signal_font_config_;
-  // Two weight scales, laid onto each other by hand: wx counts in hundreds like
-  // OpenType and CSS (THIN 100 … EXTRAHEAVY 1000), fontconfig in its own uneven
-  // scale 0…215 (fontconfig.h, FC_WEIGHT_*). The commented-out lines are no
-  // open points but synonyms with an identical numeric value (ULTRALIGHT ==
-  // EXTRALIGHT, SEMILIGHT == DEMILIGHT, NORMAL == REGULAR, SEMIBOLD ==
-  // DEMIBOLD, ULTRABOLD == EXTRABOLD, HEAVY == BLACK, ULTRABLACK ==
-  // EXTRABLACK); they stand there as evidence that the choice was made
-  // deliberately. FC_WEIGHT_BOOK (75) alone is a value of its own beside
-  // REGULAR (80) — wx knows no step for it.
+  // wx counts its weights in the OpenType and CSS scale (THIN 100 …
+  // EXTRAHEAVY 1000), fontconfig in its own uneven 0…215 one (fontconfig.h,
+  // FC_WEIGHT_*). fontconfig converts between them itself.
+  //
+  // This was a hand-written table of the eleven enum steps. The call is not
+  // merely shorter: it interpolates, where the table snapped onto its keys and
+  // threw on everything else — and a wx weight is not confined to the enum,
+  // `wxFont::SetNumericWeight` takes any number in between.
   //
   // Sources:
-  // - wxFontWeight (https://docs.wxwidgets.org/3.2/font_8h.html) — the numeric
-  //   wx steps.
-  // - fontconfig.h, FC_WEIGHT_* — the fontconfig steps including synonyms.
-  void BuildWeightTable() {
-    font_weight_map_ = {{wxFONTWEIGHT_THIN, FC_WEIGHT_THIN},
-                        {wxFONTWEIGHT_EXTRALIGHT, FC_WEIGHT_EXTRALIGHT},
-                        //{wxFONTWEIGHT_EXTRALIGHT, FC_WEIGHT_ULTRALIGHT},
-                        {wxFONTWEIGHT_LIGHT, FC_WEIGHT_LIGHT},
-                        //{wxFONTWEIGHT_LIGHT, FC_WEIGHT_DEMILIGHT},
-                        //{wxFONTWEIGHT_LIGHT, FC_WEIGHT_SEMILIGHT},
-                        //{wxFONTWEIGHT_NORMAL, FC_WEIGHT_BOOK},
-                        //{wxFONTWEIGHT_NORMAL, FC_WEIGHT_REGULAR},
-                        {wxFONTWEIGHT_NORMAL, FC_WEIGHT_NORMAL},
-                        {wxFONTWEIGHT_MEDIUM, FC_WEIGHT_MEDIUM},
-                        {wxFONTWEIGHT_SEMIBOLD, FC_WEIGHT_DEMIBOLD},
-                        //{wxFONTWEIGHT_SEMIBOLD, FC_WEIGHT_SEMIBOLD},
-                        {wxFONTWEIGHT_BOLD, FC_WEIGHT_BOLD},
-                        {wxFONTWEIGHT_EXTRABOLD, FC_WEIGHT_EXTRABOLD},
-                        //{wxFONTWEIGHT_EXTRABOLD, FC_WEIGHT_ULTRABOLD},
-                        {wxFONTWEIGHT_HEAVY, FC_WEIGHT_BLACK},
-                        //{wxFONTWEIGHT_HEAVY, FC_WEIGHT_HEAVY},
-                        {wxFONTWEIGHT_EXTRAHEAVY, FC_WEIGHT_EXTRABLACK},
-                        //{wxFONTWEIGHT_EXTRAHEAVY, FC_WEIGHT_ULTRABLACK},
-                        {wxFONTWEIGHT_MAX, FC_WEIGHT_EXTRABLACK}};
-  }
-
-  int FcWeightFromWxWeight(const wxFontWeight wx_font_weight) const {
+  // - wxFontWeight (https://docs.wxwidgets.org/3.2/font_8h.html)
+  // - FcWeightFromOpenTypeDouble
+  //   (https://man.archlinux.org/man/FcWeightFromOpenTypeDouble.3)
+  static double FcWeightFromWxWeight(const wxFontWeight wx_font_weight) {
     if (wx_font_weight == wxFONTWEIGHT_INVALID) {
       throw std::runtime_error("wxFONTWEIGHT_INVALID");
     }
 
-    int fc_weight = -1;
-    auto it = font_weight_map_.find(wx_font_weight);
-    if (it != font_weight_map_.end()) {
-      fc_weight = it->second;
-    } else {
-      throw std::runtime_error("FcWeightFromWxWeight");
-    }
+    const double fc_weight =
+        FcWeightFromOpenTypeDouble(static_cast<double>(wx_font_weight));
 
     if (decade_debug::LogEnabled()) {
       std::cout << "FcWeightFromWxWeight: " << wx_font_weight
@@ -187,8 +157,10 @@ class FontPanel : public wxPanel {
     // grades) resolve correctly.
     FcPatternAddDouble(pattern, FC_SIZE, point_size);
 
-    int const fc_weight = FcWeightFromWxWeight(font_weight);
-    FcPatternAddInteger(pattern, FC_WEIGHT, fc_weight);
+    // As a double, so an interpolated value survives instead of being cut
+    // back onto a step.
+    const double fc_weight = FcWeightFromWxWeight(font_weight);
+    FcPatternAddDouble(pattern, FC_WEIGHT, fc_weight);
 
     int const fc_slant = FcSlantFromWxStyle(font_style);
     FcPatternAddInteger(pattern, FC_SLANT, fc_slant);
@@ -244,7 +216,6 @@ class FontPanel : public wxPanel {
   wxWeakRef<wxFontPickerCtrl> wx_font_picker_;
   wxFont wx_font_;
   FontConfig font_config_;
-  std::map<int, int> font_weight_map_;
   std::map<int, int> font_style_map_;
 };
 #endif  // FONT_PANEL_HPP
