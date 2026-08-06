@@ -308,7 +308,11 @@ class SceneTreePanel : public wxPanel {
       return;
     }
     AppendCategory("Text");
-    AppendText("Text", wxString::FromUTF8(node.text_detail->text));
+    // "Content", not "Text": AppendCategory and AppendText both pass
+    // wxPG_LABEL, so wxPropertyGrid takes the label as the item name — and
+    // names must be unique across the grid. A row named like its own category
+    // aborts the selection in PrepareToAddItem.
+    AppendText("Content", wxString::FromUTF8(node.text_detail->text));
     AppendText(
         "Font Size (pt)",
         wxString::Format("%.2f", domain::PointsFromMillimetres(
