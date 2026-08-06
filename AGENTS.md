@@ -4,7 +4,7 @@ Stable guard rails for working on the decade code: architecture and conventions.
 
 ## Purpose
 
-A C++23 desktop application for calendars and timelines. Grown out of a prototype; it still carries technical debt (god classes, unclear ownership). The goal is evolutionary refactoring — stepwise, behaviour-preserving, without a rewrite (see [Refactoring](#refactoring)).
+A C++26 desktop application for calendars and timelines. Grown out of a prototype; it still carries technical debt (god classes, unclear ownership). The goal is evolutionary refactoring — stepwise, behaviour-preserving, without a rewrite (see [Refactoring](#refactoring)).
 
 Carried by wxWidgets (GUI), OpenGL through libepoxy (rendering), ICU (calendar and locale), Boost.Serialization (XML project files), FreeType, csv2 and Bullet (picking). The full list including submodules stands in `CMakeLists.txt` and `external/` (current state through `git submodule status`). Build, tests, headless runs and the lint gate commands: [operations.md](operations.md).
 
@@ -59,7 +59,7 @@ The wiring itself is a lifetime, not a pair of calls: `AppWiring` connects on co
 
 ### Language standard and header guards
 
-- C++23, no compiler extensions.
+- C++26, no compiler extensions. The move up from C++23 was made for [`#embed`](https://en.cppreference.com/cpp/preprocessor/embed), which carries the shaders and licence texts into the binary and replaced a submodule with a generator binary ([#79](https://github.com/schneeregenflocke/decade/issues/79)). Before C++26 both GCC and Clang grade it as an extension and `-Wpedantic -Werror` rejects it, so the standard level is not cosmetic here.
 - Header guards use the file name style: the upper-cased file name with the dot before the suffix as `_`, for instance `main_window.hpp` → `MAIN_WINDOW_HPP`, `gl_canvas.hpp` → `GL_CANVAS_HPP`. No directory path prefix. Apply that consistently in `#ifndef`, `#define` and the closing `#endif  // <GUARD>` comment. (The clang-tidy check `llvm-header-guard`, which would otherwise force a full-path style, is switched off in `.clang-tidy` — leave it that way.)
 
 ### Refactoring

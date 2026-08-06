@@ -2,7 +2,7 @@
 
 A desktop application that shows periods across several years on one calendar page — one row per year, the yearly total beneath. The page exports as a PNG; data comes from CSV, whole projects from XML.
 
-Alpha state, grown out of a practice project. C++23, wxWidgets, OpenGL, ICU.
+Alpha state, grown out of a practice project. C++26, wxWidgets, OpenGL, ICU.
 
 Building, starting, tests and the headless runs stand in [operations.md](operations.md); architecture and conventions in [AGENTS.md](AGENTS.md).
 

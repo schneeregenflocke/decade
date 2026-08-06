@@ -5,7 +5,7 @@ project(decade VERSION 0.0.0)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(decade)
-target_compile_features(decade PUBLIC cxx_std_23)
+target_compile_features(decade PUBLIC cxx_std_26)
 
 # The single translation unit; everything else is a header (see AGENTS.md). They
 # get collected for the IDE listing alone, not compiled — hence a glob instead of
@@ -145,33 +145,8 @@ add_subdirectory(external/bullet3 EXCLUDE_FROM_ALL)
 target_link_libraries(decade PRIVATE BulletCollision LinearMath)
 set_target_properties(BulletCollision LinearMath PROPERTIES SYSTEM TRUE)
 
-add_subdirectory(external/embed-resource)
-target_include_directories(decade SYSTEM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/embed-resource)
-# embed-resource runs during the build. Instrumented, a finding in it would break
-# the build instead of checking the program — so exempt it from the sanitizer.
-target_compile_options(embed-resource PRIVATE -fno-sanitize=all)
-target_link_options(embed-resource PRIVATE -fno-sanitize=all)
-
-# --- Embedded resources (the name after the file = the access name in code) ---
-
-embed_resources(decade_resources
-	shaders/font_fragment_shader.glsl shader
-	shaders/font_vertex_shader.glsl shader
-	shaders/lambert_fragment_shader.glsl shader
-	shaders/lambert_vertex_shader.glsl shader
-	shaders/simple_fragment_shader.glsl shader
-	shaders/simple_vertex_shader.glsl shader
-	shaders/rectangles_fragment_shader.glsl shader
-	shaders/rectangles_vertex_shader.glsl shader
-	LICENSE.txt decade
-	external/embed-resource/LICENSE.txt embed_resource_LICENSE
-	external/sigslot/LICENSE sigslot_LICENSE
-	external/csv2/LICENSE csv2_copyright
-	external/csv2/LICENSE.mio csv2mio_LICENSE
-	external/tinycolormap/LICENSE tinycolormap_LICENSE
-	external/bullet3/LICENSE.txt bullet_LICENSE
-)
-target_sources(decade PRIVATE ${decade_resources})
+# Resources travel through #embed (src/common/embedded_resources.hpp): the
+# preprocessor reads the files, so there is no generator target and no submodule.
 
 option(DECADE_BUILD_TESTS "Build the unit tests (tests/ mirrors src/)" ON)
 if(DECADE_BUILD_TESTS)
@@ -187,11 +162,18 @@ endif()
 # HeaderFilterRegex. --extra-arg: -include type_traits works around an include bug
 # in wx/meta/convertible.h, and the -Wno-* defuse GCC flags out of
 # compile_commands.json.
+#
+# -Wno-c23-extensions is of the same kind and is NOT a suppressed finding: it
+# says nothing about our code, only that Clang 22 has not yet implemented
+# #embed as the C++26 feature it is and still grades it as an extension. GCC —
+# what builds here and in CI — compiles it as standard under -std=c++26 with
+# -Wpedantic -Werror. Drop this the day Clang implements it.
 add_custom_target(clang-tidy
 	COMMAND clang-tidy -p ${CMAKE_BINARY_DIR}
 		--warnings-as-errors=*
 		--extra-arg=-include --extra-arg=type_traits
 		--extra-arg=-Wno-error --extra-arg=-Wno-unknown-warning-option
+		--extra-arg=-Wno-c23-extensions
 		src/application/main.cpp
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 	COMMENT "clang-tidy gate (every finding = an error) on src/application/main.cpp"

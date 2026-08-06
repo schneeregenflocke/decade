@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 
-#include "Resource.h"
+#include "../common/embedded_resources.hpp"
 #include "wx_owned.hpp"
 
 class LicenseInformationDialog : public wxDialog {
@@ -70,19 +70,20 @@ class LicenseInformationDialog : public wxDialog {
   void CollectLicenses() {
     collected_licenses_.clear();
 
+    // embed-resource dropped out with the submodule it licensed; tinycolormap
+    // joined, which was embedded all along and never shown.
     collected_licenses_.emplace_back("Decade",
-                                     LOAD_RESOURCE(decade_LICENSE).toString());
+                                     std::string(resources::kDecadeLicense));
+    collected_licenses_.emplace_back("csv2",
+                                     std::string(resources::kCsv2License));
+    collected_licenses_.emplace_back("csv2mio",
+                                     std::string(resources::kCsv2MioLicense));
+    collected_licenses_.emplace_back("sigslot",
+                                     std::string(resources::kSigslotLicense));
     collected_licenses_.emplace_back(
-        "embed-resource",
-        LOAD_RESOURCE(embed_resource_LICENSE_LICENSE).toString());
-    collected_licenses_.emplace_back(
-        "csv2", LOAD_RESOURCE(csv2_copyright_LICENSE).toString());
-    collected_licenses_.emplace_back(
-        "csv2mio", LOAD_RESOURCE(csv2mio_LICENSE_LICENSE).toString());
-    collected_licenses_.emplace_back(
-        "sigslot", LOAD_RESOURCE(sigslot_LICENSE_LICENSE).toString());
-    collected_licenses_.emplace_back(
-        "Bullet Physics", LOAD_RESOURCE(bullet_LICENSE_LICENSE).toString());
+        "tinycolormap", std::string(resources::kTinycolormapLicense));
+    collected_licenses_.emplace_back("Bullet Physics",
+                                     std::string(resources::kBulletLicense));
 
     for (const auto& license : collected_licenses_) {
       license_select_list_box_->AppendString(license.first);

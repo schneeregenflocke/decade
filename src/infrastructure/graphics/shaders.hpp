@@ -17,7 +17,7 @@
 #include <vector>
 
 #include "../../common/debug_log.hpp"
-#include "Resource.h"
+#include "../../common/embedded_resources.hpp"
 #include "shaders_info.hpp"
 
 class Shader {
@@ -189,36 +189,24 @@ class Shader {
 class Shaders {
  public:
   Shaders() {
-    auto simple_vertex_shader_resource =
-        LOAD_RESOURCE(shader_simple_vertex_shader);
-    auto simple_fragment_shader_resource =
-        LOAD_RESOURCE(shader_simple_fragment_shader);
-    auto rectangles_vertex_shader_resource =
-        LOAD_RESOURCE(shader_rectangles_vertex_shader);
-    auto rectangles_fragment_shader_resource =
-        LOAD_RESOURCE(shader_rectangles_fragment_shader);
-    auto font_vertex_shader_resource = LOAD_RESOURCE(shader_font_vertex_shader);
-    auto font_fragment_shader_resource =
-        LOAD_RESOURCE(shader_font_fragment_shader);
-
-    // The Lambert shaders (diffuse lighting per fragment) are embedded as a
-    // resource but deliberately not loaded: they belong to the 3D path, which
-    // the calendar rendering does not use.
-
+    // The Lambert shaders (diffuse lighting per fragment) used to be embedded
+    // beside these and never loaded — they belong to the 3D path the calendar
+    // does not use. With #embed, a file nobody names simply does not travel
+    // into the binary any more, so they are gone rather than merely unused.
     shaders_.emplace_back(
         Shader::ShaderSources{
-            .vertex = simple_vertex_shader_resource.toString(),
-            .fragment = simple_fragment_shader_resource.toString()},
+            .vertex = std::string(resources::kSimpleVertexShader),
+            .fragment = std::string(resources::kSimpleFragmentShader)},
         "Simple Shader");
     shaders_.emplace_back(
         Shader::ShaderSources{
-            .vertex = rectangles_vertex_shader_resource.toString(),
-            .fragment = rectangles_fragment_shader_resource.toString()},
+            .vertex = std::string(resources::kRectanglesVertexShader),
+            .fragment = std::string(resources::kRectanglesFragmentShader)},
         "Rectangles Shader");
     shaders_.emplace_back(
         Shader::ShaderSources{
-            .vertex = font_vertex_shader_resource.toString(),
-            .fragment = font_fragment_shader_resource.toString()},
+            .vertex = std::string(resources::kFontVertexShader),
+            .fragment = std::string(resources::kFontFragmentShader)},
         "Font Shader");
     PrintInfo();
   }

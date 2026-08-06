@@ -27,7 +27,7 @@ add_executable(decade_tests
 	application/test_project_document.cpp
 )
 
-target_compile_features(decade_tests PRIVATE cxx_std_23)
+target_compile_features(decade_tests PRIVATE cxx_std_26)
 
 target_include_directories(decade_tests PRIVATE
 	${CMAKE_SOURCE_DIR}/src
