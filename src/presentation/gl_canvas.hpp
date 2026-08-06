@@ -14,6 +14,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstddef>
+#include <exception>
 #include <functional>
 #include <glm/vec2.hpp>
 #include <iostream>
@@ -65,9 +66,24 @@ class GLCanvas : public wxGLCanvas {
   // success the engine stands ready afterwards.
   void InitOpenGL(std::function<void()> on_ready,
                   std::function<void(const std::string&)> on_failed) {
+    // The engine comes into being here, before the ready callback, so a
+    // failure inside it (a shader that will not build) would escape past the
+    // caller's try. It is the same category the bootstrap already reports —
+    // graphics that cannot be set up — hence the same channel.
+    // Copied out first: capturing on_failed and moving it in the same call
+    // would leave the order of the two to the compiler, and a moved-from
+    // std::function is empty.
+    auto report_failure = on_failed;
     context_bootstrap_.Start(
-        [this, ready = std::move(on_ready)]() {
-          StartRendering();
+        [this, ready = std::move(on_ready),
+         failed = std::move(report_failure)]() {
+          try {
+            StartRendering();
+          } catch (const std::exception& error) {
+            graphics_engine_.reset();
+            failed(error.what());
+            return;
+          }
           ready();
         },
         std::move(on_failed));

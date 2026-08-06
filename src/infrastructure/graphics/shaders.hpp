@@ -3,6 +3,7 @@
 
 #include <epoxy/gl.h>
 
+#include <algorithm>
 #include <array>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/mat4x4.hpp>
@@ -90,9 +91,13 @@ class Shader {
   }
 
   void CompileProgram(const ShaderSources& sources) {
+    // The stage travels into the message: the driver reports a line and a
+    // column but no file, so without it a failure names no source at all.
     const ShaderHandles handles{
-        .vertex = CompileShader(sources.vertex, GL_VERTEX_SHADER),
-        .fragment = CompileShader(sources.fragment, GL_FRAGMENT_SHADER)};
+        .vertex = CompileShader(sources.vertex, GL_VERTEX_SHADER,
+                                name_ + " vertex shader"),
+        .fragment = CompileShader(sources.fragment, GL_FRAGMENT_SHADER,
+                                  name_ + " fragment shader")};
 
     LinkShaders(handles);
   }
@@ -114,16 +119,24 @@ class Shader {
                 << static_cast<bool>(status) << std::noboolalpha << '\n';
     }
 
-    // The driver's log, on the other hand, is not diagnosis: a shader that
-    // failed to link leaves nothing to draw with, so the reason goes to stderr
-    // whether or not anybody asked for logging. A log on a successful link is
-    // a mere note and stays behind the flag.
+    // The driver's log is not itself a fault — on a successful link it holds
+    // notes or nothing, and stays behind the flag then. On a failed one it
+    // holds the reason, and that is the only thing anybody can act on, so it
+    // travels with the exception instead of scrolling past.
     GLint info_length = 0;
     glGetProgramiv(program_, GL_INFO_LOG_LENGTH, &info_length);
-    if (info_length > 0 && (status == GL_FALSE || decade_debug::LogEnabled())) {
-      std::vector<char> info_log(static_cast<size_t>(info_length));
+    std::string info_log(static_cast<size_t>(std::max(info_length, 1)) - 1,
+                         '\0');
+    if (info_length > 0) {
       glGetProgramInfoLog(program_, info_length, nullptr, info_log.data());
-      (status == GL_FALSE ? std::cerr : std::cout) << info_log.data();
+    }
+
+    if (status == GL_FALSE) {
+      throw std::runtime_error("linking shader program '" + name_ +
+                               "' failed: " + info_log);
+    }
+    if (!info_log.empty() && decade_debug::LogEnabled()) {
+      std::cout << info_log;
     }
 
     glDetachShader(program_, handles.vertex);
@@ -132,7 +145,8 @@ class Shader {
     glDeleteShader(handles.fragment);
   }
 
-  static GLuint CompileShader(const std::string& source, GLenum shader_type) {
+  static GLuint CompileShader(const std::string& source, GLenum shader_type,
+                              const std::string& label) {
     const GLuint shader = glCreateShader(shader_type);
     const std::array<const char*, 1> source_strings = {source.c_str()};
     glShaderSource(shader, static_cast<GLsizei>(source_strings.size()),
@@ -142,17 +156,25 @@ class Shader {
     GLint status = 0;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
     if (decade_debug::LogEnabled()) {
-      std::cout << "GL_COMPILE_STATUS: " << shader << " " << std::boolalpha
+      std::cout << "GL_COMPILE_STATUS: " << label << ' ' << std::boolalpha
                 << static_cast<bool>(status) << std::noboolalpha << '\n';
     }
 
-    // Same rule as when linking: a compile error names itself on stderr.
+    // Same split as when linking.
     GLint info_length = 0;
     glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &info_length);
-    if (info_length > 0 && (status == GL_FALSE || decade_debug::LogEnabled())) {
-      std::vector<char> info_log(static_cast<size_t>(info_length));
+    std::string info_log(static_cast<size_t>(std::max(info_length, 1)) - 1,
+                         '\0');
+    if (info_length > 0) {
       glGetShaderInfoLog(shader, info_length, nullptr, info_log.data());
-      (status == GL_FALSE ? std::cerr : std::cout) << info_log.data();
+    }
+
+    if (status == GL_FALSE) {
+      glDeleteShader(shader);
+      throw std::runtime_error("compiling " + label + " failed: " + info_log);
+    }
+    if (!info_log.empty() && decade_debug::LogEnabled()) {
+      std::cout << info_log;
     }
 
     return shader;
