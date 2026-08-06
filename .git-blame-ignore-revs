@@ -1,0 +1,17 @@
+# Pure formatting commits — git blame skips them, so a line keeps pointing at
+# the change that gave it its meaning. Activate once per clone:
+#
+#     git config blame.ignoreRevsFile .git-blame-ignore-revs
+#
+# Only mechanical, behaviour-preserving runs belong here. A commit mixing
+# formatting with anything else does not, because ignoring it would hide the
+# real change too.
+
+# clang-format
+36882d81e255401988fa8330e83c3b62146198e6
+
+# clang-format pass on tests/
+96bbeedae09e2089f3b3665b81034d3de3dc5bae
+
+# Format: clang-format over src and tests
+e4537bf6ab32d1ccdb0f48d80ad871ed01327c91
