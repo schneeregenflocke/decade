@@ -53,8 +53,8 @@ class FontPanel : public wxPanel {
     Bind(wxEVT_FONTPICKER_CHANGED, &FontPanel::CallbackFontChanged, this);
     wx_font_ = wx_font_picker_->GetFont();
 
-    initConvertWxFontWeightToFcWeight();
-    initConvertWxFontStyleToFcSlant();
+    BuildWeightTable();
+    BuildSlantTable();
 
     ProcessFontData();
   }
@@ -88,7 +88,7 @@ class FontPanel : public wxPanel {
   // - wxFontWeight (https://docs.wxwidgets.org/3.2/font_8h.html) — the numeric
   //   wx steps.
   // - fontconfig.h, FC_WEIGHT_* — the fontconfig steps including synonyms.
-  void initConvertWxFontWeightToFcWeight() {
+  void BuildWeightTable() {
     font_weight_map_ = {{wxFONTWEIGHT_THIN, FC_WEIGHT_THIN},
                         {wxFONTWEIGHT_EXTRALIGHT, FC_WEIGHT_EXTRALIGHT},
                         //{wxFONTWEIGHT_EXTRALIGHT, FC_WEIGHT_ULTRALIGHT},
@@ -111,7 +111,7 @@ class FontPanel : public wxPanel {
                         {wxFONTWEIGHT_MAX, FC_WEIGHT_EXTRABLACK}};
   }
 
-  int convertWxFontWeightToFcWeight(const wxFontWeight wx_font_weight) const {
+  int FcWeightFromWxWeight(const wxFontWeight wx_font_weight) const {
     if (wx_font_weight == wxFONTWEIGHT_INVALID) {
       throw std::runtime_error("wxFONTWEIGHT_INVALID");
     }
@@ -121,11 +121,11 @@ class FontPanel : public wxPanel {
     if (it != font_weight_map_.end()) {
       fc_weight = it->second;
     } else {
-      throw std::runtime_error("convertWxFontWeightToFcWeight");
+      throw std::runtime_error("FcWeightFromWxWeight");
     }
 
     if (decade_debug::LogEnabled()) {
-      std::cout << "convertWxFontWeightToFcWeight: " << wx_font_weight
+      std::cout << "FcWeightFromWxWeight: " << wx_font_weight
                 << " to: " << fc_weight << '\n';
     }
 
@@ -135,24 +135,24 @@ class FontPanel : public wxPanel {
   // wx knows three slants, fontconfig the same three (FC_SLANT_ROMAN, ITALIC,
   // OBLIQUE) — the mapping is one to one here. wxFONTSTYLE_MAX is merely the
   // count marker behind SLANT and lands on the same OBLIQUE.
-  void initConvertWxFontStyleToFcSlant() {
+  void BuildSlantTable() {
     font_style_map_ = {{wxFONTSTYLE_NORMAL, FC_SLANT_ROMAN},
                        {wxFONTSTYLE_ITALIC, FC_SLANT_ITALIC},
                        {wxFONTSTYLE_SLANT, FC_SLANT_OBLIQUE},
                        {wxFONTSTYLE_MAX, FC_SLANT_OBLIQUE}};
   }
 
-  int convertWxFontStyleToFcSlant(const wxFontStyle wx_font_style) const {
+  int FcSlantFromWxStyle(const wxFontStyle wx_font_style) const {
     int fc_slant = -1;
     auto it = font_style_map_.find(wx_font_style);
     if (it != font_style_map_.end()) {
       fc_slant = it->second;
     } else {
-      throw std::runtime_error("convertWxFontStyleToFcSlant");
+      throw std::runtime_error("FcSlantFromWxStyle");
     }
 
     if (decade_debug::LogEnabled()) {
-      std::cout << "convertWxFontStyleToFcSlant: " << wx_font_style
+      std::cout << "FcSlantFromWxStyle: " << wx_font_style
                 << " to: " << fc_slant << '\n';
     }
 
@@ -187,10 +187,10 @@ class FontPanel : public wxPanel {
     // grades) resolve correctly.
     FcPatternAddDouble(pattern, FC_SIZE, point_size);
 
-    int const fc_weight = convertWxFontWeightToFcWeight(font_weight);
+    int const fc_weight = FcWeightFromWxWeight(font_weight);
     FcPatternAddInteger(pattern, FC_WEIGHT, fc_weight);
 
-    int const fc_slant = convertWxFontStyleToFcSlant(font_style);
+    int const fc_slant = FcSlantFromWxStyle(font_style);
     FcPatternAddInteger(pattern, FC_SLANT, fc_slant);
 
     // The mandatory prelude to FcFontMatch: FcConfigSubstitute applies the
