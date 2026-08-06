@@ -24,12 +24,19 @@ jobs:
           apt-get update -qq
           DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
             nodejs git cmake ninja-build pkg-config g++ clang clang-tidy \
+            clang-format \
             libboost-serialization-dev libepoxy-dev libwxgtk3.2-dev \
             zlib1g-dev libpng-dev libfontconfig-dev libfreetype-dev \
             libicu-dev libglm-dev libmsgsl-dev libgtest-dev libgl1-mesa-dev
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      # First, because it needs no build and the drift of #63 arose precisely
+      # from a hook nobody had installed — a local gate is no gate.
+      - name: clang-format gate
+        run: |
+          git ls-files '*.hpp' '*.cpp' | grep -v '^external/' \
+            | xargs clang-format --dry-run -Werror
       - name: Configure
         run: cmake -S . -B build -G Ninja
       - name: Build

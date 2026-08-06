@@ -144,10 +144,24 @@ cmake --build build --target sanitize-memory    # memory (clang) — diagnosis, 
 
 #### clang-format
 
-`.clang-format` is the binding source for the formatting ([ClangFormat documentation](https://clang.llvm.org/docs/ClangFormat.html)).
+`.clang-format` is the binding source for the formatting ([ClangFormat documentation](https://clang.llvm.org/docs/ClangFormat.html)) and says one thing: `BasedOnStyle: Google`, without a single deviation. Keep it that way — a `--dump-config` in that file names every option of the version that wrote it, and an older clang-format then aborts on the first unknown key and silently formats by the LLVM default instead.
+
+Format the tree:
 
 ```bash
 find . -regex '.*\.\(cpp\|cxx\|hpp\|cc\|h\)' -not -path './build/*' -not -path './external/*' -exec clang-format -style=file -i {} +
+```
+
+Ask instead of change — the same command CI runs:
+
+```bash
+git ls-files '*.hpp' '*.cpp' | grep -v '^external/' | xargs clang-format --dry-run -Werror
+```
+
+Formatting commits stand in `.git-blame-ignore-revs`, so `git blame` walks past them to the change that gave a line its meaning. Every clone activates that once:
+
+```bash
+git config blame.ignoreRevsFile .git-blame-ignore-revs
 ```
 
 #### CI
@@ -156,5 +170,6 @@ CI runs on our own [Forgejo instance](https://git.blem.ch/), not on GitHub Actio
 
 - `git push origin main` (GitHub) → the GitHub webhook calls the `mirror-sync` API → the pull mirror `github-mirror/decade` syncs at once → the sync fires the push event for `.forgejo/workflows/build.yml`.
 - The workflow (`runs-on: runner-laptop-omen`) runs in an `ubuntu:26.04` container **exclusively** on the CI runner on `laptop-omen` — `runner-<host>` is the exclusive runner label (against the shared `ubuntu-ci`). The heavy C++ build (Boost, wx, submodules) must not land on homelab (an RPi 4 on USB SMR): there it fails on the 1200 MB limit and drives the disk into I/O saturation (the loadavg incident of 2026-07-11). Is the laptop off, the job waits in the queue instead of falling back to homelab. The runner stack: `docker-stacks/forgejo-runner/docker-compose.ci.yml`, deployed through Komodo (stack `forgejo-runner-laptop-omen`); the label scheme sits in the README there.
-- Steps: apt dependencies → checkout with submodules → `cmake` and `ninja` (with `-Werror`) → `ctest` → the clang-tidy gate → `sanitize-address`.
+- Steps: apt dependencies → checkout with submodules → the clang-format gate → `cmake` and `ninja` (with `-Werror`) → `ctest` → the clang-tidy gate → `sanitize-address`.
+- The clang-format gate runs first, because it needs no build. It exists because the pre-commit hook does not gate anything: it lives in the clone and only after `pre-commit install`, and the drift of [#63](https://github.com/schneeregenflocke/decade/issues/63) grew in a clone that had never run it.
 - `sanitize-address` builds the tree a second time — one CI run therefore compiles the project twice. `sanitize-memory` deliberately does not run in CI: it breaks off on the uninstrumented libstdc++ and gtest and stays a local diagnostic tool.

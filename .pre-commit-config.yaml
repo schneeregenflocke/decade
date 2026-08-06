@@ -1,5 +1,7 @@
-# Local quality gates. There is no CI by design — these hooks run on your
-# machine via the pre-commit framework. Install once per clone with:
+# Local quality gates: fast feedback before the push. They gate nothing — they
+# live in the clone and run only after `pre-commit install`. The binding gates
+# are in CI (.forgejo/workflows/build.yml, see operations.md). Install once per
+# clone with:
 #
 #     pre-commit install
 #
