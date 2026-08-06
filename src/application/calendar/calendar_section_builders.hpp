@@ -194,8 +194,9 @@ inline void FillCaretAndSelection(const SectionContext& ctx,
 }  // namespace title_edit
 
 inline void BuildPrintArea(const SectionContext& ctx) {
-  detail::FillRectangles(ctx.nodes.print_area, ctx.layout.PrintArea(),
-                         ctx.shape_config.GetShapeConfiguration("Page Margin"));
+  detail::FillRectangles(
+      ctx.nodes.print_area, ctx.layout.PrintArea(),
+      ctx.shape_config.GetShapeConfiguration(ShapeConfigSet::kPageMargin));
 }
 
 // The title is a pickable element: its hit area is the frame the text fills. As
@@ -205,8 +206,9 @@ inline void BuildPrintArea(const SectionContext& ctx) {
 // During an edit the frame shows the buffer instead of the stored title — that
 // becomes canonical with Enter alone — and cursor and selection alongside.
 [[nodiscard]] inline PickBox BuildTitle(const SectionContext& ctx) {
-  detail::FillRectangles(ctx.nodes.title_frame, ctx.layout.TitleFrame(),
-                         ctx.shape_config.GetShapeConfiguration("Title Frame"));
+  detail::FillRectangles(
+      ctx.nodes.title_frame, ctx.layout.TitleFrame(),
+      ctx.shape_config.GetShapeConfiguration(ShapeConfigSet::kTitleFrame));
 
   const title_edit::TextLine line = title_edit::Layout(ctx);
   if (auto* title_shape =
@@ -262,7 +264,8 @@ inline void BuildCalendarLabels(const SectionContext& ctx) {
         x_label_frames.at(index).getCenter(), labels_font_size);
   }
 
-  const auto config = ctx.shape_config.GetShapeConfiguration("Calendar Labels");
+  const auto config =
+      ctx.shape_config.GetShapeConfiguration(ShapeConfigSet::kCalendarLabels);
   detail::FillRectangles(ctx.nodes.column_labels, x_label_frames, config);
 
   const auto& year_node = ctx.nodes.year_labels;
@@ -316,7 +319,7 @@ inline void BuildYears(const SectionContext& ctx) {
 
   detail::FillRectangles(
       ctx.nodes.year_cells, year_cells,
-      ctx.shape_config.GetShapeConfiguration("Years Shapes"));
+      ctx.shape_config.GetShapeConfiguration(ShapeConfigSet::kYearsShapes));
 }
 
 inline void BuildMonths(const SectionContext& ctx) {
@@ -359,7 +362,7 @@ inline void BuildMonths(const SectionContext& ctx) {
 
   detail::FillRectangles(
       ctx.nodes.month_cells, month_cells,
-      ctx.shape_config.GetShapeConfiguration("Months Shapes"));
+      ctx.shape_config.GetShapeConfiguration(ShapeConfigSet::kMonthsShapes));
 }
 
 inline void BuildDays(const SectionContext& ctx) {
@@ -415,11 +418,12 @@ inline void BuildDays(const SectionContext& ctx) {
     }
   }
 
-  detail::FillRectangles(ctx.nodes.day_cells, day_cells,
-                         ctx.shape_config.GetShapeConfiguration("Day Shapes"));
+  detail::FillRectangles(
+      ctx.nodes.day_cells, day_cells,
+      ctx.shape_config.GetShapeConfiguration(ShapeConfigSet::kDayShapes));
   detail::FillRectangles(
       ctx.nodes.sunday_cells, sunday_cells,
-      ctx.shape_config.GetShapeConfiguration("Sunday Shapes"));
+      ctx.shape_config.GetShapeConfiguration(ShapeConfigSet::kSundayShapes));
 }
 
 [[nodiscard]] inline BarSceneResult BuildBars(const SectionContext& ctx) {
@@ -565,7 +569,7 @@ inline void BuildYearTotals(const SectionContext& ctx) {
 
   detail::FillRectangles(
       node_cells, year_totals_cells,
-      ctx.shape_config.GetShapeConfiguration("Years Totals"));
+      ctx.shape_config.GetShapeConfiguration(ShapeConfigSet::kYearsTotals));
 }
 
 inline void BuildLegend(const SectionContext& ctx) {
@@ -660,7 +664,7 @@ inline void BuildLegend(const SectionContext& ctx) {
       bar_cells.emplace_back(current_cell);
 
       auto current_shape_config = ctx.shape_config.GetShapeConfiguration(
-          ShapeConfigSet::AnnualSumConfigurationName());
+          std::string(ShapeConfigSet::kYearsTotals));
 
       auto node_entry =
           std::make_shared<SceneNode>(std::string("legend bar annual sum"));

@@ -72,9 +72,7 @@ class ShapeConfiguration {
 
   [[nodiscard]] glm::vec4 FillColorDisabled() const { return fill_color_; }
 
-  bool operator==(const std::string& compare) const {
-    return Name() == compare;
-  }
+  bool operator==(std::string_view compare) const { return Name() == compare; }
 
  private:
   std::string name_;
@@ -94,12 +92,27 @@ class ShapeConfigSet {
  public:
   ShapeConfigSet() : fixed_configurations_(BuildDefaults()) {}
 
+  // The names of the fixed configurations. They are the contract between this
+  // set and the scene builders that ask for them, and a mistyped one does not
+  // fail loudly: GetShapeConfiguration answers with a default-constructed
+  // value, which draws an invisible shape. So the string exists once, here,
+  // beside the defaults that carry it.
+  static constexpr std::string_view kPageMargin = "Page Margin";
+  static constexpr std::string_view kTitleFrame = "Title Frame";
+  static constexpr std::string_view kCalendarLabels = "Calendar Labels";
+  static constexpr std::string_view kDayShapes = "Day Shapes";
+  static constexpr std::string_view kSundayShapes = "Sunday Shapes";
+  static constexpr std::string_view kMonthsShapes = "Months Shapes";
+  static constexpr std::string_view kYearsShapes = "Years Shapes";
+  // The per-year total, styled like a bar group so it sits beside them.
+  static constexpr std::string_view kYearsTotals = "Years Totals";
+
   // The configuration with the given name, searched across the fixed and the
   // group configurations (a default-constructed value when absent). The name
   // remains a stable per-configuration label (and a node's style id); it is
   // just no longer what decides whether a configuration is a group entry.
   [[nodiscard]] ShapeConfiguration GetShapeConfiguration(
-      const std::string& name) const {
+      std::string_view name) const {
     const ShapeConfiguration* found = Find(name);
     return found != nullptr ? *found : ShapeConfiguration{};
   }
@@ -121,12 +134,6 @@ class ShapeConfigSet {
   [[nodiscard]] static std::string DynamicConfigurationName(
       size_t group_index) {
     return std::string(kDynamicNamePrefix) + std::to_string(group_index);
-  }
-
-  // Name of the "Annual Sum" (per-year total) configuration, one of the fixed
-  // configurations. Shared by the renderer so the string lives in one place.
-  [[nodiscard]] static std::string AnnualSumConfigurationName() {
-    return "Years Totals";
   }
 
   // The configuration for the date group at the given zero-based index (a
@@ -191,7 +198,7 @@ class ShapeConfigSet {
   // definition. `Self&` and not `Self&&`: the search reads alone, and a
   // forwarding reference would promise a move that never happens.
   template <typename Self>
-  [[nodiscard]] auto Find(this Self& self, const std::string& name)
+  [[nodiscard]] auto Find(this Self& self, std::string_view name)
       -> std::remove_reference_t<
           decltype(*self.fixed_configurations_.begin())>* {
     using Config =
@@ -241,10 +248,10 @@ class ShapeConfigSet {
   // right past the last group, so it is coloured and styled exactly like a bar
   // group and stays consistent if the palette is ever changed.
   void RefreshAnnualSumConfiguration(size_t group_count) {
-    ShapeConfiguration* found = Find(AnnualSumConfigurationName());
+    ShapeConfiguration* found = Find(kYearsTotals);
     if (found != nullptr) {
-      *found = MakeCategoricalConfiguration(AnnualSumConfigurationName(),
-                                            group_count);
+      *found =
+          MakeCategoricalConfiguration(std::string(kYearsTotals), group_count);
     }
   }
 
@@ -283,32 +290,33 @@ class ShapeConfigSet {
 
     return {
         ShapeConfiguration{
-            "Page Margin", true, false, kLineWidthThin,
+            std::string(kPageMargin), true, false, kLineWidthThin,
             ShapeConfiguration::OutlineColorValue{black_opaque},
             ShapeConfiguration::FillColorValue{white_transparent}},
         ShapeConfiguration{
-            "Title Frame", true, false, kLineWidthThick,
+            std::string(kTitleFrame), true, false, kLineWidthThick,
             ShapeConfiguration::OutlineColorValue{dark_gray},
             ShapeConfiguration::FillColorValue{white_transparent}},
         ShapeConfiguration{
-            "Calendar Labels", true, false, kLineWidthVeryThin,
+            std::string(kCalendarLabels), true, false, kLineWidthVeryThin,
             ShapeConfiguration::OutlineColorValue{light_gray_transparent},
             ShapeConfiguration::FillColorValue{black_opaque}},
-        ShapeConfiguration{"Day Shapes", true, true, kLineWidthThin,
+        ShapeConfiguration{std::string(kDayShapes), true, true, kLineWidthThin,
                            ShapeConfiguration::OutlineColorValue{light_gray},
                            ShapeConfiguration::FillColorValue{transparent}},
-        ShapeConfiguration{"Sunday Shapes", true, true, kLineWidthThin,
+        ShapeConfiguration{std::string(kSundayShapes), true, true,
+                           kLineWidthThin,
                            ShapeConfiguration::OutlineColorValue{light_gray},
                            ShapeConfiguration::FillColorValue{light_gray}},
         ShapeConfiguration{
-            "Months Shapes", true, false, kLineWidthThin,
+            std::string(kMonthsShapes), true, false, kLineWidthThin,
             ShapeConfiguration::OutlineColorValue{mid_gray},
             ShapeConfiguration::FillColorValue{mid_gray_transparent}},
         ShapeConfiguration{
             "Years Shapes", false, false, kLineWidthThin,
             ShapeConfiguration::OutlineColorValue{dark_quarter},
             ShapeConfiguration::FillColorValue{dark_quarter_transparent}},
-        ShapeConfiguration{AnnualSumConfigurationName(), true, true,
+        ShapeConfiguration{std::string(kYearsTotals), true, true,
                            kLineWidthThick,
                            ShapeConfiguration::OutlineColorValue{green_outline},
                            ShapeConfiguration::FillColorValue{green_fill}},
