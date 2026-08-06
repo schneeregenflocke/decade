@@ -10,13 +10,6 @@ Carried by wxWidgets (GUI), OpenGL through libepoxy (rendering), ICU (calendar a
 
 ## Architecture
 
-### Goals
-
-- Keep the startup path small and testable.
-- Isolate UI wiring from the app bootstrap.
-- Keep the data flow between stores, panels and renderer explicit.
-- Clear layering and self-explaining names, so the code stays navigable — see [Self-documenting code](#self-documenting-code).
-
 ### Layers and layer rules
 
 The codebase follows a four-layer architecture in the sense of [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html). Dependencies flow **inwards** alone (presentation → application → domain; the application consumes infrastructure). The domain knows nothing else; infrastructure knows only the domain types it serialises. New code must say which layer it belongs to and keep that layer's dependency bounds.
@@ -69,23 +62,6 @@ The wiring itself is a lifetime, not a pair of calls: `AppWiring` connects on co
 - C++23, no compiler extensions.
 - Header guards use the file name style: the upper-cased file name with the dot before the suffix as `_`, for instance `main_window.hpp` → `MAIN_WINDOW_HPP`, `gl_canvas.hpp` → `GL_CANVAS_HPP`. No directory path prefix. Apply that consistently in `#ifndef`, `#define` and the closing `#endif  // <GUARD>` comment. (The clang-tidy check `llvm-header-guard`, which would otherwise force a full-path style, is switched off in `.clang-tidy` — leave it that way.)
 
-### Self-documenting code
-
-The code communicates its intent itself; prose is the exception. The guard rail is P.1 "[Express ideas directly in code](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#Rp-direct)" of the C++ Core Guidelines. What the code or a command already shows does not get documented on top.
-
-- **Names carry the purpose, not the mechanism** — on every level: variables, functions, classes, members. Anchors: intention-revealing selector (Kent Beck, "Smalltalk Best Practice Patterns") for names; intention-revealing interfaces (Eric Evans, [DDD Reference](https://www.domainlanguage.com/ddd/reference/)) for interfaces; [general naming rules](https://google.github.io/styleguide/cppguide.html#General_Naming_Rules): optimise for readability, no cryptic abbreviations.
-- **Structure explains itself:** small units with one responsibility; one level of abstraction per function (SLAP); deep modules — a small interface with much functionality behind it (John Ousterhout, "[A Philosophy of Software Design](https://web.stanford.edu/~ouster/cgi-bin/book.php)").
-- **Comments are sparing** and explain the non-obvious why alone (a decision, a trade-off), never the what ([NL.1](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#S-naming) of the Core Guidelines). A comment describing *what* the code does is a hint to make the code clearer — not to keep the comment.
-
-Concretely, after [Google C++ Style](https://google.github.io/styleguide/cppguide.html#Naming) (in force):
-
-- Types: `PascalCase` (`DateGroup`).
-- Functions and methods: `PascalCase` (`GetDateGroups()`); trivial accessors and mutators may carry `snake_case` like their member (`set_count()`).
-- Class data members: `snake_case` **with a trailing underscore** (`date_format_`). Struct members without one. The clang-tidy gate enforces this member rule ([readability-identifier-naming](https://clang.llvm.org/extra/clang-tidy/checks/readability/identifier-naming.html) in `.clang-tidy`); a member without an underscore breaks the build.
-- Locals: `snake_case`. Constants and enumerators: `kPascalCase` (`kColorScale`).
-- The store suffix is uniformly `…Store` (not `…Storage`) — for types **and** for member and parameter names (`…_store`, not `…_storage`).
-- Renames that unify spelling and identifiers are welcome. When renaming, do it **completely and consistently** across every occurrence (declaration, definition, call sites, tests, documentation) — no half rename leaving two spellings side by side. Keep the build green afterwards (compile plus `ctest` plus the clang-tidy gate).
-
 ### Refactoring
 
 The goal is self-documenting code; refactoring brings it there step by step.
@@ -97,7 +73,7 @@ The goal is self-documenting code; refactoring brings it there step by step.
 - Isolate pure formatting commits and enter them in `.git-blame-ignore-revs` ([git blame --ignore-revs-file](https://git-scm.com/docs/git-blame)), so the history stays readable.
 - The stepwise order: first stabilise (characterisation tests, smoke paths, a baseline output) → then split (extract small seams after Michael Feathers, "Working Effectively with Legacy Code", behaviour unchanged) → then rename (make the intent visible without changing semantics) → last decouple (remove coupling only once the form is already safe).
 - Whatever cannot be changed at once becomes an issue, so it does not get lost.
-- Violations of this file's conventions that you notice while working on a file become an issue too — even when they are no part of the task.
+- Read the whole file, not just the task. A misleading name, a duplicated block, a violated convention: fix it right away as its **own** commit, or open an issue when the fix outgrows the task or needs a decision. Noticing without acting is no option.
 
 ### Style
 
@@ -145,3 +121,20 @@ Binding design principles. The established terms are set here — as everywhere 
 - Choose the smallest useful abstraction; prefer explicit data flow over hidden coupling ([law of Demeter](https://en.wikipedia.org/wiki/Law_of_Demeter)); encapsulate unwieldy constructs instead of spreading them.
 - [GRASP](https://en.wikipedia.org/wiki/GRASP_%28object-oriented_design%29) heuristics for assigning responsibility when deciding where code belongs: information expert, creator, controller, low coupling and high cohesion, indirection, pure fabrication, polymorphism and protected variations.
 - Keep stable rules apart from unstable work (this file against the issues).
+
+### Self-documenting code
+
+The code communicates its intent itself; prose is the exception. The guard rail is P.1 "[Express ideas directly in code](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#Rp-direct)" of the C++ Core Guidelines. What the code or a command already shows does not get documented on top.
+
+- **Names carry the purpose, not the mechanism** — on every level: variables, functions, classes, members. Anchors: intention-revealing selector (Kent Beck, "Smalltalk Best Practice Patterns") for names; intention-revealing interfaces (Eric Evans, [DDD Reference](https://www.domainlanguage.com/ddd/reference/)) for interfaces; [general naming rules](https://google.github.io/styleguide/cppguide.html#General_Naming_Rules): optimise for readability, no cryptic abbreviations.
+- **Structure explains itself:** small units with one responsibility; one level of abstraction per function (SLAP); deep modules — a small interface with much functionality behind it (John Ousterhout, "[A Philosophy of Software Design](https://web.stanford.edu/~ouster/cgi-bin/book.php)").
+- **Comments are sparing** and explain the non-obvious why alone (a decision, a trade-off), never the what ([NL.1](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#S-naming) of the Core Guidelines). A comment describing *what* the code does is a hint to make the code clearer — not to keep the comment.
+
+Concretely, after [Google C++ Style](https://google.github.io/styleguide/cppguide.html#Naming) (in force):
+
+- Types: `PascalCase` (`DateGroup`).
+- Functions and methods: `PascalCase` (`GetDateGroups()`); trivial accessors and mutators may carry `snake_case` like their member (`set_count()`).
+- Class data members: `snake_case` **with a trailing underscore** (`date_format_`). Struct members without one. The clang-tidy gate enforces this member rule ([readability-identifier-naming](https://clang.llvm.org/extra/clang-tidy/checks/readability/identifier-naming.html) in `.clang-tidy`); a member without an underscore breaks the build.
+- Locals: `snake_case`. Constants and enumerators: `kPascalCase` (`kColorScale`).
+- The store suffix is uniformly `…Store` (not `…Storage`) — for types **and** for member and parameter names (`…_store`, not `…_storage`).
+- Renames that unify spelling and identifiers are welcome. When renaming, do it **completely and consistently** across every occurrence (declaration, definition, call sites, tests, documentation) — no half rename leaving two spellings side by side. Keep the build green afterwards (compile plus `ctest` plus the clang-tidy gate).
