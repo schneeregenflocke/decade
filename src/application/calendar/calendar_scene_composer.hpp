@@ -24,11 +24,15 @@
 #include "../../infrastructure/graphics/scene.hpp"
 #include "../../infrastructure/graphics/scene_graph.hpp"
 #include "../../infrastructure/graphics/shapes.hpp"
+#include "bar_sections.hpp"
 #include "calendar_layout.hpp"
 #include "calendar_scene_nodes.hpp"
-#include "calendar_section_builders.hpp"
+#include "grid_sections.hpp"
+#include "legend_section.hpp"
 #include "scene_highlighter.hpp"
 #include "scene_snapshot_builder.hpp"
+#include "section_context.hpp"
+#include "title_section.hpp"
 
 // Builds and fills the calendar scene graph from domain state. This is the
 // rendering/layout half of the former CalendarPage: it borrows the Scene (whose
