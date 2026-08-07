@@ -17,81 +17,82 @@ class rect {
     Ty height;
   };
 
-  static rect from_dimension(Dimension dimension) {
+  static rect FromDimension(Dimension dimension) {
     rect result;
-    result.setL(-dimension.width / static_cast<Ty>(2));
-    result.setR(dimension.width / static_cast<Ty>(2));
-    result.setB(-dimension.height / static_cast<Ty>(2));
-    result.setT(dimension.height / static_cast<Ty>(2));
+    result.SetLeft(-dimension.width / static_cast<Ty>(2));
+    result.SetRight(dimension.width / static_cast<Ty>(2));
+    result.SetBottom(-dimension.height / static_cast<Ty>(2));
+    result.SetTop(dimension.height / static_cast<Ty>(2));
     return result;
   }
 
-  [[nodiscard]] Ty l() const { return edges_[0]; }
+  [[nodiscard]] Ty Left() const { return edges_[0]; }
 
-  [[nodiscard]] Ty r() const { return edges_[1]; }
+  [[nodiscard]] Ty Right() const { return edges_[1]; }
 
-  [[nodiscard]] Ty b() const { return edges_[2]; }
+  [[nodiscard]] Ty Bottom() const { return edges_[2]; }
 
-  [[nodiscard]] Ty t() const { return edges_[3]; }
+  [[nodiscard]] Ty Top() const { return edges_[3]; }
 
-  [[nodiscard]] Ty width() const { return edges_[1] - edges_[0]; }
+  [[nodiscard]] Ty Width() const { return edges_[1] - edges_[0]; }
 
-  [[nodiscard]] Ty height() const { return edges_[3] - edges_[2]; }
+  [[nodiscard]] Ty Height() const { return edges_[3] - edges_[2]; }
 
-  [[nodiscard]] rect shift(Ty x_offset, Ty y_offset) const {
-    return rect(l() + x_offset, r() + x_offset, b() + y_offset, t() + y_offset);
+  [[nodiscard]] rect Shift(Ty x_offset, Ty y_offset) const {
+    return rect(Left() + x_offset, Right() + x_offset, Bottom() + y_offset,
+                Top() + y_offset);
   }
 
-  [[nodiscard]] rect expand(const rect& value) const {
-    return rect(l() - value.l(), r() + value.r(), b() - value.b(),
-                t() + value.t());
+  [[nodiscard]] rect Expand(const rect& value) const {
+    return rect(Left() - value.Left(), Right() + value.Right(),
+                Bottom() - value.Bottom(), Top() + value.Top());
   }
 
-  [[nodiscard]] rect reduce(const rect& value) const {
-    return rect(l() + value.l(), r() - value.r(), b() + value.b(),
-                t() - value.t());
+  [[nodiscard]] rect Reduce(const rect& value) const {
+    return rect(Left() + value.Left(), Right() - value.Right(),
+                Bottom() + value.Bottom(), Top() - value.Top());
   }
 
-  [[nodiscard]] rect scale(Ty factor) const {
+  [[nodiscard]] rect Scale(Ty factor) const {
     const Ty expand_width_value =
-        ((width() * factor) - width()) / static_cast<Ty>(2);
+        ((Width() * factor) - Width()) / static_cast<Ty>(2);
     const Ty expand_height_value =
-        ((height() * factor) - height()) / static_cast<Ty>(2);
+        ((Height() * factor) - Height()) / static_cast<Ty>(2);
 
-    rect result = expand(rect(expand_width_value, expand_width_value,
+    rect result = Expand(rect(expand_width_value, expand_width_value,
                               expand_height_value, expand_height_value));
     return result;
   }
 
-  [[nodiscard]] glm::vec3 getCenter() const {
-    return glm::vec3(edges_[0] + (width() / static_cast<Ty>(2)),
-                     edges_[2] + (height() / static_cast<Ty>(2)),
+  [[nodiscard]] glm::vec3 Center() const {
+    return glm::vec3(edges_[0] + (Width() / static_cast<Ty>(2)),
+                     edges_[2] + (Height() / static_cast<Ty>(2)),
                      static_cast<Ty>(0));
   }
 
-  [[nodiscard]] glm::vec3 getLB() const {
+  [[nodiscard]] glm::vec3 LeftBottom() const {
     return glm::vec3(edges_[0], edges_[2], static_cast<Ty>(0));
   }
 
-  [[nodiscard]] glm::vec3 getRB() const {
+  [[nodiscard]] glm::vec3 RightBottom() const {
     return glm::vec3(edges_[1], edges_[2], static_cast<Ty>(0));
   }
 
-  [[nodiscard]] glm::vec3 getLT() const {
+  [[nodiscard]] glm::vec3 LeftTop() const {
     return glm::vec3(edges_[0], edges_[3], static_cast<Ty>(0));
   }
 
-  [[nodiscard]] glm::vec3 getRT() const {
+  [[nodiscard]] glm::vec3 RightTop() const {
     return glm::vec3(edges_[1], edges_[3], static_cast<Ty>(0));
   }
 
-  void setL(Ty value) { edges_[0] = value; }
+  void SetLeft(Ty value) { edges_[0] = value; }
 
-  void setR(Ty value) { edges_[1] = value; }
+  void SetRight(Ty value) { edges_[1] = value; }
 
-  void setB(Ty value) { edges_[2] = value; }
+  void SetBottom(Ty value) { edges_[2] = value; }
 
-  void setT(Ty value) { edges_[3] = value; }
+  void SetTop(Ty value) { edges_[3] = value; }
 
  private:
   std::array<Ty, 4> edges_;

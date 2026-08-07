@@ -44,9 +44,9 @@ class PhysicsWorld {
     ids_.reserve(boxes.size());
 
     for (const auto& box : boxes) {
-      const float half_width = box.rect.width() * kHalf;
-      const float half_height = box.rect.height() * kHalf;
-      const glm::vec3 center = box.rect.getCenter();
+      const float half_width = box.rect.Width() * kHalf;
+      const float half_height = box.rect.Height() * kHalf;
+      const glm::vec3 center = box.rect.Center();
 
       auto shape = std::make_unique<btBoxShape>(
           btVector3(half_width, half_height, kBoxHalfDepth));

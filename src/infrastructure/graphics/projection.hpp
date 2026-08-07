@@ -34,14 +34,14 @@ class Projection {
   }
 
   static glm::mat4 OrthoMatrix(const rectf& view_size) {
-    const auto page_height_ratio = view_size.width() / view_size.height();
+    const auto page_height_ratio = view_size.Width() / view_size.Height();
     const auto viewport_height_ratio = AspectRatio();
 
     glm::mat4 ortho_matrix;
     if (page_height_ratio >= viewport_height_ratio) {
-      ortho_matrix = OrthoMatrixWidth(view_size.width());
+      ortho_matrix = OrthoMatrixWidth(view_size.Width());
     } else {
-      ortho_matrix = OrthoMatrixHeight(view_size.height());
+      ortho_matrix = OrthoMatrixHeight(view_size.Height());
     }
 
     return ortho_matrix;

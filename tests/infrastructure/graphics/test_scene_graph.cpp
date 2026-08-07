@@ -142,10 +142,10 @@ TEST(SceneNodeCharacterisation, WorldBoundsSpanTheWholeSubtree) {
   const auto bounds = root.WorldBounds();
 
   ASSERT_TRUE(bounds.has_value());
-  EXPECT_FLOAT_EQ(bounds->l(), 0.0F);
-  EXPECT_FLOAT_EQ(bounds->r(), 12.0F);
-  EXPECT_FLOAT_EQ(bounds->b(), 0.0F);
-  EXPECT_FLOAT_EQ(bounds->t(), 2.0F);
+  EXPECT_FLOAT_EQ(bounds->Left(), 0.0F);
+  EXPECT_FLOAT_EQ(bounds->Right(), 12.0F);
+  EXPECT_FLOAT_EQ(bounds->Bottom(), 0.0F);
+  EXPECT_FLOAT_EQ(bounds->Top(), 2.0F);
 }
 
 // A zero-extent box counts as no geometry, so a tree of such nodes reports

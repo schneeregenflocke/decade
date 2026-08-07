@@ -12,12 +12,12 @@ class ProportionFrameLayout {
   void SetupRowFrames(const rectf& frame, const size_t number_rows) {
     row_frames_.resize(number_rows);
 
-    const auto row_height = frame.height() / static_cast<float>(number_rows);
+    const auto row_height = frame.Height() / static_cast<float>(number_rows);
 
     for (size_t index = 0; index < row_frames_.size(); ++index) {
       const auto float_index = static_cast<float>(index);
-      const auto current_bottom = frame.b() + (float_index * row_height);
-      row_frames_.at(index) = rectf(frame.l(), frame.r(), current_bottom,
+      const auto current_bottom = frame.Bottom() + (float_index * row_height);
+      row_frames_.at(index) = rectf(frame.Left(), frame.Right(), current_bottom,
                                     current_bottom + row_height);
     }
   }
@@ -33,7 +33,7 @@ class ProportionFrameLayout {
 
     for (size_t index = 0; index < row_frames_.size(); ++index) {
       const auto sections =
-          Section(proportions, row_frames_.at(index).height());
+          Section(proportions, row_frames_.at(index).Height());
       std::vector<float> cumulative_sections(sections.size());
 
       for (size_t subindex = 0; subindex < cumulative_sections.size();
@@ -48,14 +48,14 @@ class ProportionFrameLayout {
            ++subindex) {
         const auto frame_index =
             (index * number_sub_frames_per_row_) + subindex;
-        sub_frames_.at(frame_index).setL(row_frames_.at(index).l());
-        sub_frames_.at(frame_index).setR(row_frames_.at(index).r());
+        sub_frames_.at(frame_index).SetLeft(row_frames_.at(index).Left());
+        sub_frames_.at(frame_index).SetRight(row_frames_.at(index).Right());
         sub_frames_.at(frame_index)
-            .setB(row_frames_.at(index).b() +
-                  cumulative_sections.at((subindex * 2) + 1));
+            .SetBottom(row_frames_.at(index).Bottom() +
+                       cumulative_sections.at((subindex * 2) + 1));
         sub_frames_.at(frame_index)
-            .setT(row_frames_.at(index).b() +
-                  cumulative_sections.at((subindex * 2) + 2));
+            .SetTop(row_frames_.at(index).Bottom() +
+                    cumulative_sections.at((subindex * 2) + 2));
       }
     }
   }

@@ -125,10 +125,10 @@ class GLCanvas : public wxGLCanvas {
   void ReceivePageSetup(const PageSetupConfig& page_setup_config) {
     page_size_ = PageRect(page_setup_config);
     if (decade_debug::LogEnabled()) {
-      std::cout << "ReceivePageSetup: page=" << page_size_.width() << "x"
-                << page_size_.height() << " rect=(" << page_size_.l() << ","
-                << page_size_.r() << "," << page_size_.b() << ","
-                << page_size_.t() << ")\n";
+      std::cout << "ReceivePageSetup: page=" << page_size_.Width() << "x"
+                << page_size_.Height() << " rect=(" << page_size_.Left() << ","
+                << page_size_.Right() << "," << page_size_.Bottom() << ","
+                << page_size_.Top() << ")\n";
     }
     if (graphics_engine_) {
       RefreshView();
@@ -140,7 +140,7 @@ class GLCanvas : public wxGLCanvas {
   // changes.
   void RefreshView() {
     UpdateViewport();
-    if (page_size_.width() <= 0.0F || page_size_.height() <= 0.0F) {
+    if (page_size_.Width() <= 0.0F || page_size_.Height() <= 0.0F) {
       if (decade_debug::LogEnabled()) {
         std::cout << "RefreshView: skipped, page_size not yet initialised\n";
       }
@@ -256,18 +256,18 @@ class GLCanvas : public wxGLCanvas {
 
   void UpdateProjection() {
     constexpr float kViewSizeScale = 1.1F;
-    const rectf view_size = page_size_.scale(kViewSizeScale);
+    const rectf view_size = page_size_.Scale(kViewSizeScale);
 
     mvp_.SetProjection(Projection::OrthoMatrix(view_size));
     camera_.SetScaleLimits(ComputeZoomLimits(
-        mvp_.GetProjection(), {page_size_.width(), page_size_.height()},
+        mvp_.GetProjection(), {page_size_.Width(), page_size_.Height()},
         static_cast<float>(kExportPngDpi)));
     graphics_engine_->SetMVP(mvp_);
 
     if (decade_debug::LogEnabled()) {
-      std::cout << "UpdateProjection: page=" << page_size_.width() << "x"
-                << page_size_.height() << " view=" << view_size.width() << "x"
-                << view_size.height() << '\n';
+      std::cout << "UpdateProjection: page=" << page_size_.Width() << "x"
+                << page_size_.Height() << " view=" << view_size.Width() << "x"
+                << view_size.Height() << '\n';
       decade_debug::LogMat4("UpdateProjection proj", mvp_.GetProjection());
       decade_debug::LogMat4("UpdateProjection view", mvp_.GetView());
     }

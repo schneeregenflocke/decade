@@ -9,7 +9,7 @@
 // knowledge in two places would have drifted apart eventually.
 
 [[nodiscard]] inline rectf PageRect(const PageSetupConfig& page_setup_config) {
-  return rectf::from_dimension(
+  return rectf::FromDimension(
       rectf::Dimension{.width = page_setup_config.Size()[0],
                        .height = page_setup_config.Size()[1]});
 }

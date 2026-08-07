@@ -139,9 +139,9 @@ class Font {
   // first, then taken back to the cell width where needed.
   [[nodiscard]] float AdjustTextSize(const rectf& cell, const std::string& text,
                                      TextScale scale) const {
-    const float font_size = cell.height() * scale.height_ratio;
+    const float font_size = cell.Height() * scale.height_ratio;
     const float text_width = TextWidth(text, font_size);
-    const float available_width = cell.width() * scale.width_ratio;
+    const float available_width = cell.Width() * scale.width_ratio;
 
     if (text_width <= available_width) {
       return font_size;

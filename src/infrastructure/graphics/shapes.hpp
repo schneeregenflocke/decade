@@ -24,13 +24,13 @@ class QuadrilateralShape : public Shape {
     std::vector<glm::vec3> vertices(kVerticesPerQuad);
 
     constexpr float kZero = 0.0F;
-    vertices[0] = glm::vec3(rectangle.l(), rectangle.b(), kZero);
-    vertices[1] = glm::vec3(rectangle.r(), rectangle.b(), kZero);
-    vertices[2] = glm::vec3(rectangle.l(), rectangle.t(), kZero);
-    vertices[3] = glm::vec3(rectangle.r(), rectangle.t(), kZero);
-    vertices[4] = glm::vec3(rectangle.l(), rectangle.t(), kZero);
+    vertices[0] = glm::vec3(rectangle.Left(), rectangle.Bottom(), kZero);
+    vertices[1] = glm::vec3(rectangle.Right(), rectangle.Bottom(), kZero);
+    vertices[2] = glm::vec3(rectangle.Left(), rectangle.Top(), kZero);
+    vertices[3] = glm::vec3(rectangle.Right(), rectangle.Top(), kZero);
+    vertices[4] = glm::vec3(rectangle.Left(), rectangle.Top(), kZero);
     vertices[kVerticesPerQuad - 1] =
-        glm::vec3(rectangle.r(), rectangle.b(), kZero);
+        glm::vec3(rectangle.Right(), rectangle.Bottom(), kZero);
 
     SetBuffer(BufferIndex{0}, std::span<const glm::vec3>(vertices));
     SetLocalBounds(rectangle);
@@ -99,15 +99,15 @@ class RectanglesShape : public Shape {
       return {};
     }
     const float half_line = line_width * 0.5F;
-    float left = rectangles[0].l();
-    float right = rectangles[0].r();
-    float bottom = rectangles[0].b();
-    float top = rectangles[0].t();
+    float left = rectangles[0].Left();
+    float right = rectangles[0].Right();
+    float bottom = rectangles[0].Bottom();
+    float top = rectangles[0].Top();
     for (const auto& rectangle : rectangles) {
-      left = std::min(left, rectangle.l());
-      right = std::max(right, rectangle.r());
-      bottom = std::min(bottom, rectangle.b());
-      top = std::max(top, rectangle.t());
+      left = std::min(left, rectangle.Left());
+      right = std::max(right, rectangle.Right());
+      bottom = std::min(bottom, rectangle.Bottom());
+      top = std::max(top, rectangle.Top());
     }
     return {left - half_line, right + half_line, bottom - half_line,
             top + half_line};
@@ -118,33 +118,33 @@ class RectanglesShape : public Shape {
     const float half_line_thickness = line_width * 0.5F;
 
     const rectf inrectangle =
-        rectangle.reduce(rectf(half_line_thickness, half_line_thickness,
+        rectangle.Reduce(rectf(half_line_thickness, half_line_thickness,
                                half_line_thickness, half_line_thickness));
     const rectf outrectangle =
-        rectangle.expand(rectf(half_line_thickness, half_line_thickness,
+        rectangle.Expand(rectf(half_line_thickness, half_line_thickness,
                                half_line_thickness, half_line_thickness));
 
     const size_t offset = index * kVerticesPerRectangle;
 
     // fill
-    SetRectangle(offset, inrectangle.getLB(), inrectangle.getRB(),
-                 inrectangle.getLT(), inrectangle.getRT());
+    SetRectangle(offset, inrectangle.LeftBottom(), inrectangle.RightBottom(),
+                 inrectangle.LeftTop(), inrectangle.RightTop());
     // top outline
-    SetRectangle(offset + kVerticesPerQuad, inrectangle.getLT(),
-                 inrectangle.getRT(), outrectangle.getLT(),
-                 outrectangle.getRT());
+    SetRectangle(offset + kVerticesPerQuad, inrectangle.LeftTop(),
+                 inrectangle.RightTop(), outrectangle.LeftTop(),
+                 outrectangle.RightTop());
     // bottom outline
-    SetRectangle(offset + (kVerticesPerQuad * 2), outrectangle.getLB(),
-                 outrectangle.getRB(), inrectangle.getLB(),
-                 inrectangle.getRB());
+    SetRectangle(offset + (kVerticesPerQuad * 2), outrectangle.LeftBottom(),
+                 outrectangle.RightBottom(), inrectangle.LeftBottom(),
+                 inrectangle.RightBottom());
     // left outline
-    SetRectangle(offset + (kVerticesPerQuad * 3), outrectangle.getLB(),
-                 inrectangle.getLB(), outrectangle.getLT(),
-                 inrectangle.getLT());
+    SetRectangle(offset + (kVerticesPerQuad * 3), outrectangle.LeftBottom(),
+                 inrectangle.LeftBottom(), outrectangle.LeftTop(),
+                 inrectangle.LeftTop());
     // right outline
-    SetRectangle(offset + (kVerticesPerQuad * 4), inrectangle.getRB(),
-                 outrectangle.getRB(), inrectangle.getRT(),
-                 outrectangle.getRT());
+    SetRectangle(offset + (kVerticesPerQuad * 4), inrectangle.RightBottom(),
+                 outrectangle.RightBottom(), inrectangle.RightTop(),
+                 outrectangle.RightTop());
   }
 
   void SetRectangle(size_t offset, const glm::vec3& point0,

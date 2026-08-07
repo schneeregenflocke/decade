@@ -11,8 +11,8 @@ namespace {
 // swapped axis would be caught, plus a 3-year span and a 7-entry proportion set
 // (gap/sub/gap/sub/gap/sub/gap -> 3 sub-frames per row).
 CalendarLayout MakeLayout() {
-  const rectf page = rectf::from_dimension(
-      rectf::Dimension{.width = 200.0F, .height = 300.0F});
+  const rectf page =
+      rectf::FromDimension(rectf::Dimension{.width = 200.0F, .height = 300.0F});
   const rectf margin(10.0F, 20.0F, 30.0F, 40.0F);
   const std::vector<float> proportions(7, 1.0F);
   return CalendarLayout(page, margin, /*title_frame_height=*/15.0F,
@@ -30,28 +30,28 @@ TEST(CalendarLayoutTest, PrintAreaIsPageMinusMarginsShiftedToOrigin) {
   EXPECT_NEAR(layout.PrintAreaOrigin().y, -120.0F, kTol);
 
   // After the shift the print area sits at the local origin.
-  EXPECT_NEAR(layout.PrintArea().l(), 0.0F, kTol);
-  EXPECT_NEAR(layout.PrintArea().b(), 0.0F, kTol);
-  EXPECT_NEAR(layout.PrintArea().width(), 170.0F, kTol);   // 200 - 10 - 20
-  EXPECT_NEAR(layout.PrintArea().height(), 230.0F, kTol);  // 300 - 30 - 40
+  EXPECT_NEAR(layout.PrintArea().Left(), 0.0F, kTol);
+  EXPECT_NEAR(layout.PrintArea().Bottom(), 0.0F, kTol);
+  EXPECT_NEAR(layout.PrintArea().Width(), 170.0F, kTol);   // 200 - 10 - 20
+  EXPECT_NEAR(layout.PrintArea().Height(), 230.0F, kTol);  // 300 - 30 - 40
 }
 
 TEST(CalendarLayoutTest, TitleFrameSitsAtTopWithGivenHeight) {
   const CalendarLayout layout = MakeLayout();
 
-  EXPECT_NEAR(layout.TitleFrame().t(), layout.PrintArea().t(), kTol);
-  EXPECT_NEAR(layout.TitleFrame().height(), 15.0F, kTol);
-  EXPECT_NEAR(layout.TitleFrame().l(), layout.PrintArea().l(), kTol);
-  EXPECT_NEAR(layout.TitleFrame().r(), layout.PrintArea().r(), kTol);
+  EXPECT_NEAR(layout.TitleFrame().Top(), layout.PrintArea().Top(), kTol);
+  EXPECT_NEAR(layout.TitleFrame().Height(), 15.0F, kTol);
+  EXPECT_NEAR(layout.TitleFrame().Left(), layout.PrintArea().Left(), kTol);
+  EXPECT_NEAR(layout.TitleFrame().Right(), layout.PrintArea().Right(), kTol);
 }
 
 TEST(CalendarLayoutTest, CalendarFrameIsBelowTitleAndRightMargined) {
   const CalendarLayout layout = MakeLayout();
 
-  EXPECT_NEAR(layout.CalendarFrame().t(), layout.TitleFrame().b(), kTol);
-  EXPECT_NEAR(layout.CalendarFrame().b(), 0.0F, kTol);
+  EXPECT_NEAR(layout.CalendarFrame().Top(), layout.TitleFrame().Bottom(), kTol);
+  EXPECT_NEAR(layout.CalendarFrame().Bottom(), 0.0F, kTol);
   // Right edge reduced by the default 5pt calendar margin.
-  EXPECT_NEAR(layout.CalendarFrame().width(), 165.0F, kTol);  // 170 - 5
+  EXPECT_NEAR(layout.CalendarFrame().Width(), 165.0F, kTol);  // 170 - 5
 }
 
 TEST(CalendarLayoutTest, CellAndRowAndDayMetrics) {
@@ -69,16 +69,16 @@ TEST(CalendarLayoutTest, SubFrameAlignsHorizontallyWithCellsFrame) {
   const CalendarLayout layout = MakeLayout();
 
   const rectf sub = layout.GetSubFrame(0, 1);
-  EXPECT_NEAR(sub.l(), layout.CellsFrame().l(), kTol);
-  EXPECT_NEAR(sub.r(), layout.CellsFrame().r(), kTol);
+  EXPECT_NEAR(sub.Left(), layout.CellsFrame().Left(), kTol);
+  EXPECT_NEAR(sub.Right(), layout.CellsFrame().Right(), kTol);
   // The sub-frame lies within the cells frame vertically.
-  EXPECT_GE(sub.b(), layout.CellsFrame().b() - kTol);
-  EXPECT_LE(sub.t(), layout.CellsFrame().t() + kTol);
+  EXPECT_GE(sub.Bottom(), layout.CellsFrame().Bottom() - kTol);
+  EXPECT_LE(sub.Top(), layout.CellsFrame().Top() + kTol);
 }
 
 TEST(CalendarLayoutTest, DefaultConstructedIsEmpty) {
   const CalendarLayout layout;
-  EXPECT_NEAR(layout.PrintArea().width(), 0.0F, kTol);
+  EXPECT_NEAR(layout.PrintArea().Width(), 0.0F, kTol);
   EXPECT_NEAR(layout.CellWidth(), 0.0F, kTol);
 }
 

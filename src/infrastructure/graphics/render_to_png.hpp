@@ -105,8 +105,8 @@ class ImageComposer {
           static_cast<float>(tile_size_) / static_cast<float>(height_);
     }
 
-    tile_ortho_width_ = ortho_region_.width() * width_ratio;
-    tile_ortho_height_ = ortho_region_.height() * height_ratio;
+    tile_ortho_width_ = ortho_region_.Width() * width_ratio;
+    tile_ortho_height_ = ortho_region_.Height() * height_ratio;
   }
 
   void CalculateRemainderOrthoSize() {
@@ -115,8 +115,8 @@ class ImageComposer {
     const float height_remainder_ratio =
         static_cast<float>(height_remainder_) / static_cast<float>(height_);
 
-    remainder_ortho_width_ = ortho_region_.width() * width_remainder_ratio;
-    remainder_ortho_height_ = ortho_region_.height() * height_remainder_ratio;
+    remainder_ortho_width_ = ortho_region_.Width() * width_remainder_ratio;
+    remainder_ortho_height_ = ortho_region_.Height() * height_remainder_ratio;
   }
 
   void CalculateTileGrid() {
@@ -145,26 +145,26 @@ class ImageComposer {
 
         if ((column == tile_columns_ - 1) && width_has_remainder) {
           tile_pixel_width = static_cast<GLsizei>(width_remainder_);
-          tile_region.setL(ortho_region_.l() +
-                           (column_float * tile_ortho_width_));
-          tile_region.setR(tile_region.l() + remainder_ortho_width_);
+          tile_region.SetLeft(ortho_region_.Left() +
+                              (column_float * tile_ortho_width_));
+          tile_region.SetRight(tile_region.Left() + remainder_ortho_width_);
         } else {
           tile_pixel_width = static_cast<GLsizei>(tile_size_);
-          tile_region.setL(ortho_region_.l() +
-                           (column_float * tile_ortho_width_));
-          tile_region.setR(tile_region.l() + tile_ortho_width_);
+          tile_region.SetLeft(ortho_region_.Left() +
+                              (column_float * tile_ortho_width_));
+          tile_region.SetRight(tile_region.Left() + tile_ortho_width_);
         }
 
         if ((row == tile_rows_ - 1) && height_has_remainder) {
           tile_pixel_height = static_cast<GLsizei>(height_remainder_);
-          tile_region.setB(ortho_region_.b() +
-                           (row_float * tile_ortho_height_));
-          tile_region.setT(tile_region.b() + remainder_ortho_height_);
+          tile_region.SetBottom(ortho_region_.Bottom() +
+                                (row_float * tile_ortho_height_));
+          tile_region.SetTop(tile_region.Bottom() + remainder_ortho_height_);
         } else {
           tile_pixel_height = static_cast<GLsizei>(tile_size_);
-          tile_region.setB(ortho_region_.b() +
-                           (row_float * tile_ortho_height_));
-          tile_region.setT(tile_region.b() + tile_ortho_height_);
+          tile_region.SetBottom(ortho_region_.Bottom() +
+                                (row_float * tile_ortho_height_));
+          tile_region.SetTop(tile_region.Bottom() + tile_ortho_height_);
         }
 
         TileAt(column, row).pixel_dimensions[0] = tile_pixel_width;
@@ -187,8 +187,8 @@ class ImageComposer {
 
         render_texture.BeginRender();
         mvp.SetProjection(
-            glm::ortho(tile.ortho_region.l(), tile.ortho_region.r(),
-                       tile.ortho_region.b(), tile.ortho_region.t()));
+            glm::ortho(tile.ortho_region.Left(), tile.ortho_region.Right(),
+                       tile.ortho_region.Bottom(), tile.ortho_region.Top()));
 
         graphics_engine_.SetMVP(mvp);
         graphics_engine_.Render();
@@ -317,9 +317,9 @@ inline void WritePageToPng(const std::string& file_path,
   const float dots_per_millimeter =
       render_to_png_detail::DotsPerInchToDotsPerMillimeter(dpi);
   const float width_pixels =
-      std::round(ortho_region.width() * dots_per_millimeter);
+      std::round(ortho_region.Width() * dots_per_millimeter);
   const float height_pixels =
-      std::round(ortho_region.height() * dots_per_millimeter);
+      std::round(ortho_region.Height() * dots_per_millimeter);
   if (!render_to_png_detail::FitsSizeT(width_pixels) ||
       !render_to_png_detail::FitsSizeT(height_pixels)) {
     return;

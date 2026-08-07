@@ -35,10 +35,10 @@
 }
 
 [[nodiscard]] inline SnapshotBounds ToSnapshotBounds(const rectf& bounds) {
-  return SnapshotBounds{.left = bounds.l(),
-                        .right = bounds.r(),
-                        .bottom = bounds.b(),
-                        .top = bounds.t()};
+  return SnapshotBounds{.left = bounds.Left(),
+                        .right = bounds.Right(),
+                        .bottom = bounds.Bottom(),
+                        .top = bounds.Top()};
 }
 
 // The node's own box in page coordinates. All four corners get transformed and
@@ -47,10 +47,10 @@
 [[nodiscard]] inline SnapshotBounds ToWorldBounds(const rectf& local,
                                                   const glm::mat4& world) {
   const std::array<glm::vec4, 4> corners = {
-      glm::vec4(local.l(), local.b(), 0.0F, 1.0F),
-      glm::vec4(local.r(), local.b(), 0.0F, 1.0F),
-      glm::vec4(local.l(), local.t(), 0.0F, 1.0F),
-      glm::vec4(local.r(), local.t(), 0.0F, 1.0F)};
+      glm::vec4(local.Left(), local.Bottom(), 0.0F, 1.0F),
+      glm::vec4(local.Right(), local.Bottom(), 0.0F, 1.0F),
+      glm::vec4(local.Left(), local.Top(), 0.0F, 1.0F),
+      glm::vec4(local.Right(), local.Top(), 0.0F, 1.0F)};
 
   const glm::vec4 first = world * corners[0];
   SnapshotBounds bounds{

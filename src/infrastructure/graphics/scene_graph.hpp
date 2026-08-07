@@ -91,12 +91,12 @@ class SceneNode {
       stack.pop_back();
       if (current.node->shape_ != nullptr) {
         const rectf& bounds = current.node->shape_->LocalBounds();
-        if (bounds.width() > 0.0F || bounds.height() > 0.0F) {
+        if (bounds.Width() > 0.0F || bounds.Height() > 0.0F) {
           const std::array<glm::vec4, 4> corners = {
-              glm::vec4(bounds.l(), bounds.b(), 0.0F, 1.0F),
-              glm::vec4(bounds.r(), bounds.b(), 0.0F, 1.0F),
-              glm::vec4(bounds.l(), bounds.t(), 0.0F, 1.0F),
-              glm::vec4(bounds.r(), bounds.t(), 0.0F, 1.0F)};
+              glm::vec4(bounds.Left(), bounds.Bottom(), 0.0F, 1.0F),
+              glm::vec4(bounds.Right(), bounds.Bottom(), 0.0F, 1.0F),
+              glm::vec4(bounds.Left(), bounds.Top(), 0.0F, 1.0F),
+              glm::vec4(bounds.Right(), bounds.Top(), 0.0F, 1.0F)};
           for (const auto& corner : corners) {
             const glm::vec4 world_corner = current.world * corner;
             min_x = std::min(min_x, world_corner.x);

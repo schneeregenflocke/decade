@@ -131,7 +131,7 @@ struct TextLine {
   const std::vector<char32_t> decoded = DecodeUtf8(line.text);
   line.code_points.assign(decoded.begin(), decoded.end());
   line.font_size = ctx.title_config.FontSizeMillimetres();
-  line.left = ctx.layout.TitleFrame().getCenter().x -
+  line.left = ctx.layout.TitleFrame().Center().x -
               (ctx.font->TextWidth(line.text, line.font_size) * detail::kHalf);
   return line;
 }
@@ -156,7 +156,7 @@ inline void FillCaretAndSelection(const SectionContext& ctx,
   }
 
   const float text_height = ctx.font->TextHeight(line.font_size);
-  const float center_y = ctx.layout.TitleFrame().getCenter().y;
+  const float center_y = ctx.layout.TitleFrame().Center().y;
   const float bottom = center_y - (text_height * detail::kHalf);
   const float top = center_y + (text_height * detail::kHalf);
   const auto offset = [&](std::size_t index) {
@@ -215,14 +215,14 @@ inline void BuildPrintArea(const SectionContext& ctx) {
           dynamic_cast<FontShape*>(ctx.nodes.title_text->GetShape())) {
     title_shape->SetFont(ctx.font);
     title_shape->SetColor(ctx.title_config.TextColor());
-    title_shape->SetShapeCentered(
-        line.text, ctx.layout.TitleFrame().getCenter(), line.font_size);
+    title_shape->SetShapeCentered(line.text, ctx.layout.TitleFrame().Center(),
+                                  line.font_size);
   }
   title_edit::FillCaretAndSelection(ctx, line);
 
   return PickBox{
       .id = PickId{.kind = PickId::Kind::kTitle, .index = 0},
-      .rect = ctx.layout.TitleFrame().shift(ctx.layout.PrintAreaOrigin().x,
+      .rect = ctx.layout.TitleFrame().Shift(ctx.layout.PrintAreaOrigin().x,
                                             ctx.layout.PrintAreaOrigin().y)};
 }
 
@@ -252,16 +252,16 @@ inline void BuildCalendarLabels(const SectionContext& ctx) {
   month_node->RemoveChildren();
   for (size_t index = 0; index < number_months; ++index) {
     const auto float_index = static_cast<float>(index);
-    const auto left =
-        ctx.layout.XLabelsFrame().l() + (ctx.layout.CellWidth() * float_index);
-    x_label_frames.at(index).setL(left);
-    x_label_frames.at(index).setR(left + ctx.layout.CellWidth());
-    x_label_frames.at(index).setB(ctx.layout.XLabelsFrame().b());
-    x_label_frames.at(index).setT(ctx.layout.XLabelsFrame().t());
+    const auto left = ctx.layout.XLabelsFrame().Left() +
+                      (ctx.layout.CellWidth() * float_index);
+    x_label_frames.at(index).SetLeft(left);
+    x_label_frames.at(index).SetRight(left + ctx.layout.CellWidth());
+    x_label_frames.at(index).SetBottom(ctx.layout.XLabelsFrame().Bottom());
+    x_label_frames.at(index).SetTop(ctx.layout.XLabelsFrame().Top());
 
     detail::AddCenteredText(
         ctx, month_node, months_names.at(index), months_names.at(index),
-        x_label_frames.at(index).getCenter(), labels_font_size);
+        x_label_frames.at(index).Center(), labels_font_size);
   }
 
   const auto config =
@@ -283,16 +283,16 @@ inline void BuildCalendarLabels(const SectionContext& ctx) {
         std::to_string(projection.YearForRow(index));
 
     const auto float_index = static_cast<float>(index);
-    const auto bottom =
-        ctx.layout.YLabelsFrame().b() + (ctx.layout.RowHeight() * float_index);
-    y_labels_frames.at(index).setL(ctx.layout.YLabelsFrame().l());
-    y_labels_frames.at(index).setR(ctx.layout.YLabelsFrame().r());
-    y_labels_frames.at(index).setB(bottom);
-    y_labels_frames.at(index).setT(bottom + ctx.layout.RowHeight());
+    const auto bottom = ctx.layout.YLabelsFrame().Bottom() +
+                        (ctx.layout.RowHeight() * float_index);
+    y_labels_frames.at(index).SetLeft(ctx.layout.YLabelsFrame().Left());
+    y_labels_frames.at(index).SetRight(ctx.layout.YLabelsFrame().Right());
+    y_labels_frames.at(index).SetBottom(bottom);
+    y_labels_frames.at(index).SetTop(bottom + ctx.layout.RowHeight());
 
     detail::AddCenteredText(
         ctx, year_node, current_year_text, current_year_text,
-        y_labels_frames.at(index).getCenter(), labels_font_size);
+        y_labels_frames.at(index).Center(), labels_font_size);
   }
 
   detail::FillRectangles(ctx.nodes.row_labels, y_labels_frames, config);
@@ -313,7 +313,7 @@ inline void BuildYears(const SectionContext& ctx) {
     const float year_length =
         static_cast<float>(number_days) * ctx.layout.DayWidth();
     rectf year_cell = ctx.layout.GetSubFrame(index, 1);
-    year_cell.setR(year_cell.l() + year_length);
+    year_cell.SetRight(year_cell.Left() + year_length);
     year_cells.at(index) = year_cell;
   }
 
@@ -350,10 +350,10 @@ inline void BuildMonths(const SectionContext& ctx) {
               Date::DaysBetween(first_day_of_year,
                                 first_day_of_year.AddMonths(month_index + 1))) *
           ctx.layout.DayWidth();
-      month_cell.setL(current_cell.l() + start_offset);
-      month_cell.setR(current_cell.l() + end_offset);
-      month_cell.setB(current_cell.b());
-      month_cell.setT(current_cell.t());
+      month_cell.SetLeft(current_cell.Left() + start_offset);
+      month_cell.SetRight(current_cell.Left() + end_offset);
+      month_cell.SetBottom(current_cell.Bottom());
+      month_cell.SetTop(current_cell.Top());
 
       const auto store_index = (index * number_months) + subindex;
       month_cells.at(store_index) = month_cell;
@@ -399,19 +399,19 @@ inline void BuildDays(const SectionContext& ctx) {
 
       if (current_date.DayOfWeek() == Weekday::kSunday) {
         rectf day_cell;
-        day_cell.setL(current_cell.l() +
-                      (float_subindex * ctx.layout.DayWidth()));
-        day_cell.setR(day_cell.l() + ctx.layout.DayWidth());
-        day_cell.setB(current_cell.b());
-        day_cell.setT(current_cell.t());
+        day_cell.SetLeft(current_cell.Left() +
+                         (float_subindex * ctx.layout.DayWidth()));
+        day_cell.SetRight(day_cell.Left() + ctx.layout.DayWidth());
+        day_cell.SetBottom(current_cell.Bottom());
+        day_cell.SetTop(current_cell.Top());
         sunday_cells[static_cast<size_t>(days_index)] = day_cell;
       } else {
         rectf day_cell;
-        day_cell.setL(current_cell.l() +
-                      (float_subindex * ctx.layout.DayWidth()));
-        day_cell.setR(day_cell.l() + ctx.layout.DayWidth());
-        day_cell.setB(current_cell.b());
-        day_cell.setT(current_cell.t());
+        day_cell.SetLeft(current_cell.Left() +
+                         (float_subindex * ctx.layout.DayWidth()));
+        day_cell.SetRight(day_cell.Left() + ctx.layout.DayWidth());
+        day_cell.SetBottom(current_cell.Bottom());
+        day_cell.SetTop(current_cell.Top());
         day_cells[static_cast<size_t>(days_index)] = day_cell;
       }
       ++days_index;
@@ -460,10 +460,10 @@ inline void BuildDays(const SectionContext& ctx) {
     const auto current_sub_cell = ctx.layout.GetSubFrame(row, 1);
 
     const auto bar_left =
-        current_sub_cell.l() + (bar.GetFirstDay() * ctx.layout.DayWidth());
+        current_sub_cell.Left() + (bar.GetFirstDay() * ctx.layout.DayWidth());
     const auto bar_width =
         (bar.GetLastDay() - bar.GetFirstDay()) * ctx.layout.DayWidth();
-    const auto bar_height = current_sub_cell.height();
+    const auto bar_height = current_sub_cell.Height();
 
     // Each bar is its own node: the position lives in the node transform (ready
     // for dragging/animating), the size lives in the shape geometry. A pure
@@ -473,20 +473,21 @@ inline void BuildDays(const SectionContext& ctx) {
                                                 std::to_string(index));
     bar_node->SetModelMatrix(glm::translate(
         glm::mat4(1.0F),
-        glm::vec3(bar_left, current_sub_cell.b(), detail::kZero)));
+        glm::vec3(bar_left, current_sub_cell.Bottom(), detail::kZero)));
     bar_node->SetStyleId(current_shape_config.Name());
 
     // Page-space box for hit-testing. The node's world position is
-    // layout.PrintAreaOrigin() + (bar_left, sub_cell.b()), so the page-space
-    // rect is the local bar rect shifted by that origin.
+    // layout.PrintAreaOrigin() + (bar_left, sub_cell.Bottom()), so the
+    // page-space rect is the local bar rect shifted by that origin.
     const PickId pick_id{.kind = PickId::Kind::kBar, .index = index};
     result.pick_boxes.push_back(PickBox{
         .id = pick_id,
-        .rect = rectf(bar_left + ctx.layout.PrintAreaOrigin().x,
-                      bar_left + bar_width + ctx.layout.PrintAreaOrigin().x,
-                      current_sub_cell.b() + ctx.layout.PrintAreaOrigin().y,
-                      current_sub_cell.b() + bar_height +
-                          ctx.layout.PrintAreaOrigin().y)});
+        .rect =
+            rectf(bar_left + ctx.layout.PrintAreaOrigin().x,
+                  bar_left + bar_width + ctx.layout.PrintAreaOrigin().x,
+                  current_sub_cell.Bottom() + ctx.layout.PrintAreaOrigin().y,
+                  current_sub_cell.Bottom() + bar_height +
+                      ctx.layout.PrintAreaOrigin().y)});
 
     auto bar_shape = std::make_unique<RectanglesShape>(ctx.rectangles_shader);
     bar_shape->SetShape(
@@ -500,13 +501,12 @@ inline void BuildDays(const SectionContext& ctx) {
     result.bar_nodes.emplace(index, bar_node);
 
     auto current_text_cell = ctx.layout.GetSubFrame(row, 2);
-    current_text_cell.setL(bar_left);
-    current_text_cell.setR(bar_left + bar_width);
+    current_text_cell.SetLeft(bar_left);
+    current_text_cell.SetRight(bar_left + bar_width);
 
-    detail::AddCenteredText(ctx, node_labels,
-                            std::string("label node ") + std::to_string(index),
-                            bar.GetText(), current_text_cell.getCenter(),
-                            current_text_cell.height());
+    detail::AddCenteredText(
+        ctx, node_labels, std::string("label node ") + std::to_string(index),
+        bar.GetText(), current_text_cell.Center(), current_text_cell.Height());
   }
 
   return result;
@@ -536,7 +536,7 @@ inline void BuildYearTotals(const SectionContext& ctx) {
       const auto year_total_width =
           static_cast<float>(ctx.date_entry_bars.GetAnnualTotal(index)) *
           ctx.layout.DayWidth();
-      year_total_cell.setR(current_cell.l() + year_total_width);
+      year_total_cell.SetRight(current_cell.Left() + year_total_width);
       year_totals_cells.at(index) = year_total_cell;
 
       const auto number_days = DaysInYear(current_year);
@@ -550,20 +550,21 @@ inline void BuildYearTotals(const SectionContext& ctx) {
                         << percent * detail::kPercentScale << " %";
       const auto year_total_text = year_total_stream.str();
       const auto year_total_text_width =
-          ctx.font->TextWidth(year_total_text, year_total_cell.height());
+          ctx.font->TextWidth(year_total_text, year_total_cell.Height());
 
       rectf year_total_text_cell;
-      year_total_text_cell.setL(year_total_cell.r() + current_cell.height());
-      year_total_text_cell.setR(year_total_text_cell.l() +
-                                year_total_text_width);
-      year_total_text_cell.setB(year_total_cell.b());
-      year_total_text_cell.setT(year_total_cell.t());
+      year_total_text_cell.SetLeft(year_total_cell.Right() +
+                                   current_cell.Height());
+      year_total_text_cell.SetRight(year_total_text_cell.Left() +
+                                    year_total_text_width);
+      year_total_text_cell.SetBottom(year_total_cell.Bottom());
+      year_total_text_cell.SetTop(year_total_cell.Top());
 
       detail::AddCenteredText(
           ctx, node_text,
           std::string("year total label ") + std::to_string(index),
-          year_total_text, year_total_text_cell.getCenter(),
-          year_total_text_cell.height());
+          year_total_text, year_total_text_cell.Center(),
+          year_total_text_cell.Height());
     }
   }
 
@@ -581,16 +582,16 @@ inline void BuildLegend(const SectionContext& ctx) {
 
   const size_t number_entry_frames = (ctx.date_groups.Items().size() + 1) * 2;
   std::vector<rectf> legend_entries_frames(number_entry_frames);
-  const auto entries_width = ctx.layout.LegendFrame().width() /
+  const auto entries_width = ctx.layout.LegendFrame().Width() /
                              static_cast<float>(number_entry_frames);
 
   for (size_t index = 0; index < number_entry_frames; ++index) {
     const auto float_index = static_cast<float>(index);
     const auto left =
-        ctx.layout.LegendFrame().l() + (entries_width * float_index);
+        ctx.layout.LegendFrame().Left() + (entries_width * float_index);
     legend_entries_frames.at(index) = ctx.layout.LegendFrame();
-    legend_entries_frames.at(index).setL(left);
-    legend_entries_frames.at(index).setR(left + entries_width);
+    legend_entries_frames.at(index).SetLeft(left);
+    legend_entries_frames.at(index).SetRight(left + entries_width);
   }
 
   std::vector<rectf> bar_cells;
@@ -616,16 +617,16 @@ inline void BuildLegend(const SectionContext& ctx) {
     detail::AddCenteredText(
         ctx, node_text, std::string("legend label ") + std::to_string(index),
         ctx.date_groups.Items().at(index).GetName(),
-        legend_entries_frames.at(label_index).getCenter(), legend_font_size);
+        legend_entries_frames.at(label_index).Center(), legend_font_size);
 
     if (span_years > 0U) {
-      const auto current_height = ctx.layout.GetSubFrame(0, 1).height();
+      const auto current_height = ctx.layout.GetSubFrame(0, 1).Height();
       auto current_cell = legend_entries_frames.at(label_index + 1);
-      const auto current_vertical_center = current_cell.getCenter()[1];
-      current_cell.setB(current_vertical_center -
-                        (current_height * detail::kHalf));
-      current_cell.setT(current_vertical_center +
-                        (current_height * detail::kHalf));
+      const auto current_vertical_center = current_cell.Center()[1];
+      current_cell.SetBottom(current_vertical_center -
+                             (current_height * detail::kHalf));
+      current_cell.SetTop(current_vertical_center +
+                          (current_height * detail::kHalf));
       bar_cells.emplace_back(current_cell);
 
       auto current_shape_config =
@@ -649,18 +650,18 @@ inline void BuildLegend(const SectionContext& ctx) {
   {
     detail::AddCenteredText(
         ctx, node_text, std::string("legend label year total"), "Annual sum",
-        legend_entries_frames.at(legend_entries_frames.size() - 2).getCenter(),
+        legend_entries_frames.at(legend_entries_frames.size() - 2).Center(),
         legend_font_size);
 
     if (span_years > 0U) {
-      const auto current_height = ctx.layout.GetSubFrame(0, 0).height();
+      const auto current_height = ctx.layout.GetSubFrame(0, 0).Height();
       auto current_cell =
           legend_entries_frames.at(legend_entries_frames.size() - 1);
-      const auto current_vertical_center = current_cell.getCenter()[1];
-      current_cell.setB(current_vertical_center -
-                        (current_height * detail::kHalf));
-      current_cell.setT(current_vertical_center +
-                        (current_height * detail::kHalf));
+      const auto current_vertical_center = current_cell.Center()[1];
+      current_cell.SetBottom(current_vertical_center -
+                             (current_height * detail::kHalf));
+      current_cell.SetTop(current_vertical_center +
+                          (current_height * detail::kHalf));
       bar_cells.emplace_back(current_cell);
 
       auto current_shape_config = ctx.shape_config.GetShapeConfiguration(

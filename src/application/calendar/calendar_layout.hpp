@@ -88,42 +88,42 @@ class CalendarLayout {
     // The print area is the page minus the margins, then shifted so its
     // bottom-left is the local origin; print_area_origin carries that offset so
     // the caller can position the print-area node and the bars' pick boxes.
-    fields.print_area = page_size.reduce(page_margin);
-    fields.print_area_origin = fields.print_area.getLB();
-    fields.print_area = fields.print_area.shift(-fields.print_area_origin.x,
+    fields.print_area = page_size.Reduce(page_margin);
+    fields.print_area_origin = fields.print_area.LeftBottom();
+    fields.print_area = fields.print_area.Shift(-fields.print_area_origin.x,
                                                 -fields.print_area_origin.y);
 
     fields.title_frame = fields.print_area;
-    fields.title_frame.setB(fields.title_frame.t() - title_frame_height);
+    fields.title_frame.SetBottom(fields.title_frame.Top() - title_frame_height);
 
     rectf page_margin_frame = fields.print_area;
-    page_margin_frame.setT(fields.title_frame.b());
+    page_margin_frame.SetTop(fields.title_frame.Bottom());
 
     fields.calendar_frame =
-        page_margin_frame.reduce(rectf(kZero, kDefaultMargin, kZero, kZero));
+        page_margin_frame.Reduce(rectf(kZero, kDefaultMargin, kZero, kZero));
 
     const std::size_t number_rows = kAdditionalRows + span_length_years;
-    fields.cell_width = fields.calendar_frame.width() / kCalendarColumns;
+    fields.cell_width = fields.calendar_frame.Width() / kCalendarColumns;
     fields.row_height =
-        fields.calendar_frame.height() / static_cast<float>(number_rows);
+        fields.calendar_frame.Height() / static_cast<float>(number_rows);
 
-    fields.cells_frame = fields.calendar_frame.reduce(rectf(
+    fields.cells_frame = fields.calendar_frame.Reduce(rectf(
         fields.cell_width, kZero, fields.row_height * kRowHeaderScale, kZero));
 
     fields.proportions.SetupRowFrames(fields.cells_frame, span_length_years);
     fields.proportions.SetupSubFrames(spacing_proportions);
 
-    fields.day_width = fields.cells_frame.width() / kDaysPerYear;
+    fields.day_width = fields.cells_frame.Width() / kDaysPerYear;
 
-    fields.x_labels_frame = fields.calendar_frame.reduce(
+    fields.x_labels_frame = fields.calendar_frame.Reduce(
         rectf(fields.cell_width, kZero, fields.row_height,
-              fields.cells_frame.height()));
-    fields.y_labels_frame = fields.calendar_frame.reduce(
-        rectf(kZero, fields.cells_frame.width(),
+              fields.cells_frame.Height()));
+    fields.y_labels_frame = fields.calendar_frame.Reduce(
+        rectf(kZero, fields.cells_frame.Width(),
               fields.row_height * kRowHeaderScale, kZero));
-    fields.legend_frame = fields.calendar_frame.reduce(
+    fields.legend_frame = fields.calendar_frame.Reduce(
         rectf(fields.cell_width, kZero, kZero,
-              fields.cells_frame.height() + fields.row_height));
+              fields.cells_frame.Height() + fields.row_height));
 
     return fields;
   }
