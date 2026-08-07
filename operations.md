@@ -57,7 +57,7 @@ The binary honours several command line options in GNU syntax (`--name=value` or
 
 **Image capture** — two options capture two different things; they are not redundant:
 
-- `--dump-png=<path>` — the calendar **page image** alone, through an off-screen FBO. Resolution: the export DPI, a white background, no app chrome. Needs: OpenGL alone.
+- `--dump-png=<path>` — the calendar **page image** alone, through an off-screen FBO. Resolution: the export DPI, a white background, no app chrome. Needs: OpenGL alone. The 16 multisamples it asks for get capped at what the driver offers — 16 on the NVIDIA GPU, 8 under llvmpipe — so a headless export is a little coarser than one off the graphics card, but never black ([#49](https://github.com/schneeregenflocke/decade/issues/49)). `--debug-log` names the count actually used.
 - `--dump-frame-png=<path>` — the **whole window**: tabs plus panels (a `wxClientDC` blit) with the content composed on top of the GL back buffer. Resolution: screen resolution. Needs: widget read-back, which works on X11 and Xvfb alone and comes out empty under Wayland.
 
 Take `--dump-png` for a clean high-DPI export of the page itself, `--dump-frame-png` for the real GUI including chrome. `--dump-frame-png` gets delayed through `CallAfter`, so the first paint has already happened.

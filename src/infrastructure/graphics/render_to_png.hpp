@@ -9,12 +9,14 @@
 #include <cstddef>
 #include <glm/gtx/transform.hpp>
 #include <glm/vec3.hpp>
+#include <iostream>
 #include <limits>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "../../common/debug_log.hpp"
 #include "graphics_engine.hpp"
 #include "mvp_matrices.hpp"
 #include "png_writer.hpp"
@@ -69,9 +71,16 @@ class ImageComposer {
 
     ConfigureTiles();
     RenderTiles();
+    if (!rendered_) {
+      return;
+    }
     ComposeTiles();
     VerticalFlip();
   }
+
+  // False when a tile's framebuffer would not come up. The composed image is
+  // then empty, and nothing may get written out of it.
+  [[nodiscard]] bool Rendered() const { return rendered_; }
 
   ImageTile& TileAt(size_t column, size_t row) {
     return tiles_[column + (row * tile_columns_)];
@@ -184,6 +193,18 @@ class ImageComposer {
 
         RenderToTexture render_texture(tile.pixel_dimensions[0],
                                        tile.pixel_dimensions[1], msaa_samples_);
+        // Without a complete framebuffer the render goes nowhere and the
+        // read-back hands back a tile of zeros — a black page, silently. The
+        // caller has to hear about it instead of writing the file.
+        if (!render_texture.Valid()) {
+          rendered_ = false;
+          return;
+        }
+        if (decade_debug::LogEnabled() && row == 0 && column == 0) {
+          std::cout << "--dump-png: " << render_texture.Samples()
+                    << " samples per pixel (asked for " << msaa_samples_
+                    << ")\n";
+        }
 
         render_texture.BeginRender();
         mvp.SetProjection(
@@ -278,6 +299,7 @@ class ImageComposer {
   float remainder_ortho_width_{0.0F};
   float remainder_ortho_height_{0.0F};
   int msaa_samples_;
+  bool rendered_{true};
 
   static constexpr size_t kBytesPerPixel = 4;
   static constexpr size_t kMaxTileSize = 4096;
@@ -335,6 +357,11 @@ inline void WritePageToPng(const std::string& file_path,
   const ImageComposer composer(
       ImageSize{.width = image_width, .height = image_height}, ortho_region,
       graphics_engine, msaa_samples);
+  if (!composer.Rendered()) {
+    std::cerr << "--dump-png: the off-screen framebuffer would not come up; "
+                 "nothing written\n";
+    return;
+  }
   auto pixels = composer.CopyImage();
   png_io::WriteRgbaPng(
       file_path.c_str(), pixels,

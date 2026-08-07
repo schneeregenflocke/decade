@@ -3,6 +3,7 @@
 
 #include <epoxy/gl.h>
 
+#include <algorithm>
 #include <array>
 #include <memory>
 #include <vector>
@@ -98,29 +99,60 @@ class FrameBuffer {
   RenderBuffer render_buffer_;
 };
 
+// What this implementation can actually multisample, for an RGBA colour texture
+// with a depth renderbuffer beside it. Asking for more is not a warning but a
+// failure: glTexImage2DMultisample raises GL_INVALID_VALUE past GL_MAX_SAMPLES
+// and GL_INVALID_OPERATION past GL_MAX_COLOR_TEXTURE_SAMPLES, the texture never
+// comes into being, the framebuffer stays incomplete — and everything drawn
+// into it is lost without a word. That is how the 16 samples of the PNG export
+// produced a black page under llvmpipe, whose ceiling is 8 (#49).
+[[nodiscard]] inline GLsizei MaxUsableSamples() {
+  GLint max_samples = 0;
+  GLint max_color_samples = 0;
+  GLint max_depth_samples = 0;
+  glGetIntegerv(GL_MAX_SAMPLES, &max_samples);
+  glGetIntegerv(GL_MAX_COLOR_TEXTURE_SAMPLES, &max_color_samples);
+  glGetIntegerv(GL_MAX_DEPTH_TEXTURE_SAMPLES, &max_depth_samples);
+  return std::min({max_samples, max_color_samples, max_depth_samples});
+}
+
 // Renders into an off-screen framebuffer and reads the result back as RGBA
 // bytes. With multisampling (samples > 1) it renders into a dedicated MSAA
 // framebuffer and resolves it into the readable output buffer; without it,
 // rendering goes straight into the output buffer and the extra MSAA buffer is
 // never allocated.
+//
+// The wanted sample count is a wish, not a demand: it gets capped at what the
+// driver offers, and should the MSAA framebuffer still not come up, the render
+// falls back to a single sample. A page without antialiasing beats a black one.
 class RenderToTexture {
  public:
   RenderToTexture(GLsizei width_in, GLsizei height_in, GLsizei samples_in)
       : width_(width_in),
         height_(height_in),
-        multisampled_(samples_in > 1),
-        output_frame_buffer_(width_in, height_in, samples_in, false) {
+        samples_(std::min(samples_in, MaxUsableSamples())),
+        multisampled_(samples_ > 1),
+        output_frame_buffer_(width_in, height_in, samples_, false) {
     if (multisampled_) {
       multisample_frame_buffer_ =
-          std::make_unique<FrameBuffer>(width_in, height_in, samples_in, true);
+          std::make_unique<FrameBuffer>(width_in, height_in, samples_, true);
+      if (multisample_frame_buffer_->CheckStatus() != GL_FRAMEBUFFER_COMPLETE) {
+        multisample_frame_buffer_.reset();
+        multisampled_ = false;
+      }
     }
 
-    valid_ = output_frame_buffer_.CheckStatus() == GL_FRAMEBUFFER_COMPLETE &&
-             (!multisampled_ || multisample_frame_buffer_->CheckStatus() ==
-                                    GL_FRAMEBUFFER_COMPLETE);
+    valid_ = output_frame_buffer_.CheckStatus() == GL_FRAMEBUFFER_COMPLETE;
   }
 
+  // False when even the single-sample output framebuffer would not come up.
+  // Whatever gets read back then says nothing — the caller has to report it
+  // rather than write the bytes out.
   [[nodiscard]] bool Valid() const { return valid_; }
+
+  // The samples the render really runs with, after the cap and a possible
+  // fallback — not what the caller asked for.
+  [[nodiscard]] GLsizei Samples() const { return multisampled_ ? samples_ : 1; }
 
   void BeginRender() {
     std::array<GLint, 4> viewport{};
@@ -169,6 +201,7 @@ class RenderToTexture {
 
   GLsizei width_;
   GLsizei height_;
+  GLsizei samples_;
   bool multisampled_;
 
   FrameBuffer output_frame_buffer_;
