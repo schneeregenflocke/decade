@@ -20,7 +20,7 @@ class QuadrilateralShape : public Shape {
  public:
   explicit QuadrilateralShape(Shader& shader_in) : Shape(shader_in) {}
 
-  void SetShape(const rectf& rectangle) {
+  void SetShape(const RectF& rectangle) {
     std::vector<glm::vec3> vertices(kVerticesPerQuad);
 
     constexpr float kZero = 0.0F;
@@ -56,7 +56,7 @@ class RectanglesShape : public Shape {
  public:
   explicit RectanglesShape(Shader& shader_in) : Shape(shader_in) {}
 
-  void SetShape(const std::vector<rectf>& rectangles, float line_width) {
+  void SetShape(const std::vector<RectF>& rectangles, float line_width) {
     vertices_.resize(rectangles.size() * kVerticesPerRectangle);
 
     for (size_t index = 0; index < rectangles.size(); ++index) {
@@ -67,8 +67,8 @@ class RectanglesShape : public Shape {
     SetLocalBounds(UnionBounds(rectangles, line_width));
   }
 
-  void SetShape(const rectf& rectangle, float line_width) {
-    SetShape(std::vector<rectf>{rectangle}, line_width);
+  void SetShape(const RectF& rectangle, float line_width) {
+    SetShape(std::vector<RectF>{rectangle}, line_width);
   }
 
   // Outline and fill, named instead of sitting as a pair in a vector: the
@@ -93,7 +93,7 @@ class RectanglesShape : public Shape {
  private:
   // Axis-aligned union of the rectangles, grown by half the line width so the
   // box covers the drawn outline (which straddles each edge).
-  static rectf UnionBounds(const std::vector<rectf>& rectangles,
+  static RectF UnionBounds(const std::vector<RectF>& rectangles,
                            float line_width) {
     if (rectangles.empty()) {
       return {};
@@ -113,15 +113,15 @@ class RectanglesShape : public Shape {
             top + half_line};
   }
 
-  void SetRectangleShape(size_t index, const rectf& rectangle,
+  void SetRectangleShape(size_t index, const RectF& rectangle,
                          float line_width) {
     const float half_line_thickness = line_width * 0.5F;
 
-    const rectf inrectangle =
-        rectangle.Reduce(rectf(half_line_thickness, half_line_thickness,
+    const RectF inrectangle =
+        rectangle.Reduce(RectF(half_line_thickness, half_line_thickness,
                                half_line_thickness, half_line_thickness));
-    const rectf outrectangle =
-        rectangle.Expand(rectf(half_line_thickness, half_line_thickness,
+    const RectF outrectangle =
+        rectangle.Expand(RectF(half_line_thickness, half_line_thickness,
                                half_line_thickness, half_line_thickness));
 
     const size_t offset = index * kVerticesPerRectangle;

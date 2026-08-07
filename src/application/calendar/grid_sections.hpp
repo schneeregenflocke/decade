@@ -34,7 +34,7 @@ inline void BuildCalendarLabels(const SectionContext& ctx) {
     }
   }
 
-  std::vector<rectf> x_label_frames(number_months);
+  std::vector<RectF> x_label_frames(number_months);
   // Month names and year numbers carry the application-wide chosen size in
   // points — they label the page, not the individual bar, and should therefore
   // not travel with the cell size.
@@ -69,7 +69,7 @@ inline void BuildCalendarLabels(const SectionContext& ctx) {
   }
 
   const TimelineProjection projection(ctx.calendar_config);
-  std::vector<rectf> y_labels_frames(span_years);
+  std::vector<RectF> y_labels_frames(span_years);
   year_node->RemoveChildren();
   for (std::size_t index = 0; index < span_years; ++index) {
     const std::string current_year_text =
@@ -98,14 +98,14 @@ inline void BuildYears(const SectionContext& ctx) {
   }
 
   const TimelineProjection projection(ctx.calendar_config);
-  std::vector<rectf> year_cells(span_years);
+  std::vector<RectF> year_cells(span_years);
 
   for (std::size_t index = 0; index < span_years; ++index) {
     const int current_year = projection.YearForRow(index);
     const auto number_days = DaysInYear(current_year);
     const float year_length =
         static_cast<float>(number_days) * ctx.layout.DayWidth();
-    rectf year_cell = ctx.layout.GetSubFrame(index, 1);
+    RectF year_cell = ctx.layout.GetSubFrame(index, 1);
     year_cell.SetRight(year_cell.Left() + year_length);
     year_cells.at(index) = year_cell;
   }
@@ -124,7 +124,7 @@ inline void BuildMonths(const SectionContext& ctx) {
 
   const auto store_size = number_months * span_years;
   const TimelineProjection projection(ctx.calendar_config);
-  std::vector<rectf> month_cells(store_size);
+  std::vector<RectF> month_cells(store_size);
 
   for (std::size_t index = 0; index < span_years; ++index) {
     const int current_year = projection.YearForRow(index);
@@ -133,7 +133,7 @@ inline void BuildMonths(const SectionContext& ctx) {
     for (size_t subindex = 0; subindex < number_months; ++subindex) {
       const auto current_cell = ctx.layout.GetSubFrame(index, 1);
       const int month_index = static_cast<int>(subindex);
-      rectf month_cell;
+      RectF month_cell;
       const auto start_offset =
           static_cast<float>(Date::DaysBetween(
               first_day_of_year, first_day_of_year.AddMonths(month_index))) *
@@ -171,8 +171,8 @@ inline void BuildDays(const SectionContext& ctx) {
   std::int64_t days_index = 0;
   const auto number_days_cells = static_cast<size_t>(span_days);
 
-  std::vector<rectf> day_cells;
-  std::vector<rectf> sunday_cells;
+  std::vector<RectF> day_cells;
+  std::vector<RectF> sunday_cells;
   day_cells.resize(number_days_cells);
   sunday_cells.resize(number_days_cells);
 
@@ -191,7 +191,7 @@ inline void BuildDays(const SectionContext& ctx) {
               static_cast<int>(days_index));
 
       if (current_date.DayOfWeek() == Weekday::kSunday) {
-        rectf day_cell;
+        RectF day_cell;
         day_cell.SetLeft(current_cell.Left() +
                          (float_subindex * ctx.layout.DayWidth()));
         day_cell.SetRight(day_cell.Left() + ctx.layout.DayWidth());
@@ -199,7 +199,7 @@ inline void BuildDays(const SectionContext& ctx) {
         day_cell.SetTop(current_cell.Top());
         sunday_cells[static_cast<size_t>(days_index)] = day_cell;
       } else {
-        rectf day_cell;
+        RectF day_cell;
         day_cell.SetLeft(current_cell.Left() +
                          (float_subindex * ctx.layout.DayWidth()));
         day_cell.SetRight(day_cell.Left() + ctx.layout.DayWidth());

@@ -137,7 +137,7 @@ class Font {
 
   // The largest em size at which `text` fits into `cell`: from the cell height
   // first, then taken back to the cell width where needed.
-  [[nodiscard]] float AdjustTextSize(const rectf& cell, const std::string& text,
+  [[nodiscard]] float AdjustTextSize(const RectF& cell, const std::string& text,
                                      TextScale scale) const {
     const float font_size = cell.Height() * scale.height_ratio;
     const float text_width = TextWidth(text, font_size);
@@ -344,7 +344,7 @@ class FontShape : public Shape {
         bottom = std::min(bottom, vertex.y);
         top = std::max(top, vertex.y);
       }
-      SetLocalBounds(rectf(left, right, bottom, top));
+      SetLocalBounds(RectF(left, right, bottom, top));
     }
   }
 

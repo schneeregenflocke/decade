@@ -17,7 +17,7 @@ enum class SnapshotShapeKind : std::uint8_t {
 };
 
 // An axis-aligned box in page millimetres. A type of its own instead of the
-// rectf from `infrastructure/graphics/`, so the read model leaves no dependency
+// RectF from `infrastructure/graphics/`, so the read model leaves no dependency
 // there.
 struct SnapshotBounds {
   float left{0.0F};

@@ -5,11 +5,11 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 template <typename Ty>
-class rect {
+class Rect {
  public:
-  rect() : edges_({0, 0, 0, 0}) {}
+  Rect() : edges_({0, 0, 0, 0}) {}
 
-  rect(Ty left, Ty right, Ty bottom, Ty top)
+  Rect(Ty left, Ty right, Ty bottom, Ty top)
       : edges_({left, right, bottom, top}) {}
 
   struct Dimension {
@@ -17,8 +17,8 @@ class rect {
     Ty height;
   };
 
-  static rect FromDimension(Dimension dimension) {
-    rect result;
+  static Rect FromDimension(Dimension dimension) {
+    Rect result;
     result.SetLeft(-dimension.width / static_cast<Ty>(2));
     result.SetRight(dimension.width / static_cast<Ty>(2));
     result.SetBottom(-dimension.height / static_cast<Ty>(2));
@@ -38,28 +38,28 @@ class rect {
 
   [[nodiscard]] Ty Height() const { return edges_[3] - edges_[2]; }
 
-  [[nodiscard]] rect Shift(Ty x_offset, Ty y_offset) const {
-    return rect(Left() + x_offset, Right() + x_offset, Bottom() + y_offset,
+  [[nodiscard]] Rect Shift(Ty x_offset, Ty y_offset) const {
+    return Rect(Left() + x_offset, Right() + x_offset, Bottom() + y_offset,
                 Top() + y_offset);
   }
 
-  [[nodiscard]] rect Expand(const rect& value) const {
-    return rect(Left() - value.Left(), Right() + value.Right(),
+  [[nodiscard]] Rect Expand(const Rect& value) const {
+    return Rect(Left() - value.Left(), Right() + value.Right(),
                 Bottom() - value.Bottom(), Top() + value.Top());
   }
 
-  [[nodiscard]] rect Reduce(const rect& value) const {
-    return rect(Left() + value.Left(), Right() - value.Right(),
+  [[nodiscard]] Rect Reduce(const Rect& value) const {
+    return Rect(Left() + value.Left(), Right() - value.Right(),
                 Bottom() + value.Bottom(), Top() - value.Top());
   }
 
-  [[nodiscard]] rect Scale(Ty factor) const {
+  [[nodiscard]] Rect Scale(Ty factor) const {
     const Ty expand_width_value =
         ((Width() * factor) - Width()) / static_cast<Ty>(2);
     const Ty expand_height_value =
         ((Height() * factor) - Height()) / static_cast<Ty>(2);
 
-    rect result = Expand(rect(expand_width_value, expand_width_value,
+    Rect result = Expand(Rect(expand_width_value, expand_width_value,
                               expand_height_value, expand_height_value));
     return result;
   }
@@ -98,5 +98,5 @@ class rect {
   std::array<Ty, 4> edges_;
 };
 
-using rectf = rect<float>;
+using RectF = Rect<float>;
 #endif  // RECT_HPP

@@ -60,7 +60,7 @@ inline void FillCaretAndSelection(const SectionContext& ctx,
   if (caret_shape == nullptr || selection_shape == nullptr) {
     return;
   }
-  const rectf hidden(detail::kZero, detail::kZero, detail::kZero,
+  const RectF hidden(detail::kZero, detail::kZero, detail::kZero,
                      detail::kZero);
   if (!ctx.text_edit.has_value()) {
     caret_shape->SetShape(hidden);
@@ -79,11 +79,11 @@ inline void FillCaretAndSelection(const SectionContext& ctx,
 
   const float caret_x = offset(ctx.text_edit->caret);
   const float caret_width = line.font_size * kCaretWidthRatio;
-  caret_shape->SetShape(rectf(caret_x, caret_x + caret_width, bottom, top));
+  caret_shape->SetShape(RectF(caret_x, caret_x + caret_width, bottom, top));
   caret_shape->SetColor(ctx.title_config.TextColor());
 
   if (HasSelection(*ctx.text_edit)) {
-    selection_shape->SetShape(rectf(offset(ctx.text_edit->selection_begin),
+    selection_shape->SetShape(RectF(offset(ctx.text_edit->selection_begin),
                                     offset(ctx.text_edit->selection_end),
                                     bottom, top));
     selection_shape->SetColor(glm::vec4(kSelectionRed, kSelectionGreen,

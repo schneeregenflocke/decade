@@ -124,7 +124,7 @@ class Shape : public Drawable {
 
   // Recorded by each concrete shape when its geometry is set. Used for spatial
   // queries (the scene-tree selection highlight) without exposing the buffers.
-  [[nodiscard]] const rectf& LocalBounds() const override {
+  [[nodiscard]] const RectF& LocalBounds() const override {
     return local_bounds_;
   }
 
@@ -133,7 +133,7 @@ class Shape : public Drawable {
   [[nodiscard]] Shader& GetShader() const { return shader_; }
   [[nodiscard]] VertexArrayObject& VaoRef() { return vao_; }
   [[nodiscard]] const VertexArrayObject& VaoRef() const { return vao_; }
-  void SetLocalBounds(const rectf& bounds) { local_bounds_ = bounds; }
+  void SetLocalBounds(const RectF& bounds) { local_bounds_ = bounds; }
 
  private:
   void SetUpBuffers() {
@@ -175,7 +175,7 @@ class Shape : public Drawable {
   VertexArrayObject vao_;
   std::vector<VertexBufferObject> vbos_;
   std::vector<ShaderInfo> attributes_infos_;
-  rectf local_bounds_;
+  RectF local_bounds_;
 };
 
 #endif  // SHAPES_BASE_HPP

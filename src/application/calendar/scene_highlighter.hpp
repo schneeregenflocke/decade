@@ -97,7 +97,7 @@ class SceneHighlighter {
     if (shape == nullptr) {
       return;
     }
-    std::optional<rectf> bounds;
+    std::optional<RectF> bounds;
     if (selected_path_.has_value()) {
       bounds = NodeWorldBounds(*selected_path_);
     }
@@ -106,14 +106,14 @@ class SceneHighlighter {
       shape->SetColor(glm::vec4(kSelectionRed, kSelectionGreen, kSelectionBlue,
                                 kSelectionAlpha));
     } else {
-      shape->SetShape(rectf(kZero, kZero, kZero, kZero));
+      shape->SetShape(RectF(kZero, kZero, kZero, kZero));
     }
   }
 
   // Resolves a "root/.../name" path to the world-space bounds of that node's
   // subtree (page space, matching the bars' pick boxes). Returns nullopt when
   // any path segment does not resolve or the subtree carries no geometry.
-  [[nodiscard]] std::optional<rectf> NodeWorldBounds(
+  [[nodiscard]] std::optional<RectF> NodeWorldBounds(
       const std::string& path) const {
     std::vector<std::string> segments;
     std::size_t start = 0;

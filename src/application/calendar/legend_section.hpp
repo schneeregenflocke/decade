@@ -26,7 +26,7 @@ inline void BuildLegend(const SectionContext& ctx) {
   node_text->RemoveChildren();
 
   const size_t number_entry_frames = (ctx.date_groups.Items().size() + 1) * 2;
-  std::vector<rectf> legend_entries_frames(number_entry_frames);
+  std::vector<RectF> legend_entries_frames(number_entry_frames);
   const auto entries_width = ctx.layout.LegendFrame().Width() /
                              static_cast<float>(number_entry_frames);
 
@@ -39,7 +39,7 @@ inline void BuildLegend(const SectionContext& ctx) {
     legend_entries_frames.at(index).SetRight(left + entries_width);
   }
 
-  std::vector<rectf> bar_cells;
+  std::vector<RectF> bar_cells;
 
   auto print_strings = ctx.date_groups.GetDateGroupsNames();
   print_strings.emplace_back("Annual Sums");

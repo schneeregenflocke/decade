@@ -22,7 +22,7 @@ class CalendarLayout {
  public:
   CalendarLayout() = default;
 
-  CalendarLayout(const rectf& page_size, const rectf& page_margin,
+  CalendarLayout(const RectF& page_size, const RectF& page_margin,
                  float title_frame_height, std::size_t span_length_years,
                  const std::vector<float>& spacing_proportions)
       : fields_(Compute(page_size, page_margin, title_frame_height,
@@ -31,19 +31,19 @@ class CalendarLayout {
   [[nodiscard]] const glm::vec3& PrintAreaOrigin() const {
     return fields_.print_area_origin;
   }
-  [[nodiscard]] const rectf& PrintArea() const { return fields_.print_area; }
-  [[nodiscard]] const rectf& TitleFrame() const { return fields_.title_frame; }
-  [[nodiscard]] const rectf& CalendarFrame() const {
+  [[nodiscard]] const RectF& PrintArea() const { return fields_.print_area; }
+  [[nodiscard]] const RectF& TitleFrame() const { return fields_.title_frame; }
+  [[nodiscard]] const RectF& CalendarFrame() const {
     return fields_.calendar_frame;
   }
-  [[nodiscard]] const rectf& CellsFrame() const { return fields_.cells_frame; }
-  [[nodiscard]] const rectf& XLabelsFrame() const {
+  [[nodiscard]] const RectF& CellsFrame() const { return fields_.cells_frame; }
+  [[nodiscard]] const RectF& XLabelsFrame() const {
     return fields_.x_labels_frame;
   }
-  [[nodiscard]] const rectf& YLabelsFrame() const {
+  [[nodiscard]] const RectF& YLabelsFrame() const {
     return fields_.y_labels_frame;
   }
-  [[nodiscard]] const rectf& LegendFrame() const {
+  [[nodiscard]] const RectF& LegendFrame() const {
     return fields_.legend_frame;
   }
   [[nodiscard]] float CellWidth() const { return fields_.cell_width; }
@@ -51,7 +51,7 @@ class CalendarLayout {
   [[nodiscard]] float DayWidth() const { return fields_.day_width; }
 
   // Sub-frame of the given row/sub band from the proportional row layout.
-  [[nodiscard]] rectf GetSubFrame(std::size_t row, std::size_t sub) const {
+  [[nodiscard]] RectF GetSubFrame(std::size_t row, std::size_t sub) const {
     return fields_.proportions.GetSubFrame(row, sub);
   }
 
@@ -68,19 +68,19 @@ class CalendarLayout {
   struct Fields {
     ProportionFrameLayout proportions;
     glm::vec3 print_area_origin{0.0F};
-    rectf print_area;
-    rectf title_frame;
-    rectf calendar_frame;
-    rectf cells_frame;
-    rectf x_labels_frame;
-    rectf y_labels_frame;
-    rectf legend_frame;
+    RectF print_area;
+    RectF title_frame;
+    RectF calendar_frame;
+    RectF cells_frame;
+    RectF x_labels_frame;
+    RectF y_labels_frame;
+    RectF legend_frame;
     float cell_width{0.0F};
     float row_height{0.0F};
     float day_width{0.0F};
   };
 
-  static Fields Compute(const rectf& page_size, const rectf& page_margin,
+  static Fields Compute(const RectF& page_size, const RectF& page_margin,
                         float title_frame_height, std::size_t span_length_years,
                         const std::vector<float>& spacing_proportions) {
     Fields fields;
@@ -96,18 +96,18 @@ class CalendarLayout {
     fields.title_frame = fields.print_area;
     fields.title_frame.SetBottom(fields.title_frame.Top() - title_frame_height);
 
-    rectf page_margin_frame = fields.print_area;
+    RectF page_margin_frame = fields.print_area;
     page_margin_frame.SetTop(fields.title_frame.Bottom());
 
     fields.calendar_frame =
-        page_margin_frame.Reduce(rectf(kZero, kDefaultMargin, kZero, kZero));
+        page_margin_frame.Reduce(RectF(kZero, kDefaultMargin, kZero, kZero));
 
     const std::size_t number_rows = kAdditionalRows + span_length_years;
     fields.cell_width = fields.calendar_frame.Width() / kCalendarColumns;
     fields.row_height =
         fields.calendar_frame.Height() / static_cast<float>(number_rows);
 
-    fields.cells_frame = fields.calendar_frame.Reduce(rectf(
+    fields.cells_frame = fields.calendar_frame.Reduce(RectF(
         fields.cell_width, kZero, fields.row_height * kRowHeaderScale, kZero));
 
     fields.proportions.SetupRowFrames(fields.cells_frame, span_length_years);
@@ -116,13 +116,13 @@ class CalendarLayout {
     fields.day_width = fields.cells_frame.Width() / kDaysPerYear;
 
     fields.x_labels_frame = fields.calendar_frame.Reduce(
-        rectf(fields.cell_width, kZero, fields.row_height,
+        RectF(fields.cell_width, kZero, fields.row_height,
               fields.cells_frame.Height()));
     fields.y_labels_frame = fields.calendar_frame.Reduce(
-        rectf(kZero, fields.cells_frame.Width(),
+        RectF(kZero, fields.cells_frame.Width(),
               fields.row_height * kRowHeaderScale, kZero));
     fields.legend_frame = fields.calendar_frame.Reduce(
-        rectf(fields.cell_width, kZero, kZero,
+        RectF(fields.cell_width, kZero, kZero,
               fields.cells_frame.Height() + fields.row_height));
 
     return fields;

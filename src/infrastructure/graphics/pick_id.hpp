@@ -37,7 +37,7 @@ struct PickId {
 // collision geometry. Lives here so neither side depends on the other.
 struct PickBox {
   PickId id;
-  rectf rect;
+  RectF rect;
 };
 
 #endif  // PICK_ID_HPP

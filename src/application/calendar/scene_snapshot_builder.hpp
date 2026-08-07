@@ -34,7 +34,7 @@
   return SnapshotShapeKind::kNone;
 }
 
-[[nodiscard]] inline SnapshotBounds ToSnapshotBounds(const rectf& bounds) {
+[[nodiscard]] inline SnapshotBounds ToSnapshotBounds(const RectF& bounds) {
   return SnapshotBounds{.left = bounds.Left(),
                         .right = bounds.Right(),
                         .bottom = bounds.Bottom(),
@@ -44,7 +44,7 @@
 // The node's own box in page coordinates. All four corners get transformed and
 // re-enclosed, so the box holds even when a transformation scales differently
 // per axis.
-[[nodiscard]] inline SnapshotBounds ToWorldBounds(const rectf& local,
+[[nodiscard]] inline SnapshotBounds ToWorldBounds(const RectF& local,
                                                   const glm::mat4& world) {
   const std::array<glm::vec4, 4> corners = {
       glm::vec4(local.Left(), local.Bottom(), 0.0F, 1.0F),
@@ -90,7 +90,7 @@ inline void FillSnapshotValues(SceneNodeValues& destination,
   destination.draw_layer = source.GetDrawLayer();
   destination.text_detail = TextDetailOf(shape);
   if (shape != nullptr) {
-    const rectf& local = shape->LocalBounds();
+    const RectF& local = shape->LocalBounds();
     destination.local_bounds = ToSnapshotBounds(local);
     destination.world_bounds = ToWorldBounds(local, world);
   }

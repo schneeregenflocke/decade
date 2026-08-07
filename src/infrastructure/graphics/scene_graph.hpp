@@ -72,7 +72,7 @@ class SceneNode {
   // the accumulated parent world transform. Returns nullopt when no descendant
   // carries geometry. Mirrors Draw()'s transform accumulation; only shapes with
   // a non-empty local box contribute.
-  [[nodiscard]] std::optional<rectf> WorldBounds(
+  [[nodiscard]] std::optional<RectF> WorldBounds(
       const glm::mat4& parent_world = glm::mat4(1.0F)) const {
     float min_x = std::numeric_limits<float>::max();
     float min_y = std::numeric_limits<float>::max();
@@ -91,7 +91,7 @@ class SceneNode {
       const Entry current = stack.back();
       stack.pop_back();
       if (current.node->shape_ != nullptr) {
-        const rectf& bounds = current.node->shape_->LocalBounds();
+        const RectF& bounds = current.node->shape_->LocalBounds();
         if (bounds.Width() > 0.0F || bounds.Height() > 0.0F) {
           const std::array<glm::vec4, 4> corners = {
               glm::vec4(bounds.Left(), bounds.Bottom(), 0.0F, 1.0F),
@@ -117,7 +117,7 @@ class SceneNode {
     if (!found) {
       return std::nullopt;
     }
-    return rectf(min_x, max_x, min_y, max_y);
+    return RectF(min_x, max_x, min_y, max_y);
   }
 
   // Local transform of this node, relative to its parent. Draw() composes it

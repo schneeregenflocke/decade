@@ -10,8 +10,8 @@ namespace {
 
 std::vector<PickBox> TwoBoxes() {
   return {
-      {PickId{PickId::Kind::kBar, 0}, rectf(0.0F, 10.0F, 0.0F, 10.0F)},
-      {PickId{PickId::Kind::kBar, 1}, rectf(20.0F, 30.0F, 0.0F, 10.0F)},
+      {PickId{PickId::Kind::kBar, 0}, RectF(0.0F, 10.0F, 0.0F, 10.0F)},
+      {PickId{PickId::Kind::kBar, 1}, RectF(20.0F, 30.0F, 0.0F, 10.0F)},
   };
 }
 
@@ -47,7 +47,7 @@ TEST(PhysicsWorldTest, RebuildReplacesPreviousBoxes) {
   EXPECT_FALSE(world.Raycast(glm::vec2(5.0F, 5.0F)).has_value());
 
   world.Rebuild(
-      {{PickId{PickId::Kind::kBar, 7}, rectf(0.0F, 4.0F, 0.0F, 4.0F)}});
+      {{PickId{PickId::Kind::kBar, 7}, RectF(0.0F, 4.0F, 0.0F, 4.0F)}});
   const auto hit = world.Raycast(glm::vec2(2.0F, 2.0F));
   ASSERT_TRUE(hit.has_value());
   EXPECT_EQ(hit->index, 7U);

@@ -21,7 +21,7 @@
 namespace scene_shapes {
 
 // Fills the RectanglesShape carried by `node` with the given rectangle(s) (a
-// single rectf or a vector of them — RectanglesShape::SetShape is overloaded)
+// single RectF or a vector of them — RectanglesShape::SetShape is overloaded)
 // and the outline/fill colours. A no-op if the node carries no RectanglesShape.
 template <typename Shapes>
 inline void FillRectangles(const std::shared_ptr<SceneNode>& node,

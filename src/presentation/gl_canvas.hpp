@@ -257,7 +257,7 @@ class GLCanvas : public wxGLCanvas, public application::RenderSurface {
 
   void UpdateProjection() {
     constexpr float kViewSizeScale = 1.1F;
-    const rectf view_size = page_size_.Scale(kViewSizeScale);
+    const RectF view_size = page_size_.Scale(kViewSizeScale);
 
     mvp_.SetProjection(Projection::OrthoMatrix(view_size));
     camera_.SetScaleLimits(ComputeZoomLimits(
@@ -513,7 +513,7 @@ class GLCanvas : public wxGLCanvas, public application::RenderSurface {
 
   MouseInteraction mouse_interaction_;
   PanZoomCamera camera_;
-  rectf page_size_;
+  RectF page_size_;
   MVP mvp_;
 
   FrameStats frame_stats_;

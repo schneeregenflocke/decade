@@ -33,7 +33,7 @@ class Projection {
     return AspectRatioOf(viewport[2], viewport[3]);
   }
 
-  static glm::mat4 OrthoMatrix(const rectf& view_size) {
+  static glm::mat4 OrthoMatrix(const RectF& view_size) {
     const auto page_height_ratio = view_size.Width() / view_size.Height();
     const auto viewport_height_ratio = AspectRatio();
 

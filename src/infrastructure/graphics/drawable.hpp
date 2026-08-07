@@ -33,7 +33,7 @@ class Drawable {
 
   // The axis-aligned box of the geometry in the drawable's own space. A
   // drawable without geometry reports a zero-extent box.
-  [[nodiscard]] virtual const rectf& LocalBounds() const = 0;
+  [[nodiscard]] virtual const RectF& LocalBounds() const = 0;
 
  protected:
   Drawable() = default;

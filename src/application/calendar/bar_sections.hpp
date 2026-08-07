@@ -81,7 +81,7 @@ namespace calendar_sections {
     result.pick_boxes.push_back(PickBox{
         .id = pick_id,
         .rect =
-            rectf(bar_left + ctx.layout.PrintAreaOrigin().x,
+            RectF(bar_left + ctx.layout.PrintAreaOrigin().x,
                   bar_left + bar_width + ctx.layout.PrintAreaOrigin().x,
                   current_sub_cell.Bottom() + ctx.layout.PrintAreaOrigin().y,
                   current_sub_cell.Bottom() + bar_height +
@@ -89,7 +89,7 @@ namespace calendar_sections {
 
     auto bar_shape = std::make_unique<RectanglesShape>(ctx.rectangles_shader);
     bar_shape->SetShape(
-        rectf(detail::kZero, bar_width, detail::kZero, bar_height),
+        RectF(detail::kZero, bar_width, detail::kZero, bar_height),
         current_shape_config.LineWidth());
     bar_shape->SetColors(current_shape_config.OutlineColor(),
                          current_shape_config.FillColor());
@@ -121,7 +121,7 @@ inline void BuildYearTotals(const SectionContext& ctx) {
   }
 
   const TimelineProjection projection(ctx.calendar_config);
-  std::vector<rectf> year_totals_cells(span_years);
+  std::vector<RectF> year_totals_cells(span_years);
 
   for (std::size_t index = 0; index < span_years; ++index) {
     const int current_year =
@@ -130,7 +130,7 @@ inline void BuildYearTotals(const SectionContext& ctx) {
       const auto row = projection.RowForYear(current_year);
       const auto current_cell = ctx.layout.GetSubFrame(row, 0);
 
-      rectf year_total_cell = current_cell;
+      RectF year_total_cell = current_cell;
       const auto year_total_width =
           static_cast<float>(ctx.date_entry_bars.GetAnnualTotal(index)) *
           ctx.layout.DayWidth();
@@ -150,7 +150,7 @@ inline void BuildYearTotals(const SectionContext& ctx) {
       const auto year_total_text_width =
           ctx.font->TextWidth(year_total_text, year_total_cell.Height());
 
-      rectf year_total_text_cell;
+      RectF year_total_text_cell;
       year_total_text_cell.SetLeft(year_total_cell.Right() +
                                    current_cell.Height());
       year_total_text_cell.SetRight(year_total_text_cell.Left() +

@@ -25,7 +25,7 @@ namespace {
 // order, so the draw sequence becomes observable.
 class RecordingDrawable : public Drawable {
  public:
-  RecordingDrawable(std::string name, const rectf& bounds,
+  RecordingDrawable(std::string name, const RectF& bounds,
                     std::vector<std::string>& log)
       : name_(std::move(name)), bounds_(bounds), log_(log) {}
 
@@ -33,17 +33,17 @@ class RecordingDrawable : public Drawable {
     log_.push_back(name_ + "@" + std::to_string(static_cast<int>(model[3][0])));
   }
 
-  [[nodiscard]] const rectf& LocalBounds() const override { return bounds_; }
+  [[nodiscard]] const RectF& LocalBounds() const override { return bounds_; }
 
  private:
   std::string name_;
-  rectf bounds_;
+  RectF bounds_;
   std::vector<std::string>& log_;
 };
 
 std::shared_ptr<SceneNode> MakeNode(const std::string& name,
                                     std::vector<std::string>& log,
-                                    const rectf& bounds = rectf(0.0F, 1.0F,
+                                    const RectF& bounds = RectF(0.0F, 1.0F,
                                                                 0.0F, 1.0F)) {
   return std::make_shared<SceneNode>(
       name, std::make_unique<RecordingDrawable>(name, bounds, log));
@@ -149,8 +149,8 @@ TEST(SceneNodeCharacterisation, TransformsAccumulateAlongTheChain) {
 TEST(SceneNodeCharacterisation, WorldBoundsSpanTheWholeSubtree) {
   std::vector<std::string> log;
   SceneNode root("root");
-  root.AddChild(MakeNode("left", log, rectf(0.0F, 2.0F, 0.0F, 2.0F)));
-  auto shifted = MakeNode("right", log, rectf(0.0F, 2.0F, 0.0F, 2.0F));
+  root.AddChild(MakeNode("left", log, RectF(0.0F, 2.0F, 0.0F, 2.0F)));
+  auto shifted = MakeNode("right", log, RectF(0.0F, 2.0F, 0.0F, 2.0F));
   shifted->SetModelMatrix(ShiftedBy(10.0F));
   root.AddChild(shifted);
 
@@ -168,7 +168,7 @@ TEST(SceneNodeCharacterisation, WorldBoundsSpanTheWholeSubtree) {
 TEST(SceneNodeCharacterisation, EmptyBoxesContributeNoBounds) {
   std::vector<std::string> log;
   SceneNode root("root");
-  root.AddChild(MakeNode("flat", log, rectf(0.0F, 0.0F, 0.0F, 0.0F)));
+  root.AddChild(MakeNode("flat", log, RectF(0.0F, 0.0F, 0.0F, 0.0F)));
 
   EXPECT_FALSE(root.WorldBounds().has_value());
 }

@@ -145,8 +145,8 @@ class CalendarPage {
 
   FontConfig font_config_;
   std::shared_ptr<Font> font_;
-  rectf page_size_;
-  rectf page_margin_;
+  RectF page_size_;
+  RectF page_margin_;
 
   DateEntryBars date_entry_bars_;
   DateGroups date_groups_;

@@ -11,9 +11,9 @@ namespace {
 // swapped axis would be caught, plus a 3-year span and a 7-entry proportion set
 // (gap/sub/gap/sub/gap/sub/gap -> 3 sub-frames per row).
 CalendarLayout MakeLayout() {
-  const rectf page =
-      rectf::FromDimension(rectf::Dimension{.width = 200.0F, .height = 300.0F});
-  const rectf margin(10.0F, 20.0F, 30.0F, 40.0F);
+  const RectF page =
+      RectF::FromDimension(RectF::Dimension{.width = 200.0F, .height = 300.0F});
+  const RectF margin(10.0F, 20.0F, 30.0F, 40.0F);
   const std::vector<float> proportions(7, 1.0F);
   return CalendarLayout(page, margin, /*title_frame_height=*/15.0F,
                         /*span_length_years=*/3, proportions);
@@ -68,7 +68,7 @@ TEST(CalendarLayoutTest, CellAndRowAndDayMetrics) {
 TEST(CalendarLayoutTest, SubFrameAlignsHorizontallyWithCellsFrame) {
   const CalendarLayout layout = MakeLayout();
 
-  const rectf sub = layout.GetSubFrame(0, 1);
+  const RectF sub = layout.GetSubFrame(0, 1);
   EXPECT_NEAR(sub.Left(), layout.CellsFrame().Left(), kTol);
   EXPECT_NEAR(sub.Right(), layout.CellsFrame().Right(), kTol);
   // The sub-frame lies within the cells frame vertically.

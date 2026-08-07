@@ -38,7 +38,7 @@
 // blend them twice, which is exactly what we avoid.
 struct ImageTile {
   std::array<GLsizei, 2> pixel_dimensions{0, 0};  // {width, height} in pixels
-  rectf ortho_region;                             // world-space slice it maps
+  RectF ortho_region;                             // world-space slice it maps
   std::vector<unsigned char> pixels;              // rendered RGBA bytes
 };
 
@@ -53,7 +53,7 @@ struct ImageSize {
 // column/row, which hold the leftover ("remainder") pixels.
 class ImageComposer {
  public:
-  ImageComposer(ImageSize image_size, const rectf& ortho_region_in,
+  ImageComposer(ImageSize image_size, const RectF& ortho_region_in,
                 GraphicsEngine& graphics_engine_in, int msaa_samples_in)
       : width_(image_size.width),
         height_(image_size.height),
@@ -141,7 +141,7 @@ class ImageComposer {
         const auto column_float = static_cast<float>(column);
         const auto row_float = static_cast<float>(row);
 
-        rectf tile_region;
+        RectF tile_region;
 
         if ((column == tile_columns_ - 1) && width_has_remainder) {
           tile_pixel_width = static_cast<GLsizei>(width_remainder_);
@@ -259,7 +259,7 @@ class ImageComposer {
   size_t width_{0};
   size_t height_{0};
 
-  rectf ortho_region_;
+  RectF ortho_region_;
 
   std::vector<ImageTile> tiles_;
   size_t tile_columns_{0};
@@ -312,7 +312,7 @@ namespace render_to_png_detail {
 // render it in tiles and png_io write it. It does nothing when the image size
 // bursts the PNG limits.
 inline void WritePageToPng(const std::string& file_path,
-                           const rectf& ortho_region, float dpi,
+                           const RectF& ortho_region, float dpi,
                            GraphicsEngine& graphics_engine, int msaa_samples) {
   const float dots_per_millimeter =
       render_to_png_detail::DotsPerInchToDotsPerMillimeter(dpi);

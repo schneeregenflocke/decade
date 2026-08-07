@@ -45,7 +45,7 @@ class CalendarSceneComposer {
   CalendarSceneComposer(GraphicsEngine& graphics_engine_in, Scene& scene_in,
                         const std::shared_ptr<Font>& font_in,
                         const FontConfig& font_config_in,
-                        const rectf& page_size_in, const rectf& page_margin_in,
+                        const RectF& page_size_in, const RectF& page_margin_in,
                         const TitleConfig& title_config_in,
                         CalendarConfig& calendar_config_in,
                         const ShapeConfigSet& shape_config_in,
@@ -224,8 +224,8 @@ class CalendarSceneComposer {
   // alive and stable for the builder's lifetime; only their contents change.
   const std::shared_ptr<Font>& font_;
   const FontConfig& font_config_;
-  const rectf& page_size_;
-  const rectf& page_margin_;
+  const RectF& page_size_;
+  const RectF& page_margin_;
   const TitleConfig& title_config_;
   CalendarConfig& calendar_config_;
   const ShapeConfigSet& shape_config_;

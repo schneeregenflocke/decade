@@ -9,7 +9,7 @@
 
 class ProportionFrameLayout {
  public:
-  void SetupRowFrames(const rectf& frame, const size_t number_rows) {
+  void SetupRowFrames(const RectF& frame, const size_t number_rows) {
     row_frames_.resize(number_rows);
 
     const auto row_height = frame.Height() / static_cast<float>(number_rows);
@@ -17,7 +17,7 @@ class ProportionFrameLayout {
     for (size_t index = 0; index < row_frames_.size(); ++index) {
       const auto float_index = static_cast<float>(index);
       const auto current_bottom = frame.Bottom() + (float_index * row_height);
-      row_frames_.at(index) = rectf(frame.Left(), frame.Right(), current_bottom,
+      row_frames_.at(index) = RectF(frame.Left(), frame.Right(), current_bottom,
                                     current_bottom + row_height);
     }
   }
@@ -60,7 +60,7 @@ class ProportionFrameLayout {
     }
   }
 
-  [[nodiscard]] rectf GetSubFrame(const size_t row, const size_t sub) const {
+  [[nodiscard]] RectF GetSubFrame(const size_t row, const size_t sub) const {
     return sub_frames_.at((number_sub_frames_per_row_ * row) + sub);
   }
 
@@ -80,8 +80,8 @@ class ProportionFrameLayout {
     return sections;
   }
 
-  std::vector<rectf> row_frames_;
-  std::vector<rectf> sub_frames_;
+  std::vector<RectF> row_frames_;
+  std::vector<RectF> sub_frames_;
   size_t number_sub_frames_per_row_{0};
 };
 #endif  // FRAME_LAYOUT_HPP
