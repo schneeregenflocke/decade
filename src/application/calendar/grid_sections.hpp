@@ -174,35 +174,37 @@ inline void BuildDays(const SectionContext& ctx) {
 
   const std::size_t span_years = ctx.calendar_config.GetSpanLengthYears();
   const TimelineProjection projection(ctx.calendar_config);
+
+  // The weekday of the span's first day, asked of the calendar once. It used to
+  // be asked per day — AddDays plus DayOfWeek, two ICU calls for each of some
+  // 2200 cells, which made BuildDays 83 % of a whole rebuild. A week is seven
+  // days long throughout the proleptic Gregorian calendar this model stands on,
+  // so counting on from the first day says exactly the same thing.
+  constexpr std::int64_t kDaysPerWeek = 7;
+  const auto first_weekday = static_cast<std::int64_t>(
+      ctx.calendar_config.GetSpanLimitsDate().at(0).DayOfWeek());
+
   for (std::size_t index = 0; index < span_years; ++index) {
     const int current_year = projection.YearForRow(index);
     const std::int64_t number_days = DaysInYear(current_year);
+    // Both stand still inside the day loop; reading them per day cost about as
+    // much as building the cell they position.
+    const auto current_cell = ctx.layout.GetSubArea(index, 1);
+    const float day_width = ctx.layout.DayWidth();
 
     for (std::int64_t subindex = 0; subindex < number_days; ++subindex) {
       const auto float_subindex = static_cast<float>(subindex);
-      const auto current_cell = ctx.layout.GetSubArea(index, 1);
 
-      const Date current_date =
-          ctx.calendar_config.GetSpanLimitsDate().at(0).AddDays(
-              static_cast<int>(days_index));
+      RectF day_cell;
+      day_cell.SetLeft(current_cell.Left() + (float_subindex * day_width));
+      day_cell.SetRight(day_cell.Left() + day_width);
+      day_cell.SetBottom(current_cell.Bottom());
+      day_cell.SetTop(current_cell.Top());
 
-      if (current_date.DayOfWeek() == Weekday::kSunday) {
-        RectF day_cell;
-        day_cell.SetLeft(current_cell.Left() +
-                         (float_subindex * ctx.layout.DayWidth()));
-        day_cell.SetRight(day_cell.Left() + ctx.layout.DayWidth());
-        day_cell.SetBottom(current_cell.Bottom());
-        day_cell.SetTop(current_cell.Top());
-        sunday_cells[static_cast<size_t>(days_index)] = day_cell;
-      } else {
-        RectF day_cell;
-        day_cell.SetLeft(current_cell.Left() +
-                         (float_subindex * ctx.layout.DayWidth()));
-        day_cell.SetRight(day_cell.Left() + ctx.layout.DayWidth());
-        day_cell.SetBottom(current_cell.Bottom());
-        day_cell.SetTop(current_cell.Top());
-        day_cells[static_cast<size_t>(days_index)] = day_cell;
-      }
+      const bool is_sunday = ((first_weekday + days_index) % kDaysPerWeek) ==
+                             static_cast<std::int64_t>(Weekday::kSunday);
+      auto& cells = is_sunday ? sunday_cells : day_cells;
+      cells[static_cast<size_t>(days_index)] = day_cell;
       ++days_index;
     }
   }

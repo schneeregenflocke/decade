@@ -75,8 +75,8 @@ class ShapeChildPool {
 
   [[nodiscard]] Child Next(const std::string& name) {
     if (used_ == parent_->GetChildren().size()) {
-      parent_->AddChild(std::make_shared<SceneNode>(
-          name, std::make_unique<ShapeT>(shader_)));
+      parent_->AddChild(
+          std::make_shared<SceneNode>(name, std::make_unique<ShapeT>(shader_)));
     }
     const std::shared_ptr<SceneNode>& child = parent_->GetChildren()[used_];
     ++used_;
