@@ -21,6 +21,8 @@
 #include "../../infrastructure/graphics/scene_graph.hpp"
 #include "../../infrastructure/graphics/scene_shape_filler.hpp"
 #include "../../infrastructure/graphics/shaders.hpp"
+#include "../../infrastructure/graphics/shape_node.hpp"
+#include "../../infrastructure/graphics/shapes.hpp"
 #include "calendar_layout.hpp"
 #include "calendar_scene_nodes.hpp"
 
@@ -67,12 +69,12 @@ inline constexpr std::size_t kMonthNameBufferSize = 100;
 // ShapeConfiguration onto the general primitives and notes the style ID at
 // which the scene tree shows the values of the configuration.
 template <typename Shapes>
-inline void FillRectangles(const std::shared_ptr<SceneNode>& node,
+inline void FillRectangles(const ShapeNode<BoxesShape>& node,
                            const Shapes& shapes,
                            const ShapeConfiguration& config) {
   scene_shapes::FillRectangles(node, shapes, config.OutlineColor(),
                                config.FillColor(), config.LineWidth());
-  node->SetStyleId(config.Name());
+  node.Node()->SetStyleId(config.Name());
 }
 
 // Adapter over scene_shapes::AddCenteredText supplying the text draw layer.

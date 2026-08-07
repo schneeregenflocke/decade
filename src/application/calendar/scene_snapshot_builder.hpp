@@ -16,20 +16,23 @@
 #include "../../infrastructure/graphics/scene_graph.hpp"
 #include "../../infrastructure/graphics/shapes.hpp"
 
-// Classifies the shape carried by a node into the GL-free SnapshotShapeKind, so
-// the read model can describe it without exposing the OpenGL shape types.
+// Translates what the drawable says it is into the GL-free SnapshotShapeKind,
+// so the read model can describe it without exposing the OpenGL shape types.
+// Two enums for one thing on purpose: the infrastructure names its own kinds,
+// the read model belongs to the domain, and neither has to include the other.
 [[nodiscard]] inline SnapshotShapeKind ClassifyShape(const Drawable* shape) {
   if (shape == nullptr) {
     return SnapshotShapeKind::kNone;
   }
-  if (dynamic_cast<const FillShape*>(shape) != nullptr) {
-    return SnapshotShapeKind::kFill;
-  }
-  if (dynamic_cast<const BoxesShape*>(shape) != nullptr) {
-    return SnapshotShapeKind::kBoxes;
-  }
-  if (dynamic_cast<const FontShape*>(shape) != nullptr) {
-    return SnapshotShapeKind::kFont;
+  switch (shape->Kind()) {
+    case DrawableKind::kFill:
+      return SnapshotShapeKind::kFill;
+    case DrawableKind::kBoxes:
+      return SnapshotShapeKind::kBoxes;
+    case DrawableKind::kText:
+      return SnapshotShapeKind::kFont;
+    case DrawableKind::kNone:
+      break;
   }
   return SnapshotShapeKind::kNone;
 }
@@ -65,15 +68,16 @@
   return bounds;
 }
 
-// The text of a font node; empty for every other shape.
+// The text of a font node; empty for every other shape. The kind decides, and
+// the cast then follows from it rather than testing for it.
 [[nodiscard]] inline std::optional<SnapshotTextDetail> TextDetailOf(
     const Drawable* shape) {
-  const auto* font_shape = dynamic_cast<const FontShape*>(shape);
-  if (font_shape == nullptr) {
+  if (shape == nullptr || shape->Kind() != DrawableKind::kText) {
     return std::nullopt;
   }
-  return SnapshotTextDetail{.text = font_shape->Text(),
-                            .size_millimetres = font_shape->FontSize()};
+  const auto& font_shape = static_cast<const FontShape&>(*shape);
+  return SnapshotTextDetail{.text = font_shape.Text(),
+                            .size_millimetres = font_shape.FontSize()};
 }
 
 // Fills a node's own values (everything but the children) from a scene node.

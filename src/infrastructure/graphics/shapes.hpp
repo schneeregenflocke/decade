@@ -21,6 +21,10 @@ class FillShape : public Shape {
  public:
   explicit FillShape(Shader& shader_in) : Shape(shader_in) {}
 
+  [[nodiscard]] DrawableKind Kind() const override {
+    return DrawableKind::kFill;
+  }
+
   void SetShape(const RectF& rectangle) {
     std::vector<glm::vec3> vertices(kVerticesPerQuad);
 
@@ -59,6 +63,10 @@ class FillShape : public Shape {
 class BoxesShape : public Shape {
  public:
   explicit BoxesShape(Shader& shader_in) : Shape(shader_in) {}
+
+  [[nodiscard]] DrawableKind Kind() const override {
+    return DrawableKind::kBoxes;
+  }
 
   void SetShape(const std::vector<RectF>& rectangles, float line_width) {
     vertices_.resize(rectangles.size() * kVerticesPerRectangle);

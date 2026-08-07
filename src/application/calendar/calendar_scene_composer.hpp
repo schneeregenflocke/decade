@@ -75,12 +75,9 @@ class CalendarSceneComposer {
   }
 
   void Build() {
-    auto* shape = dynamic_cast<FillShape*>(nodes_.page->GetShape());
-    if (shape == nullptr) {
-      return;
-    }
-    shape->SetShape(page_size_);
-    shape->SetColor(glm::vec4(kOne, kOne, kOne, kOne));
+    FillShape& page_shape = nodes_.page.Shape();
+    page_shape.SetShape(page_size_);
+    page_shape.SetColor(glm::vec4(kOne, kOne, kOne, kOne));
 
     // The auto span derives the calendar's year range from the data; it must
     // run before the layout, which sizes the rows from the span length.
@@ -99,7 +96,7 @@ class CalendarSceneComposer {
     // every descendant is computed in print-area-local coordinates (origin at
     // the print area's bottom-left). The page rectangle itself stays in
     // absolute page space on the untransformed page node above.
-    nodes_.print_area->SetModelMatrix(
+    nodes_.print_area.Node()->SetModelMatrix(
         glm::translate(glm::mat4(1.0F), layout_.PrintAreaOrigin()));
 
     const calendar_sections::SectionContext ctx = MakeContext();

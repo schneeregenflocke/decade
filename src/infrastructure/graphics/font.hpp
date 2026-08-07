@@ -271,6 +271,10 @@ class FontShape : public Shape {
  public:
   explicit FontShape(Shader& shader_in) : Shape(shader_in) {}
 
+  [[nodiscard]] DrawableKind Kind() const override {
+    return DrawableKind::kText;
+  }
+
   void SetFont(std::shared_ptr<Font> font_ptr) { font_ = std::move(font_ptr); }
 
   void SetColor(const glm::vec4& new_color) { color_ = new_color; }

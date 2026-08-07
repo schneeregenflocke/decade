@@ -53,18 +53,13 @@ struct TextLine {
 // is editing.
 inline void FillCaretAndSelection(const SectionContext& ctx,
                                   const TextLine& line) {
-  auto* caret_shape =
-      dynamic_cast<FillShape*>(ctx.nodes.title_caret->GetShape());
-  auto* selection_shape =
-      dynamic_cast<FillShape*>(ctx.nodes.title_selection->GetShape());
-  if (caret_shape == nullptr || selection_shape == nullptr) {
-    return;
-  }
+  FillShape& caret_shape = ctx.nodes.title_caret.Shape();
+  FillShape& selection_shape = ctx.nodes.title_selection.Shape();
   const RectF hidden(detail::kZero, detail::kZero, detail::kZero,
                      detail::kZero);
   if (!ctx.text_edit.has_value()) {
-    caret_shape->SetShape(hidden);
-    selection_shape->SetShape(hidden);
+    caret_shape.SetShape(hidden);
+    selection_shape.SetShape(hidden);
     return;
   }
 
@@ -79,17 +74,17 @@ inline void FillCaretAndSelection(const SectionContext& ctx,
 
   const float caret_x = offset(ctx.text_edit->caret);
   const float caret_width = line.font_size * kCaretWidthRatio;
-  caret_shape->SetShape(RectF(caret_x, caret_x + caret_width, bottom, top));
-  caret_shape->SetColor(ctx.title_config.TextColor());
+  caret_shape.SetShape(RectF(caret_x, caret_x + caret_width, bottom, top));
+  caret_shape.SetColor(ctx.title_config.TextColor());
 
   if (HasSelection(*ctx.text_edit)) {
-    selection_shape->SetShape(RectF(offset(ctx.text_edit->selection_begin),
-                                    offset(ctx.text_edit->selection_end),
-                                    bottom, top));
-    selection_shape->SetColor(glm::vec4(kSelectionRed, kSelectionGreen,
-                                        kSelectionBlue, kSelectionAlpha));
+    selection_shape.SetShape(RectF(offset(ctx.text_edit->selection_begin),
+                                   offset(ctx.text_edit->selection_end), bottom,
+                                   top));
+    selection_shape.SetColor(glm::vec4(kSelectionRed, kSelectionGreen,
+                                       kSelectionBlue, kSelectionAlpha));
   } else {
-    selection_shape->SetShape(hidden);
+    selection_shape.SetShape(hidden);
   }
 }
 
@@ -124,13 +119,11 @@ inline void BuildPrintArea(const SectionContext& ctx) {
       ctx.shape_config.GetShapeConfiguration(ShapeConfigSet::kTitleFrame));
 
   const title_edit::TextLine line = title_edit::Layout(ctx);
-  if (auto* title_shape =
-          dynamic_cast<FontShape*>(ctx.nodes.title_text->GetShape())) {
-    title_shape->SetFont(ctx.font);
-    title_shape->SetColor(ctx.title_config.TextColor());
-    title_shape->SetShapeCentered(line.text, ctx.layout.TitleArea().Center(),
-                                  line.font_size);
-  }
+  FontShape& title_shape = ctx.nodes.title_text.Shape();
+  title_shape.SetFont(ctx.font);
+  title_shape.SetColor(ctx.title_config.TextColor());
+  title_shape.SetShapeCentered(line.text, ctx.layout.TitleArea().Center(),
+                               line.font_size);
   title_edit::FillCaretAndSelection(ctx, line);
 
   return PickBox{

@@ -15,6 +15,7 @@
 #include "../../infrastructure/graphics/rect.hpp"
 #include "../../infrastructure/graphics/scene.hpp"
 #include "../../infrastructure/graphics/scene_graph.hpp"
+#include "../../infrastructure/graphics/shape_node.hpp"
 #include "../../infrastructure/graphics/shapes.hpp"
 
 // Application/Infrastructure bridge: the interactive highlighting of the
@@ -32,13 +33,12 @@
 // persisted highlights to the new geometry.
 class SceneHighlighter {
  public:
-  SceneHighlighter(const Scene& scene,
-                   const std::shared_ptr<SceneNode>& overlay_node,
-                   const std::shared_ptr<SceneNode>& title_frame_node,
+  SceneHighlighter(const Scene& scene, const ShapeNode<FillShape>& overlay_node,
+                   const ShapeNode<BoxesShape>& title_area_node,
                    const ShapeConfigSet& shape_config)
       : scene_(scene),
         overlay_node_(overlay_node),
-        title_frame_node_(title_frame_node),
+        title_area_node_(title_area_node),
         shape_config_(shape_config) {}
 
   // Adopts the bar nodes from the latest rebuild and re-applies the persisted
@@ -77,7 +77,7 @@ class SceneHighlighter {
         return iterator == bar_nodes_.end() ? nullptr : iterator->second;
       }
       case PickId::Kind::kTitle:
-        return title_frame_node_;
+        return title_area_node_.Node();
     }
     return nullptr;
   }
@@ -93,20 +93,17 @@ class SceneHighlighter {
   // Positions the selection overlay over the currently selected node's world
   // bounds, or hides it (zero-area quad) when there is no resolvable selection.
   void ApplySelectionOverlay() {
-    auto* shape = dynamic_cast<FillShape*>(overlay_node_->GetShape());
-    if (shape == nullptr) {
-      return;
-    }
+    FillShape& shape = overlay_node_.Shape();
     std::optional<RectF> bounds;
     if (selected_path_.has_value()) {
       bounds = NodeWorldBounds(*selected_path_);
     }
     if (bounds.has_value()) {
-      shape->SetShape(*bounds);
-      shape->SetColor(glm::vec4(kSelectionRed, kSelectionGreen, kSelectionBlue,
-                                kSelectionAlpha));
+      shape.SetShape(*bounds);
+      shape.SetColor(glm::vec4(kSelectionRed, kSelectionGreen, kSelectionBlue,
+                               kSelectionAlpha));
     } else {
-      shape->SetShape(RectF(kZero, kZero, kZero, kZero));
+      shape.SetShape(RectF(kZero, kZero, kZero, kZero));
     }
   }
 
@@ -158,14 +155,17 @@ class SceneHighlighter {
     if (!node) {
       return;
     }
-    auto* shape = dynamic_cast<BoxesShape*>(node->GetShape());
-    if (shape == nullptr) {
+    // A bar node comes out of the map by index, so its type is not settled by a
+    // handle here — but the drawable says what it is, which needs no RTTI.
+    Drawable* drawable = node->GetShape();
+    if (drawable == nullptr || drawable->Kind() != DrawableKind::kBoxes) {
       return;
     }
+    auto& shape = static_cast<BoxesShape&>(*drawable);
     const auto config = shape_config_.GetShapeConfiguration(node->GetStyleId());
     const glm::vec4 hover_outline(kOne, kHoverOutlineGreen, kZero, kOne);
-    shape->SetColors(highlighted ? hover_outline : config.OutlineColor(),
-                     config.FillColor());
+    shape.SetColors(highlighted ? hover_outline : config.OutlineColor(),
+                    config.FillColor());
   }
 
   static constexpr float kZero = 0.0F;
@@ -180,8 +180,8 @@ class SceneHighlighter {
 
   // Borrowed (non-owning) collaborators, owned by CalendarPage / the builder.
   const Scene& scene_;
-  const std::shared_ptr<SceneNode>& overlay_node_;
-  const std::shared_ptr<SceneNode>& title_frame_node_;
+  const ShapeNode<FillShape>& overlay_node_;
+  const ShapeNode<BoxesShape>& title_area_node_;
   const ShapeConfigSet& shape_config_;
 
   // Bar nodes by index from the latest rebuild, for the in-place hover

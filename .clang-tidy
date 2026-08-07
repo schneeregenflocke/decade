@@ -24,6 +24,13 @@ Checks:
   # references, immutable config); they make the owning type non-assignable on
   # purpose. Enforcing this would force redesigns against that intent.
   - -cppcoreguidelines-avoid-const-or-ref-data-members
+  # Downcasts happen in exactly two shapes here, and both settle the type
+  # first: after Drawable::Kind() has named it, or through a ShapeNode handle
+  # that built the shape itself (#68). A dynamic_cast would ask the RTTI again
+  # for what is already known. The check cannot see the handle case either —
+  # ShapeT is a dependent template parameter — so leaving it on would enforce
+  # half the rule and read as protection the code does not have.
+  - -cppcoreguidelines-pro-type-static-cast-downcast
   - google-*
   # wxWidgets and Boost APIs use plain long/short directly; fixed-width
   # substitutes would fight those library signatures.

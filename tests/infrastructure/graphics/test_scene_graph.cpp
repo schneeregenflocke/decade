@@ -35,6 +35,10 @@ class RecordingDrawable : public Drawable {
 
   [[nodiscard]] const RectF& LocalBounds() const override { return bounds_; }
 
+  [[nodiscard]] DrawableKind Kind() const override {
+    return DrawableKind::kNone;
+  }
+
  private:
   std::string name_;
   RectF bounds_;

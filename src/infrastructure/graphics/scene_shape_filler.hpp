@@ -9,6 +9,7 @@
 #include "font.hpp"
 #include "scene_graph.hpp"
 #include "shaders.hpp"
+#include "shape_node.hpp"
 #include "shapes.hpp"
 
 // Infrastructure: generic, domain-free helpers for the two scene-node
@@ -21,18 +22,16 @@
 namespace scene_shapes {
 
 // Fills the BoxesShape carried by `node` with the given rectangle(s) (a
-// single RectF or a vector of them — BoxesShape::SetShape is overloaded)
-// and the outline/fill colours. A no-op if the node carries no BoxesShape.
+// single RectF or a vector of them — BoxesShape::SetShape is overloaded) and
+// the outline/fill colours. The handle carries the shape type, so nothing has
+// to be asked of the RTTI here.
 template <typename Shapes>
-inline void FillRectangles(const std::shared_ptr<SceneNode>& node,
+inline void FillRectangles(const ShapeNode<BoxesShape>& node,
                            const Shapes& shapes, const glm::vec4& outline_color,
                            const glm::vec4& fill_color, float line_width) {
-  auto* shape = dynamic_cast<BoxesShape*>(node->GetShape());
-  if (shape == nullptr) {
-    return;
-  }
-  shape->SetShape(shapes, line_width);
-  shape->SetColors(outline_color, fill_color);
+  BoxesShape& shape = node.Shape();
+  shape.SetShape(shapes, line_width);
+  shape.SetColors(outline_color, fill_color);
 }
 
 // Creates a centered text node named `name` under `parent`: a FontShape on the
