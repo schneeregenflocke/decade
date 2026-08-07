@@ -29,6 +29,7 @@
 #include "main_menu.hpp"
 #include "page_panel.hpp"
 #include "scene_tree_panel.hpp"
+#include "shape_panel.hpp"
 #include "title_panel.hpp"
 #include "window_screenshot.hpp"
 #include "wx_owned.hpp"
@@ -82,6 +83,7 @@ class MainFrame : public wxFrame {
     return *calendar_setup_panel_;
   }
   [[nodiscard]] FontPanel& Font() { return *font_panel_; }
+  [[nodiscard]] ShapeSetupPanel& ShapeSetup() { return *shape_setup_panel_; }
   [[nodiscard]] SceneTreePanel& SceneTree() { return *scene_tree_panel_; }
   [[nodiscard]] GLCanvas& Canvas() { return *gl_canvas_; }
 
@@ -165,6 +167,7 @@ class MainFrame : public wxFrame {
     date_groups_table_panel_ = MakeOwned<DateGroupsTablePanel>(notebook);
     calendar_setup_panel_ = MakeOwned<CalendarSetupPanel>(notebook);
     scene_tree_panel_ = MakeOwned<SceneTreePanel>(notebook);
+    shape_setup_panel_ = MakeOwned<ShapeSetupPanel>(notebook);
 
     // Page, font and title share the tab "Document"; the collecting panel owns
     // the three children, and they get wired one by one through the weak
@@ -178,6 +181,7 @@ class MainFrame : public wxFrame {
     notebook->AddPage(date_groups_table_panel_, "Categories");
     notebook->AddPage(data_table_panel_, "Entries");
     notebook->AddPage(document_setup_panel, "Document");
+    notebook->AddPage(shape_setup_panel_, "Shapes");
     notebook->AddPage(calendar_setup_panel_, "Timeframe");
     notebook->AddPage(scene_tree_panel_, "Scene");
   }
@@ -225,6 +229,7 @@ class MainFrame : public wxFrame {
   wxWeakRef<FontPanel> font_panel_;
   wxWeakRef<DateTablePanel> data_table_panel_;
   wxWeakRef<SceneTreePanel> scene_tree_panel_;
+  wxWeakRef<ShapeSetupPanel> shape_setup_panel_;
 
   wxTimer exit_timer_;
   MainMenu menu_;

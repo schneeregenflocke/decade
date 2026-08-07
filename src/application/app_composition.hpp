@@ -133,6 +133,7 @@ class AppComposition {
         .calendar_setup_panel = frame_->CalendarSetup(),
         .font_panel = frame_->Font(),
         .scene_tree_panel = frame_->SceneTree(),
+        .shape_setup_panel = frame_->ShapeSetup(),
         .calendar_page = calendar_page,
         .gl_canvas = frame_->Canvas(),
         .interaction_controller = interaction_controller_,

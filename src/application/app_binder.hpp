@@ -21,6 +21,7 @@
 #include "../presentation/groups_panel.hpp"
 #include "../presentation/page_panel.hpp"
 #include "../presentation/scene_tree_panel.hpp"
+#include "../presentation/shape_panel.hpp"
 #include "../presentation/title_panel.hpp"
 #include "calendar/calendar_page.hpp"
 #include "calendar/interaction_controller.hpp"
@@ -55,6 +56,7 @@ struct AppComponents {
   CalendarSetupPanel& calendar_setup_panel;
   FontPanel& font_panel;
   SceneTreePanel& scene_tree_panel;
+  ShapeSetupPanel& shape_setup_panel;
 
   CalendarPage& calendar_page;
   GLCanvas& gl_canvas;
@@ -150,6 +152,12 @@ inline void BindTitleConfig(EventBus& bus, AppComponents& components) {
 }
 
 inline void BindShapeConfiguration(EventBus& bus, AppComponents& components) {
+  components.shape_setup_panel.SignalShapeConfigSet().connect(
+      &ShapeConfigurationStore::ReceiveShapeConfigSet,
+      &components.shape_configuration_store);
+
+  bus.shape_config_set().connect(&ShapeSetupPanel::ReceiveShapeConfigSet,
+                                 &components.shape_setup_panel);
   bus.shape_config_set().connect(&CalendarPage::ReceiveShapeConfigSet,
                                  &components.calendar_page);
   bus.shape_config_set().connect(&SceneTreePanel::ReceiveShapeConfigSet,
