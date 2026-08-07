@@ -55,7 +55,7 @@ namespace calendar_sections {
         ctx.shape_config.GetDynamicConfiguration(current_group);
 
     const auto row = projection.RowForYear(bar.GetYear());
-    const auto current_sub_cell = ctx.layout.GetSubFrame(row, 1);
+    const auto current_sub_cell = ctx.layout.GetSubArea(row, 1);
 
     const auto bar_left =
         current_sub_cell.Left() + (bar.GetFirstDay() * ctx.layout.DayWidth());
@@ -98,7 +98,7 @@ namespace calendar_sections {
     group_nodes.at(current_group)->AddChild(bar_node);
     result.bar_nodes.emplace(index, bar_node);
 
-    auto current_text_cell = ctx.layout.GetSubFrame(row, 2);
+    auto current_text_cell = ctx.layout.GetSubArea(row, 2);
     current_text_cell.SetLeft(bar_left);
     current_text_cell.SetRight(bar_left + bar_width);
 
@@ -128,7 +128,7 @@ inline void BuildYearTotals(const SectionContext& ctx) {
         ctx.date_entry_bars.GetFirstYear() + static_cast<int>(index);
     if (ctx.calendar_config.IsInSpan(current_year)) {
       const auto row = projection.RowForYear(current_year);
-      const auto current_cell = ctx.layout.GetSubFrame(row, 0);
+      const auto current_cell = ctx.layout.GetSubArea(row, 0);
 
       RectF year_total_cell = current_cell;
       const auto year_total_width =

@@ -44,7 +44,7 @@ struct TextLine {
   const std::vector<char32_t> decoded = DecodeUtf8(line.text);
   line.code_points.assign(decoded.begin(), decoded.end());
   line.font_size = ctx.title_config.FontSizeMillimetres();
-  line.left = ctx.layout.TitleFrame().Center().x -
+  line.left = ctx.layout.TitleArea().Center().x -
               (ctx.font->TextWidth(line.text, line.font_size) * detail::kHalf);
   return line;
 }
@@ -69,7 +69,7 @@ inline void FillCaretAndSelection(const SectionContext& ctx,
   }
 
   const float text_height = ctx.font->TextHeight(line.font_size);
-  const float center_y = ctx.layout.TitleFrame().Center().y;
+  const float center_y = ctx.layout.TitleArea().Center().y;
   const float bottom = center_y - (text_height * detail::kHalf);
   const float top = center_y + (text_height * detail::kHalf);
   const auto offset = [&](std::size_t index) {
@@ -120,7 +120,7 @@ inline void BuildPrintArea(const SectionContext& ctx) {
 // becomes canonical with Enter alone — and cursor and selection alongside.
 [[nodiscard]] inline PickBox BuildTitle(const SectionContext& ctx) {
   detail::FillRectangles(
-      ctx.nodes.title_frame, ctx.layout.TitleFrame(),
+      ctx.nodes.title_area, ctx.layout.TitleArea(),
       ctx.shape_config.GetShapeConfiguration(ShapeConfigSet::kTitleFrame));
 
   const title_edit::TextLine line = title_edit::Layout(ctx);
@@ -128,15 +128,15 @@ inline void BuildPrintArea(const SectionContext& ctx) {
           dynamic_cast<FontShape*>(ctx.nodes.title_text->GetShape())) {
     title_shape->SetFont(ctx.font);
     title_shape->SetColor(ctx.title_config.TextColor());
-    title_shape->SetShapeCentered(line.text, ctx.layout.TitleFrame().Center(),
+    title_shape->SetShapeCentered(line.text, ctx.layout.TitleArea().Center(),
                                   line.font_size);
   }
   title_edit::FillCaretAndSelection(ctx, line);
 
   return PickBox{
       .id = PickId{.kind = PickId::Kind::kTitle, .index = 0},
-      .rect = ctx.layout.TitleFrame().Shift(ctx.layout.PrintAreaOrigin().x,
-                                            ctx.layout.PrintAreaOrigin().y)};
+      .rect = ctx.layout.TitleArea().Shift(ctx.layout.PrintAreaOrigin().x,
+                                           ctx.layout.PrintAreaOrigin().y)};
 }
 
 }  // namespace calendar_sections

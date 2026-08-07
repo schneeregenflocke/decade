@@ -15,7 +15,7 @@ CalendarLayout MakeLayout() {
       RectF::FromDimension(RectF::Dimension{.width = 200.0F, .height = 300.0F});
   const RectF margin(10.0F, 20.0F, 30.0F, 40.0F);
   const std::vector<float> proportions(7, 1.0F);
-  return CalendarLayout(page, margin, /*title_frame_height=*/15.0F,
+  return CalendarLayout(page, margin, /*title_area_height=*/15.0F,
                         /*span_length_years=*/3, proportions);
 }
 
@@ -39,19 +39,19 @@ TEST(CalendarLayoutTest, PrintAreaIsPageMinusMarginsShiftedToOrigin) {
 TEST(CalendarLayoutTest, TitleFrameSitsAtTopWithGivenHeight) {
   const CalendarLayout layout = MakeLayout();
 
-  EXPECT_NEAR(layout.TitleFrame().Top(), layout.PrintArea().Top(), kTol);
-  EXPECT_NEAR(layout.TitleFrame().Height(), 15.0F, kTol);
-  EXPECT_NEAR(layout.TitleFrame().Left(), layout.PrintArea().Left(), kTol);
-  EXPECT_NEAR(layout.TitleFrame().Right(), layout.PrintArea().Right(), kTol);
+  EXPECT_NEAR(layout.TitleArea().Top(), layout.PrintArea().Top(), kTol);
+  EXPECT_NEAR(layout.TitleArea().Height(), 15.0F, kTol);
+  EXPECT_NEAR(layout.TitleArea().Left(), layout.PrintArea().Left(), kTol);
+  EXPECT_NEAR(layout.TitleArea().Right(), layout.PrintArea().Right(), kTol);
 }
 
 TEST(CalendarLayoutTest, CalendarFrameIsBelowTitleAndRightMargined) {
   const CalendarLayout layout = MakeLayout();
 
-  EXPECT_NEAR(layout.CalendarFrame().Top(), layout.TitleFrame().Bottom(), kTol);
-  EXPECT_NEAR(layout.CalendarFrame().Bottom(), 0.0F, kTol);
+  EXPECT_NEAR(layout.CalendarArea().Top(), layout.TitleArea().Bottom(), kTol);
+  EXPECT_NEAR(layout.CalendarArea().Bottom(), 0.0F, kTol);
   // Right edge reduced by the default 5pt calendar margin.
-  EXPECT_NEAR(layout.CalendarFrame().Width(), 165.0F, kTol);  // 170 - 5
+  EXPECT_NEAR(layout.CalendarArea().Width(), 165.0F, kTol);  // 170 - 5
 }
 
 TEST(CalendarLayoutTest, CellAndRowAndDayMetrics) {
@@ -68,12 +68,12 @@ TEST(CalendarLayoutTest, CellAndRowAndDayMetrics) {
 TEST(CalendarLayoutTest, SubFrameAlignsHorizontallyWithCellsFrame) {
   const CalendarLayout layout = MakeLayout();
 
-  const RectF sub = layout.GetSubFrame(0, 1);
-  EXPECT_NEAR(sub.Left(), layout.CellsFrame().Left(), kTol);
-  EXPECT_NEAR(sub.Right(), layout.CellsFrame().Right(), kTol);
+  const RectF sub = layout.GetSubArea(0, 1);
+  EXPECT_NEAR(sub.Left(), layout.CellsArea().Left(), kTol);
+  EXPECT_NEAR(sub.Right(), layout.CellsArea().Right(), kTol);
   // The sub-frame lies within the cells frame vertically.
-  EXPECT_GE(sub.Bottom(), layout.CellsFrame().Bottom() - kTol);
-  EXPECT_LE(sub.Top(), layout.CellsFrame().Top() + kTol);
+  EXPECT_GE(sub.Bottom(), layout.CellsArea().Bottom() - kTol);
+  EXPECT_LE(sub.Top(), layout.CellsArea().Top() + kTol);
 }
 
 TEST(CalendarLayoutTest, DefaultConstructedIsEmpty) {

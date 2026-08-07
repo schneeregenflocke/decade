@@ -91,7 +91,7 @@ class CalendarSceneComposer {
     }
 
     layout_ =
-        CalendarLayout(page_size_, page_margin_, title_config_.FrameHeight(),
+        CalendarLayout(page_size_, page_margin_, title_config_.AreaHeight(),
                        calendar_config_.GetSpanLengthYears(),
                        calendar_config_.GetSpacingProportions());
 
@@ -243,6 +243,6 @@ class CalendarSceneComposer {
   // initialised first; fed the fresh bar nodes via Refresh() after each
   // Build().
   SceneHighlighter highlighter_{scene_, nodes_.selection_overlay,
-                                nodes_.title_frame, shape_config_};
+                                nodes_.title_area, shape_config_};
 };
 #endif  // CALENDAR_SCENE_COMPOSER_HPP

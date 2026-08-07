@@ -27,14 +27,14 @@ inline void BuildLegend(const SectionContext& ctx) {
 
   const size_t number_entry_frames = (ctx.date_groups.Items().size() + 1) * 2;
   std::vector<RectF> legend_entries_frames(number_entry_frames);
-  const auto entries_width = ctx.layout.LegendFrame().Width() /
-                             static_cast<float>(number_entry_frames);
+  const auto entries_width =
+      ctx.layout.LegendArea().Width() / static_cast<float>(number_entry_frames);
 
   for (size_t index = 0; index < number_entry_frames; ++index) {
     const auto float_index = static_cast<float>(index);
     const auto left =
-        ctx.layout.LegendFrame().Left() + (entries_width * float_index);
-    legend_entries_frames.at(index) = ctx.layout.LegendFrame();
+        ctx.layout.LegendArea().Left() + (entries_width * float_index);
+    legend_entries_frames.at(index) = ctx.layout.LegendArea();
     legend_entries_frames.at(index).SetLeft(left);
     legend_entries_frames.at(index).SetRight(left + entries_width);
   }
@@ -65,7 +65,7 @@ inline void BuildLegend(const SectionContext& ctx) {
         legend_entries_frames.at(label_index).Center(), legend_font_size);
 
     if (span_years > 0U) {
-      const auto current_height = ctx.layout.GetSubFrame(0, 1).Height();
+      const auto current_height = ctx.layout.GetSubArea(0, 1).Height();
       auto current_cell = legend_entries_frames.at(label_index + 1);
       const auto current_vertical_center = current_cell.Center()[1];
       current_cell.SetBottom(current_vertical_center -
@@ -98,7 +98,7 @@ inline void BuildLegend(const SectionContext& ctx) {
         legend_font_size);
 
     if (span_years > 0U) {
-      const auto current_height = ctx.layout.GetSubFrame(0, 0).Height();
+      const auto current_height = ctx.layout.GetSubArea(0, 0).Height();
       auto current_cell =
           legend_entries_frames.at(legend_entries_frames.size() - 1);
       const auto current_vertical_center = current_cell.Center()[1];

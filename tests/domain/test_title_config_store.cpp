@@ -6,12 +6,12 @@
 
 TEST(TitleConfigTest, GettersReturnSetValues) {
   TitleConfig config;
-  config.SetFrameHeight(42.0F);
+  config.SetAreaHeight(42.0F);
   config.SetFontSizePoints(36.0F);
   config.SetTitleText("hello");
   config.SetTextColor({0.1F, 0.2F, 0.3F, 0.4F});
 
-  EXPECT_FLOAT_EQ(config.FrameHeight(), 42.0F);
+  EXPECT_FLOAT_EQ(config.AreaHeight(), 42.0F);
   EXPECT_FLOAT_EQ(config.FontSizePoints(), 36.0F);
   EXPECT_FLOAT_EQ(config.FontSizeMillimetres(), 36.0F * 25.4F / 72.0F);
   EXPECT_EQ(config.TitleText(), "hello");
@@ -24,7 +24,7 @@ TEST(TitleConfigStoreTest, ReceiveStoresAndEmits) {
   TitleConfigStore store(topic);
   TitleConfig incoming;
   incoming.SetTitleText("incoming");
-  incoming.SetFrameHeight(20.0F);
+  incoming.SetAreaHeight(20.0F);
 
   int emissions = 0;
   std::string observed_text;

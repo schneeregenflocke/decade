@@ -12,8 +12,8 @@ class TitleConfig {
  public:
   TitleConfig() = default;
 
-  [[nodiscard]] float FrameHeight() const { return frame_height_; }
-  void SetFrameHeight(float value) { frame_height_ = value; }
+  [[nodiscard]] float AreaHeight() const { return area_height_; }
+  void SetAreaHeight(float value) { area_height_ = value; }
 
   [[nodiscard]] float FontSizePoints() const { return font_size_points_; }
   void SetFontSizePoints(float value) { font_size_points_ = value; }
@@ -29,12 +29,12 @@ class TitleConfig {
   void SetTextColor(const glm::vec4& value) { text_color_ = value; }
 
  private:
-  static constexpr float kDefaultFrameHeight = 10.0F;
+  static constexpr float kDefaultAreaHeight = 10.0F;
   static constexpr float kDefaultFontSizePoints = 28.0F;
   static constexpr float kDefaultTextColor = 0.0F;
   static constexpr float kDefaultTextAlpha = 1.0F;
 
-  float frame_height_{kDefaultFrameHeight};
+  float area_height_{kDefaultAreaHeight};
   float font_size_points_{kDefaultFontSizePoints};
   std::string title_text_{"title config constructor text"};
   glm::vec4 text_color_{kDefaultTextColor, kDefaultTextColor, kDefaultTextColor,

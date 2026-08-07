@@ -95,14 +95,14 @@ TEST(TitleTextEditorTest, CancelLeavesTheStoreUntouched) {
 TEST(TitleTextEditorTest, CommitKeepsTheOtherTitleSettings) {
   EditorFixture fixture;
   TitleConfig config = fixture.store.Get();
-  config.SetFrameHeight(42.0F);
+  config.SetAreaHeight(42.0F);
   fixture.store.ReceiveTitleConfig(config);
 
   fixture.editor.Begin(kTitlePick);
   fixture.editor.Insert("Neu");
   fixture.editor.Commit();
 
-  EXPECT_FLOAT_EQ(fixture.store.Get().FrameHeight(), 42.0F);
+  EXPECT_FLOAT_EQ(fixture.store.Get().AreaHeight(), 42.0F);
 }
 
 TEST(TitleTextEditorTest, InputEventsReachTheBuffer) {

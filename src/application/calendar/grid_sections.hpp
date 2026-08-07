@@ -45,12 +45,12 @@ inline void BuildCalendarLabels(const SectionContext& ctx) {
   month_node->RemoveChildren();
   for (size_t index = 0; index < number_months; ++index) {
     const auto float_index = static_cast<float>(index);
-    const auto left = ctx.layout.XLabelsFrame().Left() +
+    const auto left = ctx.layout.XLabelsArea().Left() +
                       (ctx.layout.CellWidth() * float_index);
     x_label_frames.at(index).SetLeft(left);
     x_label_frames.at(index).SetRight(left + ctx.layout.CellWidth());
-    x_label_frames.at(index).SetBottom(ctx.layout.XLabelsFrame().Bottom());
-    x_label_frames.at(index).SetTop(ctx.layout.XLabelsFrame().Top());
+    x_label_frames.at(index).SetBottom(ctx.layout.XLabelsArea().Bottom());
+    x_label_frames.at(index).SetTop(ctx.layout.XLabelsArea().Top());
 
     detail::AddCenteredText(
         ctx, month_node, months_names.at(index), months_names.at(index),
@@ -76,10 +76,10 @@ inline void BuildCalendarLabels(const SectionContext& ctx) {
         std::to_string(projection.YearForRow(index));
 
     const auto float_index = static_cast<float>(index);
-    const auto bottom = ctx.layout.YLabelsFrame().Bottom() +
+    const auto bottom = ctx.layout.YLabelsArea().Bottom() +
                         (ctx.layout.RowHeight() * float_index);
-    y_labels_frames.at(index).SetLeft(ctx.layout.YLabelsFrame().Left());
-    y_labels_frames.at(index).SetRight(ctx.layout.YLabelsFrame().Right());
+    y_labels_frames.at(index).SetLeft(ctx.layout.YLabelsArea().Left());
+    y_labels_frames.at(index).SetRight(ctx.layout.YLabelsArea().Right());
     y_labels_frames.at(index).SetBottom(bottom);
     y_labels_frames.at(index).SetTop(bottom + ctx.layout.RowHeight());
 
@@ -105,7 +105,7 @@ inline void BuildYears(const SectionContext& ctx) {
     const auto number_days = DaysInYear(current_year);
     const float year_length =
         static_cast<float>(number_days) * ctx.layout.DayWidth();
-    RectF year_cell = ctx.layout.GetSubFrame(index, 1);
+    RectF year_cell = ctx.layout.GetSubArea(index, 1);
     year_cell.SetRight(year_cell.Left() + year_length);
     year_cells.at(index) = year_cell;
   }
@@ -131,7 +131,7 @@ inline void BuildMonths(const SectionContext& ctx) {
     const Date first_day_of_year = Date::FromYmd(current_year, 1, 1);
 
     for (size_t subindex = 0; subindex < number_months; ++subindex) {
-      const auto current_cell = ctx.layout.GetSubFrame(index, 1);
+      const auto current_cell = ctx.layout.GetSubArea(index, 1);
       const int month_index = static_cast<int>(subindex);
       RectF month_cell;
       const auto start_offset =
@@ -184,7 +184,7 @@ inline void BuildDays(const SectionContext& ctx) {
 
     for (std::int64_t subindex = 0; subindex < number_days; ++subindex) {
       const auto float_subindex = static_cast<float>(subindex);
-      const auto current_cell = ctx.layout.GetSubFrame(index, 1);
+      const auto current_cell = ctx.layout.GetSubArea(index, 1);
 
       const Date current_date =
           ctx.calendar_config.GetSpanLimitsDate().at(0).AddDays(

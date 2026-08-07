@@ -5,7 +5,7 @@
 #include <glm/vec3.hpp>
 #include <vector>
 
-#include "../../infrastructure/graphics/frame_layout.hpp"
+#include "../../infrastructure/graphics/area_layout.hpp"
 #include "../../infrastructure/graphics/rect.hpp"
 
 // Application/Infrastructure bridge: the calendar's page geometry, computed
@@ -14,45 +14,43 @@
 // layout is unit-testable without a GL context — which the previous inline
 // computation inside CalendarSceneComposer::Build() was not.
 //
-// The frames are deliberately interdependent and therefore computed in one
+// The areas are deliberately interdependent and therefore computed in one
 // pass: print area -> title -> calendar -> cells -> row/sub proportions ->
-// label/legend frames. Consumers (the section builders) read the results
+// label/legend areas. Consumers (the section builders) read the results
 // through the accessors; nobody recomputes geometry.
 class CalendarLayout {
  public:
   CalendarLayout() = default;
 
   CalendarLayout(const RectF& page_size, const RectF& page_margin,
-                 float title_frame_height, std::size_t span_length_years,
+                 float title_area_height, std::size_t span_length_years,
                  const std::vector<float>& spacing_proportions)
-      : fields_(Compute(page_size, page_margin, title_frame_height,
+      : fields_(Compute(page_size, page_margin, title_area_height,
                         span_length_years, spacing_proportions)) {}
 
   [[nodiscard]] const glm::vec3& PrintAreaOrigin() const {
     return fields_.print_area_origin;
   }
   [[nodiscard]] const RectF& PrintArea() const { return fields_.print_area; }
-  [[nodiscard]] const RectF& TitleFrame() const { return fields_.title_frame; }
-  [[nodiscard]] const RectF& CalendarFrame() const {
-    return fields_.calendar_frame;
+  [[nodiscard]] const RectF& TitleArea() const { return fields_.title_area; }
+  [[nodiscard]] const RectF& CalendarArea() const {
+    return fields_.calendar_area;
   }
-  [[nodiscard]] const RectF& CellsFrame() const { return fields_.cells_frame; }
-  [[nodiscard]] const RectF& XLabelsFrame() const {
-    return fields_.x_labels_frame;
+  [[nodiscard]] const RectF& CellsArea() const { return fields_.cells_area; }
+  [[nodiscard]] const RectF& XLabelsArea() const {
+    return fields_.x_labels_area;
   }
-  [[nodiscard]] const RectF& YLabelsFrame() const {
-    return fields_.y_labels_frame;
+  [[nodiscard]] const RectF& YLabelsArea() const {
+    return fields_.y_labels_area;
   }
-  [[nodiscard]] const RectF& LegendFrame() const {
-    return fields_.legend_frame;
-  }
+  [[nodiscard]] const RectF& LegendArea() const { return fields_.legend_area; }
   [[nodiscard]] float CellWidth() const { return fields_.cell_width; }
   [[nodiscard]] float RowHeight() const { return fields_.row_height; }
   [[nodiscard]] float DayWidth() const { return fields_.day_width; }
 
-  // Sub-frame of the given row/sub band from the proportional row layout.
-  [[nodiscard]] RectF GetSubFrame(std::size_t row, std::size_t sub) const {
-    return fields_.proportions.GetSubFrame(row, sub);
+  // Sub-area of the given row/sub band from the proportional row layout.
+  [[nodiscard]] RectF GetSubArea(std::size_t row, std::size_t sub) const {
+    return fields_.proportions.GetSubArea(row, sub);
   }
 
  private:
@@ -66,22 +64,22 @@ class CalendarLayout {
   // All computed geometry in one aggregate, so the constructor can initialise
   // it from a single pure function (rather than assigning members in its body).
   struct Fields {
-    ProportionFrameLayout proportions;
+    ProportionAreaLayout proportions;
     glm::vec3 print_area_origin{0.0F};
     RectF print_area;
-    RectF title_frame;
-    RectF calendar_frame;
-    RectF cells_frame;
-    RectF x_labels_frame;
-    RectF y_labels_frame;
-    RectF legend_frame;
+    RectF title_area;
+    RectF calendar_area;
+    RectF cells_area;
+    RectF x_labels_area;
+    RectF y_labels_area;
+    RectF legend_area;
     float cell_width{0.0F};
     float row_height{0.0F};
     float day_width{0.0F};
   };
 
   static Fields Compute(const RectF& page_size, const RectF& page_margin,
-                        float title_frame_height, std::size_t span_length_years,
+                        float title_area_height, std::size_t span_length_years,
                         const std::vector<float>& spacing_proportions) {
     Fields fields;
 
@@ -93,37 +91,37 @@ class CalendarLayout {
     fields.print_area = fields.print_area.Shift(-fields.print_area_origin.x,
                                                 -fields.print_area_origin.y);
 
-    fields.title_frame = fields.print_area;
-    fields.title_frame.SetBottom(fields.title_frame.Top() - title_frame_height);
+    fields.title_area = fields.print_area;
+    fields.title_area.SetBottom(fields.title_area.Top() - title_area_height);
 
-    RectF page_margin_frame = fields.print_area;
-    page_margin_frame.SetTop(fields.title_frame.Bottom());
+    RectF page_margin_area = fields.print_area;
+    page_margin_area.SetTop(fields.title_area.Bottom());
 
-    fields.calendar_frame =
-        page_margin_frame.Reduce(RectF(kZero, kDefaultMargin, kZero, kZero));
+    fields.calendar_area =
+        page_margin_area.Reduce(RectF(kZero, kDefaultMargin, kZero, kZero));
 
     const std::size_t number_rows = kAdditionalRows + span_length_years;
-    fields.cell_width = fields.calendar_frame.Width() / kCalendarColumns;
+    fields.cell_width = fields.calendar_area.Width() / kCalendarColumns;
     fields.row_height =
-        fields.calendar_frame.Height() / static_cast<float>(number_rows);
+        fields.calendar_area.Height() / static_cast<float>(number_rows);
 
-    fields.cells_frame = fields.calendar_frame.Reduce(RectF(
+    fields.cells_area = fields.calendar_area.Reduce(RectF(
         fields.cell_width, kZero, fields.row_height * kRowHeaderScale, kZero));
 
-    fields.proportions.SetupRowFrames(fields.cells_frame, span_length_years);
-    fields.proportions.SetupSubFrames(spacing_proportions);
+    fields.proportions.SetupRowAreas(fields.cells_area, span_length_years);
+    fields.proportions.SetupSubAreas(spacing_proportions);
 
-    fields.day_width = fields.cells_frame.Width() / kDaysPerYear;
+    fields.day_width = fields.cells_area.Width() / kDaysPerYear;
 
-    fields.x_labels_frame = fields.calendar_frame.Reduce(
+    fields.x_labels_area = fields.calendar_area.Reduce(
         RectF(fields.cell_width, kZero, fields.row_height,
-              fields.cells_frame.Height()));
-    fields.y_labels_frame = fields.calendar_frame.Reduce(
-        RectF(kZero, fields.cells_frame.Width(),
+              fields.cells_area.Height()));
+    fields.y_labels_area = fields.calendar_area.Reduce(
+        RectF(kZero, fields.cells_area.Width(),
               fields.row_height * kRowHeaderScale, kZero));
-    fields.legend_frame = fields.calendar_frame.Reduce(
+    fields.legend_area = fields.calendar_area.Reduce(
         RectF(fields.cell_width, kZero, kZero,
-              fields.cells_frame.Height() + fields.row_height));
+              fields.cells_area.Height() + fields.row_height));
 
     return fields;
   }

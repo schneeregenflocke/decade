@@ -14,9 +14,9 @@
 #include "casts.hpp"
 #include "wx_owned.hpp"
 
-// The frame, font size and colour of the title. The title text itself has no
-// field here: it gets edited in the canvas (a double click) and comes through
-// as part of the received TitleConfig alone.
+// The area height, font size and colour of the title. The title text itself has
+// no field here: it gets edited in the canvas (a double click) and comes
+// through as part of the received TitleConfig alone.
 class TitleSetupPanel : public wxPanel {
  public:
   explicit TitleSetupPanel(wxWindow* parent) : wxPanel(parent, wxID_ANY) {
@@ -36,10 +36,10 @@ class TitleSetupPanel : public wxPanel {
     auto* vertical_sizer = MakeOwned<wxBoxSizer>(wxVERTICAL);
     SetSizer(vertical_sizer);
 
-    frame_height_ctrl_ = MakeOwned<wxSpinCtrlDouble>(this);
-    frame_height_ctrl_->SetDigits(2);
-    AddLabelledRow(vertical_sizer, L"Frame Height", frame_height_ctrl_,
-                   row_flags, label_flags, field_flags, kLabelWidth);
+    area_height_ctrl_ = MakeOwned<wxSpinCtrlDouble>(this);
+    area_height_ctrl_->SetDigits(2);
+    AddLabelledRow(vertical_sizer, L"Area Height", area_height_ctrl_, row_flags,
+                   label_flags, field_flags, kLabelWidth);
 
     font_size_ctrl_ = MakeOwned<wxSpinCtrlDouble>(this);
     font_size_ctrl_->SetDigits(1);
@@ -99,8 +99,8 @@ class TitleSetupPanel : public wxPanel {
   }
 
   void UpdateWidgetForSelection() {
-    frame_height_ctrl_->SetValue(
-        static_cast<double>(title_config_.FrameHeight()));
+    area_height_ctrl_->SetValue(
+        static_cast<double>(title_config_.AreaHeight()));
     font_size_ctrl_->SetValue(
         static_cast<double>(title_config_.FontSizePoints()));
 
@@ -112,8 +112,8 @@ class TitleSetupPanel : public wxPanel {
   void CallbackSpinControl(wxSpinDoubleEvent& event) {
     auto float_value = static_cast<float>(event.GetValue());
 
-    if (frame_height_ctrl_.get() == event.GetEventObject()) {
-      title_config_.SetFrameHeight(float_value);
+    if (area_height_ctrl_.get() == event.GetEventObject()) {
+      title_config_.SetAreaHeight(float_value);
 
       SendTitleConfig();
     }
@@ -149,7 +149,7 @@ class TitleSetupPanel : public wxPanel {
   TitleConfig title_config_;
   sigslot::signal<const TitleConfig&> signal_title_config_;
 
-  wxWeakRef<wxSpinCtrlDouble> frame_height_ctrl_;
+  wxWeakRef<wxSpinCtrlDouble> area_height_ctrl_;
   wxWeakRef<wxSpinCtrlDouble> font_size_ctrl_;
 
   wxWeakRef<wxColourPickerCtrl> text_color_picker_;

@@ -18,7 +18,7 @@
 // dynamic children take the same layers.
 namespace calendar_layers {
 inline constexpr int kPage = 0;
-inline constexpr int kFrame = 10;
+inline constexpr int kArea = 10;
 inline constexpr int kGrid = 20;
 inline constexpr int kBars = 30;
 inline constexpr int kTextSelection = 35;
@@ -47,7 +47,7 @@ struct CalendarSceneNodes {
   std::shared_ptr<SceneNode> print_area;
 
   static constexpr std::string_view kTitleFrameName = "Title Frame";
-  std::shared_ptr<SceneNode> title_frame;
+  std::shared_ptr<SceneNode> title_area;
 
   static constexpr std::string_view kTitleTextName = "Title Text";
   std::shared_ptr<SceneNode> title_text;
@@ -139,10 +139,10 @@ struct CalendarSceneNodes {
   nodes.page->AddChild(nodes.print_area);
 
   auto title_frame_shape = std::make_unique<BoxesShape>(rectangles_shader);
-  nodes.title_frame = std::make_shared<SceneNode>(
+  nodes.title_area = std::make_shared<SceneNode>(
       std::string(CalendarSceneNodes::kTitleFrameName),
       std::move(title_frame_shape));
-  nodes.print_area->AddChild(nodes.title_frame);
+  nodes.print_area->AddChild(nodes.title_area);
 
   auto row_labels_shape = std::make_unique<BoxesShape>(rectangles_shader);
   nodes.row_labels = std::make_shared<SceneNode>(
@@ -195,10 +195,10 @@ struct CalendarSceneNodes {
   nodes.print_area->AddChild(nodes.year_total_labels);
 
   auto legend_frame_shape = std::make_unique<BoxesShape>(rectangles_shader);
-  auto legend_frame = std::make_shared<SceneNode>(
+  auto legend_area = std::make_shared<SceneNode>(
       std::string(CalendarSceneNodes::kLegendFrameName),
       std::move(legend_frame_shape));
-  nodes.print_area->AddChild(legend_frame);
+  nodes.print_area->AddChild(legend_area);
 
   nodes.legend_entries = std::make_shared<SceneNode>(
       std::string(CalendarSceneNodes::kLegendEntriesName));
@@ -242,9 +242,9 @@ struct CalendarSceneNodes {
   nodes.print_area->AddChild(nodes.date_bar_labels);
 
   nodes.page->SetDrawLayer(calendar_layers::kPage);
-  nodes.print_area->SetDrawLayer(calendar_layers::kFrame);
-  nodes.title_frame->SetDrawLayer(calendar_layers::kFrame);
-  legend_frame->SetDrawLayer(calendar_layers::kFrame);
+  nodes.print_area->SetDrawLayer(calendar_layers::kArea);
+  nodes.title_area->SetDrawLayer(calendar_layers::kArea);
+  legend_area->SetDrawLayer(calendar_layers::kArea);
   nodes.row_labels->SetDrawLayer(calendar_layers::kGrid);
   nodes.column_labels->SetDrawLayer(calendar_layers::kGrid);
   nodes.year_cells->SetDrawLayer(calendar_layers::kGrid);
