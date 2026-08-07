@@ -17,6 +17,7 @@
 #include "../infrastructure/persistence/csv_io.hpp"
 #include "../infrastructure/persistence/project_io.hpp"
 #include "event_bus.hpp"
+#include "state_burst.hpp"
 
 namespace application {
 
@@ -32,6 +33,7 @@ class ProjectDocument {
                            LocaleDateFormatter& locale_date_formatter)
       : locale_date_formatter_(locale_date_formatter),
         file_path_topic_(bus.project_file_path()),
+        state_burst_topic_(bus.state_burst()),
         date_groups_store_(bus.date_groups()),
         date_entry_store_(bus.date_entries()),
         transform_date_entry_(bus.transformed_date_entries()),
@@ -49,6 +51,9 @@ class ProjectDocument {
   // Loads an XML project. The path gets taken over on success alone, so a
   // failed load does not misplace the target of the next save.
   [[nodiscard]] std::optional<std::string> LoadXml(std::string file_path) {
+    // Six stores get filled one after another and every one of them publishes.
+    // The bracket makes that one change for whoever rebuilds on it (#36).
+    const StateBurst burst(state_burst_topic_);
     if (auto error = persistence::LoadProjectXml(
             file_path, date_groups_store_, date_entry_store_, page_setup_store_,
             title_config_store_, shape_configuration_store_,
@@ -71,6 +76,7 @@ class ProjectDocument {
   }
 
   void ImportCsv(const std::string& file_path) {
+    const StateBurst burst(state_burst_topic_);
     date_entry_store_.ReceiveDateEntries(
         persistence::ReadDateEntriesFromCsv(file_path, locale_date_formatter_));
   }
@@ -111,6 +117,7 @@ class ProjectDocument {
 
   LocaleDateFormatter& locale_date_formatter_;
   domain::StateTopic<std::string>& file_path_topic_;
+  domain::StateTopic<bool>& state_burst_topic_;
   std::string file_path_;
 
   DateGroupStore date_groups_store_;

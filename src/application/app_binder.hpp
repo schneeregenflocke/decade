@@ -27,6 +27,7 @@
 #include "calendar/interaction_controller.hpp"
 #include "calendar/title_text_editor.hpp"
 #include "event_bus.hpp"
+#include "state_burst.hpp"
 
 // The one place where stores, panels, rendering adapter and GL canvas come
 // together.
@@ -151,6 +152,13 @@ inline void BindTitleConfig(EventBus& bus, AppComponents& components) {
                              &components.calendar_page);
 }
 
+// The bracket around a burst of changes. The rendering adapter is its only
+// consumer: it holds its rebuild while the bracket stands (#36).
+inline void BindStateBurst(EventBus& bus, AppComponents& components) {
+  bus.state_burst().connect(&CalendarPage::ReceiveStateBurst,
+                            &components.calendar_page);
+}
+
 inline void BindShapeConfiguration(EventBus& bus, AppComponents& components) {
   components.shape_setup_panel.SignalShapeConfigSet().connect(
       &ShapeConfigurationStore::ReceiveShapeConfigSet,
@@ -252,6 +260,7 @@ inline void Bind(EventBus& bus, AppComponents& components) {
   detail::BindProjectFilePath(bus, components);
   detail::BindFont(bus, components);
   detail::BindTitleConfig(bus, components);
+  detail::BindStateBurst(bus, components);
   detail::BindShapeConfiguration(bus, components);
   detail::BindCalendarConfig(bus, components);
   detail::BindSceneSnapshot(bus, components);
@@ -299,9 +308,12 @@ inline void Unbind(EventBus& bus, AppComponents& components) {
   bus.selected_node().disconnect_all();
   bus.edit_requested().disconnect_all();
   bus.text_edit().disconnect_all();
+  bus.state_burst().disconnect_all();
 }
 
-inline void SendInitialValues(AppComponents& components) {
+inline void SendInitialValues(EventBus& bus, AppComponents& components) {
+  // Five producers in a row, one rebuild at the end (#36).
+  const application::StateBurst burst(bus.state_burst());
   components.shape_configuration_store.SendShapeConfigSet();
   components.date_groups_store.SendDefaultValues();
   components.page_setup_panel.SendDefaultValues();
@@ -319,7 +331,7 @@ class AppWiring {
   AppWiring(EventBus& bus, AppComponents components)
       : bus_(bus), components_(components) {
     app_binder::Bind(bus_, components_);
-    app_binder::SendInitialValues(components_);
+    app_binder::SendInitialValues(bus_, components_);
   }
   ~AppWiring() { app_binder::Unbind(bus_, components_); }
   AppWiring(const AppWiring&) = delete;

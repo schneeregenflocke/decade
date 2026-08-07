@@ -52,6 +52,7 @@ class EventBus {
   [[nodiscard]] auto& selected_node() { return selected_node_; }
   [[nodiscard]] auto& edit_requested() { return edit_requested_; }
   [[nodiscard]] auto& text_edit() { return text_edit_; }
+  [[nodiscard]] auto& state_burst() { return state_burst_; }
 
  private:
   domain::StateTopic<std::vector<DateEntry>> date_entries_;
@@ -70,6 +71,15 @@ class EventBus {
   domain::StateTopic<PickId> edit_requested_;
   // What is to be seen of a running edit; empty means none.
   domain::StateTopic<std::optional<TextEditView>> text_edit_;
+  // The one topic that carries no state but a bracket around it: true opens a
+  // burst of changes, false closes it. Loading a project fills six stores one
+  // after another, and every one of them publishes — a consumer that rebuilds
+  // on each would do the work six times for one user action (#36). It sits
+  // here rather than behind a port of its own, because the producer
+  // (ProjectDocument) exists long before the consumer (the rendering adapter,
+  // which needs the GL context): over the bus, whoever is not there simply
+  // does not listen.
+  domain::StateTopic<bool> state_burst_;
 };
 
 #endif  // EVENT_BUS_HPP

@@ -2,11 +2,13 @@
 #define CALENDAR_PAGE_HPP
 
 #include <glm/vec2.hpp>
+#include <iostream>
 #include <memory>
 #include <optional>
 #include <string>
 #include <vector>
 
+#include "../../common/debug_log.hpp"
 #include "../../domain/calendar_config.hpp"
 #include "../../domain/date_entry.hpp"
 #include "../../domain/date_entry_bars.hpp"
@@ -89,11 +91,28 @@ class CalendarPage {
     Update();
   }
 
+  // A burst of changes gets one rebuild, not one per change: while the bracket
+  // stands the work is only noted, and the closing half does it once (#36).
+  void ReceiveStateBurst(bool open) {
+    if (open) {
+      ++open_bursts_;
+      return;
+    }
+    if (open_bursts_ > 0) {
+      --open_bursts_;
+    }
+    if (open_bursts_ == 0 && pending_update_) {
+      pending_update_ = false;
+      Rebuild();
+    }
+  }
+
   void Update() {
-    scene_composer_.Build();
-    physics_world_.Rebuild(scene_composer_.PickBoxes());
-    render_surface_.RefreshView();
-    snapshot_topic_(scene_composer_.SceneSnapshot());
+    if (open_bursts_ > 0) {
+      pending_update_ = true;
+      return;
+    }
+    Rebuild();
   }
 
   // Hit-tests a page-space point against the pickable elements, returning the
@@ -138,7 +157,22 @@ class CalendarPage {
   }
 
  private:
+  void Rebuild() {
+    if (decade_debug::LogEnabled()) {
+      std::cout << "CalendarPage rebuild #" << ++rebuild_count_ << '\n';
+    }
+    scene_composer_.Build();
+    physics_world_.Rebuild(scene_composer_.PickBoxes());
+    render_surface_.RefreshView();
+    snapshot_topic_(scene_composer_.SceneSnapshot());
+  }
+
   application::RenderSurface& render_surface_;
+  // Nested brackets are counted, not toggled: a load inside a load would
+  // otherwise let the inner one rebuild while the outer still runs.
+  std::size_t open_bursts_{0};
+  bool pending_update_{false};
+  std::size_t rebuild_count_{0};
   domain::StateTopic<SceneNodeSnapshot>& snapshot_topic_;
 
   PhysicsWorld physics_world_;
