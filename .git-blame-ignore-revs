@@ -15,3 +15,6 @@
 
 # Format: clang-format over src and tests
 e4537bf6ab32d1ccdb0f48d80ad871ed01327c91
+
+# Format: two line wraps in the shape panel
+5e99035c34fee1b3fcd52e02855a088dcefdbef2
