@@ -63,10 +63,6 @@ class rect {
     return result;
   }
 
-  [[nodiscard]] rect dimension(Ty width, Ty height) const {
-    return rect(l(), l() + width, b(), b() + height);
-  }
-
   [[nodiscard]] glm::vec3 getCenter() const {
     return glm::vec3(edges_[0] + (width() / static_cast<Ty>(2)),
                      edges_[2] + (height() / static_cast<Ty>(2)),
@@ -98,14 +94,6 @@ class rect {
   void setT(Ty value) { edges_[3] = value; }
 
  private:
-  void addL(Ty value) { edges_[0] += value; }
-
-  void addR(Ty value) { edges_[1] += value; }
-
-  void addB(Ty value) { edges_[2] += value; }
-
-  void addT(Ty value) { edges_[3] += value; }
-
   std::array<Ty, 4> edges_;
 };
 
