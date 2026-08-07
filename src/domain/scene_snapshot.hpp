@@ -11,8 +11,8 @@
 // `src/infrastructure/graphics/`.
 enum class SnapshotShapeKind : std::uint8_t {
   kNone,
-  kQuadrilateral,
-  kRectangles,
+  kFill,
+  kBoxes,
   kFont,
 };
 

@@ -87,7 +87,7 @@ namespace calendar_sections {
                   current_sub_cell.Bottom() + bar_height +
                       ctx.layout.PrintAreaOrigin().y)});
 
-    auto bar_shape = std::make_unique<RectanglesShape>(ctx.rectangles_shader);
+    auto bar_shape = std::make_unique<BoxesShape>(ctx.rectangles_shader);
     bar_shape->SetShape(
         RectF(detail::kZero, bar_width, detail::kZero, bar_height),
         current_shape_config.LineWidth());

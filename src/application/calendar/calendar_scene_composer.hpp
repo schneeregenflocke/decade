@@ -75,7 +75,7 @@ class CalendarSceneComposer {
   }
 
   void Build() {
-    auto* shape = dynamic_cast<QuadrilateralShape*>(nodes_.page->GetShape());
+    auto* shape = dynamic_cast<FillShape*>(nodes_.page->GetShape());
     if (shape == nullptr) {
       return;
     }

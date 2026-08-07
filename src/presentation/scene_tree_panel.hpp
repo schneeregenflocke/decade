@@ -203,10 +203,10 @@ class SceneTreePanel : public wxPanel {
 
   static wxString ShapeKindLabel(SnapshotShapeKind kind) {
     switch (kind) {
-      case SnapshotShapeKind::kQuadrilateral:
-        return "Quadrilateral";
-      case SnapshotShapeKind::kRectangles:
-        return "Rectangles";
+      case SnapshotShapeKind::kFill:
+        return "Fill";
+      case SnapshotShapeKind::kBoxes:
+        return "Boxes";
       case SnapshotShapeKind::kFont:
         return "Font";
       case SnapshotShapeKind::kNone:

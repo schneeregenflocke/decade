@@ -22,11 +22,11 @@
   if (shape == nullptr) {
     return SnapshotShapeKind::kNone;
   }
-  if (dynamic_cast<const QuadrilateralShape*>(shape) != nullptr) {
-    return SnapshotShapeKind::kQuadrilateral;
+  if (dynamic_cast<const FillShape*>(shape) != nullptr) {
+    return SnapshotShapeKind::kFill;
   }
-  if (dynamic_cast<const RectanglesShape*>(shape) != nullptr) {
-    return SnapshotShapeKind::kRectangles;
+  if (dynamic_cast<const BoxesShape*>(shape) != nullptr) {
+    return SnapshotShapeKind::kBoxes;
   }
   if (dynamic_cast<const FontShape*>(shape) != nullptr) {
     return SnapshotShapeKind::kFont;

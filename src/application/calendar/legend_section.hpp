@@ -83,8 +83,7 @@ inline void BuildLegend(const SectionContext& ctx) {
       node_entry->SetStyleId(current_shape_config.Name());
       node_entries->AddChild(node_entry);
 
-      auto entry_shape =
-          std::make_unique<RectanglesShape>(ctx.rectangles_shader);
+      auto entry_shape = std::make_unique<BoxesShape>(ctx.rectangles_shader);
       entry_shape->SetShape(current_cell, current_shape_config.LineWidth());
       entry_shape->SetColors(current_shape_config.OutlineColor(),
                              current_shape_config.FillColor());
@@ -118,8 +117,7 @@ inline void BuildLegend(const SectionContext& ctx) {
       node_entry->SetStyleId(current_shape_config.Name());
       node_entries->AddChild(node_entry);
 
-      auto entry_shape =
-          std::make_unique<RectanglesShape>(ctx.rectangles_shader);
+      auto entry_shape = std::make_unique<BoxesShape>(ctx.rectangles_shader);
       entry_shape->SetShape(current_cell, current_shape_config.LineWidth());
       entry_shape->SetColors(current_shape_config.OutlineColor(),
                              current_shape_config.FillColor());

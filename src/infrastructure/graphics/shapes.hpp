@@ -16,9 +16,10 @@
 // below compute in that unit.
 inline constexpr size_t kVerticesPerQuad = 6;
 
-class QuadrilateralShape : public Shape {
+// One axis-aligned rectangle as a plain coloured area: no outline, one colour.
+class FillShape : public Shape {
  public:
-  explicit QuadrilateralShape(Shader& shader_in) : Shape(shader_in) {}
+  explicit FillShape(Shader& shader_in) : Shape(shader_in) {}
 
   void SetShape(const RectF& rectangle) {
     std::vector<glm::vec3> vertices(kVerticesPerQuad);
@@ -52,9 +53,12 @@ class QuadrilateralShape : public Shape {
   glm::vec4 color_{0.0F, 0.0F, 0.0F, 1.0F};
 };
 
-class RectanglesShape : public Shape {
+// Many axis-aligned rectangles at once, each with an outline of a given width
+// around its fill — the two carry colours of their own. One draw call for all
+// of them, which is why the whole set travels together.
+class BoxesShape : public Shape {
  public:
-  explicit RectanglesShape(Shader& shader_in) : Shape(shader_in) {}
+  explicit BoxesShape(Shader& shader_in) : Shape(shader_in) {}
 
   void SetShape(const std::vector<RectF>& rectangles, float line_width) {
     vertices_.resize(rectangles.size() * kVerticesPerRectangle);

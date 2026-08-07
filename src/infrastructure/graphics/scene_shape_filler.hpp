@@ -13,21 +13,21 @@
 
 // Infrastructure: generic, domain-free helpers for the two scene-node
 // construction shapes that recur across the calendar's section builders —
-// filling a RectanglesShape node and attaching a centered text node. They take
+// filling a BoxesShape node and attaching a centered text node. They take
 // plain colours/line width and a shader/font (never a domain
 // ShapeConfiguration) so this stays a reusable graphics utility; the
 // calendar-specific mapping from a configuration to these primitives lives in
 // the calendar adapter (src/application/calendar/).
 namespace scene_shapes {
 
-// Fills the RectanglesShape carried by `node` with the given rectangle(s) (a
-// single RectF or a vector of them — RectanglesShape::SetShape is overloaded)
-// and the outline/fill colours. A no-op if the node carries no RectanglesShape.
+// Fills the BoxesShape carried by `node` with the given rectangle(s) (a
+// single RectF or a vector of them — BoxesShape::SetShape is overloaded)
+// and the outline/fill colours. A no-op if the node carries no BoxesShape.
 template <typename Shapes>
 inline void FillRectangles(const std::shared_ptr<SceneNode>& node,
                            const Shapes& shapes, const glm::vec4& outline_color,
                            const glm::vec4& fill_color, float line_width) {
-  auto* shape = dynamic_cast<RectanglesShape*>(node->GetShape());
+  auto* shape = dynamic_cast<BoxesShape*>(node->GetShape());
   if (shape == nullptr) {
     return;
   }

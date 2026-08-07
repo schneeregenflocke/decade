@@ -93,7 +93,7 @@ class SceneHighlighter {
   // Positions the selection overlay over the currently selected node's world
   // bounds, or hides it (zero-area quad) when there is no resolvable selection.
   void ApplySelectionOverlay() {
-    auto* shape = dynamic_cast<QuadrilateralShape*>(overlay_node_->GetShape());
+    auto* shape = dynamic_cast<FillShape*>(overlay_node_->GetShape());
     if (shape == nullptr) {
       return;
     }
@@ -158,7 +158,7 @@ class SceneHighlighter {
     if (!node) {
       return;
     }
-    auto* shape = dynamic_cast<RectanglesShape*>(node->GetShape());
+    auto* shape = dynamic_cast<BoxesShape*>(node->GetShape());
     if (shape == nullptr) {
       return;
     }

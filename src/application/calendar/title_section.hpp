@@ -54,9 +54,9 @@ struct TextLine {
 inline void FillCaretAndSelection(const SectionContext& ctx,
                                   const TextLine& line) {
   auto* caret_shape =
-      dynamic_cast<QuadrilateralShape*>(ctx.nodes.title_caret->GetShape());
+      dynamic_cast<FillShape*>(ctx.nodes.title_caret->GetShape());
   auto* selection_shape =
-      dynamic_cast<QuadrilateralShape*>(ctx.nodes.title_selection->GetShape());
+      dynamic_cast<FillShape*>(ctx.nodes.title_selection->GetShape());
   if (caret_shape == nullptr || selection_shape == nullptr) {
     return;
   }
