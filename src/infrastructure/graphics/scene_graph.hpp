@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstddef>
 #include <glm/mat4x4.hpp>
 #include <glm/vec4.hpp>
 #include <limits>
@@ -40,6 +41,15 @@ class SceneNode {
 
   void RemoveChildren() { children_.clear(); }
 
+  // Drops every child past the first `count`. The counterpart to reusing
+  // children across rebuilds: whatever the shorter set no longer needs falls
+  // away, while the kept ones hold on to their GL buffers (#69).
+  void TruncateChildren(std::size_t count) {
+    if (count < children_.size()) {
+      children_.resize(count);
+    }
+  }
+
   void SetShape(std::unique_ptr<Drawable> shape_ptr) {
     shape_ = std::move(shape_ptr);
   }
@@ -51,6 +61,10 @@ class SceneNode {
   [[nodiscard]] const Drawable* GetShape() const { return shape_.get(); }
 
   [[nodiscard]] const std::string& GetNodeName() const { return node_name_; }
+
+  // A reused child stands for something else than it did last rebuild — the
+  // seventh bar label may now read a different date.
+  void SetNodeName(const std::string& name) { node_name_ = name; }
 
   // The name of the domain ShapeConfiguration this node's appearance comes from
   // (empty on nodes without such a binding, text and container nodes for

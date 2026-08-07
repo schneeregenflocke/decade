@@ -2,6 +2,7 @@
 #define BAR_SECTIONS_HPP
 
 #include <cstddef>
+#include <deque>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/vec3.hpp>
 #include <iomanip>
@@ -13,6 +14,7 @@
 #include "../../domain/date.hpp"
 #include "../../domain/shape_configuration.hpp"
 #include "../../domain/timeline_projection.hpp"
+#include "../../infrastructure/graphics/child_pool.hpp"
 #include "../../infrastructure/graphics/pick_id.hpp"
 #include "../../infrastructure/graphics/rect.hpp"
 #include "../../infrastructure/graphics/scene_graph.hpp"
@@ -27,52 +29,49 @@ namespace calendar_sections {
 [[nodiscard]] inline BarSceneResult BuildBars(const SectionContext& ctx) {
   BarSceneResult result;
 
-  const auto& node = ctx.nodes.date_bars;
-  node->RemoveChildren();
-
+  ChildPool group_pool(ctx.nodes.date_bars);
   const auto number_groups = ctx.date_groups.Items().size();
-  std::vector<std::shared_ptr<SceneNode>> group_nodes;
-  group_nodes.reserve(number_groups);
+  // A deque, not a vector: the pool is deliberately neither copyable nor
+  // movable, and a deque places its elements without ever moving them.
+  std::deque<ShapeChildPool<BoxesShape>> bar_pools;
   for (size_t index = 0; index < number_groups; ++index) {
-    auto group_node = std::make_shared<SceneNode>(std::string("group node ") +
-                                                  std::to_string(index));
-    node->AddChild(group_node);
-    group_nodes.push_back(group_node);
+    bar_pools.emplace_back(
+        group_pool.Next(std::string("group node ") + std::to_string(index)),
+        ctx.rectangles_shader, calendar_layers::kBars);
   }
 
-  const auto& node_labels = ctx.nodes.date_bar_labels;
-  node_labels->RemoveChildren();
+  auto bar_labels = detail::TextPool(ctx, ctx.nodes.date_bar_labels);
 
   const TimelineProjection projection(ctx.calendar_config);
   const auto number_bars = ctx.date_entry_bars.GetNumberBars();
   for (size_t index = 0; index < number_bars; ++index) {
-    const auto& bar = ctx.date_entry_bars.GetBar(index);
-    if (!ctx.calendar_config.IsInSpan(bar.GetYear())) {
+    const auto& bar_data = ctx.date_entry_bars.GetBar(index);
+    if (!ctx.calendar_config.IsInSpan(bar_data.GetYear())) {
       continue;
     }
-    const auto current_group = static_cast<size_t>(bar.GetGroup());
+    const auto current_group = static_cast<size_t>(bar_data.GetGroup());
     auto current_shape_config =
         ctx.shape_config.GetDynamicConfiguration(current_group);
 
-    const auto row = projection.RowForYear(bar.GetYear());
+    const auto row = projection.RowForYear(bar_data.GetYear());
     const auto current_sub_cell = ctx.layout.GetSubArea(row, 1);
 
-    const auto bar_left =
-        current_sub_cell.Left() + (bar.GetFirstDay() * ctx.layout.DayWidth());
-    const auto bar_width =
-        (bar.GetLastDay() - bar.GetFirstDay()) * ctx.layout.DayWidth();
+    const auto bar_left = current_sub_cell.Left() +
+                          (bar_data.GetFirstDay() * ctx.layout.DayWidth());
+    const auto bar_width = (bar_data.GetLastDay() - bar_data.GetFirstDay()) *
+                           ctx.layout.DayWidth();
     const auto bar_height = current_sub_cell.Height();
 
     // Each bar is its own node: the position lives in the node transform (ready
     // for dragging/animating), the size lives in the shape geometry. A pure
     // translation keeps the outline width constant, which a scale matrix would
     // distort. The bar's world rect is therefore unchanged.
-    auto bar_node = std::make_shared<SceneNode>(std::string("bar ") +
-                                                std::to_string(index));
-    bar_node->SetModelMatrix(glm::translate(
+    const auto bar = bar_pools.at(current_group)
+                         .Next(std::string("bar ") + std::to_string(index));
+    bar.node->SetModelMatrix(glm::translate(
         glm::mat4(1.0F),
         glm::vec3(bar_left, current_sub_cell.Bottom(), detail::kZero)));
-    bar_node->SetStyleId(current_shape_config.Name());
+    bar.node->SetStyleId(current_shape_config.Name());
 
     // Page-space box for hit-testing. The node's world position is
     // layout.PrintAreaOrigin() + (bar_left, sub_cell.Bottom()), so the
@@ -87,24 +86,21 @@ namespace calendar_sections {
                   current_sub_cell.Bottom() + bar_height +
                       ctx.layout.PrintAreaOrigin().y)});
 
-    auto bar_shape = std::make_unique<BoxesShape>(ctx.rectangles_shader);
-    bar_shape->SetShape(
+    bar.shape.SetShape(
         RectF(detail::kZero, bar_width, detail::kZero, bar_height),
         current_shape_config.LineWidth());
-    bar_shape->SetColors(current_shape_config.OutlineColor(),
-                         current_shape_config.FillColor());
-    bar_node->SetShape(std::move(bar_shape));
-    bar_node->SetDrawLayer(calendar_layers::kBars);
-    group_nodes.at(current_group)->AddChild(bar_node);
-    result.bar_nodes.emplace(index, bar_node);
+    bar.shape.SetColors(current_shape_config.OutlineColor(),
+                        current_shape_config.FillColor());
+    result.bar_nodes.emplace(index, bar.node);
 
     auto current_text_cell = ctx.layout.GetSubArea(row, 2);
     current_text_cell.SetLeft(bar_left);
     current_text_cell.SetRight(bar_left + bar_width);
 
-    detail::AddCenteredText(
-        ctx, node_labels, std::string("label node ") + std::to_string(index),
-        bar.GetText(), current_text_cell.Center(), current_text_cell.Height());
+    detail::SetCenteredText(ctx, bar_labels,
+                            std::string("label node ") + std::to_string(index),
+                            bar_data.GetText(), current_text_cell.Center(),
+                            current_text_cell.Height());
   }
 
   return result;
@@ -112,8 +108,7 @@ namespace calendar_sections {
 
 inline void BuildYearTotals(const SectionContext& ctx) {
   const auto& node_cells = ctx.nodes.year_totals;
-  const auto& node_text = ctx.nodes.year_total_labels;
-  node_text->RemoveChildren();
+  auto total_labels = detail::TextPool(ctx, ctx.nodes.year_total_labels);
 
   const std::size_t span_years = ctx.date_entry_bars.GetSpan();
   if (span_years == 0) {
@@ -158,8 +153,8 @@ inline void BuildYearTotals(const SectionContext& ctx) {
       year_total_text_cell.SetBottom(year_total_cell.Bottom());
       year_total_text_cell.SetTop(year_total_cell.Top());
 
-      detail::AddCenteredText(
-          ctx, node_text,
+      detail::SetCenteredText(
+          ctx, total_labels,
           std::string("year total label ") + std::to_string(index),
           year_total_text, year_total_text_cell.Center(),
           year_total_text_cell.Height());

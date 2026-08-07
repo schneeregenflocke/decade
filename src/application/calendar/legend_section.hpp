@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "../../domain/shape_configuration.hpp"
+#include "../../infrastructure/graphics/child_pool.hpp"
 #include "../../infrastructure/graphics/font.hpp"
 #include "../../infrastructure/graphics/rect.hpp"
 #include "../../infrastructure/graphics/scene_graph.hpp"
@@ -19,11 +20,9 @@
 namespace calendar_sections {
 
 inline void BuildLegend(const SectionContext& ctx) {
-  const auto& node_entries = ctx.nodes.legend_entries;
-  node_entries->RemoveChildren();
-
-  const auto& node_text = ctx.nodes.legend_labels;
-  node_text->RemoveChildren();
+  ShapeChildPool<BoxesShape> entry_pool(
+      ctx.nodes.legend_entries, ctx.rectangles_shader, calendar_layers::kBars);
+  auto entry_labels = detail::TextPool(ctx, ctx.nodes.legend_labels);
 
   const size_t number_entry_frames = (ctx.date_groups.Items().size() + 1) * 2;
   std::vector<RectF> legend_entries_frames(number_entry_frames);
@@ -59,8 +58,8 @@ inline void BuildLegend(const SectionContext& ctx) {
   const std::size_t span_years = ctx.calendar_config.GetSpanLengthYears();
   for (size_t index = 0; index < ctx.date_groups.Items().size(); ++index) {
     const auto label_index = index * 2;
-    detail::AddCenteredText(
-        ctx, node_text, std::string("legend label ") + std::to_string(index),
+    detail::SetCenteredText(
+        ctx, entry_labels, std::string("legend label ") + std::to_string(index),
         ctx.date_groups.Items().at(index).GetName(),
         legend_entries_frames.at(label_index).Center(), legend_font_size);
 
@@ -77,23 +76,18 @@ inline void BuildLegend(const SectionContext& ctx) {
       auto current_shape_config =
           ctx.shape_config.GetDynamicConfiguration(index);
 
-      auto node_entry = std::make_shared<SceneNode>(std::string("legend bar ") +
-                                                    std::to_string(index));
-      node_entry->SetDrawLayer(calendar_layers::kBars);
-      node_entry->SetStyleId(current_shape_config.Name());
-      node_entries->AddChild(node_entry);
-
-      auto entry_shape = std::make_unique<BoxesShape>(ctx.rectangles_shader);
-      entry_shape->SetShape(current_cell, current_shape_config.LineWidth());
-      entry_shape->SetColors(current_shape_config.OutlineColor(),
-                             current_shape_config.FillColor());
-      node_entry->SetShape(std::move(entry_shape));
+      const auto entry =
+          entry_pool.Next(std::string("legend bar ") + std::to_string(index));
+      entry.node->SetStyleId(current_shape_config.Name());
+      entry.shape.SetShape(current_cell, current_shape_config.LineWidth());
+      entry.shape.SetColors(current_shape_config.OutlineColor(),
+                            current_shape_config.FillColor());
     }
   }
 
   {
-    detail::AddCenteredText(
-        ctx, node_text, std::string("legend label year total"), "Annual sum",
+    detail::SetCenteredText(
+        ctx, entry_labels, std::string("legend label year total"), "Annual sum",
         legend_entries_frames.at(legend_entries_frames.size() - 2).Center(),
         legend_font_size);
 
@@ -111,17 +105,11 @@ inline void BuildLegend(const SectionContext& ctx) {
       auto current_shape_config = ctx.shape_config.GetShapeConfiguration(
           std::string(ShapeConfigSet::kYearsTotals));
 
-      auto node_entry =
-          std::make_shared<SceneNode>(std::string("legend bar annual sum"));
-      node_entry->SetDrawLayer(calendar_layers::kBars);
-      node_entry->SetStyleId(current_shape_config.Name());
-      node_entries->AddChild(node_entry);
-
-      auto entry_shape = std::make_unique<BoxesShape>(ctx.rectangles_shader);
-      entry_shape->SetShape(current_cell, current_shape_config.LineWidth());
-      entry_shape->SetColors(current_shape_config.OutlineColor(),
-                             current_shape_config.FillColor());
-      node_entry->SetShape(std::move(entry_shape));
+      const auto entry = entry_pool.Next(std::string("legend bar annual sum"));
+      entry.node->SetStyleId(current_shape_config.Name());
+      entry.shape.SetShape(current_cell, current_shape_config.LineWidth());
+      entry.shape.SetColors(current_shape_config.OutlineColor(),
+                            current_shape_config.FillColor());
     }
   }
 }

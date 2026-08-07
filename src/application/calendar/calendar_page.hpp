@@ -1,6 +1,7 @@
 #ifndef CALENDAR_PAGE_HPP
 #define CALENDAR_PAGE_HPP
 
+#include <chrono>
 #include <glm/vec2.hpp>
 #include <iostream>
 #include <memory>
@@ -141,7 +142,7 @@ class CalendarPage {
   // panel.
   void ReceiveTextEdit(const std::optional<TextEditView>& text_edit) {
     scene_composer_.SetTextEdit(text_edit);
-    scene_composer_.Build();
+    BuildScene("text edit");
     render_surface_.Repaint();
   }
 
@@ -158,13 +159,25 @@ class CalendarPage {
 
  private:
   void Rebuild() {
-    if (decade_debug::LogEnabled()) {
-      std::cout << "CalendarPage rebuild #" << ++rebuild_count_ << '\n';
-    }
-    scene_composer_.Build();
+    BuildScene("state change");
     physics_world_.Rebuild(scene_composer_.PickBoxes());
     render_surface_.RefreshView();
     snapshot_topic_(scene_composer_.SceneSnapshot());
+  }
+
+  // The one place the scene gets built, so the debug channel sees every rebuild
+  // — the ones a state change causes and the ones a keystroke in the title
+  // does. What it cost is worth knowing: the build is CPU work and shows the
+  // same figure on the graphics card as under software rendering.
+  void BuildScene(const char* reason) {
+    const auto started = std::chrono::steady_clock::now();
+    scene_composer_.Build();
+    if (decade_debug::LogEnabled()) {
+      const auto elapsed = std::chrono::duration<double, std::milli>(
+          std::chrono::steady_clock::now() - started);
+      std::cout << "scene build #" << ++build_count_ << " (" << reason << ") "
+                << elapsed.count() << " ms\n";
+    }
   }
 
   application::RenderSurface& render_surface_;
@@ -172,7 +185,7 @@ class CalendarPage {
   // otherwise let the inner one rebuild while the outer still runs.
   std::size_t open_bursts_{0};
   bool pending_update_{false};
-  std::size_t rebuild_count_{0};
+  std::size_t build_count_{0};
   domain::StateTopic<SceneNodeSnapshot>& snapshot_topic_;
 
   PhysicsWorld physics_world_;

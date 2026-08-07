@@ -77,14 +77,19 @@ inline void FillRectangles(const ShapeNode<BoxesShape>& node,
   node.Node()->SetStyleId(config.Name());
 }
 
-// Adapter over scene_shapes::AddCenteredText supplying the text draw layer.
-inline void AddCenteredText(const SectionContext& ctx,
-                            const std::shared_ptr<SceneNode>& parent,
+// A pool of text children under `parent`, on the text draw layer. One per
+// label group and rebuild; it hands the nodes of the previous rebuild back out
+// instead of building new ones (#69).
+[[nodiscard]] inline scene_shapes::TextChildPool TextPool(
+    const SectionContext& ctx, const std::shared_ptr<SceneNode>& parent) {
+  return {parent, ctx.font_shader, calendar_layers::kText};
+}
+
+inline void SetCenteredText(const SectionContext& ctx,
+                            scene_shapes::TextChildPool& pool,
                             const std::string& name, const std::string& text,
                             const glm::vec3& center, float size) {
-  scene_shapes::AddCenteredText(parent, name, text, center, size,
-                                ctx.font_shader, ctx.font,
-                                calendar_layers::kText);
+  scene_shapes::SetCenteredText(pool, name, text, center, size, ctx.font);
 }
 
 }  // namespace detail

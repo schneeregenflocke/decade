@@ -40,9 +40,7 @@ inline void BuildCalendarLabels(const SectionContext& ctx) {
   // not travel with the cell size.
   const float labels_font_size = ctx.font_config.SizeMillimetres();
 
-  const auto& month_node = ctx.nodes.month_labels;
-
-  month_node->RemoveChildren();
+  auto month_labels = detail::TextPool(ctx, ctx.nodes.month_labels);
   for (size_t index = 0; index < number_months; ++index) {
     const auto float_index = static_cast<float>(index);
     const auto left = ctx.layout.XLabelsArea().Left() +
@@ -52,8 +50,8 @@ inline void BuildCalendarLabels(const SectionContext& ctx) {
     x_label_frames.at(index).SetBottom(ctx.layout.XLabelsArea().Bottom());
     x_label_frames.at(index).SetTop(ctx.layout.XLabelsArea().Top());
 
-    detail::AddCenteredText(
-        ctx, month_node, months_names.at(index), months_names.at(index),
+    detail::SetCenteredText(
+        ctx, month_labels, months_names.at(index), months_names.at(index),
         x_label_frames.at(index).Center(), labels_font_size);
   }
 
@@ -61,16 +59,14 @@ inline void BuildCalendarLabels(const SectionContext& ctx) {
       ctx.shape_config.GetShapeConfiguration(ShapeConfigSet::kCalendarLabels);
   detail::FillRectangles(ctx.nodes.column_labels, x_label_frames, config);
 
-  const auto& year_node = ctx.nodes.year_labels;
-
   const std::size_t span_years = ctx.calendar_config.GetSpanLengthYears();
+  auto year_labels = detail::TextPool(ctx, ctx.nodes.year_labels);
   if (span_years == 0) {
     return;
   }
 
   const TimelineProjection projection(ctx.calendar_config);
   std::vector<RectF> y_labels_frames(span_years);
-  year_node->RemoveChildren();
   for (std::size_t index = 0; index < span_years; ++index) {
     const std::string current_year_text =
         std::to_string(projection.YearForRow(index));
@@ -83,8 +79,8 @@ inline void BuildCalendarLabels(const SectionContext& ctx) {
     y_labels_frames.at(index).SetBottom(bottom);
     y_labels_frames.at(index).SetTop(bottom + ctx.layout.RowHeight());
 
-    detail::AddCenteredText(
-        ctx, year_node, current_year_text, current_year_text,
+    detail::SetCenteredText(
+        ctx, year_labels, current_year_text, current_year_text,
         y_labels_frames.at(index).Center(), labels_font_size);
   }
 

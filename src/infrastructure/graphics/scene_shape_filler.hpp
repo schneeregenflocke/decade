@@ -34,21 +34,17 @@ inline void FillRectangles(const ShapeNode<BoxesShape>& node,
   shape.SetColors(outline_color, fill_color);
 }
 
-// Creates a centered text node named `name` under `parent`: a FontShape on the
-// given draw layer rendering `text` centered at `center` with font height
-// `size`. Concentrates the "make FontShape, SetFont, centre, attach on a layer"
-// sequence used by every label group.
-inline void AddCenteredText(const std::shared_ptr<SceneNode>& parent,
-                            const std::string& name, const std::string& text,
-                            const glm::vec3& center, float size,
-                            Shader& font_shader,
-                            const std::shared_ptr<Font>& font, int draw_layer) {
-  auto shape = std::make_unique<FontShape>(font_shader);
-  shape->SetFont(font);
-  shape->SetShapeCentered(text, center, size);
-  auto node = std::make_shared<SceneNode>(name, std::move(shape));
-  node->SetDrawLayer(draw_layer);
-  parent->AddChild(node);
+// A pool of centred text children. Sets the next child to `text`, centred at
+// `center` with font height `size`, and keeps the node it already had —
+// including its GL buffers. The label groups all share this shape.
+using TextChildPool = ShapeChildPool<FontShape>;
+
+inline void SetCenteredText(TextChildPool& pool, const std::string& name,
+                            const std::string& text, const glm::vec3& center,
+                            float size, const std::shared_ptr<Font>& font) {
+  FontShape& shape = pool.Next(name).shape;
+  shape.SetFont(font);
+  shape.SetShapeCentered(text, center, size);
 }
 
 }  // namespace scene_shapes
