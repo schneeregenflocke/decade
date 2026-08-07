@@ -8,6 +8,7 @@
 #include <limits>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <string>
 #include <utility>
 #include <vector>
@@ -141,9 +142,7 @@ class SceneNode {
   // node's world transform (parent_world * local model matrix) and collects its
   // shape together with its Draw layer. Second, the collected shapes are drawn
   // in painter's order: a stable sort by layer, so equal layers keep the
-  // traversal order. With every layer left at its default this reproduces the
-  // previous traversal Draw order exactly; assigning layers lets the overlap
-  // order be controlled independently of the tree structure.
+  // traversal order.
   void Draw(const glm::mat4& parent_world = glm::mat4(1.0F)) {
     struct DrawCall {
       Drawable* shape;
@@ -167,7 +166,10 @@ class SceneNode {
                               .world = current.world,
                               .layer = current.node->draw_layer_});
       }
-      for (const auto& child : current.node->children_) {
+      // Back to front, because the stack pops from the back: pushed in order,
+      // the last child would come off first and end up painted underneath its
+      // earlier siblings (#29).
+      for (const auto& child : std::views::reverse(current.node->children_)) {
         stack.push_back({.node = child.get(),
                          .world = current.world * child->model_matrix_});
       }

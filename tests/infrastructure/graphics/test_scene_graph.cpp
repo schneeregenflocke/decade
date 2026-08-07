@@ -15,8 +15,8 @@
 // members allocate GL objects in their constructors, so no node could be built
 // without a live context and none of this was reachable.
 //
-// It freezes the traversal as it stands on 2026-08-06, the known fault of #29
-// included and marked as such.
+// It pins the traversal: the accumulated transforms, the painter's layer, the
+// sibling order (#29) and the node path.
 
 namespace {
 
@@ -57,13 +57,10 @@ glm::mat4 ShiftedBy(float x_offset) {
 
 // --- The draw order ---
 
-// The fault of #29, frozen as it stands. Draw walks a stack: it pushes the
-// children in order and pops from the back, so siblings get painted in
-// *reverse*. The first child added lands last in the list and therefore on top
-// — the opposite of what the comment above SetDrawLayer promises ("nodes
-// sharing a layer keep their traversal order"). Whoever closes #29 turns this
-// expectation around.
-TEST(SceneNodeCharacterisation, SiblingsOfOneLayerAreDrawnInReverse) {
+// Siblings of one layer are painted in the order they were added, so the first
+// child sits furthest back and the last one on top (#29). The stack pushes them
+// back to front for exactly this reason.
+TEST(SceneNodeCharacterisation, SiblingsOfOneLayerKeepTheirOrder) {
   std::vector<std::string> log;
   SceneNode root("root");
   root.AddChild(MakeNode("first", log));
@@ -73,9 +70,27 @@ TEST(SceneNodeCharacterisation, SiblingsOfOneLayerAreDrawnInReverse) {
   root.Draw();
 
   ASSERT_EQ(log.size(), 3U);
-  EXPECT_EQ(log[0], "third@0");
+  EXPECT_EQ(log[0], "first@0");
   EXPECT_EQ(log[1], "second@0");
-  EXPECT_EQ(log[2], "first@0");
+  EXPECT_EQ(log[2], "third@0");
+}
+
+// Depth first: a subtree gets painted whole before the next sibling starts, so
+// a later sibling covers an earlier one's children too.
+TEST(SceneNodeCharacterisation, ASubtreeIsPaintedBeforeTheNextSibling) {
+  std::vector<std::string> log;
+  SceneNode root("root");
+  auto branch = MakeNode("branch", log);
+  branch->AddChild(MakeNode("branch_child", log));
+  root.AddChild(branch);
+  root.AddChild(MakeNode("later", log));
+
+  root.Draw();
+
+  ASSERT_EQ(log.size(), 3U);
+  EXPECT_EQ(log[0], "branch@0");
+  EXPECT_EQ(log[1], "branch_child@0");
+  EXPECT_EQ(log[2], "later@0");
 }
 
 // The layer beats the tree position, and that part does hold: a lower layer is
