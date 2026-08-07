@@ -19,12 +19,13 @@
 #include "../../domain/text_edit_view.hpp"
 #include "../../domain/title_config.hpp"
 #include "../../infrastructure/graphics/font.hpp"
+#include "../../infrastructure/graphics/graphics_engine.hpp"
 #include "../../infrastructure/graphics/page_geometry.hpp"
 #include "../../infrastructure/graphics/pick_id.hpp"
 #include "../../infrastructure/graphics/rect.hpp"
 #include "../../infrastructure/graphics/scene.hpp"
 #include "../../infrastructure/physics/physics_world.hpp"
-#include "../../presentation/gl_canvas.hpp"
+#include "../render_surface.hpp"
 #include "calendar_scene_composer.hpp"
 
 // Rendering adapter: owns the domain state relevant to the calendar drawing,
@@ -33,13 +34,15 @@
 // (copyable); every incoming signal carries a value, so the slots just assign.
 class CalendarPage {
  public:
-  CalendarPage(GLCanvas& gl_canvas_in, const FontConfig& font_config,
+  CalendarPage(GraphicsEngine& graphics_engine,
+               application::RenderSurface& render_surface,
+               const FontConfig& font_config,
                domain::StateTopic<SceneNodeSnapshot>& snapshot_topic)
-      : gl_canvas_(gl_canvas_in),
+      : render_surface_(render_surface),
         snapshot_topic_(snapshot_topic),
         font_config_(font_config),
         font_(std::make_shared<Font>(font_config.FilePath())),
-        scene_composer_(gl_canvas_in.Engine(), scene_, font_, font_config_,
+        scene_composer_(graphics_engine, scene_, font_, font_config_,
                         page_size_, page_margin_, title_config_,
                         calendar_config_, shape_config_, date_groups_,
                         date_entry_bars_) {}
@@ -89,7 +92,7 @@ class CalendarPage {
   void Update() {
     scene_composer_.Build();
     physics_world_.Rebuild(scene_composer_.PickBoxes());
-    gl_canvas_.RefreshView();
+    render_surface_.RefreshView();
     snapshot_topic_(scene_composer_.SceneSnapshot());
   }
 
@@ -103,14 +106,14 @@ class CalendarPage {
   // colours change, so the cheap Repaint suffices — no projection refresh.
   void ReceiveHovered(const std::optional<PickId>& hovered) {
     scene_composer_.SetHovered(hovered);
-    gl_canvas_.Repaint();
+    render_surface_.Repaint();
   }
 
   // Highlights the scene-tree-selected node (and its subtree) in place and
   // repaints. The path identifies the node within the scene graph.
   void ReceiveSelectedNode(const std::optional<std::string>& path) {
     scene_composer_.SetSelectedNode(path);
-    gl_canvas_.Repaint();
+    render_surface_.Repaint();
   }
 
   // Draws the running text edit. The text changes the geometry, so a rebuild is
@@ -120,7 +123,7 @@ class CalendarPage {
   void ReceiveTextEdit(const std::optional<TextEditView>& text_edit) {
     scene_composer_.SetTextEdit(text_edit);
     scene_composer_.Build();
-    gl_canvas_.Repaint();
+    render_surface_.Repaint();
   }
 
   // The path of the scene node a hit element means.
@@ -135,7 +138,7 @@ class CalendarPage {
   }
 
  private:
-  GLCanvas& gl_canvas_;
+  application::RenderSurface& render_surface_;
   domain::StateTopic<SceneNodeSnapshot>& snapshot_topic_;
 
   PhysicsWorld physics_world_;

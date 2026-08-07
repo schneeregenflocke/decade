@@ -29,7 +29,7 @@ Rules:
 6. Infrastructure takes domain types by reference; it must not depend on presentation.
 7. The command line gets read in exactly one place and translated into an options object (`src/application/runtime_options.hpp`); the application reads no environment variables.
 8. Serialisation is non-intrusive: it works over public APIs alone and owns the on-disk format; domain types know nothing of persistence.
-9. Exactly one bridge connects application and rendering infrastructure: the rendering adapter with its scene composer. Presentation never depends on GL types — it sees the scene graph as a GL-free read model (a snapshot) alone.
+9. Exactly one bridge connects application and rendering infrastructure: the rendering adapter with its scene composer. Presentation never depends on GL types — it sees the scene graph as a GL-free read model (a snapshot) alone. The way back runs over a port the application declares and presentation implements (`RenderSurface`: the adapter asks for a repaint without knowing the canvas).
 10. The application-wide `LocaleDateFormatter` gets constructed once in the composition root and passed on by reference — the locale configuration stays in one place.
 11. The open project (every store plus the file path) is one object: `ProjectDocument`. Loading, saving and CSV exchange go over that alone; nobody passes the six stores through one by one.
 

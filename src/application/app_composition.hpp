@@ -87,8 +87,8 @@ class AppComposition {
   void OnGraphicsReady() {
     try {
       CalendarPage& calendar_page = calendar_page_.emplace(
-          frame_->Canvas(), frame_->Font().GetFontConfig(),
-          bus_.scene_snapshot());
+          frame_->Canvas().Engine(), frame_->Canvas(),
+          frame_->Font().GetFontConfig(), bus_.scene_snapshot());
       wiring_.emplace(bus_, Components(calendar_page));
       startup_script_.RunAfterGraphics(*frame_, calendar_page,
                                        title_text_editor_);

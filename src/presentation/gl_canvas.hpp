@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "../application/calendar/text_input_event.hpp"
+#include "../application/render_surface.hpp"
 #include "../common/debug_log.hpp"
 #include "../domain/page_setup_config.hpp"
 #include "../domain/text_edit_buffer.hpp"
@@ -43,7 +44,7 @@
 // rendering engine, the view (projection, camera) and the pointer input. It
 // knows no domain logic — it receives the page size and reports pointer
 // positions in page space onwards.
-class GLCanvas : public wxGLCanvas {
+class GLCanvas : public wxGLCanvas, public application::RenderSurface {
  public:
   // Resolution and multisampling of the PNG export (SavePNG). Public, so the
   // menu caption uses the same value instead of a second number in its text.
@@ -138,7 +139,7 @@ class GLCanvas : public wxGLCanvas {
   // Fits viewport, projection and zoom bounds to the current window and page
   // size and asks for a repaint. Needed when the page or the canvas size
   // changes.
-  void RefreshView() {
+  void RefreshView() override {
     UpdateViewport();
     if (page_size_.Width() <= 0.0F || page_size_.Height() <= 0.0F) {
       if (decade_debug::LogEnabled()) {
@@ -152,7 +153,7 @@ class GLCanvas : public wxGLCanvas {
 
   // Triggers a repaint alone — for changes touching neither projection nor zoom
   // bounds (hover and selection colours). Markedly cheaper than RefreshView.
-  void Repaint() { Refresh(false); }
+  void Repaint() override { Refresh(false); }
 
   // The frame rate in the one-second window of the newest frame; since drawing
   // happens event-driven alone, the value carries meaning during an

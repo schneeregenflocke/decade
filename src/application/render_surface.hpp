@@ -1,0 +1,33 @@
+#ifndef RENDER_SURFACE_HPP
+#define RENDER_SURFACE_HPP
+
+namespace application {
+
+// The port through which the rendering adapter asks for a repaint, without
+// knowing what draws. The implementation is the GL canvas in presentation, so
+// the dependency points inwards (#15): presentation implements what the
+// application declares.
+//
+// Two methods rather than one, because the two costs differ by an order of
+// magnitude and the caller knows which it needs.
+class RenderSurface {
+ public:
+  RenderSurface() = default;
+  RenderSurface(const RenderSurface&) = delete;
+  RenderSurface& operator=(const RenderSurface&) = delete;
+  RenderSurface(RenderSurface&&) = delete;
+  RenderSurface& operator=(RenderSurface&&) = delete;
+  virtual ~RenderSurface() = default;
+
+  // The page geometry or the window size changed: viewport, projection and zoom
+  // bounds have to be refitted before the repaint.
+  virtual void RefreshView() = 0;
+
+  // Nothing but colours changed (hover, selection): repaint on the geometry
+  // that already stands.
+  virtual void Repaint() = 0;
+};
+
+}  // namespace application
+
+#endif  // RENDER_SURFACE_HPP
