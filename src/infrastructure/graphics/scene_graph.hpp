@@ -80,39 +80,30 @@ class SceneNode {
     float max_y = std::numeric_limits<float>::lowest();
     bool found = false;
 
-    struct Entry {
-      const SceneNode* node;
-      glm::mat4 world;
-    };
-    std::vector<Entry> stack;
-    stack.push_back({.node = this, .world = parent_world * model_matrix_});
-
-    while (!stack.empty()) {
-      const Entry current = stack.back();
-      stack.pop_back();
-      if (current.node->shape_ != nullptr) {
-        const RectF& bounds = current.node->shape_->LocalBounds();
-        if (bounds.Width() > 0.0F || bounds.Height() > 0.0F) {
+    VisitDepthFirst(
+        *this, parent_world,
+        [&](const SceneNode& node, const glm::mat4& world) {
+          if (node.shape_ == nullptr) {
+            return;
+          }
+          const RectF& bounds = node.shape_->LocalBounds();
+          if (bounds.Width() <= 0.0F && bounds.Height() <= 0.0F) {
+            return;
+          }
           const std::array<glm::vec4, 4> corners = {
               glm::vec4(bounds.Left(), bounds.Bottom(), 0.0F, 1.0F),
               glm::vec4(bounds.Right(), bounds.Bottom(), 0.0F, 1.0F),
               glm::vec4(bounds.Left(), bounds.Top(), 0.0F, 1.0F),
               glm::vec4(bounds.Right(), bounds.Top(), 0.0F, 1.0F)};
           for (const auto& corner : corners) {
-            const glm::vec4 world_corner = current.world * corner;
+            const glm::vec4 world_corner = world * corner;
             min_x = std::min(min_x, world_corner.x);
             min_y = std::min(min_y, world_corner.y);
             max_x = std::max(max_x, world_corner.x);
             max_y = std::max(max_y, world_corner.y);
           }
           found = true;
-        }
-      }
-      for (const auto& child : current.node->children_) {
-        stack.push_back({.node = child.get(),
-                         .world = current.world * child->model_matrix_});
-      }
-    }
+        });
 
     if (!found) {
       return std::nullopt;
@@ -151,29 +142,15 @@ class SceneNode {
     };
     std::vector<DrawCall> draw_calls;
 
-    struct Entry {
-      SceneNode* node;
-      glm::mat4 world;
-    };
-    std::vector<Entry> stack;
-    stack.push_back({.node = this, .world = parent_world * model_matrix_});
-
-    while (!stack.empty()) {
-      const Entry current = stack.back();
-      stack.pop_back();
-      if (current.node->shape_ != nullptr) {
-        draw_calls.push_back({.shape = current.node->shape_.get(),
-                              .world = current.world,
-                              .layer = current.node->draw_layer_});
-      }
-      // Back to front, because the stack pops from the back: pushed in order,
-      // the last child would come off first and end up painted underneath its
-      // earlier siblings (#29).
-      for (const auto& child : std::views::reverse(current.node->children_)) {
-        stack.push_back({.node = child.get(),
-                         .world = current.world * child->model_matrix_});
-      }
-    }
+    VisitDepthFirst(*this, parent_world,
+                    [&](SceneNode& node, const glm::mat4& world) {
+                      if (node.shape_ == nullptr) {
+                        return;
+                      }
+                      draw_calls.push_back({.shape = node.shape_.get(),
+                                            .world = world,
+                                            .layer = node.draw_layer_});
+                    });
 
     std::ranges::stable_sort(draw_calls,
                              [](const DrawCall& lhs, const DrawCall& rhs) {
@@ -186,6 +163,38 @@ class SceneNode {
   }
 
  private:
+  // The one depth-first walk both traversals above run (#35): they accumulate
+  // the world matrix identically and differ only in what they collect. The
+  // visitor sees each node together with its accumulated transform, this node
+  // before its children.
+  //
+  // `Node` deduces the constness from the caller, so WorldBounds gets a const
+  // walk and Draw a mutable one out of the same body. Children go onto the
+  // stack back to front, because it pops from the back: pushed in order, the
+  // last child would come off first and end up painted underneath its earlier
+  // siblings (#29).
+  template <typename Node, typename Visit>
+  static void VisitDepthFirst(Node& root, const glm::mat4& parent_world,
+                              Visit visit) {
+    struct Entry {
+      Node* node;
+      glm::mat4 world;
+    };
+    std::vector<Entry> stack;
+    stack.push_back(
+        {.node = &root, .world = parent_world * root.model_matrix_});
+
+    while (!stack.empty()) {
+      const Entry current = stack.back();
+      stack.pop_back();
+      visit(*current.node, current.world);
+      for (const auto& child : std::views::reverse(current.node->children_)) {
+        stack.push_back({.node = child.get(),
+                         .world = current.world * child->model_matrix_});
+      }
+    }
+  }
+
   std::string node_name_;
   std::string style_id_;
   std::vector<std::shared_ptr<SceneNode>> children_;
