@@ -4,7 +4,9 @@
 #include <wx/app.h>
 #include <wx/cmdline.h>
 #include <wx/string.h>
+#include <wx/wxcrt.h>
 
+#include <clocale>
 #include <exception>
 #include <iostream>
 #include <memory>
@@ -17,6 +19,24 @@
 
 class DecadeApp : public wxApp {
  public:
+  // wxApp converts argv into wxString with wxConvLibc, the conversion of the
+  // current C locale — and that one stands at "C" until somebody sets it, so
+  // every non-ASCII byte makes the conversion fail and the value arrives empty
+  // (#61). The conversion happens inside the base Initialize, so the locale has
+  // to be in place before it, well ahead of OnInit and of LocaleServices.
+  //
+  // wxSetlocale rather than std::setlocale, because it also runs
+  // wxUpdateLocaleIsUtf8 — the internal flag the wxString conversion reads.
+  // LC_CTYPE alone: the character conversion is all that is wanted here, and
+  // the rest of the locale belongs to LocaleServices.
+  bool Initialize(int& argument_count, wxChar** arguments) override {
+    if (wxSetlocale(LC_CTYPE, "") == nullptr) {
+      std::cerr << "cannot set the LC_CTYPE locale; non-ASCII command line "
+                   "values will be dropped\n";
+    }
+    return wxApp::Initialize(argument_count, arguments);
+  }
+
   void OnInitCmdLine(wxCmdLineParser& parser) override {
     wxApp::OnInitCmdLine(parser);
     application::AddRuntimeOptions(parser);
