@@ -232,7 +232,8 @@ class ShapeSetupPanel : public wxPanel {
     if (row == wxNOT_FOUND) {
       return;
     }
-    selected_name_ = name_list_->GetString(static_cast<unsigned>(row)).ToStdString();
+    selected_name_ =
+        name_list_->GetString(static_cast<unsigned>(row)).ToStdString();
     RefreshDetail();
   }
 
@@ -249,7 +250,8 @@ class ShapeSetupPanel : public wxPanel {
         static_cast<float>(line_width_->GetValue()),
         ShapeConfiguration::OutlineColorValue{
             ReadColor(outline_color_, outline_alpha_)},
-        ShapeConfiguration::FillColorValue{ReadColor(fill_color_, fill_alpha_)}};
+        ShapeConfiguration::FillColorValue{
+            ReadColor(fill_color_, fill_alpha_)}};
     if (!shape_config_set_.UpdateConfiguration(edited)) {
       return;
     }
