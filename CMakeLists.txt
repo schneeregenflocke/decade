@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.16)
 
 project(decade VERSION 0.0.0)
 
@@ -65,6 +65,16 @@ pkg_check_modules(EPOXY REQUIRED epoxy)
 target_include_directories(decade SYSTEM PRIVATE ${EPOXY_INCLUDE_DIRS})
 target_link_libraries(decade PRIVATE ${EPOXY_LIBRARIES})
 
+# epoxy claims the include guards __gl_h_ and __glext_h_ and refuses to compile
+# once GL/gl.h got there first (epoxy/gl.h:38, an #error). Qt's qopengl.h — which
+# QOpenGLWidget pulls in — includes exactly those, so epoxy has to be first in
+# every translation unit. Source order cannot guarantee that: clang-format sorts
+# <QtOpenGLWidgets/...> ahead of <epoxy/gl.h>, and Google style regroups include
+# blocks. The force-include settles it in one place for the whole target; with
+# the guards taken, Qt's GL headers collapse to nothing and every gl* call
+# resolves through epoxy's dispatch.
+target_compile_options(decade PRIVATE -include epoxy/gl.h)
+
 # ICU: Unicode text handling (UTF-8, NFC, grapheme segmentation) in font.hpp plus
 # the date backend. icu-uc = Unicode and common, icu-i18n = BreakIterator and
 # calendar. Not every distribution ships a CMake config, so through pkg-config
@@ -73,18 +83,22 @@ pkg_check_modules(ICU REQUIRED icu-uc icu-i18n)
 target_include_directories(decade SYSTEM PRIVATE ${ICU_INCLUDE_DIRS})
 target_link_libraries(decade PRIVATE ${ICU_LIBRARIES})
 
-find_package(wxWidgets CONFIG COMPONENTS propgrid gl core base)
-if(NOT wxWidgets_FOUND)
-	# Debian and Ubuntu build wx with autotools and ship no CMake config: module
-	# mode through wx-config. In CONFIG mode the imported targets handle includes
-	# and flags themselves.
-	find_package(wxWidgets REQUIRED COMPONENTS propgrid gl core base)
-	target_include_directories(decade SYSTEM PRIVATE ${wxWidgets_INCLUDE_DIRS})
-	target_compile_definitions(decade PRIVATE ${wxWidgets_DEFINITIONS})
-	separate_arguments(wxWidgets_cxx_flags UNIX_COMMAND "${wxWidgets_CXX_FLAGS}")
-	target_compile_options(decade PRIVATE ${wxWidgets_cxx_flags})
-endif()
-target_link_libraries(decade PRIVATE ${wxWidgets_LIBRARIES})
+# Qt: the widget toolkit and the GL surface. PrintSupport carries
+# QPageSetupDialog, the paper-size and margin dialogue behind the page panel.
+#
+# AUTOMOC stays off, and that is a design decision, not an omission: moc would
+# emit a second translation unit and break the single-TU rule (AGENTS.md,
+# "Designed as header-only"). Nothing here needs it — the application's own
+# signals run over sigslot, subscribing to a Qt widget's signal works through
+# QObject::connect with a functor, and event handlers are plain virtual
+# overrides. Q_OBJECT is needed to *declare* signals and slots, which no class
+# here does.
+find_package(Qt6 REQUIRED COMPONENTS Widgets OpenGLWidgets PrintSupport)
+target_link_libraries(decade PRIVATE
+	Qt6::Widgets
+	Qt6::OpenGLWidgets
+	Qt6::PrintSupport
+)
 
 find_package(ZLIB REQUIRED)
 find_package(PNG REQUIRED)
@@ -158,10 +172,24 @@ endif()
 # Deliberately no part of the standard build, so normal compiles stay fast; call
 # them explicitly or in CI. The commands sit in operations.md.
 
+# clang-tidy reads compile_commands.json, and Qt6::Platform writes a GCC-only
+# codegen flag into it: -mno-direct-extern-access, chosen by a generator
+# expression on the compiler id. Clang rejects it as an unknown *argument*, which
+# is a driver error — no -Wno-… reaches it, unlike the GCC warning flags below.
+# So the gate analyses a filtered copy of the database. Taking the flag out of
+# the build instead would be the wrong trade: it stops GCC from assuming direct
+# access to Qt's exported data symbols, and Qt sets it deliberately.
+set(DECADE_TIDY_DB_DIR ${CMAKE_BINARY_DIR}/tidy)
+add_custom_target(clang-tidy-db
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${DECADE_TIDY_DB_DIR}
+	COMMAND sh -c "sed 's/-mno-direct-extern-access//g' '${CMAKE_BINARY_DIR}/compile_commands.json' > '${DECADE_TIDY_DB_DIR}/compile_commands.json'"
+	COMMENT "compile_commands.json for clang-tidy, without the GCC-only flags"
+	VERBATIM)
+
 # clang-tidy on the single translation unit — it covers every src/ header through
-# HeaderFilterRegex. --extra-arg: -include type_traits works around an include bug
-# in wx/meta/convertible.h, and the -Wno-* defuse GCC flags out of
-# compile_commands.json.
+# HeaderFilterRegex. The -Wno-* extra args defuse GCC warning flags out of
+# compile_commands.json; the epoxy force-include rides along in there by itself,
+# because it stands as a target compile option.
 #
 # -Wno-c23-extensions is of the same kind and is NOT a suppressed finding: it
 # says nothing about our code, only that Clang 22 has not yet implemented
@@ -169,15 +197,15 @@ endif()
 # what builds here and in CI — compiles it as standard under -std=c++26 with
 # -Wpedantic -Werror. Drop this the day Clang implements it.
 add_custom_target(clang-tidy
-	COMMAND clang-tidy -p ${CMAKE_BINARY_DIR}
+	COMMAND clang-tidy -p ${DECADE_TIDY_DB_DIR}
 		--warnings-as-errors=*
-		--extra-arg=-include --extra-arg=type_traits
 		--extra-arg=-Wno-error --extra-arg=-Wno-unknown-warning-option
 		--extra-arg=-Wno-c23-extensions
 		src/application/main.cpp
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 	COMMENT "clang-tidy gate (every finding = an error) on src/application/main.cpp"
 	VERBATIM USES_TERMINAL)
+add_dependencies(clang-tidy clang-tidy-db)
 
 # Sanitizers demand other compile flags than the normal build, so every gate
 # configures a build folder of its own, rebuilds everything in it and runs the

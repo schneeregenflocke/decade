@@ -10,6 +10,30 @@
 
 #include "texture_object.hpp"
 
+// Restores the framebuffer that was bound on entry. Unbinding to 0 instead
+// would be a guess about who owns the screen: 0 is the window's back buffer
+// only under a context that draws into one. A QOpenGLWidget renders into a
+// framebuffer object of its own, so 0 there is not the target the caller came
+// from, and everything drawn afterwards would land nowhere — silently.
+class ScopedFramebufferBinding {
+ public:
+  ScopedFramebufferBinding() {
+    GLint bound = 0;
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &bound);
+    previous_ = static_cast<GLuint>(bound);
+  }
+
+  ~ScopedFramebufferBinding() { glBindFramebuffer(GL_FRAMEBUFFER, previous_); }
+
+  ScopedFramebufferBinding(const ScopedFramebufferBinding&) = delete;
+  ScopedFramebufferBinding& operator=(const ScopedFramebufferBinding&) = delete;
+  ScopedFramebufferBinding(ScopedFramebufferBinding&&) = delete;
+  ScopedFramebufferBinding& operator=(ScopedFramebufferBinding&&) = delete;
+
+ private:
+  GLuint previous_{0};
+};
+
 // Owns a single OpenGL renderbuffer handle. Non-copyable/non-movable because
 // the destructor deletes the handle — a copy would delete it twice.
 class RenderBuffer {
@@ -34,6 +58,7 @@ class RenderBuffer {
 class FrameBuffer {
  public:
   FrameBuffer(GLsizei width, GLsizei height, GLsizei samples, bool msaa) {
+    const ScopedFramebufferBinding restore_binding;
     glGenFramebuffers(1, &name_);
 
     if (!msaa) {
@@ -52,7 +77,6 @@ class FrameBuffer {
                                 GL_RENDERBUFFER, render_buffer_.Name());
       glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                              GL_TEXTURE_2D, texture_.Name(), 0);
-      glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
     if (msaa) {
@@ -71,7 +95,6 @@ class FrameBuffer {
                              GL_TEXTURE_2D_MULTISAMPLE, texture_.Name(), 0);
       glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
                                 GL_RENDERBUFFER, render_buffer_.Name());
-      glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
   }
 
@@ -83,10 +106,9 @@ class FrameBuffer {
   FrameBuffer& operator=(FrameBuffer&&) = delete;
 
   [[nodiscard]] GLenum CheckStatus() const {
+    const ScopedFramebufferBinding restore_binding;
     glBindFramebuffer(GL_FRAMEBUFFER, name_);
-    GLenum const status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    return status;
+    return glCheckFramebufferStatus(GL_FRAMEBUFFER);
   }
 
   [[nodiscard]] GLuint Name() const { return name_; }
@@ -161,6 +183,10 @@ class RenderToTexture {
     previous_viewport_width_ = viewport[2];
     previous_viewport_height_ = viewport[3];
 
+    GLint bound_framebuffer = 0;
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &bound_framebuffer);
+    previous_framebuffer_ = static_cast<GLuint>(bound_framebuffer);
+
     const GLuint render_target = multisampled_
                                      ? multisample_frame_buffer_->Name()
                                      : output_frame_buffer_.Name();
@@ -178,7 +204,7 @@ class RenderToTexture {
       glBlitFramebuffer(0, 0, width_, height_, 0, 0, width_, height_,
                         GL_COLOR_BUFFER_BIT, GL_NEAREST);
     }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, previous_framebuffer_);
 
     glViewport(0, 0, previous_viewport_width_, previous_viewport_height_);
   }
@@ -209,6 +235,7 @@ class RenderToTexture {
 
   GLint previous_viewport_width_{0};
   GLint previous_viewport_height_{0};
+  GLuint previous_framebuffer_{0};
 
   GLsizei bytes_per_pixel_{kBytesPerPixel};
   std::vector<unsigned char> image_;

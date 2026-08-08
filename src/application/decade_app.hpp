@@ -1,107 +1,82 @@
 #ifndef DECADE_APP_HPP
 #define DECADE_APP_HPP
 
-#include <wx/app.h>
-#include <wx/cmdline.h>
-#include <wx/string.h>
-#include <wx/wxcrt.h>
-
-#include <clocale>
+#include <QtCore/QCommandLineParser>
+#include <QtCore/QCoreApplication>
+#include <QtCore/QString>
+#include <QtCore/QtMessageHandler>
+#include <QtGui/QSurfaceFormat>
+#include <QtWidgets/QApplication>
 #include <exception>
 #include <iostream>
 #include <memory>
 
 #include "../common/debug_log.hpp"
+#include "../presentation/gl_canvas.hpp"
 #include "app_composition.hpp"
 #include "locale_services.hpp"
 #include "runtime_info.hpp"
 #include "runtime_options.hpp"
 
-class DecadeApp : public wxApp {
- public:
-  // wxApp converts argv into wxString with wxConvLibc, the conversion of the
-  // current C locale — and that one stands at "C" until somebody sets it, so
-  // every non-ASCII byte makes the conversion fail and the value arrives empty
-  // (#61). The conversion happens inside the base Initialize, so the locale has
-  // to be in place before it, well ahead of OnInit and of LocaleServices.
-  //
-  // wxSetlocale rather than std::setlocale, because it also runs
-  // wxUpdateLocaleIsUtf8 — the internal flag the wxString conversion reads.
-  // LC_CTYPE alone: the character conversion is all that is wanted here, and
-  // the rest of the locale belongs to LocaleServices.
-  bool Initialize(int& argument_count, wxChar** arguments) override {
-    if (wxSetlocale(LC_CTYPE, "") == nullptr) {
-      std::cerr << "cannot set the LC_CTYPE locale; non-ASCII command line "
-                   "values will be dropped\n";
-    }
-    return wxApp::Initialize(argument_count, arguments);
+namespace application {
+
+namespace decade_app_detail {
+
+// Holds the two channels of operations.md: a run without --debug-log says
+// nothing on stdout and puts on stderr only what the user has to act on. Qt
+// speaks up through qDebug and qInfo about matters that are diagnosis, not
+// news, so those stay silent unless the switch is on. A warning is never
+// swallowed — it is the category that means "act".
+inline void MessageHandler(QtMsgType type, const QMessageLogContext& /*unused*/,
+                           const QString& message) {
+  if ((type == QtDebugMsg || type == QtInfoMsg) &&
+      !decade_debug::LogEnabled()) {
+    return;
+  }
+  std::cerr << message.toStdString() << '\n';
+}
+
+}  // namespace decade_app_detail
+
+// Builds the application in the order Qt prescribes and runs its event loop.
+// The surface format has to stand before the QApplication: Qt honours a
+// per-widget format on some platforms alone, and the canvas would otherwise
+// quietly get a compatibility context.
+// https://doc.qt.io/qt-6/qopenglwidget.html#details
+inline int RunDecadeApp(int& argument_count, char** arguments) {
+  QSurfaceFormat::setDefaultFormat(GLCanvas::SurfaceFormat());
+
+  const QApplication app(argument_count, arguments);
+  QCoreApplication::setApplicationName("decade");
+
+  QCommandLineParser parser;
+  parser.setApplicationDescription(
+      "A calendar and timeline for periods across several years.");
+  parser.addHelpOption();
+  AddRuntimeOptions(parser);
+  parser.process(app);
+
+  const RuntimeOptions runtime_options = RuntimeOptionsFromParser(parser);
+  decade_debug::SetLogEnabled(runtime_options.debug_log);
+  qInstallMessageHandler(decade_app_detail::MessageHandler);
+
+  std::unique_ptr<LocaleServices> locale_services;
+  try {
+    locale_services = std::make_unique<LocaleServices>();
+  } catch (const std::exception& exception) {
+    std::cerr << exception.what() << '\n';
+    return 1;
   }
 
-  void OnInitCmdLine(wxCmdLineParser& parser) override {
-    wxApp::OnInitCmdLine(parser);
-    application::AddRuntimeOptions(parser);
+  if (decade_debug::LogEnabled()) {
+    PrintRuntimeInfo(std::cout);
   }
 
-  bool OnCmdLineParsed(wxCmdLineParser& parser) override {
-    if (!wxApp::OnCmdLineParsed(parser)) {
-      return false;
-    }
-    runtime_options_ = application::RuntimeOptionsFromParser(parser);
-    return true;
-  }
+  const AppComposition composition(locale_services->date_formatter(),
+                                   runtime_options);
+  return QApplication::exec();
+}
 
-  // A runtime debug aid: with --debug-log, wx assert failures go to stderr and
-  // the app keeps running instead of opening a modal dialogue. The dialogue
-  // blocks headless and screenshot runs (and CI) — a real assertion would
-  // otherwise end silently by timeout instead of being reported. This way the
-  // assertion text lands on stderr and the run carries on.
-  void OnAssertFailure(const wxChar* file, int line, const wxChar* func,
-                       const wxChar* cond, const wxChar* msg) override {
-    if (!runtime_options_.debug_log) {
-      wxApp::OnAssertFailure(file, line, func, cond, msg);
-      return;
-    }
-    std::cerr << "wx assert failed: " << wxString(file).ToStdString() << ':'
-              << line << " ("
-              << (func != nullptr ? wxString(func).ToStdString()
-                                  : std::string{})
-              << ") " << wxString(cond).ToStdString();
-    if (msg != nullptr) {
-      std::cerr << " : " << wxString(msg).ToStdString();
-    }
-    std::cerr << '\n';
-  }
-
-  bool OnInit() override {
-    // Calling the base OnInit triggers command-line parsing, i.e. our
-    // OnInitCmdLine / OnCmdLineParsed overrides above.
-    if (!wxApp::OnInit()) {
-      return false;
-    }
-
-    decade_debug::SetLogEnabled(runtime_options_.debug_log);
-
-    try {
-      locale_services_ = std::make_unique<application::LocaleServices>();
-    } catch (const std::exception& exception) {
-      std::cerr << exception.what() << '\n';
-      return false;
-    }
-
-    if (decade_debug::LogEnabled()) {
-      application::PrintRuntimeInfo(std::cout);
-    }
-
-    composition_ = std::make_unique<application::AppComposition>(
-        locale_services_->date_formatter(), runtime_options_);
-    SetTopWindow(&composition_->Frame());
-    return true;
-  }
-
- private:
-  std::unique_ptr<application::LocaleServices> locale_services_;
-  std::unique_ptr<application::AppComposition> composition_;
-  application::RuntimeOptions runtime_options_;
-};
+}  // namespace application
 
 #endif  // DECADE_APP_HPP

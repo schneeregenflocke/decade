@@ -1,13 +1,12 @@
 #ifndef APP_COMPOSITION_HPP
 #define APP_COMPOSITION_HPP
 
-#include <wx/event.h>
-#include <wx/msgdlg.h>
-#include <wx/weakref.h>
-#include <wx/window.h>
-
+#include <QtCore/QString>
+#include <QtCore/QTimer>
+#include <QtWidgets/QMessageBox>
 #include <exception>
 #include <iostream>
+#include <memory>
 #include <optional>
 #include <string>
 #include <utility>
@@ -15,7 +14,6 @@
 #include "../domain/date_format.hpp"
 #include "../presentation/file_commands.hpp"
 #include "../presentation/main_frame.hpp"
-#include "../presentation/wx_owned.hpp"
 #include "app_binder.hpp"
 #include "app_config.hpp"
 #include "calendar/calendar_page.hpp"
@@ -34,9 +32,9 @@ namespace application {
 //
 // Two parts come into being later, because OpenGL stands ready with a delay:
 // the rendering adapter and the wiring. Both sit in an `optional` and get
-// dissolved again when the window is destroyed — while panels and canvas are
-// still alive. Without that, a panel event still firing on shutdown would run
-// into objects already destroyed.
+// dissolved again when the window closes — while panels and canvas are still
+// alive. Without that, a panel event still firing on shutdown would run into
+// objects already destroyed.
 class AppComposition {
  public:
   AppComposition(LocaleDateFormatter& locale_date_formatter,
@@ -46,22 +44,21 @@ class AppComposition {
         interaction_controller_(bus_.hovered(), bus_.selected_node(),
                                 bus_.edit_requested()),
         title_text_editor_(document_.TitleConfiguration(), bus_.text_edit()),
-        startup_script_(runtime_options_, document_) {
-    auto* frame = MakeOwned<MainFrame>(nullptr, DefaultMainFrameConfig(),
-                                       locale_date_formatter);
-    frame_ = frame;
+        startup_script_(runtime_options_, document_),
+        // A top-level window has no Qt parent to own it, so the composition
+        // root does — the same hand that owns everything else here.
+        frame_(std::make_unique<MainFrame>(nullptr, DefaultMainFrameConfig(),
+                                           locale_date_formatter)) {
+    file_commands_.emplace(*frame_, document_);
+    frame_->SignalFileCommand().connect(&FileCommands::Execute,
+                                        &file_commands_.value());
+    frame_->SignalClosing().connect(&AppComposition::ReleaseGraphics, this);
 
-    file_commands_.emplace(*frame, document_);
-    frame->SignalFileCommand().connect(&FileCommands::Execute,
-                                       &file_commands_.value());
-    frame->Bind(wxEVT_CLOSE_WINDOW, &AppComposition::OnFrameClose, this);
-    frame->Bind(wxEVT_DESTROY, &AppComposition::OnFrameDestroy, this);
+    startup_script_.RunBeforeGraphics(*frame_);
 
-    startup_script_.RunBeforeGraphics(*frame);
-
-    frame->Show();
-    frame->Raise();
-    frame->Canvas().InitOpenGL(
+    frame_->show();
+    frame_->raise();
+    frame_->Canvas().InitOpenGL(
         [this]() { OnGraphicsReady(); },
         [this](const std::string& message) { OnGraphicsFailed(message); });
   }
@@ -103,16 +100,18 @@ class AppComposition {
   // An operable window in that state crashes on the first click — hence report
   // and close.
   //
-  // Through CallAfter, because the first paint can arrive before the event
-  // loop: a Close() from there fizzles out, and a modal dialogue would stand in
-  // front of the loop.
+  // Queued on the event loop, because this can arrive during the first paint:
+  // a close() from there fizzles out, and a modal dialogue would stand in front
+  // of the loop.
   void OnGraphicsFailed(const std::string& message) {
     std::cerr << message << '\n';
-    frame_->CallAfter([this, message]() {
-      if (!IsNonInteractiveRun(runtime_options_)) {
-        wxMessageBox(message, "OpenGL", wxOK | wxICON_ERROR, frame_);
+    const bool interactive = !IsNonInteractiveRun(runtime_options_);
+    QTimer::singleShot(0, frame_.get(), [this, message, interactive]() {
+      if (interactive) {
+        QMessageBox::critical(frame_.get(), "OpenGL",
+                              QString::fromStdString(message));
       }
-      frame_->Close(true);
+      frame_->close();
     });
   }
 
@@ -141,23 +140,16 @@ class AppComposition {
     };
   }
 
-  void OnFrameClose(wxCloseEvent& event) {
-    ReleaseGraphics();
-    event.Skip();
-  }
-
-  // A second exit: a window can die without a close event too. The destroy
-  // event arrives before the base destructor clears the children away.
-  void OnFrameDestroy(wxWindowDestroyEvent& event) {
-    if (event.GetEventObject() == frame_.get()) {
-      ReleaseGraphics();
-    }
-    event.Skip();
-  }
-
   // Idempotent: it dissolves the wiring while both ends are still alive.
+  //
+  // The calendar page owns GL objects, and a buffer deleted without a current
+  // context is a call into nothing — Qt makes the context current for the three
+  // rendering callbacks alone, and this runs from the close event.
   void ReleaseGraphics() {
     wiring_.reset();
+    if (calendar_page_.has_value() && frame_ && frame_->Canvas().HasEngine()) {
+      frame_->Canvas().MakeContextCurrent();
+    }
     calendar_page_.reset();
     file_commands_.reset();
   }
@@ -172,7 +164,7 @@ class AppComposition {
   TitleTextEditor title_text_editor_;
   StartupScript startup_script_;
 
-  wxWeakRef<MainFrame> frame_;
+  std::unique_ptr<MainFrame> frame_;
   std::optional<FileCommands> file_commands_;
   std::optional<CalendarPage> calendar_page_;
   std::optional<AppWiring> wiring_;

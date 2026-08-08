@@ -2,20 +2,25 @@
 #define FONT_PANEL_HPP
 
 #include <fontconfig/fontconfig.h>
-#include <wx/fontpicker.h>
-#include <wx/weakref.h>
-#include <wx/wx.h>
 
-#include <map>
+#include <QtCore/QPointer>
+#include <QtCore/QString>
+#include <QtGui/QFont>
+#include <QtWidgets/QFontDialog>
+#include <QtWidgets/QHBoxLayout>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QWidget>
+#include <cstring>
+#include <iostream>
 #include <memory>
 #include <sigslot/signal.hpp>
 #include <string>
 
 #include "../common/debug_log.hpp"
 #include "../domain/font_config.hpp"
-#include "wx_owned.hpp"
+#include "make_owned.hpp"
 
-// Chooses the application-wide font. wx describes a font through family, size,
+// Chooses the application-wide font. Qt describes a font through family, size,
 // weight and slant; the GL renderer, by contrast, needs a font file —
 // fontconfig does the translation between them.
 //
@@ -25,35 +30,27 @@
 // does not hang on it.
 //
 // Sources:
-// - wxFont (https://docs.wxwidgets.org/3.2/classwx_font.html) — GetPointSize(),
-//   GetFaceName(), GetWeight(), GetStyle() as the inputs of the mapping.
+// - QFont (https://doc.qt.io/qt-6/qfont.html) — family(), pointSizeF(),
+//   weight(), style() as the inputs of the mapping.
 // - fontconfig font properties
 //   (https://fontconfig.pages.freedesktop.org/fontconfig/fontconfig-user.html)
 //   — names and types of FC_FAMILY, FC_WEIGHT, FC_SLANT, FC_SIZE.
-class FontPanel : public wxPanel {
+class FontPanel : public QWidget {
  public:
-  explicit FontPanel(wxWindow* parent)
-      : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                wxTAB_TRAVERSAL, wxPanelNameStr),
-        fc_config_(FcInitLoadConfigAndFonts()) {
-    wxFont const normal_font = *wxNORMAL_FONT;
+  explicit FontPanel(QWidget* parent)
+      : QWidget(parent), fc_config_(FcInitLoadConfigAndFonts()) {
+    constexpr int kBorderPx = 5;
 
-    wx_font_picker_ = MakeOwned<wxFontPickerCtrl>(
-        this, wxID_ANY, normal_font, wxDefaultPosition, wxDefaultSize,
-        wxFNTP_FONTDESC_AS_LABEL);
+    font_button_ = MakeOwned<QPushButton>(this);
+    auto* horizontal_layout = MakeOwned<QHBoxLayout>();
+    horizontal_layout->setContentsMargins(kBorderPx, kBorderPx, kBorderPx,
+                                          kBorderPx);
+    horizontal_layout->addWidget(font_button_);
+    setLayout(horizontal_layout);
 
-    constexpr int kSizerBorderPx = 5;
-    auto* horizontal_sizer = MakeOwned<wxBoxSizer>(wxHORIZONTAL);
-    horizontal_sizer->Add(wx_font_picker_, 1, wxALL | wxALIGN_CENTER_VERTICAL,
-                          kSizerBorderPx);
-    auto* vertical_sizer = MakeOwned<wxBoxSizer>(wxVERTICAL);
-    vertical_sizer->Add(horizontal_sizer, 0, wxEXPAND);
-    SetSizerAndFit(vertical_sizer);
-
-    Bind(wxEVT_FONTPICKER_CHANGED, &FontPanel::CallbackFontChanged, this);
-    wx_font_ = wx_font_picker_->GetFont();
-
-    BuildSlantTable();
+    RefreshButtonLabel();
+    connect(font_button_.data(), &QPushButton::clicked, this,
+            [this]() { ChooseFont(); });
 
     ProcessFontData();
   }
@@ -71,74 +68,49 @@ class FontPanel : public wxPanel {
     void operator()(FcConfig* config) const { FcConfigDestroy(config); }
   };
 
-  std::unique_ptr<FcConfig, FcConfigDeleter> fc_config_;
-  sigslot::signal<const FontConfig&> signal_font_config_;
-  // wx counts its weights in the OpenType and CSS scale (THIN 100 …
-  // EXTRAHEAVY 1000), fontconfig in its own uneven 0…215 one (fontconfig.h,
-  // FC_WEIGHT_*). fontconfig converts between them itself.
+  // Qt counts its weights in the OpenType and CSS scale (Thin 100 … Black 900,
+  // and any number in between), fontconfig in its own uneven 0…215 one
+  // (fontconfig.h, FC_WEIGHT_*). fontconfig converts between them itself, and
+  // interpolates — which a table of the named steps could not.
   //
-  // This was a hand-written table of the eleven enum steps. The call is not
-  // merely shorter: it interpolates, where the table snapped onto its keys and
-  // threw on everything else — and a wx weight is not confined to the enum,
-  // `wxFont::SetNumericWeight` takes any number in between.
-  //
-  // Sources:
-  // - wxFontWeight (https://docs.wxwidgets.org/3.2/font_8h.html)
-  // - FcWeightFromOpenTypeDouble
-  //   (https://man.archlinux.org/man/FcWeightFromOpenTypeDouble.3)
-  static double FcWeightFromWxWeight(const wxFontWeight wx_font_weight) {
-    if (wx_font_weight == wxFONTWEIGHT_INVALID) {
-      throw std::runtime_error("wxFONTWEIGHT_INVALID");
-    }
-
+  // Source: FcWeightFromOpenTypeDouble
+  // (https://man.archlinux.org/man/FcWeightFromOpenTypeDouble.3)
+  static double FcWeightFromQtWeight(QFont::Weight weight) {
     const double fc_weight =
-        FcWeightFromOpenTypeDouble(static_cast<double>(wx_font_weight));
+        FcWeightFromOpenTypeDouble(static_cast<double>(weight));
 
     if (decade_debug::LogEnabled()) {
-      std::cout << "FcWeightFromWxWeight: " << wx_font_weight
+      std::cout << "FcWeightFromQtWeight: " << static_cast<int>(weight)
                 << " to: " << fc_weight << '\n';
     }
 
     return fc_weight;
   }
 
-  // wx knows three slants, fontconfig the same three (FC_SLANT_ROMAN, ITALIC,
-  // OBLIQUE) — the mapping is one to one here. wxFONTSTYLE_MAX is merely the
-  // count marker behind SLANT and lands on the same OBLIQUE.
-  void BuildSlantTable() {
-    font_style_map_ = {{wxFONTSTYLE_NORMAL, FC_SLANT_ROMAN},
-                       {wxFONTSTYLE_ITALIC, FC_SLANT_ITALIC},
-                       {wxFONTSTYLE_SLANT, FC_SLANT_OBLIQUE},
-                       {wxFONTSTYLE_MAX, FC_SLANT_OBLIQUE}};
-  }
-
-  int FcSlantFromWxStyle(const wxFontStyle wx_font_style) const {
-    int fc_slant = -1;
-    auto it = font_style_map_.find(wx_font_style);
-    if (it != font_style_map_.end()) {
-      fc_slant = it->second;
-    } else {
-      throw std::runtime_error("FcSlantFromWxStyle");
+  // Qt knows three styles, fontconfig the same three slants — the mapping is
+  // one to one.
+  static int FcSlantFromQtStyle(QFont::Style style) {
+    switch (style) {
+      case QFont::StyleItalic:
+        return FC_SLANT_ITALIC;
+      case QFont::StyleOblique:
+        return FC_SLANT_OBLIQUE;
+      case QFont::StyleNormal:
+        break;
     }
-
-    if (decade_debug::LogEnabled()) {
-      std::cout << "FcSlantFromWxStyle: " << wx_font_style
-                << " to: " << fc_slant << '\n';
-    }
-
-    return fc_slant;
+    return FC_SLANT_ROMAN;
   }
 
   void ProcessFontData() {
-    wxString const face_name = wx_font_.GetFaceName();
-    double const point_size = wx_font_.GetFractionalPointSize();
-    wxFontWeight const font_weight = wx_font_.GetWeight();
-    wxFontStyle const font_style = wx_font_.GetStyle();
+    const QString face_name = font_.family();
+    const double point_size = font_.pointSizeF();
 
     if (decade_debug::LogEnabled()) {
-      std::cout << "face_name: " << face_name << "\tpoint_size: " << point_size
-                << "\tfont_style: " << font_style
-                << "\t font_weight: " << font_weight << '\n';
+      std::cout << "face_name: " << face_name.toStdString()
+                << "\tpoint_size: " << point_size
+                << "\tfont_style: " << static_cast<int>(font_.style())
+                << "\t font_weight: " << static_cast<int>(font_.weight())
+                << '\n';
     }
 
     FcPattern* pattern = FcPatternCreate();
@@ -146,9 +118,10 @@ class FontPanel : public wxPanel {
       std::cerr << "ProcessFontData: FcPatternCreate failed\n";
       return;
     }
+    const std::string face_name_utf8 = face_name.toStdString();
     FcPatternAddString(
         pattern, FC_FAMILY,
-        reinterpret_cast<const FcChar8*>(face_name.utf8_str().data()));
+        reinterpret_cast<const FcChar8*>(face_name_utf8.c_str()));
 
     // FC_SIZE is a double according to fontconfig.h (the point size); an
     // integer here would be a type break that fontconfig matches worse in
@@ -159,11 +132,9 @@ class FontPanel : public wxPanel {
 
     // As a double, so an interpolated value survives instead of being cut
     // back onto a step.
-    const double fc_weight = FcWeightFromWxWeight(font_weight);
-    FcPatternAddDouble(pattern, FC_WEIGHT, fc_weight);
-
-    int const fc_slant = FcSlantFromWxStyle(font_style);
-    FcPatternAddInteger(pattern, FC_SLANT, fc_slant);
+    FcPatternAddDouble(pattern, FC_WEIGHT,
+                       FcWeightFromQtWeight(font_.weight()));
+    FcPatternAddInteger(pattern, FC_SLANT, FcSlantFromQtStyle(font_.style()));
 
     // The mandatory prelude to FcFontMatch: FcConfigSubstitute applies the
     // rules of the system configuration (aliases such as "sans-serif"),
@@ -192,8 +163,8 @@ class FontPanel : public wxPanel {
       return;
     }
 
-    const size_t len = strlen(reinterpret_cast<const char*>(fc_filepath));
-    font_config_.SetFilePath(std::string(fc_filepath, fc_filepath + len));
+    const size_t length = strlen(reinterpret_cast<const char*>(fc_filepath));
+    font_config_.SetFilePath(std::string(fc_filepath, fc_filepath + length));
     font_config_.SetSizePoints(static_cast<float>(point_size));
     if (decade_debug::LogEnabled()) {
       std::cout << "font_filepath: " << font_config_.FilePath() << '\n';
@@ -203,19 +174,30 @@ class FontPanel : public wxPanel {
     FcPatternDestroy(pattern);
   }
 
-  void CallbackFontChanged(wxFontPickerEvent& event) {
-    try {
-      wx_font_ = event.GetFont();
-      ProcessFontData();
-      signal_font_config_(font_config_);
-    } catch (...) {
-      std::cerr << "Loading Font failed" << '\n';
+  // Qt carries no inline font picker, only the modal dialogue — so the button
+  // shows the current font and opens it, the way wxFontPickerCtrl did.
+  void ChooseFont() {
+    bool accepted = false;
+    const QFont chosen =
+        QFontDialog::getFont(&accepted, font_, this, "Choose Font");
+    if (!accepted) {
+      return;
     }
+    font_ = chosen;
+    RefreshButtonLabel();
+    ProcessFontData();
+    signal_font_config_(font_config_);
   }
 
-  wxWeakRef<wxFontPickerCtrl> wx_font_picker_;
-  wxFont wx_font_;
+  void RefreshButtonLabel() {
+    font_button_->setText(
+        QString("%1 %2").arg(font_.family()).arg(font_.pointSizeF()));
+  }
+
+  std::unique_ptr<FcConfig, FcConfigDeleter> fc_config_;
+  QPointer<QPushButton> font_button_;
+  QFont font_;
   FontConfig font_config_;
-  std::map<int, int> font_style_map_;
+  sigslot::signal<const FontConfig&> signal_font_config_;
 };
 #endif  // FONT_PANEL_HPP

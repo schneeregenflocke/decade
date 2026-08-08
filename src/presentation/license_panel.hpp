@@ -1,71 +1,62 @@
 #ifndef LICENSE_PANEL_HPP
 #define LICENSE_PANEL_HPP
 
-#include <wx/weakref.h>
-#include <wx/wx.h>
-
+#include <QtCore/QPointer>
+#include <QtCore/QString>
+#include <QtWidgets/QDialog>
+#include <QtWidgets/QDialogButtonBox>
+#include <QtWidgets/QHBoxLayout>
+#include <QtWidgets/QListWidget>
+#include <QtWidgets/QPlainTextEdit>
+#include <QtWidgets/QVBoxLayout>
+#include <QtWidgets/QWidget>
 #include <algorithm>
-#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "../common/embedded_resources.hpp"
-#include "wx_owned.hpp"
+#include "make_owned.hpp"
 
-class LicenseInformationDialog : public wxDialog {
+class LicenseInformationDialog : public QDialog {
  public:
-  explicit LicenseInformationDialog(wxWindow* parent)
-      : wxDialog(parent, wxID_ANY, L"Open Source Licenses Information",
-                 wxDefaultPosition,
-                 wxSize(kDefaultWidth, kDefaultHeight) /*wxDefaultSize*/,
-                 wxCAPTION | wxRESIZE_BORDER | wxMAXIMIZE_BOX) {
-    license_select_list_box_ =
-        MakeOwned<wxListBox>(this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                             0, nullptr, wxLB_SINGLE | wxLB_NEEDED_SB);
+  explicit LicenseInformationDialog(QWidget* parent) : QDialog(parent) {
+    setWindowTitle("Open Source Licenses Information");
+    resize(kDefaultWidth, kDefaultHeight);
 
-    text_view_ctrl_ =
-        MakeOwned<wxTextCtrl>(this, wxID_ANY, wxEmptyString, wxDefaultPosition,
-                              wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY);
+    license_select_list_ = MakeOwned<QListWidget>(this);
+    license_select_list_->setSelectionMode(QAbstractItemView::SingleSelection);
 
-    const wxSizerFlags flags0 = wxSizerFlags().Proportion(1).Expand();
-    const wxSizerFlags flags1 =
-        wxSizerFlags().Proportion(1).Expand().Border(wxALL, kBorderSize);
-    const wxSizerFlags flags2 =
-        wxSizerFlags().Proportion(0).Expand().Border(wxALL, kBorderSize);
-    const wxSizerFlags flags3 =
-        wxSizerFlags().Proportion(0).Border(wxALL, kBorderSize).Right();
+    text_view_ = MakeOwned<QPlainTextEdit>(this);
+    text_view_->setReadOnly(true);
 
-    auto* vertical_sizer = MakeOwned<wxBoxSizer>(wxVERTICAL);
-    SetSizer(vertical_sizer);
+    auto* horizontal_layout = MakeOwned<QHBoxLayout>();
+    horizontal_layout->addWidget(license_select_list_);
+    horizontal_layout->addWidget(text_view_, 1);
 
-    auto* horizontal_sizer = MakeOwned<wxBoxSizer>(wxHORIZONTAL);
-    vertical_sizer->Add(horizontal_sizer, flags0);
+    auto* button_box =
+        MakeOwned<QDialogButtonBox>(QDialogButtonBox::Close, this);
 
-    horizontal_sizer->Add(license_select_list_box_, flags2);
-    horizontal_sizer->Add(text_view_ctrl_, flags1);
+    auto* vertical_layout = MakeOwned<QVBoxLayout>();
+    vertical_layout->setContentsMargins(kBorderPx, kBorderPx, kBorderPx,
+                                        kBorderPx);
+    vertical_layout->addLayout(horizontal_layout, 1);
+    vertical_layout->addWidget(button_box);
+    setLayout(vertical_layout);
 
-    auto* close_button = MakeOwned<wxButton>(this, wxID_CLOSE);
-
-    auto* button_sizer = MakeOwned<wxStdDialogButtonSizer>();
-    button_sizer->AddButton(close_button);
-    button_sizer->Realize();
-
-    vertical_sizer->Add(button_sizer, flags3);
-
-    Bind(wxEVT_LISTBOX, &LicenseInformationDialog::SlotSelectLicense, this);
-    Bind(wxEVT_BUTTON, &LicenseInformationDialog::CloseDialog, this);
+    connect(button_box, &QDialogButtonBox::rejected, this,
+            [this]() { reject(); });
+    connect(license_select_list_.data(), &QListWidget::currentRowChanged, this,
+            [this](int row) { SelectLicenseRow(row); });
 
     CollectLicenses();
-
-    license_select_list_box_->Select(0);
-    SelectLicense(collected_licenses_.begin()->first);
+    license_select_list_->setCurrentRow(0);
   }
 
  private:
   static constexpr int kDefaultWidth = 800;
   static constexpr int kDefaultHeight = 600;
-  static constexpr int kBorderSize = 10;
+  static constexpr int kBorderPx = 10;
 
   void CollectLicenses() {
     collected_licenses_.clear();
@@ -86,31 +77,24 @@ class LicenseInformationDialog : public wxDialog {
                                      std::string(resources::kBulletLicense));
 
     for (const auto& license : collected_licenses_) {
-      license_select_list_box_->AppendString(license.first);
+      license_select_list_->addItem(QString::fromStdString(license.first));
     }
   }
 
-  void SlotSelectLicense(wxCommandEvent& event) {
-    SelectLicense(event.GetString().ToStdString());
-  }
-  void CloseDialog(wxCommandEvent& event) {
-    (void)event;
-    EndModal(0);
-  }
-  void SelectLicense(const std::string& map_key) {
-    auto iter = std::ranges::find_if(
-        collected_licenses_,
-        [&](const string_pair& compare) { return compare.first == map_key; });
-
-    text_view_ctrl_->Clear();
-    *text_view_ctrl_ << iter->second;
-    text_view_ctrl_->ShowPosition(0);
+  // The row indexes the same vector the list was filled from, so no name
+  // lookup is needed to find the text.
+  void SelectLicenseRow(int row) {
+    if (row < 0 ||
+        static_cast<std::size_t>(row) >= collected_licenses_.size()) {
+      return;
+    }
+    text_view_->setPlainText(QString::fromStdString(
+        collected_licenses_[static_cast<std::size_t>(row)].second));
+    text_view_->moveCursor(QTextCursor::Start);
   }
 
-  wxWeakRef<wxListBox> license_select_list_box_{nullptr};
-  wxWeakRef<wxTextCtrl> text_view_ctrl_{nullptr};
-
-  using string_pair = std::pair<std::string, std::string>;
+  QPointer<QListWidget> license_select_list_;
+  QPointer<QPlainTextEdit> text_view_;
 
   std::vector<std::pair<std::string, std::string>> collected_licenses_;
 };
