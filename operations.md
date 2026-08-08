@@ -36,7 +36,7 @@ Start the GUI:
 
 #### Tests
 
-`tests/` mirrors the `src/` structure; the wx-free headers are unit-tested directly. After building:
+`tests/` mirrors the `src/` structure; the toolkit-free headers are unit-tested directly. After building:
 
 ```bash
 ctest --test-dir build
@@ -58,18 +58,18 @@ The binary honours several command line options in GNU syntax (`--name=value` or
 **Image capture** — two options capture two different things; they are not redundant:
 
 - `--dump-png=<path>` — the calendar **page image** alone, through an off-screen FBO. Resolution: the export DPI, a white background, no app chrome. Needs: OpenGL alone. The 16 multisamples it asks for get capped at what the driver offers — 16 on the NVIDIA GPU, 8 under llvmpipe — so a headless export is a little coarser than one off the graphics card, but never black ([#49](https://github.com/schneeregenflocke/decade/issues/49)). `--debug-log` names the count actually used.
-- `--dump-frame-png=<path>` — the **whole window**: tabs plus panels (a `wxClientDC` blit) with the content composed on top of the GL back buffer. Resolution: screen resolution. Needs: widget read-back, which works on X11 and Xvfb alone and comes out empty under Wayland.
+- `--dump-frame-png=<path>` — the **whole window**: tabs plus panels (`QWidget::grab`) with the canvas content composed on top. Resolution: screen resolution. `grab()` renders the widgets rather than reading the screen, and `QOpenGLWidget` draws into a framebuffer object that can be read back — so this needs no X11 any more and works under Wayland too.
 
-Take `--dump-png` for a clean high-DPI export of the page itself, `--dump-frame-png` for the real GUI including chrome. `--dump-frame-png` gets delayed through `CallAfter`, so the first paint has already happened.
+Take `--dump-png` for a clean high-DPI export of the page itself, `--dump-frame-png` for the real GUI including chrome. `--dump-frame-png` gets queued on the event loop, so the first paint has already happened.
 
-**The two channels.** A run without `--debug-log` writes **nothing** on stdout, and on stderr only what the user has to act on: a startup file that would not load, an option value that got ignored, a shader that would not compile, a device that failed. Everything else — progress, versions, sizes, frame rates, the shader inventory — is diagnosis and hangs on `--debug-log`. A silent run therefore means "nothing to report", and any line at all is worth reading. The switch itself lives in `decade_debug::LogEnabled()` (`src/common/debug_log.hpp`), which `DecadeApp::OnInit` sets from the option.
+**The two channels.** A run without `--debug-log` writes **nothing** on stdout, and on stderr only what the user has to act on: a startup file that would not load, an option value that got ignored, a shader that would not compile, a device that failed. Everything else — progress, versions, sizes, frame rates, the shader inventory — is diagnosis and hangs on `--debug-log`. A silent run therefore means "nothing to report", and any line at all is worth reading. The switch itself lives in `decade_debug::LogEnabled()` (`src/common/debug_log.hpp`), which `RunDecadeApp` sets from the option.
 
 **Steering:**
 
 - `--dump-png-dpi=<dpi>` — the export DPI for `--dump-png`; `GLCanvas::kExportPngDpi` (200) when unset. Used for high-resolution README renderings, for instance.
 - `--exit-after-ms=<ms>` — closes the main window after N ms by itself.
 - `--select-tab=<label>` — preselects a notebook tab by label at start (case-insensitive), for screenshotting a particular tab.
-- `--debug-log` — switches on OpenGL and runtime debug logging. It also forwards wx **assert failures to stderr and keeps running** instead of opening a modal dialogue, so headless and screenshot runs make a failing `wxASSERT` visible (instead of blocking in silence) — see `DecadeApp::OnAssertFailure`.
+- `--debug-log` — switches on OpenGL and runtime debug logging. It also lets Qt's own `qDebug`/`qInfo` messages through; without it they stay silent, while a `qWarning` and anything above always reaches stderr. The message handler sits in `decade_app_detail::MessageHandler`.
 - `--debug-hover-bar=<index>` — highlights the bar with the given index at start as though it were hovered, to screenshot or debug the hover path without a live cursor.
 - `--debug-hover-title` — the same for the title frame; it beats `--debug-hover-bar`, because at most one element is ever hovered.
 - `--debug-edit-title=<text>` — opens the title edit after loading, like a double click, and types `<text>` into it; empty means open alone, with everything selected. The edit stays open, so cursor and selection stand in the image.
@@ -82,11 +82,18 @@ stdbuf -oL -eL timeout 12 ./build/decade \
   --dump-png=/tmp/decade_render.png --exit-after-ms=2000 examples/sample_dates.csv
 ```
 
-A full UI screenshot (tabs plus panels plus canvas) of a particular tab. The widget read-back works on the **X11 backend** alone — a `wxClientDC` blit delivers black under Wayland — so run it headless under **Xvfb** with software GL. That is the supported way to screenshot the real GUI: GNOME and Wayland block programmatic screen capture, and `GDK_BACKEND=x11` on a running XWayland session breaks the EGL surface of the GL canvas.
+A full UI screenshot (tabs plus panels plus canvas) of a particular tab. It runs on a normal session, X11 and Wayland alike, because nothing is read off the screen:
+
+```bash
+timeout 30 ./build/decade --select-tab=Timeframe \
+  --dump-frame-png=/tmp/decade_ui.png --exit-after-ms=3000 examples/sample_dates.csv
+```
+
+Without a display, use **Xvfb** — and *not* `QT_QPA_PLATFORM=offscreen`. That plugin carries no `QOpenGLWidget` as a child widget ("QOpenGLWidget is not supported on this platform"), so the run reports a missing OpenGL widget and closes. It closes cleanly rather than crashing, but it renders nothing.
 
 ```bash
 xvfb-run -a -s "-screen 0 1600x1000x24" \
-  env GDK_BACKEND=x11 LIBGL_ALWAYS_SOFTWARE=1 \
+  env LIBGL_ALWAYS_SOFTWARE=1 \
   timeout 30 ./build/decade --select-tab=Timeframe \
   --dump-frame-png=/tmp/decade_ui.png --exit-after-ms=3000 examples/sample_dates.csv
 ```
@@ -101,13 +108,13 @@ The rule behind them — **warnings break the build, never suppress them** — s
 cmake --build build --target clang-tidy   # fails on EVERY finding
 ```
 
-The tree gets held at **zero findings**; a new finding breaks this target. The gate deliberately sits *outside* the standard build, so normal compiles stay fast — run it explicitly or in CI. Prefer this single-TU form over globbing `src/**/*.hpp` directly: analysing headers in isolation creates artificial `misc-include-cleaner` noise for the GL and wx umbrella headers that never turns up in a real translation unit. Every check switched off in `.clang-tidy` carries a comment explaining why (glm unions, GL and wx C API interop, deliberate style).
+The tree gets held at **zero findings**; a new finding breaks this target. The gate deliberately sits *outside* the standard build, so normal compiles stay fast — run it explicitly or in CI. Prefer this single-TU form over globbing `src/**/*.hpp` directly: analysing headers in isolation creates artificial `misc-include-cleaner` noise for the GL and Qt umbrella headers that never turns up in a real translation unit. Every check switched off in `.clang-tidy` carries a comment explaining why (glm unions, GL and Qt C API interop, deliberate style).
 
 The full run (a report in `build/clang-tidy.log`):
 
 ```bash
-clang-tidy -p build \
-  --extra-arg=-include --extra-arg=type_traits \
+cmake --build build --target clang-tidy-db   # once, see below
+clang-tidy -p build/tidy \
   --extra-arg=-Wno-error --extra-arg=-Wno-unknown-warning-option \
   src/**/*.cpp src/**/*.hpp 2>&1 | tee build/clang-tidy.log
 ```
@@ -115,18 +122,17 @@ clang-tidy -p build \
 Auto-fix for a single check group (`modernize-*` for instance, without `--fix-errors`):
 
 ```bash
-clang-tidy -p build \
-  --extra-arg=-include --extra-arg=type_traits \
+clang-tidy -p build/tidy \
   --extra-arg=-Wno-error --extra-arg=-Wno-unknown-warning-option \
   --fix --fix-notes \
   --checks='-*,modernize-*,-modernize-use-trailing-return-type' \
   src/**/*.cpp src/**/*.hpp
 ```
 
-Why the extra args:
+Why `build/tidy` and the extra args:
 
-- `-include type_traits` works around a bug in `wx/meta/convertible.h`, which uses `std::is_base_of` without including `<type_traits>`. GCC pulls it in transitively, Clang does not.
-- `-Wno-error` and `-Wno-unknown-warning-option` keep GCC-specific flags from `compile_commands.json` (`-Wlogical-op`, `-Wduplicated-branches` …) from turning into compiler errors in clang-tidy together with `-Werror` from the build.
+- `-p build/tidy` points at a filtered copy of `compile_commands.json` that the `clang-tidy-db` target writes. Qt6 puts `-mno-direct-extern-access` into the real database (a GCC-only codegen flag, chosen by a generator expression on the compiler id); clang rejects it as an unknown *argument*, which is a driver error no `-Wno-…` reaches. The gate target builds that copy itself, so `cmake --build build --target clang-tidy` needs no preparation — the manual runs above do.
+- `-Wno-error` and `-Wno-unknown-warning-option` keep GCC-specific *warning* flags from `compile_commands.json` (`-Wlogical-op`, `-Wduplicated-branches` …) from turning into compiler errors in clang-tidy together with `-Werror` from the build.
 
 `src/**/*.cpp src/**/*.hpp` presumes the shell supports recursive globs (zsh by default; bash only after `shopt -s globstar`).
 
@@ -173,7 +179,7 @@ git config blame.ignoreRevsFile .git-blame-ignore-revs
 CI runs on our own [Forgejo instance](https://git.blem.ch/), not on GitHub Actions. The old workflow file `.github/workflows/cmake.yml` runs on demand alone (`on: workflow_dispatch`, so `gh workflow run cmake.yml`) and takes part in no push. The chain, analogous to `blem-website`:
 
 - `git push origin main` (GitHub) → the GitHub webhook calls the `mirror-sync` API → the pull mirror `github-mirror/decade` syncs at once → the sync fires the push event for `.forgejo/workflows/build.yml`.
-- The workflow (`runs-on: runner-laptop-omen`) runs in an `ubuntu:26.04` container **exclusively** on the CI runner on `laptop-omen` — `runner-<host>` is the exclusive runner label (against the shared `ubuntu-ci`). The heavy C++ build (Boost, wx, submodules) must not land on homelab (an RPi 4 on USB SMR): there it fails on the 1200 MB limit and drives the disk into I/O saturation (the loadavg incident of 2026-07-11). Is the laptop off, the job waits in the queue instead of falling back to homelab. The runner stack: `docker-stacks/forgejo-runner/docker-compose.ci.yml`, deployed through Komodo (stack `forgejo-runner-laptop-omen`); the label scheme sits in the README there.
+- The workflow (`runs-on: runner-laptop-omen`) runs in an `ubuntu:26.04` container **exclusively** on the CI runner on `laptop-omen` — `runner-<host>` is the exclusive runner label (against the shared `ubuntu-ci`). The heavy C++ build (Boost, Qt, submodules) must not land on homelab (an RPi 4 on USB SMR): there it fails on the 1200 MB limit and drives the disk into I/O saturation (the loadavg incident of 2026-07-11). Is the laptop off, the job waits in the queue instead of falling back to homelab. The runner stack: `docker-stacks/forgejo-runner/docker-compose.ci.yml`, deployed through Komodo (stack `forgejo-runner-laptop-omen`); the label scheme sits in the README there.
 - Steps: apt dependencies → checkout with submodules → the clang-format gate → `cmake` and `ninja` (with `-Werror`) → `ctest` → the clang-tidy gate → `sanitize-address`.
 - The clang-format gate runs first, because it needs no build. It exists because the pre-commit hook does not gate anything: it lives in the clone and only after `pre-commit install`, and the drift of [#63](https://github.com/schneeregenflocke/decade/issues/63) grew in a clone that had never run it.
 - `sanitize-address` builds the tree a second time — one CI run therefore compiles the project twice. `sanitize-memory` deliberately does not run in CI: it breaks off on the uninstrumented libstdc++ and gtest and stays a local diagnostic tool.
