@@ -148,7 +148,7 @@ class AppComposition {
   void ReleaseGraphics() {
     wiring_.reset();
     if (calendar_page_.has_value() && frame_ && frame_->Canvas().HasEngine()) {
-      frame_->Canvas().MakeContextCurrent();
+      frame_->Canvas().MakeGraphicsCurrent();
     }
     calendar_page_.reset();
     file_commands_.reset();

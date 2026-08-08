@@ -130,12 +130,13 @@ class GLCanvas : public QOpenGLWidget, public application::RenderSurface {
 
   // Makes this canvas's context current, for building or destroying GL objects
   // outside the three rendering callbacks. Whoever owns GL resources tied to
-  // this canvas brackets their destruction with it — see the destructor above.
+  // this canvas brackets their work with it — the rendering adapter on every
+  // rebuild, the composition root before dissolving the scene.
   //
   // There is deliberately no counterpart: releasing the context again would
   // pull it out from under Qt whenever this runs nested inside a rendering
-  // callback, which is exactly where the scene gets built.
-  void MakeContextCurrent() { makeCurrent(); }
+  // callback, which is exactly where the first scene gets built.
+  void MakeGraphicsCurrent() override { makeCurrent(); }
 
   // Called on every mouse movement with the pointer in page space, so an
   // interaction controller can hit-test on it. The binder sets it.
@@ -488,8 +489,10 @@ class GLCanvas : public QOpenGLWidget, public application::RenderSurface {
   void UpdateProjection() {
     constexpr float kViewSizeScale = 1.1F;
     const RectF view_size = page_size_.Scale(kViewSizeScale);
+    const glm::ivec2 viewport = ViewportSize();
 
-    mvp_.SetProjection(Projection::OrthoMatrix(view_size));
+    mvp_.SetProjection(Projection::OrthoMatrix(
+        view_size, Projection::AspectRatioOf(viewport.x, viewport.y)));
     camera_.SetScaleLimits(ComputeZoomLimits(
         mvp_.GetProjection(), {page_size_.Width(), page_size_.Height()},
         static_cast<float>(kExportPngDpi)));
