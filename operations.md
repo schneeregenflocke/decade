@@ -102,13 +102,13 @@ xvfb-run -a -s "-screen 0 1600x1000x24" \
 
 The rule behind them — **warnings break the build, never suppress them** — stands in [AGENTS.md](AGENTS.md), section "Warnings, the clang-tidy and the sanitizer gate". Here are the commands.
 
-**The enforcement gate (a build breaker).** It runs clang-tidy on the single translation unit `src/application/main.cpp` — which covers every `src/` header transitively through `HeaderFilterRegex` — and grades every finding as an error:
+**The enforcement gate (a build breaker).** It runs clang-tidy over every translation unit under `src/` — each one carrying its own headers in through `HeaderFilterRegex` — and grades every finding as an error:
 
 ```bash
 cmake --build build --target clang-tidy   # fails on EVERY finding
 ```
 
-The tree gets held at **zero findings**; a new finding breaks this target. The gate deliberately sits *outside* the standard build, so normal compiles stay fast — run it explicitly or in CI. Prefer this single-TU form over globbing `src/**/*.hpp` directly: analysing headers in isolation creates artificial `misc-include-cleaner` noise for the GL and Qt umbrella headers that never turns up in a real translation unit. Every check switched off in `.clang-tidy` carries a comment explaining why (glm unions, GL and Qt C API interop, deliberate style).
+The tree gets held at **zero findings**; a new finding breaks this target. The gate deliberately sits *outside* the standard build, so normal compiles stay fast — run it explicitly or in CI. `run-clang-tidy` spreads the units over the cores, and the path prefix it takes as a regex keeps the `external/` submodules and the generated moc unit out of the run. Every check switched off in `.clang-tidy` carries a comment explaining why (glm unions, GL and Qt C API interop, deliberate style).
 
 The full run (a report in `build/clang-tidy.log`):
 

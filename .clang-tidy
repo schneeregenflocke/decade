@@ -61,8 +61,9 @@ ImplementationFileExtensions:
   - cc
   - cpp
   - cxx
-# Analyse the project's own headers (this is a header-only codebase — almost
-# all code lives in headers, so an empty filter would hide nearly everything).
+# Analyse the project's own headers as well, not the translation units alone —
+# a declaration carries the naming rules and the include discipline just as much
+# as its definition does.
 # external/ submodules are excluded here; system headers via SystemHeaders.
 HeaderFilterRegex: ".*/(src|tests)/.*"
 ExcludeHeaderFilterRegex: ".*/external/.*"
