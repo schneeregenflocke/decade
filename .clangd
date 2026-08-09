@@ -3,8 +3,8 @@
 # switches off — so clangd marks line 1 of every file. The build keeps the flag;
 # it is Qt's deliberate codegen choice, see issue #87.
 #
-# This reaches clangd alone. clang-tidy never reads it and takes the other way
-# out: the clang-tidy-db target configures a second tree with clang, where Qt's
+# This reaches clangd alone, which reads the GCC database the build exports.
+# clang-tidy never reads it and needs none: it runs in build-clang/, where Qt's
 # generator expression yields the clang spelling of the same guarantee.
 CompileFlags:
   Remove: [-mno-direct-extern-access]

@@ -81,6 +81,13 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang"
 	target_compile_options(decade PRIVATE ${decade_warnings})
 endif()
 
+# Clang 22 has not implemented #embed as the C++26 feature it is and grades it
+# as an extension; GCC compiles the same line as standard. PUBLIC, because the
+# header carrying it reaches everyone who links the components — the tests too.
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	target_compile_options(decade_components PUBLIC -Wno-c23-extensions)
+endif()
+
 # --- System dependencies ------------------------------------------------------
 # Foreign headers everywhere as SYSTEM: their warnings and clang-tidy findings
 # must not break the -Werror gate.
@@ -203,54 +210,22 @@ endif()
 # Deliberately no part of the standard build, so normal compiles stay fast; call
 # them explicitly or in CI. The commands sit in operations.md.
 
-# clang-tidy reads compile_commands.json, and the one the build writes is a GCC
-# database: Qt6::Platform puts -mno-direct-extern-access in it, our warning list
-# adds -Wlogical-op and its kin. Clang rejects the first as an unknown
-# *argument* — a driver error that no -Wno-… reaches.
-#
-# So the gate reads a database configured for clang rather than a doctored copy
-# of the GCC one. Both generator expressions exist already: Qt hands clang
-# -fno-direct-access-external-data for the same guarantee, and the warning list
-# above carries a clang branch. No flag gets named here, so the next GCC-only
-# option out of any dependency arrives translated instead of breaking the gate.
-# Configuring costs a second or two and needs no build — clang-tidy reads the
-# database, not the objects. The real build stays GCC and stays untouched.
-set(DECADE_TIDY_DIR ${CMAKE_BINARY_DIR}/tidy)
-add_custom_target(clang-tidy-db
-	COMMAND ${CMAKE_COMMAND} -S ${CMAKE_SOURCE_DIR} -B ${DECADE_TIDY_DIR} -G ${CMAKE_GENERATOR}
-		-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-		-DCMAKE_C_COMPILER=clang
-		-DCMAKE_CXX_COMPILER=clang++
-	COMMENT "compile_commands.json for clang-tidy, configured for clang"
-	VERBATIM)
-
-# clang-tidy over every translation unit under src/, each one carrying its own
-# headers in through HeaderFilterRegex. run-clang-tidy fans the units out over
-# the cores; a plain clang-tidy call would walk the hundred-odd of them in a row.
-# The positional argument is a regex against the paths in the database — the
-# source prefix keeps the external/ submodules and the generated moc unit out.
-# The epoxy force-include rides along in the database by itself, because it
-# stands as a target compile option.
-#
-# -Wno-error keeps -Werror out of the analysis: a compiler warning would
-# otherwise end the unit before a single check has run, instead of surfacing as
-# a clang-diagnostic finding the gate then grades like any other.
-#
-# -Wno-c23-extensions is NOT a suppressed finding: it says nothing about our
-# code, only that Clang 22 has not yet implemented #embed as the C++26 feature
-# it is and still grades it as an extension. GCC — what builds here and in CI —
-# compiles it as standard under -std=c++26 with -Wpedantic -Werror. Drop this
-# the day Clang implements it.
-add_custom_target(clang-tidy
-	COMMAND run-clang-tidy -p ${DECADE_TIDY_DIR}
-		-warnings-as-errors=*
-		-extra-arg=-Wno-error
-		-extra-arg=-Wno-c23-extensions
-		${CMAKE_CURRENT_SOURCE_DIR}/src/
-	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-	COMMENT "clang-tidy gate (every finding = an error) over every unit in src/"
-	VERBATIM USES_TERMINAL)
-add_dependencies(clang-tidy clang-tidy-db)
+# clang-tidy parses with clang's frontend, so it needs a clang
+# compile_commands.json — a GCC one carries -mno-direct-extern-access out of
+# Qt6::Platform, which clang rejects as an unknown argument before any check
+# runs. Hence the gate exists in a clang tree alone; operations.md configures one.
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	# The positional argument is a regex against the database paths: the source
+	# prefix keeps the external/ submodules and the generated moc unit out.
+	# run-clang-tidy fans the units over the cores, one clang-tidy walks them.
+	add_custom_target(clang-tidy
+		COMMAND run-clang-tidy -p ${CMAKE_BINARY_DIR}
+			-warnings-as-errors=*
+			${CMAKE_CURRENT_SOURCE_DIR}/src/
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+		COMMENT "clang-tidy gate (every finding = an error) over every unit in src/"
+		VERBATIM USES_TERMINAL)
+endif()
 
 # Sanitizers demand other compile flags than the normal build, so every gate
 # configures a build folder of its own, rebuilds everything in it and runs the
@@ -280,17 +255,17 @@ add_custom_target(sanitize-address
 	COMMENT "Sanitizer gate: address, leak, undefined, float checks, container assertions"
 	VERBATIM USES_TERMINAL)
 
-# MemorySanitizer excludes AddressSanitizer (the compiler rejects the
-# combination) and clang alone knows it — hence a second gate. It demands that
-# ALL dependencies be instrumented; with the system libstdc++ and gtest it reports
-# false alarms out of foreign code. A diagnostic tool, no CI gate — see
-# operations.md.
-add_custom_target(sanitize-memory
-	COMMAND ${CMAKE_COMMAND} -S ${CMAKE_SOURCE_DIR} -B ${CMAKE_BINARY_DIR}/san-memory -G ${CMAKE_GENERATOR}
-		-DCMAKE_BUILD_TYPE=RelWithDebInfo
-		-DCMAKE_CXX_COMPILER=clang++
-		"-DCMAKE_CXX_FLAGS=-fsanitize=memory -fno-omit-frame-pointer"
-	COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}/san-memory
-	COMMAND ${CMAKE_CTEST_COMMAND} --test-dir ${CMAKE_BINARY_DIR}/san-memory --output-on-failure
-	COMMENT "Sanitizer gate -fsanitize=memory (build plus test run, clang)"
-	VERBATIM USES_TERMINAL)
+# MemorySanitizer excludes AddressSanitizer — the compiler rejects the
+# combination — and clang alone knows it, so it lives in the clang tree beside
+# clang-tidy. A diagnostic tool, no gate: it demands every dependency
+# instrumented, and the system libstdc++ and gtest are not (#51).
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	add_custom_target(sanitize-memory
+		COMMAND ${CMAKE_COMMAND} -S ${CMAKE_SOURCE_DIR} -B ${CMAKE_BINARY_DIR}/san-memory -G ${CMAKE_GENERATOR}
+			-DCMAKE_BUILD_TYPE=RelWithDebInfo
+			"-DCMAKE_CXX_FLAGS=-fsanitize=memory -fno-omit-frame-pointer"
+		COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}/san-memory
+		COMMAND ${CMAKE_CTEST_COMMAND} --test-dir ${CMAKE_BINARY_DIR}/san-memory --output-on-failure
+		COMMENT "Sanitizer gate -fsanitize=memory (build plus test run, clang)"
+		VERBATIM USES_TERMINAL)
+endif()

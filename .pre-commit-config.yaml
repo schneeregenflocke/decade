@@ -54,13 +54,12 @@ repos:
         always_run: true
         stages: [pre-push]
 
-      # Through the target, never through run-clang-tidy directly: the target
-      # owns the database, the unit selection and the extra args, and a hook
-      # that spells them out again drifts away from CI. Pointed at build/ it
-      # analysed nothing at all — every unit died on the GCC flags.
+      # build-clang, not build: the target exists in a clang tree alone, and
+      # through the target rather than run-clang-tidy, so hook and CI grade by
+      # one definition. operations.md configures the tree.
       - id: clang-tidy
         name: clang-tidy gate
-        entry: cmake --build build --target clang-tidy
+        entry: cmake --build build-clang --target clang-tidy
         language: system
         pass_filenames: false
         always_run: true

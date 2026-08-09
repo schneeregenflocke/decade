@@ -1,30 +1,29 @@
-# CI on git.blem.ch (the mirror github-mirror/decade): build plus ctest plus the
-# clang-tidy and sanitizer gates.
-# `runner-laptop-omen` binds the job EXCLUSIVELY to the CI runner on laptop-omen —
-# the heavy C++ build (Boost, Qt, submodules) never runs on homelab (an RPi 4 on
-# USB SMR), where it drives the disk into I/O saturation (the loadavg incident of
-# 2026-07-11) and would fail on the 1200 MB limit. Is the laptop off, the job
-# waits in the queue instead of falling back to homelab. Triggered by the mirror
-# sync, which a GitHub webhook sets off at once on every push.
+# CI on git.blem.ch (the mirror github-mirror/decade). One job per compiler: GCC
+# builds what ships and carries the sanitizer gate, clang carries clang-tidy —
+# a tool that parses with clang's frontend and needs a clang database.
+# `runner-laptop-omen` binds both jobs EXCLUSIVELY to the CI runner on
+# laptop-omen — the heavy C++ build never runs on homelab (an RPi 4 on USB SMR),
+# where it saturates the disk (the loadavg incident of 2026-07-11).
+# Triggered by the mirror sync, which a GitHub webhook sets off on every push.
 name: build
 on:
   push:
     branches: [main]
 
+# The dependency list stands in both jobs because it gets installed BEFORE the
+# checkout: actions/checkout is a JS action and needs node and git in the bare
+# container, so no file from the repository can carry the list yet.
 jobs:
-  build:
+  gcc:
     runs-on: runner-laptop-omen
     container:
       image: ubuntu:26.04
     steps:
-      # Before the checkout: actions/checkout is a JS action and needs node AND
-      # git in the job container (the bare Ubuntu image carries neither).
       - name: Toolchain and dependencies
         run: |
           apt-get update -qq
           DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
-            nodejs git cmake ninja-build pkg-config g++ clang clang-tidy \
-            clang-format \
+            nodejs git cmake ninja-build pkg-config g++ clang-format \
             libboost-serialization-dev libepoxy-dev qt6-base-dev \
             zlib1g-dev libpng-dev libfontconfig-dev libfreetype-dev \
             libicu-dev libglm-dev libmsgsl-dev libgtest-dev libgl1-mesa-dev
@@ -43,15 +42,39 @@ jobs:
         run: ninja -C build
       - name: Tests
         run: ctest --test-dir build --output-on-failure
-      - name: clang-tidy gate
-        run: cmake --build build --target clang-tidy
       # Rebuilds the tree instrumented and runs the tests underneath — a run
-      # finds errors, a build alone does not. The tree gets held at zero
-      # findings, and a hit breaks the job. Around 195 s from scratch on twelve
-      # cores, so it stays on every push rather than on a schedule.
-      # sanitize-memory deliberately does not run along: MemorySanitizer demands
-      # that ALL dependencies be instrumented, and with the system libstdc++ and
-      # gtest it reports false alarms out of foreign code — during gtest
-      # discovery already. It stays a local diagnostic tool, see operations.md.
+      # finds errors, a build alone does not. Around 195 s from scratch on
+      # twelve cores, so it stays on every push rather than on a schedule.
       - name: Sanitizer gate (address, leak, undefined, float checks)
         run: cmake --build build --target sanitize-address
+
+  clang:
+    runs-on: runner-laptop-omen
+    container:
+      image: ubuntu:26.04
+    steps:
+      - name: Toolchain and dependencies
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+            nodejs git cmake ninja-build pkg-config clang clang-tidy \
+            libboost-serialization-dev libepoxy-dev qt6-base-dev \
+            zlib1g-dev libpng-dev libfontconfig-dev libfreetype-dev \
+            libicu-dev libglm-dev libmsgsl-dev libgtest-dev libgl1-mesa-dev
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      # The build and the tests run here too: clang sees warnings GCC does not
+      # (-Wunreachable-code, -Wextra-semi), and a gate over code that never ran
+      # under this compiler would grade an artefact nobody executes.
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+      - name: Build
+        run: ninja -C build
+      - name: Tests
+        run: ctest --test-dir build --output-on-failure
+      # sanitize-memory deliberately stays out although clang knows it:
+      # MemorySanitizer demands every dependency instrumented, and the system
+      # libstdc++ and gtest are not — it is a local diagnostic tool (#51).
+      - name: clang-tidy gate
+        run: cmake --build build --target clang-tidy

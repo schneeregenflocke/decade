@@ -8,7 +8,9 @@ Build, tests, headless runs and the lint gates. Principles, architecture and con
 
 #### Building
 
-The build runs on [CMake](https://cmake.org/cmake/help/latest/) with the [Ninja](https://ninja-build.org/manual.html) generator. The build directory is `build/`; `compile_commands.json` gets exported for clangd and clang-tidy.
+The build runs on [CMake](https://cmake.org/cmake/help/latest/) with the [Ninja](https://ninja-build.org/manual.html) generator. GCC builds what ships, in `build/`; `compile_commands.json` gets exported for clangd.
+
+Beside it stands a second tree, `build-clang/`, for the tools that parse with clang's frontend. It is no variant of the build but the home of `clang-tidy` and `sanitize-memory` — both targets exist in a clang tree alone, because a GCC `compile_commands.json` carries `-mno-direct-extern-access` out of `Qt6::Platform` and clang rejects that as an unknown argument before any check runs. CI mirrors the split as one job per compiler, and both jobs build and test: clang sees warnings GCC does not.
 
 Initialise the submodules once after cloning (their state at any time through `git submodule status`):
 
@@ -20,6 +22,7 @@ Reconfigure (only when `CMakeLists.txt` or a dependency changes):
 
 ```bash
 cmake -S . -B build -G Ninja
+cmake -S . -B build-clang -G Ninja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 ```
 
 Build (from the repository root; the Ninja file sits in `build/`):
@@ -105,49 +108,66 @@ The rule behind them — **warnings break the build, never suppress them** — s
 **The enforcement gate (a build breaker).** It runs clang-tidy over every translation unit under `src/` — each one carrying its own headers in through `HeaderFilterRegex` — and grades every finding as an error:
 
 ```bash
-cmake --build build --target clang-tidy   # fails on EVERY finding
+cmake --build build-clang --target clang-tidy   # fails on EVERY finding
 ```
 
 The tree gets held at **zero findings**; a new finding breaks this target. The gate deliberately sits *outside* the standard build, so normal compiles stay fast — run it explicitly or in CI. `run-clang-tidy` spreads the units over the cores, and the path prefix it takes as a regex keeps the `external/` submodules and the generated moc unit out of the run. Every check switched off in `.clang-tidy` carries a comment explaining why (glm unions, GL and Qt C API interop, deliberate style).
 
-The full run (a report in `build/clang-tidy.log`):
+It takes no extra arguments, because the tree it reads is a clang tree: nothing in the database is spelled for another compiler. In `build/` the target does not exist at all — CMake only defines it under clang.
+
+The full run (a report in `build-clang/clang-tidy.log`):
 
 ```bash
-cmake --build build --target clang-tidy-db   # once, see below
-clang-tidy -p build/tidy --extra-arg=-Wno-error \
-  src/**/*.cpp src/**/*.hpp 2>&1 | tee build/clang-tidy.log
+clang-tidy -p build-clang src/**/*.cpp src/**/*.hpp 2>&1 | tee build-clang/clang-tidy.log
 ```
 
 Auto-fix for a single check group (`modernize-*` for instance, without `--fix-errors`):
 
 ```bash
-clang-tidy -p build/tidy --extra-arg=-Wno-error \
-  --fix --fix-notes \
+clang-tidy -p build-clang --fix --fix-notes \
   --checks='-*,modernize-*,-modernize-use-trailing-return-type' \
   src/**/*.cpp src/**/*.hpp
 ```
 
-Why `build/tidy` and the extra arg:
-
-- `-p build/tidy` points at a second CMake tree, configured for clang, that the `clang-tidy-db` target writes. The database the normal build exports is a GCC one: it carries `-mno-direct-extern-access` out of `Qt6::Platform` — which clang rejects as an unknown *argument*, a driver error no `-Wno-…` reaches — plus GCC-only warning flags like `-Wlogical-op`. Configured for clang, every one of those generator expressions yields the clang branch instead (Qt hands out `-fno-direct-access-external-data`), so the gate needs no flag surgery and knows no flag name. Configuring takes a second or two and needs no build; the gate target does it itself, so `cmake --build build --target clang-tidy` needs no preparation — the manual runs above do.
-- `-Wno-error` keeps `-Werror` from the build out of the analysis: a compiler warning would otherwise end the unit before a check has run, instead of surfacing as a `clang-diagnostic-…` finding the gate grades like any other.
-- The editor reads the GCC database directly and settles the same flag on its own: `.clangd` cuts it with `CompileFlags.Remove`. That file reaches clangd alone — clang-tidy never reads it.
-
 `src/**/*.cpp src/**/*.hpp` presumes the shell supports recursive globs (zsh by default; bash only after `shopt -s globstar`).
+
+#### What the editor sees
+
+clangd is the third reader of the sources, and unlike the two gates it reports into an editor nobody else is sitting in front of. `--check` parses one file the way the language server would and prints the diagnostics to the terminal:
+
+```bash
+clangd --check=src/domain/date.cpp
+```
+
+The output carries the whole session log. The diagnostics are the lines with a source position; the `tweak: … ==> FAIL` lines are `--check` probing code actions and mean nothing:
+
+```bash
+clangd --check=src/domain/date.cpp 2>&1 | grep -E "Line [0-9]+:|All checks"
+```
+
+Over a set of files, one at a time (there is no project-wide mode):
+
+```bash
+for f in src/domain/*.cpp; do clangd --check="$f" 2>&1 | grep -E "Line [0-9]+:" | sed "s|^|$f |"; done
+```
+
+clangd reads the **GCC** database in `build/` — that is what the editor has open — and settles `-mno-direct-extern-access` itself: `.clangd` cuts it with `CompileFlags.Remove`. That file reaches clangd alone; clang-tidy never reads it. Unknown GCC *warning* options need no counterpart there, because clangd drops those diagnostics silently.
 
 #### Sanitizers
 
-The second gate beside clang-tidy: the code runs instrumented instead of merely being read. Both targets configure a build folder of their own under `build/`, rebuild everything in it and run `ctest` there — a run finds errors, a build alone does not. Flags: [GCC, instrumentation options](https://gcc.gnu.org/onlinedocs/gcc-9.2.0/gcc/Instrumentation-Options.html).
+The second gate beside clang-tidy: the code runs instrumented instead of merely being read. Both targets configure a build folder of their own inside the tree they are called from, rebuild everything in it and run `ctest` there — a run finds errors, a build alone does not. Flags: [GCC, instrumentation options](https://gcc.gnu.org/onlinedocs/gcc-9.2.0/gcc/Instrumentation-Options.html).
 
 ```bash
-cmake --build build --target sanitize-address   # the gate run, see below
-cmake --build build --target sanitize-memory    # memory (clang) — diagnosis, see below
+cmake --build build --target sanitize-address        # the gate run, see below
+cmake --build build-clang --target sanitize-memory   # diagnosis, see below
 ```
+
+`sanitize-address` exists in both trees and instruments with whatever compiler configured it; CI runs GCC's. `sanitize-memory` exists in `build-clang` alone — clang is the only compiler that knows MemorySanitizer.
 
 - **`sanitize-address`** is the gate. It combines AddressSanitizer (buffer overruns, use-after-free), LeakSanitizer and UndefinedBehaviorSanitizer. The tree gets held at **zero findings**. `-fno-sanitize-recover=undefined` is needed, because UBSan would otherwise merely report and carry on — the gate would stay green. LeakSanitizer already sits inside AddressSanitizer on Linux; it is named anyway, so the intent stands in the target.
 - `_GLIBCXX_ASSERTIONS` rides along. It is no sanitizer, but it closes a hole they leave: reading past a container's size while it still has capacity stays inside the allocation, so AddressSanitizer sees nothing — `v.front()` on an empty vector after `reserve()` hands back garbage and runs on.
 - `float-cast-overflow` and `float-divide-by-zero` stand **beside** `undefined`, because GCC folds neither into it (checked against GCC 16 on 2026-08-06 — a cast of 7.87e30 to `size_t` passes unremarked under plain `-fsanitize=undefined`). Whoever extends the flag list checks the same way: write the smallest program that triggers the class, compile it with the gate's flags and see whether it fires. A flag nobody has seen fire buys nothing.
-- **`sanitize-memory`** is a diagnostic tool, not a gate. MemorySanitizer (uninitialised reads) excludes AddressSanitizer — the compiler rejects the combination — and clang alone knows it, hence a second target. It demands that **every** dependency be instrumented; with the system libstdc++ and gtest it reports false alarms out of foreign code and breaks off during test discovery already. It would become usable only with a self-built, instrumented libc++ plus a rebuilt gtest, ICU and Boost.
+- **`sanitize-memory`** is a diagnostic tool, not a gate. MemorySanitizer (uninitialised reads) excludes AddressSanitizer — the compiler rejects the combination — and clang alone knows it, hence a second target in the clang tree. It demands that **every** dependency be instrumented; with the system libstdc++ and gtest it reports false alarms out of foreign code and breaks off during test discovery already. Building the whole project under clang changes nothing about that: the blocker is the dependencies, not the compiler of our own units. It would become usable only with a self-built, instrumented libc++ plus a rebuilt gtest, ICU and Boost.
 - `embed-resource` runs during the build and is exempt through `-fno-sanitize=all`: a finding in the tool would break the build instead of checking the program.
 - The GUI binary in the sanitizer folder (`build/san-address/decade`) starts under Xvfb as usual; the GL drivers hold memory on exit, so a leak report out of that says little.
 
