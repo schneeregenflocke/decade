@@ -8,8 +8,8 @@
 # Hook stages:
 #   commit : fast formatting/hygiene checks (auto-fix where possible)
 #   push   : full build + unit tests — must be green to push
-#   manual : clang-tidy (advisory only; the project still carries pre-existing
-#            warnings, so it is NOT a blocking gate). Run it on demand with:
+#   manual : clang-tidy, the same gate CI runs — held at zero findings, but off
+#            the push path because it costs a minute. Run it on demand with:
 #                pre-commit run clang-tidy --hook-stage manual
 exclude: '^(external/|build/)'
 default_install_hook_types: [pre-commit, pre-push]
@@ -54,9 +54,13 @@ repos:
         always_run: true
         stages: [pre-push]
 
+      # Through the target, never through run-clang-tidy directly: the target
+      # owns the database, the unit selection and the extra args, and a hook
+      # that spells them out again drifts away from CI. Pointed at build/ it
+      # analysed nothing at all — every unit died on the GCC flags.
       - id: clang-tidy
-        name: clang-tidy (advisory)
-        entry: run-clang-tidy -p build -quiet
+        name: clang-tidy gate
+        entry: cmake --build build --target clang-tidy
         language: system
         pass_filenames: false
         always_run: true

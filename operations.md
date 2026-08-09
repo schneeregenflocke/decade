@@ -114,25 +114,24 @@ The full run (a report in `build/clang-tidy.log`):
 
 ```bash
 cmake --build build --target clang-tidy-db   # once, see below
-clang-tidy -p build/tidy \
-  --extra-arg=-Wno-error --extra-arg=-Wno-unknown-warning-option \
+clang-tidy -p build/tidy --extra-arg=-Wno-error \
   src/**/*.cpp src/**/*.hpp 2>&1 | tee build/clang-tidy.log
 ```
 
 Auto-fix for a single check group (`modernize-*` for instance, without `--fix-errors`):
 
 ```bash
-clang-tidy -p build/tidy \
-  --extra-arg=-Wno-error --extra-arg=-Wno-unknown-warning-option \
+clang-tidy -p build/tidy --extra-arg=-Wno-error \
   --fix --fix-notes \
   --checks='-*,modernize-*,-modernize-use-trailing-return-type' \
   src/**/*.cpp src/**/*.hpp
 ```
 
-Why `build/tidy` and the extra args:
+Why `build/tidy` and the extra arg:
 
-- `-p build/tidy` points at a filtered copy of `compile_commands.json` that the `clang-tidy-db` target writes. Qt6 puts `-mno-direct-extern-access` into the real database (a GCC-only codegen flag, chosen by a generator expression on the compiler id); clang rejects it as an unknown *argument*, which is a driver error no `-Wno-…` reaches. The gate target builds that copy itself, so `cmake --build build --target clang-tidy` needs no preparation — the manual runs above do. The editor meets the same flag and settles it in `.clangd` through `CompileFlags.Remove`; that file reaches clangd alone, never clang-tidy, so both places stay.
-- `-Wno-error` and `-Wno-unknown-warning-option` keep GCC-specific *warning* flags from `compile_commands.json` (`-Wlogical-op`, `-Wduplicated-branches` …) from turning into compiler errors in clang-tidy together with `-Werror` from the build.
+- `-p build/tidy` points at a second CMake tree, configured for clang, that the `clang-tidy-db` target writes. The database the normal build exports is a GCC one: it carries `-mno-direct-extern-access` out of `Qt6::Platform` — which clang rejects as an unknown *argument*, a driver error no `-Wno-…` reaches — plus GCC-only warning flags like `-Wlogical-op`. Configured for clang, every one of those generator expressions yields the clang branch instead (Qt hands out `-fno-direct-access-external-data`), so the gate needs no flag surgery and knows no flag name. Configuring takes a second or two and needs no build; the gate target does it itself, so `cmake --build build --target clang-tidy` needs no preparation — the manual runs above do.
+- `-Wno-error` keeps `-Werror` from the build out of the analysis: a compiler warning would otherwise end the unit before a check has run, instead of surfacing as a `clang-diagnostic-…` finding the gate grades like any other.
+- The editor reads the GCC database directly and settles the same flag on its own: `.clangd` cuts it with `CompileFlags.Remove`. That file reaches clangd alone — clang-tidy never reads it.
 
 `src/**/*.cpp src/**/*.hpp` presumes the shell supports recursive globs (zsh by default; bash only after `shopt -s globstar`).
 

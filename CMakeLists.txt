@@ -203,18 +203,25 @@ endif()
 # Deliberately no part of the standard build, so normal compiles stay fast; call
 # them explicitly or in CI. The commands sit in operations.md.
 
-# clang-tidy reads compile_commands.json, and Qt6::Platform writes a GCC-only
-# codegen flag into it: -mno-direct-extern-access, chosen by a generator
-# expression on the compiler id. Clang rejects it as an unknown *argument*, which
-# is a driver error — no -Wno-… reaches it, unlike the GCC warning flags below.
-# So the gate analyses a filtered copy of the database. Taking the flag out of
-# the build instead would be the wrong trade: it stops GCC from assuming direct
-# access to Qt's exported data symbols, and Qt sets it deliberately.
-set(DECADE_TIDY_DB_DIR ${CMAKE_BINARY_DIR}/tidy)
+# clang-tidy reads compile_commands.json, and the one the build writes is a GCC
+# database: Qt6::Platform puts -mno-direct-extern-access in it, our warning list
+# adds -Wlogical-op and its kin. Clang rejects the first as an unknown
+# *argument* — a driver error that no -Wno-… reaches.
+#
+# So the gate reads a database configured for clang rather than a doctored copy
+# of the GCC one. Both generator expressions exist already: Qt hands clang
+# -fno-direct-access-external-data for the same guarantee, and the warning list
+# above carries a clang branch. No flag gets named here, so the next GCC-only
+# option out of any dependency arrives translated instead of breaking the gate.
+# Configuring costs a second or two and needs no build — clang-tidy reads the
+# database, not the objects. The real build stays GCC and stays untouched.
+set(DECADE_TIDY_DIR ${CMAKE_BINARY_DIR}/tidy)
 add_custom_target(clang-tidy-db
-	COMMAND ${CMAKE_COMMAND} -E make_directory ${DECADE_TIDY_DB_DIR}
-	COMMAND sh -c "sed 's/-mno-direct-extern-access//g' '${CMAKE_BINARY_DIR}/compile_commands.json' > '${DECADE_TIDY_DB_DIR}/compile_commands.json'"
-	COMMENT "compile_commands.json for clang-tidy, without the GCC-only flags"
+	COMMAND ${CMAKE_COMMAND} -S ${CMAKE_SOURCE_DIR} -B ${DECADE_TIDY_DIR} -G ${CMAKE_GENERATOR}
+		-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+		-DCMAKE_C_COMPILER=clang
+		-DCMAKE_CXX_COMPILER=clang++
+	COMMENT "compile_commands.json for clang-tidy, configured for clang"
 	VERBATIM)
 
 # clang-tidy over every translation unit under src/, each one carrying its own
@@ -222,19 +229,22 @@ add_custom_target(clang-tidy-db
 # the cores; a plain clang-tidy call would walk the hundred-odd of them in a row.
 # The positional argument is a regex against the paths in the database — the
 # source prefix keeps the external/ submodules and the generated moc unit out.
-# The -Wno-* extra args defuse GCC warning flags out of compile_commands.json;
-# the epoxy force-include rides along in there by itself, because it stands as a
-# target compile option.
+# The epoxy force-include rides along in the database by itself, because it
+# stands as a target compile option.
 #
-# -Wno-c23-extensions is of the same kind and is NOT a suppressed finding: it
-# says nothing about our code, only that Clang 22 has not yet implemented
-# #embed as the C++26 feature it is and still grades it as an extension. GCC —
-# what builds here and in CI — compiles it as standard under -std=c++26 with
-# -Wpedantic -Werror. Drop this the day Clang implements it.
+# -Wno-error keeps -Werror out of the analysis: a compiler warning would
+# otherwise end the unit before a single check has run, instead of surfacing as
+# a clang-diagnostic finding the gate then grades like any other.
+#
+# -Wno-c23-extensions is NOT a suppressed finding: it says nothing about our
+# code, only that Clang 22 has not yet implemented #embed as the C++26 feature
+# it is and still grades it as an extension. GCC — what builds here and in CI —
+# compiles it as standard under -std=c++26 with -Wpedantic -Werror. Drop this
+# the day Clang implements it.
 add_custom_target(clang-tidy
-	COMMAND run-clang-tidy -p ${DECADE_TIDY_DB_DIR}
+	COMMAND run-clang-tidy -p ${DECADE_TIDY_DIR}
 		-warnings-as-errors=*
-		-extra-arg=-Wno-error -extra-arg=-Wno-unknown-warning-option
+		-extra-arg=-Wno-error
 		-extra-arg=-Wno-c23-extensions
 		${CMAKE_CURRENT_SOURCE_DIR}/src/
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
