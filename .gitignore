@@ -16,25 +16,14 @@ CMakeSettings.json
 .vscode/
 out/
 build/
-# A second tree for another compiler (build-clang, …). The sanitizer folders, by
-# contrast, sit under build/ and are covered already.
+
 build-*/
-.clangd/
-# The .clangd file (not the directory) balances the flag drift on the
-# infrastructure headers. Local for now: let it prove itself first, then decide
-# whether it belongs versioned.
-.clangd
+
 .cache/
 
 compile_commands.json
 
 CMakePresets.json
 
-/gh_act_token.txt
+.claude/
 
-.claude/settings.json
-
-TODO.txt
-TODO.md
-# Real data (privacy), never belongs in the repo
-/Aufenthaltsdaten*

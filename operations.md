@@ -131,7 +131,7 @@ clang-tidy -p build/tidy \
 
 Why `build/tidy` and the extra args:
 
-- `-p build/tidy` points at a filtered copy of `compile_commands.json` that the `clang-tidy-db` target writes. Qt6 puts `-mno-direct-extern-access` into the real database (a GCC-only codegen flag, chosen by a generator expression on the compiler id); clang rejects it as an unknown *argument*, which is a driver error no `-Wno-…` reaches. The gate target builds that copy itself, so `cmake --build build --target clang-tidy` needs no preparation — the manual runs above do.
+- `-p build/tidy` points at a filtered copy of `compile_commands.json` that the `clang-tidy-db` target writes. Qt6 puts `-mno-direct-extern-access` into the real database (a GCC-only codegen flag, chosen by a generator expression on the compiler id); clang rejects it as an unknown *argument*, which is a driver error no `-Wno-…` reaches. The gate target builds that copy itself, so `cmake --build build --target clang-tidy` needs no preparation — the manual runs above do. The editor meets the same flag and settles it in `.clangd` through `CompileFlags.Remove`; that file reaches clangd alone, never clang-tidy, so both places stay.
 - `-Wno-error` and `-Wno-unknown-warning-option` keep GCC-specific *warning* flags from `compile_commands.json` (`-Wlogical-op`, `-Wduplicated-branches` …) from turning into compiler errors in clang-tidy together with `-Werror` from the build.
 
 `src/**/*.cpp src/**/*.hpp` presumes the shell supports recursive globs (zsh by default; bash only after `shopt -s globstar`).
