@@ -461,7 +461,14 @@ class GLCanvas : public QOpenGLWidget, public application::RenderSurface {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    // Colour blends the usual way; alpha saturates instead of blending with
+    // itself. GL_SRC_ALPHA on the alpha channel too would leave a value below
+    // 1 wherever something translucent was drawn (0.35 over 1.0 gives 0.77),
+    // and the canvas draws an opaque page — that leftover is meaningless.
+    // Whoever reads the buffer back as premultiplied divides the final colours
+    // by it and wraps at 8 bit: teal turns red, purple turns yellow.
+    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE,
+                        GL_ONE_MINUS_SRC_ALPHA);
     // The application-wide surface format asks for 4x MSAA, which is why the
     // enable takes hold here.
     glEnable(GL_MULTISAMPLE);
