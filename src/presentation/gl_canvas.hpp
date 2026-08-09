@@ -219,7 +219,7 @@ class GLCanvas : public QOpenGLWidget, public application::RenderSurface {
   // the GL surface. QOpenGLWidget draws into a framebuffer object of its own,
   // which is what makes this readable at all — and readable on every platform,
   // Wayland included.
-  [[nodiscard]] QImage CaptureImage() { return AsOpaque(grabFramebuffer()); }
+  [[nodiscard]] QImage CaptureImage() { return grabFramebuffer(); }
 
  protected:
   // Runs exactly once, as soon as the context stands. A failure here is final:
@@ -409,30 +409,6 @@ class GLCanvas : public QOpenGLWidget, public application::RenderSurface {
            std::to_string(kRequiredGlMinor) +
            " core context failed. decade needs OpenGL to draw the calendar and "
            "cannot continue.";
-  }
-
-  // Retags a read-back as opaque. The canvas draws opaquely, but its alpha
-  // channel is not 1 everywhere: blending with GL_SRC_ALPHA leaves a value
-  // below it wherever something translucent was drawn, while the colour is
-  // already final. A platform whose window surface carries an alpha channel
-  // (Wayland does, X11 here does not) hands the image back tagged
-  // *premultiplied*, and Qt would then divide those final colours by that
-  // leftover alpha on the next draw — teal turns magenta. Retagging costs
-  // nothing: the same bytes, read as what they are.
-  [[nodiscard]] static QImage AsOpaque(QImage image) {
-    switch (image.format()) {
-      case QImage::Format_ARGB32:
-      case QImage::Format_ARGB32_Premultiplied:
-        image.reinterpretAsFormat(QImage::Format_RGB32);
-        break;
-      case QImage::Format_RGBA8888:
-      case QImage::Format_RGBA8888_Premultiplied:
-        image.reinterpretAsFormat(QImage::Format_RGBX8888);
-        break;
-      default:
-        break;
-    }
-    return image;
   }
 
   [[nodiscard]] static std::string NoContextMessage() {
