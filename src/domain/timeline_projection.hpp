@@ -30,24 +30,8 @@
 // Precondition: `period` is non-null (callers pass stored intervals, which are
 // filtered to be well-formed). For a non-null period `Last().Year()` is never
 // before `Begin().Year()`, so the segment count is non-negative.
-[[nodiscard]] inline std::vector<DatePeriod> SplitAtYearBoundaries(
-    const DatePeriod& period) {
-  const auto span =
-      static_cast<std::size_t>(period.Last().Year() - period.Begin().Year());
-
-  std::vector<DatePeriod> split_periods;
-  split_periods.push_back(period);
-
-  for (std::size_t sub_index = 0; sub_index < span; ++sub_index) {
-    const Date split_date =
-        Date::FromYmd(split_periods[sub_index].Begin().Year() + 1, 1, 1);
-    split_periods.emplace_back(split_date, split_periods[sub_index].End());
-    split_periods[sub_index] =
-        DatePeriod(split_periods[sub_index].Begin(), split_date);
-  }
-
-  return split_periods;
-}
+[[nodiscard]] std::vector<DatePeriod> SplitAtYearBoundaries(
+    const DatePeriod& period);
 
 // Maps calendar years onto layout rows for a given span. Currently a thin,
 // behaviour-preserving wrapper over CalendarSpan (row index == year offset,
@@ -55,22 +39,16 @@
 // can change the mapping in one place.
 class TimelineProjection {
  public:
-  explicit TimelineProjection(const CalendarSpan& span) : span_(span) {}
+  explicit TimelineProjection(const CalendarSpan& span);
 
   // Number of layout rows = number of years in the span.
-  [[nodiscard]] std::size_t RowCount() const {
-    return span_.GetSpanLengthYears();
-  }
+  [[nodiscard]] std::size_t RowCount() const;
 
   // Calendar year shown in the given row (row 0 == first year of the span).
-  [[nodiscard]] int YearForRow(std::size_t row) const {
-    return span_.GetYear(row);
-  }
+  [[nodiscard]] int YearForRow(std::size_t row) const;
 
   // Row index for a calendar year. Precondition: the year lies within the span.
-  [[nodiscard]] std::size_t RowForYear(int year) const {
-    return static_cast<std::size_t>(year - span_.GetSpanLimitsYears().at(0));
-  }
+  [[nodiscard]] std::size_t RowForYear(int year) const;
 
  private:
   CalendarSpan span_;

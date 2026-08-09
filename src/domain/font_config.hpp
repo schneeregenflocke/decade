@@ -12,15 +12,13 @@ class FontConfig {
  public:
   FontConfig() = default;
 
-  [[nodiscard]] const std::string& FilePath() const { return file_path_; }
-  void SetFilePath(std::string value) { file_path_ = std::move(value); }
+  [[nodiscard]] const std::string& FilePath() const;
+  void SetFilePath(std::string value);
 
-  [[nodiscard]] float SizePoints() const { return size_points_; }
-  void SetSizePoints(float value) { size_points_ = value; }
+  [[nodiscard]] float SizePoints() const;
+  void SetSizePoints(float value);
 
-  [[nodiscard]] float SizeMillimetres() const {
-    return domain::MillimetresFromPoints(size_points_);
-  }
+  [[nodiscard]] float SizeMillimetres() const;
 
  private:
   static constexpr float kDefaultSizePoints = 10.0F;

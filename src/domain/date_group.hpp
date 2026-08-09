@@ -1,11 +1,7 @@
 #ifndef DATE_GROUP_HPP
 #define DATE_GROUP_HPP
 
-#include <algorithm>
-#include <iterator>
-#include <stdexcept>
 #include <string>
-#include <utility>
 #include <vector>
 
 // Pure domain value: one date group. No serialization, no signal -> Rule of
@@ -16,13 +12,13 @@ class DateGroup {
  public:
   DateGroup() = default;
 
-  explicit DateGroup(std::string name) : name_(std::move(name)) {}
+  explicit DateGroup(std::string name);
 
-  [[nodiscard]] int GetNumber() const { return number_; }
-  void SetNumber(int number) { number_ = number; }
+  [[nodiscard]] int GetNumber() const;
+  void SetNumber(int number);
 
-  [[nodiscard]] const std::string& GetName() const { return name_; }
-  void SetName(std::string name) { name_ = std::move(name); }
+  [[nodiscard]] const std::string& GetName() const;
+  void SetName(std::string name);
 
  private:
   int number_{0};
@@ -36,60 +32,21 @@ class DateGroup {
 class DateGroups {
  public:
   // Replace the contents and renumber the groups in order.
-  void Assign(const std::vector<DateGroup>& incoming_date_groups) {
-    date_groups_ = incoming_date_groups;
-    UpdateNumbers();
-  }
+  void Assign(const std::vector<DateGroup>& incoming_date_groups);
 
-  [[nodiscard]] const std::vector<DateGroup>& Items() const {
-    return date_groups_;
-  }
+  [[nodiscard]] const std::vector<DateGroup>& Items() const;
 
-  [[nodiscard]] int GetNumber(const std::string& name) const {
-    auto find_lambda = [&](const DateGroup& compare) {
-      return compare.GetName() == name;
-    };
-    auto found = std::ranges::find_if(date_groups_, find_lambda);
-    if (found != date_groups_.end()) {
-      return found->GetNumber();
-    }
-    throw std::runtime_error("number not found");
-  }
+  [[nodiscard]] int GetNumber(const std::string& name) const;
 
-  [[nodiscard]] std::string GetName(int number) const {
-    auto find_lambda = [&](const DateGroup& compare) {
-      return compare.GetNumber() == number;
-    };
-    auto found = std::ranges::find_if(date_groups_, find_lambda);
-    if (found != date_groups_.end()) {
-      return found->GetName();
-    }
-    throw std::runtime_error("string not found");
-  }
+  [[nodiscard]] std::string GetName(int number) const;
 
-  [[nodiscard]] std::vector<std::string> GetDateGroupsNames() const {
-    std::vector<std::string> name_strings;
-    name_strings.reserve(date_groups_.size());
-    std::ranges::transform(date_groups_, std::back_inserter(name_strings),
-                           &DateGroup::GetName);
-    return name_strings;
-  }
+  [[nodiscard]] std::vector<std::string> GetDateGroupsNames() const;
 
-  [[nodiscard]] int GetGroupMax() const {
-    if (date_groups_.empty()) {
-      return -1;
-    }
-    return static_cast<int>(date_groups_.size()) - 1;
-  }
+  [[nodiscard]] int GetGroupMax() const;
 
  private:
-  void UpdateNumbers() {
-    int number = 0;
-    for (auto& date_group : date_groups_) {
-      date_group.SetNumber(number);
-      ++number;
-    }
-  }
+  void UpdateNumbers();
+
   std::vector<DateGroup> date_groups_;
 };
 #endif  // DATE_GROUP_HPP

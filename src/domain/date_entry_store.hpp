@@ -13,28 +13,18 @@
 // topic. It has identity -> not copyable.
 class DateEntryStore {
  public:
-  explicit DateEntryStore(domain::StateTopic<std::vector<DateEntry>>& topic)
-      : topic_(topic) {}
+  explicit DateEntryStore(domain::StateTopic<std::vector<DateEntry>>& topic);
   ~DateEntryStore() = default;
   DateEntryStore(const DateEntryStore&) = delete;
   DateEntryStore& operator=(const DateEntryStore&) = delete;
   DateEntryStore(DateEntryStore&&) = delete;
   DateEntryStore& operator=(DateEntryStore&&) = delete;
 
-  void ReceiveDateEntries(const std::vector<DateEntry>& incoming_date_entries) {
-    if (emitting_) {
-      return;
-    }
-    const domain::detail::ScopedReentryFlag guard(emitting_);
-    date_entries_.Assign(incoming_date_entries);
-    topic_(date_entries_.Items());
-  }
+  void ReceiveDateEntries(const std::vector<DateEntry>& incoming_date_entries);
 
-  void ReceiveDateGroups(const std::vector<DateGroup>& date_groups) {
-    date_entries_.AssignDateGroups(date_groups);
-  }
+  void ReceiveDateGroups(const std::vector<DateGroup>& date_groups);
 
-  [[nodiscard]] const DateEntryList& Get() const { return date_entries_; }
+  [[nodiscard]] const DateEntryList& Get() const;
 
  private:
   DateEntryList date_entries_;

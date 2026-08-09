@@ -17,63 +17,28 @@
 // reads it directly, so it needs neither a topic nor a re-entry guard.
 class DateEntryBars {
  public:
-  void ReceiveDateEntries(const std::vector<DateEntry>& incoming_date_entries) {
-    date_entries_.Assign(incoming_date_entries);
-    ProcessBars();
-    ProcessAnnualTotals();
-  }
+  void ReceiveDateEntries(const std::vector<DateEntry>& incoming_date_entries);
 
-  void ReceiveDateGroups(const std::vector<DateGroup>& date_groups) {
-    date_entries_.AssignDateGroups(date_groups);
-  }
+  void ReceiveDateGroups(const std::vector<DateGroup>& date_groups);
 
-  [[nodiscard]] bool is_empty() const { return date_entries_.IsEmpty(); }
+  [[nodiscard]] bool is_empty() const;
 
-  [[nodiscard]] std::size_t GetSpan() const { return date_entries_.YearSpan(); }
+  [[nodiscard]] std::size_t GetSpan() const;
 
-  [[nodiscard]] int GetFirstYear() const { return date_entries_.FirstYear(); }
+  [[nodiscard]] int GetFirstYear() const;
 
-  [[nodiscard]] int GetLastYear() const { return date_entries_.LastYear(); }
+  [[nodiscard]] int GetLastYear() const;
 
-  [[nodiscard]] size_t GetNumberBars() const { return bars_.size(); }
+  [[nodiscard]] size_t GetNumberBars() const;
 
-  [[nodiscard]] Bar GetBar(size_t index) const { return bars_[index]; }
+  [[nodiscard]] Bar GetBar(size_t index) const;
 
-  [[nodiscard]] std::int64_t GetAnnualTotal(size_t index) const {
-    return annual_totals_[index];
-  }
+  [[nodiscard]] std::int64_t GetAnnualTotal(size_t index) const;
 
  private:
-  void ProcessBars() {
-    bars_.clear();
+  void ProcessBars();
 
-    for (const auto& entry : date_entries_.Items()) {
-      // Stored periods are never null (filtered upstream), so the row-period
-      // split is well-defined. The split rule (one bar per calendar year)
-      // lives in the domain projection, not in this store.
-      const auto split_date_periods =
-          SplitAtYearBoundaries(entry.GetDateInterval());
-
-      for (const auto& split_period : split_date_periods) {
-        Bar bar(split_period);
-        bar.SetText(std::to_string(entry.GetNumber() + 1));
-        bar.SetGroup(entry.GetGroup());
-        bars_.push_back(bar);
-      }
-    }
-  }
-
-  void ProcessAnnualTotals() {
-    annual_totals_.clear();
-    annual_totals_.resize(GetSpan());
-
-    for (const auto& bar : bars_) {
-      const size_t annual_totals_index = static_cast<size_t>(bar.GetYear()) -
-                                         static_cast<size_t>(GetFirstYear());
-
-      annual_totals_[annual_totals_index] += bar.GetLength();
-    }
-  }
+  void ProcessAnnualTotals();
 
   DateEntryList date_entries_;
   std::vector<Bar> bars_;

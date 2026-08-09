@@ -10,26 +10,18 @@
 // infrastructure).
 class TitleConfigStore {
  public:
-  explicit TitleConfigStore(domain::StateTopic<TitleConfig>& topic)
-      : topic_(topic) {}
+  explicit TitleConfigStore(domain::StateTopic<TitleConfig>& topic);
   ~TitleConfigStore() = default;
   TitleConfigStore(const TitleConfigStore&) = delete;
   TitleConfigStore& operator=(const TitleConfigStore&) = delete;
   TitleConfigStore(TitleConfigStore&&) = delete;
   TitleConfigStore& operator=(TitleConfigStore&&) = delete;
 
-  void ReceiveTitleConfig(const TitleConfig& incoming_title_config) {
-    if (emitting_) {
-      return;
-    }
-    const domain::detail::ScopedReentryFlag guard(emitting_);
-    title_config_ = incoming_title_config;
-    topic_(title_config_);
-  }
+  void ReceiveTitleConfig(const TitleConfig& incoming_title_config);
 
-  void SendTitleConfig() { topic_(title_config_); }
+  void SendTitleConfig();
 
-  [[nodiscard]] const TitleConfig& Get() const { return title_config_; }
+  [[nodiscard]] const TitleConfig& Get() const;
 
  private:
   TitleConfig title_config_;
