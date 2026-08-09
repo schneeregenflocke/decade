@@ -1,10 +1,5 @@
-# Qt6::Platform writes -mno-direct-extern-access into compile_commands.json for
-# GCC. Clang rejects it as an unknown *argument* — a driver error that no -Wno-…
-# switches off — so clangd marks line 1 of every file. The build keeps the flag;
-# it is Qt's deliberate codegen choice, see issue #87.
-#
-# This reaches clangd alone, which reads the GCC database the build exports.
-# clang-tidy never reads it and needs none: it runs in build-clang/, where Qt's
-# generator expression yields the clang spelling of the same guarantee.
+# Qt6::Platform writes -mno-direct-extern-access for GCC, and clang rejects it
+# as an unknown argument, so clangd would mark line 1 of every file. A no-op
+# when build/ is a clang tree. Issue #87.
 CompileFlags:
   Remove: [-mno-direct-extern-access]

@@ -1,6 +1,12 @@
-find_package(GTest CONFIG REQUIRED)
+find_package(GTest REQUIRED)
+
+# The test binary compiles the same units as the executable, minus its entry
+# point — gtest_main brings its own main.
+set(decade_test_units ${decade_sources})
+list(FILTER decade_test_units EXCLUDE REGEX "/main\\.cpp$")
 
 add_executable(decade_tests
+	${decade_test_units}
 	domain/test_date.cpp
 	domain/test_date_period.cpp
 	domain/test_date_format.cpp
@@ -29,44 +35,16 @@ add_executable(decade_tests
 	application/test_project_document.cpp
 )
 
-target_compile_features(decade_tests PRIVATE cxx_std_26)
-
-target_include_directories(decade_tests PRIVATE
-	${CMAKE_SOURCE_DIR}/src
-	${CMAKE_SOURCE_DIR}/external/sigslot/include
-)
-
-# The units under test are Boost-free. Third-party dependencies: the ICU
-# date backend, tinycolormap (the categorical palette behind the shape-config
-# group synthesis) and Bullet (physics). The services tests additionally
-# exercise CSV I/O (csv2, header-only) and the Boost.Serialization XML round
-# trip. All variables and imported targets come from the parent scope.
-target_include_directories(decade_tests SYSTEM PRIVATE
-	${ICU_INCLUDE_DIRS}
-	${CSV2_INCLUDE_DIR}
-	${TINYCOLORMAP_INCLUDE_DIR}
-	${CMAKE_SOURCE_DIR}/external/bullet3/src
-)
-
-# Since every header pairs with a translation unit, a test no longer carries the
-# definitions in through the include alone — it links the component library.
-# A static archive hands out the objects a test actually calls, so a domain test
-# still pulls no Qt in.
 target_link_libraries(decade_tests PRIVATE
+	decade_dependencies
 	GTest::gtest
 	GTest::gtest_main
-	decade_components
 )
+set_target_properties(decade_tests PROPERTIES AUTOMOC ON)
 
-# Less strict than the main target — tests trade off some warning hygiene for
+# Less strict than the executable — tests trade off some warning hygiene for
 # brevity (e.g. literal integer narrowing in EXPECT_EQ arguments).
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-	target_compile_options(decade_tests PRIVATE
-		-Wall -Wextra -Wpedantic
-	)
-elseif(MSVC)
-	target_compile_options(decade_tests PRIVATE /W3)
-endif()
+target_compile_options(decade_tests PRIVATE -Wall -Wextra -Wpedantic)
 
 include(GoogleTest)
 gtest_discover_tests(decade_tests)

@@ -1,16 +1,5 @@
-# Local quality gates: fast feedback before the push. They gate nothing — they
-# live in the clone and run only after `pre-commit install`. The binding gates
-# are in CI (.forgejo/workflows/build.yml, see operations.md). Install once per
-# clone with:
-#
-#     pre-commit install
-#
-# Hook stages:
-#   commit : fast formatting/hygiene checks (auto-fix where possible)
-#   push   : full build + unit tests — must be green to push
-#   manual : clang-tidy, the same gate CI runs — held at zero findings, but off
-#            the push path because it costs a minute. Run it on demand with:
-#                pre-commit run clang-tidy --hook-stage manual
+# Fast feedback before the push, after `pre-commit install`. These gate nothing;
+# the binding ones run in CI. Stages and the clang-tidy gate: operations.md.
 exclude: '^(external/|build/)'
 default_install_hook_types: [pre-commit, pre-push]
 
@@ -53,14 +42,3 @@ repos:
         pass_filenames: false
         always_run: true
         stages: [pre-push]
-
-      # build-clang, not build: the target exists in a clang tree alone, and
-      # through the target rather than run-clang-tidy, so hook and CI grade by
-      # one definition. operations.md configures the tree.
-      - id: clang-tidy
-        name: clang-tidy gate
-        entry: cmake --build build-clang --target clang-tidy
-        language: system
-        pass_filenames: false
-        always_run: true
-        stages: [manual]
