@@ -1,18 +1,14 @@
 #ifndef MAIN_FRAME_HPP
 #define MAIN_FRAME_HPP
 
-#include <wx/event.h>
-#include <wx/frame.h>
-#include <wx/gdicmn.h>
-#include <wx/notebook.h>
-#include <wx/panel.h>
-#include <wx/sizer.h>
-#include <wx/splitter.h>
-#include <wx/string.h>
-#include <wx/timer.h>
-#include <wx/weakref.h>
-#include <wx/window.h>
-
+#include <QtCore/QPointer>
+#include <QtCore/QString>
+#include <QtCore/QTimer>
+#include <QtGui/QCloseEvent>
+#include <QtWidgets/QMainWindow>
+#include <QtWidgets/QSplitter>
+#include <QtWidgets/QTabWidget>
+#include <QtWidgets/QWidget>
 #include <cstdint>
 #include <sigslot/signal.hpp>
 #include <string>
@@ -27,12 +23,12 @@
 #include "groups_panel.hpp"
 #include "license_panel.hpp"
 #include "main_menu.hpp"
+#include "make_owned.hpp"
 #include "page_panel.hpp"
 #include "scene_tree_panel.hpp"
 #include "shape_panel.hpp"
 #include "title_panel.hpp"
 #include "window_screenshot.hpp"
-#include "wx_owned.hpp"
 
 // Menu commands handled outside the window, because they concern the project.
 // Quit and the licence text stay here — they need nobody but the window
@@ -49,15 +45,18 @@ enum class FileCommand : std::uint8_t {
 // The main window: it builds the layout, owns panels, canvas and menu and
 // reports menu commands as a signal. It knows neither stores nor bus — whoever
 // wires the panels fetches them through the accessors.
-class MainFrame : public wxFrame {
+class MainFrame : public QMainWindow {
  public:
-  MainFrame(wxWindow* parent, const application::MainFrameConfig& config,
+  MainFrame(QWidget* parent, const application::MainFrameConfig& config,
             LocaleDateFormatter& locale_date_formatter)
-      : wxFrame(parent, wxID_ANY, wxString::FromUTF8(config.title),
-                config.position, config.size, config.style, config.frame_name),
+      : QMainWindow(parent, config.flags),
         locale_date_formatter_(locale_date_formatter),
-        exit_timer_(this),
         menu_(GLCanvas::kExportPngDpi) {
+    setWindowTitle(QString::fromStdString(config.title));
+    setObjectName(QString::fromStdString(config.object_name));
+    move(config.position);
+    resize(config.size);
+
     CreateLayout(config.maximize_on_start);
     InitMenu();
   }
@@ -69,6 +68,10 @@ class MainFrame : public wxFrame {
   MainFrame& operator=(MainFrame&&) = delete;
 
   [[nodiscard]] auto& SignalFileCommand() { return signal_file_command_; }
+
+  // Fires while the window is still whole, so whoever holds wiring onto its
+  // children can dissolve it before the children go.
+  [[nodiscard]] auto& SignalClosing() { return signal_closing_; }
 
   [[nodiscard]] DateTablePanel& DataTable() { return *data_table_panel_; }
   [[nodiscard]] DateGroupsTablePanel& DateGroupsTable() {
@@ -90,150 +93,140 @@ class MainFrame : public wxFrame {
   // Preselects the tab with this caption (case-insensitively). It reports
   // whether the tab exists.
   [[nodiscard]] bool SelectTab(const std::string& label) {
-    const wxString wanted = wxString::FromUTF8(label);
-    for (size_t index = 0; index < notebook_->GetPageCount(); ++index) {
-      if (notebook_->GetPageText(index).IsSameAs(wanted, false)) {
-        notebook_->SetSelection(index);
+    const QString wanted = QString::fromStdString(label);
+    for (int index = 0; index < tabs_->count(); ++index) {
+      if (tabs_->tabText(index).compare(wanted, Qt::CaseInsensitive) == 0) {
+        tabs_->setCurrentIndex(index);
         return true;
       }
     }
     return false;
   }
 
-  // Closes the window after N milliseconds — for headless runs. The binding
-  // happens at the window, not at the timer: `exit_timer_(this)` makes the
-  // window the owner, and the owner gets the event. A handler on the timer
-  // object would never run.
+  // Closes the window after N milliseconds — for headless runs.
   void CloseAfter(std::int64_t milliseconds) {
-    Bind(
-        wxEVT_TIMER, [this](wxTimerEvent&) { Close(true); },
-        exit_timer_.GetId());
-    exit_timer_.StartOnce(static_cast<int>(milliseconds));
+    QTimer::singleShot(static_cast<int>(milliseconds), this,
+                       [this]() { close(); });
   }
 
   // Writes the whole window as a PNG: the widget capture plus the mounted-in GL
-  // back buffer, which a wxDC does not see.
+  // content, which the widget capture does not draw.
   [[nodiscard]] bool SaveFrameScreenshot(const std::string& file_path) {
     const window_screenshot::Overlay overlay{
-        .image = gl_canvas_->CaptureBackBufferImage(),
-        .origin = ScreenToClient(gl_canvas_->GetScreenPosition()),
-        .size = gl_canvas_->GetSize()};
+        .image = gl_canvas_->CaptureImage(),
+        .origin = gl_canvas_->mapTo(this, QPoint(0, 0)),
+        .size = gl_canvas_->size()};
     return window_screenshot::SaveWindowPng(*this, overlay, file_path);
   }
 
- private:
-  void CreateLayout(bool maximize_on_start) {
-    if (maximize_on_start) {
-      Maximize();
-    }
-
-    auto* main_splitter =
-        MakeOwned<wxSplitterWindow>(this, wxID_ANY, wxDefaultPosition,
-                                    wxDefaultSize, wxSP_3D | wxSP_LIVE_UPDATE);
-    main_splitter_ = main_splitter;
-
-    constexpr int kMinimumPaneSize = 5;
-    constexpr double kSashGravity = 0.5;
-    main_splitter->SetMinimumPaneSize(kMinimumPaneSize);
-    main_splitter->SetSashGravity(kSashGravity);
-
-    constexpr int kSizerBorder = 5;
-    wxSizerFlags sizer_flags;
-    sizer_flags.Proportion(1).Expand().Border(wxALL, kSizerBorder);
-
-    auto* notebook_panel = MakeOwned<wxPanel>(main_splitter, wxID_ANY);
-    auto* notebook_panel_sizer = MakeOwned<wxBoxSizer>(wxVERTICAL);
-    notebook_panel->SetSizer(notebook_panel_sizer);
-
-    auto* notebook = MakeOwned<wxNotebook>(
-        notebook_panel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP);
-    notebook_ = notebook;
-    notebook_panel_sizer->Add(notebook, sizer_flags);
-    CreatePanels(notebook);
-
-    auto* gl_canvas_panel = MakeOwned<wxPanel>(main_splitter, wxID_ANY);
-    auto* gl_canvas_panel_sizer = MakeOwned<wxBoxSizer>(wxVERTICAL);
-    gl_canvas_panel->SetSizer(gl_canvas_panel_sizer);
-    auto* gl_canvas = MakeOwned<GLCanvas>(gl_canvas_panel);
-    gl_canvas_ = gl_canvas;
-    gl_canvas_panel_sizer->Add(gl_canvas, sizer_flags);
-
-    main_splitter->SplitVertically(notebook_panel, gl_canvas_panel);
+ protected:
+  void closeEvent(QCloseEvent* event) override {
+    signal_closing_();
+    QMainWindow::closeEvent(event);
   }
 
-  void CreatePanels(wxNotebook* notebook) {
-    data_table_panel_ =
-        MakeOwned<DateTablePanel>(notebook, locale_date_formatter_);
-    date_groups_table_panel_ = MakeOwned<DateGroupsTablePanel>(notebook);
-    calendar_setup_panel_ = MakeOwned<CalendarSetupPanel>(notebook);
-    scene_tree_panel_ = MakeOwned<SceneTreePanel>(notebook);
-    shape_setup_panel_ = MakeOwned<ShapeSetupPanel>(notebook);
+ private:
+  // Any two equal numbers do: QSplitter reads the sizes as proportions of the
+  // space it actually has.
+  static constexpr int kEvenSplit = 10000;
+
+  void CreateLayout(bool maximize_on_start) {
+    auto* splitter = MakeOwned<QSplitter>(Qt::Horizontal, this);
+
+    auto* tabs = MakeOwned<QTabWidget>(splitter);
+    tabs_ = tabs;
+    CreatePanels(tabs);
+
+    auto* gl_canvas = MakeOwned<GLCanvas>(splitter);
+    gl_canvas_ = gl_canvas;
+
+    splitter->addWidget(tabs);
+    splitter->addWidget(gl_canvas);
+    // Half and half, and it stays that way when the window grows. Without the
+    // sizes the tab widget's size hint would claim nearly everything and leave
+    // the page a sliver; the stretch factors alone act on resizing only.
+    splitter->setSizes({kEvenSplit, kEvenSplit});
+    splitter->setStretchFactor(0, 1);
+    splitter->setStretchFactor(1, 1);
+
+    setCentralWidget(splitter);
+
+    if (maximize_on_start) {
+      showMaximized();
+    }
+  }
+
+  void CreatePanels(QTabWidget* tabs) {
+    auto* data_table_panel =
+        MakeOwned<DateTablePanel>(tabs, locale_date_formatter_);
+    data_table_panel_ = data_table_panel;
+    auto* date_groups_table_panel = MakeOwned<DateGroupsTablePanel>(tabs);
+    date_groups_table_panel_ = date_groups_table_panel;
+    auto* calendar_setup_panel = MakeOwned<CalendarSetupPanel>(tabs);
+    calendar_setup_panel_ = calendar_setup_panel;
+    auto* scene_tree_panel = MakeOwned<SceneTreePanel>(tabs);
+    scene_tree_panel_ = scene_tree_panel;
+    auto* shape_setup_panel = MakeOwned<ShapeSetupPanel>(tabs);
+    shape_setup_panel_ = shape_setup_panel;
 
     // Page, font and title share the tab "Document"; the collecting panel owns
-    // the three children, and they get wired one by one through the weak
-    // references below.
-    auto* document_setup_panel = MakeOwned<DocumentSetupPanel>(notebook);
+    // the three children, and they get wired one by one through the pointers
+    // below.
+    auto* document_setup_panel = MakeOwned<DocumentSetupPanel>(tabs);
     document_setup_panel_ = document_setup_panel;
     page_setup_panel_ = document_setup_panel->GetPageSetupPanel();
     font_panel_ = document_setup_panel->GetFontPanel();
     title_setup_panel_ = document_setup_panel->GetTitleSetupPanel();
 
-    notebook->AddPage(date_groups_table_panel_, "Categories");
-    notebook->AddPage(data_table_panel_, "Entries");
-    notebook->AddPage(document_setup_panel, "Document");
-    notebook->AddPage(shape_setup_panel_, "Shapes");
-    notebook->AddPage(calendar_setup_panel_, "Timeframe");
-    notebook->AddPage(scene_tree_panel_, "Scene");
+    tabs->addTab(date_groups_table_panel, "Categories");
+    tabs->addTab(data_table_panel, "Entries");
+    tabs->addTab(document_setup_panel, "Document");
+    tabs->addTab(shape_setup_panel, "Shapes");
+    tabs->addTab(calendar_setup_panel, "Timeframe");
+    tabs->addTab(scene_tree_panel, "Scene");
   }
 
   void InitMenu() {
-    const MainMenuIds& ids = menu_.Ids();
-
-    BindFileCommand(ids.open_xml, FileCommand::kOpenXml);
-    BindFileCommand(ids.save_xml, FileCommand::kSaveXml);
-    BindFileCommand(ids.save_as_xml, FileCommand::kSaveXmlAs);
-    BindFileCommand(ids.import_csv, FileCommand::kImportCsv);
-    BindFileCommand(ids.export_csv, FileCommand::kExportCsv);
-    BindFileCommand(ids.export_png, FileCommand::kExportPng);
-
-    Bind(wxEVT_MENU, [this](wxCommandEvent&) { Close(true); }, wxID_EXIT);
-    Bind(
-        wxEVT_MENU,
-        [this](wxCommandEvent&) {
-          LicenseInformationDialog dialog(this);
-          dialog.ShowModal();
-        },
-        ids.license_info);
-
     menu_.AttachTo(*this);
+    const MainMenuActions& actions = menu_.Actions();
+
+    ConnectFileCommand(actions.open_xml, FileCommand::kOpenXml);
+    ConnectFileCommand(actions.save_xml, FileCommand::kSaveXml);
+    ConnectFileCommand(actions.save_as_xml, FileCommand::kSaveXmlAs);
+    ConnectFileCommand(actions.import_csv, FileCommand::kImportCsv);
+    ConnectFileCommand(actions.export_csv, FileCommand::kExportCsv);
+    ConnectFileCommand(actions.export_png, FileCommand::kExportPng);
+
+    connect(actions.quit, &QAction::triggered, this, [this]() { close(); });
+    connect(actions.license_info, &QAction::triggered, this, [this]() {
+      LicenseInformationDialog dialog(this);
+      dialog.exec();
+    });
   }
 
-  void BindFileCommand(int menu_id, FileCommand command) {
-    Bind(
-        wxEVT_MENU,
-        [this, command](wxCommandEvent&) { signal_file_command_(command); },
-        menu_id);
+  void ConnectFileCommand(QAction* action, FileCommand command) {
+    connect(action, &QAction::triggered, this,
+            [this, command]() { signal_file_command_(command); });
   }
 
   LocaleDateFormatter& locale_date_formatter_;
 
-  wxWeakRef<wxSplitterWindow> main_splitter_;
-  wxWeakRef<wxNotebook> notebook_;
+  QPointer<QTabWidget> tabs_;
 
-  wxWeakRef<DateGroupsTablePanel> date_groups_table_panel_;
-  wxWeakRef<DocumentSetupPanel> document_setup_panel_;
-  wxWeakRef<PageSetupPanel> page_setup_panel_;
-  wxWeakRef<TitleSetupPanel> title_setup_panel_;
-  wxWeakRef<CalendarSetupPanel> calendar_setup_panel_;
-  wxWeakRef<GLCanvas> gl_canvas_;
-  wxWeakRef<FontPanel> font_panel_;
-  wxWeakRef<DateTablePanel> data_table_panel_;
-  wxWeakRef<SceneTreePanel> scene_tree_panel_;
-  wxWeakRef<ShapeSetupPanel> shape_setup_panel_;
+  QPointer<DateGroupsTablePanel> date_groups_table_panel_;
+  QPointer<DocumentSetupPanel> document_setup_panel_;
+  QPointer<PageSetupPanel> page_setup_panel_;
+  QPointer<TitleSetupPanel> title_setup_panel_;
+  QPointer<CalendarSetupPanel> calendar_setup_panel_;
+  QPointer<GLCanvas> gl_canvas_;
+  QPointer<FontPanel> font_panel_;
+  QPointer<DateTablePanel> data_table_panel_;
+  QPointer<SceneTreePanel> scene_tree_panel_;
+  QPointer<ShapeSetupPanel> shape_setup_panel_;
 
-  wxTimer exit_timer_;
   MainMenu menu_;
   sigslot::signal<FileCommand> signal_file_command_;
+  sigslot::signal<> signal_closing_;
 };
 
 #endif  // MAIN_FRAME_HPP

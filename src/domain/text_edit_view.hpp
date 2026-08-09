@@ -16,8 +16,6 @@ struct TextEditView {
   std::size_t selection_end{0};
 };
 
-[[nodiscard]] inline bool HasSelection(const TextEditView& view) {
-  return view.selection_end > view.selection_begin;
-}
+[[nodiscard]] bool HasSelection(const TextEditView& view);
 
 #endif  // TEXT_EDIT_VIEW_HPP

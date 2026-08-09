@@ -10,28 +10,18 @@
 // infrastructure).
 class PageSetupStore {
  public:
-  explicit PageSetupStore(domain::StateTopic<PageSetupConfig>& topic)
-      : topic_(topic) {}
+  explicit PageSetupStore(domain::StateTopic<PageSetupConfig>& topic);
   ~PageSetupStore() = default;
   PageSetupStore(const PageSetupStore&) = delete;
   PageSetupStore& operator=(const PageSetupStore&) = delete;
   PageSetupStore(PageSetupStore&&) = delete;
   PageSetupStore& operator=(PageSetupStore&&) = delete;
 
-  void ReceivePageSetup(const PageSetupConfig& incoming_page_setup_config) {
-    if (emitting_) {
-      return;
-    }
-    const domain::detail::ScopedReentryFlag guard(emitting_);
-    page_setup_config_ = incoming_page_setup_config;
-    topic_(page_setup_config_);
-  }
+  void ReceivePageSetup(const PageSetupConfig& incoming_page_setup_config);
 
-  void SendPageSetup() { topic_(page_setup_config_); }
+  void SendPageSetup();
 
-  [[nodiscard]] const PageSetupConfig& Get() const {
-    return page_setup_config_;
-  }
+  [[nodiscard]] const PageSetupConfig& Get() const;
 
  private:
   PageSetupConfig page_setup_config_;

@@ -8,29 +8,22 @@
 
 class Bar {
  public:
-  explicit Bar(const DatePeriod& date_interval)
-      : date_interval_(date_interval) {}
+  explicit Bar(const DatePeriod& date_interval);
 
-  void SetText(const std::string& text) { text_ = text; }
+  void SetText(const std::string& text);
 
-  [[nodiscard]] const std::string& GetText() const { return text_; }
+  [[nodiscard]] const std::string& GetText() const;
 
-  [[nodiscard]] int GetYear() const { return date_interval_.Begin().Year(); }
+  [[nodiscard]] int GetYear() const;
 
-  [[nodiscard]] std::int64_t GetLength() const {
-    return date_interval_.LengthDays();
-  }
+  [[nodiscard]] std::int64_t GetLength() const;
 
-  [[nodiscard]] float GetFirstDay() const {
-    return static_cast<float>(date_interval_.Begin().DayOfYear() - 1);
-  }
+  [[nodiscard]] float GetFirstDay() const;
 
-  [[nodiscard]] float GetLastDay() const {
-    return static_cast<float>(date_interval_.Last().DayOfYear());
-  }
+  [[nodiscard]] float GetLastDay() const;
 
-  [[nodiscard]] int GetGroup() const { return group_; }
-  void SetGroup(int group) { group_ = group; }
+  [[nodiscard]] int GetGroup() const;
+  void SetGroup(int group);
 
  private:
   DatePeriod date_interval_;

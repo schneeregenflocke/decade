@@ -1,17 +1,22 @@
 #ifndef LOCALE_SERVICES_HPP
 #define LOCALE_SERVICES_HPP
 
-#include <wx/intl.h>
-
 #include <exception>
 #include <iostream>
 #include <locale>
 #include <string>
+#include <utility>
 
 #include "../domain/date_format.hpp"
 
 namespace application {
 
+// The application-wide locale: the C++ global locale plus the ICU-backed date
+// formatter every panel and the CSV I/O share.
+//
+// There is no toolkit locale object beside them any more. wxLocale had to be
+// held alive because wxString conversions read it; Qt formats through QLocale,
+// which asks the system itself and needs nothing kept.
 class LocaleServices {
  public:
   explicit LocaleServices(std::string locale_name = {})
@@ -33,24 +38,10 @@ class LocaleServices {
     return date_formatter_;
   }
 
-  [[nodiscard]] wxLocale& wx_locale() { return locale_; }
-
-  [[nodiscard]] const wxLocale& wx_locale() const { return locale_; }
-
   [[nodiscard]] const std::string& locale_name() const { return locale_name_; }
 
  private:
   void Initialize() {
-    if (locale_name_.empty()) {
-      if (!locale_.Init()) {
-        throw std::runtime_error("failed to initialize wx locale");
-      }
-    } else {
-      if (!locale_.Init(locale_name_)) {
-        throw std::runtime_error("failed to initialize wx locale");
-      }
-    }
-
     try {
       const std::locale global_locale = locale_name_.empty()
                                             ? std::locale("")
@@ -64,7 +55,6 @@ class LocaleServices {
   }
 
   std::string locale_name_;
-  wxLocale locale_;
   LocaleDateFormatter date_formatter_;
 };
 

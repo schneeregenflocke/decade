@@ -12,13 +12,13 @@ class PageSetupConfig {
   PageSetupConfig() = default;
 
   // `size` is {width, height}; `margins` is {left, bottom, right, top}.
-  [[nodiscard]] const std::array<float, 2>& Size() const { return size_; }
-  [[nodiscard]] const std::array<float, 4>& Margins() const { return margins_; }
-  [[nodiscard]] int Orientation() const { return orientation_; }
+  [[nodiscard]] const std::array<float, 2>& Size() const;
+  [[nodiscard]] const std::array<float, 4>& Margins() const;
+  [[nodiscard]] int Orientation() const;
 
-  void SetSize(const std::array<float, 2>& size) { size_ = size; }
-  void SetMargins(const std::array<float, 4>& margins) { margins_ = margins; }
-  void SetOrientation(int orientation) { orientation_ = orientation; }
+  void SetSize(const std::array<float, 2>& size);
+  void SetMargins(const std::array<float, 4>& margins);
+  void SetOrientation(int orientation);
 
  private:
   std::array<float, 2> size_{};

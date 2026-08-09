@@ -2,18 +2,21 @@
 #define GL_CANVAS_HPP
 
 #include <epoxy/gl.h>
-#include <wx/clipbrd.h>
-#include <wx/dataobj.h>
-#include <wx/dcclient.h>
-#include <wx/event.h>
-#include <wx/gdicmn.h>
-#include <wx/glcanvas.h>
-#include <wx/image.h>
 
+#include <QtCore/QString>
+#include <QtGui/QClipboard>
+#include <QtGui/QGuiApplication>
+#include <QtGui/QImage>
+#include <QtGui/QKeyEvent>
+#include <QtGui/QMouseEvent>
+#include <QtGui/QOpenGLContext>
+#include <QtGui/QSurfaceFormat>
+#include <QtGui/QWheelEvent>
+#include <QtOpenGLWidgets/QOpenGLWidget>
+#include <QtWidgets/QWidget>
 #include <algorithm>
 #include <chrono>
 #include <cmath>
-#include <cstddef>
 #include <exception>
 #include <functional>
 #include <glm/vec2.hpp>
@@ -21,7 +24,6 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "../application/calendar/text_input_event.hpp"
 #include "../application/render_surface.hpp"
@@ -36,61 +38,105 @@
 #include "../infrastructure/graphics/projection.hpp"
 #include "../infrastructure/graphics/rect.hpp"
 #include "../infrastructure/graphics/render_to_png.hpp"
-#include "gl_context_bootstrap.hpp"
 #include "mouse_interaction.hpp"
-#include "wx_owned.hpp"
 
-// The drawing window: it owns the context (through the bootstrap), the
-// rendering engine, the view (projection, camera) and the pointer input. It
-// knows no domain logic — it receives the page size and reports pointer
-// positions in page space onwards.
-class GLCanvas : public wxGLCanvas, public application::RenderSurface {
+// The drawing window: it owns the rendering engine, the view (projection,
+// camera) and the pointer input. It knows no domain logic — it receives the
+// page size and reports pointer positions in page space onwards.
+//
+// The deferred context setup that used to need a bootstrap class of its own is
+// gone: QOpenGLWidget calls initializeGL() once the context stands and makes it
+// current for that call, for resizeGL() and for paintGL(). Outside those three
+// no GL function may run without makeCurrent() — the export path is the only
+// place that needs it.
+class GLCanvas : public QOpenGLWidget, public application::RenderSurface {
  public:
   // Resolution and multisampling of the PNG export (SavePNG). Public, so the
   // menu caption uses the same value instead of a second number in its text.
   static constexpr int kExportPngDpi = 200;
   static constexpr int kExportMsaaSamples = 16;
 
-  explicit GLCanvas(wxWindow* parent)
-      // wxWANTS_CHARS: otherwise the dialogue catches Enter, Esc and the arrow
-      // keys before the text editor in the canvas sees them.
-      : wxGLCanvas(parent, DisplayAttributes(), wxID_ANY, wxDefaultPosition,
-                   wxDefaultSize, wxWANTS_CHARS),
-        context_bootstrap_(*this, kRequiredGlVersion) {
-    if (decade_debug::LogEnabled()) {
-      std::cout << "wxGLCanvas IsDisplaySupported " << std::boolalpha
-                << wxGLCanvas::IsDisplaySupported(DisplayAttributes()) << '\n';
+  // The context version the renderer needs. The format itself gets set once,
+  // application-wide, before the QApplication exists (SurfaceFormat below);
+  // here it serves as the check that the driver really delivered it.
+  static constexpr int kRequiredGlMajor = 4;
+  static constexpr int kRequiredGlMinor = 6;
+
+  // The surface format of the whole application. Qt demands it be set before
+  // the QApplication is constructed — a per-widget format is honoured on some
+  // platforms alone, and the canvas would then quietly get a compatibility
+  // context.
+  // https://doc.qt.io/qt-6/qopenglwidget.html#details
+  [[nodiscard]] static QSurfaceFormat SurfaceFormat() {
+    constexpr int kMsaaSamples = 4;
+    constexpr int kDepthBufferBits = 24;
+    QSurfaceFormat format;
+    format.setVersion(kRequiredGlMajor, kRequiredGlMinor);
+    format.setProfile(QSurfaceFormat::CoreProfile);
+    // Desktop GL explicitly. On an EGL platform (Wayland) Qt otherwise resolves
+    // the default renderable type to OpenGL ES, and the 4.6 core request then
+    // fails to match a config — EGL_BAD_MATCH, with no window.
+    format.setRenderableType(QSurfaceFormat::OpenGL);
+    format.setDepthBufferSize(kDepthBufferBits);
+    format.setSamples(kMsaaSamples);
+    return format;
+  }
+
+  explicit GLCanvas(QWidget* parent) : QOpenGLWidget(parent) {
+    // Otherwise the surrounding widgets catch Enter, Escape and the arrow keys
+    // before the text editor in the canvas sees them.
+    setFocusPolicy(Qt::StrongFocus);
+    // Hovering has to be reported without a button held down.
+    setMouseTracking(true);
+  }
+
+  // The engine owns GL objects, and deleting one without a current context is
+  // a call into nothing: Qt makes the context current for initializeGL,
+  // resizeGL and paintGL alone. The base destructor runs after this one, so the
+  // context is still there to be made current.
+  ~GLCanvas() override {
+    if (graphics_engine_) {
+      makeCurrent();
+      graphics_engine_.reset();
     }
   }
 
-  // Starts the deferred GL setup. Exactly one of the two callbacks runs; on
+  GLCanvas(const GLCanvas&) = delete;
+  GLCanvas& operator=(const GLCanvas&) = delete;
+  GLCanvas(GLCanvas&&) = delete;
+  GLCanvas& operator=(GLCanvas&&) = delete;
+
+  // Announces the deferred GL setup. Exactly one of the two callbacks runs; on
   // success the engine stands ready afterwards.
+  //
+  // When the context stands already the answer follows at once instead of
+  // never: which of the two happens is the platform's decision, not ours — some
+  // plugins run initializeGL on show(), others at the first paint. The ready
+  // callback builds GL objects either way, so it gets a current context here.
+  // Inside initializeGL Qt has already seen to that.
   void InitOpenGL(std::function<void()> on_ready,
                   std::function<void(const std::string&)> on_failed) {
-    // The engine comes into being here, before the ready callback, so a
-    // failure inside it (a shader that will not build) would escape past the
-    // caller's try. It is the same category the bootstrap already reports —
-    // graphics that cannot be set up — hence the same channel.
-    // Copied out first: capturing on_failed and moving it in the same call
-    // would leave the order of the two to the compiler, and a moved-from
-    // std::function is empty.
-    auto report_failure = on_failed;
-    context_bootstrap_.Start(
-        [this, ready = std::move(on_ready),
-         failed = std::move(report_failure)]() {
-          try {
-            StartRendering();
-          } catch (const std::exception& error) {
-            graphics_engine_.reset();
-            failed(error.what());
-            return;
-          }
-          ready();
-        },
-        std::move(on_failed));
+    on_ready_ = std::move(on_ready);
+    on_failed_ = std::move(on_failed);
+    if (graphics_engine_) {
+      makeCurrent();
+      ReportReady();
+    }
   }
 
   [[nodiscard]] GraphicsEngine& Engine() { return *graphics_engine_; }
+
+  [[nodiscard]] bool HasEngine() const { return graphics_engine_ != nullptr; }
+
+  // Makes this canvas's context current, for building or destroying GL objects
+  // outside the three rendering callbacks. Whoever owns GL resources tied to
+  // this canvas brackets their work with it — the rendering adapter on every
+  // rebuild, the composition root before dissolving the scene.
+  //
+  // There is deliberately no counterpart: releasing the context again would
+  // pull it out from under Qt whenever this runs nested inside a rendering
+  // callback, which is exactly where the first scene gets built.
+  void MakeGraphicsCurrent() override { makeCurrent(); }
 
   // Called on every mouse movement with the pointer in page space, so an
   // interaction controller can hit-test on it. The binder sets it.
@@ -136,11 +182,11 @@ class GLCanvas : public wxGLCanvas, public application::RenderSurface {
     }
   }
 
-  // Fits viewport, projection and zoom bounds to the current window and page
-  // size and asks for a repaint. Needed when the page or the canvas size
-  // changes.
+  // Refits projection and zoom bounds to the current window and page size and
+  // asks for a repaint. Needed when the page or the canvas size changes. It
+  // touches no GL — the viewport is set where the context is current, in
+  // paintGL — so it may be called from anywhere.
   void RefreshView() override {
-    UpdateViewport();
     if (page_size_.Width() <= 0.0F || page_size_.Height() <= 0.0F) {
       if (decade_debug::LogEnabled()) {
         std::cout << "RefreshView: skipped, page_size not yet initialised\n";
@@ -148,66 +194,266 @@ class GLCanvas : public wxGLCanvas, public application::RenderSurface {
       return;
     }
     UpdateProjection();
-    Refresh(false);
+    update();
   }
 
   // Triggers a repaint alone — for changes touching neither projection nor zoom
   // bounds (hover and selection colours). Markedly cheaper than RefreshView.
-  void Repaint() override { Refresh(false); }
+  void Repaint() override { update(); }
 
   // The frame rate in the one-second window of the newest frame; since drawing
   // happens event-driven alone, the value carries meaning during an
   // interaction.
   [[nodiscard]] double CurrentFps() const { return frame_stats_.Fps(); }
 
+  // The off-screen framebuffers of the export come into being in this context,
+  // so it has to be current — this runs outside the rendering callbacks.
   void SavePNG(const std::string& file_path, int dpi = kExportPngDpi) {
+    makeCurrent();
     WritePageToPng(file_path, page_size_, static_cast<float>(dpi),
                    *graphics_engine_, kExportMsaaSamples);
   }
 
-  // Returns the current GL back buffer as an RGB wxImage with its origin top
-  // left, so it can be mounted into a whole-window screenshot: a wxDC does not
-  // see the GL surface. Without a surface an invalid image comes back.
-  wxImage CaptureBackBufferImage() {
-    const BackBuffer back = ReadBackBuffer();
-    if (back.pixels.empty()) {
-      return {};
+  // The rendered canvas content as an image with its origin top left, so it can
+  // be mounted into a whole-window screenshot: the widget capture does not see
+  // the GL surface. QOpenGLWidget draws into a framebuffer object of its own,
+  // which is what makes this readable at all — and readable on every platform,
+  // Wayland included.
+  [[nodiscard]] QImage CaptureImage() { return AsOpaque(grabFramebuffer()); }
+
+ protected:
+  // Runs exactly once, as soon as the context stands. A failure here is final:
+  // the shaders exist by now or not at all, so it gets reported rather than
+  // retried.
+  void initializeGL() override {
+    // A platform that carries no QOpenGLWidget (the offscreen plugin, for one)
+    // still runs this callback — with no context current. Every GL call would
+    // then dispatch through nothing, so the check comes before the first one.
+    if (QOpenGLContext::currentContext() == nullptr) {
+      ReportFailure(NoContextMessage());
+      return;
     }
-    wxImage image(static_cast<int>(back.width), static_cast<int>(back.height));
-    std::copy_n(back.pixels.data(), back.pixels.size(), image.GetData());
-    return image;
+    if (!HasRequiredVersion()) {
+      ReportFailure(VersionFailureMessage());
+      return;
+    }
+    if (decade_debug::LogEnabled()) {
+      std::cout << "OpenGL ready, version: " << DescribeDriver() << '\n';
+    }
+
+    ApplyInitialGlState();
+    try {
+      graphics_engine_ = std::make_unique<GraphicsEngine>();
+    } catch (const std::exception& error) {
+      graphics_engine_.reset();
+      ReportFailure(error.what());
+      return;
+    }
+    ReportReady();
+  }
+
+  void resizeGL(int /*width*/, int /*height*/) override { RefreshView(); }
+
+  void paintGL() override {
+    if (!graphics_engine_) {
+      return;
+    }
+    const auto render_start = FrameStats::Clock::now();
+    const FramebufferSize framebuffer = CurrentFramebufferSize();
+    glViewport(0, 0, framebuffer.width, framebuffer.height);
+    graphics_engine_->SetMVP(mvp_);
+    graphics_engine_->Render();
+    const auto render_end = FrameStats::Clock::now();
+    frame_stats_.AddFrame(render_end, render_end - render_start);
+    LogFrameStats(render_end);
+  }
+
+  void mousePressEvent(QMouseEvent* event) override {
+    const glm::ivec2 position_physical = PhysicalPosition(event->position());
+    if (event->button() == Qt::LeftButton) {
+      setFocus();
+      if (on_primary_down_) {
+        on_primary_down_(MouseInteraction::ScreenToPage(position_physical,
+                                                        ViewportSize(), mvp_),
+                         event->modifiers().testFlag(Qt::ShiftModifier));
+      }
+    }
+    HandlePointer(position_physical, false, 0);
+  }
+
+  void mouseReleaseEvent(QMouseEvent* event) override {
+    HandlePointer(PhysicalPosition(event->position()), false, 0);
+  }
+
+  void mouseMoveEvent(QMouseEvent* event) override {
+    HandlePointer(PhysicalPosition(event->position()),
+                  event->buttons() != Qt::NoButton, 0);
+  }
+
+  void wheelEvent(QWheelEvent* event) override {
+    HandlePointer(PhysicalPosition(event->position()), false,
+                  event->angleDelta().y());
+  }
+
+  void mouseDoubleClickEvent(QMouseEvent* event) override {
+    setFocus();
+    if (on_double_click_) {
+      on_double_click_(MouseInteraction::ScreenToPage(
+          PhysicalPosition(event->position()), ViewportSize(), mvp_));
+    }
+  }
+
+  // One handler for the whole keyboard, where wx needed two: Qt delivers the
+  // named keys and the composed character in the same event — event->text()
+  // stands fully composed for umlauts and accents.
+  void keyPressEvent(QKeyEvent* event) override {
+    if (!IsEditing()) {
+      QOpenGLWidget::keyPressEvent(event);
+      return;
+    }
+    const auto selection = event->modifiers().testFlag(Qt::ShiftModifier)
+                               ? TextEditBuffer::Selection::kExtend
+                               : TextEditBuffer::Selection::kReplace;
+
+    if (event->modifiers().testFlag(Qt::ControlModifier) &&
+        HandleClipboard(event->key())) {
+      return;
+    }
+
+    switch (event->key()) {
+      case Qt::Key_Left:
+        SendMove(TextEditBuffer::Direction::kLeft, selection);
+        return;
+      case Qt::Key_Right:
+        SendMove(TextEditBuffer::Direction::kRight, selection);
+        return;
+      case Qt::Key_Home:
+        SendMove(TextEditBuffer::Direction::kBegin, selection);
+        return;
+      case Qt::Key_End:
+        SendMove(TextEditBuffer::Direction::kEnd, selection);
+        return;
+      case Qt::Key_Backspace:
+        Send(TextInputEvent::Command(TextInputEvent::Kind::kDeleteBefore));
+        return;
+      case Qt::Key_Delete:
+        Send(TextInputEvent::Command(TextInputEvent::Kind::kDeleteAfter));
+        return;
+      case Qt::Key_Return:
+      case Qt::Key_Enter:
+        Send(TextInputEvent::Command(TextInputEvent::Kind::kCommit));
+        return;
+      case Qt::Key_Escape:
+        Send(TextInputEvent::Command(TextInputEvent::Kind::kCancel));
+        return;
+      default:
+        break;
+    }
+
+    const QString text = event->text();
+    if (text.isEmpty() || text.at(0).unicode() < kFirstPrintable) {
+      QOpenGLWidget::keyPressEvent(event);
+      return;
+    }
+    Send(TextInputEvent::Insert(text.toStdString()));
   }
 
  private:
-  static constexpr GlContextBootstrap::Version kRequiredGlVersion{.major = 4,
-                                                                  .minor = 6};
-
-  struct BackBuffer {
-    std::vector<unsigned char> pixels;  // origin top left, rows flipped
-    std::size_t width{0};
-    std::size_t height{0};
-  };
+  static constexpr char16_t kFirstPrintable = 32;
 
   struct FramebufferSize {
     GLsizei width{0};
     GLsizei height{0};
   };
 
-  // Runs exactly once, as soon as the context stands: set the GL base state,
-  // build the engine, attach the draw and input events.
-  void StartRendering() {
-    ApplyInitialGlState();
-    graphics_engine_ = std::make_unique<GraphicsEngine>();
+  void ReportReady() {
+    // The consumer builds GL objects, so it may only be called with a context
+    // current. A platform that carries no OpenGL widget leaves none behind even
+    // after makeCurrent(); reporting that here turns an abort in the first
+    // buffer allocation into the failure path the window already knows.
+    if (QOpenGLContext::currentContext() == nullptr) {
+      ReportFailure(NoContextMessage());
+      return;
+    }
+    if (on_ready_) {
+      // Moved out first: the callback may destroy what holds this canvas, and a
+      // member still being read after that would be a use-after-free.
+      const auto ready = std::exchange(on_ready_, nullptr);
+      on_failed_ = nullptr;
+      ready();
+    }
+  }
 
-    Bind(wxEVT_SIZE, &GLCanvas::SizeCallback, this);
-    Bind(wxEVT_PAINT, &GLCanvas::PaintCallback, this);
-    Bind(wxEVT_MOTION, &GLCanvas::MouseCallback, this);
-    Bind(wxEVT_LEFT_DOWN, &GLCanvas::MouseCallback, this);
-    Bind(wxEVT_LEFT_UP, &GLCanvas::MouseCallback, this);
-    Bind(wxEVT_MOUSEWHEEL, &GLCanvas::MouseCallback, this);
-    Bind(wxEVT_LEFT_DCLICK, &GLCanvas::DoubleClickCallback, this);
-    Bind(wxEVT_KEY_DOWN, &GLCanvas::KeyDownCallback, this);
-    Bind(wxEVT_CHAR, &GLCanvas::CharCallback, this);
+  void ReportFailure(const std::string& message) {
+    if (on_failed_) {
+      const auto failed = std::exchange(on_failed_, nullptr);
+      on_ready_ = nullptr;
+      failed(message);
+      return;
+    }
+    std::cerr << message << '\n';
+  }
+
+  // The format the context really came up with, not the one that was asked
+  // for: a driver may hand back less, and the renderer needs to hear about it
+  // here rather than at the first shader.
+  [[nodiscard]] static bool HasRequiredVersion() {
+    const QSurfaceFormat format = QOpenGLContext::currentContext()->format();
+    return format.majorVersion() > kRequiredGlMajor ||
+           (format.majorVersion() == kRequiredGlMajor &&
+            format.minorVersion() >= kRequiredGlMinor);
+  }
+
+  [[nodiscard]] static std::string VersionFailureMessage() {
+    return "Creating an OpenGL " + std::to_string(kRequiredGlMajor) + "." +
+           std::to_string(kRequiredGlMinor) +
+           " core context failed. decade needs OpenGL to draw the calendar and "
+           "cannot continue.";
+  }
+
+  // Retags a read-back as opaque. The canvas draws opaquely, but its alpha
+  // channel is not 1 everywhere: blending with GL_SRC_ALPHA leaves a value
+  // below it wherever something translucent was drawn, while the colour is
+  // already final. A platform whose window surface carries an alpha channel
+  // (Wayland does, X11 here does not) hands the image back tagged
+  // *premultiplied*, and Qt would then divide those final colours by that
+  // leftover alpha on the next draw — teal turns magenta. Retagging costs
+  // nothing: the same bytes, read as what they are.
+  [[nodiscard]] static QImage AsOpaque(QImage image) {
+    switch (image.format()) {
+      case QImage::Format_ARGB32:
+      case QImage::Format_ARGB32_Premultiplied:
+        image.reinterpretAsFormat(QImage::Format_RGB32);
+        break;
+      case QImage::Format_RGBA8888:
+      case QImage::Format_RGBA8888_Premultiplied:
+        image.reinterpretAsFormat(QImage::Format_RGBX8888);
+        break;
+      default:
+        break;
+    }
+    return image;
+  }
+
+  [[nodiscard]] static std::string NoContextMessage() {
+    return "This platform carries no OpenGL widget. decade needs OpenGL to "
+           "draw the calendar and cannot continue.";
+  }
+
+  // Valid with a current context alone; without one glGetString returns
+  // nullptr, hence the fallback instead of a cast into the void.
+  [[nodiscard]] static std::string DescribeDriver() {
+    return "GL_VERSION " + DriverString(GL_VERSION) + "\nGL_VENDOR " +
+           DriverString(GL_VENDOR) + "\nGL_RENDERER " +
+           DriverString(GL_RENDERER);
+  }
+
+  [[nodiscard]] static std::string DriverString(GLenum name) {
+    const auto* value = glGetString(name);
+    if (value == nullptr) {
+      return "unknown";
+    }
+    return {reinterpret_cast<const char*>(value)};
   }
 
   static void ApplyInitialGlState() {
@@ -216,8 +462,8 @@ class GLCanvas : public wxGLCanvas, public application::RenderSurface {
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    // wxGLAttributes::Defaults() asks for 4x MSAA under GLX
-    // (SampleBuffers(1).Samplers(4)), which is why the enable takes hold here.
+    // The application-wide surface format asks for 4x MSAA, which is why the
+    // enable takes hold here.
     glEnable(GL_MULTISAMPLE);
 
     GLint msaa_samples = 0;
@@ -227,43 +473,29 @@ class GLCanvas : public wxGLCanvas, public application::RenderSurface {
     }
   }
 
-  static wxGLAttributes DisplayAttributes() {
-    wxGLAttributes attributes;
-    attributes.PlatformDefaults().Defaults().EndList();
-    return attributes;
-  }
-
   // The window size in device pixels — more than the logical one on HiDPI
-  // displays.
+  // displays, and the size of the framebuffer QOpenGLWidget renders into.
   [[nodiscard]] FramebufferSize CurrentFramebufferSize() const {
-    const wxSize logical_size = GetClientSize();
-    const double scale = GetContentScaleFactor();
-    return {.width = static_cast<GLsizei>(
-                std::lround(logical_size.GetWidth() * scale)),
-            .height = static_cast<GLsizei>(
-                std::lround(logical_size.GetHeight() * scale))};
+    const double scale = devicePixelRatioF();
+    return {.width = static_cast<GLsizei>(std::lround(width() * scale)),
+            .height = static_cast<GLsizei>(std::lround(height() * scale))};
   }
 
-  void UpdateViewport() const {
+  [[nodiscard]] glm::ivec2 ViewportSize() const {
     const FramebufferSize framebuffer = CurrentFramebufferSize();
-    glViewport(0, 0, framebuffer.width, framebuffer.height);
-
-    if (decade_debug::LogEnabled()) {
-      std::cout << "UpdateViewport scale=" << GetContentScaleFactor()
-                << " fb=" << framebuffer.width << "x" << framebuffer.height
-                << '\n';
-    }
+    return {framebuffer.width, framebuffer.height};
   }
 
   void UpdateProjection() {
     constexpr float kViewSizeScale = 1.1F;
     const RectF view_size = page_size_.Scale(kViewSizeScale);
+    const glm::ivec2 viewport = ViewportSize();
 
-    mvp_.SetProjection(Projection::OrthoMatrix(view_size));
+    mvp_.SetProjection(Projection::OrthoMatrix(
+        view_size, Projection::AspectRatioOf(viewport.x, viewport.y)));
     camera_.SetScaleLimits(ComputeZoomLimits(
         mvp_.GetProjection(), {page_size_.Width(), page_size_.Height()},
         static_cast<float>(kExportPngDpi)));
-    graphics_engine_->SetMVP(mvp_);
 
     if (decade_debug::LogEnabled()) {
       std::cout << "UpdateProjection: page=" << page_size_.Width() << "x"
@@ -272,50 +504,6 @@ class GLCanvas : public wxGLCanvas, public application::RenderSurface {
       decade_debug::LogMat4("UpdateProjection proj", mvp_.GetProjection());
       decade_debug::LogMat4("UpdateProjection view", mvp_.GetView());
     }
-  }
-
-  // Draws the scene into the back buffer and reads it back as an RGB buffer
-  // with its origin top left. OpenGL counts from below, hence the row flip.
-  // Without a surface an empty buffer comes back.
-  BackBuffer ReadBackBuffer() {
-    constexpr std::size_t kBytesPerPixel = 3;
-    context_bootstrap_.MakeCurrent();
-    graphics_engine_->SetMVP(mvp_);
-    graphics_engine_->Render();
-    glFinish();
-
-    const FramebufferSize framebuffer = CurrentFramebufferSize();
-    const auto width = static_cast<std::size_t>(framebuffer.width);
-    const auto height = static_cast<std::size_t>(framebuffer.height);
-    if (width == 0 || height == 0) {
-      return {};
-    }
-    std::vector<unsigned char> buffer(width * height * kBytesPerPixel);
-
-    glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    glReadBuffer(GL_BACK);
-    glReadPixels(0, 0, framebuffer.width, framebuffer.height, GL_RGB,
-                 GL_UNSIGNED_BYTE, buffer.data());
-
-    std::vector<unsigned char> flipped(buffer.size());
-    const std::size_t row_bytes = width * kBytesPerPixel;
-    for (std::size_t row = 0; row < height; ++row) {
-      std::copy_n(buffer.data() + ((height - 1 - row) * row_bytes), row_bytes,
-                  flipped.data() + (row * row_bytes));
-    }
-    return {.pixels = std::move(flipped), .width = width, .height = height};
-  }
-
-  void PaintCallback(wxPaintEvent& /*event*/) {
-    const wxPaintDC paint_dc(this);
-    const auto render_start = FrameStats::Clock::now();
-    context_bootstrap_.MakeCurrent();
-    graphics_engine_->SetMVP(mvp_);
-    graphics_engine_->Render();
-    SwapBuffers();
-    const auto render_end = FrameStats::Clock::now();
-    frame_stats_.AddFrame(render_end, render_end - render_start);
-    LogFrameStats(render_end);
   }
 
   // Logs FPS and render duration at most once a second (debug mode).
@@ -331,99 +519,49 @@ class GLCanvas : public wxGLCanvas, public application::RenderSurface {
               << frame_stats_.LastRenderMillis() << " ms)\n";
   }
 
-  void SizeCallback(wxSizeEvent& /*event*/) { RefreshView(); }
-
-  // The pointer position of the event in page space — the unit the scene
-  // computes in.
-  [[nodiscard]] glm::vec2 PagePoint(const wxMouseEvent& event) const {
-    return MouseInteraction::ScreenToPage(PhysicalPosition(event), mvp_);
+  [[nodiscard]] glm::ivec2 PhysicalPosition(const QPointF& position) const {
+    const double scale = devicePixelRatioF();
+    return {static_cast<int>(std::lround(position.x() * scale)),
+            static_cast<int>(std::lround(position.y() * scale))};
   }
 
-  [[nodiscard]] wxPoint PhysicalPosition(const wxMouseEvent& event) const {
-    const double scale = GetContentScaleFactor();
-    return {static_cast<int>(std::lround(event.GetPosition().x * scale)),
-            static_cast<int>(std::lround(event.GetPosition().y * scale))};
-  }
-
-  void DoubleClickCallback(wxMouseEvent& event) {
-    SetFocus();
-    if (on_double_click_) {
-      on_double_click_(PagePoint(event));
+  // The one place pointer input turns into camera movement, shared by press,
+  // move, release and wheel — they differ in two flags alone.
+  void HandlePointer(glm::ivec2 position_physical, bool dragging,
+                     int wheel_rotation) {
+    const glm::ivec2 viewport = ViewportSize();
+    mouse_interaction_.Apply(mvp_, camera_, position_physical, viewport,
+                             dragging, wheel_rotation);
+    // Report the pointer in page space onwards, after Apply, so the view just
+    // panned or zoomed is the one that counts.
+    if (on_pointer_move_) {
+      on_pointer_move_(
+          MouseInteraction::ScreenToPage(position_physical, viewport, mvp_));
     }
-    event.Skip();
-  }
-
-  // Translates control keys into their meaning. Printable characters arrive as
-  // wxEVT_CHAR alone — there umlauts and accents stand fully composed.
-  void KeyDownCallback(wxKeyEvent& event) {
-    if (!IsEditing()) {
-      event.Skip();
-      return;
-    }
-    const auto selection = event.ShiftDown()
-                               ? TextEditBuffer::Selection::kExtend
-                               : TextEditBuffer::Selection::kReplace;
-
-    if (event.ControlDown() && HandleClipboard(event)) {
-      return;
-    }
-
-    switch (event.GetKeyCode()) {
-      case WXK_LEFT:
-        SendMove(TextEditBuffer::Direction::kLeft, selection);
-        return;
-      case WXK_RIGHT:
-        SendMove(TextEditBuffer::Direction::kRight, selection);
-        return;
-      case WXK_HOME:
-        SendMove(TextEditBuffer::Direction::kBegin, selection);
-        return;
-      case WXK_END:
-        SendMove(TextEditBuffer::Direction::kEnd, selection);
-        return;
-      case WXK_BACK:
-        Send(TextInputEvent::Command(TextInputEvent::Kind::kDeleteBefore));
-        return;
-      case WXK_DELETE:
-        Send(TextInputEvent::Command(TextInputEvent::Kind::kDeleteAfter));
-        return;
-      case WXK_RETURN:
-      case WXK_NUMPAD_ENTER:
-        Send(TextInputEvent::Command(TextInputEvent::Kind::kCommit));
-        return;
-      case WXK_ESCAPE:
-        Send(TextInputEvent::Command(TextInputEvent::Kind::kCancel));
-        return;
-      default:
-        event.Skip();
+    // Dragging and the mouse wheel alone change the view; a bare pointer
+    // movement triggers no repaint — a hover change triggers its own through
+    // CalendarPage::ReceiveHovered. Projection and zoom bounds stay untouched,
+    // so RefreshView is not needed here.
+    if (dragging || wheel_rotation != 0) {
+      Repaint();
     }
   }
 
-  void CharCallback(wxKeyEvent& event) {
-    constexpr int kFirstPrintable = 32;
-    const wxChar character = event.GetUnicodeKey();
-    if (!IsEditing() || character == WXK_NONE || character < kFirstPrintable) {
-      event.Skip();
-      return;
-    }
-    Send(TextInputEvent::Insert(wxString(character).ToStdString(wxConvUTF8)));
-  }
-
-  // Ctrl-C, X and V: the wx part of the clipboard stays here, the editor sees
-  // reading the selection and inserting text alone.
-  bool HandleClipboard(const wxKeyEvent& event) {
-    switch (event.GetKeyCode()) {
-      case 'A':
+  // Ctrl-A, C, X and V: the clipboard part of the toolkit stays here, the
+  // editor sees reading the selection and inserting text alone.
+  bool HandleClipboard(int key) {
+    switch (key) {
+      case Qt::Key_A:
         Send(TextInputEvent::Command(TextInputEvent::Kind::kSelectAll));
         return true;
-      case 'C':
+      case Qt::Key_C:
         CopySelection();
         return true;
-      case 'X':
+      case Qt::Key_X:
         CopySelection();
         Send(TextInputEvent::Command(TextInputEvent::Kind::kDeleteBefore));
         return true;
-      case 'V':
+      case Qt::Key_V:
         Send(TextInputEvent::Insert(ClipboardText()));
         return true;
       default:
@@ -436,25 +574,15 @@ class GLCanvas : public wxGLCanvas, public application::RenderSurface {
       return;
     }
     const std::string text = selected_text_();
-    if (text.empty() || !wxTheClipboard->Open()) {
+    if (text.empty()) {
       return;
     }
-    wxTheClipboard->SetData(
-        MakeOwned<wxTextDataObject>(wxString::FromUTF8(text)));
-    wxTheClipboard->Close();
+    QGuiApplication::clipboard()->setText(QString::fromStdString(text));
   }
 
   [[nodiscard]] static std::string ClipboardText() {
-    if (!wxTheClipboard->Open()) {
-      return {};
-    }
-    wxTextDataObject data;
-    const bool available = wxTheClipboard->IsSupported(wxDF_UNICODETEXT) &&
-                           wxTheClipboard->GetData(data);
-    wxTheClipboard->Close();
     // Line breaks have no business in a single-line caption.
-    return available ? SingleLine(data.GetText().ToStdString(wxConvUTF8))
-                     : std::string{};
+    return SingleLine(QGuiApplication::clipboard()->text().toStdString());
   }
 
   [[nodiscard]] static std::string SingleLine(std::string text) {
@@ -476,34 +604,10 @@ class GLCanvas : public wxGLCanvas, public application::RenderSurface {
     Send(TextInputEvent::Move(direction, selection));
   }
 
-  void MouseCallback(wxMouseEvent& event) {
-    const wxPoint position_physical = PhysicalPosition(event);
-    if (event.LeftDown()) {
-      SetFocus();
-      if (on_primary_down_) {
-        on_primary_down_(
-            MouseInteraction::ScreenToPage(position_physical, mvp_),
-            event.ShiftDown());
-      }
-    }
-    mouse_interaction_.Apply(mvp_, camera_, position_physical, event.Dragging(),
-                             event.GetWheelRotation());
-    // Report the pointer in page space onwards, after Apply, so the view just
-    // panned or zoomed is the one that counts.
-    if (on_pointer_move_) {
-      on_pointer_move_(MouseInteraction::ScreenToPage(position_physical, mvp_));
-    }
-    // Dragging and the mouse wheel alone change the view; a bare pointer
-    // movement triggers no repaint — a hover change triggers its own through
-    // CalendarPage::ReceiveHovered. Projection and zoom bounds stay untouched,
-    // so RefreshView is not needed here.
-    if (event.Dragging() || event.GetWheelRotation() != 0) {
-      Repaint();
-    }
-  }
-
-  GlContextBootstrap context_bootstrap_;
   std::unique_ptr<GraphicsEngine> graphics_engine_;
+
+  std::function<void()> on_ready_;
+  std::function<void(const std::string&)> on_failed_;
 
   std::function<void(glm::vec2, bool)> on_primary_down_;
   std::function<void(glm::vec2)> on_double_click_;

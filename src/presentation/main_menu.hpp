@@ -1,65 +1,70 @@
 #ifndef MAIN_MENU_HPP
 #define MAIN_MENU_HPP
 
-#include <wx/frame.h>
-#include <wx/menu.h>
-#include <wx/string.h>
-#include <wx/window.h>
+#include <QtCore/QPointer>
+#include <QtCore/QString>
+#include <QtGui/QAction>
+#include <QtGui/QKeySequence>
+#include <QtWidgets/QMainWindow>
+#include <QtWidgets/QMenu>
+#include <QtWidgets/QMenuBar>
 
-#include "wx_owned.hpp"
-
-// Command identifiers for the application's main menu. Generated once with
-// wxWindow::NewControlId so they never clash with framework-reserved IDs. The
-// frame binds its callbacks against these IDs.
-struct MainMenuIds {
-  int open_xml{wxWindow::NewControlId()};
-  int save_xml{wxWindow::NewControlId()};
-  int save_as_xml{wxWindow::NewControlId()};
-  int import_csv{wxWindow::NewControlId()};
-  int export_csv{wxWindow::NewControlId()};
-  int export_png{wxWindow::NewControlId()};
-  int license_info{wxWindow::NewControlId()};
+// The commands of the main menu. Qt addresses a menu entry through its QAction
+// rather than through an identifier, which is why these stand here instead of
+// the integer ids wx needed: the action is the entry, and the window connects
+// its handler straight to it. QPointer, because the menu bar owns the actions
+// and the window outlives neither.
+struct MainMenuActions {
+  QPointer<QAction> open_xml;
+  QPointer<QAction> save_xml;
+  QPointer<QAction> save_as_xml;
+  QPointer<QAction> import_csv;
+  QPointer<QAction> export_csv;
+  QPointer<QAction> export_png;
+  QPointer<QAction> quit;
+  QPointer<QAction> license_info;
 };
 
 // Presentation: it owns the menu *layout* alone (File plus Help). What a
-// command does is the window's decision; this class builds the wxMenuBar, hangs
-// it onto a frame and publishes the IDs the frame binds against. The menu
+// command does is the window's decision; this class builds the menu bar, hangs
+// it onto a window and publishes the actions the window connects to. The menu
 // changes when the menu changes — independently of wiring and commands.
 class MainMenu {
  public:
   explicit MainMenu(int export_png_dpi) : export_png_dpi_(export_png_dpi) {}
 
-  [[nodiscard]] const MainMenuIds& Ids() const { return ids_; }
+  [[nodiscard]] const MainMenuActions& Actions() const { return actions_; }
 
-  void AttachTo(wxFrame& frame) const {
-    auto* menu_bar_ptr = MakeOwned<wxMenuBar>();
-    frame.SetMenuBar(menu_bar_ptr);
+  // Builds the menu into the window's menu bar. It has to run before the window
+  // connects — the actions come into being here.
+  void AttachTo(QMainWindow& window) {
+    QMenuBar* menu_bar = window.menuBar();
 
-    auto* menu_file_ptr = MakeOwned<wxMenu>();
-    menu_bar_ptr->Append(menu_file_ptr, "&File");
-    menu_file_ptr->Append(ids_.open_xml, L"&Open...");
-    menu_file_ptr->AppendSeparator();
-    menu_file_ptr->Append(ids_.save_xml, L"&Save \tCTRL+S");
-    menu_file_ptr->Append(ids_.save_as_xml, L"&Save As...");
-    menu_file_ptr->AppendSeparator();
-    menu_file_ptr->Append(ids_.import_csv, L"&Import csv...");
-    menu_file_ptr->Append(ids_.export_csv, L"&Export csv...");
-    menu_file_ptr->AppendSeparator();
-    menu_file_ptr->Append(ids_.export_png, ExportPngLabel());
-    menu_file_ptr->AppendSeparator();
-    menu_file_ptr->Append(wxID_EXIT);
+    QMenu* file_menu = menu_bar->addMenu("&File");
+    actions_.open_xml = file_menu->addAction("&Open...");
+    file_menu->addSeparator();
+    actions_.save_xml = file_menu->addAction("&Save");
+    actions_.save_xml->setShortcut(QKeySequence::Save);
+    actions_.save_as_xml = file_menu->addAction("Save &As...");
+    file_menu->addSeparator();
+    actions_.import_csv = file_menu->addAction("&Import csv...");
+    actions_.export_csv = file_menu->addAction("&Export csv...");
+    file_menu->addSeparator();
+    actions_.export_png = file_menu->addAction(ExportPngLabel());
+    file_menu->addSeparator();
+    actions_.quit = file_menu->addAction("E&xit");
+    actions_.quit->setShortcut(QKeySequence::Quit);
 
-    auto* menu_help_ptr = MakeOwned<wxMenu>();
-    menu_bar_ptr->Append(menu_help_ptr, "&Help");
-    menu_help_ptr->Append(ids_.license_info, L"&Open Source Licenses");
+    QMenu* help_menu = menu_bar->addMenu("&Help");
+    actions_.license_info = help_menu->addAction("&Open Source Licenses");
   }
 
  private:
-  [[nodiscard]] wxString ExportPngLabel() const {
-    return wxString::Format("&Export png (%d dpi)...", export_png_dpi_);
+  [[nodiscard]] QString ExportPngLabel() const {
+    return QString("&Export png (%1 dpi)...").arg(export_png_dpi_);
   }
 
-  MainMenuIds ids_;
+  MainMenuActions actions_;
   int export_png_dpi_;
 };
 

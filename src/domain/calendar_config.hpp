@@ -1,10 +1,9 @@
 #ifndef CALENDAR_CONFIG_HPP
 #define CALENDAR_CONFIG_HPP
 
-#include <algorithm>
 #include <array>
+#include <cstddef>
 #include <cstdint>
-#include <stdexcept>
 #include <vector>
 
 #include "date.hpp"
@@ -21,58 +20,23 @@ class CalendarSpan {
     int last_year;
   };
 
-  CalendarSpan()
-      : span_(Date::FromYmd(kDefaultStartYear, 1, 1),
-              Date::FromYmd(kDefaultEndYear, 1, 1)) {}
+  CalendarSpan();
 
-  void SetSpan(YearSpan span_years) {
-    // It never produces a null span: the half-open end Jan 1 (last + 1) needs a
-    // representable year — the last selectable calendar year is therefore
-    // kMaxYear - 1, and a last year before the first year gets raised to the
-    // first year (a span of exactly one year).
-    const int first_year =
-        std::clamp(span_years.first_year, Date::kMinYear, Date::kMaxYear - 1);
-    const int last_year =
-        std::clamp(span_years.last_year, first_year, Date::kMaxYear - 1);
+  void SetSpan(YearSpan span_years);
 
-    span_ = DatePeriod(Date::FromYmd(first_year, 1, 1),
-                       Date::FromYmd(last_year + 1, 1, 1));
-  }
+  [[nodiscard]] bool IsValidSpan() const;
 
-  [[nodiscard]] bool IsValidSpan() const { return !span_.IsNull(); }
+  [[nodiscard]] std::size_t GetSpanLengthYears() const;
 
-  [[nodiscard]] std::size_t GetSpanLengthYears() const {
-    if (!IsValidSpan()) {
-      throw std::runtime_error("Not valid calendar span!");
-    }
-    return static_cast<std::size_t>(span_.End().Year() - span_.Begin().Year());
-  }
+  [[nodiscard]] std::array<int, 2> GetSpanLimitsYears() const;
 
-  [[nodiscard]] std::array<int, 2> GetSpanLimitsYears() const {
-    return std::array<int, 2>{span_.Begin().Year(), span_.Last().Year()};
-  }
+  [[nodiscard]] std::array<Date, 2> GetSpanLimitsDate() const;
 
-  [[nodiscard]] std::array<Date, 2> GetSpanLimitsDate() const {
-    return std::array<Date, 2>{span_.Begin(), span_.Last()};
-  }
+  [[nodiscard]] std::int64_t GetSpanLengthDays() const;
 
-  [[nodiscard]] std::int64_t GetSpanLengthDays() const {
-    return span_.LengthDays();
-  }
+  [[nodiscard]] int GetYear(std::size_t index) const;
 
-  [[nodiscard]] int GetYear(const std::size_t index) const {
-    const int year = span_.Begin().Year() + static_cast<int>(index);
-
-    if (!IsInSpan(year)) {
-      throw std::logic_error("Year not in span!");
-    }
-
-    return year;
-  }
-
-  [[nodiscard]] bool IsInSpan(const int year) const {
-    return year >= span_.Begin().Year() && year <= span_.Last().Year();
-  }
+  [[nodiscard]] bool IsInSpan(int year) const;
 
  private:
   static constexpr int kDefaultStartYear = 2000;
@@ -85,15 +49,11 @@ class CalendarSpan {
 // no hand-written copy/move) -> freely and correctly copyable.
 class CalendarConfig : public CalendarSpan {
  public:
-  [[nodiscard]] bool IsAutoCalendarSpan() const { return auto_calendar_span_; }
-  void SetAutoCalendarSpan(bool auto_span) { auto_calendar_span_ = auto_span; }
+  [[nodiscard]] bool IsAutoCalendarSpan() const;
+  void SetAutoCalendarSpan(bool auto_span);
 
-  [[nodiscard]] const std::vector<float>& GetSpacingProportions() const {
-    return spacing_proportions_;
-  }
-  void SetSpacingProportions(const std::vector<float>& proportions) {
-    spacing_proportions_ = proportions;
-  }
+  [[nodiscard]] const std::vector<float>& GetSpacingProportions() const;
+  void SetSpacingProportions(const std::vector<float>& proportions);
 
  private:
   static constexpr float kSpacingSmall = 25.0F;

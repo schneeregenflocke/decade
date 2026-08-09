@@ -1,16 +1,19 @@
 #ifndef DATE_PANEL_HPP
 #define DATE_PANEL_HPP
 
-#include <wx/dataview.h>
-#include <wx/weakref.h>
-#include <wx/wx.h>
-
+#include <QtCore/QPointer>
+#include <QtWidgets/QAbstractItemView>
+#include <QtWidgets/QComboBox>
+#include <QtWidgets/QTableWidget>
+#include <QtWidgets/QTableWidgetItem>
+#include <QtWidgets/QWidget>
+#include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <ranges>
 #include <sigslot/signal.hpp>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "../domain/date.hpp"
@@ -18,8 +21,9 @@
 #include "../domain/date_format.hpp"
 #include "../domain/date_group.hpp"
 #include "../domain/date_period.hpp"
+#include "../domain/detail/reentry_guard.hpp"
+#include "make_owned.hpp"
 #include "table_panel_base.hpp"
-#include "wx_owned.hpp"
 
 // The panel is the user-facing boundary for date intervals: the "To Date"
 // column shows and accepts the *inclusive* end date, while every DateEntry
@@ -30,101 +34,92 @@ class DateTablePanel : public TablePanelBase {
  public:
   // `date_format` belongs to the composition root, so the whole application
   // shares one locale configuration.
-  DateTablePanel(wxWindow* parent, LocaleDateFormatter& date_format)
-      : TablePanelBase(parent,
-                       wxDV_MULTIPLE | wxDV_HORIZ_RULES | wxDV_VERT_RULES),
+  DateTablePanel(QWidget* parent, LocaleDateFormatter& date_format)
+      : TablePanelBase(parent, QAbstractItemView::ExtendedSelection),
         date_format_(date_format) {
-    auto* select_group_control = MakeOwned<wxComboBox>(
-        this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,
-        nullptr, 0L, wxDefaultValidator, wxChoiceNameStr);
+    InitColumns({{.label = "From Date", .editable = true},
+                 {.label = "To Date", .editable = true},
+                 {.label = "Number", .editable = false},
+                 {.label = "Group", .editable = false},
+                 {.label = "Group Number", .editable = false},
+                 {.label = "Duration", .editable = false},
+                 {.label = "Duration to next", .editable = false}});
+
+    auto* select_group_control = MakeOwned<QComboBox>(this);
     select_group_control_ = select_group_control;
 
     BuildTableLayout({select_group_control});
 
-    Bind(wxEVT_DATAVIEW_ITEM_ACTIVATED, &DateTablePanel::OnItemActivated, this);
-    Bind(wxEVT_DATAVIEW_ITEM_EDITING_DONE, &DateTablePanel::OnItemEditing,
-         this);
-    Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &DateTablePanel::OnSelectionChanged,
-         this);
-    Bind(wxEVT_BUTTON, &DateTablePanel::OnButtonClicked, this);
-    Bind(wxEVT_COMBOBOX, &DateTablePanel::OnComboBoxSelection, this);
-
-    InitColumns();
+    connect(table(), &QTableWidget::itemChanged, this,
+            [this](QTableWidgetItem* item) { OnItemChanged(item); });
+    connect(table(), &QTableWidget::itemSelectionChanged, this,
+            [this]() { UpdateDeleteButton(); });
+    connect(add_button(), &QPushButton::clicked, this, [this]() { OnAdd(); });
+    connect(delete_button(), &QPushButton::clicked, this,
+            [this]() { OnDelete(); });
+    connect(select_group_control, &QComboBox::activated, this,
+            [this](int index) { OnGroupChosen(index); });
   }
 
   void ReceiveDateEntries(const std::vector<DateEntry>& date_entries) {
+    const domain::detail::ScopedReentryFlag guard(filling_);
+
     auto valid_rows_list = BuildValidRowsList();
 
-    // calculate difference
     const auto change_row_number = static_cast<int>(date_entries.size()) -
                                    static_cast<int>(valid_rows_list.size());
 
-    if (change_row_number > 0) {
-      for (int index = 0; index < change_row_number; ++index) {
-        // append
-        const auto append_index =
-            static_cast<std::size_t>(table()->GetItemCount());
-        InsertRow(append_index);
-        valid_rows_list.push_back(append_index);
-      }
+    for (int index = 0; index < change_row_number; ++index) {
+      const int append_index = table()->rowCount();
+      InsertRow(append_index);
+      valid_rows_list.push_back(append_index);
     }
 
-    // negative number
-    if (change_row_number < 0) {
-      // index not used in body
-      for (int index = change_row_number; index < 0; ++index) {
-        RemoveRow(valid_rows_list.back());
-        valid_rows_list.pop_back();
-      }
+    for (int index = change_row_number; index < 0; ++index) {
+      RemoveRow(valid_rows_list.back());
+      valid_rows_list.pop_back();
     }
 
-    // fill table from received date_entries
-    for (size_t index = 0; index < valid_rows_list.size(); ++index) {
-      const auto row = static_cast<unsigned int>(valid_rows_list[index]);
-      const auto first_date =
-          date_format_.Format(date_entries[index].GetDateInterval().Begin());
-      table()->SetValue(first_date, row, ColumnIndex(Columns::first_date));
+    for (std::size_t index = 0; index < valid_rows_list.size(); ++index) {
+      const int row = valid_rows_list[index];
+      const DateEntry& entry = date_entries[index];
+
+      SetCellText(row, ColumnIndex(Columns::first_date),
+                  date_format_.Format(entry.GetDateInterval().Begin()));
 
       // The to-column shows the inclusive last day; a single-day period
       // (length 1) shows an empty to-date.
       std::string second_date;
-      if (date_entries[index].GetDateInterval().LengthDays() > 1) {
-        second_date =
-            date_format_.Format(date_entries[index].GetDateInterval().Last());
+      if (entry.GetDateInterval().LengthDays() > 1) {
+        second_date = date_format_.Format(entry.GetDateInterval().Last());
       }
-      table()->SetValue(second_date, row, ColumnIndex(Columns::second_date));
+      SetCellText(row, ColumnIndex(Columns::second_date), second_date);
 
-      const std::string number =
-          std::to_string(date_entries[index].GetNumber() + 1);
-      table()->SetValue(number, row, ColumnIndex(Columns::number));
+      SetCellText(row, ColumnIndex(Columns::number),
+                  std::to_string(entry.GetNumber() + 1));
 
       // Unknown groups fall back to the default group (0); the store resets
       // them the same way on its side (CheckAndAdjustGroupIntegrity).
-      int group = date_entries[index].GetGroup();
+      int group = entry.GetGroup();
       if (group > date_groups_.GetGroupMax()) {
         group = 0;
       }
-      table()->SetValue(date_groups_.GetName(group), row,
-                        ColumnIndex(Columns::group));
+      SetCellText(row, ColumnIndex(Columns::group),
+                  date_groups_.GetName(group));
 
-      table()->SetValue(
-          std::to_string(date_entries[index].GetGroupNumber() + 1), row,
-          ColumnIndex(Columns::group_number));
+      SetCellText(row, ColumnIndex(Columns::group_number),
+                  std::to_string(entry.GetGroupNumber() + 1));
 
-      table()->SetValue(
-          std::to_string(date_entries[index].GetDateInterval().LengthDays()),
-          row, ColumnIndex(Columns::duration));
+      SetCellText(row, ColumnIndex(Columns::duration),
+                  std::to_string(entry.GetDateInterval().LengthDays()));
 
       // The inter-interval (end_i, begin_{i+1}) is half-open as well, so its
       // length is exactly the number of free days between the two entries.
-      if ((index + 1) < date_entries.size()) {
-        table()->SetValue(
-            std::to_string(
-                date_entries[index].GetDateInterInterval().LengthDays()),
-            row, ColumnIndex(Columns::duration_to_next));
-      } else {
-        table()->SetValue(L"", row, ColumnIndex(Columns::duration_to_next));
-      }
+      const bool has_next = (index + 1) < date_entries.size();
+      SetCellText(
+          row, ColumnIndex(Columns::duration_to_next),
+          has_next ? std::to_string(entry.GetDateInterInterval().LengthDays())
+                   : std::string{});
     }
   }
 
@@ -133,13 +128,12 @@ class DateTablePanel : public TablePanelBase {
 
     SendDateEntries();
 
-    auto date_groups_std_string = date_groups_.GetDateGroupsNames();
-    wxArrayString date_groups_strings;
-    date_groups_strings.assign(date_groups_std_string.cbegin(),
-                               date_groups_std_string.cend());
-
-    select_group_control_->Set(date_groups_strings);
-    select_group_control_->Select(0);
+    const QSignalBlocker blocker(select_group_control_);
+    select_group_control_->clear();
+    for (const std::string& name : date_groups_.GetDateGroupsNames()) {
+      select_group_control_->addItem(QString::fromStdString(name));
+    }
+    select_group_control_->setCurrentIndex(0);
   }
 
   sigslot::signal<const std::vector<DateEntry>&>& SignalTableDateEntries() {
@@ -147,125 +141,6 @@ class DateTablePanel : public TablePanelBase {
   }
 
  private:
-  void InitColumns() {
-    table()->AppendTextColumn(L"From Date", wxDATAVIEW_CELL_EDITABLE);
-    table()->AppendTextColumn(L"To Date", wxDATAVIEW_CELL_EDITABLE);
-    table()->AppendTextColumn(L"Number", wxDATAVIEW_CELL_INERT);
-    table()->AppendTextColumn(L"Group", wxDATAVIEW_CELL_INERT);
-    table()->AppendTextColumn(L"Group Number", wxDATAVIEW_CELL_INERT);
-    table()->AppendTextColumn(L"Duration", wxDATAVIEW_CELL_INERT);
-    table()->AppendTextColumn(L"Duration to next", wxDATAVIEW_CELL_INERT);
-  }
-
-  void SendDateEntries() {
-    auto valid_rows_list = BuildValidRowsList();
-
-    std::vector<DateEntry> date_entries;
-
-    for (unsigned long const valid_index : valid_rows_list) {
-      const auto begin_date =
-          GetDateByCell({.row = static_cast<unsigned int>(valid_index),
-                         .column = Columns::first_date});
-      const auto last_date =
-          GetDateByCell({.row = static_cast<unsigned int>(valid_index),
-                         .column = Columns::second_date});
-
-      const DatePeriod date_interval =
-          PeriodFromInclusiveDates(begin_date, last_date);
-
-      if (!date_interval.IsNull()) {
-        DateEntry date_entry;
-        date_entry.SetDateInterval(date_interval);
-
-        wxVariant group_string;
-        table()->GetValue(group_string, static_cast<unsigned int>(valid_index),
-                          ColumnIndex(Columns::group));
-
-        int group_number = 0;
-        try {
-          group_number =
-              date_groups_.GetNumber(group_string.GetString().ToStdString());
-        } catch (const std::exception&) {
-          group_number = 0;
-        }
-
-        date_entry.SetGroup(group_number);
-
-        date_entries.push_back(date_entry);
-      }
-    }
-
-    signal_table_date_entries_(date_entries);
-  }
-
-  void UpdateDeleteButton() {
-    auto selections = GetSelectionList();
-
-    if (selections.empty()) {
-      delete_button()->Enable(false);
-    } else {
-      delete_button()->Enable(true);
-    }
-  }
-
-  std::vector<size_t> BuildValidRowsList() {
-    std::vector<size_t> valid_rows_list;
-
-    for (size_t index = 0; std::cmp_less(index, table()->GetItemCount());
-         ++index) {
-      auto begin_date = GetDateByCell({.row = static_cast<unsigned int>(index),
-                                       .column = Columns::first_date});
-      auto last_date = GetDateByCell({.row = static_cast<unsigned int>(index),
-                                      .column = Columns::second_date});
-
-      if (!PeriodFromInclusiveDates(begin_date, last_date).IsNull()) {
-        valid_rows_list.push_back(index);
-        continue;
-      }
-
-      const auto row = static_cast<unsigned int>(index);
-      table()->SetValue("", row, ColumnIndex(Columns::number));
-      table()->SetValue("", row, ColumnIndex(Columns::group));
-      table()->SetValue("", row, ColumnIndex(Columns::group_number));
-      table()->SetValue("", row, ColumnIndex(Columns::duration));
-      table()->SetValue("", row, ColumnIndex(Columns::duration_to_next));
-    }
-
-    return valid_rows_list;
-  }
-
-  std::vector<unsigned int> GetSelectionList() {
-    wxDataViewItemArray selection_array;
-    table()->GetSelections(selection_array);
-
-    std::vector<unsigned int> selections;
-    for (const auto& selected_item : selection_array) {
-      const int selected_row = table()->ItemToRow(selected_item);
-      selections.push_back(static_cast<unsigned int>(selected_row));
-    }
-
-    return selections;
-  }
-
-  void InsertRow(size_t row) {
-    if (std::cmp_less_equal(row, table()->GetItemCount())) {
-      wxVector<wxVariant> empty_row;
-      empty_row.resize(table()->GetColumnCount());
-      empty_row[static_cast<size_t>(ColumnIndex(Columns::group))] =
-          date_groups_.GetName(0);
-      table()->InsertItem(static_cast<unsigned int>(row), empty_row);
-    }
-  }
-
-  void RemoveRow(size_t row) {
-    // Guard against an out-of-range row instead of throwing: this runs inside a
-    // wx event handler, where an escaping exception would tear down the app.
-    if (std::cmp_greater_equal(row, table()->GetItemCount())) {
-      return;
-    }
-    table()->DeleteItem(static_cast<unsigned int>(row));
-  }
-
   enum class Columns : std::uint8_t {
     first_date,
     second_date,
@@ -277,123 +152,184 @@ class DateTablePanel : public TablePanelBase {
   };
 
   struct CellIndex {
-    unsigned int row{0};
+    int row{0};
     Columns column{Columns::first_date};
   };
 
-  static constexpr unsigned int ColumnIndex(Columns column) {
-    return static_cast<unsigned int>(column);
+  static constexpr int ColumnIndex(Columns column) {
+    return static_cast<int>(column);
+  }
+
+  void SendDateEntries() {
+    std::vector<DateEntry> date_entries;
+
+    for (const int row : BuildValidRowsList()) {
+      const auto begin_date =
+          GetDateByCell({.row = row, .column = Columns::first_date});
+      const auto last_date =
+          GetDateByCell({.row = row, .column = Columns::second_date});
+
+      const DatePeriod date_interval =
+          PeriodFromInclusiveDates(begin_date, last_date);
+      if (date_interval.IsNull()) {
+        continue;
+      }
+
+      DateEntry date_entry;
+      date_entry.SetDateInterval(date_interval);
+
+      int group_number = 0;
+      try {
+        group_number =
+            date_groups_.GetNumber(CellText(row, ColumnIndex(Columns::group)));
+      } catch (const std::exception&) {
+        group_number = 0;
+      }
+      date_entry.SetGroup(group_number);
+
+      date_entries.push_back(date_entry);
+    }
+
+    signal_table_date_entries_(date_entries);
+  }
+
+  void UpdateDeleteButton() {
+    delete_button()->setEnabled(!SelectedRows().empty());
+  }
+
+  // The rows holding a usable period, in ascending order. A row that does not
+  // parse keeps its two date cells and loses its derived columns — it is a
+  // half-typed entry, not an error.
+  std::vector<int> BuildValidRowsList() {
+    std::vector<int> valid_rows_list;
+
+    for (int row = 0; row < table()->rowCount(); ++row) {
+      const auto begin_date =
+          GetDateByCell({.row = row, .column = Columns::first_date});
+      const auto last_date =
+          GetDateByCell({.row = row, .column = Columns::second_date});
+
+      if (!PeriodFromInclusiveDates(begin_date, last_date).IsNull()) {
+        valid_rows_list.push_back(row);
+        continue;
+      }
+
+      SetCellText(row, ColumnIndex(Columns::number), "");
+      SetCellText(row, ColumnIndex(Columns::group), "");
+      SetCellText(row, ColumnIndex(Columns::group_number), "");
+      SetCellText(row, ColumnIndex(Columns::duration), "");
+      SetCellText(row, ColumnIndex(Columns::duration_to_next), "");
+    }
+
+    return valid_rows_list;
+  }
+
+  [[nodiscard]] std::vector<int> SelectedRows() const {
+    std::vector<int> rows;
+    for (const auto& index : table()->selectionModel()->selectedRows()) {
+      rows.push_back(index.row());
+    }
+    std::ranges::sort(rows);
+    return rows;
+  }
+
+  void InsertRow(int row) {
+    table()->insertRow(row);
+    FillEmptyRow(row);
+    SetCellText(row, ColumnIndex(Columns::group), date_groups_.GetName(0));
+  }
+
+  void RemoveRow(int row) {
+    // Guard against an out-of-range row instead of throwing: this runs inside a
+    // Qt event handler, where an escaping exception would tear down the app.
+    if (row < 0 || row >= table()->rowCount()) {
+      return;
+    }
+    table()->removeRow(row);
   }
 
   Date GetDateByCell(CellIndex cell) {
-    wxVariant cell_value;
-    table()->GetStore()->GetValueByRow(cell_value, cell.row,
-                                       ColumnIndex(cell.column));
-    return date_format_.Parse(cell_value.GetString().ToStdString());
+    return date_format_.Parse(CellText(cell.row, ColumnIndex(cell.column)));
   }
 
-  void OnItemActivated(wxDataViewEvent& event) {
-    // Change GUI interaction behavior
-    if (event.GetItem().IsOk() && (event.GetDataViewColumn() != nullptr)) {
-      table()->EditItem(event.GetItem(), event.GetDataViewColumn());
+  void OnItemChanged(const QTableWidgetItem* item) {
+    if (filling_ || item == nullptr) {
+      return;
     }
-  }
-
-  void OnItemEditing(wxDataViewEvent& event) {
-    if (event.GetEventType() == wxEVT_DATAVIEW_ITEM_EDITING_DONE &&
-        (event.GetColumn() == ColumnIndex(Columns::first_date) ||
-         event.GetColumn() == ColumnIndex(Columns::second_date))) {
-      event.Veto();
-
-      if (!event.IsEditCancelled()) {
-        auto edited_string = event.GetValue().GetString().ToStdString();
-
-        // The row comes from the event, not from the selection: the table is
-        // wxDV_MULTIPLE, and there GetSelectedRow() returns wxNOT_FOUND through
-        // GetSelection() as soon as not exactly one row is selected — as an
-        // unsigned that would be row 4294967295.
-        const int edited_row = table()->ItemToRow(event.GetItem());
-        if (edited_row == wxNOT_FOUND) {
-          return;
-        }
-        const auto selected_row = static_cast<unsigned int>(edited_row);
-        const auto edited_column = static_cast<unsigned int>(event.GetColumn());
-
-        // Check Date
-        auto edited_date = date_format_.Parse(edited_string);
-        if (edited_date.IsValid()) {
-          std::string const parsed_string = date_format_.Format(edited_date);
-          table()->SetValue(parsed_string.c_str(), selected_row, edited_column);
-        } else {
-          table()->SetValue(edited_string.c_str(), selected_row, edited_column);
-        }
-
-        SendDateEntries();
-      }
-    }
-  }
-
-  void OnSelectionChanged(wxDataViewEvent& event) {
-    (void)event;
-    UpdateDeleteButton();
-  }
-
-  void OnButtonClicked(wxCommandEvent& event) {
-    auto selections = GetSelectionList();
-
-    if (event.GetId() == wxID_ADD) {
-      unsigned int insert_row = 0;
-      // if no selection do append
-      if (selections.empty()) {
-        insert_row = static_cast<unsigned int>(table()->GetItemCount());
-      } else {
-        insert_row = selections.back() + 1;
-      }
-
-      InsertRow(insert_row);
-      table()->SelectRow(insert_row);
-      table()->EnsureVisible(table()->RowToItem(static_cast<int>(insert_row)));
-      UpdateDeleteButton();
+    const int column = item->column();
+    if (column != ColumnIndex(Columns::first_date) &&
+        column != ColumnIndex(Columns::second_date)) {
+      return;
     }
 
-    if (event.GetId() == wxID_DELETE && !selections.empty()) {
-      const auto post_remove_select = selections.front();
-
-      for (unsigned int const& selection : std::views::reverse(selections)) {
-        RemoveRow(selection);
-      }
-
-      if (table()->GetItemCount() > 0) {
-        if (std::cmp_equal(table()->GetItemCount(), post_remove_select)) {
-          table()->SelectRow(post_remove_select - 1);
-        } else {
-          table()->SelectRow(post_remove_select);
-        }
-      }
-
-      UpdateDeleteButton();
-
-      SendDateEntries();
-    }
-  }
-
-  void OnComboBoxSelection(wxCommandEvent& event) {
-    auto selections = GetSelectionList();
-
-    auto group_number = event.GetSelection();
-    auto group_name = date_groups_.GetName(group_number);
-
-    for (unsigned int const selection : selections) {
-      table()->SetValue(group_name, selection, ColumnIndex(Columns::group));
+    // A parseable date gets written back in the canonical spelling; anything
+    // else stays as typed, so the user sees what they wrote.
+    const std::string edited_string = item->text().toStdString();
+    const Date edited_date = date_format_.Parse(edited_string);
+    if (edited_date.IsValid()) {
+      const domain::detail::ScopedReentryFlag guard(filling_);
+      SetCellText(item->row(), column, date_format_.Format(edited_date));
     }
 
     SendDateEntries();
   }
 
-  wxWeakRef<wxComboBox> select_group_control_;
+  void OnAdd() {
+    const std::vector<int> selections = SelectedRows();
+    const int insert_row =
+        selections.empty() ? table()->rowCount() : selections.back() + 1;
+
+    {
+      const domain::detail::ScopedReentryFlag guard(filling_);
+      InsertRow(insert_row);
+    }
+    table()->selectRow(insert_row);
+    table()->scrollToItem(
+        table()->item(insert_row, ColumnIndex(Columns::first_date)));
+    UpdateDeleteButton();
+  }
+
+  void OnDelete() {
+    const std::vector<int> selections = SelectedRows();
+    if (selections.empty()) {
+      return;
+    }
+    const int post_remove_select = selections.front();
+
+    {
+      const domain::detail::ScopedReentryFlag guard(filling_);
+      for (const int row : std::views::reverse(selections)) {
+        RemoveRow(row);
+      }
+    }
+
+    if (table()->rowCount() > 0) {
+      table()->selectRow(post_remove_select < table()->rowCount()
+                             ? post_remove_select
+                             : post_remove_select - 1);
+    }
+
+    UpdateDeleteButton();
+    SendDateEntries();
+  }
+
+  void OnGroupChosen(int group_number) {
+    const std::string group_name = date_groups_.GetName(group_number);
+    {
+      const domain::detail::ScopedReentryFlag guard(filling_);
+      for (const int row : SelectedRows()) {
+        SetCellText(row, ColumnIndex(Columns::group), group_name);
+      }
+    }
+    SendDateEntries();
+  }
+
+  QPointer<QComboBox> select_group_control_;
 
   LocaleDateFormatter& date_format_;
   DateGroups date_groups_;
   sigslot::signal<const std::vector<DateEntry>&> signal_table_date_entries_;
+
+  bool filling_{false};
 };
 #endif  // DATE_PANEL_HPP

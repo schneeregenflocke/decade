@@ -1,15 +1,20 @@
 #ifndef PROJECTION_HPP
 #define PROJECTION_HPP
 
-#include <epoxy/gl.h>
-
-#include <array>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "rect.hpp"
 
+// The orthographic projection that fits the page into the window.
+//
+// The aspect ratio travels in as a parameter. It used to be read back with
+// glGetIntegerv(GL_VIEWPORT), which tied the whole class to a current GL
+// context and, worse, to the viewport GL happened to hold at that moment: the
+// projection gets recomputed when the page or the window changes, and neither
+// of those moments is a draw. The caller knows its framebuffer size anyway,
+// which leaves this class pure — no GL, no state, testable.
 class Projection {
  public:
   // A degenerate viewport (height or width 0 on a window pulled extremely flat)
@@ -18,51 +23,32 @@ class Projection {
   // keeps the matrices finite.
   static constexpr float kDegenerateAspectRatio = 1.0F;
 
-  [[nodiscard]] static constexpr float AspectRatioOf(GLint width,
-                                                     GLint height) {
+  [[nodiscard]] static constexpr float AspectRatioOf(int width, int height) {
     if (width <= 0 || height <= 0) {
       return kDegenerateAspectRatio;
     }
     return static_cast<float>(width) / static_cast<float>(height);
   }
 
-  static float AspectRatio() {
-    std::array<GLint, 4> viewport{};
-    glGetIntegerv(GL_VIEWPORT, viewport.data());
-
-    return AspectRatioOf(viewport[2], viewport[3]);
-  }
-
-  static glm::mat4 OrthoMatrix(const RectF& view_size) {
+  static glm::mat4 OrthoMatrix(const RectF& view_size, float aspect_ratio) {
     const auto page_height_ratio = view_size.Width() / view_size.Height();
-    const auto viewport_height_ratio = AspectRatio();
 
-    glm::mat4 ortho_matrix;
-    if (page_height_ratio >= viewport_height_ratio) {
-      ortho_matrix = OrthoMatrixWidth(view_size.Width());
-    } else {
-      ortho_matrix = OrthoMatrixHeight(view_size.Height());
+    if (page_height_ratio >= aspect_ratio) {
+      return OrthoMatrixWidth(view_size.Width(), aspect_ratio);
     }
-
-    return ortho_matrix;
+    return OrthoMatrixHeight(view_size.Height(), aspect_ratio);
   }
 
-  // Belongs to the unused 3D path, like the Lambert shaders.
-  static glm::mat4 PerspectiveMatrix(const float fovy, const float z_near,
-                                     const float z_far) {
-    return glm::perspective(fovy, AspectRatio(), z_near, z_far);
-  }
-
-  static glm::mat4 OrthoMatrixWidth(float width) {
+  static glm::mat4 OrthoMatrixWidth(float width, float aspect_ratio) {
     constexpr float kHalf = 0.5F;
     const float x_half_size = width * kHalf;
-    const float y_half_size = width / AspectRatio() * kHalf;
+    const float y_half_size = width / aspect_ratio * kHalf;
     return glm::ortho(-x_half_size, x_half_size, -y_half_size, y_half_size);
   }
 
-  static glm::mat4 OrthoMatrixHeight(float height) {
+  static glm::mat4 OrthoMatrixHeight(float height, float aspect_ratio) {
     constexpr float kHalf = 0.5F;
-    const float x_half_size = height * AspectRatio() * kHalf;
+    const float x_half_size = height * aspect_ratio * kHalf;
     const float y_half_size = height * kHalf;
     return glm::ortho(-x_half_size, x_half_size, -y_half_size, y_half_size);
   }

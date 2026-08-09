@@ -1,21 +1,49 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.16)
 
 project(decade VERSION 0.0.0)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_executable(decade)
-target_compile_features(decade PUBLIC cxx_std_26)
+# Every header pairs with a translation unit of the same name (AGENTS.md,
+# "Components: a header and its translation unit"). Both get globbed rather than
+# hand-listed, and CONFIGURE_DEPENDS makes CMake re-glob when a file appears —
+# with the sources compiled now, a missing entry breaks the link instead of
+# vanishing from the IDE tree in silence.
+#
+# The components sit in a library so the executable and the test binary share
+# one compilation of them. main.cpp stays outside it: a test binary carries an
+# entry point of its own. Every dependency below hangs on the library as PUBLIC
+# and reaches the executable through the link — one place names each flag.
+add_library(decade_components STATIC)
+add_executable(decade src/application/main.cpp)
 
-# The single translation unit; everything else is a header (see AGENTS.md). They
-# get collected for the IDE listing alone, not compiled — hence a glob instead of
-# a hand-kept list: a forgotten line breaks nothing, it merely goes missing from
-# the tree in silence.
 file(GLOB_RECURSE decade_headers CONFIGURE_DEPENDS src/*.hpp)
-target_sources(decade PRIVATE src/application/main.cpp ${decade_headers})
+file(GLOB_RECURSE decade_sources CONFIGURE_DEPENDS src/*.cpp)
+list(REMOVE_ITEM decade_sources ${CMAKE_CURRENT_SOURCE_DIR}/src/application/main.cpp)
+target_sources(decade_components PRIVATE ${decade_sources} ${decade_headers})
 
+target_compile_features(decade_components PUBLIC cxx_std_26)
+target_link_libraries(decade PRIVATE decade_components)
+
+# Cutting the program into components moved the inlining decision across unit
+# borders, where the compiler alone no longer reaches it — every accessor that
+# used to inline out of a header would turn into a call. LTO hands that decision
+# to the linker. Debug builds stay out: nothing inlines there anyway, and the
+# link time would only lengthen the edit cycle.
+include(CheckIPOSupported)
+check_ipo_supported(RESULT decade_ipo_supported)
+if(decade_ipo_supported)
+	set_target_properties(decade decade_components PROPERTIES
+		INTERPROCEDURAL_OPTIMIZATION_RELEASE ON
+		INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO ON)
+endif()
+
+# The warning set belongs to the units we compile ourselves, never to whoever
+# links against them: the tests build under a milder set of their own
+# (tests/CMakeLists.txt), and a PUBLIC option would push -Werror onto them
+# through the link. So one list, applied to both of our targets.
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-	target_compile_options(decade PRIVATE
+	set(decade_warnings
 		-Wall
 		-Wextra
 		-Wpedantic
@@ -37,18 +65,20 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang"
 		-Werror
 	)
 	if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-		target_compile_options(decade PRIVATE
+		list(APPEND decade_warnings
 			-Wlogical-op
 			-Wduplicated-cond
 			-Wduplicated-branches
 			-Wuseless-cast
 		)
 	else()
-		target_compile_options(decade PRIVATE
+		list(APPEND decade_warnings
 			-Wunreachable-code
 			-Wextra-semi
 		)
 	endif()
+	target_compile_options(decade_components PRIVATE ${decade_warnings})
+	target_compile_options(decade PRIVATE ${decade_warnings})
 endif()
 
 # --- System dependencies ------------------------------------------------------
@@ -56,35 +86,50 @@ endif()
 # must not break the -Werror gate.
 
 find_package(Boost CONFIG REQUIRED COMPONENTS serialization wserialization)
-target_link_libraries(decade PRIVATE Boost::serialization Boost::wserialization)
+target_link_libraries(decade_components PUBLIC Boost::serialization Boost::wserialization)
 
 find_package(PkgConfig REQUIRED)
 
 # GL pulls libepoxy in itself at runtime; there is nothing to link.
 pkg_check_modules(EPOXY REQUIRED epoxy)
-target_include_directories(decade SYSTEM PRIVATE ${EPOXY_INCLUDE_DIRS})
-target_link_libraries(decade PRIVATE ${EPOXY_LIBRARIES})
+target_include_directories(decade_components SYSTEM PUBLIC ${EPOXY_INCLUDE_DIRS})
+target_link_libraries(decade_components PUBLIC ${EPOXY_LIBRARIES})
+
+# epoxy claims the include guards __gl_h_ and __glext_h_ and refuses to compile
+# once GL/gl.h got there first (epoxy/gl.h:38, an #error). Qt's qopengl.h — which
+# QOpenGLWidget pulls in — includes exactly those, so epoxy has to be first in
+# every translation unit. Source order cannot guarantee that: clang-format sorts
+# <QtOpenGLWidgets/...> ahead of <epoxy/gl.h>, and Google style regroups include
+# blocks. The force-include settles it in one place for the whole target; with
+# the guards taken, Qt's GL headers collapse to nothing and every gl* call
+# resolves through epoxy's dispatch. PRIVATE for the same reason as the warning
+# set: it belongs to the units we compile, not to the test binary that links them.
+target_compile_options(decade_components PRIVATE -include epoxy/gl.h)
+target_compile_options(decade PRIVATE -include epoxy/gl.h)
 
 # ICU: Unicode text handling (UTF-8, NFC, grapheme segmentation) in font.hpp plus
 # the date backend. icu-uc = Unicode and common, icu-i18n = BreakIterator and
 # calendar. Not every distribution ships a CMake config, so through pkg-config
 # like epoxy.
 pkg_check_modules(ICU REQUIRED icu-uc icu-i18n)
-target_include_directories(decade SYSTEM PRIVATE ${ICU_INCLUDE_DIRS})
-target_link_libraries(decade PRIVATE ${ICU_LIBRARIES})
+target_include_directories(decade_components SYSTEM PUBLIC ${ICU_INCLUDE_DIRS})
+target_link_libraries(decade_components PUBLIC ${ICU_LIBRARIES})
 
-find_package(wxWidgets CONFIG COMPONENTS propgrid gl core base)
-if(NOT wxWidgets_FOUND)
-	# Debian and Ubuntu build wx with autotools and ship no CMake config: module
-	# mode through wx-config. In CONFIG mode the imported targets handle includes
-	# and flags themselves.
-	find_package(wxWidgets REQUIRED COMPONENTS propgrid gl core base)
-	target_include_directories(decade SYSTEM PRIVATE ${wxWidgets_INCLUDE_DIRS})
-	target_compile_definitions(decade PRIVATE ${wxWidgets_DEFINITIONS})
-	separate_arguments(wxWidgets_cxx_flags UNIX_COMMAND "${wxWidgets_CXX_FLAGS}")
-	target_compile_options(decade PRIVATE ${wxWidgets_cxx_flags})
-endif()
-target_link_libraries(decade PRIVATE ${wxWidgets_LIBRARIES})
+# Qt: the widget toolkit and the GL surface. PrintSupport carries
+# QPageSetupDialog, the paper-size and margin dialogue behind the page panel.
+#
+# AUTOMOC is on: with a translation unit per header (AGENTS.md, "Components: a
+# header and its translation unit") the unit moc emits costs nothing the design
+# forbids, so a presentation class may carry Q_OBJECT. Reaching for it still wants
+# a reason — the application's own signals run over sigslot, and QObject::connect
+# with a functor subscribes to a Qt widget's signal without any of it.
+find_package(Qt6 REQUIRED COMPONENTS Widgets OpenGLWidgets PrintSupport)
+set_target_properties(decade decade_components PROPERTIES AUTOMOC ON)
+target_link_libraries(decade_components PUBLIC
+	Qt6::Widgets
+	Qt6::OpenGLWidgets
+	Qt6::PrintSupport
+)
 
 find_package(ZLIB REQUIRED)
 find_package(PNG REQUIRED)
@@ -92,7 +137,7 @@ find_package(Fontconfig REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(Microsoft.GSL CONFIG REQUIRED)
-target_link_libraries(decade PRIVATE
+target_link_libraries(decade_components PUBLIC
 	ZLIB::ZLIB
 	PNG::PNG
 	Fontconfig::Fontconfig
@@ -100,7 +145,7 @@ target_link_libraries(decade PRIVATE
 	glm::glm
 	Microsoft.GSL::GSL
 )
-target_compile_definitions(decade PRIVATE GLM_ENABLE_EXPERIMENTAL)
+target_compile_definitions(decade_components PUBLIC GLM_ENABLE_EXPERIMENTAL)
 
 # --- Submodules out of external/ ----------------------------------------------
 
@@ -117,7 +162,7 @@ decade_require_submodule(bullet3 src/btBulletCollisionCommon.h)
 
 set(CSV2_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/csv2/include")
 set(TINYCOLORMAP_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/tinycolormap/include")
-target_include_directories(decade SYSTEM PRIVATE
+target_include_directories(decade_components SYSTEM PUBLIC
 	${CSV2_INCLUDE_DIR}
 	${TINYCOLORMAP_INCLUDE_DIR}
 	${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/include
@@ -142,7 +187,7 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 # Bullet 3.25 still declares cmake_minimum_required < 3.5, which CMake 4.x rejects.
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 add_subdirectory(external/bullet3 EXCLUDE_FROM_ALL)
-target_link_libraries(decade PRIVATE BulletCollision LinearMath)
+target_link_libraries(decade_components PUBLIC BulletCollision LinearMath)
 set_target_properties(BulletCollision LinearMath PROPERTIES SYSTEM TRUE)
 
 # Resources travel through #embed (src/common/embedded_resources.hpp): the
@@ -158,10 +203,28 @@ endif()
 # Deliberately no part of the standard build, so normal compiles stay fast; call
 # them explicitly or in CI. The commands sit in operations.md.
 
-# clang-tidy on the single translation unit — it covers every src/ header through
-# HeaderFilterRegex. --extra-arg: -include type_traits works around an include bug
-# in wx/meta/convertible.h, and the -Wno-* defuse GCC flags out of
-# compile_commands.json.
+# clang-tidy reads compile_commands.json, and Qt6::Platform writes a GCC-only
+# codegen flag into it: -mno-direct-extern-access, chosen by a generator
+# expression on the compiler id. Clang rejects it as an unknown *argument*, which
+# is a driver error — no -Wno-… reaches it, unlike the GCC warning flags below.
+# So the gate analyses a filtered copy of the database. Taking the flag out of
+# the build instead would be the wrong trade: it stops GCC from assuming direct
+# access to Qt's exported data symbols, and Qt sets it deliberately.
+set(DECADE_TIDY_DB_DIR ${CMAKE_BINARY_DIR}/tidy)
+add_custom_target(clang-tidy-db
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${DECADE_TIDY_DB_DIR}
+	COMMAND sh -c "sed 's/-mno-direct-extern-access//g' '${CMAKE_BINARY_DIR}/compile_commands.json' > '${DECADE_TIDY_DB_DIR}/compile_commands.json'"
+	COMMENT "compile_commands.json for clang-tidy, without the GCC-only flags"
+	VERBATIM)
+
+# clang-tidy over every translation unit under src/, each one carrying its own
+# headers in through HeaderFilterRegex. run-clang-tidy fans the units out over
+# the cores; a plain clang-tidy call would walk the hundred-odd of them in a row.
+# The positional argument is a regex against the paths in the database — the
+# source prefix keeps the external/ submodules and the generated moc unit out.
+# The -Wno-* extra args defuse GCC warning flags out of compile_commands.json;
+# the epoxy force-include rides along in there by itself, because it stands as a
+# target compile option.
 #
 # -Wno-c23-extensions is of the same kind and is NOT a suppressed finding: it
 # says nothing about our code, only that Clang 22 has not yet implemented
@@ -169,15 +232,15 @@ endif()
 # what builds here and in CI — compiles it as standard under -std=c++26 with
 # -Wpedantic -Werror. Drop this the day Clang implements it.
 add_custom_target(clang-tidy
-	COMMAND clang-tidy -p ${CMAKE_BINARY_DIR}
-		--warnings-as-errors=*
-		--extra-arg=-include --extra-arg=type_traits
-		--extra-arg=-Wno-error --extra-arg=-Wno-unknown-warning-option
-		--extra-arg=-Wno-c23-extensions
-		src/application/main.cpp
+	COMMAND run-clang-tidy -p ${DECADE_TIDY_DB_DIR}
+		-warnings-as-errors=*
+		-extra-arg=-Wno-error -extra-arg=-Wno-unknown-warning-option
+		-extra-arg=-Wno-c23-extensions
+		${CMAKE_CURRENT_SOURCE_DIR}/src/
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-	COMMENT "clang-tidy gate (every finding = an error) on src/application/main.cpp"
+	COMMENT "clang-tidy gate (every finding = an error) over every unit in src/"
 	VERBATIM USES_TERMINAL)
+add_dependencies(clang-tidy clang-tidy-db)
 
 # Sanitizers demand other compile flags than the normal build, so every gate
 # configures a build folder of its own, rebuilds everything in it and runs the

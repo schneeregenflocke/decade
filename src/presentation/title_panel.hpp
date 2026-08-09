@@ -1,71 +1,59 @@
 #ifndef TITLE_PANEL_HPP
 #define TITLE_PANEL_HPP
 
-#include <wx/clrpicker.h>
-#include <wx/spinctrl.h>
-#include <wx/weakref.h>
-#include <wx/wx.h>
-
+#include <QtCore/QPointer>
+#include <QtWidgets/QDoubleSpinBox>
+#include <QtWidgets/QFormLayout>
+#include <QtWidgets/QWidget>
 #include <glm/vec4.hpp>
-#include <memory>
 #include <sigslot/signal.hpp>
 
 #include "../domain/title_config.hpp"
+#include "alpha_slider.hpp"
 #include "casts.hpp"
-#include "wx_owned.hpp"
+#include "color_button.hpp"
+#include "make_owned.hpp"
 
 // The area height, font size and colour of the title. The title text itself has
 // no field here: it gets edited in the canvas (a double click) and comes
 // through as part of the received TitleConfig alone.
-class TitleSetupPanel : public wxPanel {
+class TitleSetupPanel : public QWidget {
  public:
-  explicit TitleSetupPanel(wxWindow* parent) : wxPanel(parent, wxID_ANY) {
-    constexpr int kSizerBorder = 5;
-    constexpr int kLabelWidth = 120;
-    constexpr double kFontSizeIncrementPt = 1.0;
-    constexpr double kFontSizeMinPt = 1.0;
-    constexpr double kFontSizeMaxPt = 500.0;
+  explicit TitleSetupPanel(QWidget* parent) : QWidget(parent) {
+    constexpr int kBorderPx = 5;
 
-    const wxSizerFlags row_flags = wxSizerFlags().Proportion(0).Expand();
-    const wxSizerFlags label_flags =
-        wxSizerFlags().Proportion(0).Expand().Border(wxALL, kSizerBorder);
-    const wxSizerFlags field_flags =
-        wxSizerFlags().Proportion(1).CenterVertical().Border(wxALL,
-                                                             kSizerBorder);
+    area_height_spin_ = MakeOwned<QDoubleSpinBox>(this);
+    area_height_spin_->setDecimals(2);
+    area_height_spin_->setRange(0.0, kAreaHeightMaxMm);
 
-    auto* vertical_sizer = MakeOwned<wxBoxSizer>(wxVERTICAL);
-    SetSizer(vertical_sizer);
+    font_size_spin_ = MakeOwned<QDoubleSpinBox>(this);
+    font_size_spin_->setDecimals(1);
+    font_size_spin_->setRange(kFontSizeMinPt, kFontSizeMaxPt);
+    font_size_spin_->setSingleStep(kFontSizeIncrementPt);
 
-    area_height_ctrl_ = MakeOwned<wxSpinCtrlDouble>(this);
-    area_height_ctrl_->SetDigits(2);
-    AddLabelledRow(vertical_sizer, L"Area Height", area_height_ctrl_, row_flags,
-                   label_flags, field_flags, kLabelWidth);
+    text_color_button_ = MakeOwned<ColorButton>(this);
+    alpha_slider_ = MakeOwned<AlphaSlider>(this);
 
-    font_size_ctrl_ = MakeOwned<wxSpinCtrlDouble>(this);
-    font_size_ctrl_->SetDigits(1);
-    font_size_ctrl_->SetRange(kFontSizeMinPt, kFontSizeMaxPt);
-    font_size_ctrl_->SetIncrement(kFontSizeIncrementPt);
-    AddLabelledRow(vertical_sizer, L"Font Size (pt)", font_size_ctrl_,
-                   row_flags, label_flags, field_flags, kLabelWidth);
+    auto* form_layout = MakeOwned<QFormLayout>();
+    form_layout->setContentsMargins(kBorderPx, kBorderPx, kBorderPx, kBorderPx);
+    form_layout->addRow("Area Height", area_height_spin_.data());
+    form_layout->addRow("Font Size (pt)", font_size_spin_.data());
+    form_layout->addRow("Color", text_color_button_.data());
+    form_layout->addRow("Transparency", alpha_slider_.data());
+    setLayout(form_layout);
 
-    constexpr int kAlphaMax = 255;
-    text_color_picker_ = MakeOwned<wxColourPickerCtrl>(
-        this, wxID_ANY, *wxStockGDI::GetColour(wxStockGDI::COLOUR_BLACK));
-    AddLabelledRow(vertical_sizer, L"Color", text_color_picker_, row_flags,
-                   label_flags, field_flags, kLabelWidth);
-
-    alpha_slider_ = MakeOwned<wxSlider>(this, wxID_ANY, kAlphaMax, 0, kAlphaMax,
-                                        wxDefaultPosition, wxDefaultSize,
-                                        wxSL_HORIZONTAL | wxSL_LABELS);
-    AddLabelledRow(vertical_sizer, L"Transparency", alpha_slider_, row_flags,
-                   label_flags, field_flags, kLabelWidth);
-
-    vertical_sizer->Layout();
-
-    Bind(wxEVT_SPINCTRLDOUBLE, &TitleSetupPanel::CallbackSpinControl, this);
-    Bind(wxEVT_COLOURPICKER_CHANGED,
-         &TitleSetupPanel::CallbackColorPickerControl, this);
-    Bind(wxEVT_SLIDER, &TitleSetupPanel::CallbackSliderControl, this);
+    connect(area_height_spin_.data(), &QDoubleSpinBox::valueChanged, this,
+            [this](double value) {
+              title_config_.SetAreaHeight(static_cast<float>(value));
+              SendUnlessLoading();
+            });
+    connect(font_size_spin_.data(), &QDoubleSpinBox::valueChanged, this,
+            [this](double value) {
+              title_config_.SetFontSizePoints(static_cast<float>(value));
+              SendUnlessLoading();
+            });
+    text_color_button_->SetOnChanged([this]() { ApplyColorFromWidgets(); });
+    alpha_slider_->SetOnChanged([this]() { ApplyColorFromWidgets(); });
   }
 
   void SendDefaultValues() { SendTitleConfig(); }
@@ -82,77 +70,52 @@ class TitleSetupPanel : public wxPanel {
   }
 
  private:
-  // The colour picker has no alpha channel (alpha lives on the separate
-  // slider, byte-valued 0..255); wx <-> glm conversion is shared via casts.hpp.
+  // wxSpinCtrlDouble capped at 100 without being told; the number stays, so a
+  // project written before the toolkit swap still fits its field.
+  static constexpr double kAreaHeightMaxMm = 100.0;
+  static constexpr double kFontSizeMinPt = 1.0;
+  static constexpr double kFontSizeMaxPt = 500.0;
+  static constexpr double kFontSizeIncrementPt = 1.0;
   static constexpr float kAlphaByteMax = 255.0F;
 
-  void AddLabelledRow(wxSizer* parent_sizer, const wxString& text,
-                      wxWindow* field, const wxSizerFlags& row_flags,
-                      const wxSizerFlags& label_flags,
-                      const wxSizerFlags& field_flags, int label_width) {
-    auto* row_sizer = MakeOwned<wxBoxSizer>(wxHORIZONTAL);
-    auto* label = MakeOwned<wxStaticText>(this, wxID_ANY, text);
-    label->SetMinSize(wxSize(label_width, -1));
-    row_sizer->Add(label, label_flags);
-    row_sizer->Add(field, field_flags);
-    parent_sizer->Add(row_sizer, row_flags);
-  }
-
   void UpdateWidgetForSelection() {
-    area_height_ctrl_->SetValue(
+    // Loading the widgets fires their change signals; without the guard every
+    // received config would be sent straight back out.
+    loading_ = true;
+    area_height_spin_->setValue(
         static_cast<double>(title_config_.AreaHeight()));
-    font_size_ctrl_->SetValue(
+    font_size_spin_->setValue(
         static_cast<double>(title_config_.FontSizePoints()));
 
-    const wxColour color = ToWxColor(title_config_.TextColor());
-    text_color_picker_->SetColour(color);
-    alpha_slider_->SetValue(color.Alpha());
+    const QColor color = ToQColor(title_config_.TextColor());
+    text_color_button_->SetColor(color);
+    alpha_slider_->SetValue(color.alpha());
+    loading_ = false;
   }
 
-  void CallbackSpinControl(wxSpinDoubleEvent& event) {
-    auto float_value = static_cast<float>(event.GetValue());
-
-    if (area_height_ctrl_.get() == event.GetEventObject()) {
-      title_config_.SetAreaHeight(float_value);
-
-      SendTitleConfig();
-    }
-
-    if (font_size_ctrl_.get() == event.GetEventObject()) {
-      title_config_.SetFontSizePoints(float_value);
-
-      SendTitleConfig();
-    }
-  }
-
-  // Stores the new text colour on the config and publishes it. Shared by the
-  // colour picker (RGB) and the alpha slider (A), which only differ in which
-  // channels they touch.
-  void ApplyTextColor(const glm::vec4& text_color) {
+  // The colour button carries no alpha (that channel lives on the slider), so
+  // the two get read together and written as one value.
+  void ApplyColorFromWidgets() {
+    glm::vec4 text_color = ToGlmVec4(text_color_button_->Color());
+    text_color[3] = static_cast<float>(alpha_slider_->Value()) / kAlphaByteMax;
     title_config_.SetTextColor(text_color);
-    SendTitleConfig();
+    SendUnlessLoading();
   }
 
-  void CallbackColorPickerControl(wxColourPickerEvent& event) {
-    // The picker carries no alpha, so keep the configured alpha and take RGB.
-    glm::vec4 text_color = ToGlmVec4(event.GetColour());
-    text_color[3] = title_config_.TextColor()[3];
-    ApplyTextColor(text_color);
-  }
-
-  void CallbackSliderControl(wxCommandEvent& event) {
-    glm::vec4 text_color = title_config_.TextColor();
-    text_color[3] = static_cast<float>(event.GetInt()) / kAlphaByteMax;
-    ApplyTextColor(text_color);
+  void SendUnlessLoading() {
+    if (!loading_) {
+      SendTitleConfig();
+    }
   }
 
   TitleConfig title_config_;
   sigslot::signal<const TitleConfig&> signal_title_config_;
 
-  wxWeakRef<wxSpinCtrlDouble> area_height_ctrl_;
-  wxWeakRef<wxSpinCtrlDouble> font_size_ctrl_;
+  QPointer<QDoubleSpinBox> area_height_spin_;
+  QPointer<QDoubleSpinBox> font_size_spin_;
+  QPointer<ColorButton> text_color_button_;
+  QPointer<AlphaSlider> alpha_slider_;
 
-  wxWeakRef<wxColourPickerCtrl> text_color_picker_;
-  wxWeakRef<wxSlider> alpha_slider_;
+  bool loading_{false};
 };
 #endif  // TITLE_PANEL_HPP

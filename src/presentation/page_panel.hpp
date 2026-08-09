@@ -1,140 +1,97 @@
 #ifndef PAGE_PANEL_HPP
 #define PAGE_PANEL_HPP
 
-#include <wx/printdlg.h>
-#include <wx/spinctrl.h>
-#include <wx/weakref.h>
-#include <wx/wx.h>
-
+#include <QtCore/QMarginsF>
+#include <QtCore/QPointer>
+#include <QtCore/QSizeF>
+#include <QtGui/QPageLayout>
+#include <QtGui/QPageSize>
+#include <QtPrintSupport/QPageSetupDialog>
+#include <QtPrintSupport/QPrinter>
+#include <QtWidgets/QDialog>
+#include <QtWidgets/QDoubleSpinBox>
+#include <QtWidgets/QFormLayout>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QVBoxLayout>
+#include <QtWidgets/QWidget>
 #include <array>
-#include <memory>
 #include <sigslot/signal.hpp>
 
 #include "../domain/page_setup_config.hpp"
-#include "wx_owned.hpp"
+#include "make_owned.hpp"
 
-class PageSetupPanel : public wxPanel {
+class PageSetupPanel : public QWidget {
  public:
-  explicit PageSetupPanel(wxWindow* parent)
-      : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                wxTAB_TRAVERSAL, wxPanelNameStr),
-        id_page_width_(wxWindow::NewControlId()),
-        id_page_height_(wxWindow::NewControlId()) {
-    wxPrintData print_data;
-    print_data.SetOrientation(wxPrintOrientation::wxLANDSCAPE);
+  explicit PageSetupPanel(QWidget* parent) : QWidget(parent) {
+    constexpr int kBorderPx = 5;
 
-    dialog_data_.SetPrintData(print_data);
-    dialog_data_.SetPaperId(wxPaperSize::wxPAPER_A4);
-    dialog_data_.CalculatePaperSizeFromId();
+    auto* page_setup_button = MakeOwned<QPushButton>("Page Setup...", this);
 
-    constexpr int kPageMarginMm = 15;
-    constexpr int kLabelMinWidthPx = 75;
-    constexpr double kMaxPageSizeMm = 2000.0;
-    constexpr int kSizerBorderPx = 5;
+    page_width_spin_ = MakeOwned<QDoubleSpinBox>(this);
+    page_width_spin_->setRange(0.0, kMaxPageSizeMm);
+    page_height_spin_ = MakeOwned<QDoubleSpinBox>(this);
+    page_height_spin_->setRange(0.0, kMaxPageSizeMm);
 
-    dialog_data_.SetMarginTopLeft(wxPoint(kPageMarginMm, kPageMarginMm));
-    dialog_data_.SetMarginBottomRight(wxPoint(kPageMarginMm, kPageMarginMm));
+    auto* form_layout = MakeOwned<QFormLayout>();
+    form_layout->addRow("Width", page_width_spin_.data());
+    form_layout->addRow("Height", page_height_spin_.data());
 
-    auto* vertical_sizer = MakeOwned<wxBoxSizer>(wxVERTICAL);
+    auto* vertical_layout = MakeOwned<QVBoxLayout>();
+    vertical_layout->setContentsMargins(kBorderPx, kBorderPx, kBorderPx,
+                                        kBorderPx);
+    vertical_layout->addWidget(page_setup_button);
+    vertical_layout->addLayout(form_layout);
+    setLayout(vertical_layout);
 
-    auto* horizontal_sizer0 = MakeOwned<wxBoxSizer>(wxHORIZONTAL);
+    UpdateSpinControls();
 
-    auto* page_setup_dialog_button =
-        MakeOwned<wxButton>(this, wxID_ANY, L"Page Setup...");
-
-    auto* page_width_label = MakeOwned<wxStaticText>(this, wxID_ANY, L"Width");
-    page_width_label->SetMinSize(wxSize(kLabelMinWidthPx, -1));
-
-    auto* page_height_label =
-        MakeOwned<wxStaticText>(this, wxID_ANY, L"Height");
-    page_height_label->SetMinSize(wxSize(kLabelMinWidthPx, -1));
-
-    page_width_spinctrl_ = MakeOwned<wxSpinCtrlDouble>(this, id_page_width_);
-    page_width_spinctrl_->SetRange(.0, kMaxPageSizeMm);
-
-    page_height_spinctrl_ = MakeOwned<wxSpinCtrlDouble>(this, id_page_height_);
-    page_height_spinctrl_->SetRange(.0, kMaxPageSizeMm);
-
-    horizontal_sizer0->Add(page_setup_dialog_button, 1, wxEXPAND | wxALL,
-                           kSizerBorderPx);  //| wxALIGN_CENTER_VERTICAL
-
-    auto* horizontal_sizer1 = MakeOwned<wxBoxSizer>(wxHORIZONTAL);
-    horizontal_sizer1->Add(page_width_label, 0, wxALL | wxALIGN_CENTER_VERTICAL,
-                           kSizerBorderPx);
-    horizontal_sizer1->Add(page_width_spinctrl_, 1,
-                           wxALIGN_CENTER_VERTICAL | wxALL, kSizerBorderPx);
-
-    auto* horizontal_sizer2 = MakeOwned<wxBoxSizer>(wxHORIZONTAL);
-    horizontal_sizer2->Add(page_height_label, 0,
-                           wxALL | wxALIGN_CENTER_VERTICAL, kSizerBorderPx);
-    horizontal_sizer2->Add(page_height_spinctrl_, 1,
-                           wxALIGN_CENTER_VERTICAL | wxALL, kSizerBorderPx);
-
-    vertical_sizer->Add(horizontal_sizer0, 0, wxEXPAND);
-    vertical_sizer->Add(horizontal_sizer1, 0, wxEXPAND);
-    vertical_sizer->Add(horizontal_sizer2, 0, wxEXPAND);
-
-    SetSizerAndFit(vertical_sizer);
-
-    Bind(wxEVT_BUTTON, &PageSetupPanel::CallbackButtonClicked, this);
-    Bind(wxEVT_SPINCTRLDOUBLE, &PageSetupPanel::CallbackSpinControl, this,
-         id_page_width_);
-    Bind(wxEVT_SPINCTRLDOUBLE, &PageSetupPanel::CallbackSpinControl, this,
-         id_page_height_);
+    connect(page_setup_button, &QPushButton::clicked, this,
+            [this]() { OpenPageSetupDialog(); });
+    connect(page_width_spin_.data(), &QDoubleSpinBox::valueChanged, this,
+            [this](double) { OnSpinChanged(); });
+    connect(page_height_spin_.data(), &QDoubleSpinBox::valueChanged, this,
+            [this](double) { OnSpinChanged(); });
   }
 
   void SendPageSetup() {
     PageSetupConfig page_setup_config;
 
-    auto dialog_width =
-        static_cast<float>(dialog_data_.GetPaperSize().GetWidth());
-    auto dialog_height =
-        static_cast<float>(dialog_data_.GetPaperSize().GetHeight());
+    const QSizeF paper = PaperSizeMillimetres();
+    const bool landscape = IsLandscape();
 
-    auto print_data = dialog_data_.GetPrintData();
-    if (print_data.GetOrientation() == wxPORTRAIT) {
-      page_setup_config.SetOrientation(wxPORTRAIT);
-      page_setup_config.SetSize({dialog_width, dialog_height});
-    }
-    if (print_data.GetOrientation() == wxLANDSCAPE) {
-      page_setup_config.SetOrientation(wxLANDSCAPE);
-      page_setup_config.SetSize({dialog_height, dialog_width});
-    }
+    page_setup_config.SetOrientation(landscape ? kLandscape : kPortrait);
+    page_setup_config.SetSize(
+        landscape ? std::array<float, 2>{static_cast<float>(paper.height()),
+                                         static_cast<float>(paper.width())}
+                  : std::array<float, 2>{static_cast<float>(paper.width()),
+                                         static_cast<float>(paper.height())});
 
-    page_setup_config.SetMargins(
-        {static_cast<float>(dialog_data_.GetMarginTopLeft().x),
-         static_cast<float>(dialog_data_.GetMarginBottomRight().y),
-         static_cast<float>(dialog_data_.GetMarginBottomRight().x),
-         static_cast<float>(dialog_data_.GetMarginTopLeft().y)});
+    const QMarginsF margins = page_layout_.margins(QPageLayout::Millimeter);
+    page_setup_config.SetMargins({static_cast<float>(margins.left()),
+                                  static_cast<float>(margins.bottom()),
+                                  static_cast<float>(margins.right()),
+                                  static_cast<float>(margins.top())});
 
     signal_page_setup_config_(page_setup_config);
   }
 
   void ReceivePageSetup(const PageSetupConfig& page_setup_config) {
-    wxPrintData print_data = dialog_data_.GetPrintData();
-    print_data.SetOrientation(
-        static_cast<wxPrintOrientation>(page_setup_config.Orientation()));
-    dialog_data_.SetPrintData(print_data);
+    page_layout_.setOrientation(page_setup_config.Orientation() == kLandscape
+                                    ? QPageLayout::Landscape
+                                    : QPageLayout::Portrait);
 
     const std::array<float, 2>& size = page_setup_config.Size();
-    if (print_data.GetOrientation() == wxPORTRAIT) {
-      dialog_data_.SetPaperSize(
-          wxSize(static_cast<int>(size[0]), static_cast<int>(size[1])));
-    }
-    if (print_data.GetOrientation() == wxLANDSCAPE) {
-      dialog_data_.SetPaperSize(
-          wxSize(static_cast<int>(size[1]), static_cast<int>(size[0])));
-    }
-
-    dialog_data_.CalculateIdFromPaperSize();
+    SetPaperSizeMillimetres(
+        IsLandscape()
+            ? QSizeF(static_cast<qreal>(size[1]), static_cast<qreal>(size[0]))
+            : QSizeF(static_cast<qreal>(size[0]), static_cast<qreal>(size[1])));
 
     const std::array<float, 4>& margins = page_setup_config.Margins();
-    dialog_data_.SetMarginTopLeft(
-        wxPoint(static_cast<int>(margins[0]), static_cast<int>(margins[3])));
-    dialog_data_.SetMarginBottomRight(
-        wxPoint(static_cast<int>(margins[2]), static_cast<int>(margins[1])));
+    page_layout_.setMargins(QMarginsF(
+        static_cast<qreal>(margins[0]), static_cast<qreal>(margins[3]),
+        static_cast<qreal>(margins[2]), static_cast<qreal>(margins[1])));
 
-    UpdateSpinControl();
+    UpdateSpinControls();
   }
 
   void SendDefaultValues() { SendPageSetup(); }
@@ -144,58 +101,82 @@ class PageSetupPanel : public wxPanel {
   }
 
  private:
-  sigslot::signal<const PageSetupConfig&> signal_page_setup_config_;
-  void UpdateSpinControl() {
-    const wxPrintData print_data = dialog_data_.GetPrintData();
-    const wxSize paper_size = dialog_data_.GetPaperSize();
+  // The orientation travels through the domain as a plain int and lands in the
+  // project file that way (value_serialization.hpp). These two are the whole
+  // vocabulary, taken from Qt's enum so there is no second numbering to keep in
+  // step. Reading is total: anything that is not landscape counts as portrait,
+  // which also makes a default-constructed PageSetupConfig portrait.
+  static constexpr int kPortrait = static_cast<int>(QPageLayout::Portrait);
+  static constexpr int kLandscape = static_cast<int>(QPageLayout::Landscape);
 
-    if (print_data.GetOrientation() == wxPORTRAIT) {
-      page_width_spinctrl_->SetValue(paper_size.x);
-      page_height_spinctrl_->SetValue(paper_size.y);
-    }
-    if (print_data.GetOrientation() == wxLANDSCAPE) {
-      page_width_spinctrl_->SetValue(paper_size.y);
-      page_height_spinctrl_->SetValue(paper_size.x);
-    }
+  static constexpr double kMaxPageSizeMm = 2000.0;
+  static constexpr qreal kPageMarginMm = 15.0;
+
+  [[nodiscard]] bool IsLandscape() const {
+    return page_layout_.orientation() == QPageLayout::Landscape;
   }
 
-  void CallbackButtonClicked(wxCommandEvent& /*event*/) {
-    wxPageSetupDialog page_setup_dialog(nullptr, &dialog_data_);
-
-    if (page_setup_dialog.ShowModal() == wxID_OK) {
-      dialog_data_ = page_setup_dialog.GetPageSetupDialogData();
-      UpdateSpinControl();
-      SendPageSetup();
-    }
+  // QPageSize always reports the paper in portrait; the orientation is a
+  // separate flag. Every swap in this file follows from that.
+  [[nodiscard]] QSizeF PaperSizeMillimetres() const {
+    return page_layout_.pageSize().size(QPageSize::Millimeter);
   }
-  void CallbackCheckboxClicked(wxCommandEvent& event) {
-    page_width_spinctrl_->Enable(event.IsChecked());
-    page_height_spinctrl_->Enable(event.IsChecked());
+
+  // QPageSize matches a free size back onto a standard paper name where one
+  // fits, which is what keeps "A4" showing in the dialogue after a round trip
+  // through the two spin boxes.
+  void SetPaperSizeMillimetres(const QSizeF& size_millimetres) {
+    page_layout_.setPageSize(
+        QPageSize(size_millimetres, QPageSize::Millimeter));
   }
-  void CallbackSpinControl(wxSpinDoubleEvent& /*event*/) {
-    wxSize paper_size;
-    paper_size.x = static_cast<int>(page_width_spinctrl_->GetValue());
-    paper_size.y = static_cast<int>(page_height_spinctrl_->GetValue());
 
-    const wxPrintData print_data = dialog_data_.GetPrintData();
+  void UpdateSpinControls() {
+    const QSizeF paper = PaperSizeMillimetres();
+    const bool landscape = IsLandscape();
 
-    if (print_data.GetOrientation() == wxPORTRAIT) {
-      dialog_data_.SetPaperSize(wxSize(paper_size.x, paper_size.y));
+    updating_ = true;
+    page_width_spin_->setValue(landscape ? paper.height() : paper.width());
+    page_height_spin_->setValue(landscape ? paper.width() : paper.height());
+    updating_ = false;
+  }
+
+  void OpenPageSetupDialog() {
+    // The printer exists for the dialogue alone: QPageSetupDialog takes one,
+    // while the panel's state is the page layout. Constructing it on demand
+    // keeps the printing subsystem out of the startup path.
+    QPrinter printer(QPrinter::HighResolution);
+    printer.setPageLayout(page_layout_);
+
+    QPageSetupDialog dialog(&printer, this);
+    if (dialog.exec() != QDialog::Accepted) {
+      return;
     }
-    if (print_data.GetOrientation() == wxLANDSCAPE) {
-      dialog_data_.SetPaperSize(wxSize(paper_size.y, paper_size.x));
-    }
-
-    dialog_data_.CalculateIdFromPaperSize();
+    page_layout_ = printer.pageLayout();
+    UpdateSpinControls();
     SendPageSetup();
   }
 
-  const int id_page_width_;
-  const int id_page_height_;
+  void OnSpinChanged() {
+    if (updating_) {
+      return;
+    }
+    const double width = page_width_spin_->value();
+    const double height = page_height_spin_->value();
+    SetPaperSizeMillimetres(IsLandscape() ? QSizeF(height, width)
+                                          : QSizeF(width, height));
+    SendPageSetup();
+  }
 
-  wxPageSetupDialogData dialog_data_;
+  QPageLayout page_layout_{
+      QPageSize(QPageSize::A4), QPageLayout::Landscape,
+      QMarginsF(kPageMarginMm, kPageMarginMm, kPageMarginMm, kPageMarginMm),
+      QPageLayout::Millimeter};
 
-  wxWeakRef<wxSpinCtrlDouble> page_width_spinctrl_;
-  wxWeakRef<wxSpinCtrlDouble> page_height_spinctrl_;
+  QPointer<QDoubleSpinBox> page_width_spin_;
+  QPointer<QDoubleSpinBox> page_height_spin_;
+
+  sigslot::signal<const PageSetupConfig&> signal_page_setup_config_;
+
+  bool updating_{false};
 };
 #endif  // PAGE_PANEL_HPP

@@ -1,7 +1,7 @@
 # CI on git.blem.ch (the mirror github-mirror/decade): build plus ctest plus the
 # clang-tidy and sanitizer gates.
 # `runner-laptop-omen` binds the job EXCLUSIVELY to the CI runner on laptop-omen —
-# the heavy C++ build (Boost, wx, submodules) never runs on homelab (an RPi 4 on
+# the heavy C++ build (Boost, Qt, submodules) never runs on homelab (an RPi 4 on
 # USB SMR), where it drives the disk into I/O saturation (the loadavg incident of
 # 2026-07-11) and would fail on the 1200 MB limit. Is the laptop off, the job
 # waits in the queue instead of falling back to homelab. Triggered by the mirror
@@ -25,7 +25,7 @@ jobs:
           DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
             nodejs git cmake ninja-build pkg-config g++ clang clang-tidy \
             clang-format \
-            libboost-serialization-dev libepoxy-dev libwxgtk3.2-dev \
+            libboost-serialization-dev libepoxy-dev qt6-base-dev \
             zlib1g-dev libpng-dev libfontconfig-dev libfreetype-dev \
             libicu-dev libglm-dev libmsgsl-dev libgtest-dev libgl1-mesa-dev
       - uses: actions/checkout@v4

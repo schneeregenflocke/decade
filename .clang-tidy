@@ -15,8 +15,8 @@ Checks:
   # this. The only "fix" is [] indexing, which hurts readability.
   - -cppcoreguidelines-pro-type-union-access
   # reinterpret_cast and raw pointer/array handling are required for the
-  # OpenGL and wxWidgets C APIs (buffer offsets, glGetIntegerv out-params,
-  # native handles). Unavoidable at the infrastructure boundary.
+  # OpenGL, fontconfig and FreeType C APIs (buffer offsets, glGetIntegerv
+  # out-params, FcChar8 strings). Unavoidable at the infrastructure boundary.
   - -cppcoreguidelines-pro-type-reinterpret-cast
   - -cppcoreguidelines-pro-bounds-pointer-arithmetic
   - -cppcoreguidelines-pro-bounds-array-to-pointer-decay
@@ -32,8 +32,8 @@ Checks:
   # half the rule and read as protection the code does not have.
   - -cppcoreguidelines-pro-type-static-cast-downcast
   - google-*
-  # wxWidgets and Boost APIs use plain long/short directly; fixed-width
-  # substitutes would fight those library signatures.
+  # Qt and Boost APIs use plain long/short directly; fixed-width substitutes
+  # would fight those library signatures.
   - -google-runtime-int
   - hicpp-*
   # Same C-array-to-GL-C-API decay as the cppcoreguidelines variant above.
@@ -46,7 +46,7 @@ Checks:
   - performance-*
   - portability-*
   - readability-*
-  # Short names (i, x, ar, dc, ft) are idiomatic in loop/lambda/GL/wx contexts;
+  # Short names (i, x, ar, dc, ft) are idiomatic in loop/lambda/GL/Qt contexts;
   # enforcing a minimum length hurts more than it helps here.
   - -readability-identifier-length
 WarningsAsErrors: ""
@@ -61,8 +61,9 @@ ImplementationFileExtensions:
   - cc
   - cpp
   - cxx
-# Analyse the project's own headers (this is a header-only codebase — almost
-# all code lives in headers, so an empty filter would hide nearly everything).
+# Analyse the project's own headers as well, not the translation units alone —
+# a declaration carries the naming rules and the include discipline just as much
+# as its definition does.
 # external/ submodules are excluded here; system headers via SystemHeaders.
 HeaderFilterRegex: ".*/(src|tests)/.*"
 ExcludeHeaderFilterRegex: ".*/external/.*"

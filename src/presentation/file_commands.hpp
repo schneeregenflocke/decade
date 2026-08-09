@@ -1,11 +1,11 @@
 #ifndef FILE_COMMANDS_HPP
 #define FILE_COMMANDS_HPP
 
-#include <wx/filedlg.h>
-#include <wx/filename.h>
-#include <wx/msgdlg.h>
-#include <wx/string.h>
-
+#include <QtCore/QFileInfo>
+#include <QtCore/QString>
+#include <QtWidgets/QFileDialog>
+#include <QtWidgets/QMessageBox>
+#include <optional>
 #include <string>
 
 #include "../application/project_document.hpp"
@@ -48,23 +48,22 @@ class FileCommands {
   // `const char*` and not `std::string_view`, against the usual preference:
   // these are string literals in a `static constexpr` member, so they have
   // static storage duration and encode neither ownership nor a dangling risk —
-  // and every consumer is a wxString, which takes a `const char*` and no
+  // and every consumer is a QString, which takes a `const char*` and no
   // string_view. A view would buy nothing and cost a `.data()` at each call,
   // where null termination would hold only by accident.
   struct FileType {
-    const char* wildcard;
+    const char* filter;
     const char* extension;
   };
-  static constexpr FileType kXmlFile{.wildcard = "XML Files (*.xml)|*.xml",
+  static constexpr FileType kXmlFile{.filter = "XML Files (*.xml)",
                                      .extension = "xml"};
   static constexpr FileType kCsvFile{
-      .wildcard = "CSV and TXT files (*.csv;*.txt)|*.csv;*.txt",
-      .extension = "csv"};
-  static constexpr FileType kPngFile{.wildcard = "PNG files (*.png)|*.png",
+      .filter = "CSV and TXT files (*.csv *.txt)", .extension = "csv"};
+  static constexpr FileType kPngFile{.filter = "PNG files (*.png)",
                                      .extension = "png"};
 
   void OpenXml() {
-    const std::string file_path = AskOpenPath("Open File", kXmlFile.wildcard);
+    const std::string file_path = AskOpenPath("Open File", kXmlFile.filter);
     if (file_path.empty()) {
       return;
     }
@@ -89,7 +88,7 @@ class FileCommands {
   }
 
   void ImportCsv() {
-    const std::string file_path = AskOpenPath("Import file", kCsvFile.wildcard);
+    const std::string file_path = AskOpenPath("Import file", kCsvFile.filter);
     if (file_path.empty()) {
       return;
     }
@@ -113,49 +112,47 @@ class FileCommands {
   }
 
   // An empty return value means: cancelled.
-  [[nodiscard]] std::string AskOpenPath(const wxString& title,
-                                        const wxString& wildcard) {
-    wxFileDialog dialog(&frame_, title, wxEmptyString, wxEmptyString, wildcard,
-                        wxFD_OPEN | wxFD_FILE_MUST_EXIST);
-    if (dialog.ShowModal() != wxID_OK) {
-      return {};
-    }
-    return dialog.GetPath().ToStdString();
+  [[nodiscard]] std::string AskOpenPath(const QString& title,
+                                        const QString& filter) {
+    return QFileDialog::getOpenFileName(&frame_, title, QString(), filter)
+        .toStdString();
   }
 
-  // wxGTK never appends the filter's suffix (wxWidgets #9917) — we do that
-  // afterwards, together with the overwrite question the dialogue asks about
-  // the typed name alone.
-  [[nodiscard]] std::string AskSavePath(const wxString& title,
+  // The overwrite question of the save dialogue asks about the typed name
+  // alone, so the suffix gets appended afterwards and the question repeated for
+  // the completed name.
+  [[nodiscard]] std::string AskSavePath(const QString& title,
                                         const FileType& type) {
-    wxFileDialog dialog(&frame_, title, wxEmptyString, wxEmptyString,
-                        type.wildcard, wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
-    if (dialog.ShowModal() != wxID_OK) {
+    const QString chosen =
+        QFileDialog::getSaveFileName(&frame_, title, QString(), type.filter);
+    if (chosen.isEmpty()) {
       return {};
     }
-    wxFileName file_path(dialog.GetPath());
-    if (file_path.HasExt()) {
-      return file_path.GetFullPath().ToStdString();
+    const QFileInfo file_info(chosen);
+    if (!file_info.suffix().isEmpty()) {
+      return chosen.toStdString();
     }
-    file_path.SetExt(type.extension);
-    if (file_path.FileExists() && !ConfirmOverwrite(title, file_path)) {
+    const QString with_extension = chosen + "." + type.extension;
+    if (QFileInfo::exists(with_extension) &&
+        !ConfirmOverwrite(title, with_extension)) {
       return {};
     }
-    return file_path.GetFullPath().ToStdString();
+    return with_extension.toStdString();
   }
 
-  [[nodiscard]] bool ConfirmOverwrite(const wxString& title,
-                                      const wxFileName& file_path) const {
-    const wxString question = file_path.GetFullPath() +
-                              " already exists.\nDo you want to replace it?";
-    return wxMessageBox(question, title, wxYES_NO | wxICON_WARNING, &frame_) ==
-           wxYES;
+  [[nodiscard]] bool ConfirmOverwrite(const QString& title,
+                                      const QString& file_path) const {
+    const QString question =
+        file_path + " already exists.\nDo you want to replace it?";
+    return QMessageBox::warning(&frame_, title, question,
+                                QMessageBox::Yes | QMessageBox::No) ==
+           QMessageBox::Yes;
   }
 
-  void Report(const wxString& title,
+  void Report(const QString& title,
               const std::optional<std::string>& error) const {
     if (error) {
-      wxMessageBox(*error, title, wxOK | wxICON_ERROR, &frame_);
+      QMessageBox::critical(&frame_, title, QString::fromStdString(*error));
     }
   }
 

@@ -71,6 +71,8 @@ class CalendarPage {
   // without a reload, because Font rasters em-normalised.
   void ReceiveFont(const FontConfig& font_config) {
     if (font_config.FilePath() != font_config_.FilePath()) {
+      // A font is GL: it rasters its glyphs into a texture.
+      render_surface_.MakeGraphicsCurrent();
       font_ = std::make_shared<Font>(font_config.FilePath());
     }
     font_config_ = font_config;
@@ -169,7 +171,12 @@ class CalendarPage {
   // — the ones a state change causes and the ones a keystroke in the title
   // does. What it cost is worth knowing: the build is CPU work and shows the
   // same figure on the graphics card as under software rendering.
+  // The one place the scene gets built — and the one place that has to see to
+  // the GL context. A rebuild allocates buffers and textures, and it is driven
+  // by the bus: a panel edit, a loaded project, a keystroke in the title. None
+  // of those is a paint, so nothing has made a context current by then.
   void BuildScene(const char* reason) {
+    render_surface_.MakeGraphicsCurrent();
     const auto started = std::chrono::steady_clock::now();
     scene_composer_.Build();
     if (decade_debug::LogEnabled()) {

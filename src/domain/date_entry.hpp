@@ -7,26 +7,20 @@ class DateEntry {
  public:
   DateEntry() = default;  // both periods invalid until set
 
-  [[nodiscard]] const DatePeriod& GetDateInterval() const {
-    return date_interval_;
-  }
-  void SetDateInterval(const DatePeriod& value) { date_interval_ = value; }
+  [[nodiscard]] const DatePeriod& GetDateInterval() const;
+  void SetDateInterval(const DatePeriod& value);
 
-  [[nodiscard]] const DatePeriod& GetDateInterInterval() const {
-    return date_inter_interval_;
-  }
-  void SetDateInterInterval(const DatePeriod& value) {
-    date_inter_interval_ = value;
-  }
+  [[nodiscard]] const DatePeriod& GetDateInterInterval() const;
+  void SetDateInterInterval(const DatePeriod& value);
 
-  [[nodiscard]] int GetNumber() const { return number_; }
-  void SetNumber(int number) { number_ = number; }
+  [[nodiscard]] int GetNumber() const;
+  void SetNumber(int number);
 
-  [[nodiscard]] int GetGroup() const { return group_; }
-  void SetGroup(int group) { group_ = group; }
+  [[nodiscard]] int GetGroup() const;
+  void SetGroup(int group);
 
-  [[nodiscard]] int GetGroupNumber() const { return group_number_; }
-  void SetGroupNumber(int group_number) { group_number_ = group_number; }
+  [[nodiscard]] int GetGroupNumber() const;
+  void SetGroupNumber(int group_number);
 
  private:
   DatePeriod date_interval_;

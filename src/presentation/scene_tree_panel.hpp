@@ -1,15 +1,15 @@
 #ifndef SCENE_TREE_PANEL_HPP
 #define SCENE_TREE_PANEL_HPP
 
-#include <wx/propgrid/advprops.h>
-#include <wx/propgrid/propgrid.h>
-#include <wx/splitter.h>
-#include <wx/treectrl.h>
-#include <wx/weakref.h>
-#include <wx/wx.h>
-
+#include <QtCore/QPointer>
+#include <QtCore/QString>
+#include <QtGui/QColor>
+#include <QtWidgets/QSplitter>
+#include <QtWidgets/QTreeWidget>
+#include <QtWidgets/QTreeWidgetItem>
+#include <QtWidgets/QVBoxLayout>
+#include <QtWidgets/QWidget>
 #include <cstddef>
-#include <memory>
 #include <optional>
 #include <sigslot/signal.hpp>
 #include <string>
@@ -21,13 +21,13 @@
 #include "../domain/shape_configuration.hpp"
 #include "../domain/typography.hpp"
 #include "casts.hpp"
-#include "wx_owned.hpp"
+#include "make_owned.hpp"
 
 // Presentation: master/detail view of the render scene graph. A collapsible
 // tree on the left mirrors the GL-free SceneNodeSnapshot (delivered via the
-// EventBus on every scene rebuild); a property grid on the right shows the
+// EventBus on every scene rebuild); a two-column list on the right shows the
 // selected node's detail. For nodes bound to a domain ShapeConfiguration (via
-// the snapshot's `style_id`) the grid also shows the node's colours and line
+// the snapshot's `style_id`) the detail also shows the node's colours and line
 // width, looked up in the received ShapeConfigSet. The panel never touches the
 // OpenGL `SceneNode` type, keeping the presentation layer graphics-free.
 //
@@ -35,39 +35,44 @@
 // An edit field here would be a second write path onto state the rebuild
 // recreates anyway; changes happen where the state is at home (the panel of the
 // respective configuration).
-class SceneTreePanel : public wxPanel {
+class SceneTreePanel : public QWidget {
  public:
-  explicit SceneTreePanel(wxWindow* parent)
-      : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                wxTAB_TRAVERSAL, wxPanelNameStr) {
-    auto* splitter = MakeOwned<wxSplitterWindow>(
-        this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_3D);
-    splitter->SetMinimumPaneSize(kMinPanePx);
+  explicit SceneTreePanel(QWidget* parent) : QWidget(parent) {
+    constexpr int kBorderPx = 5;
 
-    tree_ctrl_ = MakeOwned<wxTreeCtrl>(splitter, wxID_ANY, wxDefaultPosition,
-                                       wxDefaultSize,
-                                       wxTR_DEFAULT_STYLE | wxTR_TWIST_BUTTONS);
-    property_grid_ =
-        MakeOwned<wxPropertyGrid>(splitter, wxID_ANY, wxDefaultPosition,
-                                  wxDefaultSize, wxPG_SPLITTER_AUTO_CENTER);
+    auto* splitter = MakeOwned<QSplitter>(Qt::Horizontal, this);
 
-    splitter->SplitVertically(tree_ctrl_, property_grid_, kSashPositionPx);
+    tree_ = MakeOwned<QTreeWidget>(splitter);
+    tree_->setHeaderHidden(true);
+    tree_->setColumnCount(1);
 
-    constexpr int kSizerBorderPx = 5;
-    auto* vertical_sizer = MakeOwned<wxBoxSizer>(wxVERTICAL);
-    vertical_sizer->Add(splitter, 1, wxEXPAND | wxALL, kSizerBorderPx);
-    SetSizer(vertical_sizer);
+    detail_ = MakeOwned<QTreeWidget>(splitter);
+    detail_->setColumnCount(2);
+    detail_->setHeaderLabels({"Property", "Value"});
+    detail_->setRootIsDecorated(false);
 
-    tree_ctrl_->Bind(wxEVT_TREE_SEL_CHANGED,
-                     &SceneTreePanel::CallbackTreeSelectionChanged, this);
+    splitter->addWidget(tree_);
+    splitter->addWidget(detail_);
+    splitter->setSizes({kSashPositionPx, kSashPositionPx});
+
+    auto* vertical_layout = MakeOwned<QVBoxLayout>();
+    vertical_layout->setContentsMargins(kBorderPx, kBorderPx, kBorderPx,
+                                        kBorderPx);
+    vertical_layout->addWidget(splitter);
+    setLayout(vertical_layout);
+
+    connect(tree_.data(), &QTreeWidget::currentItemChanged, this,
+            [this](QTreeWidgetItem*, QTreeWidgetItem*) {
+              CallbackTreeSelectionChanged();
+            });
   }
 
   void ReceiveSceneSnapshot(const SceneNodeSnapshot& snapshot) {
-    if (tree_ctrl_ == nullptr) {
+    if (tree_ == nullptr) {
       return;
     }
-    // Suppress selection events fired by DeleteAllItems/rebuild: the renderer
-    // keeps highlighting the last selected path across rebuilds, so a spurious
+    // Suppress selection events fired by the rebuild: the renderer keeps
+    // highlighting the last selected path across rebuilds, so a spurious
     // "nothing selected" event here would wrongly clear it.
     rebuilding_ = true;
     // Remember the selected node's stable path so the rebuild can restore it.
@@ -75,18 +80,18 @@ class SceneTreePanel : public wxPanel {
     // happens after each state change, and would force the user to re-select
     // the node afterwards.
     const std::string previously_selected = SelectedPath();
-    tree_ctrl_->Freeze();
-    tree_ctrl_->DeleteAllItems();
-    path_to_item_.clear();
-    const wxTreeItemId root = tree_ctrl_->AddRoot(MakeLabel(snapshot), -1, -1,
-                                                  MakeItemData(snapshot, ""));
-    path_to_item_.emplace(snapshot.values.name, root);
+    tree_->setUpdatesEnabled(false);
+    tree_->clear();
+    node_details_.clear();
+
+    auto* root = MakeOwned<QTreeWidgetItem>(tree_.data());
+    ApplyNode(root, snapshot, snapshot.values.name);
 
     // Iterative descent (no recursion): each frame pairs an already-created
     // tree item with the snapshot node whose children still need appending,
     // plus the path accumulated so far (a stable per-node identity).
     struct Frame {
-      wxTreeItemId item;
+      QTreeWidgetItem* item;
       const SceneNodeSnapshot* node;
       std::string path;
     };
@@ -99,34 +104,29 @@ class SceneTreePanel : public wxPanel {
       stack.pop_back();
       for (const auto& child : frame.node->children) {
         const std::string child_path = frame.path + "/" + child.values.name;
-        const wxTreeItemId child_item =
-            tree_ctrl_->AppendItem(frame.item, MakeLabel(child), -1, -1,
-                                   MakeItemData(child, child_path));
-        path_to_item_.emplace(child_path, child_item);
+        auto* child_item = MakeOwned<QTreeWidgetItem>(frame.item);
+        ApplyNode(child_item, child, child_path);
         stack.push_back(
             {.item = child_item, .node = &child, .path = child_path});
       }
     }
 
-    tree_ctrl_->ExpandAll();
+    tree_->expandAll();
 
     // Restore the previous selection by path. Still under the rebuilding_ guard
-    // so SelectItem does not re-emit the selection (which the renderer already
-    // tracks); the detail grid is refreshed explicitly below.
+    // so setting it does not re-emit the selection (which the renderer already
+    // tracks); the detail is refreshed explicitly below.
     if (!previously_selected.empty()) {
-      const auto iterator = path_to_item_.find(previously_selected);
-      if (iterator != path_to_item_.end()) {
-        tree_ctrl_->SelectItem(iterator->second);
-      }
+      SelectItemAt(previously_selected);
     }
 
-    tree_ctrl_->Thaw();
+    tree_->setUpdatesEnabled(true);
     rebuilding_ = false;
     RefreshDetail();
   }
 
   // The set is the source of truth for the colours/line width shown in the
-  // detail grid; keep a copy so a selected node's style stays in sync when the
+  // detail; keep a copy so a selected node's style stays in sync when the
   // configuration changes elsewhere.
   void ReceiveShapeConfigSet(const ShapeConfigSet& shape_config_set) {
     shape_config_set_ = shape_config_set;
@@ -137,17 +137,14 @@ class SceneTreePanel : public wxPanel {
   // renderer can highlight that node and its subtree on the calendar.
   [[nodiscard]] auto& SignalSelectedNode() { return signal_selected_node_; }
 
-  // Selects the tree item at `path`, driving the normal selection path
-  // (detail grid + highlight emit). A debug/screenshot aid for exercising the
-  // panel without a pointer device; a no-op when the path is unknown.
+  // Selects the tree item at `path`, driving the normal selection path (detail
+  // plus highlight emit). A debug/screenshot aid for exercising the panel
+  // without a pointer device; a no-op when the path is unknown.
   void SelectNodeByPath(const std::string& path) {
-    if (tree_ctrl_ == nullptr) {
+    if (tree_ == nullptr) {
       return;
     }
-    const auto iterator = path_to_item_.find(path);
-    if (iterator != path_to_item_.end()) {
-      tree_ctrl_->SelectItem(iterator->second);
-    }
+    SelectItemAt(path);
   }
 
   // The selection came from outside — from a click in the canvas today. The
@@ -163,45 +160,44 @@ class SceneTreePanel : public wxPanel {
   }
 
  private:
-  // Per-tree-item payload: the snapshot node's scalar fields plus its stable
-  // path. A copy (not a pointer into the snapshot) so it survives the snapshot
-  // being replaced on the next rebuild.
-  class NodeData : public wxTreeItemData {
-   public:
-    NodeData(const SceneNodeSnapshot& node, std::string path)
-        : values_(node.values),
-          path_(std::move(path)),
-          child_count_(node.children.size()) {}
-
-    [[nodiscard]] const SceneNodeValues& Values() const { return values_; }
-    [[nodiscard]] const std::string& Path() const { return path_; }
-    [[nodiscard]] std::size_t ChildCount() const { return child_count_; }
-
-   private:
-    SceneNodeValues values_;
-    std::string path_;
-    std::size_t child_count_;
+  // Per-node payload: the snapshot node's scalar fields plus its child count. A
+  // copy (not a reference into the snapshot) so it survives the snapshot being
+  // replaced on the next rebuild. Keyed by the node's stable path, which is
+  // also what the tree item carries — no pointer to an item is ever stored, and
+  // the tree stays the single owner of its items.
+  struct NodeDetail {
+    SceneNodeValues values;
+    std::size_t child_count{0};
   };
 
-  static NodeData* MakeItemData(const SceneNodeSnapshot& node,
-                                const std::string& path) {
-    return MakeOwned<NodeData>(node, path);
+  static constexpr int kSashPositionPx = 220;
+  static constexpr int kPathRole = Qt::UserRole;
+  static constexpr int kLabelColumn = 0;
+  static constexpr int kValueColumn = 1;
+
+  void ApplyNode(QTreeWidgetItem* item, const SceneNodeSnapshot& node,
+                 const std::string& path) {
+    item->setText(kLabelColumn, MakeLabel(node));
+    item->setData(kLabelColumn, kPathRole, QString::fromStdString(path));
+    node_details_.insert_or_assign(
+        path,
+        NodeDetail{.values = node.values, .child_count = node.children.size()});
   }
 
-  static wxString MakeLabel(const SceneNodeSnapshot& node) {
-    wxString label = wxString::FromUTF8(node.values.name);
-    if (label.empty()) {
+  static QString MakeLabel(const SceneNodeSnapshot& node) {
+    QString label = QString::fromStdString(node.values.name);
+    if (label.isEmpty()) {
       label = "(unnamed)";
     }
     // A node without a shape is a pure grouping/container node; mark it so the
     // tree distinguishes drawable nodes from structural ones at a glance.
     if (!node.values.has_shape) {
-      label << "  •";
+      label += "  •";
     }
     return label;
   }
 
-  static wxString ShapeKindLabel(SnapshotShapeKind kind) {
+  static QString ShapeKindLabel(SnapshotShapeKind kind) {
     switch (kind) {
       case SnapshotShapeKind::kFill:
         return "Fill";
@@ -217,14 +213,48 @@ class SceneTreePanel : public wxPanel {
 
   // Boxes and sizes stand in page millimetres; two decimals suffice to see
   // differences of 0.1 mm.
-  static wxString BoundsLabel(const SnapshotBounds& bounds) {
-    return wxString::Format("l %.2f  r %.2f  b %.2f  t %.2f  (%.2f x %.2f)",
-                            bounds.left, bounds.right, bounds.bottom,
-                            bounds.top, bounds.right - bounds.left,
-                            bounds.top - bounds.bottom);
+  static QString Millimetres(float value) {
+    return QString::number(static_cast<double>(value), 'f', 2);
   }
 
-  void CallbackTreeSelectionChanged(wxTreeEvent& /*event*/) {
+  static QString BoundsLabel(const SnapshotBounds& bounds) {
+    return QString("l %1  r %2  b %3  t %4  (%5 x %6)")
+        .arg(Millimetres(bounds.left), Millimetres(bounds.right),
+             Millimetres(bounds.bottom), Millimetres(bounds.top),
+             Millimetres(bounds.right - bounds.left),
+             Millimetres(bounds.top - bounds.bottom));
+  }
+
+  // Walks the tree for the item carrying this path. Cheaper than it looks — the
+  // alternative, a map of item pointers, would be a raw pointer member whose
+  // entries the tree deletes underneath it on every rebuild.
+  [[nodiscard]] QTreeWidgetItem* FindItemAt(const std::string& path) const {
+    const QString wanted = QString::fromStdString(path);
+    std::vector<QTreeWidgetItem*> stack;
+    stack.reserve(static_cast<std::size_t>(tree_->topLevelItemCount()));
+    for (int index = 0; index < tree_->topLevelItemCount(); ++index) {
+      stack.push_back(tree_->topLevelItem(index));
+    }
+    while (!stack.empty()) {
+      QTreeWidgetItem* item = stack.back();
+      stack.pop_back();
+      if (item->data(kLabelColumn, kPathRole).toString() == wanted) {
+        return item;
+      }
+      for (int index = 0; index < item->childCount(); ++index) {
+        stack.push_back(item->child(index));
+      }
+    }
+    return nullptr;
+  }
+
+  void SelectItemAt(const std::string& path) {
+    if (QTreeWidgetItem* item = FindItemAt(path); item != nullptr) {
+      tree_->setCurrentItem(item);
+    }
+  }
+
+  void CallbackTreeSelectionChanged() {
     if (rebuilding_) {
       return;
     }
@@ -235,16 +265,14 @@ class SceneTreePanel : public wxPanel {
   // The stable path of the currently selected node, or empty when nothing
   // (valid) is selected. The single place that reads the selection's payload.
   [[nodiscard]] std::string SelectedPath() const {
-    if (tree_ctrl_ == nullptr) {
+    if (tree_ == nullptr) {
       return {};
     }
-    const wxTreeItemId selected = tree_ctrl_->GetSelection();
-    if (!selected.IsOk()) {
+    const QTreeWidgetItem* selected = tree_->currentItem();
+    if (selected == nullptr) {
       return {};
     }
-    const auto* data =
-        dynamic_cast<NodeData*>(tree_ctrl_->GetItemData(selected));
-    return data != nullptr ? data->Path() : std::string{};
+    return selected->data(kLabelColumn, kPathRole).toString().toStdString();
   }
 
   // Publishes the selected node's stable path (or nullopt when the selection is
@@ -258,35 +286,37 @@ class SceneTreePanel : public wxPanel {
     }
   }
 
-  // Rebuilds the detail grid from the current tree selection. Rebuilding
-  // wholesale keeps the code simple and robust to the optional categories.
+  // Rebuilds the detail from the current tree selection. Rebuilding wholesale
+  // keeps the code simple and robust to the optional categories.
   void RefreshDetail() {
-    if (property_grid_ == nullptr || tree_ctrl_ == nullptr) {
+    if (detail_ == nullptr || tree_ == nullptr) {
       return;
     }
-    property_grid_->Clear();
+    detail_->clear();
 
-    const wxTreeItemId selected = tree_ctrl_->GetSelection();
-    if (!selected.IsOk()) {
+    const auto iterator = node_details_.find(SelectedPath());
+    if (iterator == node_details_.end()) {
       return;
     }
-    const auto* data =
-        dynamic_cast<NodeData*>(tree_ctrl_->GetItemData(selected));
-    if (data == nullptr) {
-      return;
-    }
-    const SceneNodeValues& node = data->Values();
+    const NodeDetail& detail = iterator->second;
+    const SceneNodeValues& node = detail.values;
 
-    AppendCategory("Node");
-    AppendText("Name", wxString::FromUTF8(node.name));
-    AppendText("Shape", ShapeKindLabel(node.shape_kind));
-    AppendInt("Draw Layer", node.draw_layer);
-    AppendInt("Children", static_cast<int>(data->ChildCount()));
-    AppendText("Style ID", wxString::FromUTF8(node.style_id));
+    QTreeWidgetItem* node_category = AppendCategory("Node");
+    AppendText(node_category, "Name", QString::fromStdString(node.name));
+    AppendText(node_category, "Shape", ShapeKindLabel(node.shape_kind));
+    AppendText(node_category, "Draw Layer", QString::number(node.draw_layer));
+    AppendText(node_category, "Children", QString::number(detail.child_count));
+    AppendText(node_category, "Style ID",
+               QString::fromStdString(node.style_id));
 
     AppendGeometryCategory(node);
     AppendTextCategory(node);
     AppendStyleCategory(node.style_id);
+
+    detail_->expandAll();
+    // After expanding, so the widest row counts: the property names are short
+    // and fixed, the values are not, and a truncated "Outline …" says nothing.
+    detail_->resizeColumnToContents(kLabelColumn);
   }
 
   // The node's own geometry: its box in node space and the same box on the
@@ -295,9 +325,9 @@ class SceneTreePanel : public wxPanel {
     if (!node.local_bounds.has_value() || !node.world_bounds.has_value()) {
       return;
     }
-    AppendCategory("Geometry");
-    AppendText("Local Bounds (mm)", BoundsLabel(*node.local_bounds));
-    AppendText("Page Bounds (mm)", BoundsLabel(*node.world_bounds));
+    QTreeWidgetItem* category = AppendCategory("Geometry");
+    AppendText(category, "Local Bounds (mm)", BoundsLabel(*node.local_bounds));
+    AppendText(category, "Page Bounds (mm)", BoundsLabel(*node.world_bounds));
   }
 
   // Text nodes additionally show what they draw and how large — in points,
@@ -307,18 +337,18 @@ class SceneTreePanel : public wxPanel {
     if (!node.text_detail.has_value()) {
       return;
     }
-    AppendCategory("Text");
-    // "Content", not "Text": AppendCategory and AppendText both pass
-    // wxPG_LABEL, so wxPropertyGrid takes the label as the item name — and
-    // names must be unique across the grid. A row named like its own category
-    // aborts the selection in PrepareToAddItem.
-    AppendText("Content", wxString::FromUTF8(node.text_detail->text));
+    QTreeWidgetItem* category = AppendCategory("Text");
+    AppendText(category, "Content",
+               QString::fromStdString(node.text_detail->text));
     AppendText(
-        "Font Size (pt)",
-        wxString::Format("%.2f", domain::PointsFromMillimetres(
-                                     node.text_detail->size_millimetres)));
-    AppendText("Font Size (mm)",
-               wxString::Format("%.2f", node.text_detail->size_millimetres));
+        category, "Font Size (pt)",
+        QString::number(static_cast<double>(domain::PointsFromMillimetres(
+                            node.text_detail->size_millimetres)),
+                        'f', 2));
+    AppendText(
+        category, "Font Size (mm)",
+        QString::number(static_cast<double>(node.text_detail->size_millimetres),
+                        'f', 2));
   }
 
   // If the node's style_id resolves to a configuration, show its colours, line
@@ -333,53 +363,66 @@ class SceneTreePanel : public wxPanel {
       return;  // not found in the set
     }
 
-    AppendCategory("Style");
-    AppendText("Outline Visible", config.OutlineVisible() ? "true" : "false");
-    AppendColor("Outline Color", config.OutlineColorDisabled());
-    AppendText("Fill Visible", config.FillVisible() ? "true" : "false");
-    AppendColor("Fill Color", config.FillColorDisabled());
+    QTreeWidgetItem* category = AppendCategory("Style");
+    AppendText(category, "Outline Visible",
+               config.OutlineVisible() ? "true" : "false");
+    AppendColor(category, "Outline Color", config.OutlineColorDisabled());
+    AppendText(category, "Fill Visible",
+               config.FillVisible() ? "true" : "false");
+    AppendColor(category, "Fill Color", config.FillColorDisabled());
     // The configured values, not those cleaned up by visibility: what stands
     // here should match what the user set.
-    AppendText("Line Width",
-               wxString::Format("%.2f", config.LineWidthDisabled()));
+    AppendText(category, "Line Width",
+               QString::number(static_cast<double>(config.LineWidthDisabled()),
+                               'f', 2));
   }
 
-  void AppendCategory(const wxString& label) {
-    property_grid_->Append(MakeOwned<wxPropertyCategory>(label, wxPG_LABEL));
+  // The categories are the top level of the detail list; every row hangs under
+  // the one it was created with. The category travels as a parameter rather
+  // than in a member — the list owns its items and deletes them on the next
+  // rebuild, which is exactly the dangling a cached pointer would invite.
+  QTreeWidgetItem* AppendCategory(const QString& label) {
+    auto* category = MakeOwned<QTreeWidgetItem>(detail_.data());
+    category->setText(kLabelColumn, label);
+    QFont category_font = category->font(kLabelColumn);
+    category_font.setBold(true);
+    category->setFont(kLabelColumn, category_font);
+    category->setFlags(Qt::ItemIsEnabled);
+    return category;
   }
 
-  // Every value stands as text: one kind of row, no typed editors that could
-  // write after all by accident.
-  void AppendText(const wxString& label, const wxString& value) {
-    AppendReadOnly(MakeOwned<wxStringProperty>(label, wxPG_LABEL, value));
+  // Every value stands as text: one kind of row, and no editable cell that
+  // could write back on state the rebuild recreates anyway.
+  static QTreeWidgetItem* AppendText(QTreeWidgetItem* category,
+                                     const QString& label,
+                                     const QString& value) {
+    auto* row = MakeOwned<QTreeWidgetItem>(category);
+    row->setText(kLabelColumn, label);
+    row->setText(kValueColumn, value);
+    row->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+    return row;
   }
 
-  void AppendInt(const wxString& label, int value) {
-    AppendReadOnly(MakeOwned<wxIntProperty>(label, wxPG_LABEL, value));
+  // Colours with alpha; the swatch shows the RGB, the numbers beside it name
+  // all four channels — the swatch alone cannot show transparency.
+  static void AppendColor(QTreeWidgetItem* category, const QString& label,
+                          const glm::vec4& color) {
+    const QColor qt_color = ToQColor(color);
+    QTreeWidgetItem* row =
+        AppendText(category, label, qt_color.name(QColor::HexRgb));
+    row->setData(kValueColumn, Qt::DecorationRole,
+                 QColor(qt_color.red(), qt_color.green(), qt_color.blue()));
+    AppendText(category, label + " (RGBA)",
+               QString("%1, %2, %3, %4")
+                   .arg(qt_color.red())
+                   .arg(qt_color.green())
+                   .arg(qt_color.blue())
+                   .arg(qt_color.alpha()));
   }
 
-  // Colours with alpha; the wx colour picker knows no alpha channel, hence the
-  // four channels as numbers plus the colour as a field beside them.
-  void AppendColor(const wxString& label, const glm::vec4& color) {
-    const wxColour wx_color = ToWxColor(color);
-    AppendReadOnly(MakeOwned<wxColourProperty>(label, wxPG_LABEL, wx_color));
-    AppendText(
-        label + " (RGBA)",
-        wxString::Format("%u, %u, %u, %u", wx_color.Red(), wx_color.Green(),
-                         wx_color.Blue(), wx_color.Alpha()));
-  }
-
-  void AppendReadOnly(wxPGProperty* property) {
-    property_grid_->Append(property);
-    property_grid_->SetPropertyReadOnly(property);
-  }
-
-  static constexpr int kSashPositionPx = 220;
-  static constexpr int kMinPanePx = 80;
-
-  wxWeakRef<wxTreeCtrl> tree_ctrl_;
-  wxWeakRef<wxPropertyGrid> property_grid_;
-  std::unordered_map<std::string, wxTreeItemId> path_to_item_;
+  QPointer<QTreeWidget> tree_;
+  QPointer<QTreeWidget> detail_;
+  std::unordered_map<std::string, NodeDetail> node_details_;
   ShapeConfigSet shape_config_set_;
   sigslot::signal<const std::optional<std::string>&> signal_selected_node_;
 

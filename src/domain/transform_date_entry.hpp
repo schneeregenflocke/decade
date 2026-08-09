@@ -18,27 +18,12 @@ class TransformDateEntry {
     int end_days;
   };
 
-  explicit TransformDateEntry(domain::StateTopic<std::vector<DateEntry>>& topic)
-      : topic_(topic), date_shift_{.begin_days = 0, .end_days = 0} {}
+  explicit TransformDateEntry(
+      domain::StateTopic<std::vector<DateEntry>>& topic);
 
-  void ReceiveDateEntries(const std::vector<DateEntry>& date_entries) {
-    if (emitting_) {
-      return;
-    }
-    const domain::detail::ScopedReentryFlag guard(emitting_);
-    std::vector<DateEntry> transformed_entries = date_entries;
+  void ReceiveDateEntries(const std::vector<DateEntry>& date_entries);
 
-    for (auto& transformed_entry : transformed_entries) {
-      const auto& interval = transformed_entry.GetDateInterval();
-      transformed_entry.SetDateInterval(
-          DatePeriod(interval.Begin().AddDays(date_shift_.begin_days),
-                     interval.End().AddDays(date_shift_.end_days)));
-    }
-
-    topic_(transformed_entries);
-  }
-
-  void SetTransform(DateShift shift) { date_shift_ = shift; }
+  void SetTransform(DateShift shift);
 
  private:
   domain::StateTopic<std::vector<DateEntry>>& topic_;

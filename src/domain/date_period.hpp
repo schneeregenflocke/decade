@@ -22,27 +22,21 @@ class DatePeriod {
  public:
   DatePeriod() = default;  // both endpoints invalid
 
-  DatePeriod(const Date& begin, const Date& end) : begin_(begin), end_(end) {}
+  DatePeriod(const Date& begin, const Date& end);
 
-  [[nodiscard]] const Date& Begin() const { return begin_; }
-  [[nodiscard]] const Date& End() const { return end_; }
+  [[nodiscard]] const Date& Begin() const;
+  [[nodiscard]] const Date& End() const;
 
   // Last day inside the half-open period: the day before End().
-  [[nodiscard]] Date Last() const { return end_.AddDays(-1); }
+  [[nodiscard]] Date Last() const;
 
-  [[nodiscard]] bool HasValidDates() const {
-    return begin_.IsValid() && end_.IsValid();
-  }
+  [[nodiscard]] bool HasValidDates() const;
 
   // Boost semantics: a period is null when it contains no day (end <= begin).
-  [[nodiscard]] bool IsNull() const {
-    return !HasValidDates() || end_ <= begin_;
-  }
+  [[nodiscard]] bool IsNull() const;
 
   // Signed length `end - begin` in days; 0 if an endpoint is invalid.
-  [[nodiscard]] std::int64_t LengthDays() const {
-    return Date::DaysBetween(begin_, end_);
-  }
+  [[nodiscard]] std::int64_t LengthDays() const;
 
   friend auto operator<=>(const DatePeriod&, const DatePeriod&) = default;
 
@@ -56,16 +50,7 @@ class DatePeriod {
 //   from=d,  to empty/invalid -> [d, d+1)        (single day)
 //   from=d0, to=d1 >= d0      -> [d0, d1+1)
 //   from invalid, or to < from -> null period    (unusable input)
-[[nodiscard]] inline DatePeriod PeriodFromInclusiveDates(
-    const Date& begin_date, const Date& last_date) {
-  if (!begin_date.IsValid()) {
-    return {};
-  }
-  const Date effective_last = last_date.IsValid() ? last_date : begin_date;
-  if (effective_last < begin_date) {
-    return {};
-  }
-  return {begin_date, effective_last.AddDays(1)};
-}
+[[nodiscard]] DatePeriod PeriodFromInclusiveDates(const Date& begin_date,
+                                                  const Date& last_date);
 
 #endif  // DATE_PERIOD_HPP

@@ -22,6 +22,7 @@ add_executable(decade_tests
 	infrastructure/graphics/test_pan_zoom_camera.cpp
 	infrastructure/graphics/test_frame_stats.cpp
 	infrastructure/graphics/test_projection.cpp
+	infrastructure/graphics/test_child_pool.cpp
 	infrastructure/graphics/test_scene_graph.cpp
 	application/calendar/test_calendar_layout.cpp
 	application/calendar/test_title_text_editor.cpp
@@ -47,15 +48,14 @@ target_include_directories(decade_tests SYSTEM PRIVATE
 	${CMAKE_SOURCE_DIR}/external/bullet3/src
 )
 
+# Since every header pairs with a translation unit, a test no longer carries the
+# definitions in through the include alone — it links the component library.
+# A static archive hands out the objects a test actually calls, so a domain test
+# still pulls no Qt in.
 target_link_libraries(decade_tests PRIVATE
 	GTest::gtest
 	GTest::gtest_main
-	glm::glm
-	${ICU_LIBRARIES}
-	Boost::serialization
-	Boost::wserialization
-	BulletCollision
-	LinearMath
+	decade_components
 )
 
 # Less strict than the main target — tests trade off some warning hygiene for

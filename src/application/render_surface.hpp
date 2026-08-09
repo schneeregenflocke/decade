@@ -26,6 +26,12 @@ class RenderSurface {
   // Nothing but colours changed (hover, selection): repaint on the geometry
   // that already stands.
   virtual void Repaint() = 0;
+
+  // The adapter is about to build GL objects outside a paint — a state change
+  // arriving over the bus rebuilds the scene, and that allocates buffers and
+  // textures. The surface makes its context current; without it the calls
+  // dispatch into whatever context happens to be current, which is none.
+  virtual void MakeGraphicsCurrent() = 0;
 };
 
 }  // namespace application

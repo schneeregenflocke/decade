@@ -8,8 +8,8 @@ namespace domain::detail {
 // state runs back into `Receive*` of the same store.
 class ScopedReentryFlag {
  public:
-  explicit ScopedReentryFlag(bool& flag) : flag_(flag) { flag_ = true; }
-  ~ScopedReentryFlag() { flag_ = false; }
+  explicit ScopedReentryFlag(bool& flag);
+  ~ScopedReentryFlag();
   ScopedReentryFlag(const ScopedReentryFlag&) = delete;
   ScopedReentryFlag& operator=(const ScopedReentryFlag&) = delete;
   ScopedReentryFlag(ScopedReentryFlag&&) = delete;
