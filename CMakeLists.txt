@@ -4,19 +4,14 @@ project(decade VERSION 0.0.0)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Every header pairs with a translation unit of the same name (AGENTS.md,
-# "Components: a header and its translation unit"). Both get globbed rather than
-# hand-listed, and CONFIGURE_DEPENDS makes CMake re-glob when a file appears —
-# with the sources compiled now, a missing entry breaks the link instead of
-# vanishing from the IDE tree in silence.
-#
-# The components sit in a library so the executable and the test binary share
-# one compilation of them. main.cpp stays outside it: a test binary carries an
-# entry point of its own. Every dependency below hangs on the library as PUBLIC
-# and reaches the executable through the link — one place names each flag.
+# A library, so executable and test binary share one compilation of the
+# components; main.cpp stays out because a test binary brings its own entry
+# point. Dependencies hang on the library PUBLIC and reach the executable.
 add_library(decade_components STATIC)
 add_executable(decade src/application/main.cpp)
 
+# CONFIGURE_DEPENDS re-globs when a file appears: with the sources compiled, a
+# missing entry breaks the link instead of vanishing from the IDE tree in silence.
 file(GLOB_RECURSE decade_headers CONFIGURE_DEPENDS src/*.hpp)
 file(GLOB_RECURSE decade_sources CONFIGURE_DEPENDS src/*.cpp)
 list(REMOVE_ITEM decade_sources ${CMAKE_CURRENT_SOURCE_DIR}/src/application/main.cpp)
@@ -25,11 +20,9 @@ target_sources(decade_components PRIVATE ${decade_sources} ${decade_headers})
 target_compile_features(decade_components PUBLIC cxx_std_26)
 target_link_libraries(decade PRIVATE decade_components)
 
-# Cutting the program into components moved the inlining decision across unit
-# borders, where the compiler alone no longer reaches it — every accessor that
-# used to inline out of a header would turn into a call. LTO hands that decision
-# to the linker. Debug builds stay out: nothing inlines there anyway, and the
-# link time would only lengthen the edit cycle.
+# Components moved the inlining decision across unit borders, out of the
+# compiler's reach; LTO hands it to the linker. Debug stays out — nothing
+# inlines there anyway, and the link time would only lengthen the edit cycle.
 include(CheckIPOSupported)
 check_ipo_supported(RESULT decade_ipo_supported)
 if(decade_ipo_supported)
@@ -38,10 +31,9 @@ if(decade_ipo_supported)
 		INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO ON)
 endif()
 
-# The warning set belongs to the units we compile ourselves, never to whoever
-# links against them: the tests build under a milder set of their own
-# (tests/CMakeLists.txt), and a PUBLIC option would push -Werror onto them
-# through the link. So one list, applied to both of our targets.
+# PRIVATE, never PUBLIC: the set belongs to the units we compile, and through
+# the link it would push -Werror onto the tests, which build under a milder set
+# of their own (tests/CMakeLists.txt).
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 	set(decade_warnings
 		-Wall
@@ -102,34 +94,21 @@ pkg_check_modules(EPOXY REQUIRED epoxy)
 target_include_directories(decade_components SYSTEM PUBLIC ${EPOXY_INCLUDE_DIRS})
 target_link_libraries(decade_components PUBLIC ${EPOXY_LIBRARIES})
 
-# epoxy claims the include guards __gl_h_ and __glext_h_ and refuses to compile
-# once GL/gl.h got there first (epoxy/gl.h:38, an #error). Qt's qopengl.h — which
-# QOpenGLWidget pulls in — includes exactly those, so epoxy has to be first in
-# every translation unit. Source order cannot guarantee that: clang-format sorts
-# <QtOpenGLWidgets/...> ahead of <epoxy/gl.h>, and Google style regroups include
-# blocks. The force-include settles it in one place for the whole target; with
-# the guards taken, Qt's GL headers collapse to nothing and every gl* call
-# resolves through epoxy's dispatch. PRIVATE for the same reason as the warning
-# set: it belongs to the units we compile, not to the test binary that links them.
+# epoxy claims __gl_h_ and __glext_h_ and #errors out if Qt's qopengl.h got
+# there first. Source order cannot settle it — clang-format sorts the includes —
+# so the force-include does, once per target. AGENTS.md, "OpenGL under Qt".
 target_compile_options(decade_components PRIVATE -include epoxy/gl.h)
 target_compile_options(decade PRIVATE -include epoxy/gl.h)
 
-# ICU: Unicode text handling (UTF-8, NFC, grapheme segmentation) in font.hpp plus
-# the date backend. icu-uc = Unicode and common, icu-i18n = BreakIterator and
-# calendar. Not every distribution ships a CMake config, so through pkg-config
-# like epoxy.
+# icu-uc = Unicode and common, icu-i18n = BreakIterator and calendar. Through
+# pkg-config like epoxy, because not every distribution ships a CMake config.
 pkg_check_modules(ICU REQUIRED icu-uc icu-i18n)
 target_include_directories(decade_components SYSTEM PUBLIC ${ICU_INCLUDE_DIRS})
 target_link_libraries(decade_components PUBLIC ${ICU_LIBRARIES})
 
-# Qt: the widget toolkit and the GL surface. PrintSupport carries
-# QPageSetupDialog, the paper-size and margin dialogue behind the page panel.
-#
-# AUTOMOC is on: with a translation unit per header (AGENTS.md, "Components: a
-# header and its translation unit") the unit moc emits costs nothing the design
-# forbids, so a presentation class may carry Q_OBJECT. Reaching for it still wants
-# a reason — the application's own signals run over sigslot, and QObject::connect
-# with a functor subscribes to a Qt widget's signal without any of it.
+# PrintSupport carries QPageSetupDialog, the dialogue behind the page panel.
+# AUTOMOC is on, so a presentation class may carry Q_OBJECT — which still wants
+# a reason of its own; AGENTS.md, "Components: a header and its translation unit".
 find_package(Qt6 REQUIRED COMPONENTS Widgets OpenGLWidgets PrintSupport)
 set_target_properties(decade decade_components PROPERTIES AUTOMOC ON)
 target_link_libraries(decade_components PUBLIC
@@ -210,10 +189,9 @@ endif()
 # Deliberately no part of the standard build, so normal compiles stay fast; call
 # them explicitly or in CI. The commands sit in operations.md.
 
-# clang-tidy parses with clang's frontend, so it needs a clang
-# compile_commands.json — a GCC one carries -mno-direct-extern-access out of
-# Qt6::Platform, which clang rejects as an unknown argument before any check
-# runs. Hence the gate exists in a clang tree alone; operations.md configures one.
+# clang-tidy parses with clang's frontend and dies on a GCC database, where
+# Qt6::Platform leaves -mno-direct-extern-access behind. So the gate exists in a
+# clang tree alone — operations.md configures one.
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 	# The positional argument is a regex against the database paths: the source
 	# prefix keeps the external/ submodules and the generated moc unit out.
@@ -227,24 +205,9 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 		VERBATIM USES_TERMINAL)
 endif()
 
-# Sanitizers demand other compile flags than the normal build, so every gate
-# configures a build folder of its own, rebuilds everything in it and runs the
-# test suite — a run finds errors, a build alone does not. Should a sanitizer
-# fire, the process ends non-zero and ctest breaks off. The flags sit in
-# CMAKE_CXX_FLAGS, so they hit every target in the folder, Bullet included.
-# UBSan would otherwise merely report and carry on — without
-# -fno-sanitize-recover the gate would stay green; -fno-omit-frame-pointer saves
-# the stack traces.
-# https://gcc.gnu.org/onlinedocs/gcc-9.2.0/gcc/Instrumentation-Options.html
-# LeakSanitizer already sits inside AddressSanitizer on Linux; named here anyway.
-# _GLIBCXX_ASSERTIONS is no sanitizer but closes a hole they leave: reading
-# past the size of a container that still has capacity stays inside the
-# allocation, so AddressSanitizer sees nothing (v.front() on an empty vector
-# after reserve() returns garbage and runs on).
-# float-cast-overflow stands beside `undefined` because GCC does not fold it
-# in: a float too large for the integer it gets cast to is undefined, and
-# without this flag the gate reads that cast as sound (verified against GCC 16
-# on 2026-08-06). That is the shape of #28.
+# A folder of its own, because sanitizers demand other flags, and a test run
+# rather than a build, because a run is what finds errors. CMAKE_CXX_FLAGS to
+# reach every target in it, Bullet included. Why each flag: operations.md.
 add_custom_target(sanitize-address
 	COMMAND ${CMAKE_COMMAND} -S ${CMAKE_SOURCE_DIR} -B ${CMAKE_BINARY_DIR}/san-address -G ${CMAKE_GENERATOR}
 		-DCMAKE_BUILD_TYPE=RelWithDebInfo
@@ -255,9 +218,8 @@ add_custom_target(sanitize-address
 	COMMENT "Sanitizer gate: address, leak, undefined, float checks, container assertions"
 	VERBATIM USES_TERMINAL)
 
-# MemorySanitizer excludes AddressSanitizer — the compiler rejects the
-# combination — and clang alone knows it, so it lives in the clang tree beside
-# clang-tidy. A diagnostic tool, no gate: it demands every dependency
+# MemorySanitizer excludes AddressSanitizer and clang alone knows it, so it sits
+# in the clang tree. A diagnostic tool, no gate: it wants every dependency
 # instrumented, and the system libstdc++ and gtest are not (#51).
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 	add_custom_target(sanitize-memory
