@@ -4,21 +4,12 @@ project(decade VERSION 0.0.0)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# The entry point sits outside src/, so the glob that feeds both binaries never
-# picks it up — the test binary takes its main from gtest_main.
 file(GLOB_RECURSE decade_headers CONFIGURE_DEPENDS src/*.hpp)
 file(GLOB_RECURSE decade_sources CONFIGURE_DEPENDS src/*.cpp)
 
-add_executable(decade app/main.cpp ${decade_sources} ${decade_headers})
+add_executable(decade ${decade_sources} ${decade_headers})
 
 # --- Dependencies -------------------------------------------------------------
-# INTERFACE, so both binaries inherit this instead of repeating it: the target
-# compiles nothing and writes no archive. SYSTEM keeps foreign warnings and
-# clang-tidy findings from breaking the -Werror gate.
-
-add_library(decade_dependencies INTERFACE)
-target_compile_features(decade_dependencies INTERFACE cxx_std_26)
-target_include_directories(decade_dependencies INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # CONFIG only where the find module is in the way: CMake drops FindBoost from
 # 3.30 on (CMP0167), because upstream ships BoostConfig.cmake. Everywhere else
@@ -41,32 +32,6 @@ pkg_check_modules(EPOXY REQUIRED epoxy)
 # pkg-config like epoxy, because not every distribution ships a CMake config.
 pkg_check_modules(ICU REQUIRED icu-uc icu-i18n)
 
-target_link_libraries(decade_dependencies INTERFACE
-	Boost::serialization
-	Boost::wserialization
-	Qt6::Widgets
-	Qt6::OpenGLWidgets
-	Qt6::PrintSupport
-	ZLIB::ZLIB
-	PNG::PNG
-	Fontconfig::Fontconfig
-	Freetype::Freetype
-	glm::glm
-	Microsoft.GSL::GSL
-	${EPOXY_LIBRARIES}
-	${ICU_LIBRARIES}
-)
-target_include_directories(decade_dependencies SYSTEM INTERFACE
-	${EPOXY_INCLUDE_DIRS}
-	${ICU_INCLUDE_DIRS}
-)
-target_compile_definitions(decade_dependencies INTERFACE GLM_ENABLE_EXPERIMENTAL)
-
-# epoxy #errors out if Qt's qopengl.h claimed __gl_h_ first, and source order
-# cannot settle it because clang-format sorts the includes. AGENTS.md, "OpenGL
-# under Qt".
-target_compile_options(decade_dependencies INTERFACE -include epoxy/gl.h)
-
 # --- Submodules out of external/ ----------------------------------------------
 
 function(decade_require_submodule name probe_file)
@@ -79,13 +44,6 @@ decade_require_submodule(csv2 include/csv2/reader.hpp)
 decade_require_submodule(sigslot include/sigslot/signal.hpp)
 decade_require_submodule(tinycolormap include/tinycolormap.hpp)
 decade_require_submodule(bullet3 src/btBulletCollisionCommon.h)
-
-target_include_directories(decade_dependencies SYSTEM INTERFACE
-	${CMAKE_CURRENT_SOURCE_DIR}/external/csv2/include
-	${CMAKE_CURRENT_SOURCE_DIR}/external/tinycolormap/include
-	${CMAKE_CURRENT_SOURCE_DIR}/external/sigslot/include
-	${CMAKE_CURRENT_SOURCE_DIR}/external/bullet3/src
-)
 
 # Bullet from source, everything superfluous off. Picking needs the Bullet 2
 # collision world alone (BulletCollision plus LinearMath); EXCLUDE_FROM_ALL keeps
@@ -106,16 +64,51 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 add_subdirectory(external/bullet3 EXCLUDE_FROM_ALL)
 set_target_properties(BulletCollision LinearMath PROPERTIES SYSTEM TRUE)
-target_link_libraries(decade_dependencies INTERFACE BulletCollision LinearMath)
 
 # Resources travel through #embed (src/common/embedded_resources.hpp): the
 # preprocessor reads the files, so there is no generator target and no submodule.
 
-target_link_libraries(decade PRIVATE decade_dependencies)
+# --- The executable -----------------------------------------------------------
+
+target_compile_features(decade PRIVATE cxx_std_26)
 set_target_properties(decade PROPERTIES AUTOMOC ON)
 
-# PRIVATE, never on decade_dependencies: through the interface these would push
-# -Werror onto the tests, which build under a milder set of their own.
+target_include_directories(decade PRIVATE src)
+# SYSTEM keeps foreign warnings and clang-tidy findings out of the -Werror gate.
+target_include_directories(decade SYSTEM PRIVATE
+	${EPOXY_INCLUDE_DIRS}
+	${ICU_INCLUDE_DIRS}
+	external/csv2/include
+	external/tinycolormap/include
+	external/sigslot/include
+	external/bullet3/src
+)
+
+target_link_libraries(decade PRIVATE
+	Boost::serialization
+	Boost::wserialization
+	Qt6::Widgets
+	Qt6::OpenGLWidgets
+	Qt6::PrintSupport
+	ZLIB::ZLIB
+	PNG::PNG
+	Fontconfig::Fontconfig
+	Freetype::Freetype
+	glm::glm
+	Microsoft.GSL::GSL
+	BulletCollision
+	LinearMath
+	${EPOXY_LIBRARIES}
+	${ICU_LIBRARIES}
+)
+
+target_compile_definitions(decade PRIVATE GLM_ENABLE_EXPERIMENTAL)
+
+# epoxy #errors out if Qt's qopengl.h claimed __gl_h_ first, and source order
+# cannot settle it because clang-format sorts the includes. AGENTS.md, "OpenGL
+# under Qt".
+target_compile_options(decade PRIVATE -include epoxy/gl.h)
+
 target_compile_options(decade PRIVATE
 	-Wall
 	-Wextra
@@ -159,9 +152,9 @@ endif()
 # Deliberately no part of the standard build, so normal compiles stay fast; call
 # them explicitly or in CI. The commands sit in operations.md.
 
-# Both compilers: the sanitizers instrument with whoever configured the tree. A
-# folder of its own, because the flags differ from the build, and a test run
-# rather than a build, because a run is what finds errors. Flags: operations.md.
+# A folder of its own, because the sanitizer flags differ from the build, and a
+# test run rather than a build, because a run is what finds errors. Why each
+# flag: operations.md.
 add_custom_target(sanitize-address
 	COMMAND ${CMAKE_COMMAND} -S ${CMAKE_SOURCE_DIR} -B ${CMAKE_BINARY_DIR}/san-address -G ${CMAKE_GENERATOR}
 		-DCMAKE_BUILD_TYPE=RelWithDebInfo
@@ -192,9 +185,8 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 	)
 
 	# Clang 22 grades #embed as an extension, which -Werror ends the build on;
-	# GCC compiles the same line as standard. On the interface, because the
-	# tests compile that header too. Drop it when Clang catches up.
-	target_compile_options(decade_dependencies INTERFACE -Wno-c23-extensions)
+	# GCC compiles the same line as standard. Drop it when Clang catches up.
+	target_compile_options(decade PRIVATE -Wno-c23-extensions)
 
 	# clang-tidy parses with clang's frontend and dies on a GCC database, where
 	# Qt6::Platform leaves -mno-direct-extern-access behind. The positional
