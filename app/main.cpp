@@ -1,7 +1,7 @@
 #include <exception>
 #include <iostream>
 
-#include "decade_app.hpp"
+#include "application/decade_app.hpp"
 
 // The last net: everything below reports its own failures, but a constructor on
 // the way up (the ICU backend, for one) can still throw. An exception leaving

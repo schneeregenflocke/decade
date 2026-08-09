@@ -4,28 +4,17 @@ project(decade VERSION 0.0.0)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# One compiler per build directory: configure build/ with GCC or with clang, and
-# the targets belonging to that compiler appear. Everything below that differs
-# between them stands under DECADE_GCC or DECADE_CLANG — what holds for both
-# carries no guard at all.
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-	set(DECADE_GCC ON)
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-	set(DECADE_CLANG ON)
-endif()
-
-# CONFIGURE_DEPENDS re-globs when a file appears: with the sources compiled, a
-# missing entry breaks the link instead of vanishing from the IDE tree in silence.
+# The entry point sits outside src/, so the glob that feeds both binaries never
+# picks it up — the test binary takes its main from gtest_main.
 file(GLOB_RECURSE decade_headers CONFIGURE_DEPENDS src/*.hpp)
 file(GLOB_RECURSE decade_sources CONFIGURE_DEPENDS src/*.cpp)
 
-add_executable(decade ${decade_sources} ${decade_headers})
+add_executable(decade app/main.cpp ${decade_sources} ${decade_headers})
 
 # --- Dependencies -------------------------------------------------------------
-# An INTERFACE target compiles nothing and produces no archive; it carries what
-# both binaries need in order to compile our sources, so the test binary
-# inherits that instead of repeating it. Foreign headers arrive SYSTEM, so their
-# warnings and clang-tidy findings cannot break the -Werror gate.
+# INTERFACE, so both binaries inherit this instead of repeating it: the target
+# compiles nothing and writes no archive. SYSTEM keeps foreign warnings and
+# clang-tidy findings from breaking the -Werror gate.
 
 add_library(decade_dependencies INTERFACE)
 target_compile_features(decade_dependencies INTERFACE cxx_std_26)
@@ -43,12 +32,10 @@ find_package(glm REQUIRED)
 find_package(Microsoft.GSL REQUIRED)
 
 # PrintSupport carries QPageSetupDialog, the dialogue behind the page panel.
-# AUTOMOC is on, so a presentation class may carry Q_OBJECT — which still wants
-# a reason of its own; AGENTS.md, "Components: a header and its translation unit".
 find_package(Qt6 REQUIRED COMPONENTS Widgets OpenGLWidgets PrintSupport)
 
 find_package(PkgConfig REQUIRED)
-# GL pulls libepoxy in itself at runtime; there is nothing to link.
+# epoxy loads GL itself at runtime, so no OpenGL library gets found or linked.
 pkg_check_modules(EPOXY REQUIRED epoxy)
 # icu-uc = Unicode and common, icu-i18n = BreakIterator and calendar. Through
 # pkg-config like epoxy, because not every distribution ships a CMake config.
@@ -75,10 +62,9 @@ target_include_directories(decade_dependencies SYSTEM INTERFACE
 )
 target_compile_definitions(decade_dependencies INTERFACE GLM_ENABLE_EXPERIMENTAL)
 
-# epoxy claims __gl_h_ and __glext_h_ and #errors out if Qt's qopengl.h got
-# there first. Source order cannot settle it — clang-format sorts the includes —
-# so the force-include does, for everyone compiling our sources. AGENTS.md,
-# "OpenGL under Qt".
+# epoxy #errors out if Qt's qopengl.h claimed __gl_h_ first, and source order
+# cannot settle it because clang-format sorts the includes. AGENTS.md, "OpenGL
+# under Qt".
 target_compile_options(decade_dependencies INTERFACE -include epoxy/gl.h)
 
 # --- Submodules out of external/ ----------------------------------------------
@@ -125,13 +111,12 @@ target_link_libraries(decade_dependencies INTERFACE BulletCollision LinearMath)
 # Resources travel through #embed (src/common/embedded_resources.hpp): the
 # preprocessor reads the files, so there is no generator target and no submodule.
 
-# --- Warnings -----------------------------------------------------------------
-# PRIVATE on the target, never on decade_dependencies: through the interface it
-# would push -Werror onto the tests, which build under a milder set of their own
-# (tests/CMakeLists.txt).
+target_link_libraries(decade PRIVATE decade_dependencies)
+set_target_properties(decade PROPERTIES AUTOMOC ON)
 
-# Both compilers
-set(decade_warnings
+# PRIVATE, never on decade_dependencies: through the interface these would push
+# -Werror onto the tests, which build under a milder set of their own.
+target_compile_options(decade PRIVATE
 	-Wall
 	-Wextra
 	-Wpedantic
@@ -153,33 +138,9 @@ set(decade_warnings
 	-Werror
 )
 
-if(DECADE_GCC)
-	list(APPEND decade_warnings
-		-Wlogical-op
-		-Wduplicated-cond
-		-Wduplicated-branches
-		-Wuseless-cast
-	)
-endif()
-
-if(DECADE_CLANG)
-	list(APPEND decade_warnings
-		-Wunreachable-code
-		-Wextra-semi
-	)
-	# Clang 22 has not implemented #embed as the C++26 feature it is and grades
-	# it as an extension, which -Werror ends on; GCC compiles the same line as
-	# standard. On the interface, because the tests compile that header too.
-	target_compile_options(decade_dependencies INTERFACE -Wno-c23-extensions)
-endif()
-
-target_link_libraries(decade PRIVATE decade_dependencies)
-target_compile_options(decade PRIVATE ${decade_warnings})
-set_target_properties(decade PROPERTIES AUTOMOC ON)
-
-# Components moved the inlining decision across unit borders, out of the
-# compiler's reach; LTO hands it to the linker. Debug stays out — nothing
-# inlines there anyway, and the link time would only lengthen the edit cycle.
+# Cutting the program into components moved the inlining decision across unit
+# borders, out of the compiler's reach; LTO hands it to the linker. Debug stays
+# out — nothing inlines there, and linking would only lengthen the edit cycle.
 include(CheckIPOSupported)
 check_ipo_supported(RESULT decade_ipo_supported)
 if(decade_ipo_supported)
@@ -211,7 +172,30 @@ add_custom_target(sanitize-address
 	COMMENT "Sanitizer gate: address, leak, undefined, float checks, container assertions"
 	VERBATIM USES_TERMINAL)
 
-if(DECADE_CLANG)
+# --- GCC ----------------------------------------------------------------------
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+	target_compile_options(decade PRIVATE
+		-Wlogical-op
+		-Wduplicated-cond
+		-Wduplicated-branches
+		-Wuseless-cast
+	)
+endif()
+
+# --- Clang --------------------------------------------------------------------
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	target_compile_options(decade PRIVATE
+		-Wunreachable-code
+		-Wextra-semi
+	)
+
+	# Clang 22 grades #embed as an extension, which -Werror ends the build on;
+	# GCC compiles the same line as standard. On the interface, because the
+	# tests compile that header too. Drop it when Clang catches up.
+	target_compile_options(decade_dependencies INTERFACE -Wno-c23-extensions)
+
 	# clang-tidy parses with clang's frontend and dies on a GCC database, where
 	# Qt6::Platform leaves -mno-direct-extern-access behind. The positional
 	# argument is a regex: the source prefix keeps external/ and the moc unit out.

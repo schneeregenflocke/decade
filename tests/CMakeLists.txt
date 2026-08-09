@@ -1,12 +1,7 @@
 find_package(GTest REQUIRED)
 
-# The test binary compiles the same units as the executable, minus its entry
-# point — gtest_main brings its own main.
-set(decade_test_units ${decade_sources})
-list(FILTER decade_test_units EXCLUDE REGEX "/main\\.cpp$")
-
 add_executable(decade_tests
-	${decade_test_units}
+	${decade_sources}
 	domain/test_date.cpp
 	domain/test_date_period.cpp
 	domain/test_date_format.cpp
