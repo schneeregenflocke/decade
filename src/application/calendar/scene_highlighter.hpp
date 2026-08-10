@@ -2,13 +2,10 @@
 #define SCENE_HIGHLIGHTER_HPP
 
 #include <cstddef>
-#include <glm/mat4x4.hpp>
-#include <glm/vec4.hpp>
 #include <memory>
 #include <optional>
 #include <string>
 #include <unordered_map>
-#include <vector>
 
 #include "../../domain/shape_configuration.hpp"
 #include "../../infrastructure/graphics/pick_id.hpp"
@@ -35,138 +32,41 @@ class SceneHighlighter {
  public:
   SceneHighlighter(const Scene& scene, const ShapeNode<FillShape>& overlay_node,
                    const ShapeNode<BoxesShape>& title_area_node,
-                   const ShapeConfigSet& shape_config)
-      : scene_(scene),
-        overlay_node_(overlay_node),
-        title_area_node_(title_area_node),
-        shape_config_(shape_config) {}
+                   const ShapeConfigSet& shape_config);
 
   // Adopts the bar nodes from the latest rebuild and re-applies the persisted
   // hover and selection highlights to the fresh geometry.
   void Refresh(
-      std::unordered_map<std::size_t, std::shared_ptr<SceneNode>> bar_nodes) {
-    bar_nodes_ = std::move(bar_nodes);
-    if (hovered_.has_value()) {
-      ApplyHover(*hovered_, /*highlighted=*/true);
-    }
-    ApplySelectionOverlay();
-  }
+      std::unordered_map<std::size_t, std::shared_ptr<SceneNode>> bar_nodes);
 
   // Highlights the hovered element (and restores the previously hovered one) by
   // recolouring its shape in place — no scene rebuild. A null value clears it.
-  void SetHovered(const std::optional<PickId>& hovered) {
-    if (hovered == hovered_) {
-      return;
-    }
-    if (hovered_.has_value()) {
-      ApplyHover(*hovered_, /*highlighted=*/false);
-    }
-    hovered_ = hovered;
-    if (hovered_.has_value()) {
-      ApplyHover(*hovered_, /*highlighted=*/true);
-    }
-  }
+  void SetHovered(const std::optional<PickId>& hovered);
 
   // The scene node a hit element means — empty when its index points into the
   // void after a rebuild. The highlighter keeps the nodes anyway, so nobody has
   // to hold them a second time.
-  [[nodiscard]] std::shared_ptr<SceneNode> NodeFor(const PickId& picked) const {
-    switch (picked.kind) {
-      case PickId::Kind::kBar: {
-        const auto iterator = bar_nodes_.find(picked.index);
-        return iterator == bar_nodes_.end() ? nullptr : iterator->second;
-      }
-      case PickId::Kind::kTitle:
-        return title_area_node_.Node();
-    }
-    return nullptr;
-  }
+  [[nodiscard]] std::shared_ptr<SceneNode> NodeFor(const PickId& picked) const;
 
   // Highlights the scene node identified by `path` (and its subtree) with a
   // translucent overlay — no rebuild. A null/unknown path clears the overlay.
-  void SetSelectedNode(const std::optional<std::string>& path) {
-    selected_path_ = path;
-    ApplySelectionOverlay();
-  }
+  void SetSelectedNode(const std::optional<std::string>& path);
 
  private:
   // Positions the selection overlay over the currently selected node's world
   // bounds, or hides it (zero-area quad) when there is no resolvable selection.
-  void ApplySelectionOverlay() {
-    FillShape& shape = overlay_node_.Shape();
-    std::optional<RectF> bounds;
-    if (selected_path_.has_value()) {
-      bounds = NodeWorldBounds(*selected_path_);
-    }
-    if (bounds.has_value()) {
-      shape.SetShape(*bounds);
-      shape.SetColor(glm::vec4(kSelectionRed, kSelectionGreen, kSelectionBlue,
-                               kSelectionAlpha));
-    } else {
-      shape.SetShape(RectF(kZero, kZero, kZero, kZero));
-    }
-  }
+  void ApplySelectionOverlay();
 
   // Resolves a "root/.../name" path to the world-space bounds of that node's
   // subtree (page space, matching the bars' pick boxes). Returns nullopt when
   // any path segment does not resolve or the subtree carries no geometry.
   [[nodiscard]] std::optional<RectF> NodeWorldBounds(
-      const std::string& path) const {
-    std::vector<std::string> segments;
-    std::size_t start = 0;
-    while (start <= path.size()) {
-      const std::size_t slash = path.find('/', start);
-      const std::size_t end =
-          (slash == std::string::npos) ? path.size() : slash;
-      segments.push_back(path.substr(start, end - start));
-      if (slash == std::string::npos) {
-        break;
-      }
-      start = slash + 1;
-    }
-    if (segments.empty() || scene_.Root().GetNodeName() != segments.front()) {
-      return std::nullopt;
-    }
-
-    const SceneNode* node = &scene_.Root();
-    glm::mat4 parent_world(1.0F);
-    for (std::size_t index = 1; index < segments.size(); ++index) {
-      parent_world = parent_world * node->GetModelMatrix();
-      const SceneNode* next = nullptr;
-      for (const auto& child : node->GetChildren()) {
-        if (child->GetNodeName() == segments[index]) {
-          next = child.get();
-          break;
-        }
-      }
-      if (next == nullptr) {
-        return std::nullopt;
-      }
-      node = next;
-    }
-    return node->WorldBounds(parent_world);
-  }
+      const std::string& path) const;
 
   // Recolours the hovered element's outline: highlighted gets the hover accent,
   // otherwise the colours of the configuration its style id points at. Fill is
   // left as configured so the hover reads as an outline accent.
-  void ApplyHover(const PickId& picked, bool highlighted) {
-    const auto node = NodeFor(picked);
-    if (!node) {
-      return;
-    }
-    // A bar node comes out of the map by index, so its type is not settled by a
-    // handle here — but the drawable says what it is, which needs no RTTI.
-    Drawable* drawable = node->GetShape();
-    if (drawable == nullptr || drawable->Kind() != DrawableKind::kBoxes) {
-      return;
-    }
-    auto& shape = static_cast<BoxesShape&>(*drawable);
-    const auto config = shape_config_.GetShapeConfiguration(node->GetStyleId());
-    const glm::vec4 hover_outline(kOne, kHoverOutlineGreen, kZero, kOne);
-    shape.SetColors(highlighted ? hover_outline : config.OutlineColor(),
-                    config.FillColor());
-  }
+  void ApplyHover(const PickId& picked, bool highlighted);
 
   static constexpr float kZero = 0.0F;
   static constexpr float kOne = 1.0F;

@@ -33,22 +33,12 @@ struct TextInputEvent {
 
   // Named factories instead of field-by-field initialisation: they say what is
   // meant and leave the uninvolved fields at their default.
-  [[nodiscard]] static TextInputEvent Insert(std::string text) {
-    return {.kind = Kind::kInsert, .text = std::move(text)};
-  }
+  [[nodiscard]] static TextInputEvent Insert(std::string text);
 
-  [[nodiscard]] static TextInputEvent Move(
-      TextEditBuffer::Direction direction,
-      TextEditBuffer::Selection selection) {
-    TextInputEvent event{.kind = Kind::kMove, .text = {}};
-    event.direction = direction;
-    event.selection = selection;
-    return event;
-  }
+  [[nodiscard]] static TextInputEvent Move(TextEditBuffer::Direction direction,
+                                           TextEditBuffer::Selection selection);
 
-  [[nodiscard]] static TextInputEvent Command(Kind kind) {
-    return {.kind = kind, .text = {}};
-  }
+  [[nodiscard]] static TextInputEvent Command(Kind kind);
 };
 
 #endif  // TEXT_INPUT_EVENT_HPP

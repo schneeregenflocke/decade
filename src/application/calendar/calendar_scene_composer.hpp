@@ -50,138 +50,40 @@ class CalendarSceneComposer {
                         CalendarConfig& calendar_config_in,
                         const ShapeConfigSet& shape_config_in,
                         const DateGroups& date_groups_in,
-                        const DateEntryBars& date_entry_bars_in)
-      : scene_(scene_in),
-        graphics_engine_(graphics_engine_in),
-        rectangles_shader_(
-            RequireShader(graphics_engine_in, "Rectangles Shader")),
-        font_shader_(RequireShader(graphics_engine_in, "Font Shader")),
-        font_(font_in),
-        font_config_(font_config_in),
-        page_size_(page_size_in),
-        page_margin_(page_margin_in),
-        title_config_(title_config_in),
-        calendar_config_(calendar_config_in),
-        shape_config_(shape_config_in),
-        date_groups_(date_groups_in),
-        date_entry_bars_(date_entry_bars_in) {
-    graphics_engine_.SetScene(scene_);
-    Shader& simple_shader = RequireShader(graphics_engine_, "Simple Shader");
+                        const DateEntryBars& date_entry_bars_in);
 
-    // The fixed scene skeleton (named nodes, their painter layers and parent
-    // attachments) is built once here; the handles drive the section builders.
-    nodes_ = BuildCalendarSceneNodes(scene_, simple_shader, rectangles_shader_,
-                                     font_shader_, font_);
-  }
-
-  void Build() {
-    FillShape& page_shape = nodes_.page.Shape();
-    page_shape.SetShape(page_size_);
-    page_shape.SetColor(glm::vec4(kOne, kOne, kOne, kOne));
-
-    // The auto span derives the calendar's year range from the data; it must
-    // run before the layout, which sizes the rows from the span length.
-    if (calendar_config_.IsAutoCalendarSpan() && !date_entry_bars_.is_empty()) {
-      calendar_config_.SetSpan(
-          CalendarSpan::YearSpan{.first_year = date_entry_bars_.GetFirstYear(),
-                                 .last_year = date_entry_bars_.GetLastYear()});
-    }
-
-    layout_ =
-        CalendarLayout(page_size_, page_margin_, title_config_.AreaHeight(),
-                       calendar_config_.GetSpanLengthYears(),
-                       calendar_config_.GetSpacingProportions());
-
-    // The print-area node carries the print area's offset within the page;
-    // every descendant is computed in print-area-local coordinates (origin at
-    // the print area's bottom-left). The page rectangle itself stays in
-    // absolute page space on the untransformed page node above.
-    nodes_.print_area.Node()->SetModelMatrix(
-        glm::translate(glm::mat4(1.0F), layout_.PrintAreaOrigin()));
-
-    const calendar_sections::SectionContext ctx = MakeContext();
-    calendar_sections::BuildPrintArea(ctx);
-    pick_boxes_.clear();
-    pick_boxes_.push_back(calendar_sections::BuildTitle(ctx));
-    calendar_sections::BuildCalendarLabels(ctx);
-    calendar_sections::BuildDays(ctx);
-    calendar_sections::BuildMonths(ctx);
-    calendar_sections::BuildYears(ctx);
-    calendar_sections::BarSceneResult bars = calendar_sections::BuildBars(ctx);
-    pick_boxes_.insert(pick_boxes_.end(), bars.pick_boxes.begin(),
-                       bars.pick_boxes.end());
-    calendar_sections::BuildYearTotals(ctx);
-    calendar_sections::BuildLegend(ctx);
-
-    // Hand the fresh bar nodes to the highlighter, which re-applies the
-    // persisted hover and selection highlights to the new geometry.
-    highlighter_.Refresh(std::move(bars.bar_nodes));
-  }
+  void Build();
 
   // Bundles the references the section builders need into a context, built
   // fresh per Build() (never stored).
-  [[nodiscard]] calendar_sections::SectionContext MakeContext() const {
-    return calendar_sections::SectionContext{
-        .nodes = nodes_,
-        .layout = layout_,
-        .shape_config = shape_config_,
-        .calendar_config = calendar_config_,
-        .title_config = title_config_,
-        .date_groups = date_groups_,
-        .date_entry_bars = date_entry_bars_,
-        .text_edit = text_edit_,
-        .font = font_,
-        .font_config = font_config_,
-        .rectangles_shader = rectangles_shader_,
-        .font_shader = font_shader_};
-  }
+  [[nodiscard]] calendar_sections::SectionContext MakeContext() const;
 
   // Plain, GL-free mirror of the current scene-graph hierarchy for the
   // presentation layer (the scene-tree widget). Rebuilt on demand from the
   // live graph after Build().
-  [[nodiscard]] SceneNodeSnapshot SceneSnapshot() const {
-    return BuildSceneSnapshot(scene_.Root());
-  }
+  [[nodiscard]] SceneNodeSnapshot SceneSnapshot() const;
 
   // Page-space rectangles of the pickable elements (title, bars), produced by
   // the last Build(). Handed to the picking layer; Bullet-free.
-  [[nodiscard]] const std::vector<PickBox>& PickBoxes() const {
-    return pick_boxes_;
-  }
+  [[nodiscard]] const std::vector<PickBox>& PickBoxes() const;
 
   // Hover and scene-tree selection highlighting are delegated to the
   // SceneHighlighter; the builder just forwards.
-  void SetHovered(const std::optional<PickId>& hovered) {
-    highlighter_.SetHovered(hovered);
-  }
+  void SetHovered(const std::optional<PickId>& hovered);
 
-  void SetSelectedNode(const std::optional<std::string>& path) {
-    highlighter_.SetSelectedNode(path);
-  }
+  void SetSelectedNode(const std::optional<std::string>& path);
 
   // The state of the running text edit; the next Build() draws text, cursor and
   // selection out of it.
-  void SetTextEdit(const std::optional<TextEditView>& text_edit) {
-    text_edit_ = text_edit;
-  }
+  void SetTextEdit(const std::optional<TextEditView>& text_edit);
 
   // The path "root/.../name" of the node a hit element means — the notion of
   // selection the scene tree uses too.
   [[nodiscard]] std::optional<std::string> NodePathFor(
-      const PickId& picked) const {
-    const auto node = highlighter_.NodeFor(picked);
-    if (!node) {
-      return std::nullopt;
-    }
-    return FindNodePath(scene_.Root(), *node);
-  }
+      const PickId& picked) const;
 
   // The cursor index a click in page space means within the title line.
-  [[nodiscard]] std::size_t TitleCaretIndexAt(glm::vec2 page_point) const {
-    const calendar_sections::SectionContext ctx = MakeContext();
-    return calendar_sections::title_edit::CaretIndexAt(
-        ctx, calendar_sections::title_edit::Layout(ctx), page_point);
-  }
+  [[nodiscard]] std::size_t TitleCaretIndexAt(glm::vec2 page_point) const;
 
  private:
   static constexpr float kOne = 1.0F;
@@ -202,13 +104,7 @@ class CalendarSceneComposer {
   // and throwing lets AppComposition report and close down the same path it
   // already uses when the GL context fails to come up ([#53]).
   [[nodiscard]] static Shader& RequireShader(GraphicsEngine& graphics_engine,
-                                             const std::string& name) {
-    const auto found = graphics_engine.SearchShader(name);
-    if (!found.has_value()) {
-      throw std::runtime_error("shader not found: " + name);
-    }
-    return found->get();
-  }
+                                             const std::string& name);
 
   Shader& rectangles_shader_;
   Shader& font_shader_;

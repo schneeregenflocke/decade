@@ -40,132 +40,57 @@ class CalendarPage {
   CalendarPage(GraphicsEngine& graphics_engine,
                application::RenderSurface& render_surface,
                const FontConfig& font_config,
-               domain::StateTopic<SceneNodeSnapshot>& snapshot_topic)
-      : render_surface_(render_surface),
-        snapshot_topic_(snapshot_topic),
-        font_config_(font_config),
-        font_(std::make_shared<Font>(font_config.FilePath())),
-        scene_composer_(graphics_engine, scene_, font_, font_config_,
-                        page_size_, page_margin_, title_config_,
-                        calendar_config_, shape_config_, date_groups_,
-                        date_entry_bars_) {}
+               domain::StateTopic<SceneNodeSnapshot>& snapshot_topic);
 
-  void ReceiveDateGroups(const std::vector<DateGroup>& date_groups_in) {
-    date_groups_.Assign(date_groups_in);
-    date_entry_bars_.ReceiveDateGroups(date_groups_in);
-    Update();
-  }
+  void ReceiveDateGroups(const std::vector<DateGroup>& date_groups_in);
 
-  void ReceiveDateEntries(const std::vector<DateEntry>& date_entries) {
-    date_entry_bars_.ReceiveDateEntries(date_entries);
-    Update();
-  }
+  void ReceiveDateEntries(const std::vector<DateEntry>& date_entries);
 
-  void ReceivePageSetup(const PageSetupConfig& page_setup_config) {
-    page_size_ = PageRect(page_setup_config);
-    page_margin_ = PageMarginRect(page_setup_config);
-    Update();
-  }
+  void ReceivePageSetup(const PageSetupConfig& page_setup_config);
 
   // Reloading the font file pays off only when it changes; the size takes hold
   // without a reload, because Font rasters em-normalised.
-  void ReceiveFont(const FontConfig& font_config) {
-    if (font_config.FilePath() != font_config_.FilePath()) {
-      // A font is GL: it rasters its glyphs into a texture.
-      render_surface_.MakeGraphicsCurrent();
-      font_ = std::make_shared<Font>(font_config.FilePath());
-    }
-    font_config_ = font_config;
-    Update();
-  }
+  void ReceiveFont(const FontConfig& font_config);
 
-  void ReceiveTitleConfig(const TitleConfig& incoming_title_config) {
-    title_config_ = incoming_title_config;
-    Update();
-  }
+  void ReceiveTitleConfig(const TitleConfig& incoming_title_config);
 
-  void ReceiveCalendarConfig(const CalendarConfig& incoming_calendar_config) {
-    calendar_config_ = incoming_calendar_config;
-    Update();
-  }
+  void ReceiveCalendarConfig(const CalendarConfig& incoming_calendar_config);
 
-  void ReceiveShapeConfigSet(const ShapeConfigSet& incoming_shape_config_set) {
-    shape_config_ = incoming_shape_config_set;
-    Update();
-  }
+  void ReceiveShapeConfigSet(const ShapeConfigSet& incoming_shape_config_set);
 
   // A burst of changes gets one rebuild, not one per change: while the bracket
   // stands the work is only noted, and the closing half does it once (#36).
-  void ReceiveStateBurst(bool open) {
-    if (open) {
-      ++open_bursts_;
-      return;
-    }
-    if (open_bursts_ > 0) {
-      --open_bursts_;
-    }
-    if (open_bursts_ == 0 && pending_update_) {
-      pending_update_ = false;
-      Rebuild();
-    }
-  }
+  void ReceiveStateBurst(bool open);
 
-  void Update() {
-    if (open_bursts_ > 0) {
-      pending_update_ = true;
-      return;
-    }
-    Rebuild();
-  }
+  void Update();
 
   // Hit-tests a page-space point against the pickable elements, returning the
   // element's PickId.
-  [[nodiscard]] std::optional<PickId> Pick(glm::vec2 page_point) const {
-    return physics_world_.Raycast(page_point);
-  }
+  [[nodiscard]] std::optional<PickId> Pick(glm::vec2 page_point) const;
 
   // Highlights the hovered element in place (no rebuild) and repaints. Only
   // colours change, so the cheap Repaint suffices — no projection refresh.
-  void ReceiveHovered(const std::optional<PickId>& hovered) {
-    scene_composer_.SetHovered(hovered);
-    render_surface_.Repaint();
-  }
+  void ReceiveHovered(const std::optional<PickId>& hovered);
 
   // Highlights the scene-tree-selected node (and its subtree) in place and
   // repaints. The path identifies the node within the scene graph.
-  void ReceiveSelectedNode(const std::optional<std::string>& path) {
-    scene_composer_.SetSelectedNode(path);
-    render_surface_.Repaint();
-  }
+  void ReceiveSelectedNode(const std::optional<std::string>& path);
 
   // Draws the running text edit. The text changes the geometry, so a rebuild is
   // needed — but no new scene snapshot: the user's tree does not change while
   // typing, and rebuilding it per keystroke would disturb the selection in the
   // panel.
-  void ReceiveTextEdit(const std::optional<TextEditView>& text_edit) {
-    scene_composer_.SetTextEdit(text_edit);
-    BuildScene("text edit");
-    render_surface_.Repaint();
-  }
+  void ReceiveTextEdit(const std::optional<TextEditView>& text_edit);
 
   // The path of the scene node a hit element means.
   [[nodiscard]] std::optional<std::string> NodePathFor(
-      const PickId& picked) const {
-    return scene_composer_.NodePathFor(picked);
-  }
+      const PickId& picked) const;
 
   // The cursor index a click in page space means within the title line.
-  [[nodiscard]] std::size_t TitleCaretIndexAt(glm::vec2 page_point) const {
-    return scene_composer_.TitleCaretIndexAt(page_point);
-  }
+  [[nodiscard]] std::size_t TitleCaretIndexAt(glm::vec2 page_point) const;
 
  private:
-  void Rebuild() {
-    BuildScene("state change");
-    physics_world_.Rebuild(scene_composer_.PickBoxes());
-    render_surface_.RefreshView();
-    snapshot_topic_(scene_composer_.SceneSnapshot());
-  }
+  void Rebuild();
 
   // The one place the scene gets built, so the debug channel sees every rebuild
   // — the ones a state change causes and the ones a keystroke in the title
@@ -175,17 +100,7 @@ class CalendarPage {
   // the GL context. A rebuild allocates buffers and textures, and it is driven
   // by the bus: a panel edit, a loaded project, a keystroke in the title. None
   // of those is a paint, so nothing has made a context current by then.
-  void BuildScene(const char* reason) {
-    render_surface_.MakeGraphicsCurrent();
-    const auto started = std::chrono::steady_clock::now();
-    scene_composer_.Build();
-    if (decade_debug::LogEnabled()) {
-      const auto elapsed = std::chrono::duration<double, std::milli>(
-          std::chrono::steady_clock::now() - started);
-      std::cout << "scene build #" << ++build_count_ << " (" << reason << ") "
-                << elapsed.count() << " ms\n";
-    }
-  }
+  void BuildScene(const char* reason);
 
   application::RenderSurface& render_surface_;
   // Nested brackets are counted, not toggled: a load inside a load would

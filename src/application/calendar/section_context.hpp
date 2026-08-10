@@ -80,17 +80,13 @@ inline void FillRectangles(const ShapeNode<BoxesShape>& node,
 // A pool of text children under `parent`, on the text draw layer. One per
 // label group and rebuild; it hands the nodes of the previous rebuild back out
 // instead of building new ones (#69).
-[[nodiscard]] inline scene_shapes::TextChildPool TextPool(
-    const SectionContext& ctx, const std::shared_ptr<SceneNode>& parent) {
-  return {parent, ctx.font_shader, calendar_layers::kText};
-}
+[[nodiscard]] scene_shapes::TextChildPool TextPool(
+    const SectionContext& ctx, const std::shared_ptr<SceneNode>& parent);
 
-inline void SetCenteredText(const SectionContext& ctx,
-                            scene_shapes::TextChildPool& pool,
-                            const std::string& name, const std::string& text,
-                            const glm::vec3& center, float size) {
-  scene_shapes::SetCenteredText(pool, name, text, center, size, ctx.font);
-}
+void SetCenteredText(const SectionContext& ctx,
+                     scene_shapes::TextChildPool& pool, const std::string& name,
+                     const std::string& text, const glm::vec3& center,
+                     float size);
 
 }  // namespace detail
 

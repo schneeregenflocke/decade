@@ -1,104 +1,38 @@
 #ifndef SCENE_SNAPSHOT_BUILDER_HPP
 #define SCENE_SNAPSHOT_BUILDER_HPP
 
-#include <algorithm>
-#include <array>
-#include <cstddef>
 #include <glm/mat4x4.hpp>
-#include <glm/vec4.hpp>
-#include <memory>
 #include <optional>
-#include <vector>
 
 #include "../../domain/scene_snapshot.hpp"
-#include "../../infrastructure/graphics/font.hpp"
+#include "../../infrastructure/graphics/drawable.hpp"
 #include "../../infrastructure/graphics/rect.hpp"
 #include "../../infrastructure/graphics/scene_graph.hpp"
-#include "../../infrastructure/graphics/shapes.hpp"
 
 // Translates what the drawable says it is into the GL-free SnapshotShapeKind,
 // so the read model can describe it without exposing the OpenGL shape types.
 // Two enums for one thing on purpose: the infrastructure names its own kinds,
 // the read model belongs to the domain, and neither has to include the other.
-[[nodiscard]] inline SnapshotShapeKind ClassifyShape(const Drawable* shape) {
-  if (shape == nullptr) {
-    return SnapshotShapeKind::kNone;
-  }
-  switch (shape->Kind()) {
-    case DrawableKind::kFill:
-      return SnapshotShapeKind::kFill;
-    case DrawableKind::kBoxes:
-      return SnapshotShapeKind::kBoxes;
-    case DrawableKind::kText:
-      return SnapshotShapeKind::kFont;
-    case DrawableKind::kNone:
-      break;
-  }
-  return SnapshotShapeKind::kNone;
-}
+[[nodiscard]] SnapshotShapeKind ClassifyShape(const Drawable* shape);
 
-[[nodiscard]] inline SnapshotBounds ToSnapshotBounds(const RectF& bounds) {
-  return SnapshotBounds{.left = bounds.Left(),
-                        .right = bounds.Right(),
-                        .bottom = bounds.Bottom(),
-                        .top = bounds.Top()};
-}
+[[nodiscard]] SnapshotBounds ToSnapshotBounds(const RectF& bounds);
 
 // The node's own box in page coordinates. All four corners get transformed and
 // re-enclosed, so the box holds even when a transformation scales differently
 // per axis.
-[[nodiscard]] inline SnapshotBounds ToWorldBounds(const RectF& local,
-                                                  const glm::mat4& world) {
-  const std::array<glm::vec4, 4> corners = {
-      glm::vec4(local.Left(), local.Bottom(), 0.0F, 1.0F),
-      glm::vec4(local.Right(), local.Bottom(), 0.0F, 1.0F),
-      glm::vec4(local.Left(), local.Top(), 0.0F, 1.0F),
-      glm::vec4(local.Right(), local.Top(), 0.0F, 1.0F)};
-
-  const glm::vec4 first = world * corners[0];
-  SnapshotBounds bounds{
-      .left = first.x, .right = first.x, .bottom = first.y, .top = first.y};
-  for (const auto& corner : corners) {
-    const glm::vec4 transformed = world * corner;
-    bounds.left = std::min(bounds.left, transformed.x);
-    bounds.right = std::max(bounds.right, transformed.x);
-    bounds.bottom = std::min(bounds.bottom, transformed.y);
-    bounds.top = std::max(bounds.top, transformed.y);
-  }
-  return bounds;
-}
+[[nodiscard]] SnapshotBounds ToWorldBounds(const RectF& local,
+                                           const glm::mat4& world);
 
 // The text of a font node; empty for every other shape. The kind decides, and
 // the cast then follows from it rather than testing for it.
-[[nodiscard]] inline std::optional<SnapshotTextDetail> TextDetailOf(
-    const Drawable* shape) {
-  if (shape == nullptr || shape->Kind() != DrawableKind::kText) {
-    return std::nullopt;
-  }
-  const auto& font_shape = static_cast<const FontShape&>(*shape);
-  return SnapshotTextDetail{.text = font_shape.Text(),
-                            .size_millimetres = font_shape.FontSize()};
-}
+[[nodiscard]] std::optional<SnapshotTextDetail> TextDetailOf(
+    const Drawable* shape);
 
 // Fills a node's own values (everything but the children) from a scene node.
 // `world` is the accumulated transformation down to and including this node —
 // the same one Draw() draws with.
-inline void FillSnapshotValues(SceneNodeValues& destination,
-                               const SceneNode& source,
-                               const glm::mat4& world) {
-  destination.name = source.GetNodeName();
-  destination.style_id = source.GetStyleId();
-  const Drawable* shape = source.GetShape();
-  destination.has_shape = shape != nullptr;
-  destination.shape_kind = ClassifyShape(shape);
-  destination.draw_layer = source.GetDrawLayer();
-  destination.text_detail = TextDetailOf(shape);
-  if (shape != nullptr) {
-    const RectF& local = shape->LocalBounds();
-    destination.local_bounds = ToSnapshotBounds(local);
-    destination.world_bounds = ToWorldBounds(local, world);
-  }
-}
+void FillSnapshotValues(SceneNodeValues& destination, const SceneNode& source,
+                        const glm::mat4& world);
 
 // Application/Infrastructure bridge: turns the live OpenGL `SceneNode` graph
 // into the GL-free `SceneNodeSnapshot` read model consumed by the presentation
@@ -111,46 +45,6 @@ inline void FillSnapshotValues(SceneNodeValues& destination,
 // fills and the world transform accumulated down to it. Child vectors are sized
 // once and never reallocated afterwards, so the stored destination pointers
 // stay valid.
-[[nodiscard]] inline SceneNodeSnapshot BuildSceneSnapshot(
-    const SceneNode& root) {
-  SceneNodeSnapshot result;
-  const glm::mat4 root_world = root.GetModelMatrix();
-  FillSnapshotValues(result.values, root, root_world);
-
-  struct Frame {
-    const SceneNode* source;
-    SceneNodeSnapshot* destination;
-    glm::mat4 world;
-  };
-  std::vector<Frame> stack;
-  stack.push_back(
-      {.source = &root, .destination = &result, .world = root_world});
-
-  while (!stack.empty()) {
-    const Frame frame = stack.back();
-    stack.pop_back();
-
-    // Internal rendering aids (e.g. the selection overlay) are excluded so the
-    // user-facing tree mirrors only the real scene.
-    std::vector<const SceneNode*> visible;
-    for (const auto& child : frame.source->GetChildren()) {
-      if (!child->IsSnapshotHidden()) {
-        visible.push_back(child.get());
-      }
-    }
-    frame.destination->children.resize(visible.size());
-    for (std::size_t index = 0; index < visible.size(); ++index) {
-      SceneNodeSnapshot& child = frame.destination->children[index];
-      const glm::mat4 child_world =
-          frame.world * visible[index]->GetModelMatrix();
-      FillSnapshotValues(child.values, *visible[index], child_world);
-      stack.push_back({.source = visible[index],
-                       .destination = &child,
-                       .world = child_world});
-    }
-  }
-
-  return result;
-}
+[[nodiscard]] SceneNodeSnapshot BuildSceneSnapshot(const SceneNode& root);
 
 #endif  // SCENE_SNAPSHOT_BUILDER_HPP
