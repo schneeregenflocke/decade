@@ -28,9 +28,9 @@ AppComposition::AppComposition(LocaleDateFormatter& locale_date_formatter,
                                RuntimeOptions options)
     : runtime_options_(std::move(options)),
       document_(bus_, locale_date_formatter),
-      interaction_controller_(bus_.hovered(), bus_.selected_node(),
-                              bus_.edit_requested()),
-      title_text_editor_(document_.TitleConfiguration(), bus_.text_edit()),
+      interaction_controller_(bus_.hovered, bus_.selected_node,
+                              bus_.edit_requested),
+      title_text_editor_(document_.TitleConfiguration(), bus_.text_edit),
       startup_script_(runtime_options_, document_),
       // A top-level window has no Qt parent to own it, so the composition
       // root does — the same hand that owns everything else here.
@@ -65,7 +65,7 @@ void AppComposition::OnGraphicsReady() {
   try {
     CalendarPage& calendar_page = calendar_page_.emplace(
         frame_->Canvas().Engine(), frame_->Canvas(),
-        frame_->Font().GetFontConfig(), bus_.scene_snapshot());
+        frame_->Font().GetFontConfig(), bus_.scene_snapshot);
     wiring_.emplace(bus_, Components(calendar_page));
     startup_script_.RunAfterGraphics(*frame_, calendar_page,
                                      title_text_editor_);

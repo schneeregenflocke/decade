@@ -58,9 +58,9 @@ void BindDateEntries(QObject& scope, EventBus& bus, AppComponents& components) {
           &DateEntryStore::ReceiveDateEntries);
 
   // Topic -> consumers. The store publishes itself.
-  Connect(scope, bus.date_entries(), &domain::DateEntriesTopic::Published,
+  Connect(scope, bus.date_entries, &domain::DateEntriesTopic::Published,
           components.data_table_panel, &DateTablePanel::ReceiveDateEntries);
-  Connect(scope, bus.date_entries(), &domain::DateEntriesTopic::Published,
+  Connect(scope, bus.date_entries, &domain::DateEntriesTopic::Published,
           components.transform_date_entry,
           &TransformDateEntry::ReceiveDateEntries);
 
@@ -68,7 +68,7 @@ void BindDateEntries(QObject& scope, EventBus& bus, AppComponents& components) {
   // half-open [begin, end) everywhere, so the end is exclusive already. The
   // earlier {end_days = 1} was a correction out of the old inclusive model and
   // made every bar one day too long.
-  Connect(scope, bus.transformed_date_entries(),
+  Connect(scope, bus.transformed_date_entries,
           &domain::DateEntriesTopic::Published, components.calendar_page,
           &CalendarPage::ReceiveDateEntries);
 }
@@ -78,12 +78,12 @@ void BindDateGroups(QObject& scope, EventBus& bus, AppComponents& components) {
           &DateGroupsTablePanel::DateGroupsEdited, components.date_groups_store,
           &DateGroupStore::ReceiveDateGroups);
 
-  Connect(scope, bus.date_groups(), &domain::DateGroupsTopic::Published,
+  Connect(scope, bus.date_groups, &domain::DateGroupsTopic::Published,
           components.date_groups_table_panel,
           &DateGroupsTablePanel::ReceiveDateGroups);
-  Connect(scope, bus.date_groups(), &domain::DateGroupsTopic::Published,
+  Connect(scope, bus.date_groups, &domain::DateGroupsTopic::Published,
           components.date_entry_store, &DateEntryStore::ReceiveDateGroups);
-  Connect(scope, bus.date_groups(), &domain::DateGroupsTopic::Published,
+  Connect(scope, bus.date_groups, &domain::DateGroupsTopic::Published,
           components.data_table_panel, &DateTablePanel::ReceiveDateGroups);
   // The store synthesises the per-group shape configurations out of the palette
   // and publishes them anew — that must run before the scene rebuild below,
@@ -91,10 +91,10 @@ void BindDateGroups(QObject& scope, EventBus& bus, AppComponents& components) {
   // the order of these two calls: "if a signal is connected to several slots,
   // the slots are activated in the same order as the order the connection was
   // made" (https://doc.qt.io/qt-6/qobject.html#connect).
-  Connect(scope, bus.date_groups(), &domain::DateGroupsTopic::Published,
+  Connect(scope, bus.date_groups, &domain::DateGroupsTopic::Published,
           components.shape_configuration_store,
           &ShapeConfigurationStore::ReceiveDateGroups);
-  Connect(scope, bus.date_groups(), &domain::DateGroupsTopic::Published,
+  Connect(scope, bus.date_groups, &domain::DateGroupsTopic::Published,
           components.calendar_page, &CalendarPage::ReceiveDateGroups);
 }
 
@@ -102,11 +102,11 @@ void BindPageSetup(QObject& scope, EventBus& bus, AppComponents& components) {
   Connect(scope, components.page_setup_panel, &PageSetupPanel::PageSetupEdited,
           components.page_setup_store, &PageSetupStore::ReceivePageSetup);
 
-  Connect(scope, bus.page_setup(), &domain::PageSetupTopic::Published,
+  Connect(scope, bus.page_setup, &domain::PageSetupTopic::Published,
           components.page_setup_panel, &PageSetupPanel::ReceivePageSetup);
-  Connect(scope, bus.page_setup(), &domain::PageSetupTopic::Published,
+  Connect(scope, bus.page_setup, &domain::PageSetupTopic::Published,
           components.calendar_page, &CalendarPage::ReceivePageSetup);
-  Connect(scope, bus.page_setup(), &domain::PageSetupTopic::Published,
+  Connect(scope, bus.page_setup, &domain::PageSetupTopic::Published,
           components.gl_canvas, &GLCanvas::ReceivePageSetup);
 }
 
@@ -114,7 +114,7 @@ void BindPageSetup(QObject& scope, EventBus& bus, AppComponents& components) {
 // alone change it. The display is a pure consumer.
 void BindProjectFilePath(QObject& scope, EventBus& bus,
                          AppComponents& components) {
-  Connect(scope, bus.project_file_path(), &domain::FilePathTopic::Published,
+  Connect(scope, bus.project_file_path, &domain::FilePathTopic::Published,
           components.document_setup_panel,
           &DocumentSetupPanel::ReceiveProjectFilePath);
 }
@@ -124,9 +124,9 @@ void BindProjectFilePath(QObject& scope, EventBus& bus,
 // FontStore steps into the same place as with the other topics.
 void BindFont(QObject& scope, EventBus& bus, AppComponents& components) {
   Connect(scope, components.font_panel, &FontPanel::FontConfigChosen,
-          bus.font_config(), &domain::FontConfigTopic::Publish);
+          bus.font_config, &domain::FontConfigTopic::Publish);
 
-  Connect(scope, bus.font_config(), &domain::FontConfigTopic::Published,
+  Connect(scope, bus.font_config, &domain::FontConfigTopic::Published,
           components.calendar_page, &CalendarPage::ReceiveFont);
 }
 
@@ -135,16 +135,16 @@ void BindTitleConfig(QObject& scope, EventBus& bus, AppComponents& components) {
           &TitleSetupPanel::TitleConfigEdited, components.title_config_store,
           &TitleConfigStore::ReceiveTitleConfig);
 
-  Connect(scope, bus.title_config(), &domain::TitleConfigTopic::Published,
+  Connect(scope, bus.title_config, &domain::TitleConfigTopic::Published,
           components.title_setup_panel, &TitleSetupPanel::ReceiveTitleConfig);
-  Connect(scope, bus.title_config(), &domain::TitleConfigTopic::Published,
+  Connect(scope, bus.title_config, &domain::TitleConfigTopic::Published,
           components.calendar_page, &CalendarPage::ReceiveTitleConfig);
 }
 
 // The bracket around a burst of changes. The rendering adapter is its only
 // consumer: it holds its rebuild while the bracket stands (#36).
 void BindStateBurst(QObject& scope, EventBus& bus, AppComponents& components) {
-  Connect(scope, bus.state_burst(), &domain::StateBurstTopic::Published,
+  Connect(scope, bus.state_burst, &domain::StateBurstTopic::Published,
           components.calendar_page, &CalendarPage::ReceiveStateBurst);
 }
 
@@ -155,15 +155,13 @@ void BindShapeConfiguration(QObject& scope, EventBus& bus,
           components.shape_configuration_store,
           &ShapeConfigurationStore::ReceiveShapeConfigSet);
 
-  Connect(scope, bus.shape_config_set(),
-          &domain::ShapeConfigSetTopic::Published, components.shape_setup_panel,
+  Connect(scope, bus.shape_config_set, &domain::ShapeConfigSetTopic::Published,
+          components.shape_setup_panel,
           &ShapeSetupPanel::ReceiveShapeConfigSet);
-  Connect(scope, bus.shape_config_set(),
-          &domain::ShapeConfigSetTopic::Published, components.calendar_page,
-          &CalendarPage::ReceiveShapeConfigSet);
-  Connect(scope, bus.shape_config_set(),
-          &domain::ShapeConfigSetTopic::Published, components.scene_tree_panel,
-          &SceneTreePanel::ReceiveShapeConfigSet);
+  Connect(scope, bus.shape_config_set, &domain::ShapeConfigSetTopic::Published,
+          components.calendar_page, &CalendarPage::ReceiveShapeConfigSet);
+  Connect(scope, bus.shape_config_set, &domain::ShapeConfigSetTopic::Published,
+          components.scene_tree_panel, &SceneTreePanel::ReceiveShapeConfigSet);
 }
 
 void BindCalendarConfig(QObject& scope, EventBus& bus,
@@ -173,10 +171,10 @@ void BindCalendarConfig(QObject& scope, EventBus& bus,
           components.calendar_configuration_store,
           &CalendarConfigStore::ReceiveCalendarConfig);
 
-  Connect(scope, bus.calendar_config(), &domain::CalendarConfigTopic::Published,
+  Connect(scope, bus.calendar_config, &domain::CalendarConfigTopic::Published,
           components.calendar_setup_panel,
           &CalendarSetupPanel::ReceiveCalendarConfig);
-  Connect(scope, bus.calendar_config(), &domain::CalendarConfigTopic::Published,
+  Connect(scope, bus.calendar_config, &domain::CalendarConfigTopic::Published,
           components.calendar_page, &CalendarPage::ReceiveCalendarConfig);
 }
 
@@ -185,15 +183,15 @@ void BindCalendarConfig(QObject& scope, EventBus& bus,
 // bus to the highlight in the renderer.
 void BindSceneSnapshot(QObject& scope, EventBus& bus,
                        AppComponents& components) {
-  Connect(scope, bus.scene_snapshot(), &domain::SceneSnapshotTopic::Published,
+  Connect(scope, bus.scene_snapshot, &domain::SceneSnapshotTopic::Published,
           components.scene_tree_panel, &SceneTreePanel::ReceiveSceneSnapshot);
 
   Connect(scope, components.scene_tree_panel,
-          &SceneTreePanel::SelectedNodeChanged, bus.selected_node(),
+          &SceneTreePanel::SelectedNodeChanged, bus.selected_node,
           &domain::NodePathTopic::Publish);
-  Connect(scope, bus.selected_node(), &domain::NodePathTopic::Published,
+  Connect(scope, bus.selected_node, &domain::NodePathTopic::Published,
           components.calendar_page, &CalendarPage::ReceiveSelectedNode);
-  Connect(scope, bus.selected_node(), &domain::NodePathTopic::Published,
+  Connect(scope, bus.selected_node, &domain::NodePathTopic::Published,
           components.scene_tree_panel, &SceneTreePanel::ReceiveSelectedNode);
 }
 
@@ -246,12 +244,11 @@ void BindInteraction(QObject& scope, EventBus& bus, AppComponents& components) {
   components.gl_canvas.SetSelectedTextSource(
       [editor]() { return editor->SelectedText(); });
 
-  Connect(scope, bus.hovered(), &application::HoveredTopic::Published,
+  Connect(scope, bus.hovered, &application::HoveredTopic::Published,
           components.calendar_page, &CalendarPage::ReceiveHovered);
-  Connect(scope, bus.edit_requested(),
-          &application::EditRequestTopic::Published,
+  Connect(scope, bus.edit_requested, &application::EditRequestTopic::Published,
           components.title_text_editor, &TitleTextEditor::Begin);
-  Connect(scope, bus.text_edit(), &domain::TextEditTopic::Published,
+  Connect(scope, bus.text_edit, &domain::TextEditTopic::Published,
           components.calendar_page, &CalendarPage::ReceiveTextEdit);
 }
 
@@ -286,7 +283,7 @@ void ReleaseCallbacks(AppComponents& components) {
 
 void SendInitialValues(EventBus& bus, AppComponents& components) {
   // Five producers in a row, one rebuild at the end (#36).
-  const application::StateBurst burst(bus.state_burst());
+  const application::StateBurst burst(bus.state_burst);
   components.shape_configuration_store.SendShapeConfigSet();
   components.date_groups_store.SendDefaultValues();
   components.page_setup_panel.SendDefaultValues();

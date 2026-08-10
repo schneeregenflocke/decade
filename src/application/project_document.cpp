@@ -22,15 +22,15 @@ namespace application {
 ProjectDocument::ProjectDocument(EventBus& bus,
                                  LocaleDateFormatter& locale_date_formatter)
     : locale_date_formatter_(locale_date_formatter),
-      file_path_topic_(bus.project_file_path()),
-      state_burst_topic_(bus.state_burst()),
-      date_groups_store_(bus.date_groups()),
-      date_entry_store_(bus.date_entries()),
-      transform_date_entry_(bus.transformed_date_entries()),
-      page_setup_store_(bus.page_setup()),
-      title_config_store_(bus.title_config()),
-      shape_configuration_store_(bus.shape_config_set()),
-      calendar_configuration_store_(bus.calendar_config()) {}
+      file_path_topic_(bus.project_file_path),
+      state_burst_topic_(bus.state_burst),
+      date_groups_store_(bus.date_groups),
+      date_entry_store_(bus.date_entries),
+      transform_date_entry_(bus.transformed_date_entries),
+      page_setup_store_(bus.page_setup),
+      title_config_store_(bus.title_config),
+      shape_configuration_store_(bus.shape_config_set),
+      calendar_configuration_store_(bus.calendar_config) {}
 
 std::optional<std::string> ProjectDocument::LoadXml(std::string file_path) {
   // Six stores get filled one after another and every one of them publishes.
