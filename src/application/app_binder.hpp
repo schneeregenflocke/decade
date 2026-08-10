@@ -55,22 +55,28 @@ struct AppComponents {
   TitleTextEditor& title_text_editor;
 };
 
+// The three that carry plain `std::function` callbacks instead of Qt
+// connections: they are queries as much as notifications (a pick returns a
+// hit), so no signal and no context object reaches them, and the wiring has to
+// release them by hand.
+struct CallbackTargets {
+  GLCanvas& gl_canvas;
+  InteractionController& interaction_controller;
+  TitleTextEditor& title_text_editor;
+};
+
 namespace app_binder {
 
 // Connects every producer to its consumer: panel edits go to the owning store,
 // the stores' facts go over the bus. Every connection carries `scope` as its
 // context object and thereby lives exactly as long as that object — nothing
 // here has to be disconnected by hand.
-void Bind(QObject& scope, EventBus& bus, AppComponents& components);
+void Bind(QObject& scope, EventBus& bus, const AppComponents& components);
 
-// Releases what no context object can reach: the plain `std::function`
-// callbacks of canvas, controller and editor. They are queries as much as
-// notifications (a pick returns a hit), so they are no signals and Qt knows
-// nothing of them — while they capture the rendering adapter, which gets
-// dissolved right after the wiring.
-void ReleaseCallbacks(AppComponents& components);
+// Drops the callbacks before the rendering adapter they capture gets dissolved.
+void ReleaseCallbacks(const CallbackTargets& targets);
 
-void SendInitialValues(EventBus& bus, AppComponents& components);
+void SendInitialValues(EventBus& bus, const AppComponents& components);
 
 }  // namespace app_binder
 
@@ -80,7 +86,7 @@ void SendInitialValues(EventBus& bus, AppComponents& components);
 // release needs.
 class AppWiring {
  public:
-  AppWiring(EventBus& bus, AppComponents components);
+  AppWiring(EventBus& bus, const AppComponents& components);
   ~AppWiring();
   AppWiring(const AppWiring&) = delete;
   AppWiring& operator=(const AppWiring&) = delete;
@@ -88,7 +94,9 @@ class AppWiring {
   AppWiring& operator=(AppWiring&&) = delete;
 
  private:
-  AppComponents components_;
+  // Of the twenty components the binder reaches, these three outlive the call:
+  // their callbacks want dropping again.
+  CallbackTargets callback_targets_;
   // The context object of every connection Bind makes. Qt releases them all
   // when it dies, so no counterpart to Bind has to list them.
   QObject connection_scope_;

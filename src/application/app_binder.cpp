@@ -51,7 +51,8 @@ void Connect(QObject& scope, Sender& sender, void (Sender::*signal)(SentValue),
   });
 }
 
-void BindDateEntries(QObject& scope, EventBus& bus, AppComponents& components) {
+void BindDateEntries(QObject& scope, EventBus& bus,
+                     const AppComponents& components) {
   // Panel -> store (user input)
   Connect(scope, components.data_table_panel,
           &DateTablePanel::DateEntriesEdited, components.date_entry_store,
@@ -73,7 +74,8 @@ void BindDateEntries(QObject& scope, EventBus& bus, AppComponents& components) {
           &CalendarPage::ReceiveDateEntries);
 }
 
-void BindDateGroups(QObject& scope, EventBus& bus, AppComponents& components) {
+void BindDateGroups(QObject& scope, EventBus& bus,
+                    const AppComponents& components) {
   Connect(scope, components.date_groups_table_panel,
           &DateGroupsTablePanel::DateGroupsEdited, components.date_groups_store,
           &DateGroupStore::ReceiveDateGroups);
@@ -98,7 +100,8 @@ void BindDateGroups(QObject& scope, EventBus& bus, AppComponents& components) {
           components.calendar_page, &CalendarPage::ReceiveDateGroups);
 }
 
-void BindPageSetup(QObject& scope, EventBus& bus, AppComponents& components) {
+void BindPageSetup(QObject& scope, EventBus& bus,
+                   const AppComponents& components) {
   Connect(scope, components.page_setup_panel, &PageSetupPanel::PageSetupEdited,
           components.page_setup_store, &PageSetupStore::ReceivePageSetup);
 
@@ -113,7 +116,7 @@ void BindPageSetup(QObject& scope, EventBus& bus, AppComponents& components) {
 // The file path comes from the document, not from a store: loading and saving
 // alone change it. The display is a pure consumer.
 void BindProjectFilePath(QObject& scope, EventBus& bus,
-                         AppComponents& components) {
+                         const AppComponents& components) {
   Connect(scope, bus.project_file_path, &domain::FilePathTopic::Published,
           components.document_setup_panel,
           &DocumentSetupPanel::ReceiveProjectFilePath);
@@ -122,7 +125,7 @@ void BindProjectFilePath(QObject& scope, EventBus& bus,
 // The font has no store — the panel value goes straight onto the topic and from
 // there to the renderer. Should the font ever get saved with the project, a
 // FontStore steps into the same place as with the other topics.
-void BindFont(QObject& scope, EventBus& bus, AppComponents& components) {
+void BindFont(QObject& scope, EventBus& bus, const AppComponents& components) {
   Connect(scope, components.font_panel, &FontPanel::FontConfigChosen,
           bus.font_config, &domain::FontConfigTopic::Publish);
 
@@ -130,7 +133,8 @@ void BindFont(QObject& scope, EventBus& bus, AppComponents& components) {
           components.calendar_page, &CalendarPage::ReceiveFont);
 }
 
-void BindTitleConfig(QObject& scope, EventBus& bus, AppComponents& components) {
+void BindTitleConfig(QObject& scope, EventBus& bus,
+                     const AppComponents& components) {
   Connect(scope, components.title_setup_panel,
           &TitleSetupPanel::TitleConfigEdited, components.title_config_store,
           &TitleConfigStore::ReceiveTitleConfig);
@@ -143,13 +147,14 @@ void BindTitleConfig(QObject& scope, EventBus& bus, AppComponents& components) {
 
 // The bracket around a burst of changes. The rendering adapter is its only
 // consumer: it holds its rebuild while the bracket stands (#36).
-void BindStateBurst(QObject& scope, EventBus& bus, AppComponents& components) {
+void BindStateBurst(QObject& scope, EventBus& bus,
+                    const AppComponents& components) {
   Connect(scope, bus.state_burst, &domain::StateBurstTopic::Published,
           components.calendar_page, &CalendarPage::ReceiveStateBurst);
 }
 
 void BindShapeConfiguration(QObject& scope, EventBus& bus,
-                            AppComponents& components) {
+                            const AppComponents& components) {
   Connect(scope, components.shape_setup_panel,
           &ShapeSetupPanel::ShapeConfigSetEdited,
           components.shape_configuration_store,
@@ -165,7 +170,7 @@ void BindShapeConfiguration(QObject& scope, EventBus& bus,
 }
 
 void BindCalendarConfig(QObject& scope, EventBus& bus,
-                        AppComponents& components) {
+                        const AppComponents& components) {
   Connect(scope, components.calendar_setup_panel,
           &CalendarSetupPanel::CalendarConfigEdited,
           components.calendar_configuration_store,
@@ -182,7 +187,7 @@ void BindCalendarConfig(QObject& scope, EventBus& bus,
 // panel is the only consumer. Its selection goes back the other way over the
 // bus to the highlight in the renderer.
 void BindSceneSnapshot(QObject& scope, EventBus& bus,
-                       AppComponents& components) {
+                       const AppComponents& components) {
   Connect(scope, bus.scene_snapshot, &domain::SceneSnapshotTopic::Published,
           components.scene_tree_panel, &SceneTreePanel::ReceiveSceneSnapshot);
 
@@ -203,7 +208,8 @@ void BindSceneSnapshot(QObject& scope, EventBus& bus,
 //
 // These stay plain callbacks rather than signals: a pick source answers with a
 // hit, and a Qt signal carries no return value.
-void BindInteraction(QObject& scope, EventBus& bus, AppComponents& components) {
+void BindInteraction(QObject& scope, EventBus& bus,
+                     const AppComponents& components) {
   auto* page = &components.calendar_page;
   auto* controller = &components.interaction_controller;
   auto* editor = &components.title_text_editor;
@@ -254,7 +260,7 @@ void BindInteraction(QObject& scope, EventBus& bus, AppComponents& components) {
 
 }  // namespace
 
-void Bind(QObject& scope, EventBus& bus, AppComponents& components) {
+void Bind(QObject& scope, EventBus& bus, const AppComponents& components) {
   BindDateEntries(scope, bus, components);
   BindDateGroups(scope, bus, components);
   BindPageSetup(scope, bus, components);
@@ -268,20 +274,20 @@ void Bind(QObject& scope, EventBus& bus, AppComponents& components) {
   BindInteraction(scope, bus, components);
 }
 
-void ReleaseCallbacks(AppComponents& components) {
-  components.gl_canvas.SetPointerMoveCallback(nullptr);
-  components.gl_canvas.SetPrimaryDownCallback(nullptr);
-  components.gl_canvas.SetDoubleClickCallback(nullptr);
-  components.gl_canvas.SetTextInputCallback(nullptr);
-  components.gl_canvas.SetEditingQuery(nullptr);
-  components.gl_canvas.SetSelectedTextSource(nullptr);
-  components.interaction_controller.SetPickSource(nullptr);
-  components.interaction_controller.SetPathSource(nullptr);
-  components.title_text_editor.SetPickSource(nullptr);
-  components.title_text_editor.SetCaretIndexSource(nullptr);
+void ReleaseCallbacks(const CallbackTargets& targets) {
+  targets.gl_canvas.SetPointerMoveCallback(nullptr);
+  targets.gl_canvas.SetPrimaryDownCallback(nullptr);
+  targets.gl_canvas.SetDoubleClickCallback(nullptr);
+  targets.gl_canvas.SetTextInputCallback(nullptr);
+  targets.gl_canvas.SetEditingQuery(nullptr);
+  targets.gl_canvas.SetSelectedTextSource(nullptr);
+  targets.interaction_controller.SetPickSource(nullptr);
+  targets.interaction_controller.SetPathSource(nullptr);
+  targets.title_text_editor.SetPickSource(nullptr);
+  targets.title_text_editor.SetCaretIndexSource(nullptr);
 }
 
-void SendInitialValues(EventBus& bus, AppComponents& components) {
+void SendInitialValues(EventBus& bus, const AppComponents& components) {
   // Five producers in a row, one rebuild at the end (#36).
   const application::StateBurst burst(bus.state_burst);
   components.shape_configuration_store.SendShapeConfigSet();
@@ -293,10 +299,14 @@ void SendInitialValues(EventBus& bus, AppComponents& components) {
 
 }  // namespace app_binder
 
-AppWiring::AppWiring(EventBus& bus, AppComponents components)
-    : components_(components) {
-  app_binder::Bind(connection_scope_, bus, components_);
-  app_binder::SendInitialValues(bus, components_);
+AppWiring::AppWiring(EventBus& bus, const AppComponents& components)
+    : callback_targets_{
+          .gl_canvas = components.gl_canvas,
+          .interaction_controller = components.interaction_controller,
+          .title_text_editor = components.title_text_editor,
+      } {
+  app_binder::Bind(connection_scope_, bus, components);
+  app_binder::SendInitialValues(bus, components);
 }
 
-AppWiring::~AppWiring() { app_binder::ReleaseCallbacks(components_); }
+AppWiring::~AppWiring() { app_binder::ReleaseCallbacks(callback_targets_); }
