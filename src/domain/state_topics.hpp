@@ -24,10 +24,8 @@ namespace domain {
 // layer's decision (the EventBus in the application, a local topic in a test).
 //
 // One class per value, not one template: moc cannot process class templates, so
-// a Qt signal has to stand in a concrete QObject. That is what put QtCore into
-// this layer — and QtCore alone, so the domain still builds and runs without a
-// window. The reasoning stands in AGENTS.md under layer rule 4 and in issue
-// #86.
+// a Qt signal has to stand in a concrete QObject. Why that is worth QtCore in
+// this layer: AGENTS.md, layer rule 4, and issue #86.
 //
 // Each carries the value and nothing else, so consumers keep working with
 // copyable value objects. `Publish` exists because Qt asks that a signal be

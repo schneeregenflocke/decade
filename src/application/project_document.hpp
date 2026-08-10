@@ -20,12 +20,9 @@
 
 namespace application {
 
-// The open project: it owns every store, knows its file path and is the only
-// place loading and saving get triggered from. The stores get their bus topic
-// injected on construction and publish themselves.
-//
-// Without this object every load and save site passed six stores through by
-// hand; now that list stands exactly once, here.
+// The open project — every store plus the file path in one object (AGENTS.md,
+// layer rule 11). The stores get their bus topic injected on construction and
+// publish themselves.
 class ProjectDocument {
  public:
   explicit ProjectDocument(EventBus& bus,

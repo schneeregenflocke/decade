@@ -21,17 +21,12 @@
 
 namespace application {
 
-// The composition root: it builds every long-lived part, owns them and holds
-// them together. It carries neither domain nor widget logic itself — it decides
-// what exists and for how long, and nothing more.
-//
-// Two parts come into being later, because OpenGL stands ready with a delay:
-// the rendering adapter and the wiring. Both sit in an `optional` and get
-// dissolved again when the window closes — while panels and canvas are still
-// alive. The adapter needs that order for its GL objects, which want a current
-// context; the wiring needs it for the callbacks it planted in canvas,
-// controller and editor, which capture the adapter and are no Qt connections
-// that would release themselves.
+// The composition root (AGENTS.md, layer rule 3). Two parts come into being
+// later, because OpenGL stands ready with a delay: the rendering adapter and
+// the wiring, both in an `optional`. The adapter needs that order for its GL
+// objects, which want a current context; the wiring needs it for the callbacks
+// it planted in canvas, controller and editor, which capture the adapter and
+// are no Qt connections that would release themselves.
 class AppComposition {
  public:
   AppComposition(LocaleDateFormatter& locale_date_formatter,

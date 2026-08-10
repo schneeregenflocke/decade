@@ -4,14 +4,11 @@
 #include "../domain/state_topics.hpp"
 #include "interaction_topics.hpp"
 
-// The central typed event bus.
-//
-// One topic per domain event. Producers publish with
-// `bus.<topic>.Publish(value)`, consumers attach with
-// `QObject::connect(&bus.<topic>, &Topic::Published, …)`. Stores get their
-// topic injected on construction and publish themselves — no forwarding stands
-// between any more. Who attaches which consumer sits collected in `app_binder`,
-// so neither side needs to know the other.
+// The central typed event bus, one topic per domain event. Producers publish
+// with `bus.<topic>.Publish(value)`, consumers attach with
+// `QObject::connect(&bus.<topic>, &Topic::Published, …)` — collected in
+// `app_binder`, so neither side needs to know the other. What travels which
+// way: AGENTS.md, "Event flow".
 //
 // An aggregate rather than a class with accessors: those handed out non-const
 // references and thereby guarded nothing. No member function may come back
@@ -35,14 +32,6 @@ struct EventBus {
   application::EditRequestTopic edit_requested;
   // What is to be seen of a running edit; empty means none.
   domain::TextEditTopic text_edit;
-  // The one topic that carries no state but a bracket around it: true opens a
-  // burst of changes, false closes it. Loading a project fills six stores one
-  // after another, and every one of them publishes — a consumer that rebuilds
-  // on each would do the work six times for one user action (#36). It sits
-  // here rather than behind a port of its own, because the producer
-  // (ProjectDocument) exists long before the consumer (the rendering adapter,
-  // which needs the GL context): over the bus, whoever is not there simply
-  // does not listen.
   domain::StateBurstTopic state_burst;
 };
 

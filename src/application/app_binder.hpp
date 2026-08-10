@@ -26,17 +26,10 @@
 #include "event_bus.hpp"
 #include "state_burst.hpp"
 
-// The one place where stores, panels, rendering adapter and GL canvas come
-// together.
-//
-// Two directions, two rules:
-//   * A panel edit is a *command* and goes straight to the owning store. Its
-//     `Receive*` is thereby the only place canonical state comes into being.
-//   * The new state is a *fact* and goes over the bus: the store publishes on
-//     its topic, and every consumer attaches there.
-// Were panels to put their edits onto the same topic they subscribe to, there
-// would be feedback loops; the separation prevents that and keeps producer and
-// consumer independent of each other.
+// Everything the wiring reaches: stores, panels, rendering adapter and GL
+// canvas. Which of them may send what to whom — a panel edit is a command to
+// its store, the new state a fact on the bus — stands in AGENTS.md, "Event
+// flow".
 struct AppComponents {
   DateGroupStore& date_groups_store;
   DateEntryStore& date_entry_store;
