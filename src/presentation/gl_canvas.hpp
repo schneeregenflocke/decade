@@ -1,6 +1,10 @@
 #ifndef GL_CANVAS_HPP
 #define GL_CANVAS_HPP
 
+// libepoxy has to be first. epoxy/gl.h claims the include guards __gl_h_ and
+// __glext_h_ and refuses to compile once GL/gl.h got there before it (an
+// #error). Qt's qopengl.h — which QOpenGLWidget pulls in — includes exactly
+// those, so a header that reaches Qt first breaks the build.
 #include <epoxy/gl.h>
 
 #include <QtCore/QString>
