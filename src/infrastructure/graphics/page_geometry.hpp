@@ -8,16 +8,8 @@
 // conversion used to stand in the GL canvas and in CalendarPage; the same
 // knowledge in two places would have drifted apart eventually.
 
-[[nodiscard]] inline RectF PageRect(const PageSetupConfig& page_setup_config) {
-  return RectF::FromDimension(
-      RectF::Dimension{.width = page_setup_config.Size()[0],
-                       .height = page_setup_config.Size()[1]});
-}
+[[nodiscard]] RectF PageRect(const PageSetupConfig& page_setup_config);
 
-[[nodiscard]] inline RectF PageMarginRect(
-    const PageSetupConfig& page_setup_config) {
-  return {page_setup_config.Margins()[0], page_setup_config.Margins()[1],
-          page_setup_config.Margins()[2], page_setup_config.Margins()[3]};
-}
+[[nodiscard]] RectF PageMarginRect(const PageSetupConfig& page_setup_config);
 
 #endif  // PAGE_GEOMETRY_HPP

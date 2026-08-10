@@ -80,6 +80,12 @@ SystemHeaders: false
 # types and locals alone (those are not part of the enforced rule). struct
 # members are public and intentionally carry no suffix.
 CheckOptions:
+  # Three C libraries document one entry point and put their symbols in
+  # headers behind it: libepoxy (<epoxy/gl.h>, which refuses to compile after
+  # GL/gl.h), libpng (<png.h>) and FreeType (<ft2build.h> plus the
+  # FT_FREETYPE_H macro, whose internal paths are not portable). Without this
+  # the check demands those headers in every unit that calls them.
+  misc-include-cleaner.IgnoreHeaders: "epoxy/.*;pngconf.h;freetype/.*"
   readability-identifier-naming.PrivateMemberCase: lower_case
   readability-identifier-naming.PrivateMemberSuffix: "_"
   readability-identifier-naming.ProtectedMemberCase: lower_case

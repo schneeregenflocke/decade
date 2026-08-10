@@ -3,8 +3,6 @@
 
 #include <epoxy/gl.h>
 
-#include <algorithm>
-#include <array>
 #include <memory>
 #include <vector>
 
@@ -17,13 +15,9 @@
 // from, and everything drawn afterwards would land nowhere — silently.
 class ScopedFramebufferBinding {
  public:
-  ScopedFramebufferBinding() {
-    GLint bound = 0;
-    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &bound);
-    previous_ = static_cast<GLuint>(bound);
-  }
+  ScopedFramebufferBinding();
 
-  ~ScopedFramebufferBinding() { glBindFramebuffer(GL_FRAMEBUFFER, previous_); }
+  ~ScopedFramebufferBinding();
 
   ScopedFramebufferBinding(const ScopedFramebufferBinding&) = delete;
   ScopedFramebufferBinding& operator=(const ScopedFramebufferBinding&) = delete;
@@ -38,16 +32,16 @@ class ScopedFramebufferBinding {
 // the destructor deletes the handle — a copy would delete it twice.
 class RenderBuffer {
  public:
-  RenderBuffer() { glGenRenderbuffers(1, &name_); }
+  RenderBuffer();
 
-  ~RenderBuffer() { glDeleteRenderbuffers(1, &name_); }
+  ~RenderBuffer();
 
   RenderBuffer(const RenderBuffer&) = delete;
   RenderBuffer& operator=(const RenderBuffer&) = delete;
   RenderBuffer(RenderBuffer&&) = delete;
   RenderBuffer& operator=(RenderBuffer&&) = delete;
 
-  [[nodiscard]] GLuint Name() const { return name_; }
+  [[nodiscard]] GLuint Name() const;
 
  private:
   GLuint name_{0};
@@ -57,63 +51,20 @@ class RenderBuffer {
 // renderbuffer. Non-copyable/non-movable for the same reason as RenderBuffer.
 class FrameBuffer {
  public:
-  FrameBuffer(GLsizei width, GLsizei height, GLsizei samples, bool msaa) {
-    const ScopedFramebufferBinding restore_binding;
-    glGenFramebuffers(1, &name_);
+  FrameBuffer(GLsizei width, GLsizei height, GLsizei samples, bool msaa);
 
-    if (!msaa) {
-      glBindTexture(GL_TEXTURE_2D, texture_.Name());
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA,
-                   GL_UNSIGNED_BYTE, nullptr);
-      glBindTexture(GL_TEXTURE_2D, 0);
-
-      glBindRenderbuffer(GL_RENDERBUFFER, render_buffer_.Name());
-      glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width,
-                            height);
-      glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-      glBindFramebuffer(GL_FRAMEBUFFER, name_);
-      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                                GL_RENDERBUFFER, render_buffer_.Name());
-      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                             GL_TEXTURE_2D, texture_.Name(), 0);
-    }
-
-    if (msaa) {
-      glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texture_.Name());
-      glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGBA8,
-                              width, height, GL_TRUE);
-      glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
-
-      glBindRenderbuffer(GL_RENDERBUFFER, render_buffer_.Name());
-      glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples,
-                                       GL_DEPTH_COMPONENT24, width, height);
-      glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-      glBindFramebuffer(GL_FRAMEBUFFER, name_);
-      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                             GL_TEXTURE_2D_MULTISAMPLE, texture_.Name(), 0);
-      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                                GL_RENDERBUFFER, render_buffer_.Name());
-    }
-  }
-
-  ~FrameBuffer() { glDeleteFramebuffers(1, &name_); }
+  ~FrameBuffer();
 
   FrameBuffer(const FrameBuffer&) = delete;
   FrameBuffer& operator=(const FrameBuffer&) = delete;
   FrameBuffer(FrameBuffer&&) = delete;
   FrameBuffer& operator=(FrameBuffer&&) = delete;
 
-  [[nodiscard]] GLenum CheckStatus() const {
-    const ScopedFramebufferBinding restore_binding;
-    glBindFramebuffer(GL_FRAMEBUFFER, name_);
-    return glCheckFramebufferStatus(GL_FRAMEBUFFER);
-  }
+  [[nodiscard]] GLenum CheckStatus() const;
 
-  [[nodiscard]] GLuint Name() const { return name_; }
+  [[nodiscard]] GLuint Name() const;
 
-  [[nodiscard]] GLuint TextureName() const { return texture_.Name(); }
+  [[nodiscard]] GLuint TextureName() const;
 
  private:
   GLuint name_{0};
@@ -128,15 +79,7 @@ class FrameBuffer {
 // comes into being, the framebuffer stays incomplete — and everything drawn
 // into it is lost without a word. That is how the 16 samples of the PNG export
 // produced a black page under llvmpipe, whose ceiling is 8 (#49).
-[[nodiscard]] inline GLsizei MaxUsableSamples() {
-  GLint max_samples = 0;
-  GLint max_color_samples = 0;
-  GLint max_depth_samples = 0;
-  glGetIntegerv(GL_MAX_SAMPLES, &max_samples);
-  glGetIntegerv(GL_MAX_COLOR_TEXTURE_SAMPLES, &max_color_samples);
-  glGetIntegerv(GL_MAX_DEPTH_TEXTURE_SAMPLES, &max_depth_samples);
-  return std::min({max_samples, max_color_samples, max_depth_samples});
-}
+[[nodiscard]] GLsizei MaxUsableSamples();
 
 // Renders into an off-screen framebuffer and reads the result back as RGBA
 // bytes. With multisampling (samples > 1) it renders into a dedicated MSAA
@@ -149,78 +92,22 @@ class FrameBuffer {
 // falls back to a single sample. A page without antialiasing beats a black one.
 class RenderToTexture {
  public:
-  RenderToTexture(GLsizei width_in, GLsizei height_in, GLsizei samples_in)
-      : width_(width_in),
-        height_(height_in),
-        samples_(std::min(samples_in, MaxUsableSamples())),
-        multisampled_(samples_ > 1),
-        output_frame_buffer_(width_in, height_in, samples_, false) {
-    if (multisampled_) {
-      multisample_frame_buffer_ =
-          std::make_unique<FrameBuffer>(width_in, height_in, samples_, true);
-      if (multisample_frame_buffer_->CheckStatus() != GL_FRAMEBUFFER_COMPLETE) {
-        multisample_frame_buffer_.reset();
-        multisampled_ = false;
-      }
-    }
-
-    valid_ = output_frame_buffer_.CheckStatus() == GL_FRAMEBUFFER_COMPLETE;
-  }
+  RenderToTexture(GLsizei width_in, GLsizei height_in, GLsizei samples_in);
 
   // False when even the single-sample output framebuffer would not come up.
   // Whatever gets read back then says nothing — the caller has to report it
   // rather than write the bytes out.
-  [[nodiscard]] bool Valid() const { return valid_; }
+  [[nodiscard]] bool Valid() const;
 
   // The samples the render really runs with, after the cap and a possible
   // fallback — not what the caller asked for.
-  [[nodiscard]] GLsizei Samples() const { return multisampled_ ? samples_ : 1; }
+  [[nodiscard]] GLsizei Samples() const;
 
-  void BeginRender() {
-    std::array<GLint, 4> viewport{};
-    glGetIntegerv(GL_VIEWPORT, viewport.data());
+  void BeginRender();
 
-    previous_viewport_width_ = viewport[2];
-    previous_viewport_height_ = viewport[3];
+  void EndRender();
 
-    GLint bound_framebuffer = 0;
-    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &bound_framebuffer);
-    previous_framebuffer_ = static_cast<GLuint>(bound_framebuffer);
-
-    const GLuint render_target = multisampled_
-                                     ? multisample_frame_buffer_->Name()
-                                     : output_frame_buffer_.Name();
-    glBindFramebuffer(GL_FRAMEBUFFER, render_target);
-    glViewport(0, 0, width_, height_);
-  }
-
-  void EndRender() {
-    // Resolve the multisampled colour buffer into the single-sample output
-    // buffer. Without MSAA we render straight into the output buffer, so no
-    // blit is needed.
-    if (multisampled_) {
-      glBindFramebuffer(GL_READ_FRAMEBUFFER, multisample_frame_buffer_->Name());
-      glBindFramebuffer(GL_DRAW_FRAMEBUFFER, output_frame_buffer_.Name());
-      glBlitFramebuffer(0, 0, width_, height_, 0, 0, width_, height_,
-                        GL_COLOR_BUFFER_BIT, GL_NEAREST);
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, previous_framebuffer_);
-
-    glViewport(0, 0, previous_viewport_width_, previous_viewport_height_);
-  }
-
-  std::vector<unsigned char> CopyImage() {
-    const size_t image_size = static_cast<size_t>(width_) *
-                              static_cast<size_t>(height_) *
-                              static_cast<size_t>(bytes_per_pixel_);
-    image_.resize(image_size);
-
-    glBindTexture(GL_TEXTURE_2D, output_frame_buffer_.TextureName());
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_.data());
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    return image_;
-  }
+  std::vector<unsigned char> CopyImage();
 
  private:
   static constexpr GLsizei kBytesPerPixel = 4;

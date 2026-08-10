@@ -11,6 +11,7 @@
 #include "../../infrastructure/graphics/rect.hpp"
 #include "../../infrastructure/graphics/shapes.hpp"
 #include "../../infrastructure/graphics/unicode.hpp"
+#include "../../infrastructure/graphics/utf8_codec.hpp"
 #include "section_context.hpp"
 
 // The print area frame and the title: its frame, its text and — while somebody

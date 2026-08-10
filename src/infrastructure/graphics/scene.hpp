@@ -21,16 +21,14 @@
 // surface over the scene graph.
 class Scene {
  public:
-  Scene() : root_(std::make_unique<SceneNode>(kRootName)) {}
+  Scene();
 
-  [[nodiscard]] SceneNode& Root() { return *root_; }
-  [[nodiscard]] const SceneNode& Root() const { return *root_; }
+  [[nodiscard]] SceneNode& Root();
+  [[nodiscard]] const SceneNode& Root() const;
 
   // Renders the whole graph. Painter-order layering is handled inside
   // SceneNode::Draw; this is just the entry point the engine calls per frame.
-  void Draw(const glm::mat4& parent_world = glm::mat4(1.0F)) {
-    root_->Draw(parent_world);
-  }
+  void Draw(const glm::mat4& parent_world = glm::mat4(1.0F));
 
  private:
   static constexpr const char* kRootName = "root";

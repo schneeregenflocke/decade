@@ -15,7 +15,7 @@
 // (case-sensitive, brackets stripped), which breaks the build; FreeType's
 // contract has no in-code fix for this.
 // NOLINTNEXTLINE(llvm-include-order)
-#include <ft2build.h>
-#include FT_FREETYPE_H
+#include <ft2build.h>   // IWYU pragma: export
+#include FT_FREETYPE_H  // IWYU pragma: export
 
 #endif  // FREETYPE_HPP

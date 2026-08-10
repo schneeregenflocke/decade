@@ -34,25 +34,16 @@
 // Children without a shape — pure grouping nodes.
 class ChildPool {
  public:
-  explicit ChildPool(std::shared_ptr<SceneNode> parent)
-      : parent_(std::move(parent)) {}
+  explicit ChildPool(std::shared_ptr<SceneNode> parent);
 
-  ~ChildPool() { parent_->TruncateChildren(used_); }
+  ~ChildPool();
 
   ChildPool(const ChildPool&) = delete;
   ChildPool& operator=(const ChildPool&) = delete;
   ChildPool(ChildPool&&) = delete;
   ChildPool& operator=(ChildPool&&) = delete;
 
-  [[nodiscard]] std::shared_ptr<SceneNode> Next(const std::string& name) {
-    if (used_ == parent_->GetChildren().size()) {
-      parent_->AddChild(std::make_shared<SceneNode>(name));
-    }
-    std::shared_ptr<SceneNode> child = parent_->GetChildren()[used_];
-    ++used_;
-    child->SetNodeName(name);
-    return child;
-  }
+  [[nodiscard]] std::shared_ptr<SceneNode> Next(const std::string& name);
 
  private:
   std::shared_ptr<SceneNode> parent_;

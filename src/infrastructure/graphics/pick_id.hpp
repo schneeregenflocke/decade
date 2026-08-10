@@ -22,15 +22,7 @@ struct PickId {
 };
 
 // The plain name of the kind, for diagnostic output alone.
-[[nodiscard]] inline std::string_view PickKindName(PickId::Kind kind) {
-  switch (kind) {
-    case PickId::Kind::kBar:
-      return "bar";
-    case PickId::Kind::kTitle:
-      return "title";
-  }
-  return "unknown";
-}
+[[nodiscard]] std::string_view PickKindName(PickId::Kind kind);
 
 // A pickable element's identity paired with its page-space rectangle. The scene
 // builder produces these (Bullet-free); the physics layer turns them into

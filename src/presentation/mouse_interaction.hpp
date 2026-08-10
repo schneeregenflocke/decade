@@ -2,6 +2,7 @@
 #define MOUSE_INTERACTION_HPP
 
 #include <cmath>
+#include <glm/ext/matrix_clip_space.hpp>
 #include <glm/glm.hpp>
 #include <glm/vec2.hpp>
 #include <iostream>

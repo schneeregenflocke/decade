@@ -1,21 +1,19 @@
 #ifndef MVP_MATRICES_HPP
 #define MVP_MATRICES_HPP
 
-#include <glm/glm.hpp>
+#include <glm/mat4x4.hpp>
 
 class MVP {
  public:
-  MVP() : projection_(1.0F), view_(1.0F) {}
+  MVP();
 
-  void SetProjection(const glm::mat4& new_projection) {
-    projection_ = new_projection;
-  }
+  void SetProjection(const glm::mat4& new_projection);
 
-  void SetView(const glm::mat4& new_view) { view_ = new_view; }
+  void SetView(const glm::mat4& new_view);
 
-  [[nodiscard]] glm::mat4 GetProjection() const { return projection_; }
+  [[nodiscard]] glm::mat4 GetProjection() const;
 
-  [[nodiscard]] glm::mat4 GetView() const { return view_; }
+  [[nodiscard]] glm::mat4 GetView() const;
 
  private:
   glm::mat4 projection_;

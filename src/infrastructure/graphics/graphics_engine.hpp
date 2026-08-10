@@ -15,41 +15,19 @@ class GraphicsEngine {
   // Background fill of the GL framebuffer: a dark grey.
   static constexpr tinycolormap::Color kClearColor{0.2};
 
-  void Render() {
-    glClearColor(static_cast<GLfloat>(kClearColor.r()),
-                 static_cast<GLfloat>(kClearColor.g()),
-                 static_cast<GLfloat>(kClearColor.b()), 1.0F);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  void Render();
 
-    // Camera uniforms (projection/view) are frame-global and set here for every
-    // shader; the per-node model matrix is applied by each Shape during the
-    // scene-graph traversal below.
-    for (size_t index = 0; index < shaders_.GetNumberShaders(); ++index) {
-      auto& shader = shaders_.GetShader(index);
-
-      shader.UseProgram();
-      shader.SetUniform("projection", mvp_.GetProjection());
-      shader.SetUniform("view", mvp_.GetView());
-    }
-
-    if (scene_.has_value()) {
-      scene_->get().Draw();
-    }
-  }
-
-  void SetMVP(const MVP& new_mvp) { mvp_ = new_mvp; }
+  void SetMVP(const MVP& new_mvp);
 
   // Borrows the Scene (non-owning): its owner outlives the engine's use of it,
   // so there is a single source of truth for the graph's lifetime. An optional
   // reference and not a pointer — the engine can be asked to render before a
   // scene has been set, which is the one absence to model, and a raw pointer
   // member would say nothing about ownership either way.
-  void SetScene(Scene& scene) { scene_ = std::ref(scene); }
+  void SetScene(Scene& scene);
 
   std::optional<std::reference_wrapper<Shader>> SearchShader(
-      const std::string& search_name) {
-    return shaders_.SearchShader(search_name);
-  }
+      const std::string& search_name);
 
  private:
   MVP mvp_;

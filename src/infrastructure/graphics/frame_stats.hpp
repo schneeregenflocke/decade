@@ -13,27 +13,15 @@ class FrameStats {
  public:
   using Clock = std::chrono::steady_clock;
 
-  void AddFrame(Clock::time_point now, std::chrono::nanoseconds render_time) {
-    frame_times_.push_back(now);
-    last_render_time_ = render_time;
-    const auto window_start = now - kWindow;
-    while (!frame_times_.empty() && frame_times_.front() <= window_start) {
-      frame_times_.pop_front();
-    }
-  }
+  void AddFrame(Clock::time_point now, std::chrono::nanoseconds render_time);
 
   // Frames per second in the window ending with the newest frame. Since the app
   // draws event-driven alone, the value carries meaning during an interaction;
   // when idle it stays at its last reading.
-  [[nodiscard]] double Fps() const {
-    return static_cast<double>(frame_times_.size()) /
-           std::chrono::duration<double>(kWindow).count();
-  }
+  [[nodiscard]] double Fps() const;
 
   // The CPU duration of the last drawn frame (render plus buffer swap).
-  [[nodiscard]] double LastRenderMillis() const {
-    return std::chrono::duration<double, std::milli>(last_render_time_).count();
-  }
+  [[nodiscard]] double LastRenderMillis() const;
 
  private:
   static constexpr std::chrono::seconds kWindow{1};

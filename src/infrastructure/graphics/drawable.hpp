@@ -34,7 +34,9 @@ enum class DrawableKind : std::uint8_t {
 // which pins the concrete type when the node is built.
 class Drawable {
  public:
-  virtual ~Drawable() = default;
+  // Defined out of line so the vtable gets emitted once, in drawable.cpp,
+  // instead of in every unit that sees the interface.
+  virtual ~Drawable();
 
   Drawable(const Drawable&) = delete;
   Drawable& operator=(const Drawable&) = delete;

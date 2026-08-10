@@ -6,6 +6,7 @@
 #include <memory>
 #include <string>
 
+#include "child_pool.hpp"
 #include "font.hpp"
 #include "scene_graph.hpp"
 #include "shaders.hpp"
@@ -39,13 +40,9 @@ inline void FillRectangles(const ShapeNode<BoxesShape>& node,
 // including its GL buffers. The label groups all share this shape.
 using TextChildPool = ShapeChildPool<FontShape>;
 
-inline void SetCenteredText(TextChildPool& pool, const std::string& name,
-                            const std::string& text, const glm::vec3& center,
-                            float size, const std::shared_ptr<Font>& font) {
-  FontShape& shape = pool.Next(name).shape;
-  shape.SetFont(font);
-  shape.SetShapeCentered(text, center, size);
-}
+void SetCenteredText(TextChildPool& pool, const std::string& name,
+                     const std::string& text, const glm::vec3& center,
+                     float size, const std::shared_ptr<Font>& font);
 
 }  // namespace scene_shapes
 
