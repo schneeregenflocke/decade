@@ -6,7 +6,7 @@
 #include <string>
 
 // A pure domain value: a single-line text buffer with cursor and selection —
-// the editing logic behind editing in the canvas, without wx, GL or font
+// the editing logic behind editing in the canvas, without a widget, GL or font
 // metrics. Positions count code points, not bytes, hence `std::u32string`: that
 // way an umlaut is one step, and the renderer measures the same units.
 //

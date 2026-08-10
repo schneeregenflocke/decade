@@ -17,7 +17,7 @@
 namespace persistence {
 
 // The return: empty on success, otherwise the display-ready error message.
-// Neither Load nor Save lets an exception escape — the callers sit in wx event
+// Neither Load nor Save lets an exception escape — the callers sit in Qt event
 // handlers, where a throw would tear the application down.
 [[nodiscard]] std::optional<std::string> LoadProjectXml(
     const std::string& file_path, DateGroupStore& date_groups_store,

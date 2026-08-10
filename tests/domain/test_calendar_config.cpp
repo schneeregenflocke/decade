@@ -23,7 +23,7 @@ TEST(CalendarSpanTest, SetSpanClampsAndStores) {
 }
 
 // Regression: SetSpan must never produce a null span — GetSpanLengthYears()
-// would otherwise throw and the error escapes the wx event handler uncaught
+// would otherwise throw and the error escapes the Qt event handler uncaught
 // (First Year > Last Year in the Timeframe tab, or both years = kMaxYear).
 TEST(CalendarSpanTest, SetSpanNormalizesReversedYears) {
   CalendarSpan span;

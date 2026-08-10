@@ -1,8 +1,8 @@
 #ifndef CSV_IO_HPP
 #define CSV_IO_HPP
 
-// CSV import/export for date entries (Infrastructure). Deliberately wx-free so
-// the conversion logic is unit-testable.
+// CSV import/export for date entries (Infrastructure). Deliberately
+// toolkit-free so the conversion logic is unit-testable.
 //
 // CSV files are user-facing data: each row is "from,to" with the to-date
 // inclusive, formatted in the formatter's locale. Like the date table, this is

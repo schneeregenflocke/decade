@@ -16,7 +16,7 @@ constexpr PickId kTitlePick{.kind = PickId::Kind::kTitle, .index = 0};
 constexpr PickId kBarPick{.kind = PickId::Kind::kBar, .index = 0};
 
 // Store plus topics plus editor, as the composition root connects them — only
-// without wx and without GL.
+// without a window and without GL.
 struct EditorFixture {
   domain::TitleConfigTopic title_topic;
   domain::TextEditTopic edit_topic;

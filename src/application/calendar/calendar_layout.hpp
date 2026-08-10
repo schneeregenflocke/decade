@@ -10,9 +10,9 @@
 
 // Application/Infrastructure bridge: the calendar's page geometry, computed
 // once per rebuild from the page size, margins, title height and calendar span.
-// It is pure (GL-free, wx-free) and depends only on primitives, so the whole
-// layout is unit-testable without a GL context — which the previous inline
-// computation inside CalendarSceneComposer::Build() was not.
+// It is pure (GL-free, toolkit-free) and depends only on primitives, so the
+// whole layout is unit-testable without a GL context — which the previous
+// inline computation inside CalendarSceneComposer::Build() was not.
 //
 // The areas are deliberately interdependent and therefore computed in one
 // pass: print area -> title -> calendar -> cells -> row/sub proportions ->

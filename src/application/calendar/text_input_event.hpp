@@ -7,14 +7,14 @@
 
 #include "../../domain/text_edit_buffer.hpp"
 
-// Application: a keyboard input, already translated from wx key codes into its
+// Application: a keyboard input, already translated from Qt key codes into its
 // meaning. The canvas knows the keys, the editor the meaning — this event is
-// the seam between them, so that neither wx codes travel into the application
+// the seam between them, so that neither Qt codes travel into the application
 // nor editing logic into presentation.
 //
 // The clipboard does not turn up here: copying is reading the selection (the
-// editor hands it out as UTF-8), pasting is a kInsert. The wx part thereby
-// stays in presentation.
+// editor hands it out as UTF-8), pasting is a kInsert. The toolkit part
+// thereby stays in presentation.
 struct TextInputEvent {
   enum class Kind : std::uint8_t {
     kInsert,
