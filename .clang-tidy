@@ -40,6 +40,10 @@ Checks:
   - -hicpp-no-array-decay
   - llvm-*
   - -llvm-header-guard
+  # Contradicts misc-use-anonymous-namespace, which is on: one demands static
+  # for a translation-unit-local function, the other the anonymous namespace.
+  # Google style (in force here) uses the anonymous namespace, so this one goes.
+  - -llvm-prefer-static-over-anonymous-namespace
   - misc-*
   - modernize-*
   - -modernize-use-trailing-return-type
