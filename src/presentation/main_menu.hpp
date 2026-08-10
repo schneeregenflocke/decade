@@ -2,12 +2,10 @@
 #define MAIN_MENU_HPP
 
 #include <QtCore/QPointer>
-#include <QtCore/QString>
-#include <QtGui/QAction>
-#include <QtGui/QKeySequence>
-#include <QtWidgets/QMainWindow>
-#include <QtWidgets/QMenu>
-#include <QtWidgets/QMenuBar>
+
+class QAction;
+class QMainWindow;
+class QString;
 
 // The commands of the main menu. Qt addresses a menu entry through its QAction
 // rather than through an identifier, which is why these stand here instead of
@@ -31,38 +29,16 @@ struct MainMenuActions {
 // changes when the menu changes — independently of wiring and commands.
 class MainMenu {
  public:
-  explicit MainMenu(int export_png_dpi) : export_png_dpi_(export_png_dpi) {}
+  explicit MainMenu(int export_png_dpi);
 
-  [[nodiscard]] const MainMenuActions& Actions() const { return actions_; }
+  [[nodiscard]] const MainMenuActions& Actions() const;
 
   // Builds the menu into the window's menu bar. It has to run before the window
   // connects — the actions come into being here.
-  void AttachTo(QMainWindow& window) {
-    QMenuBar* menu_bar = window.menuBar();
-
-    QMenu* file_menu = menu_bar->addMenu("&File");
-    actions_.open_xml = file_menu->addAction("&Open...");
-    file_menu->addSeparator();
-    actions_.save_xml = file_menu->addAction("&Save");
-    actions_.save_xml->setShortcut(QKeySequence::Save);
-    actions_.save_as_xml = file_menu->addAction("Save &As...");
-    file_menu->addSeparator();
-    actions_.import_csv = file_menu->addAction("&Import csv...");
-    actions_.export_csv = file_menu->addAction("&Export csv...");
-    file_menu->addSeparator();
-    actions_.export_png = file_menu->addAction(ExportPngLabel());
-    file_menu->addSeparator();
-    actions_.quit = file_menu->addAction("E&xit");
-    actions_.quit->setShortcut(QKeySequence::Quit);
-
-    QMenu* help_menu = menu_bar->addMenu("&Help");
-    actions_.license_info = help_menu->addAction("&Open Source Licenses");
-  }
+  void AttachTo(QMainWindow& window);
 
  private:
-  [[nodiscard]] QString ExportPngLabel() const {
-    return QString("&Export png (%1 dpi)...").arg(export_png_dpi_);
-  }
+  [[nodiscard]] QString ExportPngLabel() const;
 
   MainMenuActions actions_;
   int export_png_dpi_;

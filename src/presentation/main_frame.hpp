@@ -48,18 +48,7 @@ enum class FileCommand : std::uint8_t {
 class MainFrame : public QMainWindow {
  public:
   MainFrame(QWidget* parent, const application::MainFrameConfig& config,
-            LocaleDateFormatter& locale_date_formatter)
-      : QMainWindow(parent, config.flags),
-        locale_date_formatter_(locale_date_formatter),
-        menu_(GLCanvas::kExportPngDpi) {
-    setWindowTitle(QString::fromStdString(config.title));
-    setObjectName(QString::fromStdString(config.object_name));
-    move(config.position);
-    resize(config.size);
-
-    CreateLayout(config.maximize_on_start);
-    InitMenu();
-  }
+            LocaleDateFormatter& locale_date_formatter);
 
   ~MainFrame() override = default;
   MainFrame(const MainFrame&) = delete;
@@ -67,147 +56,53 @@ class MainFrame : public QMainWindow {
   MainFrame(MainFrame&&) = delete;
   MainFrame& operator=(MainFrame&&) = delete;
 
+  // Defined here, and this member therefore stays in the header: a deduced
+  // return type has to be visible where it is called.
   [[nodiscard]] auto& SignalFileCommand() { return signal_file_command_; }
 
   // Fires while the window is still whole, so whoever holds wiring onto its
   // children can dissolve it before the children go.
+  // Defined here, and this member therefore stays in the header: a deduced
+  // return type has to be visible where it is called.
   [[nodiscard]] auto& SignalClosing() { return signal_closing_; }
 
-  [[nodiscard]] DateTablePanel& DataTable() { return *data_table_panel_; }
-  [[nodiscard]] DateGroupsTablePanel& DateGroupsTable() {
-    return *date_groups_table_panel_;
-  }
-  [[nodiscard]] DocumentSetupPanel& DocumentSetup() {
-    return *document_setup_panel_;
-  }
-  [[nodiscard]] PageSetupPanel& PageSetup() { return *page_setup_panel_; }
-  [[nodiscard]] TitleSetupPanel& TitleSetup() { return *title_setup_panel_; }
-  [[nodiscard]] CalendarSetupPanel& CalendarSetup() {
-    return *calendar_setup_panel_;
-  }
-  [[nodiscard]] FontPanel& Font() { return *font_panel_; }
-  [[nodiscard]] ShapeSetupPanel& ShapeSetup() { return *shape_setup_panel_; }
-  [[nodiscard]] SceneTreePanel& SceneTree() { return *scene_tree_panel_; }
-  [[nodiscard]] GLCanvas& Canvas() { return *gl_canvas_; }
+  [[nodiscard]] DateTablePanel& DataTable();
+  [[nodiscard]] DateGroupsTablePanel& DateGroupsTable();
+  [[nodiscard]] DocumentSetupPanel& DocumentSetup();
+  [[nodiscard]] PageSetupPanel& PageSetup();
+  [[nodiscard]] TitleSetupPanel& TitleSetup();
+  [[nodiscard]] CalendarSetupPanel& CalendarSetup();
+  [[nodiscard]] FontPanel& Font();
+  [[nodiscard]] ShapeSetupPanel& ShapeSetup();
+  [[nodiscard]] SceneTreePanel& SceneTree();
+  [[nodiscard]] GLCanvas& Canvas();
 
   // Preselects the tab with this caption (case-insensitively). It reports
   // whether the tab exists.
-  [[nodiscard]] bool SelectTab(const std::string& label) {
-    const QString wanted = QString::fromStdString(label);
-    for (int index = 0; index < tabs_->count(); ++index) {
-      if (tabs_->tabText(index).compare(wanted, Qt::CaseInsensitive) == 0) {
-        tabs_->setCurrentIndex(index);
-        return true;
-      }
-    }
-    return false;
-  }
+  [[nodiscard]] bool SelectTab(const std::string& label);
 
   // Closes the window after N milliseconds — for headless runs.
-  void CloseAfter(std::int64_t milliseconds) {
-    QTimer::singleShot(static_cast<int>(milliseconds), this,
-                       [this]() { close(); });
-  }
+  void CloseAfter(std::int64_t milliseconds);
 
   // Writes the whole window as a PNG: the widget capture plus the mounted-in GL
   // content, which the widget capture does not draw.
-  [[nodiscard]] bool SaveFrameScreenshot(const std::string& file_path) {
-    const window_screenshot::Overlay overlay{
-        .image = gl_canvas_->CaptureImage(),
-        .origin = gl_canvas_->mapTo(this, QPoint(0, 0)),
-        .size = gl_canvas_->size()};
-    return window_screenshot::SaveWindowPng(*this, overlay, file_path);
-  }
+  [[nodiscard]] bool SaveFrameScreenshot(const std::string& file_path);
 
  protected:
-  void closeEvent(QCloseEvent* event) override {
-    signal_closing_();
-    QMainWindow::closeEvent(event);
-  }
+  void closeEvent(QCloseEvent* event) override;
 
  private:
   // Any two equal numbers do: QSplitter reads the sizes as proportions of the
   // space it actually has.
   static constexpr int kEvenSplit = 10000;
 
-  void CreateLayout(bool maximize_on_start) {
-    auto* splitter = MakeOwned<QSplitter>(Qt::Horizontal, this);
+  void CreateLayout(bool maximize_on_start);
 
-    auto* tabs = MakeOwned<QTabWidget>(splitter);
-    tabs_ = tabs;
-    CreatePanels(tabs);
+  void CreatePanels(QTabWidget* tabs);
 
-    auto* gl_canvas = MakeOwned<GLCanvas>(splitter);
-    gl_canvas_ = gl_canvas;
+  void InitMenu();
 
-    splitter->addWidget(tabs);
-    splitter->addWidget(gl_canvas);
-    // Half and half, and it stays that way when the window grows. Without the
-    // sizes the tab widget's size hint would claim nearly everything and leave
-    // the page a sliver; the stretch factors alone act on resizing only.
-    splitter->setSizes({kEvenSplit, kEvenSplit});
-    splitter->setStretchFactor(0, 1);
-    splitter->setStretchFactor(1, 1);
-
-    setCentralWidget(splitter);
-
-    if (maximize_on_start) {
-      showMaximized();
-    }
-  }
-
-  void CreatePanels(QTabWidget* tabs) {
-    auto* data_table_panel =
-        MakeOwned<DateTablePanel>(tabs, locale_date_formatter_);
-    data_table_panel_ = data_table_panel;
-    auto* date_groups_table_panel = MakeOwned<DateGroupsTablePanel>(tabs);
-    date_groups_table_panel_ = date_groups_table_panel;
-    auto* calendar_setup_panel = MakeOwned<CalendarSetupPanel>(tabs);
-    calendar_setup_panel_ = calendar_setup_panel;
-    auto* scene_tree_panel = MakeOwned<SceneTreePanel>(tabs);
-    scene_tree_panel_ = scene_tree_panel;
-    auto* shape_setup_panel = MakeOwned<ShapeSetupPanel>(tabs);
-    shape_setup_panel_ = shape_setup_panel;
-
-    // Page, font and title share the tab "Document"; the collecting panel owns
-    // the three children, and they get wired one by one through the pointers
-    // below.
-    auto* document_setup_panel = MakeOwned<DocumentSetupPanel>(tabs);
-    document_setup_panel_ = document_setup_panel;
-    page_setup_panel_ = document_setup_panel->GetPageSetupPanel();
-    font_panel_ = document_setup_panel->GetFontPanel();
-    title_setup_panel_ = document_setup_panel->GetTitleSetupPanel();
-
-    tabs->addTab(date_groups_table_panel, "Categories");
-    tabs->addTab(data_table_panel, "Entries");
-    tabs->addTab(document_setup_panel, "Document");
-    tabs->addTab(shape_setup_panel, "Shapes");
-    tabs->addTab(calendar_setup_panel, "Timeframe");
-    tabs->addTab(scene_tree_panel, "Scene");
-  }
-
-  void InitMenu() {
-    menu_.AttachTo(*this);
-    const MainMenuActions& actions = menu_.Actions();
-
-    ConnectFileCommand(actions.open_xml, FileCommand::kOpenXml);
-    ConnectFileCommand(actions.save_xml, FileCommand::kSaveXml);
-    ConnectFileCommand(actions.save_as_xml, FileCommand::kSaveXmlAs);
-    ConnectFileCommand(actions.import_csv, FileCommand::kImportCsv);
-    ConnectFileCommand(actions.export_csv, FileCommand::kExportCsv);
-    ConnectFileCommand(actions.export_png, FileCommand::kExportPng);
-
-    connect(actions.quit, &QAction::triggered, this, [this]() { close(); });
-    connect(actions.license_info, &QAction::triggered, this, [this]() {
-      LicenseInformationDialog dialog(this);
-      dialog.exec();
-    });
-  }
-
-  void ConnectFileCommand(QAction* action, FileCommand command) {
-    connect(action, &QAction::triggered, this,
-            [this, command]() { signal_file_command_(command); });
-  }
+  void ConnectFileCommand(QAction* action, FileCommand command);
 
   LocaleDateFormatter& locale_date_formatter_;
 

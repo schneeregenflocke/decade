@@ -57,85 +57,24 @@ class ElidedPathLabel : public QLabel {
 // their signals are unchanged.
 class DocumentSetupPanel : public QWidget {
  public:
-  explicit DocumentSetupPanel(QWidget* parent) : QWidget(parent) {
-    constexpr int kBorderPx = 5;
+  explicit DocumentSetupPanel(QWidget* parent);
 
-    auto* page_setup_panel = MakeOwned<PageSetupPanel>(this);
-    page_setup_panel_ = page_setup_panel;
-    auto* font_panel = MakeOwned<FontPanel>(this);
-    font_panel_ = font_panel;
-    auto* title_setup_panel = MakeOwned<TitleSetupPanel>(this);
-    title_setup_panel_ = title_setup_panel;
+  void ReceiveProjectFilePath(const std::string& file_path);
 
-    auto* vertical_layout = MakeOwned<QVBoxLayout>();
-    vertical_layout->setContentsMargins(kBorderPx, kBorderPx, kBorderPx,
-                                        kBorderPx);
-    vertical_layout->addWidget(WrapInGroup("File", CreateFilePathRow()));
-    vertical_layout->addWidget(WrapInGroup("Page", page_setup_panel));
-    vertical_layout->addWidget(WrapInGroup("Font", font_panel));
-    vertical_layout->addWidget(WrapInGroup("Title", title_setup_panel));
-    vertical_layout->addStretch(1);
-    setLayout(vertical_layout);
-  }
-
-  void ReceiveProjectFilePath(const std::string& file_path) {
-    file_path_ = file_path;
-    const bool has_path = !file_path_.empty();
-    const QString shown = has_path ? QString::fromStdString(file_path_)
-                                   : QString("unsaved project");
-    file_path_label_->SetFullText(shown);
-    file_path_label_->setToolTip(has_path ? shown : QString());
-    copy_button_->setEnabled(has_path);
-  }
-
-  [[nodiscard]] PageSetupPanel* GetPageSetupPanel() const {
-    return page_setup_panel_;
-  }
-  [[nodiscard]] FontPanel* GetFontPanel() const { return font_panel_; }
-  [[nodiscard]] TitleSetupPanel* GetTitleSetupPanel() const {
-    return title_setup_panel_;
-  }
+  [[nodiscard]] PageSetupPanel* GetPageSetupPanel() const;
+  [[nodiscard]] FontPanel* GetFontPanel() const;
+  [[nodiscard]] TitleSetupPanel* GetTitleSetupPanel() const;
 
  private:
   // A label instead of an input field: the path never gets typed. Copying runs
   // over the button beside it.
-  QLayout* CreateFilePathRow() {
-    auto* label = MakeOwned<ElidedPathLabel>(this);
-    label->SetFullText("unsaved project");
-    file_path_label_ = label;
+  QLayout* CreateFilePathRow();
 
-    auto* copy_button = MakeOwned<QPushButton>("Copy", this);
-    copy_button->setEnabled(false);
-    connect(copy_button, &QPushButton::clicked, this,
-            [this]() { CopyFilePathToClipboard(); });
-    copy_button_ = copy_button;
+  void CopyFilePathToClipboard() const;
 
-    auto* row_layout = MakeOwned<QHBoxLayout>();
-    row_layout->addWidget(label, 1);
-    row_layout->addWidget(copy_button);
-    return row_layout;
-  }
+  QGroupBox* WrapInGroup(const QString& label, QWidget* panel);
 
-  void CopyFilePathToClipboard() const {
-    if (file_path_.empty()) {
-      return;
-    }
-    QGuiApplication::clipboard()->setText(QString::fromStdString(file_path_));
-  }
-
-  QGroupBox* WrapInGroup(const QString& label, QWidget* panel) {
-    auto* group = MakeOwned<QGroupBox>(label, this);
-    auto* group_layout = MakeOwned<QVBoxLayout>();
-    group_layout->addWidget(panel);
-    group->setLayout(group_layout);
-    return group;
-  }
-
-  QGroupBox* WrapInGroup(const QString& label, QLayout* content) {
-    auto* group = MakeOwned<QGroupBox>(label, this);
-    group->setLayout(content);
-    return group;
-  }
+  QGroupBox* WrapInGroup(const QString& label, QLayout* content);
 
   std::string file_path_;
   QPointer<ElidedPathLabel> file_path_label_;

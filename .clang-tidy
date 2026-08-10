@@ -83,10 +83,11 @@ CheckOptions:
   # Libraries that document one entry point and put their symbols in a header
   # behind it: libepoxy (<epoxy/gl.h>, which refuses to compile after
   # GL/gl.h), libpng (<png.h>), FreeType (<ft2build.h> plus the FT_FREETYPE_H
-  # macro, whose internal paths are not portable) and Qt's generated qconfig.h,
-  # which carries QT_VERSION_STR behind <QtCore/QtVersion>. Without this the
-  # check demands the header behind the entry point in every unit.
-  misc-include-cleaner.IgnoreHeaders: "epoxy/.*;pngconf.h;freetype/.*;qconfig.h"
+  # macro, whose internal paths are not portable) and two Qt headers behind the
+  # class headers: qconfig.h carries QT_VERSION_STR behind <QtCore/QtVersion>,
+  # qcontainerfwd.h declares QStringList ahead of <QtCore/QStringList>. Without
+  # this the check demands the header behind the entry point in every unit.
+  misc-include-cleaner.IgnoreHeaders: "epoxy/.*;pngconf.h;freetype/.*;qconfig.h;qcontainerfwd.h"
   readability-identifier-naming.PrivateMemberCase: lower_case
   readability-identifier-naming.PrivateMemberSuffix: "_"
   readability-identifier-naming.ProtectedMemberCase: lower_case
