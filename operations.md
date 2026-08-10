@@ -195,7 +195,30 @@ git config blame.ignoreRevsFile .git-blame-ignore-revs
 CI runs on our own [Forgejo instance](https://git.blem.ch/), not on GitHub Actions. The old workflow file `.github/workflows/cmake.yml` runs on demand alone (`on: workflow_dispatch`, so `gh workflow run cmake.yml`) and takes part in no push. The chain, analogous to `blem-website`:
 
 - `git push origin main` (GitHub) → the GitHub webhook calls the `mirror-sync` API → the pull mirror `github-mirror/decade` syncs at once → the sync fires the push event for `.forgejo/workflows/build.yml`.
-- The workflow (`runs-on: runner-laptop-omen`) runs in an `ubuntu:26.04` container **exclusively** on the CI runner on `laptop-omen` — `runner-<host>` is the exclusive runner label (against the shared `ubuntu-ci`). The heavy C++ build (Boost, Qt, submodules) must not land on homelab (an RPi 4 on USB SMR): there it fails on the 1200 MB limit and drives the disk into I/O saturation (the loadavg incident of 2026-07-11). Is the laptop off, the job waits in the queue instead of falling back to homelab. The runner stack: `docker-stacks/forgejo-runner/docker-compose.ci.yml`, deployed through Komodo (stack `forgejo-runner-laptop-omen`); the label scheme sits in the README there.
+- The workflow (`runs-on: runner-laptop-omen`) runs in an `ubuntu:26.04` container **exclusively** on the CI runner on `laptop-omen` — `runner-<host>` is the exclusive runner label (against the shared `ubuntu-ci`). The heavy C++ build (Boost, Qt, submodules) must not land on homelab, an RPi 4 with 4 GB of RAM: there it fails on the 1200 MB limit the runner caps job containers at. Is the laptop off, the job waits in the queue instead of falling back to homelab. The runner stack: `docker-stacks/forgejo-runner/docker-compose.ci.yml`, deployed through Komodo (stack `forgejo-runner-laptop-omen`); the label scheme sits in the README there.
 - Steps: apt dependencies → checkout with submodules → the clang-format gate → `cmake` and `ninja` (with `-Werror`) → `ctest` → the clang-tidy gate → `sanitize-address`.
 - The clang-format gate runs first, because it needs no build. It exists because the pre-commit hook does not gate anything: it lives in the clone and only after `pre-commit install`, and the drift of [#63](https://github.com/schneeregenflocke/decade/issues/63) grew in a clone that had never run it.
 - `sanitize-address` builds the tree a second time — one CI run therefore compiles the project twice. `sanitize-memory` deliberately does not run in CI: it breaks off on the uninstrumented libstdc++ and gtest and stays a local diagnostic tool.
+
+#### Reading the CI status
+
+[The run list in the browser](https://git.blem.ch/github-mirror/decade/actions) needs an Authelia session; the API needs a token, and **without one it answers 404 rather than 401** — a repo you may not see does not exist. The token sits in OpenBao under `secret/forgejo`; where it comes from and which scopes it carries stands in the [forgejo README](https://github.com/schneeregenflocke/docker-stacks/blob/main/forgejo/README.md), the login in the [openbao role README](https://github.com/schneeregenflocke/ansible-project/blob/main/collections/ansible_collections/schneeregenflocke/homelab/roles/openbao/README.md). Both need the WireGuard link — OpenBao hangs in the tunnel.
+
+```bash
+export BAO_ADDR=http://10.0.0.3:8200
+bao login -method=oidc role=default
+FJ=$(bao kv get -mount=secret -field=admin_token forgejo)
+
+# the last ten runs, one line each
+curl -s -H "Authorization: token $FJ" \
+  "https://git.blem.ch/api/v1/repos/github-mirror/decade/actions/tasks?page=1&limit=10" \
+  | jq -r '.workflow_runs[] | "\(.run_started_at)  \(.name)  \(.status)"'
+```
+
+`name` is the **job** name, so one push yields two runs, `gcc` and `clang` — a green `gcc` beside a red `clang` is the normal shape of a clang-only finding, not a flake. `status` carries the outcome (`success`, `failure`, `cancelled`, `running`); `conclusion` stays `null` in Forgejo 15 and is not the field to read. `?status=failure` shortens the list to what is worth looking at.
+
+The job log stays out of reach of the API — it sits zstd-compressed in the data volume, keyed by the task ID from the call above:
+
+```bash
+ssh homelab 'docker exec forgejo sh -c "cat /data/gitea/actions_log/github-mirror/decade/<hash-prefix>/<task-id>.log.zst"' | zstd -d | less
+```
