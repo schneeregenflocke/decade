@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <QtCore/QObject>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -15,7 +16,8 @@ struct PathRecorder {
   std::vector<std::string> published;
 
   explicit PathRecorder(EventBus& bus) {
-    bus.project_file_path().connect(
+    QObject::connect(
+        &bus.project_file_path(), &domain::FilePathTopic::Published,
         [this](const std::string& path) { published.push_back(path); });
   }
 };
@@ -31,21 +33,28 @@ struct BurstRecorder {
   std::vector<std::string> events;
 
   explicit BurstRecorder(EventBus& bus) {
-    bus.state_burst().connect(
+    QObject::connect(
+        &bus.state_burst(), &domain::StateBurstTopic::Published,
         [this](bool open) { events.emplace_back(open ? "open" : "close"); });
-    bus.date_groups().connect([this](const std::vector<DateGroup>&) {
-      events.emplace_back("store");
-    });
-    bus.date_entries().connect([this](const std::vector<DateEntry>&) {
-      events.emplace_back("store");
-    });
-    bus.page_setup().connect(
+    QObject::connect(&bus.date_groups(), &domain::DateGroupsTopic::Published,
+                     [this](const std::vector<DateGroup>&) {
+                       events.emplace_back("store");
+                     });
+    QObject::connect(&bus.date_entries(), &domain::DateEntriesTopic::Published,
+                     [this](const std::vector<DateEntry>&) {
+                       events.emplace_back("store");
+                     });
+    QObject::connect(
+        &bus.page_setup(), &domain::PageSetupTopic::Published,
         [this](const PageSetupConfig&) { events.emplace_back("store"); });
-    bus.title_config().connect(
+    QObject::connect(
+        &bus.title_config(), &domain::TitleConfigTopic::Published,
         [this](const TitleConfig&) { events.emplace_back("store"); });
-    bus.shape_config_set().connect(
+    QObject::connect(
+        &bus.shape_config_set(), &domain::ShapeConfigSetTopic::Published,
         [this](const ShapeConfigSet&) { events.emplace_back("store"); });
-    bus.calendar_config().connect(
+    QObject::connect(
+        &bus.calendar_config(), &domain::CalendarConfigTopic::Published,
         [this](const CalendarConfig&) { events.emplace_back("store"); });
   }
 
@@ -171,7 +180,8 @@ TEST(ProjectDocumentTest, AFailedLoadStillClosesTheBurst) {
   application::ProjectDocument document(bus, formatter);
 
   std::vector<bool> brackets;
-  bus.state_burst().connect([&](bool open) { brackets.push_back(open); });
+  QObject::connect(&bus.state_burst(), &domain::StateBurstTopic::Published,
+                   [&](bool open) { brackets.push_back(open); });
   ASSERT_TRUE(
       document.LoadXml(TempXmlPath("decade_no_such_file.xml")).has_value());
 

@@ -7,7 +7,7 @@
 #include <utility>
 #include <vector>
 
-#include "../../domain/state_topic.hpp"
+#include "../../domain/state_topics.hpp"
 #include "../../domain/text_edit_buffer.hpp"
 #include "../../domain/text_edit_view.hpp"
 #include "../../domain/title_config.hpp"
@@ -16,9 +16,8 @@
 #include "../../infrastructure/graphics/utf8_codec.hpp"
 #include "text_input_event.hpp"
 
-TitleTextEditor::TitleTextEditor(
-    TitleConfigStore& title_store,
-    domain::StateTopic<std::optional<TextEditView>>& edit_topic)
+TitleTextEditor::TitleTextEditor(TitleConfigStore& title_store,
+                                 domain::TextEditTopic& edit_topic)
     : title_store_(title_store), edit_topic_(edit_topic) {}
 
 void TitleTextEditor::SetPickSource(PickSource pick_source) {
@@ -156,14 +155,14 @@ void TitleTextEditor::End() {
     return;
   }
   buffer_.reset();
-  edit_topic_(std::nullopt);
+  edit_topic_.Publish(std::nullopt);
 }
 
 void TitleTextEditor::Publish(const TextEditBuffer& buffer) {
-  edit_topic_(TextEditView{.text = EncodeUtf8(buffer.Text()),
-                           .caret = buffer.Caret(),
-                           .selection_begin = buffer.SelectionBegin(),
-                           .selection_end = buffer.SelectionEnd()});
+  edit_topic_.Publish(TextEditView{.text = EncodeUtf8(buffer.Text()),
+                                   .caret = buffer.Caret(),
+                                   .selection_begin = buffer.SelectionBegin(),
+                                   .selection_end = buffer.SelectionEnd()});
 }
 
 bool TitleTextEditor::HitsTitle(glm::vec2 page_point) const {

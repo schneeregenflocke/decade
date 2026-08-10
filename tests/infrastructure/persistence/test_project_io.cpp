@@ -14,7 +14,7 @@
 #include "domain/date_period.hpp"
 #include "domain/page_setup_store.hpp"
 #include "domain/shape_configuration_store.hpp"
-#include "domain/state_topic.hpp"
+#include "domain/state_topics.hpp"
 #include "domain/title_config_store.hpp"
 #include "infrastructure/persistence/project_io.hpp"
 
@@ -24,12 +24,12 @@ namespace {
 // every store publishes on an injected channel. The topics are declared first,
 // so they outlive the stores.
 struct ProjectStores {
-  domain::StateTopic<std::vector<DateGroup>> date_groups_topic;
-  domain::StateTopic<std::vector<DateEntry>> date_entries_topic;
-  domain::StateTopic<PageSetupConfig> page_setup_topic;
-  domain::StateTopic<TitleConfig> title_config_topic;
-  domain::StateTopic<ShapeConfigSet> shape_configuration_topic;
-  domain::StateTopic<CalendarConfig> calendar_configuration_topic;
+  domain::DateGroupsTopic date_groups_topic;
+  domain::DateEntriesTopic date_entries_topic;
+  domain::PageSetupTopic page_setup_topic;
+  domain::TitleConfigTopic title_config_topic;
+  domain::ShapeConfigSetTopic shape_configuration_topic;
+  domain::CalendarConfigTopic calendar_configuration_topic;
 
   DateGroupStore date_groups{date_groups_topic};
   DateEntryStore date_entries{date_entries_topic};

@@ -11,7 +11,6 @@
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 #include <glm/vec4.hpp>
-#include <sigslot/signal.hpp>
 #include <string>
 #include <vector>
 
@@ -29,6 +28,8 @@
 // Master and detail rather than one long form, because the set grows with the
 // date groups: the fixed configurations plus one entry per group.
 class ShapeSetupPanel : public QWidget {
+  Q_OBJECT
+
  public:
   explicit ShapeSetupPanel(QWidget* parent);
 
@@ -37,7 +38,8 @@ class ShapeSetupPanel : public QWidget {
   // shift the selection to a different configuration.
   void ReceiveShapeConfigSet(const ShapeConfigSet& shape_config_set);
 
-  sigslot::signal<const ShapeConfigSet&>& SignalShapeConfigSet();
+ signals:
+  void ShapeConfigSetEdited(const ShapeConfigSet& shape_config_set);
 
  private:
   static constexpr float kAlphaByteMax = 255.0F;
@@ -75,7 +77,6 @@ class ShapeSetupPanel : public QWidget {
 
   ShapeConfigSet shape_config_set_;
   std::string selected_name_;
-  sigslot::signal<const ShapeConfigSet&> signal_shape_config_set_;
 
   QPointer<QListWidget> name_list_;
   QPointer<QCheckBox> outline_visible_;

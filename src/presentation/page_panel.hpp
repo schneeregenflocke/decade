@@ -15,12 +15,13 @@
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 #include <array>
-#include <sigslot/signal.hpp>
 
 #include "../domain/page_setup_config.hpp"
 #include "make_owned.hpp"
 
 class PageSetupPanel : public QWidget {
+  Q_OBJECT
+
  public:
   explicit PageSetupPanel(QWidget* parent);
 
@@ -30,11 +31,8 @@ class PageSetupPanel : public QWidget {
 
   void SendDefaultValues();
 
-  // Defined here, and this member therefore stays in the header: a deduced
-  // return type has to be visible where it is called.
-  [[nodiscard]] auto& SignalPageSetupConfig() {
-    return signal_page_setup_config_;
-  }
+ signals:
+  void PageSetupEdited(const PageSetupConfig& page_setup_config);
 
  private:
   // The orientation travels through the domain as a plain int and lands in the
@@ -72,8 +70,6 @@ class PageSetupPanel : public QWidget {
 
   QPointer<QDoubleSpinBox> page_width_spin_;
   QPointer<QDoubleSpinBox> page_height_spin_;
-
-  sigslot::signal<const PageSetupConfig&> signal_page_setup_config_;
 
   bool updating_{false};
 };

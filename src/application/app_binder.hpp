@@ -1,6 +1,8 @@
 #ifndef APP_BINDER_HPP
 #define APP_BINDER_HPP
 
+#include <QtCore/QObject>
+
 #include "../domain/calendar_config_store.hpp"
 #include "../domain/date_entry_store.hpp"
 #include "../domain/date_group_store.hpp"
@@ -63,23 +65,26 @@ struct AppComponents {
 namespace app_binder {
 
 // Connects every producer to its consumer: panel edits go to the owning store,
-// the stores' facts go over the bus.
-void Bind(EventBus& bus, AppComponents& components);
+// the stores' facts go over the bus. Every connection carries `scope` as its
+// context object and thereby lives exactly as long as that object — nothing
+// here has to be disconnected by hand.
+void Bind(QObject& scope, EventBus& bus, AppComponents& components);
 
-// The counterpart to Bind: it disconnects everything. Needed on shutdown — the
-// Qt children (panels, GL canvas) die in the ~QWidget base destructor alone, so
-// after the stores and the event bus. Should a control still fire an event
-// while being destroyed (an open editor commit, say), the slot would otherwise
-// run into objects already destroyed.
-void Unbind(EventBus& bus, AppComponents& components);
+// Releases what no context object can reach: the plain `std::function`
+// callbacks of canvas, controller and editor. They are queries as much as
+// notifications (a pick returns a hit), so they are no signals and Qt knows
+// nothing of them — while they capture the rendering adapter, which gets
+// dissolved right after the wiring.
+void ReleaseCallbacks(AppComponents& components);
 
 void SendInitialValues(EventBus& bus, AppComponents& components);
 
 }  // namespace app_binder
 
-// The wiring as a lifetime instead of two calls paired by hand: connect on
-// construction, disconnect on destruction. Declared as the last member it dies
-// before stores and bus — exactly the order the disconnect needs.
+// The wiring as a lifetime instead of two calls paired by hand: it connects on
+// construction and releases on destruction. Declared as the last member of the
+// composition root it dies before stores and bus — exactly the order the
+// release needs.
 class AppWiring {
  public:
   AppWiring(EventBus& bus, AppComponents components);
@@ -90,8 +95,10 @@ class AppWiring {
   AppWiring& operator=(AppWiring&&) = delete;
 
  private:
-  EventBus& bus_;
   AppComponents components_;
+  // The context object of every connection Bind makes. Qt releases them all
+  // when it dies, so no counterpart to Bind has to list them.
+  QObject connection_scope_;
 };
 
 #endif  // APP_BINDER_HPP

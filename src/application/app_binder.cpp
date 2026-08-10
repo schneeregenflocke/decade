@@ -1,5 +1,6 @@
 #include "app_binder.hpp"
 
+#include <QtCore/QObject>
 #include <glm/ext/vector_float2.hpp>
 
 #include "../domain/calendar_config_store.hpp"
@@ -7,6 +8,7 @@
 #include "../domain/date_group_store.hpp"
 #include "../domain/page_setup_store.hpp"
 #include "../domain/shape_configuration_store.hpp"
+#include "../domain/state_topics.hpp"
 #include "../domain/text_edit_buffer.hpp"
 #include "../domain/title_config_store.hpp"
 #include "../domain/transform_date_entry.hpp"
@@ -26,138 +28,173 @@
 #include "calendar/text_input_event.hpp"
 #include "calendar/title_text_editor.hpp"
 #include "event_bus.hpp"
+#include "interaction_topics.hpp"
 #include "state_burst.hpp"
 
 namespace app_binder {
 namespace {
 
-// Hangs a panel signal onto a bus topic. Needed only where the producer sits in
-// presentation and therefore gets no topic injected.
-template <typename Signal, typename Topic>
-void Forward(Signal& from, Topic& to) {
-  from.connect([&to](const auto& value) { to(value); });
+// Hangs a consumer method onto a producer's signal for the wiring's lifetime.
+//
+// Most consumers are no QObjects — the stores, the rendering adapter, the text
+// editor — so the connection cannot carry the receiver as its context. It
+// carries the scope object instead: Qt releases every connection when that
+// dies, and the receiver has to outlive it, which the composition root's member
+// order settles. Signal and slot keep their own parameter types, so a topic
+// publishing `const T&` also reaches a slot taking `T`.
+template <typename Sender, typename SentValue, typename Receiver,
+          typename ReceivedValue>
+void Connect(QObject& scope, Sender& sender, void (Sender::*signal)(SentValue),
+             Receiver& receiver, void (Receiver::*slot)(ReceivedValue)) {
+  QObject::connect(&sender, signal, &scope, [&receiver, slot](SentValue value) {
+    (receiver.*slot)(value);
+  });
 }
 
-void BindDateEntries(EventBus& bus, AppComponents& components) {
+void BindDateEntries(QObject& scope, EventBus& bus, AppComponents& components) {
   // Panel -> store (user input)
-  components.data_table_panel.SignalTableDateEntries().connect(
-      &DateEntryStore::ReceiveDateEntries, &components.date_entry_store);
+  Connect(scope, components.data_table_panel,
+          &DateTablePanel::DateEntriesEdited, components.date_entry_store,
+          &DateEntryStore::ReceiveDateEntries);
 
   // Topic -> consumers. The store publishes itself.
-  bus.date_entries().connect(&DateTablePanel::ReceiveDateEntries,
-                             &components.data_table_panel);
-  bus.date_entries().connect(&TransformDateEntry::ReceiveDateEntries,
-                             &components.transform_date_entry);
+  Connect(scope, bus.date_entries(), &domain::DateEntriesTopic::Published,
+          components.data_table_panel, &DateTablePanel::ReceiveDateEntries);
+  Connect(scope, bus.date_entries(), &domain::DateEntriesTopic::Published,
+          components.transform_date_entry,
+          &TransformDateEntry::ReceiveDateEntries);
 
   // The transform adapter publishes on its own topic. No shift: DatePeriod is
   // half-open [begin, end) everywhere, so the end is exclusive already. The
   // earlier {end_days = 1} was a correction out of the old inclusive model and
   // made every bar one day too long.
-  bus.transformed_date_entries().connect(&CalendarPage::ReceiveDateEntries,
-                                         &components.calendar_page);
+  Connect(scope, bus.transformed_date_entries(),
+          &domain::DateEntriesTopic::Published, components.calendar_page,
+          &CalendarPage::ReceiveDateEntries);
 }
 
-void BindDateGroups(EventBus& bus, AppComponents& components) {
-  components.date_groups_table_panel.SignalTableDateGroups().connect(
-      &DateGroupStore::ReceiveDateGroups, &components.date_groups_store);
+void BindDateGroups(QObject& scope, EventBus& bus, AppComponents& components) {
+  Connect(scope, components.date_groups_table_panel,
+          &DateGroupsTablePanel::DateGroupsEdited, components.date_groups_store,
+          &DateGroupStore::ReceiveDateGroups);
 
-  bus.date_groups().connect(&DateGroupsTablePanel::ReceiveDateGroups,
-                            &components.date_groups_table_panel);
-  bus.date_groups().connect(&DateEntryStore::ReceiveDateGroups,
-                            &components.date_entry_store);
-  bus.date_groups().connect(&DateTablePanel::ReceiveDateGroups,
-                            &components.data_table_panel);
+  Connect(scope, bus.date_groups(), &domain::DateGroupsTopic::Published,
+          components.date_groups_table_panel,
+          &DateGroupsTablePanel::ReceiveDateGroups);
+  Connect(scope, bus.date_groups(), &domain::DateGroupsTopic::Published,
+          components.date_entry_store, &DateEntryStore::ReceiveDateGroups);
+  Connect(scope, bus.date_groups(), &domain::DateGroupsTopic::Published,
+          components.data_table_panel, &DateTablePanel::ReceiveDateGroups);
   // The store synthesises the per-group shape configurations out of the palette
-  // and publishes them anew — that must run before the scene rebuild, which
-  // reads the updated configurations off the bus.
-  bus.date_groups().connect(&ShapeConfigurationStore::ReceiveDateGroups,
-                            &components.shape_configuration_store);
-  bus.date_groups().connect(&CalendarPage::ReceiveDateGroups,
-                            &components.calendar_page);
+  // and publishes them anew — that must run before the scene rebuild below,
+  // which reads the updated configurations off the bus. What keeps the order is
+  // the order of these two calls: "if a signal is connected to several slots,
+  // the slots are activated in the same order as the order the connection was
+  // made" (https://doc.qt.io/qt-6/qobject.html#connect).
+  Connect(scope, bus.date_groups(), &domain::DateGroupsTopic::Published,
+          components.shape_configuration_store,
+          &ShapeConfigurationStore::ReceiveDateGroups);
+  Connect(scope, bus.date_groups(), &domain::DateGroupsTopic::Published,
+          components.calendar_page, &CalendarPage::ReceiveDateGroups);
 }
 
-void BindPageSetup(EventBus& bus, AppComponents& components) {
-  components.page_setup_panel.SignalPageSetupConfig().connect(
-      &PageSetupStore::ReceivePageSetup, &components.page_setup_store);
+void BindPageSetup(QObject& scope, EventBus& bus, AppComponents& components) {
+  Connect(scope, components.page_setup_panel, &PageSetupPanel::PageSetupEdited,
+          components.page_setup_store, &PageSetupStore::ReceivePageSetup);
 
-  bus.page_setup().connect(&PageSetupPanel::ReceivePageSetup,
-                           &components.page_setup_panel);
-  bus.page_setup().connect(&CalendarPage::ReceivePageSetup,
-                           &components.calendar_page);
-  bus.page_setup().connect(&GLCanvas::ReceivePageSetup, &components.gl_canvas);
+  Connect(scope, bus.page_setup(), &domain::PageSetupTopic::Published,
+          components.page_setup_panel, &PageSetupPanel::ReceivePageSetup);
+  Connect(scope, bus.page_setup(), &domain::PageSetupTopic::Published,
+          components.calendar_page, &CalendarPage::ReceivePageSetup);
+  Connect(scope, bus.page_setup(), &domain::PageSetupTopic::Published,
+          components.gl_canvas, &GLCanvas::ReceivePageSetup);
 }
 
 // The file path comes from the document, not from a store: loading and saving
 // alone change it. The display is a pure consumer.
-void BindProjectFilePath(EventBus& bus, AppComponents& components) {
-  bus.project_file_path().connect(&DocumentSetupPanel::ReceiveProjectFilePath,
-                                  &components.document_setup_panel);
+void BindProjectFilePath(QObject& scope, EventBus& bus,
+                         AppComponents& components) {
+  Connect(scope, bus.project_file_path(), &domain::FilePathTopic::Published,
+          components.document_setup_panel,
+          &DocumentSetupPanel::ReceiveProjectFilePath);
 }
 
 // The font has no store — the panel value goes straight onto the topic and from
 // there to the renderer. Should the font ever get saved with the project, a
 // FontStore steps into the same place as with the other topics.
-void BindFont(EventBus& bus, AppComponents& components) {
-  Forward(components.font_panel.SignalFontConfig(), bus.font_config());
+void BindFont(QObject& scope, EventBus& bus, AppComponents& components) {
+  Connect(scope, components.font_panel, &FontPanel::FontConfigChosen,
+          bus.font_config(), &domain::FontConfigTopic::Publish);
 
-  bus.font_config().connect(&CalendarPage::ReceiveFont,
-                            &components.calendar_page);
+  Connect(scope, bus.font_config(), &domain::FontConfigTopic::Published,
+          components.calendar_page, &CalendarPage::ReceiveFont);
 }
 
-void BindTitleConfig(EventBus& bus, AppComponents& components) {
-  components.title_setup_panel.SignalTitleConfig().connect(
-      &TitleConfigStore::ReceiveTitleConfig, &components.title_config_store);
+void BindTitleConfig(QObject& scope, EventBus& bus, AppComponents& components) {
+  Connect(scope, components.title_setup_panel,
+          &TitleSetupPanel::TitleConfigEdited, components.title_config_store,
+          &TitleConfigStore::ReceiveTitleConfig);
 
-  bus.title_config().connect(&TitleSetupPanel::ReceiveTitleConfig,
-                             &components.title_setup_panel);
-  bus.title_config().connect(&CalendarPage::ReceiveTitleConfig,
-                             &components.calendar_page);
+  Connect(scope, bus.title_config(), &domain::TitleConfigTopic::Published,
+          components.title_setup_panel, &TitleSetupPanel::ReceiveTitleConfig);
+  Connect(scope, bus.title_config(), &domain::TitleConfigTopic::Published,
+          components.calendar_page, &CalendarPage::ReceiveTitleConfig);
 }
 
 // The bracket around a burst of changes. The rendering adapter is its only
 // consumer: it holds its rebuild while the bracket stands (#36).
-void BindStateBurst(EventBus& bus, AppComponents& components) {
-  bus.state_burst().connect(&CalendarPage::ReceiveStateBurst,
-                            &components.calendar_page);
+void BindStateBurst(QObject& scope, EventBus& bus, AppComponents& components) {
+  Connect(scope, bus.state_burst(), &domain::StateBurstTopic::Published,
+          components.calendar_page, &CalendarPage::ReceiveStateBurst);
 }
 
-void BindShapeConfiguration(EventBus& bus, AppComponents& components) {
-  components.shape_setup_panel.SignalShapeConfigSet().connect(
-      &ShapeConfigurationStore::ReceiveShapeConfigSet,
-      &components.shape_configuration_store);
+void BindShapeConfiguration(QObject& scope, EventBus& bus,
+                            AppComponents& components) {
+  Connect(scope, components.shape_setup_panel,
+          &ShapeSetupPanel::ShapeConfigSetEdited,
+          components.shape_configuration_store,
+          &ShapeConfigurationStore::ReceiveShapeConfigSet);
 
-  bus.shape_config_set().connect(&ShapeSetupPanel::ReceiveShapeConfigSet,
-                                 &components.shape_setup_panel);
-  bus.shape_config_set().connect(&CalendarPage::ReceiveShapeConfigSet,
-                                 &components.calendar_page);
-  bus.shape_config_set().connect(&SceneTreePanel::ReceiveShapeConfigSet,
-                                 &components.scene_tree_panel);
+  Connect(scope, bus.shape_config_set(),
+          &domain::ShapeConfigSetTopic::Published, components.shape_setup_panel,
+          &ShapeSetupPanel::ReceiveShapeConfigSet);
+  Connect(scope, bus.shape_config_set(),
+          &domain::ShapeConfigSetTopic::Published, components.calendar_page,
+          &CalendarPage::ReceiveShapeConfigSet);
+  Connect(scope, bus.shape_config_set(),
+          &domain::ShapeConfigSetTopic::Published, components.scene_tree_panel,
+          &SceneTreePanel::ReceiveShapeConfigSet);
 }
 
-void BindCalendarConfig(EventBus& bus, AppComponents& components) {
-  components.calendar_setup_panel.SignalCalendarConfig().connect(
-      &CalendarConfigStore::ReceiveCalendarConfig,
-      &components.calendar_configuration_store);
+void BindCalendarConfig(QObject& scope, EventBus& bus,
+                        AppComponents& components) {
+  Connect(scope, components.calendar_setup_panel,
+          &CalendarSetupPanel::CalendarConfigEdited,
+          components.calendar_configuration_store,
+          &CalendarConfigStore::ReceiveCalendarConfig);
 
-  bus.calendar_config().connect(&CalendarSetupPanel::ReceiveCalendarConfig,
-                                &components.calendar_setup_panel);
-  bus.calendar_config().connect(&CalendarPage::ReceiveCalendarConfig,
-                                &components.calendar_page);
+  Connect(scope, bus.calendar_config(), &domain::CalendarConfigTopic::Published,
+          components.calendar_setup_panel,
+          &CalendarSetupPanel::ReceiveCalendarConfig);
+  Connect(scope, bus.calendar_config(), &domain::CalendarConfigTopic::Published,
+          components.calendar_page, &CalendarPage::ReceiveCalendarConfig);
 }
 
 // The rendering adapter publishes the scene snapshots itself; the scene tree
 // panel is the only consumer. Its selection goes back the other way over the
 // bus to the highlight in the renderer.
-void BindSceneSnapshot(EventBus& bus, AppComponents& components) {
-  bus.scene_snapshot().connect(&SceneTreePanel::ReceiveSceneSnapshot,
-                               &components.scene_tree_panel);
+void BindSceneSnapshot(QObject& scope, EventBus& bus,
+                       AppComponents& components) {
+  Connect(scope, bus.scene_snapshot(), &domain::SceneSnapshotTopic::Published,
+          components.scene_tree_panel, &SceneTreePanel::ReceiveSceneSnapshot);
 
-  Forward(components.scene_tree_panel.SignalSelectedNode(),
-          bus.selected_node());
-  bus.selected_node().connect(&CalendarPage::ReceiveSelectedNode,
-                              &components.calendar_page);
-  bus.selected_node().connect(&SceneTreePanel::ReceiveSelectedNode,
-                              &components.scene_tree_panel);
+  Connect(scope, components.scene_tree_panel,
+          &SceneTreePanel::SelectedNodeChanged, bus.selected_node(),
+          &domain::NodePathTopic::Publish);
+  Connect(scope, bus.selected_node(), &domain::NodePathTopic::Published,
+          components.calendar_page, &CalendarPage::ReceiveSelectedNode);
+  Connect(scope, bus.selected_node(), &domain::NodePathTopic::Published,
+          components.scene_tree_panel, &SceneTreePanel::ReceiveSelectedNode);
 }
 
 // Picking: the canvas reports pointer movements in page space, the controller
@@ -165,7 +202,10 @@ void BindSceneSnapshot(EventBus& bus, AppComponents& components) {
 // itself. Click and double click go to the text editor first: while an edit is
 // running it consumes them (set the cursor, select a word), otherwise the
 // binder passes them on to the controller.
-void BindInteraction(EventBus& bus, AppComponents& components) {
+//
+// These stay plain callbacks rather than signals: a pick source answers with a
+// hit, and a Qt signal carries no return value.
+void BindInteraction(QObject& scope, EventBus& bus, AppComponents& components) {
   auto* page = &components.calendar_page;
   auto* controller = &components.interaction_controller;
   auto* editor = &components.title_text_editor;
@@ -206,38 +246,32 @@ void BindInteraction(EventBus& bus, AppComponents& components) {
   components.gl_canvas.SetSelectedTextSource(
       [editor]() { return editor->SelectedText(); });
 
-  bus.hovered().connect(&CalendarPage::ReceiveHovered,
-                        &components.calendar_page);
-  bus.edit_requested().connect(&TitleTextEditor::Begin, editor);
-  bus.text_edit().connect(&CalendarPage::ReceiveTextEdit,
-                          &components.calendar_page);
+  Connect(scope, bus.hovered(), &application::HoveredTopic::Published,
+          components.calendar_page, &CalendarPage::ReceiveHovered);
+  Connect(scope, bus.edit_requested(),
+          &application::EditRequestTopic::Published,
+          components.title_text_editor, &TitleTextEditor::Begin);
+  Connect(scope, bus.text_edit(), &domain::TextEditTopic::Published,
+          components.calendar_page, &CalendarPage::ReceiveTextEdit);
 }
 
 }  // namespace
 
-void Bind(EventBus& bus, AppComponents& components) {
-  BindDateEntries(bus, components);
-  BindDateGroups(bus, components);
-  BindPageSetup(bus, components);
-  BindProjectFilePath(bus, components);
-  BindFont(bus, components);
-  BindTitleConfig(bus, components);
-  BindStateBurst(bus, components);
-  BindShapeConfiguration(bus, components);
-  BindCalendarConfig(bus, components);
-  BindSceneSnapshot(bus, components);
-  BindInteraction(bus, components);
+void Bind(QObject& scope, EventBus& bus, AppComponents& components) {
+  BindDateEntries(scope, bus, components);
+  BindDateGroups(scope, bus, components);
+  BindPageSetup(scope, bus, components);
+  BindProjectFilePath(scope, bus, components);
+  BindFont(scope, bus, components);
+  BindTitleConfig(scope, bus, components);
+  BindStateBurst(scope, bus, components);
+  BindShapeConfiguration(scope, bus, components);
+  BindCalendarConfig(scope, bus, components);
+  BindSceneSnapshot(scope, bus, components);
+  BindInteraction(scope, bus, components);
 }
 
-void Unbind(EventBus& bus, AppComponents& components) {
-  // The event sources of the presentation layer.
-  components.data_table_panel.SignalTableDateEntries().disconnect_all();
-  components.date_groups_table_panel.SignalTableDateGroups().disconnect_all();
-  components.page_setup_panel.SignalPageSetupConfig().disconnect_all();
-  components.title_setup_panel.SignalTitleConfig().disconnect_all();
-  components.calendar_setup_panel.SignalCalendarConfig().disconnect_all();
-  components.font_panel.SignalFontConfig().disconnect_all();
-  components.scene_tree_panel.SignalSelectedNode().disconnect_all();
+void ReleaseCallbacks(AppComponents& components) {
   components.gl_canvas.SetPointerMoveCallback(nullptr);
   components.gl_canvas.SetPrimaryDownCallback(nullptr);
   components.gl_canvas.SetDoubleClickCallback(nullptr);
@@ -248,24 +282,6 @@ void Unbind(EventBus& bus, AppComponents& components) {
   components.interaction_controller.SetPathSource(nullptr);
   components.title_text_editor.SetPickSource(nullptr);
   components.title_text_editor.SetCaretIndexSource(nullptr);
-
-  // Bus topics: their slots point at panels and the rendering adapter. The
-  // producers may keep publishing afterwards — only nobody listens.
-  bus.date_entries().disconnect_all();
-  bus.transformed_date_entries().disconnect_all();
-  bus.date_groups().disconnect_all();
-  bus.page_setup().disconnect_all();
-  bus.project_file_path().disconnect_all();
-  bus.font_config().disconnect_all();
-  bus.title_config().disconnect_all();
-  bus.shape_config_set().disconnect_all();
-  bus.calendar_config().disconnect_all();
-  bus.scene_snapshot().disconnect_all();
-  bus.hovered().disconnect_all();
-  bus.selected_node().disconnect_all();
-  bus.edit_requested().disconnect_all();
-  bus.text_edit().disconnect_all();
-  bus.state_burst().disconnect_all();
 }
 
 void SendInitialValues(EventBus& bus, AppComponents& components) {
@@ -281,9 +297,9 @@ void SendInitialValues(EventBus& bus, AppComponents& components) {
 }  // namespace app_binder
 
 AppWiring::AppWiring(EventBus& bus, AppComponents components)
-    : bus_(bus), components_(components) {
-  app_binder::Bind(bus_, components_);
-  app_binder::SendInitialValues(bus_, components_);
+    : components_(components) {
+  app_binder::Bind(connection_scope_, bus, components_);
+  app_binder::SendInitialValues(bus, components_);
 }
 
-AppWiring::~AppWiring() { app_binder::Unbind(bus_, components_); }
+AppWiring::~AppWiring() { app_binder::ReleaseCallbacks(components_); }

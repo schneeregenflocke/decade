@@ -5,13 +5,13 @@
 
 #include "date_group.hpp"
 #include "detail/reentry_guard.hpp"
-#include "state_topic.hpp"
+#include "state_topics.hpp"
 
 // Owns a DateGroups value and publishes every change on the injected topic. It
 // has identity -> not copyable. It carries no serialisation code.
 class DateGroupStore {
  public:
-  explicit DateGroupStore(domain::StateTopic<std::vector<DateGroup>>& topic);
+  explicit DateGroupStore(domain::DateGroupsTopic& topic);
   ~DateGroupStore() = default;
   DateGroupStore(const DateGroupStore&) = delete;
   DateGroupStore& operator=(const DateGroupStore&) = delete;
@@ -28,7 +28,7 @@ class DateGroupStore {
 
  private:
   DateGroups date_groups_;
-  domain::StateTopic<std::vector<DateGroup>>& topic_;
+  domain::DateGroupsTopic& topic_;
   bool emitting_{false};
 };
 #endif  // DATE_GROUP_STORE_HPP

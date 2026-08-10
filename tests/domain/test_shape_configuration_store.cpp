@@ -1,11 +1,12 @@
 #include <gtest/gtest.h>
 
+#include <QtCore/QObject>
 #include <glm/vec4.hpp>
 #include <string>
 
 #include "domain/shape_configuration.hpp"
 #include "domain/shape_configuration_store.hpp"
-#include "domain/state_topic.hpp"
+#include "domain/state_topics.hpp"
 
 TEST(ShapeConfigSetTest, DefaultsContainExpectedNames) {
   ShapeConfigSet set;
@@ -95,11 +96,12 @@ TEST(ShapeConfigurationTest, OutlineColorReturnsValueWhenVisible) {
 
 TEST(ShapeConfigurationStoreTest, ReceiveEmitsAndCopiesContents) {
   ShapeConfigSet source;
-  domain::StateTopic<ShapeConfigSet> topic;
+  domain::ShapeConfigSetTopic topic;
   ShapeConfigurationStore target(topic);
 
   int emissions = 0;
-  topic.connect([&](const ShapeConfigSet&) { ++emissions; });
+  QObject::connect(&topic, &domain::ShapeConfigSetTopic::Published,
+                   [&](const ShapeConfigSet&) { ++emissions; });
 
   target.ReceiveShapeConfigSet(source);
 
@@ -110,15 +112,16 @@ TEST(ShapeConfigurationStoreTest, ReceiveEmitsAndCopiesContents) {
 
 TEST(ShapeConfigurationStoreTest, ReentryGuardBlocksRecursiveReceive) {
   ShapeConfigSet secondary;
-  domain::StateTopic<ShapeConfigSet> topic;
+  domain::ShapeConfigSetTopic topic;
   ShapeConfigurationStore primary(topic);
   int emissions = 0;
-  topic.connect([&](const ShapeConfigSet&) {
-    ++emissions;
-    if (emissions == 1) {
-      primary.ReceiveShapeConfigSet(secondary);
-    }
-  });
+  QObject::connect(&topic, &domain::ShapeConfigSetTopic::Published,
+                   [&](const ShapeConfigSet&) {
+                     ++emissions;
+                     if (emissions == 1) {
+                       primary.ReceiveShapeConfigSet(secondary);
+                     }
+                   });
 
   primary.ReceiveShapeConfigSet(secondary);
 

@@ -4,10 +4,9 @@
 
 #include "date_group.hpp"
 #include "detail/reentry_guard.hpp"
-#include "state_topic.hpp"
+#include "state_topics.hpp"
 
-DateGroupStore::DateGroupStore(
-    domain::StateTopic<std::vector<DateGroup>>& topic)
+DateGroupStore::DateGroupStore(domain::DateGroupsTopic& topic)
     : topic_(topic) {}
 
 void DateGroupStore::ReceiveDateGroups(
@@ -17,7 +16,7 @@ void DateGroupStore::ReceiveDateGroups(
   }
   const domain::detail::ScopedReentryFlag guard(emitting_);
   date_groups_.Assign(incoming_date_groups);
-  topic_(date_groups_.Items());
+  topic_.Publish(date_groups_.Items());
 }
 
 const DateGroups& DateGroupStore::Get() const { return date_groups_; }

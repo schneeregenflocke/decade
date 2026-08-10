@@ -6,14 +6,14 @@
 #include "date_group.hpp"
 #include "detail/reentry_guard.hpp"
 #include "shape_configuration.hpp"
-#include "state_topic.hpp"
+#include "state_topics.hpp"
 
 // Owns a ShapeConfigSet value and publishes it on the injected topic. It has
 // identity -> not copyable. The topic carries the value, so the store needs no
 // query delegation.
 class ShapeConfigurationStore {
  public:
-  explicit ShapeConfigurationStore(domain::StateTopic<ShapeConfigSet>& topic);
+  explicit ShapeConfigurationStore(domain::ShapeConfigSetTopic& topic);
   ~ShapeConfigurationStore() = default;
   ShapeConfigurationStore(const ShapeConfigurationStore&) = delete;
   ShapeConfigurationStore(ShapeConfigurationStore&&) = delete;
@@ -34,7 +34,7 @@ class ShapeConfigurationStore {
 
  private:
   ShapeConfigSet shape_config_set_;
-  domain::StateTopic<ShapeConfigSet>& topic_;
+  domain::ShapeConfigSetTopic& topic_;
   bool emitting_{false};
 };
 #endif  // SHAPE_CONFIGURATION_STORE_HPP

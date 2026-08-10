@@ -13,7 +13,6 @@
 #include <cstdint>
 #include <exception>
 #include <ranges>
-#include <sigslot/signal.hpp>
 #include <string>
 #include <vector>
 
@@ -32,6 +31,8 @@
 // conversion happens exactly here (PeriodFromInclusiveDates on input, Last()
 // on display) and nowhere else.
 class DateTablePanel : public TablePanelBase {
+  Q_OBJECT
+
  public:
   // `date_format` belongs to the composition root, so the whole application
   // shares one locale configuration.
@@ -41,7 +42,8 @@ class DateTablePanel : public TablePanelBase {
 
   void ReceiveDateGroups(const std::vector<DateGroup>& date_groups);
 
-  sigslot::signal<const std::vector<DateEntry>&>& SignalTableDateEntries();
+ signals:
+  void DateEntriesEdited(const std::vector<DateEntry>& date_entries);
 
  private:
   enum class Columns : std::uint8_t {
@@ -92,7 +94,6 @@ class DateTablePanel : public TablePanelBase {
 
   LocaleDateFormatter& date_format_;
   DateGroups date_groups_;
-  sigslot::signal<const std::vector<DateEntry>&> signal_table_date_entries_;
 
   bool filling_{false};
 };

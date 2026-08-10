@@ -97,7 +97,7 @@ CalendarConfigStore& ProjectDocument::CalendarConfiguration() {
 
 void ProjectDocument::SetFilePath(std::string file_path) {
   file_path_ = std::move(file_path);
-  file_path_topic_(file_path_);
+  file_path_topic_.Publish(file_path_);
 }
 
 }  // namespace application

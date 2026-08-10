@@ -1,5 +1,7 @@
 #include "shape_panel.hpp"
 
+#include <QtCore/qtmetamacros.h>
+
 #include <QtCore/QObject>
 #include <QtCore/QPointer>
 #include <QtCore/QString>
@@ -14,7 +16,6 @@
 #include <QtWidgets/QWidget>
 #include <cstddef>
 #include <glm/ext/vector_float4.hpp>
-#include <sigslot/signal.hpp>
 #include <string>
 #include <vector>
 
@@ -54,11 +55,6 @@ void ShapeSetupPanel::ReceiveShapeConfigSet(
   shape_config_set_ = shape_config_set;
   RebuildNameList();
   RefreshDetail();
-}
-
-sigslot::signal<const ShapeConfigSet&>&
-ShapeSetupPanel::SignalShapeConfigSet() {
-  return signal_shape_config_set_;
 }
 
 void ShapeSetupPanel::CreateDetailFields(QWidget* detail_widget) {
@@ -211,5 +207,5 @@ void ShapeSetupPanel::CallbackEdit() {
   // The set comes back over the bus while this call still runs; the guard
   // keeps that echo from rebuilding the list under the user's hands.
   const domain::detail::ScopedReentryFlag guard(editing_);
-  signal_shape_config_set_(shape_config_set_);
+  emit ShapeConfigSetEdited(shape_config_set_);
 }

@@ -1,5 +1,7 @@
 #include "page_panel.hpp"
 
+#include <QtCore/qtmetamacros.h>
+
 #include <QtCore/QMarginsF>
 #include <QtCore/QPointer>
 #include <QtCore/QSizeF>
@@ -15,7 +17,6 @@
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 #include <array>
-#include <sigslot/signal.hpp>
 
 #include "../domain/page_setup_config.hpp"
 #include "make_owned.hpp"
@@ -69,7 +70,7 @@ void PageSetupPanel::SendPageSetup() {
       {static_cast<float>(margins.left()), static_cast<float>(margins.bottom()),
        static_cast<float>(margins.right()), static_cast<float>(margins.top())});
 
-  signal_page_setup_config_(page_setup_config);
+  emit PageSetupEdited(page_setup_config);
 }
 
 void PageSetupPanel::ReceivePageSetup(

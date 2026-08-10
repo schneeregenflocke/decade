@@ -1,10 +1,11 @@
 #include <gtest/gtest.h>
 
+#include <QtCore/QObject>
 #include <optional>
 #include <string>
 
 #include "application/calendar/title_text_editor.hpp"
-#include "domain/state_topic.hpp"
+#include "domain/state_topics.hpp"
 #include "domain/text_edit_view.hpp"
 #include "domain/title_config.hpp"
 #include "domain/title_config_store.hpp"
@@ -17,14 +18,15 @@ constexpr PickId kBarPick{.kind = PickId::Kind::kBar, .index = 0};
 // Store plus topics plus editor, as the composition root connects them — only
 // without wx and without GL.
 struct EditorFixture {
-  domain::StateTopic<TitleConfig> title_topic;
-  domain::StateTopic<std::optional<TextEditView>> edit_topic;
+  domain::TitleConfigTopic title_topic;
+  domain::TextEditTopic edit_topic;
   TitleConfigStore store{title_topic};
   TitleTextEditor editor{store, edit_topic};
   std::optional<TextEditView> last_view;
 
   EditorFixture() {
-    edit_topic.connect(
+    QObject::connect(
+        &edit_topic, &domain::TextEditTopic::Published,
         [this](const std::optional<TextEditView>& view) { last_view = view; });
     TitleConfig config;
     config.SetTitleText("Titel");

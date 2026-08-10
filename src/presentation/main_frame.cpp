@@ -1,5 +1,7 @@
 #include "main_frame.hpp"
 
+#include <QtCore/qtmetamacros.h>
+
 #include <QtCore/QPointer>
 #include <QtCore/QString>
 #include <QtCore/QTimer>
@@ -10,7 +12,6 @@
 #include <QtWidgets/QTabWidget>
 #include <QtWidgets/QWidget>
 #include <cstdint>
-#include <sigslot/signal.hpp>
 #include <string>
 
 #include "../application/app_config.hpp"
@@ -96,7 +97,7 @@ bool MainFrame::SaveFrameScreenshot(const std::string& file_path) {
 }
 
 void MainFrame::closeEvent(QCloseEvent* event) {
-  signal_closing_();
+  emit Closing();
   QMainWindow::closeEvent(event);
 }
 
@@ -176,5 +177,5 @@ void MainFrame::InitMenu() {
 
 void MainFrame::ConnectFileCommand(QAction* action, FileCommand command) {
   connect(action, &QAction::triggered, this,
-          [this, command]() { signal_file_command_(command); });
+          [this, command]() { emit FileCommandRequested(command); });
 }

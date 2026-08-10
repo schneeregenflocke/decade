@@ -6,10 +6,9 @@
 #include "date_entry_list.hpp"
 #include "date_group.hpp"
 #include "detail/reentry_guard.hpp"
-#include "state_topic.hpp"
+#include "state_topics.hpp"
 
-DateEntryStore::DateEntryStore(
-    domain::StateTopic<std::vector<DateEntry>>& topic)
+DateEntryStore::DateEntryStore(domain::DateEntriesTopic& topic)
     : topic_(topic) {}
 
 void DateEntryStore::ReceiveDateEntries(
@@ -19,7 +18,7 @@ void DateEntryStore::ReceiveDateEntries(
   }
   const domain::detail::ScopedReentryFlag guard(emitting_);
   date_entries_.Assign(incoming_date_entries);
-  topic_(date_entries_.Items());
+  topic_.Publish(date_entries_.Items());
 }
 
 void DateEntryStore::ReceiveDateGroups(

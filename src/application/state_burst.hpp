@@ -1,7 +1,7 @@
 #ifndef STATE_BURST_HPP
 #define STATE_BURST_HPP
 
-#include "../domain/state_topic.hpp"
+#include "../domain/state_topics.hpp"
 
 namespace application {
 
@@ -14,7 +14,7 @@ namespace application {
 // exactly as before — the bracket is an offer, not a protocol.
 class StateBurst {
  public:
-  explicit StateBurst(domain::StateTopic<bool>& topic);
+  explicit StateBurst(domain::StateBurstTopic& topic);
 
   ~StateBurst();
 
@@ -24,7 +24,7 @@ class StateBurst {
   StateBurst& operator=(StateBurst&&) = delete;
 
  private:
-  domain::StateTopic<bool>& topic_;
+  domain::StateBurstTopic& topic_;
 };
 
 }  // namespace application

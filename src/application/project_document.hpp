@@ -10,7 +10,7 @@
 #include "../domain/date_group_store.hpp"
 #include "../domain/page_setup_store.hpp"
 #include "../domain/shape_configuration_store.hpp"
-#include "../domain/state_topic.hpp"
+#include "../domain/state_topics.hpp"
 #include "../domain/title_config_store.hpp"
 #include "../domain/transform_date_entry.hpp"
 #include "../infrastructure/persistence/csv_io.hpp"
@@ -66,8 +66,8 @@ class ProjectDocument {
   void SetFilePath(std::string file_path);
 
   LocaleDateFormatter& locale_date_formatter_;
-  domain::StateTopic<std::string>& file_path_topic_;
-  domain::StateTopic<bool>& state_burst_topic_;
+  domain::FilePathTopic& file_path_topic_;
+  domain::StateBurstTopic& state_burst_topic_;
   std::string file_path_;
 
   DateGroupStore date_groups_store_;

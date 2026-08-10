@@ -1,5 +1,7 @@
 #include "scene_tree_panel.hpp"
 
+#include <QtCore/qtmetamacros.h>
+
 #include <QtCore/QPointer>
 #include <QtCore/QString>
 #include <QtCore/Qt>
@@ -13,7 +15,6 @@
 #include <cstddef>
 #include <glm/ext/vector_float4.hpp>
 #include <optional>
-#include <sigslot/signal.hpp>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -232,9 +233,9 @@ std::string SceneTreePanel::SelectedPath() const {
 void SceneTreePanel::EmitSelection() {
   const std::string path = SelectedPath();
   if (path.empty()) {
-    signal_selected_node_(std::nullopt);
+    emit SelectedNodeChanged(std::nullopt);
   } else {
-    signal_selected_node_(std::optional<std::string>(path));
+    emit SelectedNodeChanged(std::optional<std::string>(path));
   }
 }
 

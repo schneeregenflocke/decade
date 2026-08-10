@@ -58,7 +58,6 @@ target_include_directories(decade SYSTEM PRIVATE
 	${ICU_INCLUDE_DIRS}
 	external/csv2/include
 	external/tinycolormap/include
-	external/sigslot/include
 	external/bullet3/src
 )
 

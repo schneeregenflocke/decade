@@ -18,7 +18,7 @@
 #include "../../domain/page_setup_config.hpp"
 #include "../../domain/scene_snapshot.hpp"
 #include "../../domain/shape_configuration.hpp"
-#include "../../domain/state_topic.hpp"
+#include "../../domain/state_topics.hpp"
 #include "../../domain/text_edit_view.hpp"
 #include "../../domain/title_config.hpp"
 #include "../../infrastructure/graphics/font.hpp"
@@ -40,7 +40,7 @@ class CalendarPage {
   CalendarPage(GraphicsEngine& graphics_engine,
                application::RenderSurface& render_surface,
                const FontConfig& font_config,
-               domain::StateTopic<SceneNodeSnapshot>& snapshot_topic);
+               domain::SceneSnapshotTopic& snapshot_topic);
 
   void ReceiveDateGroups(const std::vector<DateGroup>& date_groups_in);
 
@@ -108,7 +108,7 @@ class CalendarPage {
   std::size_t open_bursts_{0};
   bool pending_update_{false};
   std::size_t build_count_{0};
-  domain::StateTopic<SceneNodeSnapshot>& snapshot_topic_;
+  domain::SceneSnapshotTopic& snapshot_topic_;
 
   PhysicsWorld physics_world_;
 

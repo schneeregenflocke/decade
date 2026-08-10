@@ -6,7 +6,7 @@
 #include "date_entry.hpp"
 #include "date_period.hpp"
 #include "detail/reentry_guard.hpp"
-#include "state_topic.hpp"
+#include "state_topics.hpp"
 
 // Shifts the begin and end of every entry by a fixed number of days and
 // publishes the result on the injected topic. The shift is zero everywhere
@@ -18,15 +18,14 @@ class TransformDateEntry {
     int end_days;
   };
 
-  explicit TransformDateEntry(
-      domain::StateTopic<std::vector<DateEntry>>& topic);
+  explicit TransformDateEntry(domain::DateEntriesTopic& topic);
 
   void ReceiveDateEntries(const std::vector<DateEntry>& date_entries);
 
   void SetTransform(DateShift shift);
 
  private:
-  domain::StateTopic<std::vector<DateEntry>>& topic_;
+  domain::DateEntriesTopic& topic_;
   DateShift date_shift_;
   bool emitting_{false};
 };

@@ -2,7 +2,7 @@
 #define TITLE_CONFIG_STORE_HPP
 
 #include "detail/reentry_guard.hpp"
-#include "state_topic.hpp"
+#include "state_topics.hpp"
 #include "title_config.hpp"
 
 // Owns a TitleConfig value and publishes it on the injected topic. Not
@@ -10,7 +10,7 @@
 // infrastructure).
 class TitleConfigStore {
  public:
-  explicit TitleConfigStore(domain::StateTopic<TitleConfig>& topic);
+  explicit TitleConfigStore(domain::TitleConfigTopic& topic);
   ~TitleConfigStore() = default;
   TitleConfigStore(const TitleConfigStore&) = delete;
   TitleConfigStore& operator=(const TitleConfigStore&) = delete;
@@ -25,7 +25,7 @@ class TitleConfigStore {
 
  private:
   TitleConfig title_config_;
-  domain::StateTopic<TitleConfig>& topic_;
+  domain::TitleConfigTopic& topic_;
   bool emitting_{false};
 };
 #endif  // TITLE_CONFIG_STORE_HPP

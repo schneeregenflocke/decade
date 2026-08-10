@@ -5,10 +5,9 @@
 #include "date_entry.hpp"
 #include "date_period.hpp"
 #include "detail/reentry_guard.hpp"
-#include "state_topic.hpp"
+#include "state_topics.hpp"
 
-TransformDateEntry::TransformDateEntry(
-    domain::StateTopic<std::vector<DateEntry>>& topic)
+TransformDateEntry::TransformDateEntry(domain::DateEntriesTopic& topic)
     : topic_(topic), date_shift_{.begin_days = 0, .end_days = 0} {}
 
 void TransformDateEntry::ReceiveDateEntries(
@@ -26,7 +25,7 @@ void TransformDateEntry::ReceiveDateEntries(
                    interval.End().AddDays(date_shift_.end_days)));
   }
 
-  topic_(transformed_entries);
+  topic_.Publish(transformed_entries);
 }
 
 void TransformDateEntry::SetTransform(DateShift shift) { date_shift_ = shift; }

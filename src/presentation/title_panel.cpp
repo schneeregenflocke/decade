@@ -1,11 +1,12 @@
 #include "title_panel.hpp"
 
+#include <QtCore/qtmetamacros.h>
+
 #include <QtGui/QColor>
 #include <QtWidgets/QDoubleSpinBox>
 #include <QtWidgets/QFormLayout>
 #include <QtWidgets/QWidget>
 #include <glm/ext/vector_float4.hpp>
-#include <sigslot/signal.hpp>
 
 #include "../domain/title_config.hpp"
 #include "alpha_slider.hpp"
@@ -52,16 +53,14 @@ TitleSetupPanel::TitleSetupPanel(QWidget* parent) : QWidget(parent) {
 
 void TitleSetupPanel::SendDefaultValues() { SendTitleConfig(); }
 
-void TitleSetupPanel::SendTitleConfig() { signal_title_config_(title_config_); }
+void TitleSetupPanel::SendTitleConfig() {
+  emit TitleConfigEdited(title_config_);
+}
 
 void TitleSetupPanel::ReceiveTitleConfig(
     const TitleConfig& incoming_title_config) {
   title_config_ = incoming_title_config;
   UpdateWidgetForSelection();
-}
-
-sigslot::signal<const TitleConfig&>& TitleSetupPanel::SignalTitleConfig() {
-  return signal_title_config_;
 }
 
 void TitleSetupPanel::UpdateWidgetForSelection() {

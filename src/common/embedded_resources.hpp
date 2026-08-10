@@ -43,9 +43,6 @@ inline constexpr auto kRectanglesFragmentShaderData = std::to_array<char>({
 inline constexpr auto kDecadeLicenseData = std::to_array<char>({
 #embed "../../LICENSE.txt"
 });
-inline constexpr auto kSigslotLicenseData = std::to_array<char>({
-#embed "../../external/sigslot/LICENSE"
-});
 inline constexpr auto kCsv2LicenseData = std::to_array<char>({
 #embed "../../external/csv2/LICENSE"
 });
@@ -81,8 +78,6 @@ inline constexpr std::string_view kRectanglesFragmentShader{
 
 inline constexpr std::string_view kDecadeLicense{
     detail::kDecadeLicenseData.data(), detail::kDecadeLicenseData.size()};
-inline constexpr std::string_view kSigslotLicense{
-    detail::kSigslotLicenseData.data(), detail::kSigslotLicenseData.size()};
 inline constexpr std::string_view kCsv2License{detail::kCsv2LicenseData.data(),
                                                detail::kCsv2LicenseData.size()};
 inline constexpr std::string_view kCsv2MioLicense{

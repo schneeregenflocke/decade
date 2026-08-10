@@ -1,34 +1,19 @@
 #ifndef EVENT_BUS_HPP
 #define EVENT_BUS_HPP
 
-#include <optional>
-#include <string>
-#include <vector>
-
-#include "../domain/calendar_config.hpp"
-#include "../domain/date_entry.hpp"
-#include "../domain/date_group.hpp"
-#include "../domain/font_config.hpp"
-#include "../domain/page_setup_config.hpp"
-#include "../domain/scene_snapshot.hpp"
-#include "../domain/shape_configuration.hpp"
-#include "../domain/state_topic.hpp"
-#include "../domain/text_edit_view.hpp"
-#include "../domain/title_config.hpp"
-#include "../infrastructure/graphics/pick_id.hpp"
+#include "../domain/state_topics.hpp"
+#include "interaction_topics.hpp"
 
 // The central typed event bus.
 //
 // One topic per domain event, reachable through an accessor of the same name.
-// Producers publish with `bus.<topic>()(value)`, consumers attach with
-// `bus.<topic>().connect(...)`. Stores get their topic injected on construction
-// and call it themselves — no forwarding stands between any more. Who attaches
-// which consumer sits collected in `main_window_binder`, so neither side needs
-// to know the other.
+// Producers publish with `bus.<topic>().Publish(value)`, consumers attach with
+// `QObject::connect(&bus.<topic>(), &Topic::Published, …)`. Stores get their
+// topic injected on construction and publish themselves — no forwarding stands
+// between any more. Who attaches which consumer sits collected in `app_binder`,
+// so neither side needs to know the other.
 //
 // The topics are private; the accessors are the only way in for both sides.
-// They stay in the header, and this component therefore has no unit of its own:
-// a deduced return type has to be visible where it is called.
 class EventBus {
  public:
   EventBus() = default;
@@ -38,41 +23,39 @@ class EventBus {
   EventBus(EventBus&&) = delete;
   EventBus& operator=(EventBus&&) = delete;
 
-  [[nodiscard]] auto& date_entries() { return date_entries_; }
-  [[nodiscard]] auto& transformed_date_entries() {
-    return transformed_date_entries_;
-  }
-  [[nodiscard]] auto& date_groups() { return date_groups_; }
-  [[nodiscard]] auto& page_setup() { return page_setup_; }
-  [[nodiscard]] auto& project_file_path() { return project_file_path_; }
-  [[nodiscard]] auto& font_config() { return font_config_; }
-  [[nodiscard]] auto& title_config() { return title_config_; }
-  [[nodiscard]] auto& shape_config_set() { return shape_config_set_; }
-  [[nodiscard]] auto& calendar_config() { return calendar_config_; }
-  [[nodiscard]] auto& scene_snapshot() { return scene_snapshot_; }
-  [[nodiscard]] auto& hovered() { return hovered_; }
-  [[nodiscard]] auto& selected_node() { return selected_node_; }
-  [[nodiscard]] auto& edit_requested() { return edit_requested_; }
-  [[nodiscard]] auto& text_edit() { return text_edit_; }
-  [[nodiscard]] auto& state_burst() { return state_burst_; }
+  [[nodiscard]] domain::DateEntriesTopic& date_entries();
+  [[nodiscard]] domain::DateEntriesTopic& transformed_date_entries();
+  [[nodiscard]] domain::DateGroupsTopic& date_groups();
+  [[nodiscard]] domain::PageSetupTopic& page_setup();
+  [[nodiscard]] domain::FilePathTopic& project_file_path();
+  [[nodiscard]] domain::FontConfigTopic& font_config();
+  [[nodiscard]] domain::TitleConfigTopic& title_config();
+  [[nodiscard]] domain::ShapeConfigSetTopic& shape_config_set();
+  [[nodiscard]] domain::CalendarConfigTopic& calendar_config();
+  [[nodiscard]] domain::SceneSnapshotTopic& scene_snapshot();
+  [[nodiscard]] application::HoveredTopic& hovered();
+  [[nodiscard]] domain::NodePathTopic& selected_node();
+  [[nodiscard]] application::EditRequestTopic& edit_requested();
+  [[nodiscard]] domain::TextEditTopic& text_edit();
+  [[nodiscard]] domain::StateBurstTopic& state_burst();
 
  private:
-  domain::StateTopic<std::vector<DateEntry>> date_entries_;
-  domain::StateTopic<std::vector<DateEntry>> transformed_date_entries_;
-  domain::StateTopic<std::vector<DateGroup>> date_groups_;
-  domain::StateTopic<PageSetupConfig> page_setup_;
-  domain::StateTopic<std::string> project_file_path_;
-  domain::StateTopic<FontConfig> font_config_;
-  domain::StateTopic<TitleConfig> title_config_;
-  domain::StateTopic<ShapeConfigSet> shape_config_set_;
-  domain::StateTopic<CalendarConfig> calendar_config_;
-  domain::StateTopic<SceneNodeSnapshot> scene_snapshot_;
-  domain::StateTopic<std::optional<PickId>> hovered_;
-  domain::StateTopic<std::optional<std::string>> selected_node_;
+  domain::DateEntriesTopic date_entries_;
+  domain::DateEntriesTopic transformed_date_entries_;
+  domain::DateGroupsTopic date_groups_;
+  domain::PageSetupTopic page_setup_;
+  domain::FilePathTopic project_file_path_;
+  domain::FontConfigTopic font_config_;
+  domain::TitleConfigTopic title_config_;
+  domain::ShapeConfigSetTopic shape_config_set_;
+  domain::CalendarConfigTopic calendar_config_;
+  domain::SceneSnapshotTopic scene_snapshot_;
+  application::HoveredTopic hovered_;
+  domain::NodePathTopic selected_node_;
   // A double click on an element: please edit this one.
-  domain::StateTopic<PickId> edit_requested_;
+  application::EditRequestTopic edit_requested_;
   // What is to be seen of a running edit; empty means none.
-  domain::StateTopic<std::optional<TextEditView>> text_edit_;
+  domain::TextEditTopic text_edit_;
   // The one topic that carries no state but a bracket around it: true opens a
   // burst of changes, false closes it. Loading a project fills six stores one
   // after another, and every one of them publishes — a consumer that rebuilds
@@ -81,7 +64,7 @@ class EventBus {
   // (ProjectDocument) exists long before the consumer (the rendering adapter,
   // which needs the GL context): over the bus, whoever is not there simply
   // does not listen.
-  domain::StateTopic<bool> state_burst_;
+  domain::StateBurstTopic state_burst_;
 };
 
 #endif  // EVENT_BUS_HPP

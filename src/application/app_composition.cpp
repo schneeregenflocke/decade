@@ -37,9 +37,16 @@ AppComposition::AppComposition(LocaleDateFormatter& locale_date_formatter,
       frame_(std::make_unique<MainFrame>(nullptr, DefaultMainFrameConfig(),
                                          locale_date_formatter)) {
   file_commands_.emplace(*frame_, document_);
-  frame_->SignalFileCommand().connect(&FileCommands::Execute,
-                                      &file_commands_.value());
-  frame_->SignalClosing().connect(&AppComposition::ReleaseGraphics, this);
+  // The commands go once the graphics are released, while the window can still
+  // raise a menu action — hence the check rather than a captured address.
+  QObject::connect(frame_.get(), &MainFrame::FileCommandRequested,
+                   &connection_scope_, [this](FileCommand command) {
+                     if (file_commands_.has_value()) {
+                       file_commands_->Execute(command);
+                     }
+                   });
+  QObject::connect(frame_.get(), &MainFrame::Closing, &connection_scope_,
+                   [this]() { ReleaseGraphics(); });
 
   startup_script_.RunBeforeGraphics(*frame_);
 

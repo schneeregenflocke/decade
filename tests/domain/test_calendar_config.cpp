@@ -1,10 +1,11 @@
 #include <gtest/gtest.h>
 
+#include <QtCore/QObject>
 #include <stdexcept>
 
 #include "domain/calendar_config.hpp"
 #include "domain/calendar_config_store.hpp"
-#include "domain/state_topic.hpp"
+#include "domain/state_topics.hpp"
 
 TEST(CalendarSpanTest, DefaultSpanIsValid) {
   CalendarSpan span;
@@ -66,10 +67,11 @@ TEST(CalendarConfigStoreTest, ReceiveCopiesAndEmits) {
   source.SetSpan({.first_year = 2040, .last_year = 2042});
   source.SetAutoCalendarSpan(false);
 
-  domain::StateTopic<CalendarConfig> topic;
+  domain::CalendarConfigTopic topic;
   CalendarConfigStore target(topic);
   int emissions = 0;
-  topic.connect([&](const CalendarConfig&) { ++emissions; });
+  QObject::connect(&topic, &domain::CalendarConfigTopic::Published,
+                   [&](const CalendarConfig&) { ++emissions; });
 
   target.ReceiveCalendarConfig(source);
 
@@ -82,15 +84,16 @@ TEST(CalendarConfigStoreTest, ReentryGuardBlocksRecursiveReceive) {
   CalendarConfig secondary;
   secondary.SetSpan({.first_year = 2050, .last_year = 2050});
 
-  domain::StateTopic<CalendarConfig> topic;
+  domain::CalendarConfigTopic topic;
   CalendarConfigStore primary(topic);
   int emissions = 0;
-  topic.connect([&](const CalendarConfig&) {
-    ++emissions;
-    if (emissions == 1) {
-      primary.ReceiveCalendarConfig(secondary);
-    }
-  });
+  QObject::connect(&topic, &domain::CalendarConfigTopic::Published,
+                   [&](const CalendarConfig&) {
+                     ++emissions;
+                     if (emissions == 1) {
+                       primary.ReceiveCalendarConfig(secondary);
+                     }
+                   });
 
   primary.ReceiveCalendarConfig(secondary);
 

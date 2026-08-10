@@ -6,8 +6,9 @@
 #include <optional>
 #include <string>
 
-#include "../../domain/state_topic.hpp"
+#include "../../domain/state_topics.hpp"
 #include "../../infrastructure/graphics/pick_id.hpp"
+#include "../interaction_topics.hpp"
 
 // Application: it turns pointer input into events on the scene. The canvas
 // delivers points in page space, the controller tests them through an
@@ -25,10 +26,9 @@ class InteractionController {
   using PickSource = std::function<std::optional<PickId>(glm::vec2)>;
   using PathSource = std::function<std::optional<std::string>(PickId)>;
 
-  InteractionController(
-      domain::StateTopic<std::optional<PickId>>& hovered_topic,
-      domain::StateTopic<std::optional<std::string>>& selected_topic,
-      domain::StateTopic<PickId>& edit_requested_topic);
+  InteractionController(application::HoveredTopic& hovered_topic,
+                        domain::NodePathTopic& selected_topic,
+                        application::EditRequestTopic& edit_requested_topic);
 
   void SetPickSource(PickSource pick_source);
 
@@ -45,9 +45,9 @@ class InteractionController {
  private:
   [[nodiscard]] std::optional<PickId> Pick(glm::vec2 page_point) const;
 
-  domain::StateTopic<std::optional<PickId>>& hovered_topic_;
-  domain::StateTopic<std::optional<std::string>>& selected_topic_;
-  domain::StateTopic<PickId>& edit_requested_topic_;
+  application::HoveredTopic& hovered_topic_;
+  domain::NodePathTopic& selected_topic_;
+  application::EditRequestTopic& edit_requested_topic_;
   PickSource pick_source_;
   PathSource path_source_;
   std::optional<PickId> hovered_;

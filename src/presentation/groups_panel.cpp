@@ -1,12 +1,13 @@
 #include "groups_panel.hpp"
 
+#include <QtCore/qtmetamacros.h>
+
 #include <QtWidgets/QAbstractItemView>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QTableWidget>
 #include <QtWidgets/QTableWidgetItem>
 #include <QtWidgets/QWidget>
 #include <cstddef>
-#include <sigslot/signal.hpp>
 #include <string>
 #include <vector>
 
@@ -49,11 +50,6 @@ void DateGroupsTablePanel::ReceiveDateGroups(
   }
 }
 
-sigslot::signal<const std::vector<DateGroup>&>&
-DateGroupsTablePanel::SignalTableDateGroups() {
-  return signal_table_date_groups_;
-}
-
 void DateGroupsTablePanel::ResizeRows(int row_count) {
   while (table()->rowCount() > row_count) {
     table()->removeRow(table()->rowCount() - 1);
@@ -89,7 +85,7 @@ void DateGroupsTablePanel::CallbackAdd() {
       date_groups_.cbegin() + static_cast<std::ptrdiff_t>(insert_row),
       DateGroup(""));
 
-  signal_table_date_groups_(date_groups_);
+  emit DateGroupsEdited(date_groups_);
 
   table()->selectRow(insert_row);
   table()->scrollToItem(table()->item(insert_row, kNameColumn));
@@ -106,7 +102,7 @@ void DateGroupsTablePanel::CallbackDelete() {
   date_groups_.erase(date_groups_.cbegin() +
                      static_cast<std::ptrdiff_t>(selected_row));
 
-  signal_table_date_groups_(date_groups_);
+  emit DateGroupsEdited(date_groups_);
 
   if (table()->rowCount() > 0) {
     table()->selectRow(selected_row < table()->rowCount() ? selected_row
@@ -127,5 +123,5 @@ void DateGroupsTablePanel::CallbackItemChanged(const QTableWidgetItem* item) {
     return;
   }
   date_groups_[row].SetName(item->text().toStdString());
-  signal_table_date_groups_(date_groups_);
+  emit DateGroupsEdited(date_groups_);
 }

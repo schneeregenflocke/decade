@@ -1,5 +1,7 @@
 #include "date_panel.hpp"
 
+#include <QtCore/qtmetamacros.h>
+
 #include <QtCore/QHashFunctions>
 #include <QtCore/QObject>
 #include <QtCore/QPointer>
@@ -13,7 +15,6 @@
 #include <cstddef>
 #include <exception>
 #include <ranges>
-#include <sigslot/signal.hpp>
 #include <string>
 #include <vector>
 
@@ -130,11 +131,6 @@ void DateTablePanel::ReceiveDateGroups(
   select_group_control_->setCurrentIndex(0);
 }
 
-sigslot::signal<const std::vector<DateEntry>&>&
-DateTablePanel::SignalTableDateEntries() {
-  return signal_table_date_entries_;
-}
-
 void DateTablePanel::SendDateEntries() {
   std::vector<DateEntry> date_entries;
 
@@ -165,7 +161,7 @@ void DateTablePanel::SendDateEntries() {
     date_entries.push_back(date_entry);
   }
 
-  signal_table_date_entries_(date_entries);
+  emit DateEntriesEdited(date_entries);
 }
 
 void DateTablePanel::UpdateDeleteButton() {

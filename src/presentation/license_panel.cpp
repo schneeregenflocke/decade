@@ -60,8 +60,6 @@ void LicenseInformationDialog::CollectLicenses() {
                                    std::string(resources::kCsv2License));
   collected_licenses_.emplace_back("csv2mio",
                                    std::string(resources::kCsv2MioLicense));
-  collected_licenses_.emplace_back("sigslot",
-                                   std::string(resources::kSigslotLicense));
   collected_licenses_.emplace_back(
       "tinycolormap", std::string(resources::kTinycolormapLicense));
   collected_licenses_.emplace_back("Bullet Physics",

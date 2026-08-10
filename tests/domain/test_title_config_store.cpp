@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 
-#include "domain/state_topic.hpp"
+#include <QtCore/QObject>
+
+#include "domain/state_topics.hpp"
 #include "domain/title_config.hpp"
 #include "domain/title_config_store.hpp"
 
@@ -20,7 +22,7 @@ TEST(TitleConfigTest, GettersReturnSetValues) {
 }
 
 TEST(TitleConfigStoreTest, ReceiveStoresAndEmits) {
-  domain::StateTopic<TitleConfig> topic;
+  domain::TitleConfigTopic topic;
   TitleConfigStore store(topic);
   TitleConfig incoming;
   incoming.SetTitleText("incoming");
@@ -28,10 +30,11 @@ TEST(TitleConfigStoreTest, ReceiveStoresAndEmits) {
 
   int emissions = 0;
   std::string observed_text;
-  topic.connect([&](const TitleConfig& cfg) {
-    ++emissions;
-    observed_text = cfg.TitleText();
-  });
+  QObject::connect(&topic, &domain::TitleConfigTopic::Published,
+                   [&](const TitleConfig& cfg) {
+                     ++emissions;
+                     observed_text = cfg.TitleText();
+                   });
 
   store.ReceiveTitleConfig(incoming);
 
@@ -40,17 +43,18 @@ TEST(TitleConfigStoreTest, ReceiveStoresAndEmits) {
 }
 
 TEST(TitleConfigStoreTest, ReentryGuardBlocksRecursiveReceive) {
-  domain::StateTopic<TitleConfig> topic;
+  domain::TitleConfigTopic topic;
   TitleConfigStore store(topic);
   int emissions = 0;
-  topic.connect([&](const TitleConfig&) {
-    ++emissions;
-    if (emissions == 1) {
-      TitleConfig recursive;
-      recursive.SetTitleText("recursive");
-      store.ReceiveTitleConfig(recursive);
-    }
-  });
+  QObject::connect(&topic, &domain::TitleConfigTopic::Published,
+                   [&](const TitleConfig&) {
+                     ++emissions;
+                     if (emissions == 1) {
+                       TitleConfig recursive;
+                       recursive.SetTitleText("recursive");
+                       store.ReceiveTitleConfig(recursive);
+                     }
+                   });
 
   TitleConfig first;
   first.SetTitleText("first");

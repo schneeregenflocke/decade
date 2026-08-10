@@ -11,7 +11,6 @@
 #include <QtWidgets/QWidget>
 #include <cstddef>
 #include <optional>
-#include <sigslot/signal.hpp>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -36,6 +35,8 @@
 // recreates anyway; changes happen where the state is at home (the panel of the
 // respective configuration).
 class SceneTreePanel : public QWidget {
+  Q_OBJECT
+
  public:
   explicit SceneTreePanel(QWidget* parent);
 
@@ -46,12 +47,6 @@ class SceneTreePanel : public QWidget {
   // configuration changes elsewhere.
   void ReceiveShapeConfigSet(const ShapeConfigSet& shape_config_set);
 
-  // Emits the path of the currently selected node (nullopt when none) so the
-  // renderer can highlight that node and its subtree on the calendar.
-  // Defined here, and this member therefore stays in the header: a deduced
-  // return type has to be visible where it is called.
-  [[nodiscard]] auto& SignalSelectedNode() { return signal_selected_node_; }
-
   // Selects the tree item at `path`, driving the normal selection path (detail
   // plus highlight emit). A debug/screenshot aid for exercising the panel
   // without a pointer device; a no-op when the path is unknown.
@@ -61,6 +56,12 @@ class SceneTreePanel : public QWidget {
   // tree follows without reporting it back: otherwise the value would run in a
   // circle.
   void ReceiveSelectedNode(const std::optional<std::string>& path);
+
+ signals:
+  // The path of the currently selected node (nullopt when none), so the
+  // renderer can highlight that node and its subtree on the calendar. The
+  // selection has no store, so the binder puts it onto the topic itself.
+  void SelectedNodeChanged(const std::optional<std::string>& path);
 
  private:
   // Per-node payload: the snapshot node's scalar fields plus its child count. A
@@ -146,7 +147,6 @@ class SceneTreePanel : public QWidget {
   QPointer<QTreeWidget> detail_;
   std::unordered_map<std::string, NodeDetail> node_details_;
   ShapeConfigSet shape_config_set_;
-  sigslot::signal<const std::optional<std::string>&> signal_selected_node_;
 
   bool rebuilding_{false};
 };

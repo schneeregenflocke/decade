@@ -1,6 +1,7 @@
 #ifndef APP_COMPOSITION_HPP
 #define APP_COMPOSITION_HPP
 
+#include <QtCore/QObject>
 #include <memory>
 #include <optional>
 #include <string>
@@ -27,8 +28,10 @@ namespace application {
 // Two parts come into being later, because OpenGL stands ready with a delay:
 // the rendering adapter and the wiring. Both sit in an `optional` and get
 // dissolved again when the window closes — while panels and canvas are still
-// alive. Without that, a panel event still firing on shutdown would run into
-// objects already destroyed.
+// alive. The adapter needs that order for its GL objects, which want a current
+// context; the wiring needs it for the callbacks it planted in canvas,
+// controller and editor, which capture the adapter and are no Qt connections
+// that would release themselves.
 class AppComposition {
  public:
   AppComposition(LocaleDateFormatter& locale_date_formatter,
@@ -86,6 +89,11 @@ class AppComposition {
   std::optional<FileCommands> file_commands_;
   std::optional<CalendarPage> calendar_page_;
   std::optional<AppWiring> wiring_;
+
+  // The context object of the two connections onto the window. Declared last it
+  // dies first, so no menu command and no close event reaches a member already
+  // gone.
+  QObject connection_scope_;
 };
 
 }  // namespace application

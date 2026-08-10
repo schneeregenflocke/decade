@@ -1,8 +1,10 @@
 #include <gtest/gtest.h>
 
+#include <QtCore/QObject>
+
 #include "domain/page_setup_config.hpp"
 #include "domain/page_setup_store.hpp"
-#include "domain/state_topic.hpp"
+#include "domain/state_topics.hpp"
 
 namespace {
 
@@ -17,14 +19,15 @@ PageSetupConfig MakeConfig(float width, float height, int orientation) {
 }  // namespace
 
 TEST(PageSetupStoreTest, ReceiveStoresConfigAndEmitsSignal) {
-  domain::StateTopic<PageSetupConfig> topic;
+  domain::PageSetupTopic topic;
   PageSetupStore store(topic);
   int emissions = 0;
   PageSetupConfig captured{};
-  topic.connect([&](const PageSetupConfig& config) {
-    ++emissions;
-    captured = config;
-  });
+  QObject::connect(&topic, &domain::PageSetupTopic::Published,
+                   [&](const PageSetupConfig& config) {
+                     ++emissions;
+                     captured = config;
+                   });
 
   const auto config = MakeConfig(210.0F, 297.0F, 0);
   store.ReceivePageSetup(config);
@@ -37,11 +40,12 @@ TEST(PageSetupStoreTest, ReceiveStoresConfigAndEmitsSignal) {
 }
 
 TEST(PageSetupStoreTest, SendPageSetupEmitsCurrentConfig) {
-  domain::StateTopic<PageSetupConfig> topic;
+  domain::PageSetupTopic topic;
   PageSetupStore store(topic);
   store.ReceivePageSetup(MakeConfig(100.0F, 100.0F, 1));
   int emissions = 0;
-  topic.connect([&](const PageSetupConfig&) { ++emissions; });
+  QObject::connect(&topic, &domain::PageSetupTopic::Published,
+                   [&](const PageSetupConfig&) { ++emissions; });
 
   store.SendPageSetup();
   store.SendPageSetup();
@@ -49,15 +53,16 @@ TEST(PageSetupStoreTest, SendPageSetupEmitsCurrentConfig) {
 }
 
 TEST(PageSetupStoreTest, ReentryGuardBlocksRecursiveReceive) {
-  domain::StateTopic<PageSetupConfig> topic;
+  domain::PageSetupTopic topic;
   PageSetupStore store(topic);
   int emissions = 0;
-  topic.connect([&](const PageSetupConfig&) {
-    ++emissions;
-    if (emissions == 1) {
-      store.ReceivePageSetup(MakeConfig(0.0F, 0.0F, 9));
-    }
-  });
+  QObject::connect(&topic, &domain::PageSetupTopic::Published,
+                   [&](const PageSetupConfig&) {
+                     ++emissions;
+                     if (emissions == 1) {
+                       store.ReceivePageSetup(MakeConfig(0.0F, 0.0F, 9));
+                     }
+                   });
 
   store.ReceivePageSetup(MakeConfig(210.0F, 297.0F, 0));
 

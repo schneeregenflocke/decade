@@ -1,11 +1,12 @@
 #include <gtest/gtest.h>
 
+#include <QtCore/QObject>
 #include <vector>
 
 #include "domain/date.hpp"
 #include "domain/date_entry.hpp"
 #include "domain/date_period.hpp"
-#include "domain/state_topic.hpp"
+#include "domain/state_topics.hpp"
 #include "domain/transform_date_entry.hpp"
 
 namespace {
@@ -20,12 +21,14 @@ DateEntry MakeEntry(int year, int month, int day_begin, int day_end) {
 }  // namespace
 
 TEST(TransformDateEntryTest, IdentityTransformLeavesIntervalsUnchanged) {
-  domain::StateTopic<std::vector<DateEntry>> topic;
+  domain::DateEntriesTopic topic;
   TransformDateEntry transformer(topic);
   transformer.SetTransform({.begin_days = 0, .end_days = 0});
 
   std::vector<DateEntry> captured;
-  topic.connect([&](const std::vector<DateEntry>& value) { captured = value; });
+  QObject::connect(
+      &topic, &domain::DateEntriesTopic::Published,
+      [&](const std::vector<DateEntry>& value) { captured = value; });
 
   std::vector<DateEntry> input;
   input.push_back(MakeEntry(2030, 6, 10, 20));
@@ -37,12 +40,14 @@ TEST(TransformDateEntryTest, IdentityTransformLeavesIntervalsUnchanged) {
 }
 
 TEST(TransformDateEntryTest, ShiftsBeginAndEndIndependently) {
-  domain::StateTopic<std::vector<DateEntry>> topic;
+  domain::DateEntriesTopic topic;
   TransformDateEntry transformer(topic);
   transformer.SetTransform({.begin_days = -2, .end_days = 3});
 
   std::vector<DateEntry> captured;
-  topic.connect([&](const std::vector<DateEntry>& value) { captured = value; });
+  QObject::connect(
+      &topic, &domain::DateEntriesTopic::Published,
+      [&](const std::vector<DateEntry>& value) { captured = value; });
 
   std::vector<DateEntry> input;
   input.push_back(MakeEntry(2030, 6, 10, 20));
@@ -54,7 +59,7 @@ TEST(TransformDateEntryTest, ShiftsBeginAndEndIndependently) {
 }
 
 TEST(TransformDateEntryTest, ReentryGuardBlocksRecursiveReceive) {
-  domain::StateTopic<std::vector<DateEntry>> topic;
+  domain::DateEntriesTopic topic;
   TransformDateEntry transformer(topic);
   transformer.SetTransform({.begin_days = 0, .end_days = 1});
 
@@ -62,12 +67,13 @@ TEST(TransformDateEntryTest, ReentryGuardBlocksRecursiveReceive) {
   recursive_input.push_back(MakeEntry(2099, 1, 1, 10));
 
   int emissions = 0;
-  topic.connect([&](const std::vector<DateEntry>&) {
-    ++emissions;
-    if (emissions == 1) {
-      transformer.ReceiveDateEntries(recursive_input);
-    }
-  });
+  QObject::connect(&topic, &domain::DateEntriesTopic::Published,
+                   [&](const std::vector<DateEntry>&) {
+                     ++emissions;
+                     if (emissions == 1) {
+                       transformer.ReceiveDateEntries(recursive_input);
+                     }
+                   });
 
   std::vector<DateEntry> input;
   input.push_back(MakeEntry(2030, 1, 1, 10));

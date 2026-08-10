@@ -14,7 +14,6 @@
 #include <QtWidgets/QWidget>
 #include <cstddef>
 #include <functional>
-#include <sigslot/signal.hpp>
 #include <utility>
 #include <vector>
 
@@ -84,18 +83,20 @@ class CalendarSetupForm : public QWidget {
 };
 
 class CalendarSetupPanel : public QWidget {
+  Q_OBJECT
+
  public:
   explicit CalendarSetupPanel(QWidget* parent);
 
   void ReceiveCalendarConfig(const CalendarConfig& incoming_calendar_config);
 
-  sigslot::signal<const CalendarConfig&>& SignalCalendarConfig();
+ signals:
+  void CalendarConfigEdited(const CalendarConfig& calendar_config);
 
  private:
   void CallbackFormChanged();
 
   QPointer<CalendarSetupForm> form_;
   CalendarConfig calendar_config_;
-  sigslot::signal<const CalendarConfig&> signal_calendar_config_;
 };
 #endif  // CALENDAR_PANEL_HPP

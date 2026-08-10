@@ -13,7 +13,6 @@
 #include <cstring>
 #include <iostream>
 #include <memory>
-#include <sigslot/signal.hpp>
 #include <string>
 
 #include "../common/debug_log.hpp"
@@ -36,14 +35,17 @@
 //   (https://fontconfig.pages.freedesktop.org/fontconfig/fontconfig-user.html)
 //   — names and types of FC_FAMILY, FC_WEIGHT, FC_SLANT, FC_SIZE.
 class FontPanel : public QWidget {
+  Q_OBJECT
+
  public:
   explicit FontPanel(QWidget* parent);
 
   [[nodiscard]] const FontConfig& GetFontConfig() const;
 
-  // Defined here, and this member therefore stays in the header: a deduced
-  // return type has to be visible where it is called.
-  [[nodiscard]] auto& SignalFontConfig() { return signal_font_config_; }
+ signals:
+  // The font the user picked. It has no store, so the binder puts it onto the
+  // topic itself.
+  void FontConfigChosen(const FontConfig& font_config);
 
  private:
   // Owns the fontconfig configuration for this panel's lifetime. Loading it
@@ -79,6 +81,5 @@ class FontPanel : public QWidget {
   QPointer<QPushButton> font_button_;
   QFont font_;
   FontConfig font_config_;
-  sigslot::signal<const FontConfig&> signal_font_config_;
 };
 #endif  // FONT_PANEL_HPP

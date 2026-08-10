@@ -10,7 +10,6 @@
 #include <QtWidgets/QTabWidget>
 #include <QtWidgets/QWidget>
 #include <cstdint>
-#include <sigslot/signal.hpp>
 #include <string>
 
 #include "../application/app_config.hpp"
@@ -46,6 +45,8 @@ enum class FileCommand : std::uint8_t {
 // reports menu commands as a signal. It knows neither stores nor bus — whoever
 // wires the panels fetches them through the accessors.
 class MainFrame : public QMainWindow {
+  Q_OBJECT
+
  public:
   MainFrame(QWidget* parent, const application::MainFrameConfig& config,
             LocaleDateFormatter& locale_date_formatter);
@@ -55,16 +56,6 @@ class MainFrame : public QMainWindow {
   MainFrame& operator=(const MainFrame&) = delete;
   MainFrame(MainFrame&&) = delete;
   MainFrame& operator=(MainFrame&&) = delete;
-
-  // Defined here, and this member therefore stays in the header: a deduced
-  // return type has to be visible where it is called.
-  [[nodiscard]] auto& SignalFileCommand() { return signal_file_command_; }
-
-  // Fires while the window is still whole, so whoever holds wiring onto its
-  // children can dissolve it before the children go.
-  // Defined here, and this member therefore stays in the header: a deduced
-  // return type has to be visible where it is called.
-  [[nodiscard]] auto& SignalClosing() { return signal_closing_; }
 
   [[nodiscard]] DateTablePanel& DataTable();
   [[nodiscard]] DateGroupsTablePanel& DateGroupsTable();
@@ -87,6 +78,13 @@ class MainFrame : public QMainWindow {
   // Writes the whole window as a PNG: the widget capture plus the mounted-in GL
   // content, which the widget capture does not draw.
   [[nodiscard]] bool SaveFrameScreenshot(const std::string& file_path);
+
+ signals:
+  void FileCommandRequested(FileCommand command);
+
+  // Fires while the window is still whole, so whoever holds wiring onto its
+  // children can dissolve it before the children go.
+  void Closing();
 
  protected:
   void closeEvent(QCloseEvent* event) override;
@@ -120,8 +118,6 @@ class MainFrame : public QMainWindow {
   QPointer<ShapeSetupPanel> shape_setup_panel_;
 
   MainMenu menu_;
-  sigslot::signal<FileCommand> signal_file_command_;
-  sigslot::signal<> signal_closing_;
 };
 
 #endif  // MAIN_FRAME_HPP

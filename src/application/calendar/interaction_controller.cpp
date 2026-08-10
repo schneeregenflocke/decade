@@ -3,17 +3,17 @@
 #include <glm/ext/vector_float2.hpp>
 #include <iostream>
 #include <optional>
-#include <string>
 #include <utility>
 
 #include "../../common/debug_log.hpp"
-#include "../../domain/state_topic.hpp"
+#include "../../domain/state_topics.hpp"
 #include "../../infrastructure/graphics/pick_id.hpp"
+#include "../interaction_topics.hpp"
 
 InteractionController::InteractionController(
-    domain::StateTopic<std::optional<PickId>>& hovered_topic,
-    domain::StateTopic<std::optional<std::string>>& selected_topic,
-    domain::StateTopic<PickId>& edit_requested_topic)
+    application::HoveredTopic& hovered_topic,
+    domain::NodePathTopic& selected_topic,
+    application::EditRequestTopic& edit_requested_topic)
     : hovered_topic_(hovered_topic),
       selected_topic_(selected_topic),
       edit_requested_topic_(edit_requested_topic) {}
@@ -42,16 +42,16 @@ void InteractionController::OnPointerMove(glm::vec2 page_point) {
     }
   }
 
-  hovered_topic_(hovered_);
+  hovered_topic_.Publish(hovered_);
 }
 
 void InteractionController::OnPrimaryDown(glm::vec2 page_point) {
   const std::optional<PickId> hit = Pick(page_point);
   if (!hit.has_value() || !path_source_) {
-    selected_topic_(std::nullopt);
+    selected_topic_.Publish(std::nullopt);
     return;
   }
-  selected_topic_(path_source_(*hit));
+  selected_topic_.Publish(path_source_(*hit));
 }
 
 void InteractionController::OnDoubleClick(glm::vec2 page_point) {
@@ -59,7 +59,7 @@ void InteractionController::OnDoubleClick(glm::vec2 page_point) {
   if (!hit.has_value()) {
     return;
   }
-  edit_requested_topic_(*hit);
+  edit_requested_topic_.Publish(*hit);
 }
 
 std::optional<PickId> InteractionController::Pick(glm::vec2 page_point) const {

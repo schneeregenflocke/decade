@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <QtCore/QObject>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
@@ -10,7 +11,7 @@
 #include "domain/date_entry_store.hpp"
 #include "domain/date_group.hpp"
 #include "domain/date_period.hpp"
-#include "domain/state_topic.hpp"
+#include "domain/state_topics.hpp"
 
 namespace {
 
@@ -35,7 +36,7 @@ void SeedDefaultGroup(Holder& holder) {
 }  // namespace
 
 TEST(DateEntryStoreTest, ReceiveSortsByBeginDate) {
-  domain::StateTopic<std::vector<DateEntry>> topic;
+  domain::DateEntriesTopic topic;
   DateEntryStore store(topic);
   SeedDefaultGroup(store);
   std::vector<DateEntry> input;
@@ -53,7 +54,7 @@ TEST(DateEntryStoreTest, ReceiveSortsByBeginDate) {
 }
 
 TEST(DateEntryStoreTest, ReceiveAssignsSequentialNumbers) {
-  domain::StateTopic<std::vector<DateEntry>> topic;
+  domain::DateEntriesTopic topic;
   DateEntryStore store(topic);
   SeedDefaultGroup(store);
   std::vector<DateEntry> input;
@@ -71,7 +72,7 @@ TEST(DateEntryStoreTest, ReceiveAssignsSequentialNumbers) {
 }
 
 TEST(DateEntryStoreTest, SpanReflectsFirstAndLastYear) {
-  domain::StateTopic<std::vector<DateEntry>> topic;
+  domain::DateEntriesTopic topic;
   DateEntryStore store(topic);
   SeedDefaultGroup(store);
   std::vector<DateEntry> input;
@@ -85,11 +86,12 @@ TEST(DateEntryStoreTest, SpanReflectsFirstAndLastYear) {
 }
 
 TEST(DateEntryStoreTest, EmitsSignalOnReceive) {
-  domain::StateTopic<std::vector<DateEntry>> topic;
+  domain::DateEntriesTopic topic;
   DateEntryStore store(topic);
   SeedDefaultGroup(store);
   int emissions = 0;
-  topic.connect([&](const std::vector<DateEntry>&) { ++emissions; });
+  QObject::connect(&topic, &domain::DateEntriesTopic::Published,
+                   [&](const std::vector<DateEntry>&) { ++emissions; });
 
   std::vector<DateEntry> input;
   input.push_back(MakeEntry(2030, 1, 1, 1, 10));
@@ -99,19 +101,20 @@ TEST(DateEntryStoreTest, EmitsSignalOnReceive) {
 }
 
 TEST(DateEntryStoreTest, ReentryGuardBlocksRecursiveReceive) {
-  domain::StateTopic<std::vector<DateEntry>> topic;
+  domain::DateEntriesTopic topic;
   DateEntryStore store(topic);
   SeedDefaultGroup(store);
   std::vector<DateEntry> recursive_input;
   recursive_input.push_back(MakeEntry(2099, 1, 1, 1, 10));
 
   int emissions = 0;
-  topic.connect([&](const std::vector<DateEntry>&) {
-    ++emissions;
-    if (emissions == 1) {
-      store.ReceiveDateEntries(recursive_input);
-    }
-  });
+  QObject::connect(&topic, &domain::DateEntriesTopic::Published,
+                   [&](const std::vector<DateEntry>&) {
+                     ++emissions;
+                     if (emissions == 1) {
+                       store.ReceiveDateEntries(recursive_input);
+                     }
+                   });
 
   std::vector<DateEntry> input;
   input.push_back(MakeEntry(2030, 1, 1, 1, 10));
@@ -206,7 +209,7 @@ TEST(DateEntryBarsTest, LastYearComesFromLatestEndNotLatestBegin) {
 
 // Null periods (no contained day) carry no data and are filtered out.
 TEST(DateEntryStoreTest, DropsNullPeriodEntries) {
-  domain::StateTopic<std::vector<DateEntry>> topic;
+  domain::DateEntriesTopic topic;
   DateEntryStore store(topic);
   SeedDefaultGroup(store);
   DateEntry null_entry;

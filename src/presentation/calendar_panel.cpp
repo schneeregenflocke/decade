@@ -1,5 +1,7 @@
 #include "calendar_panel.hpp"
 
+#include <QtCore/qtmetamacros.h>
+
 #include <QtCore/QPointer>
 #include <QtCore/QString>
 #include <QtGui/QFont>
@@ -13,7 +15,6 @@
 #include <QtWidgets/QWidget>
 #include <cstddef>
 #include <functional>
-#include <sigslot/signal.hpp>
 #include <utility>
 #include <vector>
 
@@ -167,12 +168,7 @@ void CalendarSetupPanel::ReceiveCalendarConfig(
   form_->LoadConfig(calendar_config_);
 }
 
-sigslot::signal<const CalendarConfig&>&
-CalendarSetupPanel::SignalCalendarConfig() {
-  return signal_calendar_config_;
-}
-
 void CalendarSetupPanel::CallbackFormChanged() {
   calendar_config_ = form_->ReadConfig();
-  signal_calendar_config_(calendar_config_);
+  emit CalendarConfigEdited(calendar_config_);
 }

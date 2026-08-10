@@ -2,10 +2,9 @@
 
 #include "calendar_config.hpp"
 #include "detail/reentry_guard.hpp"
-#include "state_topic.hpp"
+#include "state_topics.hpp"
 
-CalendarConfigStore::CalendarConfigStore(
-    domain::StateTopic<CalendarConfig>& topic)
+CalendarConfigStore::CalendarConfigStore(domain::CalendarConfigTopic& topic)
     : topic_(topic) {}
 
 void CalendarConfigStore::ReceiveCalendarConfig(
@@ -15,10 +14,12 @@ void CalendarConfigStore::ReceiveCalendarConfig(
   }
   const domain::detail::ScopedReentryFlag guard(emitting_);
   calendar_config_ = incoming_calendar_config;
-  topic_(calendar_config_);
+  topic_.Publish(calendar_config_);
 }
 
-void CalendarConfigStore::SendCalendarConfig() { topic_(calendar_config_); }
+void CalendarConfigStore::SendCalendarConfig() {
+  topic_.Publish(calendar_config_);
+}
 
 const CalendarConfig& CalendarConfigStore::Get() const {
   return calendar_config_;

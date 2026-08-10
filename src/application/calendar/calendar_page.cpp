@@ -16,9 +16,8 @@
 #include "../../domain/date_group.hpp"
 #include "../../domain/font_config.hpp"
 #include "../../domain/page_setup_config.hpp"
-#include "../../domain/scene_snapshot.hpp"
 #include "../../domain/shape_configuration.hpp"
-#include "../../domain/state_topic.hpp"
+#include "../../domain/state_topics.hpp"
 #include "../../domain/text_edit_view.hpp"
 #include "../../domain/title_config.hpp"
 #include "../../infrastructure/graphics/font.hpp"
@@ -27,10 +26,10 @@
 #include "../../infrastructure/graphics/pick_id.hpp"
 #include "../render_surface.hpp"
 
-CalendarPage::CalendarPage(
-    GraphicsEngine& graphics_engine, application::RenderSurface& render_surface,
-    const FontConfig& font_config,
-    domain::StateTopic<SceneNodeSnapshot>& snapshot_topic)
+CalendarPage::CalendarPage(GraphicsEngine& graphics_engine,
+                           application::RenderSurface& render_surface,
+                           const FontConfig& font_config,
+                           domain::SceneSnapshotTopic& snapshot_topic)
     : render_surface_(render_surface),
       snapshot_topic_(snapshot_topic),
       font_config_(font_config),
@@ -142,7 +141,7 @@ void CalendarPage::Rebuild() {
   BuildScene("state change");
   physics_world_.Rebuild(scene_composer_.PickBoxes());
   render_surface_.RefreshView();
-  snapshot_topic_(scene_composer_.SceneSnapshot());
+  snapshot_topic_.Publish(scene_composer_.SceneSnapshot());
 }
 
 void CalendarPage::BuildScene(const char* reason) {

@@ -3,14 +3,14 @@
 
 #include "calendar_config.hpp"
 #include "detail/reentry_guard.hpp"
-#include "state_topic.hpp"
+#include "state_topics.hpp"
 
 // Owns a CalendarConfig value and publishes it on the injected topic. It has
 // identity -> not copyable. The topic carries the value, so the store needs no
 // query delegation.
 class CalendarConfigStore {
  public:
-  explicit CalendarConfigStore(domain::StateTopic<CalendarConfig>& topic);
+  explicit CalendarConfigStore(domain::CalendarConfigTopic& topic);
   ~CalendarConfigStore() = default;
   CalendarConfigStore(const CalendarConfigStore&) = delete;
   CalendarConfigStore(CalendarConfigStore&&) = delete;
@@ -25,7 +25,7 @@ class CalendarConfigStore {
 
  private:
   CalendarConfig calendar_config_;
-  domain::StateTopic<CalendarConfig>& topic_;
+  domain::CalendarConfigTopic& topic_;
   bool emitting_{false};
 };
 #endif  // CALENDAR_CONFIG_STORE_HPP

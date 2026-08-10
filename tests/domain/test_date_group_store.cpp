@@ -1,12 +1,13 @@
 #include <gtest/gtest.h>
 
+#include <QtCore/QObject>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
 #include "domain/date_group.hpp"
 #include "domain/date_group_store.hpp"
-#include "domain/state_topic.hpp"
+#include "domain/state_topics.hpp"
 
 namespace {
 
@@ -22,7 +23,7 @@ std::vector<DateGroup> MakeGroups(std::initializer_list<const char*> names) {
 }  // namespace
 
 TEST(DateGroupStoreTest, ReceiveAssignsAndRenumbersGroups) {
-  domain::StateTopic<std::vector<DateGroup>> topic;
+  domain::DateGroupsTopic topic;
   DateGroupStore store(topic);
   store.ReceiveDateGroups(MakeGroups({"alpha", "beta", "gamma"}));
 
@@ -34,14 +35,15 @@ TEST(DateGroupStoreTest, ReceiveAssignsAndRenumbersGroups) {
 }
 
 TEST(DateGroupStoreTest, ReceiveEmitsSignalToConnectedSlot) {
-  domain::StateTopic<std::vector<DateGroup>> topic;
+  domain::DateGroupsTopic topic;
   DateGroupStore store(topic);
   int call_count = 0;
   std::size_t observed_size = 0;
-  topic.connect([&](const std::vector<DateGroup>& groups) {
-    ++call_count;
-    observed_size = groups.size();
-  });
+  QObject::connect(&topic, &domain::DateGroupsTopic::Published,
+                   [&](const std::vector<DateGroup>& groups) {
+                     ++call_count;
+                     observed_size = groups.size();
+                   });
 
   store.ReceiveDateGroups(MakeGroups({"a", "b"}));
 
@@ -50,7 +52,7 @@ TEST(DateGroupStoreTest, ReceiveEmitsSignalToConnectedSlot) {
 }
 
 TEST(DateGroupStoreTest, GetNumberAndGetNameRoundTrip) {
-  domain::StateTopic<std::vector<DateGroup>> topic;
+  domain::DateGroupsTopic topic;
   DateGroupStore store(topic);
   store.ReceiveDateGroups(MakeGroups({"x", "y", "z"}));
   EXPECT_EQ(store.Get().GetNumber("y"), 1);
@@ -58,14 +60,14 @@ TEST(DateGroupStoreTest, GetNumberAndGetNameRoundTrip) {
 }
 
 TEST(DateGroupStoreTest, GetNumberThrowsForUnknownName) {
-  domain::StateTopic<std::vector<DateGroup>> topic;
+  domain::DateGroupsTopic topic;
   DateGroupStore store(topic);
   store.ReceiveDateGroups(MakeGroups({"only"}));
   EXPECT_THROW((void)store.Get().GetNumber("missing"), std::runtime_error);
 }
 
 TEST(DateGroupStoreTest, GetGroupMaxReflectsCurrentSize) {
-  domain::StateTopic<std::vector<DateGroup>> topic;
+  domain::DateGroupsTopic topic;
   DateGroupStore store(topic);
   EXPECT_EQ(store.Get().GetGroupMax(), -1);
   store.ReceiveDateGroups(MakeGroups({"a"}));
@@ -75,10 +77,11 @@ TEST(DateGroupStoreTest, GetGroupMaxReflectsCurrentSize) {
 }
 
 TEST(DateGroupStoreTest, SendDefaultValuesEmitsOneDefaultGroup) {
-  domain::StateTopic<std::vector<DateGroup>> topic;
+  domain::DateGroupsTopic topic;
   DateGroupStore store(topic);
   std::vector<DateGroup> captured;
-  topic.connect(
+  QObject::connect(
+      &topic, &domain::DateGroupsTopic::Published,
       [&](const std::vector<DateGroup>& groups) { captured = groups; });
 
   store.SendDefaultValues();
@@ -90,16 +93,18 @@ TEST(DateGroupStoreTest, SendDefaultValuesEmitsOneDefaultGroup) {
 TEST(DateGroupStoreTest, ReentryGuardBlocksRecursiveReceive) {
   // A slot that re-calls Receive on the same store would cause an infinite
   // signal storm. The re-entry guard must suppress the inner call entirely.
-  domain::StateTopic<std::vector<DateGroup>> topic;
+  domain::DateGroupsTopic topic;
   DateGroupStore store(topic);
   int outer_emissions = 0;
-  topic.connect([&](const std::vector<DateGroup>& /*groups*/) {
-    ++outer_emissions;
-    if (outer_emissions == 1) {
-      // Try to re-enter from inside the slot. The guard must drop this.
-      store.ReceiveDateGroups(MakeGroups({"recursive"}));
-    }
-  });
+  QObject::connect(&topic, &domain::DateGroupsTopic::Published,
+                   [&](const std::vector<DateGroup>& /*groups*/) {
+                     ++outer_emissions;
+                     if (outer_emissions == 1) {
+                       // Try to re-enter from inside the slot. The guard must
+                       // drop this.
+                       store.ReceiveDateGroups(MakeGroups({"recursive"}));
+                     }
+                   });
 
   store.ReceiveDateGroups(MakeGroups({"initial"}));
 

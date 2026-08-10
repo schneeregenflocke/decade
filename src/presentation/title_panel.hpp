@@ -3,7 +3,6 @@
 
 #include <QtCore/QPointer>
 #include <QtWidgets/QWidget>
-#include <sigslot/signal.hpp>
 
 #include "../domain/title_config.hpp"
 #include "alpha_slider.hpp"
@@ -15,6 +14,8 @@ class QDoubleSpinBox;
 // no field here: it gets edited in the canvas (a double click) and comes
 // through as part of the received TitleConfig alone.
 class TitleSetupPanel : public QWidget {
+  Q_OBJECT
+
  public:
   explicit TitleSetupPanel(QWidget* parent);
 
@@ -24,7 +25,8 @@ class TitleSetupPanel : public QWidget {
 
   void ReceiveTitleConfig(const TitleConfig& incoming_title_config);
 
-  sigslot::signal<const TitleConfig&>& SignalTitleConfig();
+ signals:
+  void TitleConfigEdited(const TitleConfig& title_config);
 
  private:
   // wxSpinCtrlDouble capped at 100 without being told; the number stays, so a
@@ -44,7 +46,6 @@ class TitleSetupPanel : public QWidget {
   void SendUnlessLoading();
 
   TitleConfig title_config_;
-  sigslot::signal<const TitleConfig&> signal_title_config_;
 
   QPointer<QDoubleSpinBox> area_height_spin_;
   QPointer<QDoubleSpinBox> font_size_spin_;

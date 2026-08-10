@@ -7,7 +7,7 @@
 #include <optional>
 #include <string>
 
-#include "../../domain/state_topic.hpp"
+#include "../../domain/state_topics.hpp"
 #include "../../domain/text_edit_buffer.hpp"
 #include "../../domain/text_edit_view.hpp"
 #include "../../domain/title_config_store.hpp"
@@ -31,7 +31,7 @@ class TitleTextEditor {
   using CaretIndexSource = std::function<std::size_t(glm::vec2)>;
 
   TitleTextEditor(TitleConfigStore& title_store,
-                  domain::StateTopic<std::optional<TextEditView>>& edit_topic);
+                  domain::TextEditTopic& edit_topic);
 
   void SetPickSource(PickSource pick_source);
 
@@ -105,7 +105,7 @@ class TitleTextEditor {
   [[nodiscard]] std::size_t CaretIndexAt(glm::vec2 page_point) const;
 
   TitleConfigStore& title_store_;
-  domain::StateTopic<std::optional<TextEditView>>& edit_topic_;
+  domain::TextEditTopic& edit_topic_;
   PickSource pick_source_;
   CaretIndexSource caret_index_source_;
   std::optional<TextEditBuffer> buffer_;

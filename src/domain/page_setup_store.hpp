@@ -3,14 +3,14 @@
 
 #include "detail/reentry_guard.hpp"
 #include "page_setup_config.hpp"
-#include "state_topic.hpp"
+#include "state_topics.hpp"
 
 // Owns a PageSetupConfig value and publishes it on the injected topic. Not
 // copyable, no serialisation code (that sits non-intrusively in the
 // infrastructure).
 class PageSetupStore {
  public:
-  explicit PageSetupStore(domain::StateTopic<PageSetupConfig>& topic);
+  explicit PageSetupStore(domain::PageSetupTopic& topic);
   ~PageSetupStore() = default;
   PageSetupStore(const PageSetupStore&) = delete;
   PageSetupStore& operator=(const PageSetupStore&) = delete;
@@ -25,7 +25,7 @@ class PageSetupStore {
 
  private:
   PageSetupConfig page_setup_config_;
-  domain::StateTopic<PageSetupConfig>& topic_;
+  domain::PageSetupTopic& topic_;
   bool emitting_{false};
 };
 #endif  // PAGE_SETUP_STORE_HPP

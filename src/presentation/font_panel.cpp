@@ -1,5 +1,6 @@
 #include "font_panel.hpp"
 
+#include <QtCore/qtmetamacros.h>
 #include <fontconfig/fontconfig.h>
 
 #include <QtCore/QPointer>
@@ -12,7 +13,6 @@
 #include <cstring>
 #include <iostream>
 #include <memory>
-#include <sigslot/signal.hpp>
 #include <string>
 
 #include "../common/debug_log.hpp"
@@ -143,7 +143,7 @@ void FontPanel::ChooseFont() {
   font_ = chosen;
   RefreshButtonLabel();
   ProcessFontData();
-  signal_font_config_(font_config_);
+  emit FontConfigChosen(font_config_);
 }
 
 void FontPanel::RefreshButtonLabel() {
