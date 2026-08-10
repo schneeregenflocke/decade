@@ -27,6 +27,8 @@
 // to know the other.
 //
 // The topics are private; the accessors are the only way in for both sides.
+// They stay in the header, and this component therefore has no unit of its own:
+// a deduced return type has to be visible where it is called.
 class EventBus {
  public:
   EventBus() = default;

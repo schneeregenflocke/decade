@@ -14,11 +14,9 @@ namespace application {
 // exactly as before — the bracket is an offer, not a protocol.
 class StateBurst {
  public:
-  explicit StateBurst(domain::StateTopic<bool>& topic) : topic_(topic) {
-    topic_(true);
-  }
+  explicit StateBurst(domain::StateTopic<bool>& topic);
 
-  ~StateBurst() { topic_(false); }
+  ~StateBurst();
 
   StateBurst(const StateBurst&) = delete;
   StateBurst& operator=(const StateBurst&) = delete;

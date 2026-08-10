@@ -1,15 +1,9 @@
 #ifndef APP_COMPOSITION_HPP
 #define APP_COMPOSITION_HPP
 
-#include <QtCore/QString>
-#include <QtCore/QTimer>
-#include <QtWidgets/QMessageBox>
-#include <exception>
-#include <iostream>
 #include <memory>
 #include <optional>
 #include <string>
-#include <utility>
 
 #include "../domain/date_format.hpp"
 #include "../presentation/file_commands.hpp"
@@ -38,38 +32,15 @@ namespace application {
 class AppComposition {
  public:
   AppComposition(LocaleDateFormatter& locale_date_formatter,
-                 RuntimeOptions options)
-      : runtime_options_(std::move(options)),
-        document_(bus_, locale_date_formatter),
-        interaction_controller_(bus_.hovered(), bus_.selected_node(),
-                                bus_.edit_requested()),
-        title_text_editor_(document_.TitleConfiguration(), bus_.text_edit()),
-        startup_script_(runtime_options_, document_),
-        // A top-level window has no Qt parent to own it, so the composition
-        // root does — the same hand that owns everything else here.
-        frame_(std::make_unique<MainFrame>(nullptr, DefaultMainFrameConfig(),
-                                           locale_date_formatter)) {
-    file_commands_.emplace(*frame_, document_);
-    frame_->SignalFileCommand().connect(&FileCommands::Execute,
-                                        &file_commands_.value());
-    frame_->SignalClosing().connect(&AppComposition::ReleaseGraphics, this);
+                 RuntimeOptions options);
 
-    startup_script_.RunBeforeGraphics(*frame_);
-
-    frame_->show();
-    frame_->raise();
-    frame_->Canvas().InitOpenGL(
-        [this]() { OnGraphicsReady(); },
-        [this](const std::string& message) { OnGraphicsFailed(message); });
-  }
-
-  ~AppComposition() { ReleaseGraphics(); }
+  ~AppComposition();
   AppComposition(const AppComposition&) = delete;
   AppComposition& operator=(const AppComposition&) = delete;
   AppComposition(AppComposition&&) = delete;
   AppComposition& operator=(AppComposition&&) = delete;
 
-  [[nodiscard]] MainFrame& Frame() { return *frame_; }
+  [[nodiscard]] MainFrame& Frame();
 
  private:
   // Runs as soon as the GL context stands — only here may GL state be touched,
@@ -81,20 +52,7 @@ class AppComposition {
   // all — a missing shader, for instance — so the failure is final and gets
   // reported rather than retried. Whatever came into being before the throw
   // gets dissolved first, so no half-built page survives.
-  void OnGraphicsReady() {
-    try {
-      CalendarPage& calendar_page = calendar_page_.emplace(
-          frame_->Canvas().Engine(), frame_->Canvas(),
-          frame_->Font().GetFontConfig(), bus_.scene_snapshot());
-      wiring_.emplace(bus_, Components(calendar_page));
-      startup_script_.RunAfterGraphics(*frame_, calendar_page,
-                                       title_text_editor_);
-    } catch (const std::exception& error) {
-      wiring_.reset();
-      calendar_page_.reset();
-      OnGraphicsFailed(std::string("scene setup failed: ") + error.what());
-    }
-  }
+  void OnGraphicsReady();
 
   // Without a context the ready path never runs: no wiring, no initial values.
   // An operable window in that state crashes on the first click — hence report
@@ -103,56 +61,16 @@ class AppComposition {
   // Queued on the event loop, because this can arrive during the first paint:
   // a close() from there fizzles out, and a modal dialogue would stand in front
   // of the loop.
-  void OnGraphicsFailed(const std::string& message) {
-    std::cerr << message << '\n';
-    const bool interactive = !IsNonInteractiveRun(runtime_options_);
-    QTimer::singleShot(0, frame_.get(), [this, message, interactive]() {
-      if (interactive) {
-        QMessageBox::critical(frame_.get(), "OpenGL",
-                              QString::fromStdString(message));
-      }
-      frame_->close();
-    });
-  }
+  void OnGraphicsFailed(const std::string& message);
 
-  [[nodiscard]] AppComponents Components(CalendarPage& calendar_page) {
-    return AppComponents{
-        .date_groups_store = document_.DateGroups(),
-        .date_entry_store = document_.DateEntries(),
-        .transform_date_entry = document_.Transform(),
-        .page_setup_store = document_.PageSetup(),
-        .title_config_store = document_.TitleConfiguration(),
-        .shape_configuration_store = document_.ShapeConfiguration(),
-        .calendar_configuration_store = document_.CalendarConfiguration(),
-        .data_table_panel = frame_->DataTable(),
-        .date_groups_table_panel = frame_->DateGroupsTable(),
-        .document_setup_panel = frame_->DocumentSetup(),
-        .page_setup_panel = frame_->PageSetup(),
-        .title_setup_panel = frame_->TitleSetup(),
-        .calendar_setup_panel = frame_->CalendarSetup(),
-        .font_panel = frame_->Font(),
-        .scene_tree_panel = frame_->SceneTree(),
-        .shape_setup_panel = frame_->ShapeSetup(),
-        .calendar_page = calendar_page,
-        .gl_canvas = frame_->Canvas(),
-        .interaction_controller = interaction_controller_,
-        .title_text_editor = title_text_editor_,
-    };
-  }
+  [[nodiscard]] AppComponents Components(CalendarPage& calendar_page);
 
   // Idempotent: it dissolves the wiring while both ends are still alive.
   //
   // The calendar page owns GL objects, and a buffer deleted without a current
   // context is a call into nothing — Qt makes the context current for the three
   // rendering callbacks alone, and this runs from the close event.
-  void ReleaseGraphics() {
-    wiring_.reset();
-    if (calendar_page_.has_value() && frame_ && frame_->Canvas().HasEngine()) {
-      frame_->Canvas().MakeGraphicsCurrent();
-    }
-    calendar_page_.reset();
-    file_commands_.reset();
-  }
+  void ReleaseGraphics();
 
   // Declared first, so destroyed last: every producer publishes over the bus,
   // and something can still fire while clearing away.

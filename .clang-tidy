@@ -80,12 +80,13 @@ SystemHeaders: false
 # types and locals alone (those are not part of the enforced rule). struct
 # members are public and intentionally carry no suffix.
 CheckOptions:
-  # Three C libraries document one entry point and put their symbols in
-  # headers behind it: libepoxy (<epoxy/gl.h>, which refuses to compile after
-  # GL/gl.h), libpng (<png.h>) and FreeType (<ft2build.h> plus the
-  # FT_FREETYPE_H macro, whose internal paths are not portable). Without this
-  # the check demands those headers in every unit that calls them.
-  misc-include-cleaner.IgnoreHeaders: "epoxy/.*;pngconf.h;freetype/.*"
+  # Libraries that document one entry point and put their symbols in a header
+  # behind it: libepoxy (<epoxy/gl.h>, which refuses to compile after
+  # GL/gl.h), libpng (<png.h>), FreeType (<ft2build.h> plus the FT_FREETYPE_H
+  # macro, whose internal paths are not portable) and Qt's generated qconfig.h,
+  # which carries QT_VERSION_STR behind <QtCore/QtVersion>. Without this the
+  # check demands the header behind the entry point in every unit.
+  misc-include-cleaner.IgnoreHeaders: "epoxy/.*;pngconf.h;freetype/.*;qconfig.h"
   readability-identifier-naming.PrivateMemberCase: lower_case
   readability-identifier-naming.PrivateMemberSuffix: "_"
   readability-identifier-naming.ProtectedMemberCase: lower_case

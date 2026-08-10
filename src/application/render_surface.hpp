@@ -17,6 +17,10 @@ class RenderSurface {
   RenderSurface& operator=(const RenderSurface&) = delete;
   RenderSurface(RenderSurface&&) = delete;
   RenderSurface& operator=(RenderSurface&&) = delete;
+  // Defaulted in the class body, and this port therefore has no unit of its
+  // own: a destructor defined out of line would make the class more than a
+  // pure interface, which is what an implementer inherits it as beside its
+  // widget base.
   virtual ~RenderSurface() = default;
 
   // The page geometry or the window size changed: viewport, projection and zoom
