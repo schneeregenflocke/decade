@@ -2,8 +2,8 @@
 # builds what ships and carries the sanitizer gate, clang carries clang-tidy —
 # a tool that parses with clang's frontend and needs a clang database.
 # `runner-laptop-omen` binds both jobs EXCLUSIVELY to the CI runner on
-# laptop-omen — the heavy C++ build never runs on homelab (an RPi 4 on USB SMR),
-# where it saturates the disk (the loadavg incident of 2026-07-11).
+# laptop-omen — the heavy C++ build never runs on homelab, an RPi 4 with 4 GB of
+# RAM whose job container is capped at 1200 MB.
 # Triggered by the mirror sync, which a GitHub webhook sets off on every push.
 name: build
 on:
@@ -57,7 +57,7 @@ jobs:
         run: |
           apt-get update -qq
           DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
-            nodejs git cmake ninja-build pkg-config clang clang-tidy \
+            nodejs git cmake ninja-build pkg-config clang-22 clang-tidy-22 \
             libboost-serialization-dev libepoxy-dev qt6-base-dev \
             zlib1g-dev libpng-dev libfontconfig-dev libfreetype-dev \
             libicu-dev libglm-dev libmsgsl-dev libgtest-dev libgl1-mesa-dev
@@ -67,8 +67,12 @@ jobs:
       # The build and the tests run here too: clang sees warnings GCC does not
       # (-Wunreachable-code, -Wextra-semi), and a gate over code that never ran
       # under this compiler would grade an artefact nobody executes.
+      # Versioned, not the `clang` metapackage: that one points at 21 on
+      # ubuntu:26.04 while the developer machines run 22, and clang-tidy 21
+      # carries a false positive 22 has fixed. CMakeLists picks the matching
+      # run-clang-tidy off the compiler version, so this one line steers both.
       - name: Configure
-        run: cmake -S . -B build -G Ninja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+        run: cmake -S . -B build -G Ninja -DCMAKE_C_COMPILER=clang-22 -DCMAKE_CXX_COMPILER=clang++-22
       - name: Build
         run: ninja -C build
       - name: Tests
