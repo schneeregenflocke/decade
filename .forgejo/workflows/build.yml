@@ -1,4 +1,4 @@
-# CI on git.blem.ch (the mirror github-mirror/decade). One job per compiler: GCC
+# CI on forgejo.blem.ch (the mirror github-mirror/decade). One job per compiler: GCC
 # builds what ships and carries the sanitizer gate, clang carries clang-tidy —
 # a tool that parses with clang's frontend and needs a clang database.
 # `runner-laptop-omen` binds both jobs EXCLUSIVELY to the CI runner on
