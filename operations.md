@@ -222,3 +222,14 @@ The job log stays out of reach of the API — it sits zstd-compressed in the dat
 ```bash
 ssh homelab 'docker exec forgejo sh -c "cat /data/gitea/actions_log/github-mirror/decade/<hash-prefix>/<task-id>.log.zst"' | zstd -d | less
 ```
+
+The `<hash-prefix>` is no hash but the task ID in hex, so task 86 lies in `56/86.log.zst`. A finished job ends its log with `🏁 Job succeeded`, which is the outcome without any API at all.
+
+**Without the token** two more sources answer, because the runner runs on this laptop. `docker logs forgejo-runner-ci` writes one line per task it picks up, and `docker ps` names the job in the container it starts — `…TASK-87_…_JOB-clang` says which compiler is running right now. The outcome of every job stands in the Forgejo database:
+
+```bash
+ssh homelab 'docker exec forgejo-postgres psql -U forgejo -d forgejo \
+  -c "select id, name, status, started, stopped from action_run_job order by id desc limit 6"'
+```
+
+`status` is `1` for success, `2` for failure, `3` for cancelled. One trap: the task ID the runner logs is **not** the job ID in that table — the two counters drift apart. Match a run by `started`, a Unix timestamp, rather than by number.
