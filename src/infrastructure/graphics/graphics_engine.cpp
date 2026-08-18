@@ -2,7 +2,6 @@
 
 #include <epoxy/gl.h>
 
-#include <cstddef>
 #include <functional>
 #include <optional>
 #include <string>
