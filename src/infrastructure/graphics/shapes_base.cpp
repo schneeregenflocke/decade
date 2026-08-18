@@ -8,54 +8,7 @@
 
 #include "rect.hpp"
 #include "shaders.hpp"
-
-VertexArrayObject::VertexArrayObject() { glCreateVertexArrays(1, &vao_); }
-
-VertexArrayObject::~VertexArrayObject() { glDeleteVertexArrays(1, &vao_); }
-
-VertexArrayObject::VertexArrayObject(VertexArrayObject&& other) noexcept
-    : vao_(std::exchange(other.vao_, 0)) {}
-
-VertexArrayObject& VertexArrayObject::operator=(
-    VertexArrayObject&& other) noexcept {
-  if (this != &other) {
-    if (vao_ != 0) {
-      glDeleteVertexArrays(1, &vao_);
-    }
-    vao_ = std::exchange(other.vao_, 0);
-  }
-  return *this;
-}
-
-void VertexArrayObject::Bind() const { glBindVertexArray(vao_); }
-
-void VertexArrayObject::Unbind() { glBindVertexArray(0); }
-
-GLuint VertexArrayObject::Get() const { return vao_; }
-
-VertexBufferObject::VertexBufferObject() { glCreateBuffers(1, &vbo_); }
-
-VertexBufferObject::~VertexBufferObject() { glDeleteBuffers(1, &vbo_); }
-
-VertexBufferObject::VertexBufferObject(VertexBufferObject&& other) noexcept
-    : vbo_(std::exchange(other.vbo_, 0)) {}
-
-VertexBufferObject& VertexBufferObject::operator=(
-    VertexBufferObject&& other) noexcept {
-  if (this != &other) {
-    if (vbo_ != 0) {
-      glDeleteBuffers(1, &vbo_);
-    }
-    vbo_ = std::exchange(other.vbo_, 0);
-  }
-  return *this;
-}
-
-void VertexBufferObject::Bind() const { glBindBuffer(GL_ARRAY_BUFFER, vbo_); }
-
-void VertexBufferObject::Unbind() { glBindBuffer(GL_ARRAY_BUFFER, 0); }
-
-GLuint VertexBufferObject::Get() const { return vbo_; }
+#include "vertex_objects.hpp"
 
 Shape::Shape(Shader& shader_in) : shader_(shader_in) { SetUpBuffers(); }
 
@@ -72,8 +25,6 @@ const RectF& Shape::LocalBounds() const { return local_bounds_; }
 GLsizei Shape::VertexCount() const { return number_vertices_; }
 
 Shader& Shape::GetShader() const { return shader_; }
-
-VertexArrayObject& Shape::VaoRef() { return vao_; }
 
 const VertexArrayObject& Shape::VaoRef() const { return vao_; }
 
@@ -102,7 +53,7 @@ void Shape::SetUpBuffers() {
 
     glVertexAttribBinding(attribute_location, binding_index);
 
-    glBindVertexBuffer(binding_index, vbos_[index].Get(), 0,
+    glBindVertexBuffer(binding_index, vbos_[index].Name(), 0,
                        static_cast<GLsizei>(attribute_info.GetTypeSize()));
 
     glEnableVertexAttribArray(attribute_location);

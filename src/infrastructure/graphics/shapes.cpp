@@ -14,6 +14,7 @@
 #include "rect.hpp"
 #include "shaders.hpp"
 #include "shapes_base.hpp"
+#include "vertex_objects.hpp"
 
 FillShape::FillShape(Shader& shader_in) : Shape(shader_in) {}
 

@@ -24,6 +24,7 @@
 #include "shaders.hpp"
 #include "shapes_base.hpp"
 #include "utf8_codec.hpp"
+#include "vertex_objects.hpp"
 
 Font::Font(const std::string& filepath) {
   InitFreetype();
