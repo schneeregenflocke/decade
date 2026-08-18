@@ -12,6 +12,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "mvp_matrices.hpp"
 #include "shaders_info.hpp"
 
 class Shader {
@@ -74,16 +75,15 @@ class Shaders {
   // ShaderInfo printers below it have no other caller.
   void PrintInfo() const;
 
-  // A reference, because the only failure is the out-of-range one and that
-  // throws — there is no null to hand back.
-  Shader& GetShader(size_t index);
+  // Projection and view are frame-global, so they are set for all shaders at
+  // once. The iteration lives here, with the shaders, rather than at the one
+  // caller that would otherwise need an index into them.
+  void SetCameraUniforms(const MVP& mvp);
 
   // A reference_wrapper and not a pointer: the optional already carries the
   // absence, so a pointer inside it would be nullable twice over.
   std::optional<std::reference_wrapper<Shader>> SearchShader(
       const std::string& search_name);
-
-  [[nodiscard]] size_t GetNumberShaders() const;
 
  private:
   std::vector<Shader> shaders_;

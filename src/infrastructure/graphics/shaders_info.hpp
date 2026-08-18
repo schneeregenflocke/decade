@@ -62,9 +62,9 @@ class ShaderInfos {
 
   [[nodiscard]] const std::vector<ShaderInfo>& GetAttributesInfos() const;
 
-  [[nodiscard]] int GetNumberAttributes() const;
+  [[nodiscard]] size_t GetNumberAttributes() const;
 
-  [[nodiscard]] int GetNumberUniforms() const;
+  [[nodiscard]] size_t GetNumberUniforms() const;
 
   void PrintAttributesInfo() const;
 

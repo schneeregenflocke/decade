@@ -111,17 +111,11 @@ const std::vector<ShaderInfo>& ShaderInfos::GetAttributesInfos() const {
   return attribute_infos_;
 }
 
-int ShaderInfos::GetNumberAttributes() const {
-  GLint num_attribs = 0;
-  glGetProgramiv(program_, GL_ACTIVE_ATTRIBUTES, &num_attribs);
-  return num_attribs;
+size_t ShaderInfos::GetNumberAttributes() const {
+  return attribute_infos_.size();
 }
 
-int ShaderInfos::GetNumberUniforms() const {
-  GLint num_uniforms = 0;
-  glGetProgramiv(program_, GL_ACTIVE_UNIFORMS, &num_uniforms);
-  return num_uniforms;
-}
+size_t ShaderInfos::GetNumberUniforms() const { return uniform_infos_.size(); }
 
 void ShaderInfos::PrintAttributesInfo() const {
   for (const auto& shader_info : attribute_infos_) {
@@ -150,7 +144,8 @@ void ShaderInfos::SortUniformsInfo() {
 }
 
 void ShaderInfos::GatherAttributesInfo() {
-  const GLint num_attribs = GetNumberAttributes();
+  GLint num_attribs = 0;
+  glGetProgramiv(program_, GL_ACTIVE_ATTRIBUTES, &num_attribs);
   GLint max_attrib_name_length = 0;
   glGetProgramiv(program_, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH,
                  &max_attrib_name_length);
@@ -177,7 +172,8 @@ void ShaderInfos::GatherAttributesInfo() {
 }
 
 void ShaderInfos::GatherUniformsInfo() {
-  const GLint num_uniforms = GetNumberUniforms();
+  GLint num_uniforms = 0;
+  glGetProgramiv(program_, GL_ACTIVE_UNIFORMS, &num_uniforms);
   GLint max_uniforms_name_length = 0;
   glGetProgramiv(program_, GL_ACTIVE_UNIFORM_MAX_LENGTH,
                  &max_uniforms_name_length);

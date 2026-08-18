@@ -18,6 +18,7 @@
 
 #include "../../common/debug_log.hpp"
 #include "../../common/embedded_resources.hpp"
+#include "mvp_matrices.hpp"
 #include "shaders_info.hpp"
 
 Shader::Shader(const ShaderSources& sources, std::string name_in)
@@ -90,8 +91,6 @@ void Shader::LinkShaders(const ShaderHandles& handles) {
   glAttachShader(program_, handles.fragment);
 
   glLinkProgram(program_);
-
-  glValidateProgram(program_);
 
   GLint status = 0;
   glGetProgramiv(program_, GL_LINK_STATUS, &status);
@@ -191,11 +190,12 @@ void Shaders::PrintInfo() const {
   }
 }
 
-Shader& Shaders::GetShader(size_t index) {
-  if (index >= shaders_.size()) {
-    throw std::invalid_argument("Shader index out of bounds");
+void Shaders::SetCameraUniforms(const MVP& mvp) {
+  for (const auto& shader : shaders_) {
+    shader.UseProgram();
+    shader.SetUniform("projection", mvp.GetProjection());
+    shader.SetUniform("view", mvp.GetView());
   }
-  return shaders_[index];
 }
 
 std::optional<std::reference_wrapper<Shader>> Shaders::SearchShader(
@@ -207,5 +207,3 @@ std::optional<std::reference_wrapper<Shader>> Shaders::SearchShader(
   }
   return std::nullopt;
 }
-
-size_t Shaders::GetNumberShaders() const { return shaders_.size(); }
