@@ -265,8 +265,8 @@ void FontShape::SetShape(const std::string& text, const glm::vec3& position,
     current_x += letter.advance * size;
   }
 
-  SetBuffer(BufferIndex{0}, std::span<const glm::vec3>(positions_));
-  SetBuffer(BufferIndex{1}, std::span<const glm::vec2>(texture_positions_));
+  SetBuffer("position", std::span<const glm::vec3>(positions_));
+  SetBuffer("texture_coord", std::span<const glm::vec2>(texture_positions_));
 
   if (positions_.empty()) {
     SetLocalBounds({});

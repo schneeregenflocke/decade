@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <glm/mat4x4.hpp>
 #include <span>
+#include <string_view>
 #include <vector>
 
 #include "drawable.hpp"
@@ -16,36 +17,25 @@
 
 class Shape : public Drawable {
  public:
-  struct BufferIndex {
-    size_t value;
-  };
-
-  // A shape without a shader cannot exist — SetShader dereferences at once —
-  // so the type says it instead of a null check that nobody would reach.
+  // A shape without a shader cannot exist — SetUpBuffers reads the attribute
+  // layout out of it at once — so the type says it instead of a null check that
+  // nobody would reach.
   explicit Shape(Shader& shader_in);
 
   // The vertices arrive as one span rather than as a pointer beside a count,
-  // so the two cannot disagree at a call site. The byte size still comes from
-  // the shader attribute and not from `sizeof(T)`: the attribute decides how
-  // wide a vertex is on the GL side, and that is what glBufferData is told.
+  // so the two cannot disagree at a call site. The attribute is addressed by
+  // the name it carries in the shader, the way SetUniform addresses a uniform:
+  // the layout comes out of the linked program, and a position in that list
+  // shifts as soon as the driver drops an attribute the shader never reads.
   template <typename Vertex>
-  void SetBuffer(BufferIndex index, std::span<const Vertex> vertices) {
+  void SetBuffer(std::string_view attribute_name,
+                 std::span<const Vertex> vertices) {
+    const std::size_t index = BufferIndexFor(attribute_name, sizeof(Vertex));
     number_vertices_ = static_cast<GLsizei>(vertices.size());
 
-    const auto& attribute_info = attributes_infos_.at(index.value);
-    const auto type_size =
-        static_cast<GLsizeiptr>(attribute_info.GetTypeSize());
-    const auto buffer_size =
-        static_cast<GLsizeiptr>(vertices.size()) * type_size;
-    const void* data = vertices.data();
-
-    vao_.Bind();
-    vbos_.at(index.value).Bind();
-
-    glBufferData(GL_ARRAY_BUFFER, buffer_size, data, GL_DYNAMIC_DRAW);
-
-    VertexBufferObject::Unbind();
-    VertexArrayObject::Unbind();
+    glNamedBufferData(vbos_[index].Name(),
+                      static_cast<GLsizeiptr>(vertices.size_bytes()),
+                      vertices.data(), GL_DYNAMIC_DRAW);
   }
 
   void Draw(const glm::mat4& model) const override;
@@ -61,6 +51,13 @@ class Shape : public Drawable {
   void SetLocalBounds(const RectF& bounds);
 
  private:
+  // The buffer feeding `attribute_name`, with the vertex type checked against
+  // what the shader declares. Both failures throw and name the shader: an
+  // attribute the program does not carry, and one of a different width — the
+  // latter would otherwise upload the wrong number of bytes out of the span.
+  [[nodiscard]] std::size_t BufferIndexFor(std::string_view attribute_name,
+                                           std::size_t vertex_size) const;
+
   void SetUpBuffers();
 
   Shader& shader_;

@@ -34,16 +34,19 @@ void ShaderInfo::UpdateTypeInfo() {
       type_str_ = "GL_FLOAT_VEC2";
       number_ = kVec2Components;
       type_size_ = sizeof(glm::vec2);
+      float_vector_ = true;
       break;
     case GL_FLOAT_VEC3:
       type_str_ = "GL_FLOAT_VEC3";
       number_ = kVec3Components;
       type_size_ = sizeof(glm::vec3);
+      float_vector_ = true;
       break;
     case GL_FLOAT_VEC4:
       type_str_ = "GL_FLOAT_VEC4";
       number_ = kVec4Components;
       type_size_ = sizeof(glm::vec4);
+      float_vector_ = true;
       break;
     case GL_FLOAT_MAT4:
       type_str_ = "GL_FLOAT_MAT4";
@@ -78,6 +81,8 @@ size_t ShaderInfo::GetNumber() const { return number_; }
 size_t ShaderInfo::GetTypeSize() const { return type_size_; }
 
 const std::string& ShaderInfo::GetTypeString() const { return type_str_; }
+
+bool ShaderInfo::IsFloatVector() const { return float_vector_; }
 
 void ShaderInfo::Print() const {
   std::string info_type_str;

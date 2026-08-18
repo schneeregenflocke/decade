@@ -32,7 +32,7 @@ void FillShape::SetShape(const RectF& rectangle) {
   vertices[kVerticesPerQuad - 1] =
       glm::vec3(rectangle.Right(), rectangle.Bottom(), kZero);
 
-  SetBuffer(BufferIndex{0}, std::span<const glm::vec3>(vertices));
+  SetBuffer("position", std::span<const glm::vec3>(vertices));
   SetLocalBounds(rectangle);
 }
 
@@ -60,7 +60,7 @@ void BoxesShape::SetShape(const std::vector<RectF>& rectangles,
     SetRectangleShape(index, rectangles[index], line_width);
   }
 
-  SetBuffer(BufferIndex{0}, std::span<const glm::vec3>(vertices_));
+  SetBuffer("position", std::span<const glm::vec3>(vertices_));
   SetLocalBounds(UnionBounds(rectangles, line_width));
 }
 

@@ -46,8 +46,4 @@ VertexBufferObject& VertexBufferObject::operator=(
   return *this;
 }
 
-void VertexBufferObject::Bind() const { glBindBuffer(GL_ARRAY_BUFFER, name_); }
-
-void VertexBufferObject::Unbind() { glBindBuffer(GL_ARRAY_BUFFER, 0); }
-
 GLuint VertexBufferObject::Name() const { return name_; }

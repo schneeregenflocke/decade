@@ -34,6 +34,12 @@ class ShaderInfo {
   [[nodiscard]] size_t GetTypeSize() const;
   [[nodiscard]] const std::string& GetTypeString() const;
 
+  // Whether a vertex array can be fed this type as floats — the vector types.
+  // A uniform-only type (a matrix, a sampler) answers false, and so does one
+  // the table below does not know: without that, an unknown type would reach
+  // glVertexAttribFormat as zero components of zero bytes.
+  [[nodiscard]] bool IsFloatVector() const;
+
   void Print() const;
 
  private:
@@ -44,6 +50,7 @@ class ShaderInfo {
   GLenum type_{0};
   size_t number_{0};
   size_t type_size_{0};
+  bool float_vector_{false};
   std::string type_str_;
 };
 

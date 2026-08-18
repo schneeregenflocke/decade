@@ -4,10 +4,13 @@
 
 #include <cstddef>
 #include <glm/ext/matrix_float4x4.hpp>
-#include <utility>
+#include <stdexcept>
+#include <string>
+#include <string_view>
 
 #include "rect.hpp"
 #include "shaders.hpp"
+#include "shaders_info.hpp"
 #include "vertex_objects.hpp"
 
 Shape::Shape(Shader& shader_in) : shader_(shader_in) { SetUpBuffers(); }
@@ -30,36 +33,62 @@ const VertexArrayObject& Shape::VaoRef() const { return vao_; }
 
 void Shape::SetLocalBounds(const RectF& bounds) { local_bounds_ = bounds; }
 
+std::size_t Shape::BufferIndexFor(std::string_view attribute_name,
+                                  std::size_t vertex_size) const {
+  for (std::size_t index = 0; index < attributes_infos_.size(); ++index) {
+    const ShaderInfo& attribute_info = attributes_infos_[index];
+    if (attribute_info.GetName() != attribute_name) {
+      continue;
+    }
+    if (attribute_info.GetTypeSize() != vertex_size) {
+      throw std::runtime_error(
+          "shader '" + shader_.GetName() + "' declares attribute '" +
+          std::string(attribute_name) + "' as " +
+          attribute_info.GetTypeString() + ", which is " +
+          std::to_string(attribute_info.GetTypeSize()) + " bytes wide, but " +
+          std::to_string(vertex_size) + " bytes arrive per vertex");
+    }
+    return index;
+  }
+  throw std::runtime_error("shader '" + shader_.GetName() +
+                           "' carries no active attribute '" +
+                           std::string(attribute_name) + "'");
+}
+
 void Shape::SetUpBuffers() {
   attributes_infos_ = shader_.GetShaderAttributesInfos();
 
-  vao_.Bind();
-
   vbos_.resize(attributes_infos_.size());
 
-  for (size_t index = 0; index < attributes_infos_.size(); ++index) {
-    const auto& attribute_info = attributes_infos_[index];
+  for (std::size_t index = 0; index < attributes_infos_.size(); ++index) {
+    const ShaderInfo& attribute_info = attributes_infos_[index];
 
-    vbos_[index].Bind();
+    if (!attribute_info.IsFloatVector()) {
+      throw std::runtime_error(
+          "shader '" + shader_.GetName() + "' declares attribute '" +
+          attribute_info.GetName() + "' as " + attribute_info.GetTypeString() +
+          "; a shape feeds float vectors of one to four components alone");
+    }
 
-    const auto attribute_location =
-        static_cast<GLuint>(attribute_info.GetLocation());
-
-    glVertexAttribFormat(attribute_location,
-                         static_cast<GLint>(attribute_info.GetNumber()),
-                         GL_FLOAT, GL_FALSE, 0);
-
+    // Each attribute owns a buffer of its own, tightly packed — hence the
+    // element size as the stride and no offset anywhere. The three calls split
+    // what glVertexAttribPointer once welded together: what an element looks
+    // like, which binding point feeds the attribute, and what sits on that
+    // point. None of them reads a bound buffer, so nothing gets bound here.
+    const GLuint vertex_array = vao_.Name();
+    const auto location = static_cast<GLuint>(attribute_info.GetLocation());
     const auto binding_index = static_cast<GLuint>(index);
 
-    glVertexAttribBinding(attribute_location, binding_index);
+    glVertexArrayAttribFormat(vertex_array, location,
+                              static_cast<GLint>(attribute_info.GetNumber()),
+                              GL_FLOAT, GL_FALSE, 0);
 
-    glBindVertexBuffer(binding_index, vbos_[index].Name(), 0,
-                       static_cast<GLsizei>(attribute_info.GetTypeSize()));
+    glVertexArrayAttribBinding(vertex_array, location, binding_index);
 
-    glEnableVertexAttribArray(attribute_location);
+    glVertexArrayVertexBuffer(
+        vertex_array, binding_index, vbos_[index].Name(), 0,
+        static_cast<GLsizei>(attribute_info.GetTypeSize()));
 
-    VertexBufferObject::Unbind();
+    glEnableVertexArrayAttrib(vertex_array, location);
   }
-
-  VertexArrayObject::Unbind();
 }
