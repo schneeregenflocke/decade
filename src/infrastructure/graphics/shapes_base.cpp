@@ -15,6 +15,11 @@
 
 Shape::Shape(Shader& shader_in) : shader_(shader_in) { SetUpBuffers(); }
 
+void Shape::Hide() {
+  number_vertices_ = 0;
+  local_bounds_ = {};
+}
+
 void Shape::Draw(const glm::mat4& model) const {
   shader_.UseProgram();
   shader_.SetUniform("model", model);

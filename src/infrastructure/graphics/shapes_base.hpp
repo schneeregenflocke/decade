@@ -38,6 +38,11 @@ class Shape : public Drawable {
                       vertices.data(), GL_DYNAMIC_DRAW);
   }
 
+  // Draws nothing until the next SetShape refills the geometry. Says what a
+  // zero-extent rectangle used to say at four call sites, and says it in the
+  // vertex count rather than in coordinates nobody could read as "hidden".
+  void Hide();
+
   void Draw(const glm::mat4& model) const override;
 
   // Recorded by each concrete shape when its geometry is set. Used for spatial

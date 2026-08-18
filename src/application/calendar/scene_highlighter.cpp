@@ -79,7 +79,7 @@ void SceneHighlighter::ApplySelectionOverlay() {
     shape.SetColor(glm::vec4(kSelectionRed, kSelectionGreen, kSelectionBlue,
                              kSelectionAlpha));
   } else {
-    shape.SetShape(RectF(kZero, kZero, kZero, kZero));
+    shape.Hide();
   }
 }
 

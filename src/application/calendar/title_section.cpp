@@ -34,11 +34,9 @@ TextLine Layout(const SectionContext& ctx) {
 void FillCaretAndSelection(const SectionContext& ctx, const TextLine& line) {
   FillShape& caret_shape = ctx.nodes.title_caret.Shape();
   FillShape& selection_shape = ctx.nodes.title_selection.Shape();
-  const RectF hidden(detail::kZero, detail::kZero, detail::kZero,
-                     detail::kZero);
   if (!ctx.text_edit.has_value()) {
-    caret_shape.SetShape(hidden);
-    selection_shape.SetShape(hidden);
+    caret_shape.Hide();
+    selection_shape.Hide();
     return;
   }
 
@@ -63,7 +61,7 @@ void FillCaretAndSelection(const SectionContext& ctx, const TextLine& line) {
     selection_shape.SetColor(glm::vec4(kSelectionRed, kSelectionGreen,
                                        kSelectionBlue, kSelectionAlpha));
   } else {
-    selection_shape.SetShape(hidden);
+    selection_shape.Hide();
   }
 }
 
