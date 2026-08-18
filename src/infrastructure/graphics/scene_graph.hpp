@@ -55,13 +55,6 @@ class SceneNode {
 
   [[nodiscard]] const std::string& GetStyleId() const;
 
-  // Marks this node (and its subtree) as an internal rendering aid that should
-  // not appear in the user-facing scene tree — e.g. the selection-highlight
-  // overlay. The snapshot builder skips hidden subtrees.
-  void SetSnapshotHidden(bool hidden);
-
-  [[nodiscard]] bool IsSnapshotHidden() const;
-
   // Axis-aligned bounding box of this subtree's shapes in world space, given
   // the accumulated parent world transform. Returns nullopt when no descendant
   // carries geometry. Mirrors Draw()'s transform accumulation; only shapes with
@@ -131,7 +124,6 @@ class SceneNode {
   glm::mat4 model_matrix_;
   std::unique_ptr<Drawable> shape_;
   int draw_layer_{0};
-  bool snapshot_hidden_{false};
 };
 
 // The path "root/.../name" to a node of the tree, or empty when it does not lie

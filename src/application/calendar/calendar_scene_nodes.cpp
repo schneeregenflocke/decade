@@ -22,12 +22,10 @@ CalendarSceneNodes BuildCalendarSceneNodes(Scene& scene, Shader& simple_shader,
   scene.Root().AddChild(nodes.page.Node());
 
   // Selection-highlight overlay: a single translucent quad drawn on top of
-  // everything, covering the scene-tree-selected node and its subtree. It is a
-  // rendering aid, not part of the user's scene, so it is hidden from the
-  // snapshot. Updated in place (no rebuild) when the selection changes.
+  // everything, covering the scene-tree-selected node and its subtree. Updated
+  // in place (no rebuild) when the selection changes.
   nodes.selection_overlay = ShapeNode<FillShape>::Make(
       std::string(CalendarSceneNodes::kSelectionOverlayName), simple_shader);
-  nodes.selection_overlay.Node()->SetSnapshotHidden(true);
   scene.Root().AddChild(nodes.selection_overlay.Node());
 
   nodes.print_area = ShapeNode<BoxesShape>::Make(
@@ -90,11 +88,9 @@ CalendarSceneNodes BuildCalendarSceneNodes(Scene& scene, Shader& simple_shader,
 
   nodes.title_selection =
       fill_under_print_area(CalendarSceneNodes::kTitleSelectionName);
-  nodes.title_selection.Node()->SetSnapshotHidden(true);
 
   nodes.title_caret =
       fill_under_print_area(CalendarSceneNodes::kTitleCaretName);
-  nodes.title_caret.Node()->SetSnapshotHidden(true);
 
   nodes.month_labels =
       container_under_print_area(CalendarSceneNodes::kMonthLabelsName);

@@ -101,21 +101,14 @@ SceneNodeSnapshot BuildSceneSnapshot(const SceneNode& root) {
     const Frame frame = stack.back();
     stack.pop_back();
 
-    // Internal rendering aids (e.g. the selection overlay) are excluded so the
-    // user-facing tree mirrors only the real scene.
-    std::vector<const SceneNode*> visible;
-    for (const auto& child : frame.source->GetChildren()) {
-      if (!child->IsSnapshotHidden()) {
-        visible.push_back(child.get());
-      }
-    }
-    frame.destination->children.resize(visible.size());
-    for (std::size_t index = 0; index < visible.size(); ++index) {
+    const auto& children = frame.source->GetChildren();
+    frame.destination->children.resize(children.size());
+    for (std::size_t index = 0; index < children.size(); ++index) {
       SceneNodeSnapshot& child = frame.destination->children[index];
       const glm::mat4 child_world =
-          frame.world * visible[index]->GetModelMatrix();
-      FillSnapshotValues(child.values, *visible[index], child_world);
-      stack.push_back({.source = visible[index],
+          frame.world * children[index]->GetModelMatrix();
+      FillSnapshotValues(child.values, *children[index], child_world);
+      stack.push_back({.source = children[index].get(),
                        .destination = &child,
                        .world = child_world});
     }

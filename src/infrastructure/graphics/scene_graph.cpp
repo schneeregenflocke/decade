@@ -61,10 +61,6 @@ void SceneNode::SetStyleId(const std::string& style_id) {
 
 const std::string& SceneNode::GetStyleId() const { return style_id_; }
 
-void SceneNode::SetSnapshotHidden(bool hidden) { snapshot_hidden_ = hidden; }
-
-bool SceneNode::IsSnapshotHidden() const { return snapshot_hidden_; }
-
 std::optional<RectF> SceneNode::WorldBounds(
     const glm::mat4& parent_world) const {
   float min_x = std::numeric_limits<float>::max();
