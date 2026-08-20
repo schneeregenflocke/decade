@@ -23,10 +23,10 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             ninja-build \
             pkg-config \
-            libboost-date-time-dev \
             libboost-serialization-dev \
             libepoxy-dev \
             libgl1-mesa-dev \
+            libicu-dev \
             qt6-base-dev \
             libpng-dev \
             zlib1g-dev \
