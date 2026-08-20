@@ -6,6 +6,8 @@ Alpha state, grown out of a practice project. C++26, Qt 6, OpenGL, ICU.
 
 Building, starting, tests and the headless runs stand in [operations.md](operations.md); architecture and conventions in [AGENTS.md](AGENTS.md).
 
+MIT, and it links Qt under the [LGPLv3](https://www.gnu.org/licenses/lgpl-3.0.html) — dynamically, unmodified. Help → Open Source Licenses shows every licence text the binary carries, and `cmake --install` writes an SPDX 2.3 SBOM beside it.
+
 ## Purpose
 
 ### The interface

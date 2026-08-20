@@ -122,6 +122,14 @@ Three traps, all silent, each settled in one place.
 
 **Alpha has to leave the framebuffer at 1.** The canvas draws an opaque page, but `GL_SRC_ALPHA` blends the alpha channel with itself, so a translucent fill leaves a value below 1 behind — colour that is already final beside an alpha that means nothing. The buffer does not stay inside: `QOpenGLWidget` hands it to the compositor, and the export writes it into the PNG. Whoever reads it as premultiplied divides the colour by that alpha and wraps at 8 bit, which is how teal came out red ([#93](https://github.com/schneeregenflocke/decade/issues/93)). Hence `glBlendFuncSeparate` with `GL_ONE` on the alpha channel in `GLCanvas::ApplyInitialGlState`: colour blends as before, alpha saturates. Retagging a read-back afterwards would patch one consumer and miss the rest.
 
+### Licences and the notices they oblige
+
+Decade is MIT, and every dependency but one is permissive. Qt is the exception: Decade uses it under **LGPL-3.0-only**, linked dynamically and unmodified. That choice carries weight. Qt also offers GPL-2.0, and taking it would pull FreeType onto its GPLv2 branch — the FTL carries a credit clause GPLv2 does not admit, which is why FreeType comes dual-licensed at all — and the binary would end up GPLv2, with source obligations for everything in it. LGPLv3 asks for less: [§4](https://www.gnu.org/licenses/lgpl-3.0.html) wants the library named, its copyright shown among the ones the running program displays, and both the LGPL and the GPL text shipped along. The licence dialogue is where those three happen, which is why the texts travel inside the binary rather than beside it.
+
+What no licence text says by itself stands in `licenses/notices.txt`: the Qt notice with its relinking statement, and FreeType's mandatory disclaimer ("based in part of the work of the FreeType Team").
+
+The obligations follow the linker, not the repository layout — a system library obliges as much as a submodule, and the dialogue once showed the submodules alone. Whoever adds a dependency does four things: drop its licence text into `licenses/`, add a line to `src/common/third_party_licenses.hpp`, add the name to `tests/common/test_third_party_licenses.cpp`, and write a `sbom_add(PACKAGE …)` beside the `find_package` call it arrived with. No gate catches a forgotten one.
+
 ### Warnings, the clang-tidy and the sanitizer gate
 
 - **Warnings break the build — fix them, do not suppress them. That rule holds for compiler warnings and for [clang-tidy](https://clang.llvm.org/extra/clang-tidy/) diagnostics alike.** Never quieten a finding with [`NOLINT`, `NOLINTNEXTLINE` or `NOLINTBEGIN`](https://clang.llvm.org/extra/clang-tidy/index.html#suppressing-undesired-diagnostics), a `#pragma`, a `-Wno-…` flag or a single-line exception in `.clang-tidy`. Change the code so the finding no longer takes hold. Restructuring, RAII and correct type annotations are fixes; suppression is not.
