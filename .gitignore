@@ -27,3 +27,6 @@ CMakePresets.json
 
 .claude/
 
+
+# The virtual environment for the SBOM verification (operations.md).
+.sbom-venv/

@@ -7,3 +7,6 @@
 [submodule "external/bullet3"]
 	path = external/bullet3
 	url = https://github.com/bulletphysics/bullet3.git
+[submodule "external/cmake-sbom"]
+	path = external/cmake-sbom
+	url = https://github.com/DEMCON/cmake-sbom.git

@@ -148,6 +148,87 @@ if(DECADE_BUILD_TESTS)
 	add_subdirectory(tests)
 endif()
 
+# --- SBOM ---------------------------------------------------------------------
+
+# The licence texts the about dialogue shows sit in `licenses/`; this is the
+# machine-readable half of the same knowledge. Both are fed from the build
+# rather than from a hand-kept list: the versions below are what `find_package`
+# and `pkg_check_modules` just resolved, so the SBOM cannot drift from what the
+# linker actually took. The submodules answer with their pinned commit instead
+# of a version, which is the only thing that identifies them exactly.
+#
+# GoogleTest is deliberately absent: it links into `decade_tests` alone and
+# never reaches the artefact this document describes.
+
+include(GNUInstallDirs)
+install(TARGETS decade RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(DIRECTORY licenses DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/decade)
+
+list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_SOURCE_DIR}/external/cmake-sbom/cmake")
+include(sbom)
+
+find_package(Git QUIET REQUIRED)
+function(decade_submodule_commit relative_path output_variable)
+	execute_process(
+		COMMAND ${GIT_EXECUTABLE} -C ${CMAKE_SOURCE_DIR}/${relative_path} rev-parse HEAD
+		OUTPUT_VARIABLE commit
+		OUTPUT_STRIP_TRAILING_WHITESPACE
+		COMMAND_ERROR_IS_FATAL ANY)
+	set(${output_variable} ${commit} PARENT_SCOPE)
+endfunction()
+
+decade_submodule_commit(external/bullet3 DECADE_BULLET_COMMIT)
+decade_submodule_commit(external/csv2 DECADE_CSV2_COMMIT)
+decade_submodule_commit(external/tinycolormap DECADE_TINYCOLORMAP_COMMIT)
+
+sbom_generate(
+	OUTPUT ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATAROOTDIR}/decade/decade.spdx
+	LICENSE MIT
+	SUPPLIER "Marco Peyer"
+	SUPPLIER_URL https://github.com/schneeregenflocke
+	DOWNLOAD_URL https://github.com/schneeregenflocke/decade
+)
+
+sbom_add(TARGET decade)
+
+# Qt carries the only copyleft in the tree. LGPL-3.0-only is a choice out of the
+# licences Qt offers, not a fact about the package: the GPL-2.0 option would
+# pull FreeType onto its GPL branch and take the whole binary with it.
+sbom_add(PACKAGE Qt6 VERSION ${Qt6_VERSION} LICENSE LGPL-3.0-only
+	SUPPLIER "Organization: The Qt Company" DOWNLOAD_LOCATION https://download.qt.io/)
+sbom_add(PACKAGE boost VERSION ${Boost_VERSION} LICENSE BSL-1.0
+	SUPPLIER "Organization: Boost" DOWNLOAD_LOCATION https://www.boost.org/)
+sbom_add(PACKAGE icu VERSION ${ICU_icu-uc_VERSION}
+	LICENSE "Unicode-3.0 AND BSD-2-Clause AND BSD-3-Clause AND NAIST-2003"
+	SUPPLIER "Organization: Unicode, Inc." DOWNLOAD_LOCATION https://github.com/unicode-org/icu)
+sbom_add(PACKAGE freetype VERSION ${FREETYPE_VERSION_STRING} LICENSE FTL
+	SUPPLIER "Organization: The FreeType Project" DOWNLOAD_LOCATION https://freetype.org/)
+sbom_add(PACKAGE fontconfig VERSION ${Fontconfig_VERSION}
+	LICENSE "HPND AND Unicode-DFS-2016"
+	SUPPLIER "Organization: freedesktop.org" DOWNLOAD_LOCATION https://www.freedesktop.org/wiki/Software/fontconfig/)
+sbom_add(PACKAGE libpng VERSION ${PNG_VERSION_STRING} LICENSE libpng-2.0
+	SUPPLIER "Organization: PNG Reference Library Authors" DOWNLOAD_LOCATION http://www.libpng.org/pub/png/libpng.html)
+sbom_add(PACKAGE zlib VERSION ${ZLIB_VERSION_STRING} LICENSE Zlib
+	SUPPLIER "Person: Jean-loup Gailly and Mark Adler" DOWNLOAD_LOCATION https://zlib.net/)
+sbom_add(PACKAGE libepoxy VERSION ${EPOXY_VERSION} LICENSE MIT
+	SUPPLIER "Organization: Intel Corporation" DOWNLOAD_LOCATION https://github.com/anholt/libepoxy)
+sbom_add(PACKAGE glm VERSION ${glm_VERSION} LICENSE MIT
+	SUPPLIER "Organization: G-Truc Creation" DOWNLOAD_LOCATION https://github.com/g-truc/glm)
+sbom_add(PACKAGE Microsoft.GSL VERSION ${Microsoft.GSL_VERSION} LICENSE MIT
+	SUPPLIER "Organization: Microsoft Corporation" DOWNLOAD_LOCATION https://github.com/microsoft/GSL)
+sbom_add(PACKAGE bullet3 COMMIT ${DECADE_BULLET_COMMIT} LICENSE Zlib
+	SUPPLIER "Person: Erwin Coumans" DOWNLOAD_LOCATION https://github.com/bulletphysics/bullet3)
+sbom_add(PACKAGE csv2 COMMIT ${DECADE_CSV2_COMMIT} LICENSE MIT
+	SUPPLIER "Person: Pranav Srinivas Kumar" DOWNLOAD_LOCATION https://github.com/p-ranav/csv2)
+sbom_add(PACKAGE tinycolormap COMMIT ${DECADE_TINYCOLORMAP_COMMIT} LICENSE MIT
+	SUPPLIER "Person: Yuki Koyama" DOWNLOAD_LOCATION https://github.com/yuki-koyama/tinycolormap)
+
+# NO_VERIFY, because cmake-sbom's check needs the Python packages spdx-tools
+# and ntia-conformance-checker, and it turns a missing package into a failing
+# `cmake --install`. Verifying stays a gate you run on purpose — the command
+# stands in operations.md.
+sbom_finalize(NO_VERIFY)
+
 # --- Gates --------------------------------------------------------------------
 
 add_custom_target(sanitize-address
