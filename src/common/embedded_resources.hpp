@@ -4,8 +4,8 @@
 #include <array>
 #include <string_view>
 
-// The files that travel inside the binary: the GLSL sources the renderer
-// compiles, and the licence texts the about panel shows.
+// The GLSL sources the renderer compiles, carried inside the binary. The
+// licence texts travel the same way, in third_party_licenses.hpp.
 //
 // [`#embed`](https://en.cppreference.com/cpp/preprocessor/embed) reads them at
 // preprocessing time, so there is no generator, no build step and no submodule
@@ -40,22 +40,6 @@ inline constexpr auto kRectanglesFragmentShaderData = std::to_array<char>({
 #embed "../../shaders/rectangles_fragment_shader.glsl"
 });
 
-inline constexpr auto kDecadeLicenseData = std::to_array<char>({
-#embed "../../LICENSE.txt"
-});
-inline constexpr auto kCsv2LicenseData = std::to_array<char>({
-#embed "../../external/csv2/LICENSE"
-});
-inline constexpr auto kCsv2MioLicenseData = std::to_array<char>({
-#embed "../../external/csv2/LICENSE.mio"
-});
-inline constexpr auto kTinycolormapLicenseData = std::to_array<char>({
-#embed "../../external/tinycolormap/LICENSE"
-});
-inline constexpr auto kBulletLicenseData = std::to_array<char>({
-#embed "../../external/bullet3/LICENSE.txt"
-});
-
 }  // namespace detail
 
 inline constexpr std::string_view kFontVertexShader{
@@ -75,18 +59,6 @@ inline constexpr std::string_view kRectanglesVertexShader{
 inline constexpr std::string_view kRectanglesFragmentShader{
     detail::kRectanglesFragmentShaderData.data(),
     detail::kRectanglesFragmentShaderData.size()};
-
-inline constexpr std::string_view kDecadeLicense{
-    detail::kDecadeLicenseData.data(), detail::kDecadeLicenseData.size()};
-inline constexpr std::string_view kCsv2License{detail::kCsv2LicenseData.data(),
-                                               detail::kCsv2LicenseData.size()};
-inline constexpr std::string_view kCsv2MioLicense{
-    detail::kCsv2MioLicenseData.data(), detail::kCsv2MioLicenseData.size()};
-inline constexpr std::string_view kTinycolormapLicense{
-    detail::kTinycolormapLicenseData.data(),
-    detail::kTinycolormapLicenseData.size()};
-inline constexpr std::string_view kBulletLicense{
-    detail::kBulletLicenseData.data(), detail::kBulletLicenseData.size()};
 
 }  // namespace resources
 

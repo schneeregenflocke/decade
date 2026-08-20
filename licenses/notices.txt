@@ -1,0 +1,33 @@
+Third-party notices
+===================
+
+Decade is licensed under the MIT License and links the libraries listed in this
+dialogue. Each entry holds that library's own licence text. Two of them ask for
+more than the text alone, and that part stands here.
+
+
+Qt 6
+----
+
+Qt Widgets, Qt OpenGL Widgets and Qt Print Support.
+Copyright (C) The Qt Company Ltd. and other contributors.
+
+Decade uses Qt under the GNU Lesser General Public License, version 3 — see the
+entry "Qt 6 (LGPL v3)", which incorporates the terms of the entry "GNU GPL v3".
+Decade links Qt dynamically and modifies nothing in it.
+
+You may run Decade against a Qt of your own: replace the shared libraries, or
+relink the application against them, and it will use yours. Nothing in Decade
+prevents that.
+
+The Qt sources are at https://code.qt.io/cgit/qt/qtbase.git/ and
+https://download.qt.io/official_releases/qt/.
+
+
+FreeType
+--------
+
+Portions of this software are copyright of The FreeType Project
+(https://freetype.org). All rights reserved.
+
+This software is based in part of the work of the FreeType Team.

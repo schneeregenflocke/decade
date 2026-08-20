@@ -7,6 +7,7 @@ list(FILTER decade_units EXCLUDE REGEX "/main\\.cpp$")
 
 add_executable(decade_tests
 	${decade_units}
+	common/test_third_party_licenses.cpp
 	domain/test_date.cpp
 	domain/test_date_period.cpp
 	domain/test_date_format.cpp

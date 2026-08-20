@@ -1,5 +1,7 @@
 #include "license_panel.hpp"
 
+#include <QtCore/qtypes.h>
+
 #include <QtCore/QString>
 #include <QtGui/QTextCursor>
 #include <QtWidgets/QAbstractItemView>
@@ -11,10 +13,24 @@
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 #include <cstddef>
-#include <string>
+#include <span>
+#include <string_view>
 
-#include "../common/embedded_resources.hpp"
+#include "../common/third_party_licenses.hpp"
 #include "make_owned.hpp"
+
+namespace {
+
+QString AsQString(std::string_view text) {
+  return QString::fromUtf8(text.data(), static_cast<qsizetype>(text.size()));
+}
+
+QString AsQString(std::span<const unsigned char> text) {
+  return QString::fromUtf8(
+      QByteArrayView(text.data(), static_cast<qsizetype>(text.size())));
+}
+
+}  // namespace
 
 LicenseInformationDialog::LicenseInformationDialog(QWidget* parent)
     : QDialog(parent) {
@@ -45,36 +61,21 @@ LicenseInformationDialog::LicenseInformationDialog(QWidget* parent)
   connect(license_select_list_.data(), &QListWidget::currentRowChanged, this,
           [this](int row) { SelectLicenseRow(row); });
 
-  CollectLicenses();
+  FillLicenseList();
   license_select_list_->setCurrentRow(0);
 }
 
-void LicenseInformationDialog::CollectLicenses() {
-  collected_licenses_.clear();
-
-  // embed-resource dropped out with the submodule it licensed; tinycolormap
-  // joined, which was embedded all along and never shown.
-  collected_licenses_.emplace_back("Decade",
-                                   std::string(resources::kDecadeLicense));
-  collected_licenses_.emplace_back("csv2",
-                                   std::string(resources::kCsv2License));
-  collected_licenses_.emplace_back("csv2mio",
-                                   std::string(resources::kCsv2MioLicense));
-  collected_licenses_.emplace_back(
-      "tinycolormap", std::string(resources::kTinycolormapLicense));
-  collected_licenses_.emplace_back("Bullet Physics",
-                                   std::string(resources::kBulletLicense));
-
-  for (const auto& license : collected_licenses_) {
-    license_select_list_->addItem(QString::fromStdString(license.first));
+void LicenseInformationDialog::FillLicenseList() {
+  for (const auto& notice : licenses::kNotices) {
+    license_select_list_->addItem(AsQString(notice.name));
   }
 }
 
 void LicenseInformationDialog::SelectLicenseRow(int row) {
-  if (row < 0 || static_cast<std::size_t>(row) >= collected_licenses_.size()) {
+  if (row < 0 || static_cast<std::size_t>(row) >= licenses::kNotices.size()) {
     return;
   }
-  text_view_->setPlainText(QString::fromStdString(
-      collected_licenses_[static_cast<std::size_t>(row)].second));
+  text_view_->setPlainText(
+      AsQString(licenses::kNotices.at(static_cast<std::size_t>(row)).text));
   text_view_->moveCursor(QTextCursor::Start);
 }
