@@ -1,6 +1,6 @@
 # decade
 
-A desktop application that shows periods across several years on one calendar page — one row per year, the yearly total beneath. The page exports as a PNG; data comes from CSV, whole projects from XML.
+Desktop application for calendars and timelines. The page exports as a PNG; data comes from CSV, whole projects from XML.
 
 Alpha state, grown out of a practice project. C++26, Qt 6, OpenGL, ICU.
 
