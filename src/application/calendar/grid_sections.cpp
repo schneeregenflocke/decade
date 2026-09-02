@@ -52,8 +52,8 @@ void BuildCalendarLabels(const SectionContext& ctx) {
         x_label_frames.at(index).Center(), labels_font_size);
   }
 
-  const auto config =
-      ctx.shape_config.GetShapeConfiguration(ShapeConfigSet::kCalendarLabels);
+  const auto config = ctx.shape_config.GetShapeConfiguration(
+      ShapeConfigSet::kCalendarLabelsKey);
   detail::FillRectangles(ctx.nodes.column_labels, x_label_frames, config);
 
   const std::size_t span_years = ctx.calendar_config.GetSpanLengthYears();
@@ -105,7 +105,7 @@ void BuildYears(const SectionContext& ctx) {
 
   detail::FillRectangles(
       ctx.nodes.year_cells, year_cells,
-      ctx.shape_config.GetShapeConfiguration(ShapeConfigSet::kYearsShapes));
+      ctx.shape_config.GetShapeConfiguration(ShapeConfigSet::kYearsShapesKey));
 }
 
 void BuildMonths(const SectionContext& ctx) {
@@ -148,7 +148,7 @@ void BuildMonths(const SectionContext& ctx) {
 
   detail::FillRectangles(
       ctx.nodes.month_cells, month_cells,
-      ctx.shape_config.GetShapeConfiguration(ShapeConfigSet::kMonthsShapes));
+      ctx.shape_config.GetShapeConfiguration(ShapeConfigSet::kMonthsShapesKey));
 }
 
 void BuildDays(const SectionContext& ctx) {
@@ -206,10 +206,10 @@ void BuildDays(const SectionContext& ctx) {
 
   detail::FillRectangles(
       ctx.nodes.day_cells, day_cells,
-      ctx.shape_config.GetShapeConfiguration(ShapeConfigSet::kDayShapes));
+      ctx.shape_config.GetShapeConfiguration(ShapeConfigSet::kDayShapesKey));
   detail::FillRectangles(
       ctx.nodes.sunday_cells, sunday_cells,
-      ctx.shape_config.GetShapeConfiguration(ShapeConfigSet::kSundayShapes));
+      ctx.shape_config.GetShapeConfiguration(ShapeConfigSet::kSundayShapesKey));
 }
 
 }  // namespace calendar_sections

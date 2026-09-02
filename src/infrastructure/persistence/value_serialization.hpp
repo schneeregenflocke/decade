@@ -162,7 +162,7 @@ void load(Archive& ar, TitleConfig& config, const unsigned int /*v*/) {
 template <class Archive>
 void save(Archive& ar, const ShapeConfiguration& config,
           const unsigned int /*v*/) {
-  const std::string& name = config.Name();
+  const std::string& key = config.Key();
   const bool outline_visible = config.OutlineVisible();
   const bool fill_visible = config.FillVisible();
   const float line_width = config.LineWidthDisabled();
@@ -172,7 +172,7 @@ void save(Archive& ar, const ShapeConfiguration& config,
   const std::array<float, 4> fill_color =
       persistence::serialization_detail::ColorToArray(
           config.FillColorDisabled());
-  ar& make_nvp("name", name);
+  ar& make_nvp("key", key);
   ar& make_nvp("outline_visible", outline_visible);
   ar& make_nvp("fill_visible", fill_visible);
   ar& make_nvp("line_width", line_width);
@@ -181,20 +181,20 @@ void save(Archive& ar, const ShapeConfiguration& config,
 }
 template <class Archive>
 void load(Archive& ar, ShapeConfiguration& config, const unsigned int /*v*/) {
-  std::string name;
+  std::string key;
   bool outline_visible = false;
   bool fill_visible = false;
   float line_width = 0.0F;
   std::array<float, 4> outline_color{};
   std::array<float, 4> fill_color{};
-  ar& make_nvp("name", name);
+  ar& make_nvp("key", key);
   ar& make_nvp("outline_visible", outline_visible);
   ar& make_nvp("fill_visible", fill_visible);
   ar& make_nvp("line_width", line_width);
   ar& make_nvp("outline_color", outline_color);
   ar& make_nvp("fill_color", fill_color);
   config = ShapeConfiguration(
-      std::move(name), outline_visible, fill_visible, line_width,
+      std::move(key), outline_visible, fill_visible, line_width,
       ShapeConfiguration::OutlineColorValue{
           persistence::serialization_detail::ColorFromArray(outline_color)},
       ShapeConfiguration::FillColorValue{

@@ -66,10 +66,10 @@ CalendarSceneNodes BuildCalendarSceneNodes(Scene& scene, Shader& simple_shader,
       boxes_under_print_area(CalendarSceneNodes::kSundayCellsName);
   nodes.date_bars =
       container_under_print_area(CalendarSceneNodes::kDateBarsName);
-  nodes.year_totals =
-      boxes_under_print_area(CalendarSceneNodes::kYearTotalsName);
-  nodes.year_total_labels =
-      container_under_print_area(CalendarSceneNodes::kYearTotalLabelsName);
+  nodes.annual_coverage =
+      boxes_under_print_area(CalendarSceneNodes::kAnnualCoverageName);
+  nodes.annual_coverage_labels =
+      container_under_print_area(CalendarSceneNodes::kAnnualCoverageLabelsName);
 
   // A leaf with no later updates, hence no handle in the struct — but it needs
   // its draw layer below, so it stays named here.
@@ -109,7 +109,7 @@ CalendarSceneNodes BuildCalendarSceneNodes(Scene& scene, Shader& simple_shader,
   nodes.month_cells.Node()->SetDrawLayer(calendar_layers::kGrid);
   nodes.day_cells.Node()->SetDrawLayer(calendar_layers::kGrid);
   nodes.sunday_cells.Node()->SetDrawLayer(calendar_layers::kGrid);
-  nodes.year_totals.Node()->SetDrawLayer(calendar_layers::kBars);
+  nodes.annual_coverage.Node()->SetDrawLayer(calendar_layers::kBars);
   nodes.title_text.Node()->SetDrawLayer(calendar_layers::kText);
   nodes.title_selection.Node()->SetDrawLayer(calendar_layers::kTextSelection);
   nodes.title_caret.Node()->SetDrawLayer(calendar_layers::kCaret);

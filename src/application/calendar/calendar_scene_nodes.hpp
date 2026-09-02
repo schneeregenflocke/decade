@@ -82,11 +82,12 @@ struct CalendarSceneNodes {
   static constexpr std::string_view kDateBarsName = "Date Bars";
   std::shared_ptr<SceneNode> date_bars;
 
-  static constexpr std::string_view kYearTotalsName = "Year Totals";
-  ShapeNode<BoxesShape> year_totals;
+  static constexpr std::string_view kAnnualCoverageName = "Annual Coverage";
+  ShapeNode<BoxesShape> annual_coverage;
 
-  static constexpr std::string_view kYearTotalLabelsName = "Year Total Labels";
-  std::shared_ptr<SceneNode> year_total_labels;
+  static constexpr std::string_view kAnnualCoverageLabelsName =
+      "Annual Coverage Labels";
+  std::shared_ptr<SceneNode> annual_coverage_labels;
 
   static constexpr std::string_view kLegendFrameName = "Legend Frame";
   // The legend frame is a leaf with no later updates, so it has no handle here;

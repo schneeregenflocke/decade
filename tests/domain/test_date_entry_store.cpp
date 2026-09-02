@@ -174,12 +174,12 @@ TEST(DateEntryBarsTest, SingleDayOnJanuaryFirstProducesOneBar) {
   ASSERT_EQ(bars.GetNumberBars(), 1U);
   EXPECT_EQ(bars.GetBar(0).GetYear(), 2030);
   EXPECT_EQ(bars.GetBar(0).GetLength(), 1);
-  EXPECT_EQ(bars.GetAnnualTotal(0), 1);
+  EXPECT_EQ(bars.GetCoveredDays(0), 1);
 }
 
 // Regression: the entry with the latest Begin() does not necessarily have the
 // latest End(). GetLastYear() and GetSpan() must maximise across every entry,
-// or ProcessAnnualTotals writes past the end of annual_totals_ for the yearly
+// or ProcessCoveredDays writes past the end of covered_days_ for the yearly
 // bars of the multi-year entry.
 TEST(DateEntryBarsTest, LastYearComesFromLatestEndNotLatestBegin) {
   DateEntryBars bars;
@@ -199,7 +199,7 @@ TEST(DateEntryBarsTest, LastYearComesFromLatestEndNotLatestBegin) {
 
   std::int64_t total = 0;
   for (size_t index = 0; index < bars.GetSpan(); ++index) {
-    total += bars.GetAnnualTotal(index);
+    total += bars.GetCoveredDays(index);
   }
   const auto expected =
       Date::DaysBetween(Date::FromYmd(2000, 1, 1), Date::FromYmd(2010, 1, 1)) +

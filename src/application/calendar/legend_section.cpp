@@ -36,7 +36,7 @@ void BuildLegend(const SectionContext& ctx) {
   std::vector<RectF> bar_cells;
 
   auto print_strings = ctx.date_groups.GetDateGroupsNames();
-  print_strings.emplace_back("Annual Sums");
+  print_strings.emplace_back(ShapeConfigSet::kAnnualCoverageKey);
 
   std::string string_max_length;
   for (const auto& current_string : print_strings) {
@@ -73,7 +73,7 @@ void BuildLegend(const SectionContext& ctx) {
 
       const auto entry =
           entry_pool.Next(std::string("legend bar ") + std::to_string(index));
-      entry.node->SetStyleId(current_shape_config.Name());
+      entry.node->SetStyleId(current_shape_config.Key());
       entry.shape.SetShape(current_cell, current_shape_config.LineWidth());
       entry.shape.SetColors(current_shape_config.OutlineColor(),
                             current_shape_config.FillColor());
@@ -82,7 +82,8 @@ void BuildLegend(const SectionContext& ctx) {
 
   {
     detail::SetCenteredText(
-        ctx, entry_labels, std::string("legend label year total"), "Annual sum",
+        ctx, entry_labels, std::string("legend label annual coverage"),
+        std::string(ShapeConfigSet::kAnnualCoverageKey),
         legend_entries_frames.at(legend_entries_frames.size() - 2).Center(),
         legend_font_size);
 
@@ -98,10 +99,11 @@ void BuildLegend(const SectionContext& ctx) {
       bar_cells.emplace_back(current_cell);
 
       auto current_shape_config = ctx.shape_config.GetShapeConfiguration(
-          std::string(ShapeConfigSet::kYearsTotals));
+          std::string(ShapeConfigSet::kAnnualCoverageKey));
 
-      const auto entry = entry_pool.Next(std::string("legend bar annual sum"));
-      entry.node->SetStyleId(current_shape_config.Name());
+      const auto entry =
+          entry_pool.Next(std::string("legend bar annual coverage"));
+      entry.node->SetStyleId(current_shape_config.Key());
       entry.shape.SetShape(current_cell, current_shape_config.LineWidth());
       entry.shape.SetColors(current_shape_config.OutlineColor(),
                             current_shape_config.FillColor());

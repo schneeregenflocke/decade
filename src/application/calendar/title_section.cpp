@@ -77,13 +77,13 @@ std::size_t CaretIndexAt(const SectionContext& ctx, const TextLine& line,
 void BuildPrintArea(const SectionContext& ctx) {
   detail::FillRectangles(
       ctx.nodes.print_area, ctx.layout.PrintArea(),
-      ctx.shape_config.GetShapeConfiguration(ShapeConfigSet::kPageMargin));
+      ctx.shape_config.GetShapeConfiguration(ShapeConfigSet::kPageMarginKey));
 }
 
 PickBox BuildTitle(const SectionContext& ctx) {
   detail::FillRectangles(
       ctx.nodes.title_area, ctx.layout.TitleArea(),
-      ctx.shape_config.GetShapeConfiguration(ShapeConfigSet::kTitleFrame));
+      ctx.shape_config.GetShapeConfiguration(ShapeConfigSet::kTitleFrameKey));
 
   const title_edit::TextLine line = title_edit::Layout(ctx);
   FontShape& title_shape = ctx.nodes.title_text.Shape();

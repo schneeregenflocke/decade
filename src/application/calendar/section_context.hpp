@@ -74,7 +74,7 @@ inline void FillRectangles(const ShapeNode<BoxesShape>& node,
                            const ShapeConfiguration& config) {
   scene_shapes::FillRectangles(node, shapes, config.OutlineColor(),
                                config.FillColor(), config.LineWidth());
-  node.Node()->SetStyleId(config.Name());
+  node.Node()->SetStyleId(config.Key());
 }
 
 // A pool of text children under `parent`, on the text draw layer. One per

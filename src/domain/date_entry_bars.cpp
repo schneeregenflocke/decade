@@ -14,7 +14,7 @@ void DateEntryBars::ReceiveDateEntries(
     const std::vector<DateEntry>& incoming_date_entries) {
   date_entries_.Assign(incoming_date_entries);
   ProcessBars();
-  ProcessAnnualTotals();
+  ProcessCoveredDays();
 }
 
 void DateEntryBars::ReceiveDateGroups(
@@ -34,8 +34,8 @@ size_t DateEntryBars::GetNumberBars() const { return bars_.size(); }
 
 Bar DateEntryBars::GetBar(size_t index) const { return bars_[index]; }
 
-std::int64_t DateEntryBars::GetAnnualTotal(size_t index) const {
-  return annual_totals_[index];
+std::int64_t DateEntryBars::GetCoveredDays(size_t year_index) const {
+  return covered_days_[year_index];
 }
 
 void DateEntryBars::ProcessBars() {
@@ -57,14 +57,14 @@ void DateEntryBars::ProcessBars() {
   }
 }
 
-void DateEntryBars::ProcessAnnualTotals() {
-  annual_totals_.clear();
-  annual_totals_.resize(GetSpan());
+void DateEntryBars::ProcessCoveredDays() {
+  covered_days_.clear();
+  covered_days_.resize(GetSpan());
 
   for (const auto& bar : bars_) {
-    const size_t annual_totals_index = static_cast<size_t>(bar.GetYear()) -
-                                       static_cast<size_t>(GetFirstYear());
+    const size_t covered_days_index = static_cast<size_t>(bar.GetYear()) -
+                                      static_cast<size_t>(GetFirstYear());
 
-    annual_totals_[annual_totals_index] += bar.GetLength();
+    covered_days_[covered_days_index] += bar.GetLength();
   }
 }

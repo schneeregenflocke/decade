@@ -29,11 +29,11 @@
 ShapeSetupPanel::ShapeSetupPanel(QWidget* parent) : QWidget(parent) {
   auto* splitter = MakeOwned<QSplitter>(Qt::Horizontal, this);
 
-  name_list_ = MakeOwned<QListWidget>(splitter);
+  key_list_ = MakeOwned<QListWidget>(splitter);
   auto* detail_widget = MakeOwned<QWidget>(splitter);
   CreateDetailFields(detail_widget);
 
-  splitter->addWidget(name_list_);
+  splitter->addWidget(key_list_);
   splitter->addWidget(detail_widget);
   splitter->setSizes({kSashPositionPx, kSashPositionPx * 2});
 
@@ -43,7 +43,7 @@ ShapeSetupPanel::ShapeSetupPanel(QWidget* parent) : QWidget(parent) {
   vertical_layout->addWidget(splitter);
   setLayout(vertical_layout);
 
-  connect(name_list_.data(), &QListWidget::currentRowChanged, this,
+  connect(key_list_.data(), &QListWidget::currentRowChanged, this,
           [this](int row) { CallbackSelection(row); });
 }
 
@@ -53,7 +53,7 @@ void ShapeSetupPanel::ReceiveShapeConfigSet(
     return;
   }
   shape_config_set_ = shape_config_set;
-  RebuildNameList();
+  RebuildKeyList();
   RefreshDetail();
 }
 
@@ -96,44 +96,44 @@ void ShapeSetupPanel::CreateDetailFields(QWidget* detail_widget) {
   fill_alpha_->SetOnChanged(on_edit);
 }
 
-std::vector<std::string> ShapeSetupPanel::ConfigurationNames() const {
-  std::vector<std::string> names;
-  names.reserve(shape_config_set_.FixedConfigurations().size() +
-                shape_config_set_.GroupConfigurations().size());
+std::vector<std::string> ShapeSetupPanel::ConfigurationKeys() const {
+  std::vector<std::string> keys;
+  keys.reserve(shape_config_set_.FixedConfigurations().size() +
+               shape_config_set_.GroupConfigurations().size());
   for (const auto& config : shape_config_set_.FixedConfigurations()) {
-    names.push_back(config.Name());
+    keys.push_back(config.Key());
   }
   for (const auto& config : shape_config_set_.GroupConfigurations()) {
-    names.push_back(config.Name());
+    keys.push_back(config.Key());
   }
-  return names;
+  return keys;
 }
 
-void ShapeSetupPanel::RebuildNameList() {
-  const std::vector<std::string> names = ConfigurationNames();
+void ShapeSetupPanel::RebuildKeyList() {
+  const std::vector<std::string> keys = ConfigurationKeys();
 
-  const QSignalBlocker blocker(name_list_);
-  name_list_->clear();
-  for (const std::string& name : names) {
-    name_list_->addItem(QString::fromStdString(name));
+  const QSignalBlocker blocker(key_list_);
+  key_list_->clear();
+  for (const std::string& key : keys) {
+    key_list_->addItem(QString::fromStdString(key));
   }
 
-  if (selected_name_.empty() && !names.empty()) {
-    selected_name_ = names.front();
+  if (selected_key_.empty() && !keys.empty()) {
+    selected_key_ = keys.front();
   }
-  const int row = RowOf(names, selected_name_);
+  const int row = RowOf(keys, selected_key_);
   if (row < 0) {
-    selected_name_ = names.empty() ? std::string{} : names.front();
-    name_list_->setCurrentRow(names.empty() ? -1 : 0);
+    selected_key_ = keys.empty() ? std::string{} : keys.front();
+    key_list_->setCurrentRow(keys.empty() ? -1 : 0);
     return;
   }
-  name_list_->setCurrentRow(row);
+  key_list_->setCurrentRow(row);
 }
 
-int ShapeSetupPanel::RowOf(const std::vector<std::string>& names,
-                           const std::string& name) {
-  for (std::size_t index = 0; index < names.size(); ++index) {
-    if (names[index] == name) {
+int ShapeSetupPanel::RowOf(const std::vector<std::string>& keys,
+                           const std::string& key) {
+  for (std::size_t index = 0; index < keys.size(); ++index) {
+    if (keys[index] == key) {
       return static_cast<int>(index);
     }
   }
@@ -142,8 +142,8 @@ int ShapeSetupPanel::RowOf(const std::vector<std::string>& names,
 
 void ShapeSetupPanel::RefreshDetail() {
   const ShapeConfiguration config =
-      shape_config_set_.GetShapeConfiguration(selected_name_);
-  const bool has_selection = config.Name() == selected_name_;
+      shape_config_set_.GetShapeConfiguration(selected_key_);
+  const bool has_selection = config.Key() == selected_key_;
 
   outline_visible_->setEnabled(has_selection);
   outline_color_->setEnabled(has_selection);
@@ -185,16 +185,16 @@ void ShapeSetupPanel::CallbackSelection(int row) {
   if (row < 0) {
     return;
   }
-  selected_name_ = name_list_->item(row)->text().toStdString();
+  selected_key_ = key_list_->item(row)->text().toStdString();
   RefreshDetail();
 }
 
 void ShapeSetupPanel::CallbackEdit() {
-  if (loading_ || selected_name_.empty()) {
+  if (loading_ || selected_key_.empty()) {
     return;
   }
   const ShapeConfiguration edited{
-      selected_name_,
+      selected_key_,
       outline_visible_->isChecked(),
       fill_visible_->isChecked(),
       static_cast<float>(line_width_->value()),

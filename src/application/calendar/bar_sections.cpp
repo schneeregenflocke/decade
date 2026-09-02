@@ -68,7 +68,7 @@ BarSceneResult BuildBars(const SectionContext& ctx) {
     bar.node->SetModelMatrix(glm::translate(
         glm::mat4(1.0F),
         glm::vec3(bar_left, current_sub_cell.Bottom(), detail::kZero)));
-    bar.node->SetStyleId(current_shape_config.Name());
+    bar.node->SetStyleId(current_shape_config.Key());
 
     // Page-space box for hit-testing. The node's world position is
     // layout.PrintAreaOrigin() + (bar_left, sub_cell.Bottom()), so the
@@ -103,9 +103,10 @@ BarSceneResult BuildBars(const SectionContext& ctx) {
   return result;
 }
 
-void BuildYearTotals(const SectionContext& ctx) {
-  const auto& node_cells = ctx.nodes.year_totals;
-  auto total_labels = detail::TextPool(ctx, ctx.nodes.year_total_labels);
+void BuildAnnualCoverage(const SectionContext& ctx) {
+  const auto& node_cells = ctx.nodes.annual_coverage;
+  auto coverage_labels =
+      detail::TextPool(ctx, ctx.nodes.annual_coverage_labels);
 
   const std::size_t span_years = ctx.date_entry_bars.GetSpan();
   if (span_years == 0) {
@@ -113,7 +114,7 @@ void BuildYearTotals(const SectionContext& ctx) {
   }
 
   const TimelineProjection projection(ctx.calendar_config);
-  std::vector<RectF> year_totals_cells(span_years);
+  std::vector<RectF> coverage_cells(span_years);
 
   for (std::size_t index = 0; index < span_years; ++index) {
     const int current_year =
@@ -122,45 +123,44 @@ void BuildYearTotals(const SectionContext& ctx) {
       const auto row = projection.RowForYear(current_year);
       const auto current_cell = ctx.layout.GetSubArea(row, 0);
 
-      RectF year_total_cell = current_cell;
-      const auto year_total_width =
-          static_cast<float>(ctx.date_entry_bars.GetAnnualTotal(index)) *
+      RectF coverage_cell = current_cell;
+      const auto coverage_width =
+          static_cast<float>(ctx.date_entry_bars.GetCoveredDays(index)) *
           ctx.layout.DayWidth();
-      year_total_cell.SetRight(current_cell.Left() + year_total_width);
-      year_totals_cells.at(index) = year_total_cell;
+      coverage_cell.SetRight(current_cell.Left() + coverage_width);
+      coverage_cells.at(index) = coverage_cell;
 
       const auto number_days = DaysInYear(current_year);
 
       const float percent =
-          static_cast<float>(ctx.date_entry_bars.GetAnnualTotal(index)) /
+          static_cast<float>(ctx.date_entry_bars.GetCoveredDays(index)) /
           static_cast<float>(number_days);
 
-      std::ostringstream year_total_stream;
-      year_total_stream << std::fixed << std::setprecision(1)
-                        << percent * detail::kPercentScale << " %";
-      const auto year_total_text = year_total_stream.str();
-      const auto year_total_text_width =
-          ctx.font->TextWidth(year_total_text, year_total_cell.Height());
+      std::ostringstream coverage_stream;
+      coverage_stream << std::fixed << std::setprecision(1)
+                      << percent * detail::kPercentScale << " %";
+      const auto coverage_text = coverage_stream.str();
+      const auto coverage_text_width =
+          ctx.font->TextWidth(coverage_text, coverage_cell.Height());
 
-      RectF year_total_text_cell;
-      year_total_text_cell.SetLeft(year_total_cell.Right() +
-                                   current_cell.Height());
-      year_total_text_cell.SetRight(year_total_text_cell.Left() +
-                                    year_total_text_width);
-      year_total_text_cell.SetBottom(year_total_cell.Bottom());
-      year_total_text_cell.SetTop(year_total_cell.Top());
+      RectF coverage_text_cell;
+      coverage_text_cell.SetLeft(coverage_cell.Right() + current_cell.Height());
+      coverage_text_cell.SetRight(coverage_text_cell.Left() +
+                                  coverage_text_width);
+      coverage_text_cell.SetBottom(coverage_cell.Bottom());
+      coverage_text_cell.SetTop(coverage_cell.Top());
 
       detail::SetCenteredText(
-          ctx, total_labels,
-          std::string("year total label ") + std::to_string(index),
-          year_total_text, year_total_text_cell.Center(),
-          year_total_text_cell.Height());
+          ctx, coverage_labels,
+          std::string("annual coverage label ") + std::to_string(index),
+          coverage_text, coverage_text_cell.Center(),
+          coverage_text_cell.Height());
     }
   }
 
-  detail::FillRectangles(
-      node_cells, year_totals_cells,
-      ctx.shape_config.GetShapeConfiguration(ShapeConfigSet::kYearsTotals));
+  detail::FillRectangles(node_cells, coverage_cells,
+                         ctx.shape_config.GetShapeConfiguration(
+                             ShapeConfigSet::kAnnualCoverageKey));
 }
 
 }  // namespace calendar_sections

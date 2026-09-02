@@ -13,16 +13,17 @@ TEST(ShapeConfigSetTest, DefaultsContainExpectedNames) {
   ASSERT_FALSE(set.FixedConfigurations().empty());
   // The defaults are all fixed configurations: no group entries yet.
   EXPECT_TRUE(set.GroupConfigurations().empty());
-  EXPECT_TRUE(set.GetDynamicConfiguration(0).Name().empty());
+  EXPECT_TRUE(set.GetDynamicConfiguration(0).Key().empty());
 
   // A handful of named entries we expect from the default set.
   const ShapeConfiguration page_margin =
-      set.GetShapeConfiguration("Page Margin");
-  EXPECT_EQ(page_margin.Name(), "Page Margin");
+      set.GetShapeConfiguration(ShapeConfigSet::kPageMarginKey);
+  EXPECT_EQ(page_margin.Key(), ShapeConfigSet::kPageMarginKey);
   EXPECT_TRUE(page_margin.OutlineVisible());
 
-  const ShapeConfiguration day_shapes = set.GetShapeConfiguration("Day Shapes");
-  EXPECT_EQ(day_shapes.Name(), "Day Shapes");
+  const ShapeConfiguration day_shapes =
+      set.GetShapeConfiguration(ShapeConfigSet::kDayShapesKey);
+  EXPECT_EQ(day_shapes.Key(), ShapeConfigSet::kDayShapesKey);
   EXPECT_TRUE(day_shapes.FillVisible());
 }
 
@@ -30,12 +31,12 @@ TEST(ShapeConfigSetTest, GetShapeConfigurationReturnsBlankForUnknownName) {
   ShapeConfigSet set;
   const ShapeConfiguration unknown =
       set.GetShapeConfiguration("Does Not Exist");
-  EXPECT_TRUE(unknown.Name().empty());
+  EXPECT_TRUE(unknown.Key().empty());
 }
 
-TEST(ShapeConfigSetTest, DynamicConfigurationNameMatchesFormat) {
-  EXPECT_EQ(ShapeConfigSet::DynamicConfigurationName(0), "Bar Group 0");
-  EXPECT_EQ(ShapeConfigSet::DynamicConfigurationName(7), "Bar Group 7");
+TEST(ShapeConfigSetTest, DynamicConfigurationKeyMatchesFormat) {
+  EXPECT_EQ(ShapeConfigSet::DynamicConfigurationKey(0), "Bar Group 0");
+  EXPECT_EQ(ShapeConfigSet::DynamicConfigurationKey(7), "Bar Group 7");
 }
 
 TEST(ShapeConfigSetTest, SyncToDateGroupsAddressesByIndex) {
@@ -46,10 +47,10 @@ TEST(ShapeConfigSetTest, SyncToDateGroupsAddressesByIndex) {
   set.SyncToDateGroups(3);
 
   const ShapeConfiguration second = set.GetDynamicConfiguration(1);
-  EXPECT_EQ(second.Name(), "Bar Group 1");
+  EXPECT_EQ(second.Key(), "Bar Group 1");
 
   // Out-of-range / absent indices return a blank configuration.
-  EXPECT_TRUE(set.GetDynamicConfiguration(3).Name().empty());
+  EXPECT_TRUE(set.GetDynamicConfiguration(3).Key().empty());
 }
 
 TEST(ShapeConfigSetTest, SyncToDateGroupsPreservesCustomisationAndDropsStale) {
@@ -58,17 +59,45 @@ TEST(ShapeConfigSetTest, SyncToDateGroupsPreservesCustomisationAndDropsStale) {
 
   // Customise the colour of the second group's configuration.
   ShapeConfiguration customised = set.GetDynamicConfiguration(1);
-  ASSERT_EQ(customised.Name(), "Bar Group 1");
+  ASSERT_EQ(customised.Key(), "Bar Group 1");
   customised.OutlineColor(glm::vec4{0.1F, 0.2F, 0.3F, 1.0F});
   ASSERT_TRUE(set.UpdateConfiguration(customised));
 
   // Shrinking then re-growing must keep the surviving group's customisation
   // and drop the entries past the new count.
   set.SyncToDateGroups(2);
-  EXPECT_TRUE(set.GetDynamicConfiguration(2).Name().empty());
+  EXPECT_TRUE(set.GetDynamicConfiguration(2).Key().empty());
   const ShapeConfiguration kept = set.GetDynamicConfiguration(1);
-  EXPECT_EQ(kept.Name(), "Bar Group 1");
+  EXPECT_EQ(kept.Key(), "Bar Group 1");
   EXPECT_FLOAT_EQ(kept.OutlineColorDisabled()[0], 0.1F);
+}
+
+// The annual coverage aggregates the groups instead of being one, so neither
+// adding nor removing a group may recolour it — least of all over a colour the
+// user picked.
+TEST(ShapeConfigSetTest, SyncToDateGroupsKeepsTheAnnualCoverageConfiguration) {
+  ShapeConfigSet set;
+  const ShapeConfiguration initial =
+      set.GetShapeConfiguration(ShapeConfigSet::kAnnualCoverageKey);
+  ASSERT_EQ(initial.Key(), ShapeConfigSet::kAnnualCoverageKey);
+
+  set.SyncToDateGroups(3);
+  EXPECT_FLOAT_EQ(set.GetShapeConfiguration(ShapeConfigSet::kAnnualCoverageKey)
+                      .FillColorDisabled()[0],
+                  initial.FillColorDisabled()[0]);
+
+  ShapeConfiguration customised =
+      set.GetShapeConfiguration(ShapeConfigSet::kAnnualCoverageKey);
+  customised.FillColor(glm::vec4{0.9F, 0.1F, 0.2F, 1.0F});
+  ASSERT_TRUE(set.UpdateConfiguration(customised));
+
+  set.SyncToDateGroups(5);
+  set.SyncToDateGroups(2);
+
+  const ShapeConfiguration kept =
+      set.GetShapeConfiguration(ShapeConfigSet::kAnnualCoverageKey);
+  EXPECT_FLOAT_EQ(kept.FillColorDisabled()[0], 0.9F);
+  EXPECT_FLOAT_EQ(kept.FillColorDisabled()[1], 0.1F);
 }
 
 TEST(ShapeConfigurationTest, OutlineColorReturnsZeroWhenInvisible) {

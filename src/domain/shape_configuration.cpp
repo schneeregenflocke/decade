@@ -10,18 +10,18 @@
 
 #include "color_palette.hpp"
 
-ShapeConfiguration::ShapeConfiguration(std::string name, bool outline_visible,
+ShapeConfiguration::ShapeConfiguration(std::string key, bool outline_visible,
                                        bool fill_visible, float line_width,
                                        OutlineColorValue outline_color,
                                        FillColorValue fill_color)
-    : name_(std::move(name)),
+    : key_(std::move(key)),
       outline_visible_(outline_visible),
       fill_visible_(fill_visible),
       line_width_(line_width),
       outline_color_(outline_color.value),
       fill_color_(fill_color.value) {}
 
-const std::string& ShapeConfiguration::Name() const { return name_; }
+const std::string& ShapeConfiguration::Key() const { return key_; }
 
 void ShapeConfiguration::FillVisible(bool value) { fill_visible_ = value; }
 
@@ -64,19 +64,19 @@ glm::vec4 ShapeConfiguration::OutlineColorDisabled() const {
 glm::vec4 ShapeConfiguration::FillColorDisabled() const { return fill_color_; }
 
 bool ShapeConfiguration::operator==(std::string_view compare) const {
-  return Name() == compare;
+  return Key() == compare;
 }
 
 ShapeConfigSet::ShapeConfigSet() : fixed_configurations_(BuildDefaults()) {}
 
 ShapeConfiguration ShapeConfigSet::GetShapeConfiguration(
-    std::string_view name) const {
-  const ShapeConfiguration* found = Find(name);
+    std::string_view key) const {
+  const ShapeConfiguration* found = Find(key);
   return found != nullptr ? *found : ShapeConfiguration{};
 }
 
 bool ShapeConfigSet::UpdateConfiguration(const ShapeConfiguration& config) {
-  ShapeConfiguration* found = Find(config.Name());
+  ShapeConfiguration* found = Find(config.Key());
   if (found == nullptr) {
     return false;
   }
@@ -84,8 +84,8 @@ bool ShapeConfigSet::UpdateConfiguration(const ShapeConfiguration& config) {
   return true;
 }
 
-std::string ShapeConfigSet::DynamicConfigurationName(size_t group_index) {
-  return std::string(kDynamicNamePrefix) + std::to_string(group_index);
+std::string ShapeConfigSet::DynamicConfigurationKey(size_t group_index) {
+  return std::string(kGroupKeyPrefix) + std::to_string(group_index);
 }
 
 ShapeConfiguration ShapeConfigSet::GetDynamicConfiguration(
@@ -104,9 +104,6 @@ void ShapeConfigSet::SyncToDateGroups(size_t group_count) {
     for (size_t index = previous_group_count; index < group_count; ++index) {
       group_configurations_.push_back(MakeBarGroupConfiguration(index));
     }
-  }
-  if (group_count != previous_group_count) {
-    RefreshAnnualSumConfiguration(group_count);
   }
 }
 
@@ -128,16 +125,14 @@ std::vector<ShapeConfiguration>& ShapeConfigSet::MutableGroupConfigurations() {
   return group_configurations_;
 }
 
-ShapeConfiguration ShapeConfigSet::MakeCategoricalConfiguration(
-    std::string name, size_t palette_index) {
+ShapeConfiguration ShapeConfigSet::MakeBarStyledConfiguration(
+    std::string key, const glm::vec3& color) {
   constexpr float kDynamicLineWidth = 0.5F;
   constexpr float kOutlineAlpha = 0.75F;
   constexpr float kFillAlpha = 0.35F;
 
-  const glm::vec3 color = palette::CategoricalColor(palette_index);
-
   return ShapeConfiguration{
-      std::move(name),
+      std::move(key),
       true,
       true,
       kDynamicLineWidth,
@@ -147,16 +142,8 @@ ShapeConfiguration ShapeConfigSet::MakeCategoricalConfiguration(
 
 ShapeConfiguration ShapeConfigSet::MakeBarGroupConfiguration(
     size_t group_index) {
-  return MakeCategoricalConfiguration(DynamicConfigurationName(group_index),
-                                      group_index);
-}
-
-void ShapeConfigSet::RefreshAnnualSumConfiguration(size_t group_count) {
-  ShapeConfiguration* found = Find(kYearsTotals);
-  if (found != nullptr) {
-    *found =
-        MakeCategoricalConfiguration(std::string(kYearsTotals), group_count);
-  }
+  return MakeBarStyledConfiguration(DynamicConfigurationKey(group_index),
+                                    palette::CategoricalColor(group_index));
 }
 
 std::vector<ShapeConfiguration> ShapeConfigSet::BuildDefaults() {
@@ -184,40 +171,41 @@ std::vector<ShapeConfiguration> ShapeConfigSet::BuildDefaults() {
   const glm::vec4 mid_gray_transparent{kHalf, kHalf, kHalf, kZero};
   const glm::vec4 dark_quarter{kQuarter, kQuarter, kQuarter, kOne};
   const glm::vec4 dark_quarter_transparent{kQuarter, kQuarter, kQuarter, kZero};
-  // Initial "Annual Sum" placeholder: a pastel fill with a stronger outline,
-  // matching the bar-group recipe. The panel re-derives the actual color from
-  // the categorical palette (index = group count) on the first update.
-  const glm::vec4 green_outline{kQuarter, kThreeQuarters, kQuarter,
-                                kThreeQuarters};
-  const glm::vec4 green_fill{kQuarter, kThreeQuarters, kQuarter, kMid};
+  // The annual coverage is no category, so it takes no colour out of the
+  // categorical palette: a neutral grey tells the aggregate apart from the
+  // groups it sums up, and it collides with none of them however many there
+  // are — Viridis is saturated end to end.
+  const glm::vec3 annual_coverage_gray{kMid, kMid, kMid};
 
   return {
-      ShapeConfiguration{std::string(kPageMargin), true, false, kLineWidthThin,
+      ShapeConfiguration{std::string(kPageMarginKey), true, false,
+                         kLineWidthThin,
                          ShapeConfiguration::OutlineColorValue{black_opaque},
                          ShapeConfiguration::FillColorValue{white_transparent}},
-      ShapeConfiguration{std::string(kTitleFrame), true, false, kLineWidthThick,
+      ShapeConfiguration{std::string(kTitleFrameKey), true, false,
+                         kLineWidthThick,
                          ShapeConfiguration::OutlineColorValue{dark_gray},
                          ShapeConfiguration::FillColorValue{white_transparent}},
       ShapeConfiguration{
-          std::string(kCalendarLabels), true, false, kLineWidthVeryThin,
+          std::string(kCalendarLabelsKey), true, false, kLineWidthVeryThin,
           ShapeConfiguration::OutlineColorValue{light_gray_transparent},
           ShapeConfiguration::FillColorValue{black_opaque}},
-      ShapeConfiguration{std::string(kDayShapes), true, true, kLineWidthThin,
+      ShapeConfiguration{std::string(kDayShapesKey), true, true, kLineWidthThin,
                          ShapeConfiguration::OutlineColorValue{light_gray},
                          ShapeConfiguration::FillColorValue{transparent}},
-      ShapeConfiguration{std::string(kSundayShapes), true, true, kLineWidthThin,
+      ShapeConfiguration{std::string(kSundayShapesKey), true, true,
+                         kLineWidthThin,
                          ShapeConfiguration::OutlineColorValue{light_gray},
                          ShapeConfiguration::FillColorValue{light_gray}},
       ShapeConfiguration{
-          std::string(kMonthsShapes), true, false, kLineWidthThin,
+          std::string(kMonthsShapesKey), true, false, kLineWidthThin,
           ShapeConfiguration::OutlineColorValue{mid_gray},
           ShapeConfiguration::FillColorValue{mid_gray_transparent}},
       ShapeConfiguration{
-          "Years Shapes", false, false, kLineWidthThin,
+          std::string(kYearsShapesKey), false, false, kLineWidthThin,
           ShapeConfiguration::OutlineColorValue{dark_quarter},
           ShapeConfiguration::FillColorValue{dark_quarter_transparent}},
-      ShapeConfiguration{std::string(kYearsTotals), true, true, kLineWidthThick,
-                         ShapeConfiguration::OutlineColorValue{green_outline},
-                         ShapeConfiguration::FillColorValue{green_fill}},
+      MakeBarStyledConfiguration(std::string(kAnnualCoverageKey),
+                                 annual_coverage_gray),
   };
 }

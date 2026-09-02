@@ -13,8 +13,9 @@
 #include "timeline_projection.hpp"
 
 // A read model for the drawing: it holds the same prepared entry list and
-// derives bars and yearly totals from it. It publishes nothing — the calendar
-// reads it directly, so it needs neither a topic nor a re-entry guard.
+// derives from it the bars plus the days each year covers. It publishes
+// nothing — the calendar reads it directly, so it needs neither a topic nor a
+// re-entry guard.
 class DateEntryBars {
  public:
   void ReceiveDateEntries(const std::vector<DateEntry>& incoming_date_entries);
@@ -33,15 +34,17 @@ class DateEntryBars {
 
   [[nodiscard]] Bar GetBar(size_t index) const;
 
-  [[nodiscard]] std::int64_t GetAnnualTotal(size_t index) const;
+  // Marked days in the year at the given zero-based offset from the first one
+  // — what the annual coverage bar draws and its percentage divides.
+  [[nodiscard]] std::int64_t GetCoveredDays(size_t year_index) const;
 
  private:
   void ProcessBars();
 
-  void ProcessAnnualTotals();
+  void ProcessCoveredDays();
 
   DateEntryList date_entries_;
   std::vector<Bar> bars_;
-  std::vector<std::int64_t> annual_totals_;
+  std::vector<std::int64_t> covered_days_;
 };
 #endif  // DATE_ENTRY_BARS_HPP

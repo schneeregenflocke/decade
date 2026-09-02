@@ -112,7 +112,7 @@ void CalendarSceneComposer::Build() {
   calendar_sections::BarSceneResult bars = calendar_sections::BuildBars(ctx);
   pick_boxes_.insert(pick_boxes_.end(), bars.pick_boxes.begin(),
                      bars.pick_boxes.end());
-  calendar_sections::BuildYearTotals(ctx);
+  calendar_sections::BuildAnnualCoverage(ctx);
   calendar_sections::BuildLegend(ctx);
 
   // Hand the fresh bar nodes to the highlighter, which re-applies the

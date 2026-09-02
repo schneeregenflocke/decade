@@ -301,7 +301,7 @@ void SceneTreePanel::AppendStyleCategory(const std::string& style_id) {
   }
   const ShapeConfiguration config =
       shape_config_set_.GetShapeConfiguration(style_id);
-  if (config.Name() != style_id) {
+  if (config.Key() != style_id) {
     return;  // not found in the set
   }
 

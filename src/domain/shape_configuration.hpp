@@ -2,6 +2,7 @@
 #define SHAPE_CONFIGURATION_HPP
 
 #include <algorithm>
+#include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <string>
 #include <string_view>
@@ -22,11 +23,14 @@ class ShapeConfiguration {
 
   ShapeConfiguration() = default;
 
-  ShapeConfiguration(std::string name, bool outline_visible, bool fill_visible,
+  ShapeConfiguration(std::string key, bool outline_visible, bool fill_visible,
                      float line_width, OutlineColorValue outline_color,
                      FillColorValue fill_color);
 
-  [[nodiscard]] const std::string& Name() const;
+  // The identity of this configuration: what a scene builder looks it up by,
+  // what a node carries as its style id, what the shapes list shows and what
+  // the project file stores.
+  [[nodiscard]] const std::string& Key() const;
 
   void FillVisible(bool value);
 
@@ -57,7 +61,7 @@ class ShapeConfiguration {
   bool operator==(std::string_view compare) const;
 
  private:
-  std::string name_;
+  std::string key_;
   bool outline_visible_{true};
   bool fill_visible_{false};
   float line_width_{1.0F};
@@ -66,44 +70,49 @@ class ShapeConfiguration {
 };
 
 // Pure value object: the shape configurations, split into the fixed ones (page
-// margin, labels, the per-year "Annual Sum", …) and the per-date-group ones.
+// margin, labels, the per-year coverage bar, …) and the per-date-group ones.
 // The two live in separate containers, so a group configuration is identified
-// structurally (its position in the group list), not by parsing its name. No
+// structurally (its position in the group list), not by parsing its key. No
 // signal -> Rule of Zero, copyable.
 class ShapeConfigSet {
  public:
   ShapeConfigSet();
 
-  // The names of the fixed configurations. They are the contract between this
-  // set and the scene builders that ask for them, and a mistyped one does not
-  // fail loudly: GetShapeConfiguration answers with a default-constructed
-  // value, which draws an invisible shape. So the string exists once, here,
-  // beside the defaults that carry it.
-  static constexpr std::string_view kPageMargin = "Page Margin";
-  static constexpr std::string_view kTitleFrame = "Title Frame";
-  static constexpr std::string_view kCalendarLabels = "Calendar Labels";
-  static constexpr std::string_view kDayShapes = "Day Shapes";
-  static constexpr std::string_view kSundayShapes = "Sunday Shapes";
-  static constexpr std::string_view kMonthsShapes = "Months Shapes";
-  static constexpr std::string_view kYearsShapes = "Years Shapes";
-  // The per-year total, styled like a bar group so it sits beside them.
-  static constexpr std::string_view kYearsTotals = "Years Totals";
+  // The keys of the fixed configurations: the identity a scene builder looks a
+  // configuration up by, the style id of the node it draws, the row the shapes
+  // list shows — and what a saved project carries on disk. Renaming one breaks
+  // every project written before, because GetShapeConfiguration answers an
+  // unknown key with a default-constructed value, which draws nothing.
+  static constexpr std::string_view kPageMarginKey = "Page Margin";
+  static constexpr std::string_view kTitleFrameKey = "Title Frame";
+  static constexpr std::string_view kCalendarLabelsKey = "Calendar Labels";
+  static constexpr std::string_view kDayShapesKey = "Day Shapes";
+  static constexpr std::string_view kSundayShapesKey = "Sunday Shapes";
+  static constexpr std::string_view kMonthsShapesKey = "Months Shapes";
+  static constexpr std::string_view kYearsShapesKey = "Years Shapes";
+  // The per-year bar: styled like a bar group so it sits beside them, but
+  // coloured off the palette it is not part of. It aggregates the groups
+  // instead of being one, and a colour derived from their count would move
+  // under the user every time a group is added. Coverage rather than sum,
+  // because the bar measures the marked days of a year and the figure beside
+  // it their share of that year — a sum leaves open of what.
+  static constexpr std::string_view kAnnualCoverageKey = "Annual Coverage";
 
-  // The configuration with the given name, searched across the fixed and the
-  // group configurations (a default-constructed value when absent). The name
-  // remains a stable per-configuration label (and a node's style id); it is
-  // just no longer what decides whether a configuration is a group entry.
+  // The configuration under the given key, searched across the fixed and the
+  // group configurations (a default-constructed value when absent). The key no
+  // longer decides whether a configuration is a group entry — its container
+  // does.
   [[nodiscard]] ShapeConfiguration GetShapeConfiguration(
-      std::string_view name) const;
+      std::string_view key) const;
 
-  // Replaces the configuration that shares `config`'s name, in whichever
-  // container holds it. Returns false when no such configuration exists.
+  // Replaces the configuration under `config`'s key, in whichever container
+  // holds it. Returns false when no such configuration exists.
   bool UpdateConfiguration(const ShapeConfiguration& config);
 
-  // Display name of the per-date-group configuration at the given zero-based
-  // index. Still used to label the group configurations (and as the matching
-  // node style id); group membership no longer depends on it.
-  [[nodiscard]] static std::string DynamicConfigurationName(size_t group_index);
+  // Key of the per-date-group configuration at the given zero-based index. It
+  // labels the group configurations and matches the node style id; group
+  // membership no longer depends on it.
+  [[nodiscard]] static std::string DynamicConfigurationKey(size_t group_index);
 
   // The configuration for the date group at the given zero-based index (a
   // default-constructed value when out of range).
@@ -113,8 +122,8 @@ class ShapeConfigSet {
   // Reconciles the group configurations with the current date groups: keeps the
   // existing entries (so user customisations survive), drops the entries past
   // `group_count` and synthesises fresh ones from the palette for newly added
-  // groups. The "Annual Sum" entry is re-derived from the palette only when the
-  // group count actually changed, so a rename of a group keeps its colour.
+  // groups. Every configuration that already exists keeps its colour — an entry
+  // is coloured once, when it comes into being, and is the user's from then on.
   void SyncToDateGroups(size_t group_count);
 
   // Raw access for non-intrusive serialization in the infrastructure layer.
@@ -126,11 +135,11 @@ class ShapeConfigSet {
   [[nodiscard]] std::vector<ShapeConfiguration>& MutableGroupConfigurations();
 
  private:
-  // Name prefix shared by every per-date-group configuration; used only to
-  // label them, no longer to decide group membership.
-  static constexpr std::string_view kDynamicNamePrefix = "Bar Group ";
+  // Key prefix shared by every per-date-group configuration; it labels them
+  // alone and no longer decides group membership.
+  static constexpr std::string_view kGroupKeyPrefix = "Bar Group ";
 
-  // Locates the configuration with the given name across both containers
+  // Locates the configuration under the given key across both containers
   // (fixed first, then group), or nullptr when absent.
   //
   // One body for both constnesses through [deducing this]
@@ -144,7 +153,7 @@ class ShapeConfigSet {
   //
   // A template, so it stays in the header where every instantiation can see it.
   template <typename Self>
-  [[nodiscard]] auto Find(this Self& self, std::string_view name)
+  [[nodiscard]] auto Find(this Self& self, std::string_view key)
       -> std::remove_reference_t<
           decltype(*self.fixed_configurations_.begin())>* {
     using Config =
@@ -153,7 +162,7 @@ class ShapeConfigSet {
          {&self.fixed_configurations_, &self.group_configurations_}) {
       const auto found = std::ranges::find_if(
           *container,
-          [&](const ShapeConfiguration& config) { return config == name; });
+          [&](const ShapeConfiguration& config) { return config == key; });
       if (found != container->end()) {
         return static_cast<Config*>(&*found);
       }
@@ -161,22 +170,16 @@ class ShapeConfigSet {
     return static_cast<Config*>(nullptr);
   }
 
-  // Builds a categorical shape configuration: the colour comes from the shared
-  // palette at the given index, with a stronger outline than fill so the box
-  // has a visible border while the fill stays pastel. The single source of the
-  // alpha recipe for every palette-driven entry (bar groups and the annual
-  // sum).
-  static ShapeConfiguration MakeCategoricalConfiguration(std::string name,
-                                                         size_t palette_index);
+  // Builds a bar-styled shape configuration around the given colour: a stronger
+  // outline than fill, so the box has a visible border while the fill stays
+  // pastel. The single source of that alpha recipe, for the bar groups and for
+  // the annual coverage alike.
+  static ShapeConfiguration MakeBarStyledConfiguration(std::string key,
+                                                       const glm::vec3& color);
 
   // Default configuration for the dynamic bar group at the given zero-based
   // index, reproducible across sessions because the palette is index-stable.
   static ShapeConfiguration MakeBarGroupConfiguration(size_t group_index);
-
-  // Re-derives the "Annual Sum" configuration from the palette at the index
-  // right past the last group, so it is coloured and styled exactly like a bar
-  // group and stays consistent if the palette is ever changed.
-  void RefreshAnnualSumConfiguration(size_t group_count);
 
   static std::vector<ShapeConfiguration> BuildDefaults();
 

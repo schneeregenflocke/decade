@@ -37,6 +37,8 @@ add_executable(decade_tests
 	application/calendar/test_calendar_layout.cpp
 	application/calendar/test_title_text_editor.cpp
 	application/test_project_document.cpp
+	presentation/test_groups_panel.cpp
+	presentation/test_shape_panel.cpp
 )
 
 target_compile_features(decade_tests PRIVATE cxx_std_26)

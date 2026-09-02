@@ -21,7 +21,7 @@
 #include "color_button.hpp"
 #include "make_owned.hpp"
 
-// The home of the shape configurations: the list on the left names them, the
+// The home of the shape configurations: the list on the left keys them, the
 // fields on the right edit the selected one. The scene tree mirrors the same
 // values and stays read-only — this is where they get changed (#65).
 //
@@ -34,7 +34,7 @@ class ShapeSetupPanel : public QWidget {
   explicit ShapeSetupPanel(QWidget* parent);
 
   // The set arrives whole and replaces what stands here. The selection follows
-  // the name, not the row: a new date group adds an entry and would otherwise
+  // the key, not the row: a new date group adds an entry and would otherwise
   // shift the selection to a different configuration.
   void ReceiveShapeConfigSet(const ShapeConfigSet& shape_config_set);
 
@@ -53,12 +53,12 @@ class ShapeSetupPanel : public QWidget {
 
   // Every configuration of the set in one list: the fixed ones first, the
   // per-date-group ones after them, in the order the set holds them.
-  [[nodiscard]] std::vector<std::string> ConfigurationNames() const;
+  [[nodiscard]] std::vector<std::string> ConfigurationKeys() const;
 
-  void RebuildNameList();
+  void RebuildKeyList();
 
-  static int RowOf(const std::vector<std::string>& names,
-                   const std::string& name);
+  static int RowOf(const std::vector<std::string>& keys,
+                   const std::string& key);
 
   // The fields show the configured values, not the ones visibility cleans up:
   // switching a fill off and on again must give back the colour that was set.
@@ -76,9 +76,9 @@ class ShapeSetupPanel : public QWidget {
   void CallbackEdit();
 
   ShapeConfigSet shape_config_set_;
-  std::string selected_name_;
+  std::string selected_key_;
 
-  QPointer<QListWidget> name_list_;
+  QPointer<QListWidget> key_list_;
   QPointer<QCheckBox> outline_visible_;
   QPointer<ColorButton> outline_color_;
   QPointer<AlphaSlider> outline_alpha_;

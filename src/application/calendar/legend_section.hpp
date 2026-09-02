@@ -4,7 +4,7 @@
 #include "section_context.hpp"
 
 // The legend below the calendar: one label plus one sample bar per date group,
-// and the annual sum after them.
+// and the annual coverage after them.
 
 namespace calendar_sections {
 
