@@ -11,6 +11,6 @@ int main(int argc, char** argv) {
     return application::RunDecadeApp(argc, argv);
   } catch (const std::exception& error) {
     std::cerr << "decade: " << error.what() << '\n';
-    return 1;
+    return EXIT_FAILURE;
   }
 }
