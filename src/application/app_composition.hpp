@@ -8,7 +8,7 @@
 
 #include "../domain/date_format.hpp"
 #include "../presentation/file_commands.hpp"
-#include "../presentation/main_frame.hpp"
+#include "../presentation/main_window.hpp"
 #include "app_binder.hpp"
 #include "app_config.hpp"
 #include "calendar/calendar_page.hpp"
@@ -38,7 +38,7 @@ class AppComposition {
   AppComposition(AppComposition&&) = delete;
   AppComposition& operator=(AppComposition&&) = delete;
 
-  [[nodiscard]] MainFrame& Frame();
+  [[nodiscard]] MainWindow& Frame();
 
  private:
   // Runs as soon as the GL context stands — only here may GL state be touched,
@@ -80,7 +80,7 @@ class AppComposition {
   TitleTextEditor title_text_editor_;
   StartupScript startup_script_;
 
-  std::unique_ptr<MainFrame> frame_;
+  std::unique_ptr<MainWindow> frame_;
   std::optional<FileCommands> file_commands_;
   std::optional<CalendarPage> calendar_page_;
   std::optional<AppWiring> wiring_;

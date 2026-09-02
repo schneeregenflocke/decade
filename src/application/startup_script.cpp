@@ -10,7 +10,7 @@
 #include "../common/debug_log.hpp"
 #include "../infrastructure/graphics/pick_id.hpp"
 #include "../presentation/gl_canvas.hpp"
-#include "../presentation/main_frame.hpp"
+#include "../presentation/main_window.hpp"
 #include "../presentation/scene_tree_panel.hpp"
 #include "calendar/calendar_page.hpp"
 #include "calendar/title_text_editor.hpp"
@@ -23,7 +23,7 @@ StartupScript::StartupScript(const RuntimeOptions& options,
                              ProjectDocument& document)
     : options_(options), document_(document) {}
 
-void StartupScript::RunBeforeGraphics(MainFrame& frame) const {
+void StartupScript::RunBeforeGraphics(MainWindow& frame) const {
   SelectStartupTab(frame);
   if (options_.exit_after_ms) {
     if (decade_debug::LogEnabled()) {
@@ -33,7 +33,7 @@ void StartupScript::RunBeforeGraphics(MainFrame& frame) const {
   }
 }
 
-void StartupScript::RunAfterGraphics(MainFrame& frame,
+void StartupScript::RunAfterGraphics(MainWindow& frame,
                                      CalendarPage& calendar_page,
                                      TitleTextEditor& title_text_editor) const {
   LoadStartupFile();
@@ -41,7 +41,7 @@ void StartupScript::RunAfterGraphics(MainFrame& frame,
   WriteRequestedImages(frame);
 }
 
-void StartupScript::SelectStartupTab(MainFrame& frame) const {
+void StartupScript::SelectStartupTab(MainWindow& frame) const {
   if (!options_.select_tab) {
     return;
   }
@@ -77,7 +77,7 @@ void StartupScript::LoadStartupFile() const {
 }
 
 void StartupScript::ApplyDebugHighlights(
-    MainFrame& frame, CalendarPage& calendar_page,
+    MainWindow& frame, CalendarPage& calendar_page,
     TitleTextEditor& title_text_editor) const {
   // At most one element is ever hovered, so the two hover options exclude
   // each other.
@@ -101,7 +101,7 @@ void StartupScript::ApplyDebugHighlights(
   }
 }
 
-void StartupScript::WriteRequestedImages(MainFrame& frame) const {
+void StartupScript::WriteRequestedImages(MainWindow& frame) const {
   if (options_.dump_png_path) {
     const int dpi = options_.dump_png_dpi.value_or(GLCanvas::kExportPngDpi);
     if (decade_debug::LogEnabled()) {

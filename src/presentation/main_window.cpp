@@ -1,4 +1,4 @@
-#include "main_frame.hpp"
+#include "main_window.hpp"
 
 #include <QtCore/qtmetamacros.h>
 
@@ -31,9 +31,9 @@
 #include "title_panel.hpp"
 #include "window_screenshot.hpp"
 
-MainFrame::MainFrame(QWidget* parent,
-                     const application::MainFrameConfig& config,
-                     LocaleDateFormatter& locale_date_formatter)
+MainWindow::MainWindow(QWidget* parent,
+                       const application::MainFrameConfig& config,
+                       LocaleDateFormatter& locale_date_formatter)
     : QMainWindow(parent, config.flags),
       locale_date_formatter_(locale_date_formatter),
       menu_(GLCanvas::kExportPngDpi) {
@@ -46,33 +46,33 @@ MainFrame::MainFrame(QWidget* parent,
   InitMenu();
 }
 
-DateTablePanel& MainFrame::DataTable() { return *data_table_panel_; }
+DateTablePanel& MainWindow::DataTable() { return *data_table_panel_; }
 
-DateGroupsTablePanel& MainFrame::DateGroupsTable() {
+DateGroupsTablePanel& MainWindow::DateGroupsTable() {
   return *date_groups_table_panel_;
 }
 
-DocumentSetupPanel& MainFrame::DocumentSetup() {
+DocumentSetupPanel& MainWindow::DocumentSetup() {
   return *document_setup_panel_;
 }
 
-PageSetupPanel& MainFrame::PageSetup() { return *page_setup_panel_; }
+PageSetupPanel& MainWindow::PageSetup() { return *page_setup_panel_; }
 
-TitleSetupPanel& MainFrame::TitleSetup() { return *title_setup_panel_; }
+TitleSetupPanel& MainWindow::TitleSetup() { return *title_setup_panel_; }
 
-CalendarSetupPanel& MainFrame::CalendarSetup() {
+CalendarSetupPanel& MainWindow::CalendarSetup() {
   return *calendar_setup_panel_;
 }
 
-FontPanel& MainFrame::Font() { return *font_panel_; }
+FontPanel& MainWindow::Font() { return *font_panel_; }
 
-ShapeSetupPanel& MainFrame::ShapeSetup() { return *shape_setup_panel_; }
+ShapeSetupPanel& MainWindow::ShapeSetup() { return *shape_setup_panel_; }
 
-SceneTreePanel& MainFrame::SceneTree() { return *scene_tree_panel_; }
+SceneTreePanel& MainWindow::SceneTree() { return *scene_tree_panel_; }
 
-GLCanvas& MainFrame::Canvas() { return *gl_canvas_; }
+GLCanvas& MainWindow::Canvas() { return *gl_canvas_; }
 
-bool MainFrame::SelectTab(const std::string& label) {
+bool MainWindow::SelectTab(const std::string& label) {
   const QString wanted = QString::fromStdString(label);
   for (int index = 0; index < tabs_->count(); ++index) {
     if (tabs_->tabText(index).compare(wanted, Qt::CaseInsensitive) == 0) {
@@ -83,12 +83,12 @@ bool MainFrame::SelectTab(const std::string& label) {
   return false;
 }
 
-void MainFrame::CloseAfter(std::int64_t milliseconds) {
+void MainWindow::CloseAfter(std::int64_t milliseconds) {
   QTimer::singleShot(static_cast<int>(milliseconds), this,
                      [this]() { close(); });
 }
 
-bool MainFrame::SaveFrameScreenshot(const std::string& file_path) {
+bool MainWindow::SaveFrameScreenshot(const std::string& file_path) {
   const window_screenshot::Overlay overlay{
       .image = gl_canvas_->CaptureImage(),
       .origin = gl_canvas_->mapTo(this, QPoint(0, 0)),
@@ -96,12 +96,12 @@ bool MainFrame::SaveFrameScreenshot(const std::string& file_path) {
   return window_screenshot::SaveWindowPng(*this, overlay, file_path);
 }
 
-void MainFrame::closeEvent(QCloseEvent* event) {
+void MainWindow::closeEvent(QCloseEvent* event) {
   emit Closing();
   QMainWindow::closeEvent(event);
 }
 
-void MainFrame::CreateLayout(bool maximize_on_start) {
+void MainWindow::CreateLayout(bool maximize_on_start) {
   auto* splitter = MakeOwned<QSplitter>(Qt::Horizontal, this);
 
   auto* tabs = MakeOwned<QTabWidget>(splitter);
@@ -127,7 +127,7 @@ void MainFrame::CreateLayout(bool maximize_on_start) {
   }
 }
 
-void MainFrame::CreatePanels(QTabWidget* tabs) {
+void MainWindow::CreatePanels(QTabWidget* tabs) {
   auto* data_table_panel =
       MakeOwned<DateTablePanel>(tabs, locale_date_formatter_);
   data_table_panel_ = data_table_panel;
@@ -157,7 +157,7 @@ void MainFrame::CreatePanels(QTabWidget* tabs) {
   tabs->addTab(scene_tree_panel, "Scene");
 }
 
-void MainFrame::InitMenu() {
+void MainWindow::InitMenu() {
   menu_.AttachTo(*this);
   const MainMenuActions& actions = menu_.Actions();
 
@@ -175,7 +175,7 @@ void MainFrame::InitMenu() {
   });
 }
 
-void MainFrame::ConnectFileCommand(QAction* action, FileCommand command) {
+void MainWindow::ConnectFileCommand(QAction* action, FileCommand command) {
   connect(action, &QAction::triggered, this,
           [this, command]() { emit FileCommandRequested(command); });
 }

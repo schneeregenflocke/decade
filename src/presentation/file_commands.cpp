@@ -8,9 +8,9 @@
 #include <string>
 
 #include "../application/project_document.hpp"
-#include "main_frame.hpp"
+#include "main_window.hpp"
 
-FileCommands::FileCommands(MainFrame& frame,
+FileCommands::FileCommands(MainWindow& frame,
                            application::ProjectDocument& document)
     : frame_(frame), document_(document) {}
 

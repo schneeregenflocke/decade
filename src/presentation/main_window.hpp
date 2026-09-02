@@ -1,5 +1,5 @@
-#ifndef MAIN_FRAME_HPP
-#define MAIN_FRAME_HPP
+#ifndef MAIN_WINDOW_HPP
+#define MAIN_WINDOW_HPP
 
 #include <QtCore/QPointer>
 #include <QtCore/QString>
@@ -22,7 +22,6 @@
 #include "groups_panel.hpp"
 #include "license_panel.hpp"
 #include "main_menu.hpp"
-#include "make_owned.hpp"
 #include "page_panel.hpp"
 #include "scene_tree_panel.hpp"
 #include "shape_panel.hpp"
@@ -44,18 +43,18 @@ enum class FileCommand : std::uint8_t {
 // The main window: it builds the layout, owns panels, canvas and menu and
 // reports menu commands as a signal. It knows neither stores nor bus — whoever
 // wires the panels fetches them through the accessors.
-class MainFrame : public QMainWindow {
+class MainWindow : public QMainWindow {
   Q_OBJECT
 
  public:
-  MainFrame(QWidget* parent, const application::MainFrameConfig& config,
-            LocaleDateFormatter& locale_date_formatter);
+  MainWindow(QWidget* parent, const application::MainFrameConfig& config,
+             LocaleDateFormatter& locale_date_formatter);
 
-  ~MainFrame() override = default;
-  MainFrame(const MainFrame&) = delete;
-  MainFrame& operator=(const MainFrame&) = delete;
-  MainFrame(MainFrame&&) = delete;
-  MainFrame& operator=(MainFrame&&) = delete;
+  ~MainWindow() override = default;
+  MainWindow(const MainWindow&) = delete;
+  MainWindow& operator=(const MainWindow&) = delete;
+  MainWindow(MainWindow&&) = delete;
+  MainWindow& operator=(MainWindow&&) = delete;
 
   [[nodiscard]] DateTablePanel& DataTable();
   [[nodiscard]] DateGroupsTablePanel& DateGroupsTable();
@@ -120,4 +119,4 @@ class MainFrame : public QMainWindow {
   MainMenu menu_;
 };
 
-#endif  // MAIN_FRAME_HPP
+#endif  // MAIN_WINDOW_HPP

@@ -13,7 +13,7 @@
 #include "../domain/date_format.hpp"
 #include "../presentation/file_commands.hpp"
 #include "../presentation/gl_canvas.hpp"
-#include "../presentation/main_frame.hpp"
+#include "../presentation/main_window.hpp"
 #include "app_binder.hpp"
 #include "app_config.hpp"
 #include "calendar/calendar_page.hpp"
@@ -34,18 +34,18 @@ AppComposition::AppComposition(LocaleDateFormatter& locale_date_formatter,
       startup_script_(runtime_options_, document_),
       // A top-level window has no Qt parent to own it, so the composition
       // root does — the same hand that owns everything else here.
-      frame_(std::make_unique<MainFrame>(nullptr, DefaultMainFrameConfig(),
-                                         locale_date_formatter)) {
+      frame_(std::make_unique<MainWindow>(nullptr, DefaultMainFrameConfig(),
+                                          locale_date_formatter)) {
   file_commands_.emplace(*frame_, document_);
   // The commands go once the graphics are released, while the window can still
   // raise a menu action — hence the check rather than a captured address.
-  QObject::connect(frame_.get(), &MainFrame::FileCommandRequested,
+  QObject::connect(frame_.get(), &MainWindow::FileCommandRequested,
                    &connection_scope_, [this](FileCommand command) {
                      if (file_commands_.has_value()) {
                        file_commands_->Execute(command);
                      }
                    });
-  QObject::connect(frame_.get(), &MainFrame::Closing, &connection_scope_,
+  QObject::connect(frame_.get(), &MainWindow::Closing, &connection_scope_,
                    [this]() { ReleaseGraphics(); });
 
   startup_script_.RunBeforeGraphics(*frame_);
@@ -59,7 +59,7 @@ AppComposition::AppComposition(LocaleDateFormatter& locale_date_formatter,
 
 AppComposition::~AppComposition() { ReleaseGraphics(); }
 
-MainFrame& AppComposition::Frame() { return *frame_; }
+MainWindow& AppComposition::Frame() { return *frame_; }
 
 void AppComposition::OnGraphicsReady() {
   try {

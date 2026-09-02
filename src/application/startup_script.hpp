@@ -1,7 +1,7 @@
 #ifndef STARTUP_SCRIPT_HPP
 #define STARTUP_SCRIPT_HPP
 
-#include "../presentation/main_frame.hpp"
+#include "../presentation/main_window.hpp"
 #include "calendar/calendar_page.hpp"
 #include "calendar/title_text_editor.hpp"
 #include "project_document.hpp"
@@ -20,23 +20,23 @@ class StartupScript {
  public:
   StartupScript(const RuntimeOptions& options, ProjectDocument& document);
 
-  void RunBeforeGraphics(MainFrame& frame) const;
+  void RunBeforeGraphics(MainWindow& frame) const;
 
-  void RunAfterGraphics(MainFrame& frame, CalendarPage& calendar_page,
+  void RunAfterGraphics(MainWindow& frame, CalendarPage& calendar_page,
                         TitleTextEditor& title_text_editor) const;
 
  private:
-  void SelectStartupTab(MainFrame& frame) const;
+  void SelectStartupTab(MainWindow& frame) const;
 
   // Opt-in: what came as a positional argument gets loaded, and nothing else.
   // Without one an empty project starts; a default path relative to the working
   // directory deliberately does not exist.
   void LoadStartupFile() const;
 
-  void ApplyDebugHighlights(MainFrame& frame, CalendarPage& calendar_page,
+  void ApplyDebugHighlights(MainWindow& frame, CalendarPage& calendar_page,
                             TitleTextEditor& title_text_editor) const;
 
-  void WriteRequestedImages(MainFrame& frame) const;
+  void WriteRequestedImages(MainWindow& frame) const;
 
   const RuntimeOptions& options_;
   ProjectDocument& document_;

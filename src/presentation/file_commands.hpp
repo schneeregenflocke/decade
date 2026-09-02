@@ -9,14 +9,14 @@
 #include <string>
 
 #include "../application/project_document.hpp"
-#include "main_frame.hpp"
+#include "main_window.hpp"
 
 // Carries out the menu commands around files: show the dialogue, fetch the
 // path, have the project loaded or written, report errors. The dialogues are
 // the reason this sits in presentation — nothing gets computed here.
 class FileCommands {
  public:
-  FileCommands(MainFrame& frame, application::ProjectDocument& document);
+  FileCommands(MainWindow& frame, application::ProjectDocument& document);
 
   void Execute(FileCommand command);
 
@@ -69,7 +69,7 @@ class FileCommands {
   void Report(const QString& title,
               const std::optional<std::string>& error) const;
 
-  MainFrame& frame_;
+  MainWindow& frame_;
   application::ProjectDocument& document_;
 };
 
