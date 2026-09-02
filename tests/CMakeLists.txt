@@ -1,12 +1,15 @@
 find_package(GTest REQUIRED)
+# Qt6::Test carries the GUI event simulation the presentation tests click with.
+find_package(Qt6 CONFIG REQUIRED COMPONENTS Test)
 
 # This file globs src/ itself rather than borrowing a variable from the parent.
-# main.cpp stays out: gtest_main defines the main it would collide with.
+# The application's main.cpp stays out: it would collide with the one below.
 file(GLOB_RECURSE decade_units CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/src/*.cpp)
 list(FILTER decade_units EXCLUDE REGEX "/main\\.cpp$")
 
 add_executable(decade_tests
 	${decade_units}
+	main.cpp
 	common/test_third_party_licenses.cpp
 	domain/test_date.cpp
 	domain/test_date_period.cpp
@@ -51,11 +54,11 @@ target_include_directories(decade_tests SYSTEM PRIVATE
 
 target_link_libraries(decade_tests PRIVATE
 	GTest::gtest
-	GTest::gtest_main
 	Boost::serialization
 	Boost::wserialization
 	Qt6::Widgets
 	Qt6::OpenGLWidgets
+	Qt6::Test
 	Qt6::PrintSupport
 	ZLIB::ZLIB
 	PNG::PNG

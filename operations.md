@@ -45,6 +45,8 @@ Start the GUI:
 ctest --test-dir build
 ```
 
+A panel gets tested through simulated input rather than through its handlers: `Qt6::Test` sends a click over `QWindowSystemInterface`, so it walks the route a real one walks — hit test, grab, focus — and the assertion stands at the far end of the wiring instead of beside the widget. Two consequences carry the setup. The binary brings its own `main` (`tests/main.cpp`) instead of linking `gtest_main`, because a widget needs a `QApplication` before it exists. And that `main` defaults to the `offscreen` platform, so CI needs no display; `QT_QPA_PLATFORM` overrides it when you want to watch a run on a real one. The plugin carries no `QOpenGLWidget`, so anything reaching the canvas needs a real display either way.
+
 #### Installing and the SBOM
 
 `cmake --install` places the binary, the licence texts the dialogue also carries, and an [SPDX](https://spdx.github.io/spdx-spec/v2.3/) 2.3 document describing the build:
