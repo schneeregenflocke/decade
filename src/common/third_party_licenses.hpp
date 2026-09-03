@@ -72,9 +72,6 @@ inline constexpr auto kLibepoxyData = std::to_array<unsigned char>({
 inline constexpr auto kLibpngData = std::to_array<unsigned char>({
 #embed "../../licenses/libpng.txt"
 });
-inline constexpr auto kOkColorData = std::to_array<unsigned char>({
-#embed "../../external/ok_color/License.txt"
-});
 inline constexpr auto kMicrosoftGslData = std::to_array<unsigned char>({
 #embed "../../licenses/microsoft_gsl.txt"
 });
@@ -111,7 +108,6 @@ inline constexpr std::array kNotices{
     Notice{.name = "libpng", .text = detail::AsText(detail::kLibpngData)},
     Notice{.name = "Microsoft GSL",
            .text = detail::AsText(detail::kMicrosoftGslData)},
-    Notice{.name = "ok_color", .text = detail::AsText(detail::kOkColorData)},
     Notice{.name = "zlib", .text = detail::AsText(detail::kZlibData)},
 };
 

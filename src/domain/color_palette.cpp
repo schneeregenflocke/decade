@@ -1,7 +1,5 @@
 #include "color_palette.hpp"
 
-#include <ok_color.h>
-
 #include <algorithm>
 #include <array>
 #include <cstddef>
