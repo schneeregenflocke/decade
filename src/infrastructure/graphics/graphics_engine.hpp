@@ -4,7 +4,6 @@
 #include <functional>
 #include <optional>
 #include <string>
-#include <tinycolormap.hpp>
 
 #include "mvp_matrices.hpp"
 #include "scene.hpp"
@@ -12,8 +11,7 @@
 
 class GraphicsEngine {
  public:
-  // Background fill of the GL framebuffer: a dark grey.
-  static constexpr tinycolormap::Color kClearColor{0.2};
+  static constexpr float kBackgroundGray = 0.2F;
 
   void Render();
 

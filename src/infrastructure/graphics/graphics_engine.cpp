@@ -11,9 +11,7 @@
 #include "shaders.hpp"
 
 void GraphicsEngine::Render() {
-  glClearColor(static_cast<GLfloat>(kClearColor.r()),
-               static_cast<GLfloat>(kClearColor.g()),
-               static_cast<GLfloat>(kClearColor.b()), 1.0F);
+  glClearColor(kBackgroundGray, kBackgroundGray, kBackgroundGray, 1.0F);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   // The per-node model matrix is applied by each Shape during the scene-graph

@@ -50,7 +50,6 @@ target_include_directories(decade_tests SYSTEM PRIVATE
 	${EPOXY_INCLUDE_DIRS}
 	${ICU_INCLUDE_DIRS}
 	${CMAKE_SOURCE_DIR}/external/csv2/include
-	${CMAKE_SOURCE_DIR}/external/tinycolormap/include
 	${CMAKE_SOURCE_DIR}/external/bullet3/src
 )
 

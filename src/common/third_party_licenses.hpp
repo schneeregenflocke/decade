@@ -75,9 +75,6 @@ inline constexpr auto kLibpngData = std::to_array<unsigned char>({
 inline constexpr auto kMicrosoftGslData = std::to_array<unsigned char>({
 #embed "../../licenses/microsoft_gsl.txt"
 });
-inline constexpr auto kTinycolormapData = std::to_array<unsigned char>({
-#embed "../../external/tinycolormap/LICENSE"
-});
 inline constexpr auto kZlibData = std::to_array<unsigned char>({
 #embed "../../licenses/zlib.txt"
 });
@@ -111,8 +108,6 @@ inline constexpr std::array kNotices{
     Notice{.name = "libpng", .text = detail::AsText(detail::kLibpngData)},
     Notice{.name = "Microsoft GSL",
            .text = detail::AsText(detail::kMicrosoftGslData)},
-    Notice{.name = "tinycolormap",
-           .text = detail::AsText(detail::kTinycolormapData)},
     Notice{.name = "zlib", .text = detail::AsText(detail::kZlibData)},
 };
 

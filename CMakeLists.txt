@@ -57,7 +57,6 @@ target_include_directories(decade SYSTEM PRIVATE
 	${EPOXY_INCLUDE_DIRS}
 	${ICU_INCLUDE_DIRS}
 	external/csv2/include
-	external/tinycolormap/include
 	external/bullet3/src
 )
 
@@ -179,7 +178,6 @@ endfunction()
 
 decade_submodule_commit(external/bullet3 DECADE_BULLET_COMMIT)
 decade_submodule_commit(external/csv2 DECADE_CSV2_COMMIT)
-decade_submodule_commit(external/tinycolormap DECADE_TINYCOLORMAP_COMMIT)
 
 sbom_generate(
 	OUTPUT ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATAROOTDIR}/decade/decade.spdx
@@ -220,8 +218,6 @@ sbom_add(PACKAGE bullet3 COMMIT ${DECADE_BULLET_COMMIT} LICENSE Zlib
 	SUPPLIER "Person: Erwin Coumans" DOWNLOAD_LOCATION https://github.com/bulletphysics/bullet3)
 sbom_add(PACKAGE csv2 COMMIT ${DECADE_CSV2_COMMIT} LICENSE MIT
 	SUPPLIER "Person: Pranav Srinivas Kumar" DOWNLOAD_LOCATION https://github.com/p-ranav/csv2)
-sbom_add(PACKAGE tinycolormap COMMIT ${DECADE_TINYCOLORMAP_COMMIT} LICENSE MIT
-	SUPPLIER "Person: Yuki Koyama" DOWNLOAD_LOCATION https://github.com/yuki-koyama/tinycolormap)
 
 # NO_VERIFY, because cmake-sbom's check needs the Python packages spdx-tools
 # and ntia-conformance-checker, and it turns a missing package into a failing
