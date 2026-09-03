@@ -41,7 +41,8 @@ TEST(ThirdPartyLicensesTest, ListsEveryLinkedLibrary) {
   for (const std::string_view name :
        {"Decade", "Third-party notices", "Qt 6 (LGPL v3)", "GNU GPL v3",
         "Boost", "Bullet Physics", "csv2", "csv2mio", "fontconfig", "FreeType",
-        "glm", "ICU", "libepoxy", "libpng", "Microsoft GSL", "zlib"}) {
+        "glm", "ICU", "libepoxy", "libpng", "Microsoft GSL", "ok_color",
+        "zlib"}) {
     EXPECT_TRUE(Lists(name)) << name;
   }
 }

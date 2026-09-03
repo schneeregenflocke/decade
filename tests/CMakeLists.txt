@@ -25,6 +25,7 @@ add_executable(decade_tests
 	domain/test_date_entry_list.cpp
 	domain/test_transform_date_entry.cpp
 	domain/test_text_edit_buffer.cpp
+	domain/test_color_palette.cpp
 	infrastructure/persistence/test_csv_io.cpp
 	infrastructure/persistence/test_project_io.cpp
 	infrastructure/persistence/test_value_serialization.cpp
@@ -50,6 +51,7 @@ target_include_directories(decade_tests SYSTEM PRIVATE
 	${EPOXY_INCLUDE_DIRS}
 	${ICU_INCLUDE_DIRS}
 	${CMAKE_SOURCE_DIR}/external/csv2/include
+	${CMAKE_SOURCE_DIR}/external/ok_color
 	${CMAKE_SOURCE_DIR}/external/bullet3/src
 )
 
