@@ -24,13 +24,13 @@ namespace {
 // project palette is what the bar groups are actually drawn in.
 constexpr int kStandardColorCount = 48;
 
-void OfferProjectPalette() {
+/*void OfferProjectPalette() {
   for (int index = 0; index < kStandardColorCount; ++index) {
     const glm::vec3 color =
         palette::CategoricalColor(static_cast<std::size_t>(index));
     QColorDialog::setStandardColor(index, ToQColor(glm::vec4{color, 1.0F}));
   }
-}
+}*/
 
 }  // namespace
 
@@ -51,7 +51,7 @@ void ColorButton::SetOnChanged(std::function<void()> on_changed) {
 }
 
 void ColorButton::PickColor() {
-  OfferProjectPalette();
+  // OfferProjectPalette();
   // Qt's own dialogue rather than the platform one: the platform helpers pass
   // the colour and the alpha flag on and nothing else, so a native dialogue
   // would never show the palette set above.
