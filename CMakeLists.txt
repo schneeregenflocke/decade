@@ -57,7 +57,6 @@ target_include_directories(decade SYSTEM PRIVATE
 	${EPOXY_INCLUDE_DIRS}
 	${ICU_INCLUDE_DIRS}
 	external/csv2/include
-	external/ok_color
 	external/bullet3/src
 )
 
@@ -219,8 +218,6 @@ sbom_add(PACKAGE bullet3 COMMIT ${DECADE_BULLET_COMMIT} LICENSE Zlib
 	SUPPLIER "Person: Erwin Coumans" DOWNLOAD_LOCATION https://github.com/bulletphysics/bullet3)
 sbom_add(PACKAGE csv2 COMMIT ${DECADE_CSV2_COMMIT} LICENSE MIT
 	SUPPLIER "Person: Pranav Srinivas Kumar" DOWNLOAD_LOCATION https://github.com/p-ranav/csv2)
-sbom_add(PACKAGE ok_color COMMIT d69831edb90ffdcd08b7e64da3c5405acd48ad2c LICENSE MIT
-	SUPPLIER "Person: Bjoern Ottosson" DOWNLOAD_LOCATION https://github.com/bottosson/bottosson.github.io)
 
 # NO_VERIFY, because cmake-sbom's check needs the Python packages spdx-tools
 # and ntia-conformance-checker, and it turns a missing package into a failing

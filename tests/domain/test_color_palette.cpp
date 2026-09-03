@@ -21,9 +21,6 @@ bool InsideDisplayRange(const glm::vec3& color) {
 
 }  // namespace
 
-// OkHSL states saturation relative to the gamut, so a hue rotation must never
-// leave a channel needing to be clipped — that is the whole reason the palette
-// rotates hue instead of holding chroma fixed.
 TEST(ColorPaletteTest, EveryColorFitsInsideTheDisplayableRange) {
   for (std::size_t index = 0; index < kEnoughGroups; ++index) {
     EXPECT_TRUE(InsideDisplayRange(palette::CategoricalColor(index))) << index;
@@ -37,16 +34,15 @@ TEST(ColorPaletteTest, AnIndexKeepsItsColorAsGroupsAreAdded) {
   EXPECT_NE(palette::CategoricalColor(3), third);
 }
 
-// Neighbouring indices are the pair a reader compares, and the golden-angle
-// step exists to keep them apart.
+// Neighbouring indices are the pair a reader compares, and the palette order
+// exists to keep them apart.
 TEST(ColorPaletteTest, NeighbouringIndicesDifferVisibly) {
   constexpr float kLeastNoticeableDistance = 0.2F;
 
   for (std::size_t index = 0; index + 1 < kEnoughGroups; ++index) {
     const glm::vec3 current = palette::CategoricalColor(index);
     const glm::vec3 next = palette::CategoricalColor(index + 1);
-    const glm::vec3 difference = next - current;
-    const float distance = glm::length(difference);
+    const float distance = glm::length(next - current);
 
     EXPECT_GT(distance, kLeastNoticeableDistance) << index;
   }
