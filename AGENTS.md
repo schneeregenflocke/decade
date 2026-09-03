@@ -70,14 +70,40 @@ The wiring itself is a lifetime, not a pair of calls: `AppWiring` connects on co
 
 The goal is self-documenting code; refactoring brings it there step by step.
 
-- Safety before structure. Before a structural change to a god class or another [code smell](https://en.wikipedia.org/wiki/Code_smell), add a black-box safety net first: a [characterisation test](https://en.wikipedia.org/wiki/Characterization_test) with an input and the current output as a frozen expectation. No rebuild without that cover.
-- Do not change behaviour while tidying. Formatting, renames, warning cleanup and behaviour changes are separate steps or commits. When fixing a warning, never change the semantics in silence.
-- Small, reversible steps. One commit, one goal. Keep diffs small enough to roll back cleanly. For bigger rebuilds: the Mikado method (Ellnestam and Brolund) — note the goal, explore the preconditions, roll back on a break instead of pushing through.
-- Refactoring is evolutionary, not a rewrite. First lower the risk, then cut along the load-bearing abstraction.
-- Isolate pure formatting commits and enter them in `.git-blame-ignore-revs` ([git blame --ignore-revs-file](https://git-scm.com/docs/git-blame)), so the history stays readable.
-- The stepwise order: first stabilise (characterisation tests, smoke paths, a baseline output) → then split (extract small seams after Michael Feathers, "Working Effectively with Legacy Code", behaviour unchanged) → then rename (make the intent visible without changing semantics) → last decouple (remove coupling only once the form is already safe).
+- When fixing a warning, never change the semantics in silence.
 - Whatever cannot be changed at once becomes an issue, so it does not get lost.
 - Read the whole file, not just the task. A misleading name, a duplicated block, a violated convention: fix it right away as its **own** commit, or open an issue when the fix outgrows the task or needs a decision. Noticing without acting is no option.
+
+### Self-documenting code
+
+The code communicates its intent itself; prose is the exception. The guard rail is P.1 "[Express ideas directly in code](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#Rp-direct)" of the C++ Core Guidelines. What the code or a command already shows does not get documented on top.
+
+- **Names carry the purpose, not the mechanism** — on every level: variables, functions, classes, members. Anchors: intention-revealing selector (Kent Beck, "Smalltalk Best Practice Patterns") for names; intention-revealing interfaces (Eric Evans, [DDD Reference](https://www.domainlanguage.com/ddd/reference/)) for interfaces; [general naming rules](https://google.github.io/styleguide/cppguide.html#General_Naming_Rules): optimise for readability, no cryptic abbreviations.
+- **Structure explains itself:** small units with one responsibility; one level of abstraction per function (SLAP); deep modules — a small interface with much functionality behind it (John Ousterhout, "[A Philosophy of Software Design](https://web.stanford.edu/~ouster/cgi-bin/book.php)").
+- **Comments are sparing** and explain the non-obvious why alone (a decision, a trade-off), never the what ([NL.1](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#S-naming) of the Core Guidelines). A comment describing *what* the code does is a hint to make the code clearer — not to keep the comment.
+
+Concretely, after [Google C++ Style](https://google.github.io/styleguide/cppguide.html#Naming) (in force):
+
+- Types: `PascalCase` (`DateGroup`).
+- Functions and methods: `PascalCase` (`GetDateGroups()`); trivial accessors and mutators may carry `snake_case` like their member (`set_count()`).
+- Class data members: `snake_case` **with a trailing underscore** (`date_format_`). Struct members without one. The clang-tidy gate enforces this member rule ([readability-identifier-naming](https://clang.llvm.org/extra/clang-tidy/checks/readability/identifier-naming.html) in `.clang-tidy`); a member without an underscore breaks the build.
+- Locals: `snake_case`. Constants and enumerators: `kPascalCase` (`kColorScale`).
+- The store suffix is uniformly `…Store` (not `…Storage`) — for types **and** for member and parameter names (`…_store`, not `…_storage`).
+- Renames that unify spelling and identifiers are welcome. When renaming, do it **completely and consistently** across every occurrence (declaration, definition, call sites, tests, documentation) — no half rename leaving two spellings side by side. Keep the build green afterwards (compile plus `ctest` plus the clang-tidy gate).
+
+### Principles
+
+Binding design principles. The established terms are set here — as everywhere in this document — deliberately as [semantic anchors](https://github.com/LLM-Coding/Semantic-Anchors): the term activates the knowledge behind it, in humans as in coding agents, more precisely than any paraphrase. As a general C++ guideline the [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#main) hold throughout, and many of the anchors below come from them.
+
+- Check against the official manual, not from memory: when working with Qt, OpenGL, ICU, Boost, clang-tidy or CMake, read the documentation of the **version used here** — behaviour, flags and defaults change between versions.
+- [Single responsibility principle](https://en.wikipedia.org/wiki/Single-responsibility_principle) and [separation of concerns](https://en.wikipedia.org/wiki/Separation_of_concerns); low [coupling](https://en.wikipedia.org/wiki/Coupling_%28computer_programming%29), high [cohesion](https://en.wikipedia.org/wiki/Cohesion_%28computer_science%29).
+- [Domain-driven design](https://www.domainlanguage.com/ddd/reference/) — see the [domain pattern](#domain-pattern-value-objects-and-stores) — and [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) — see [Layers and layer rules](#layers-and-layer-rules).
+- [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) as DRY of knowledge, with [single source of truth](https://en.wikipedia.org/wiki/Single_source_of_truth) as the measure: every piece of knowledge (a rule, a constant, a domain decision) has exactly one authoritative representation — not every similar-looking line folded together. But: [duplication is cheaper than the wrong abstraction](https://sandimetz.com/blog/2016/1/20/the-wrong-abstraction); two coincidentally identical blocks expressing *different* concepts stay apart — in doubt, do not abstract early ([YAGNI](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it), [KISS](https://en.wikipedia.org/wiki/KISS_principle)).
+  - The mechanics: where the same multi-line shape recurs across several methods (or panels), pull it up into a small helper — a `private` member, a free function or a shared base class — instead of copying it. Established examples: `scene_shapes::FillRectangles` and `AddCenteredText` (scene node creation), `runtime_options_detail::FoundString` (read an option → `std::optional<std::string>`), `MakeOwned<T>` (parent-owned widgets), `TablePanelBase` (the table plus add and delete scaffold), `serialization_detail::ColorToArray` and `ColorFromArray` (glm::vec4 marshalling). Prefer that over macros, because macros worsen readability and debuggability — the explicit, field-by-field `save`/`load` pairs in `infrastructure/persistence/value_serialization.hpp` stay written out on purpose, because they document the on-disk format.
+- [Principle of least astonishment](https://en.wikipedia.org/wiki/Principle_of_least_astonishment): names, signatures and behaviour fit together.
+- Choose the smallest useful abstraction; prefer explicit data flow over hidden coupling ([law of Demeter](https://en.wikipedia.org/wiki/Law_of_Demeter)); encapsulate unwieldy constructs instead of spreading them.
+- [GRASP](https://en.wikipedia.org/wiki/GRASP_%28object-oriented_design%29) heuristics for assigning responsibility when deciding where code belongs: information expert, creator, controller, low coupling and high cohesion, indirection, pure fabrication, polymorphism and protected variations.
+- Keep stable rules apart from unstable work (this file against the issues).
 
 ### Style
 
@@ -143,33 +169,4 @@ Beside clang-tidy stands the sanitizer gate `sanitize-address` (address, leak, u
 
 The gate commands (enforcement targets, the full run, auto-fix, clang-format, CI) stand in [operations.md](operations.md), section Build checks.
 
-### Principles
 
-Binding design principles. The established terms are set here — as everywhere in this document — deliberately as [semantic anchors](https://github.com/LLM-Coding/Semantic-Anchors): the term activates the knowledge behind it, in humans as in coding agents, more precisely than any paraphrase. As a general C++ guideline the [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#main) hold throughout, and many of the anchors below come from them.
-
-- Check against the official manual, not from memory: when working with Qt, OpenGL, ICU, Boost, clang-tidy or CMake, read the documentation of the **version used here** — behaviour, flags and defaults change between versions.
-- [Single responsibility principle](https://en.wikipedia.org/wiki/Single-responsibility_principle) and [separation of concerns](https://en.wikipedia.org/wiki/Separation_of_concerns); low [coupling](https://en.wikipedia.org/wiki/Coupling_%28computer_programming%29), high [cohesion](https://en.wikipedia.org/wiki/Cohesion_%28computer_science%29).
-- [Domain-driven design](https://www.domainlanguage.com/ddd/reference/) — see the [domain pattern](#domain-pattern-value-objects-and-stores) — and [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) — see [Layers and layer rules](#layers-and-layer-rules).
-- [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) as DRY of knowledge, with [single source of truth](https://en.wikipedia.org/wiki/Single_source_of_truth) as the measure: every piece of knowledge (a rule, a constant, a domain decision) has exactly one authoritative representation — not every similar-looking line folded together. But: [duplication is cheaper than the wrong abstraction](https://sandimetz.com/blog/2016/1/20/the-wrong-abstraction); two coincidentally identical blocks expressing *different* concepts stay apart — in doubt, do not abstract early ([YAGNI](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it), [KISS](https://en.wikipedia.org/wiki/KISS_principle)).
-  - The mechanics: where the same multi-line shape recurs across several methods (or panels), pull it up into a small helper — a `private` member, a free function or a shared base class — instead of copying it. Established examples: `scene_shapes::FillRectangles` and `AddCenteredText` (scene node creation), `runtime_options_detail::FoundString` (read an option → `std::optional<std::string>`), `MakeOwned<T>` (parent-owned widgets), `TablePanelBase` (the table plus add and delete scaffold), `serialization_detail::ColorToArray` and `ColorFromArray` (glm::vec4 marshalling). Prefer that over macros, because macros worsen readability and debuggability — the explicit, field-by-field `save`/`load` pairs in `infrastructure/persistence/value_serialization.hpp` stay written out on purpose, because they document the on-disk format.
-- [Principle of least astonishment](https://en.wikipedia.org/wiki/Principle_of_least_astonishment): names, signatures and behaviour fit together.
-- Choose the smallest useful abstraction; prefer explicit data flow over hidden coupling ([law of Demeter](https://en.wikipedia.org/wiki/Law_of_Demeter)); encapsulate unwieldy constructs instead of spreading them.
-- [GRASP](https://en.wikipedia.org/wiki/GRASP_%28object-oriented_design%29) heuristics for assigning responsibility when deciding where code belongs: information expert, creator, controller, low coupling and high cohesion, indirection, pure fabrication, polymorphism and protected variations.
-- Keep stable rules apart from unstable work (this file against the issues).
-
-### Self-documenting code
-
-The code communicates its intent itself; prose is the exception. The guard rail is P.1 "[Express ideas directly in code](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#Rp-direct)" of the C++ Core Guidelines. What the code or a command already shows does not get documented on top.
-
-- **Names carry the purpose, not the mechanism** — on every level: variables, functions, classes, members. Anchors: intention-revealing selector (Kent Beck, "Smalltalk Best Practice Patterns") for names; intention-revealing interfaces (Eric Evans, [DDD Reference](https://www.domainlanguage.com/ddd/reference/)) for interfaces; [general naming rules](https://google.github.io/styleguide/cppguide.html#General_Naming_Rules): optimise for readability, no cryptic abbreviations.
-- **Structure explains itself:** small units with one responsibility; one level of abstraction per function (SLAP); deep modules — a small interface with much functionality behind it (John Ousterhout, "[A Philosophy of Software Design](https://web.stanford.edu/~ouster/cgi-bin/book.php)").
-- **Comments are sparing** and explain the non-obvious why alone (a decision, a trade-off), never the what ([NL.1](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#S-naming) of the Core Guidelines). A comment describing *what* the code does is a hint to make the code clearer — not to keep the comment.
-
-Concretely, after [Google C++ Style](https://google.github.io/styleguide/cppguide.html#Naming) (in force):
-
-- Types: `PascalCase` (`DateGroup`).
-- Functions and methods: `PascalCase` (`GetDateGroups()`); trivial accessors and mutators may carry `snake_case` like their member (`set_count()`).
-- Class data members: `snake_case` **with a trailing underscore** (`date_format_`). Struct members without one. The clang-tidy gate enforces this member rule ([readability-identifier-naming](https://clang.llvm.org/extra/clang-tidy/checks/readability/identifier-naming.html) in `.clang-tidy`); a member without an underscore breaks the build.
-- Locals: `snake_case`. Constants and enumerators: `kPascalCase` (`kColorScale`).
-- The store suffix is uniformly `…Store` (not `…Storage`) — for types **and** for member and parameter names (`…_store`, not `…_storage`).
-- Renames that unify spelling and identifiers are welcome. When renaming, do it **completely and consistently** across every occurrence (declaration, definition, call sites, tests, documentation) — no half rename leaving two spellings side by side. Keep the build green afterwards (compile plus `ctest` plus the clang-tidy gate).
