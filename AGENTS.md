@@ -168,5 +168,3 @@ One build directory, one compiler in it: `build/` holds GCC or clang, chosen whe
 Beside clang-tidy stands the sanitizer gate `sanitize-address` (address, leak, undefined): it rebuilds the tree instrumented and runs the test suite underneath. It works under both compilers and gets held at **zero findings**; a sanitizer hit gets fixed, not suppressed. Whoever changes behaviour the tests do not cover, covers it first — the sanitizer sees what runs alone.
 
 The gate commands (enforcement targets, the full run, auto-fix, clang-format, CI) stand in [operations.md](operations.md), section Build checks.
-
-
