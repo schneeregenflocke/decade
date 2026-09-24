@@ -4,12 +4,23 @@ Stable guard rails for working on the decade code: architecture and conventions.
 
 ## Principles
 
+### How these rules hold
+
+- **Anchors, not mandates.** The established terms stand here as [semantic anchors](https://github.com/LLM-Coding/Semantic-Anchors): a term calls up the knowledge behind it, in humans as in coding agents, more precisely than any paraphrase — without prescribing each step.
+- **Tools enforce what they can check.** clang-tidy, the tests and the sanitizer gate carry every rule a tool can decide, so nobody has to keep it in mind.
+- **Examples in the code show instead of demand**, such as the established helpers under [Design principles](#design-principles).
+- **Tool-driven moves** — a rename through clangd, a clang-tidy fix-it — preserve behaviour by construction.
+- **A concrete refactoring target becomes an issue**, where the case gets a goal of its own instead of a general rule narrowing it.
+
 ### Refactoring
 
-The target is self-documenting code (see [Self-documenting code](#self-documenting-code)), reached in behaviour-preserving steps. A step carries the name of its move in Martin Fowler's [refactoring catalogue](https://refactoring.com/catalog/) — Rename Variable, Extract Function, Move Function — so a reader knows what it may and may not change.
+The target is self-documenting code (see [Self-documenting code](#self-documenting-code)), reached in behaviour-preserving steps. Martin Fowler's [refactoring catalogue](https://refactoring.com/catalog/) gives the moves their names — Rename Variable, Extract Function, Move Function — a vocabulary to reach for when a name helps, never a demand.
 
 - **Two hats.** A commit either restructures or changes behaviour, never both (Kent Beck). A restructuring leaves every test result and every output unchanged; a warning fix counts as one and never changes the semantics in silence.
+- **Preparatory refactoring.** Make the change easy, then make the easy change ([Kent Beck, via Fowler](https://martinfowler.com/articles/preparatory-refactoring-example.html)): before a feature, restructure until it fits, in a commit of its own.
 - **Characterisation test first.** Before restructuring code no test covers, pin what it does today in a test (Michael Feathers, "Working Effectively with Legacy Code"). The sanitizer gate sees only what runs, so uncovered code stays unchecked by it too.
+- **Too large for one step: the [Mikado Method](https://www.manning.com/books/the-mikado-method)** (Ola Ellnestam, Daniel Brolund). Attempt the goal, note what breaks, revert, and do the prerequisites first; the graph of prerequisites becomes the plan, kept in the issue.
+- **Replacing a component: the [strangler fig](https://martinfowler.com/bliki/StranglerFigApplication.html)** (Fowler). The new one grows beside the old, the callers move over one by one, and the old one goes once nobody calls it.
 - **A rename goes all the way.** Renames that unify spelling are welcome, and one covers every occurrence — declaration, definition, call sites, tests, comments, documentation, open issues — and the names derived from it: a config struct, a member or parameter holding the object, a constant, a command-line option. It ends when a search for the old spelling finds history alone.
 - **Green means every gate.** Compile, `ctest`, the clang-tidy gate and `sanitize-address` (commands in [operations.md](operations.md)).
 - **Read the whole file, not just the task.** A misleading name, a duplicated block, a violated convention: fix it right away as its **own** commit, or open an issue when the fix outgrows the task or needs a decision. Noticing without acting is no option.
@@ -32,10 +43,10 @@ Concretely, after [Google C++ Style](https://google.github.io/styleguide/cppguid
 
 ### Design principles
 
-Binding design principles. The established terms are set here — as everywhere in this document — deliberately as [semantic anchors](https://github.com/LLM-Coding/Semantic-Anchors): the term activates the knowledge behind it, in humans as in coding agents, more precisely than any paraphrase. As a general C++ guideline the [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#main) hold throughout, and many of the anchors below come from them.
+Binding design principles. As a general C++ guideline the [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#main) hold throughout, and many of the anchors below come from them.
 
 - [Single responsibility principle](https://en.wikipedia.org/wiki/Single-responsibility_principle) and [separation of concerns](https://en.wikipedia.org/wiki/Separation_of_concerns); low [coupling](https://en.wikipedia.org/wiki/Coupling_%28computer_programming%29), high [cohesion](https://en.wikipedia.org/wiki/Cohesion_%28computer_science%29).
-- [Domain-driven design](https://www.domainlanguage.com/ddd/reference/) — see the [domain pattern](#domain-pattern-value-objects-and-stores) — and [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) — see [Layers and layer rules](#layers-and-layer-rules).
+- [Domain-driven design](https://www.domainlanguage.com/ddd/reference/) — see the [domain pattern](#domain-pattern-value-objects-and-stores); the layering stands under [Layers and layer rules](#layers-and-layer-rules).
 - [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) as DRY of knowledge, with [single source of truth](https://en.wikipedia.org/wiki/Single_source_of_truth) as the measure: every piece of knowledge (a rule, a constant, a domain decision) has exactly one authoritative representation — not every similar-looking line folded together. But: [duplication is cheaper than the wrong abstraction](https://sandimetz.com/blog/2016/1/20/the-wrong-abstraction); two coincidentally identical blocks expressing *different* concepts stay apart — in doubt, do not abstract early ([YAGNI](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it), [KISS](https://en.wikipedia.org/wiki/KISS_principle)).
   - The mechanics: where the same multi-line shape recurs across several methods (or panels), pull it up into a small helper — a `private` member, a free function or a shared base class — instead of copying it. Established examples: `scene_shapes::FillRectangles` and `AddCenteredText` (scene node creation), `runtime_options_detail::FoundString` (read an option → `std::optional<std::string>`), `MakeOwned<T>` (parent-owned widgets), `TablePanelBase` (the table plus add and delete scaffold), `serialization_detail::ColorToArray` and `ColorFromArray` (glm::vec4 marshalling). Prefer that over macros, because macros worsen readability and debuggability — the explicit, field-by-field `save`/`load` pairs in `infrastructure/persistence/value_serialization.hpp` stay written out on purpose, because they document the on-disk format.
 - [Principle of least astonishment](https://en.wikipedia.org/wiki/Principle_of_least_astonishment): names, signatures and behaviour fit together.
