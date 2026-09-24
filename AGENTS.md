@@ -4,9 +4,23 @@ Stable guard rails for working on the decade code: architecture and conventions.
 
 ## Purpose
 
-A C++26 desktop application for calendars and timelines. Grown out of a prototype; it still carries technical debt (god classes, unclear ownership). The goal is evolutionary refactoring — stepwise, behaviour-preserving, without a rewrite (see [Refactoring](#refactoring)).
+### The application
+
+A C++26 desktop application for calendars and timelines. Grown out of a prototype; it still carries technical debt (god classes, unclear ownership). The goal is evolutionary refactoring — stepwise, behaviour-preserving, without a rewrite.
 
 Carried by Qt 6 (GUI), OpenGL through libepoxy (rendering), ICU (calendar and locale), Boost.Serialization (XML project files), FreeType, csv2 and Bullet (picking). The full list including submodules stands in `CMakeLists.txt` and `external/` (current state through `git submodule status`). Build, tests, headless runs and the lint gate commands: [operations.md](operations.md).
+
+### Refactoring
+
+The target is self-documenting code (see [Self-documenting code](#self-documenting-code)), reached in behaviour-preserving steps. A step carries the name of its move in Martin Fowler's [refactoring catalogue](https://refactoring.com/catalog/) — Rename Variable, Extract Function, Move Function — so a reader knows what it may and may not change.
+
+- **Two hats.** A commit either restructures or changes behaviour, never both (Kent Beck). A restructuring leaves every test result and every output unchanged; a warning fix counts as one and never changes the semantics in silence.
+- **Characterisation test first.** Before restructuring code no test covers, pin what it does today in a test (Michael Feathers, "Working Effectively with Legacy Code"). The sanitizer gate sees only what runs, so uncovered code stays unchecked by it too.
+- **The rendered page stays the same.** Where a restructuring reaches the scene or the renderer, write a `--dump-png` before and after and compare the two; they must match to one step per channel, the noise of the multisampling (command in [operations.md](operations.md), *Headless runs*).
+- **A rename goes all the way.** It covers every occurrence — declaration, definition, call sites, tests, comments, documentation, open issues — and the names derived from it: a config struct, a member or parameter holding the object, a constant, a command-line option. It ends when a search for the old spelling finds history alone.
+- **Green means every gate.** Compile, `ctest`, the clang-tidy gate and `sanitize-address` (commands in [operations.md](operations.md)).
+- **Read the whole file, not just the task.** A misleading name, a duplicated block, a violated convention: fix it right away as its **own** commit, or open an issue when the fix outgrows the task or needs a decision. Noticing without acting is no option.
+- **Whatever cannot change at once becomes an issue**, so it does not get lost.
 
 ## Architecture
 
@@ -66,14 +80,6 @@ The wiring itself is a lifetime, not a pair of calls: `AppWiring` connects on co
 - C++26, no compiler extensions. The move up from C++23 was made for [`#embed`](https://en.cppreference.com/cpp/preprocessor/embed), which carries the shaders and licence texts into the binary and replaced a submodule with a generator binary ([#79](https://github.com/schneeregenflocke/decade/issues/79)). Before C++26 both GCC and Clang grade it as an extension and `-Wpedantic -Werror` rejects it, so the standard level is not cosmetic here.
 - Header guards use the file name style: the upper-cased file name with the dot before the suffix as `_`, for instance `main_window.hpp` → `MAIN_WINDOW_HPP`, `gl_canvas.hpp` → `GL_CANVAS_HPP`. No directory path prefix. Apply that consistently in `#ifndef`, `#define` and the closing `#endif  // <GUARD>` comment. (The clang-tidy check `llvm-header-guard`, which would otherwise force a full-path style, is switched off in `.clang-tidy` — leave it that way.)
 
-### Refactoring
-
-The goal is self-documenting code; refactoring brings it there step by step.
-
-- When fixing a warning, never change the semantics in silence.
-- Whatever cannot be changed at once becomes an issue, so it does not get lost.
-- Read the whole file, not just the task. A misleading name, a duplicated block, a violated convention: fix it right away as its **own** commit, or open an issue when the fix outgrows the task or needs a decision. Noticing without acting is no option.
-
 ### Self-documenting code
 
 The code communicates its intent itself; prose is the exception. The guard rail is P.1 "[Express ideas directly in code](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#Rp-direct)" of the C++ Core Guidelines. What the code or a command already shows does not get documented on top.
@@ -89,7 +95,7 @@ Concretely, after [Google C++ Style](https://google.github.io/styleguide/cppguid
 - Class data members: `snake_case` **with a trailing underscore** (`date_format_`). Struct members without one. The clang-tidy gate enforces this member rule ([readability-identifier-naming](https://clang.llvm.org/extra/clang-tidy/checks/readability/identifier-naming.html) in `.clang-tidy`); a member without an underscore breaks the build.
 - Locals: `snake_case`. Constants and enumerators: `kPascalCase` (`kColorScale`).
 - The store suffix is uniformly `…Store` (not `…Storage`) — for types **and** for member and parameter names (`…_store`, not `…_storage`).
-- Renames that unify spelling and identifiers are welcome. When renaming, do it **completely and consistently** across every occurrence (declaration, definition, call sites, tests, documentation) — no half rename leaving two spellings side by side. Keep the build green afterwards (compile plus `ctest` plus the clang-tidy gate).
+- Renames that unify spelling and identifiers are welcome; how far one reaches stands under [Refactoring](#refactoring).
 
 ### Principles
 
@@ -165,6 +171,6 @@ The obligations follow the linker, not the repository layout — a system librar
 
 One build directory, one compiler in it: `build/` holds GCC or clang, chosen when you configure, and the choice decides which targets exist — `clang-tidy` and `sanitize-memory` appear under clang alone, because they parse with its frontend. `CMakeLists.txt` gathers each compiler's own flags and targets into one section at its end; whatever holds for both stands before them, unguarded. `CMakeLists.txt` and `tests/CMakeLists.txt` share no target and no variable — each names its own sources and its own dependencies, so either reads on its own and a new dependency has to be entered twice. CI runs one job per compiler, and both build and test, because each sees warnings the other does not. Whoever adds a gate says which compiler it belongs to.
 
-Beside clang-tidy stands the sanitizer gate `sanitize-address` (address, leak, undefined): it rebuilds the tree instrumented and runs the test suite underneath. It works under both compilers and gets held at **zero findings**; a sanitizer hit gets fixed, not suppressed. Whoever changes behaviour the tests do not cover, covers it first — the sanitizer sees what runs alone.
+Beside clang-tidy stands the sanitizer gate `sanitize-address` (address, leak, undefined): it rebuilds the tree instrumented and runs the test suite underneath. It works under both compilers and gets held at **zero findings**; a sanitizer hit gets fixed, not suppressed.
 
 The gate commands (enforcement targets, the full run, auto-fix, clang-format, CI) stand in [operations.md](operations.md), section Build checks.

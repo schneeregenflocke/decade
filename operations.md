@@ -126,6 +126,12 @@ xvfb-run -a -s "-screen 0 1600x1000x24" \
   --dump-window-png=/tmp/decade_ui.png --exit-after-ms=3000 examples/sample_dates.csv
 ```
 
+**Comparing two renders.** A restructuring that reaches the scene or the renderer proves itself with a `--dump-png` before and after. The two files never match byte for byte: from run to run the multisampling moves a few pixels by one step in one channel — 24 of 3.9 million with `examples/sample_dates.csv` on the laptop's GPU. One step is 0.4 %, so a fuzz of 0.5 % absorbs it:
+
+```bash
+magick compare -metric AE -fuzz 0.5% before.png after.png diff.png   # 0: the same page
+```
+
 ### Build checks
 
 The rule behind them — **warnings break the build, never suppress them** — stands in [AGENTS.md](AGENTS.md), section "Warnings, the clang-tidy and the sanitizer gate". Here are the commands.
