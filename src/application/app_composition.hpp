@@ -21,7 +21,7 @@
 
 namespace application {
 
-// The composition root (AGENTS.md, layer rule 3). Two parts come into being
+// The composition root (AGENTS.md, "Layers"). Two parts come into being
 // later, because OpenGL stands ready with a delay: the rendering adapter and
 // the wiring, both in an `optional`. The adapter needs that order for its GL
 // objects, which want a current context; the wiring needs it for the callbacks

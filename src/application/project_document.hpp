@@ -21,7 +21,7 @@
 namespace application {
 
 // The open project — every store plus the file path in one object (AGENTS.md,
-// layer rule 11). The stores get their bus topic injected on construction and
+// "Layers"). The stores get their bus topic injected on construction and
 // publish themselves.
 class ProjectDocument {
  public:

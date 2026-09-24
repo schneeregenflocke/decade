@@ -25,7 +25,7 @@ namespace domain {
 //
 // One class per value, not one template: moc cannot process class templates, so
 // a Qt signal has to stand in a concrete QObject. Why that is worth QtCore in
-// this layer: AGENTS.md, layer rule 4, and issue #86.
+// this layer: AGENTS.md, "Layers", and issue #86.
 //
 // Each carries the value and nothing else, so consumers keep working with
 // copyable value objects. `Publish` exists because Qt asks that a signal be
