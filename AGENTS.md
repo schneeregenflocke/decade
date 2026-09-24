@@ -107,7 +107,7 @@ Binding design principles. The established terms are set here — as everywhere 
 
 ### Style
 
-Language and documentation rules live in the superproject (`~/homelab-superproject/AGENTS.md`).
+Language and documentation rules live in the superproject (`~/code/homelab-superproject/AGENTS.md`).
 
 ### Ownership and lifetimes
 
