@@ -21,7 +21,7 @@ struct RuntimeOptions {
   std::optional<std::string> dump_png_path;
   // The export DPI for dump_png_path; the fallback is GLCanvas::kExportPngDpi.
   std::optional<int> dump_png_dpi;
-  std::optional<std::string> dump_frame_png_path;
+  std::optional<std::string> dump_window_png_path;
   std::optional<std::string> select_tab;
   std::optional<std::int64_t> exit_after_ms;
   // A debug and screenshot aid: it forces the hover highlight onto this bar

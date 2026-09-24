@@ -15,7 +15,7 @@ namespace application {
 
 bool IsNonInteractiveRun(const RuntimeOptions& options) {
   return options.dump_png_path.has_value() ||
-         options.dump_frame_png_path.has_value() ||
+         options.dump_window_png_path.has_value() ||
          options.exit_after_ms.has_value();
 }
 
@@ -26,7 +26,7 @@ void AddRuntimeOptions(QCommandLineParser& parser) {
       {"dump-png", "render the calendar page to PNG (off-screen FBO)", "path"});
   parser.addOption({"dump-png-dpi", "export DPI for --dump-png", "dpi"});
   parser.addOption(
-      {"dump-frame-png", "capture the whole main window to PNG", "path"});
+      {"dump-window-png", "capture the whole main window to PNG", "path"});
   parser.addOption({"select-tab",
                     "pre-select a notebook tab by label (case-insensitive)",
                     "label"});
@@ -82,7 +82,7 @@ RuntimeOptions RuntimeOptionsFromParser(const QCommandLineParser& parser) {
     options.startup_file = positional.first().toStdString();
   }
   options.dump_png_path = FoundString(parser, "dump-png");
-  options.dump_frame_png_path = FoundString(parser, "dump-frame-png");
+  options.dump_window_png_path = FoundString(parser, "dump-window-png");
   options.select_tab = FoundString(parser, "select-tab");
   options.debug_select_node = FoundString(parser, "debug-select-node");
   options.debug_hover_title = parser.isSet("debug-hover-title");

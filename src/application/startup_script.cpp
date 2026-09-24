@@ -110,16 +110,16 @@ void StartupScript::WriteRequestedImages(MainWindow& window) const {
     }
     window.Canvas().SavePNG(*options_.dump_png_path, dpi);
   }
-  if (options_.dump_frame_png_path) {
-    const std::string path = *options_.dump_frame_png_path;
+  if (options_.dump_window_png_path) {
+    const std::string path = *options_.dump_window_png_path;
     // After the first real paint alone, so every panel is drawn: queued on
     // the event loop, which runs it once the pending paints are through.
     QTimer::singleShot(0, &window, [&window, path]() {
       if (decade_debug::LogEnabled()) {
-        std::cout << "--dump-frame-png: writing " << path << '\n';
+        std::cout << "--dump-window-png: writing " << path << '\n';
       }
       if (!window.SaveScreenshot(path)) {
-        std::cerr << "--dump-frame-png: failed to write " << path << '\n';
+        std::cerr << "--dump-window-png: failed to write " << path << '\n';
       }
     });
   }
