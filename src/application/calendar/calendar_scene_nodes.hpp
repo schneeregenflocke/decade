@@ -13,7 +13,7 @@
 #include "../../infrastructure/graphics/shapes.hpp"
 
 // Painter draw layers for the calendar (lower = further back). The bars sit
-// above the grid background so the day/sunday/month cells no longer cover them;
+// above the grid background so the day/sunday/month cells do not cover them;
 // text sits on top, and the scene-tree selection overlay on top of everything.
 // Shared by the skeleton factory (fixed nodes) and the section builders, whose
 // dynamic children take the same layers.

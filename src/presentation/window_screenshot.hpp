@@ -23,8 +23,7 @@ struct Overlay {
 // and writes the whole as a PNG. It reports success.
 //
 // QWidget::grab() renders the widgets rather than reading the screen, so this
-// needs no X11 and works under Wayland too — the blit through a device context
-// that wx used did not.
+// needs no X11 and works under Wayland too.
 [[nodiscard]] bool SaveWindowPng(QWidget& window, const Overlay& overlay,
                                  const std::string& file_path);
 

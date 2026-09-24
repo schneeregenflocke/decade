@@ -47,12 +47,6 @@
 // The drawing window: it owns the rendering engine, the view (projection,
 // camera) and the pointer input. It knows no domain logic — it receives the
 // page size and reports pointer positions in page space onwards.
-//
-// The deferred context setup that used to need a bootstrap class of its own is
-// gone: QOpenGLWidget calls initializeGL() once the context stands and makes it
-// current for that call, for resizeGL() and for paintGL(). Outside those three
-// no GL function may run without makeCurrent() — the export path is the only
-// place that needs it.
 class GLCanvas : public QOpenGLWidget, public application::RenderSurface {
  public:
   // Resolution and multisampling of the PNG export (SavePNG). Public, so the
@@ -178,9 +172,9 @@ class GLCanvas : public QOpenGLWidget, public application::RenderSurface {
 
   void mouseDoubleClickEvent(QMouseEvent* event) override;
 
-  // One handler for the whole keyboard, where wx needed two: Qt delivers the
-  // named keys and the composed character in the same event — event->text()
-  // stands fully composed for umlauts and accents.
+  // One handler for the whole keyboard: Qt delivers the named keys and the
+  // composed character in the same event — event->text() stands fully composed
+  // for umlauts and accents.
   void keyPressEvent(QKeyEvent* event) override;
 
  private:

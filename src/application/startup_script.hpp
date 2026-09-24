@@ -10,9 +10,8 @@
 namespace application {
 
 // Turns the command line into actions — load the startup file, preselect a tab,
-// write an image, close after N milliseconds. These steps used to sit scattered
-// across the main window as six methods; here they stand together, and the
-// window knows nothing of runtime options any more.
+// write an image, close after N milliseconds — so the window knows nothing of
+// runtime options.
 //
 // Two moments, because OpenGL stands ready with a delay: whatever works without
 // a context runs at once, the rest afterwards.

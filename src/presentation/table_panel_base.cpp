@@ -25,8 +25,8 @@ TablePanelBase::TablePanelBase(QWidget* parent,
   table_ = MakeOwned<QTableWidget>(this);
   table_->setSelectionMode(selection_mode);
   table_->setSelectionBehavior(QAbstractItemView::SelectRows);
-  // Editing on a double click alone, as the wxDataViewCtrl did: a single
-  // click selects, and the delete button follows the selection.
+  // Editing on a double click alone: a single click selects, and the delete
+  // button follows the selection.
   table_->setEditTriggers(QAbstractItemView::DoubleClicked |
                           QAbstractItemView::EditKeyPressed);
   table_->verticalHeader()->setVisible(false);

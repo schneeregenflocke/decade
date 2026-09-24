@@ -23,7 +23,7 @@
 
 // A label that shortens a long path at the front, so the file name stays
 // visible. Qt shortens nothing by itself, and without this the path would
-// dictate the column width — the reason wx got wxST_ELLIPSIZE_START here.
+// dictate the column width.
 class ElidedPathLabel : public QLabel {
  public:
   explicit ElidedPathLabel(QWidget* parent) : QLabel(parent) {

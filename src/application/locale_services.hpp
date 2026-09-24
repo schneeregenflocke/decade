@@ -9,10 +9,6 @@ namespace application {
 
 // The application-wide locale: the C++ global locale plus the ICU-backed date
 // formatter every panel and the CSV I/O share.
-//
-// There is no toolkit locale object beside them any more. wxLocale had to be
-// held alive because wxString conversions read it; Qt formats through QLocale,
-// which asks the system itself and needs nothing kept.
 class LocaleServices {
  public:
   explicit LocaleServices(std::string locale_name = {});

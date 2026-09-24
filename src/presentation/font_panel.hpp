@@ -72,7 +72,7 @@ class FontPanel : public QWidget {
   void ProcessFontData();
 
   // Qt carries no inline font picker, only the modal dialogue — so the button
-  // shows the current font and opens it, the way wxFontPickerCtrl did.
+  // shows the current font and opens it.
   void ChooseFont();
 
   void RefreshButtonLabel();

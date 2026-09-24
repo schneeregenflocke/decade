@@ -7,11 +7,8 @@ class QAction;
 class QMainWindow;
 class QString;
 
-// The commands of the main menu. Qt addresses a menu entry through its QAction
-// rather than through an identifier, which is why these stand here instead of
-// the integer ids wx needed: the action is the entry, and the window connects
-// its handler straight to it. QPointer, because the menu bar owns the actions
-// and the window outlives neither.
+// The commands of the main menu. QPointer, because the menu bar owns the
+// actions.
 struct MainMenuActions {
   QPointer<QAction> open_xml;
   QPointer<QAction> save_xml;
