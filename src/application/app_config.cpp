@@ -6,15 +6,15 @@
 
 namespace application {
 
-MainFrameConfig DefaultMainFrameConfig() {
-  constexpr int kMainFramePosX = 100;
-  constexpr int kMainFramePosY = 100;
-  constexpr int kMainFrameWidth = 1280;
-  constexpr int kMainFrameHeight = 800;
+MainWindowConfig DefaultMainWindowConfig() {
+  constexpr int kMainWindowPosX = 100;
+  constexpr int kMainWindowPosY = 100;
+  constexpr int kMainWindowWidth = 1280;
+  constexpr int kMainWindowHeight = 800;
 
   return {.title = "Decade",
-          .position = QPoint(kMainFramePosX, kMainFramePosY),
-          .size = QSize(kMainFrameWidth, kMainFrameHeight),
+          .position = QPoint(kMainWindowPosX, kMainWindowPosY),
+          .size = QSize(kMainWindowWidth, kMainWindowHeight),
           .flags = Qt::Window,
           .object_name = "main_window",
           .maximize_on_start = false};

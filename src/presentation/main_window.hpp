@@ -47,7 +47,7 @@ class MainWindow : public QMainWindow {
   Q_OBJECT
 
  public:
-  MainWindow(QWidget* parent, const application::MainFrameConfig& config,
+  MainWindow(QWidget* parent, const application::MainWindowConfig& config,
              LocaleDateFormatter& locale_date_formatter);
 
   ~MainWindow() override = default;
@@ -76,7 +76,7 @@ class MainWindow : public QMainWindow {
 
   // Writes the whole window as a PNG: the widget capture plus the mounted-in GL
   // content, which the widget capture does not draw.
-  [[nodiscard]] bool SaveFrameScreenshot(const std::string& file_path);
+  [[nodiscard]] bool SaveScreenshot(const std::string& file_path);
 
  signals:
   void FileCommandRequested(FileCommand command);

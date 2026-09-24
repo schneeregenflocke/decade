@@ -38,8 +38,6 @@ class AppComposition {
   AppComposition(AppComposition&&) = delete;
   AppComposition& operator=(AppComposition&&) = delete;
 
-  [[nodiscard]] MainWindow& Frame();
-
  private:
   // Runs as soon as the GL context stands — only here may GL state be touched,
   // and only here is there anything to wire.
@@ -80,7 +78,7 @@ class AppComposition {
   TitleTextEditor title_text_editor_;
   StartupScript startup_script_;
 
-  std::unique_ptr<MainWindow> frame_;
+  std::unique_ptr<MainWindow> window_;
   std::optional<FileCommands> file_commands_;
   std::optional<CalendarPage> calendar_page_;
   std::optional<AppWiring> wiring_;

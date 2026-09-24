@@ -32,7 +32,7 @@
 #include "window_screenshot.hpp"
 
 MainWindow::MainWindow(QWidget* parent,
-                       const application::MainFrameConfig& config,
+                       const application::MainWindowConfig& config,
                        LocaleDateFormatter& locale_date_formatter)
     : QMainWindow(parent, config.flags),
       locale_date_formatter_(locale_date_formatter),
@@ -88,7 +88,7 @@ void MainWindow::CloseAfter(std::int64_t milliseconds) {
                      [this]() { close(); });
 }
 
-bool MainWindow::SaveFrameScreenshot(const std::string& file_path) {
+bool MainWindow::SaveScreenshot(const std::string& file_path) {
   const window_screenshot::Overlay overlay{
       .image = gl_canvas_->CaptureImage(),
       .origin = gl_canvas_->mapTo(this, QPoint(0, 0)),

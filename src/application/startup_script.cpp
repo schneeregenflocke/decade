@@ -23,29 +23,29 @@ StartupScript::StartupScript(const RuntimeOptions& options,
                              ProjectDocument& document)
     : options_(options), document_(document) {}
 
-void StartupScript::RunBeforeGraphics(MainWindow& frame) const {
-  SelectStartupTab(frame);
+void StartupScript::RunBeforeGraphics(MainWindow& window) const {
+  SelectStartupTab(window);
   if (options_.exit_after_ms) {
     if (decade_debug::LogEnabled()) {
       std::cout << "Auto-exit in ms: " << *options_.exit_after_ms << '\n';
     }
-    frame.CloseAfter(*options_.exit_after_ms);
+    window.CloseAfter(*options_.exit_after_ms);
   }
 }
 
-void StartupScript::RunAfterGraphics(MainWindow& frame,
+void StartupScript::RunAfterGraphics(MainWindow& window,
                                      CalendarPage& calendar_page,
                                      TitleTextEditor& title_text_editor) const {
   LoadStartupFile();
-  ApplyDebugHighlights(frame, calendar_page, title_text_editor);
-  WriteRequestedImages(frame);
+  ApplyDebugHighlights(window, calendar_page, title_text_editor);
+  WriteRequestedImages(window);
 }
 
-void StartupScript::SelectStartupTab(MainWindow& frame) const {
+void StartupScript::SelectStartupTab(MainWindow& window) const {
   if (!options_.select_tab) {
     return;
   }
-  if (!frame.SelectTab(*options_.select_tab)) {
+  if (!window.SelectTab(*options_.select_tab)) {
     std::cerr << "--select-tab: no tab labelled '" << *options_.select_tab
               << "'\n";
   }
@@ -77,7 +77,7 @@ void StartupScript::LoadStartupFile() const {
 }
 
 void StartupScript::ApplyDebugHighlights(
-    MainWindow& frame, CalendarPage& calendar_page,
+    MainWindow& window, CalendarPage& calendar_page,
     TitleTextEditor& title_text_editor) const {
   // At most one element is ever hovered, so the two hover options exclude
   // each other.
@@ -97,28 +97,28 @@ void StartupScript::ApplyDebugHighlights(
   if (options_.debug_select_node) {
     // Over the real selection path (tree -> detail grid -> bus -> highlight),
     // so this walks the panel exactly as a click would.
-    frame.SceneTree().SelectNodeByPath(*options_.debug_select_node);
+    window.SceneTree().SelectNodeByPath(*options_.debug_select_node);
   }
 }
 
-void StartupScript::WriteRequestedImages(MainWindow& frame) const {
+void StartupScript::WriteRequestedImages(MainWindow& window) const {
   if (options_.dump_png_path) {
     const int dpi = options_.dump_png_dpi.value_or(GLCanvas::kExportPngDpi);
     if (decade_debug::LogEnabled()) {
       std::cout << "--dump-png: writing " << *options_.dump_png_path << " at "
                 << dpi << " dpi\n";
     }
-    frame.Canvas().SavePNG(*options_.dump_png_path, dpi);
+    window.Canvas().SavePNG(*options_.dump_png_path, dpi);
   }
   if (options_.dump_frame_png_path) {
     const std::string path = *options_.dump_frame_png_path;
     // After the first real paint alone, so every panel is drawn: queued on
     // the event loop, which runs it once the pending paints are through.
-    QTimer::singleShot(0, &frame, [&frame, path]() {
+    QTimer::singleShot(0, &window, [&window, path]() {
       if (decade_debug::LogEnabled()) {
         std::cout << "--dump-frame-png: writing " << path << '\n';
       }
-      if (!frame.SaveFrameScreenshot(path)) {
+      if (!window.SaveScreenshot(path)) {
         std::cerr << "--dump-frame-png: failed to write " << path << '\n';
       }
     });

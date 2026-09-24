@@ -26,7 +26,7 @@ void AddRuntimeOptions(QCommandLineParser& parser) {
       {"dump-png", "render the calendar page to PNG (off-screen FBO)", "path"});
   parser.addOption({"dump-png-dpi", "export DPI for --dump-png", "dpi"});
   parser.addOption(
-      {"dump-frame-png", "capture the whole main frame to PNG", "path"});
+      {"dump-frame-png", "capture the whole main window to PNG", "path"});
   parser.addOption({"select-tab",
                     "pre-select a notebook tab by label (case-insensitive)",
                     "label"});

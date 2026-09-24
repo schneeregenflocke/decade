@@ -20,23 +20,23 @@ class StartupScript {
  public:
   StartupScript(const RuntimeOptions& options, ProjectDocument& document);
 
-  void RunBeforeGraphics(MainWindow& frame) const;
+  void RunBeforeGraphics(MainWindow& window) const;
 
-  void RunAfterGraphics(MainWindow& frame, CalendarPage& calendar_page,
+  void RunAfterGraphics(MainWindow& window, CalendarPage& calendar_page,
                         TitleTextEditor& title_text_editor) const;
 
  private:
-  void SelectStartupTab(MainWindow& frame) const;
+  void SelectStartupTab(MainWindow& window) const;
 
   // Opt-in: what came as a positional argument gets loaded, and nothing else.
   // Without one an empty project starts; a default path relative to the working
   // directory deliberately does not exist.
   void LoadStartupFile() const;
 
-  void ApplyDebugHighlights(MainWindow& frame, CalendarPage& calendar_page,
+  void ApplyDebugHighlights(MainWindow& window, CalendarPage& calendar_page,
                             TitleTextEditor& title_text_editor) const;
 
-  void WriteRequestedImages(MainWindow& frame) const;
+  void WriteRequestedImages(MainWindow& window) const;
 
   const RuntimeOptions& options_;
   ProjectDocument& document_;

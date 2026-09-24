@@ -7,7 +7,7 @@
 #include <string>
 
 namespace application {
-struct MainFrameConfig {
+struct MainWindowConfig {
   std::string title;
   QPoint position;
   QSize size;
@@ -16,7 +16,7 @@ struct MainFrameConfig {
   bool maximize_on_start{true};
 };
 
-MainFrameConfig DefaultMainFrameConfig();
+MainWindowConfig DefaultMainWindowConfig();
 
 }  // namespace application
 

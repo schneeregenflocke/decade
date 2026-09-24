@@ -10,9 +10,9 @@
 #include "../application/project_document.hpp"
 #include "main_window.hpp"
 
-FileCommands::FileCommands(MainWindow& frame,
+FileCommands::FileCommands(MainWindow& window,
                            application::ProjectDocument& document)
-    : frame_(frame), document_(document) {}
+    : window_(window), document_(document) {}
 
 void FileCommands::Execute(FileCommand command) {
   switch (command) {
@@ -82,19 +82,19 @@ void FileCommands::ExportPng() {
   if (file_path.empty()) {
     return;
   }
-  frame_.Canvas().SavePNG(file_path);
+  window_.Canvas().SavePNG(file_path);
 }
 
 std::string FileCommands::AskOpenPath(const QString& title,
                                       const QString& filter) {
-  return QFileDialog::getOpenFileName(&frame_, title, QString(), filter)
+  return QFileDialog::getOpenFileName(&window_, title, QString(), filter)
       .toStdString();
 }
 
 std::string FileCommands::AskSavePath(const QString& title,
                                       const FileType& type) {
   const QString chosen =
-      QFileDialog::getSaveFileName(&frame_, title, QString(), type.filter);
+      QFileDialog::getSaveFileName(&window_, title, QString(), type.filter);
   if (chosen.isEmpty()) {
     return {};
   }
@@ -114,7 +114,7 @@ bool FileCommands::ConfirmOverwrite(const QString& title,
                                     const QString& file_path) const {
   const QString question =
       file_path + " already exists.\nDo you want to replace it?";
-  return QMessageBox::warning(&frame_, title, question,
+  return QMessageBox::warning(&window_, title, question,
                               QMessageBox::Yes | QMessageBox::No) ==
          QMessageBox::Yes;
 }
@@ -122,6 +122,6 @@ bool FileCommands::ConfirmOverwrite(const QString& title,
 void FileCommands::Report(const QString& title,
                           const std::optional<std::string>& error) const {
   if (error) {
-    QMessageBox::critical(&frame_, title, QString::fromStdString(*error));
+    QMessageBox::critical(&window_, title, QString::fromStdString(*error));
   }
 }

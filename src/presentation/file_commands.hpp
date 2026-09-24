@@ -16,7 +16,7 @@
 // the reason this sits in presentation — nothing gets computed here.
 class FileCommands {
  public:
-  FileCommands(MainWindow& frame, application::ProjectDocument& document);
+  FileCommands(MainWindow& window, application::ProjectDocument& document);
 
   void Execute(FileCommand command);
 
@@ -69,7 +69,7 @@ class FileCommands {
   void Report(const QString& title,
               const std::optional<std::string>& error) const;
 
-  MainWindow& frame_;
+  MainWindow& window_;
   application::ProjectDocument& document_;
 };
 
