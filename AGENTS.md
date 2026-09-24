@@ -2,13 +2,7 @@
 
 Stable guard rails for working on the decade code: architecture and conventions. Build and operations live in [operations.md](operations.md), open points as issues.
 
-## Purpose
-
-### The application
-
-A C++26 desktop application for calendars and timelines. Grown out of a prototype; it still carries technical debt (god classes, unclear ownership). The goal is evolutionary refactoring — stepwise, behaviour-preserving, without a rewrite.
-
-Carried by Qt 6 (GUI), OpenGL through libepoxy (rendering), ICU (calendar and locale), Boost.Serialization (XML project files), FreeType, csv2 and Bullet (picking). The full list including submodules stands in `CMakeLists.txt` and `external/` (current state through `git submodule status`). Build, tests, headless runs and the lint gate commands: [operations.md](operations.md).
+## Principles
 
 ### Refactoring
 
@@ -16,11 +10,43 @@ The target is self-documenting code (see [Self-documenting code](#self-documenti
 
 - **Two hats.** A commit either restructures or changes behaviour, never both (Kent Beck). A restructuring leaves every test result and every output unchanged; a warning fix counts as one and never changes the semantics in silence.
 - **Characterisation test first.** Before restructuring code no test covers, pin what it does today in a test (Michael Feathers, "Working Effectively with Legacy Code"). The sanitizer gate sees only what runs, so uncovered code stays unchecked by it too.
-- **The rendered page stays the same.** Where a restructuring reaches the scene or the renderer, write a `--dump-png` before and after and compare the two; they must match to one step per channel, the noise of the multisampling (command in [operations.md](operations.md), *Headless runs*).
-- **A rename goes all the way.** It covers every occurrence — declaration, definition, call sites, tests, comments, documentation, open issues — and the names derived from it: a config struct, a member or parameter holding the object, a constant, a command-line option. It ends when a search for the old spelling finds history alone.
+- **A rename goes all the way.** Renames that unify spelling are welcome, and one covers every occurrence — declaration, definition, call sites, tests, comments, documentation, open issues — and the names derived from it: a config struct, a member or parameter holding the object, a constant, a command-line option. It ends when a search for the old spelling finds history alone.
 - **Green means every gate.** Compile, `ctest`, the clang-tidy gate and `sanitize-address` (commands in [operations.md](operations.md)).
 - **Read the whole file, not just the task.** A misleading name, a duplicated block, a violated convention: fix it right away as its **own** commit, or open an issue when the fix outgrows the task or needs a decision. Noticing without acting is no option.
-- **Whatever cannot change at once becomes an issue**, so it does not get lost.
+
+### Self-documenting code
+
+The code communicates its intent itself; prose is the exception. The guard rail is P.1 "[Express ideas directly in code](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#Rp-direct)" of the C++ Core Guidelines. What the code or a command already shows does not get documented on top.
+
+- **Names carry the purpose, not the mechanism** — on every level: variables, functions, classes, members. Anchors: intention-revealing selector (Kent Beck, "Smalltalk Best Practice Patterns") for names; intention-revealing interfaces (Eric Evans, [DDD Reference](https://www.domainlanguage.com/ddd/reference/)) for interfaces; [general naming rules](https://google.github.io/styleguide/cppguide.html#General_Naming_Rules): optimise for readability, no cryptic abbreviations.
+- **Structure explains itself:** small units with one responsibility; one level of abstraction per function (SLAP); deep modules — a small interface with much functionality behind it (John Ousterhout, "[A Philosophy of Software Design](https://web.stanford.edu/~ouster/cgi-bin/book.php)").
+- **Comments are sparing** and explain the non-obvious why alone (a decision, a trade-off), never the what ([NL.1](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#S-naming) of the Core Guidelines). A comment describing *what* the code does is a hint to make the code clearer — not to keep the comment.
+
+Concretely, after [Google C++ Style](https://google.github.io/styleguide/cppguide.html#Naming) (in force):
+
+- Types: `PascalCase` (`DateGroup`).
+- Functions and methods: `PascalCase` (`GetDateGroups()`); trivial accessors and mutators may carry `snake_case` like their member (`set_count()`).
+- Class data members: `snake_case` **with a trailing underscore** (`date_format_`). Struct members without one. The clang-tidy gate enforces this member rule ([readability-identifier-naming](https://clang.llvm.org/extra/clang-tidy/checks/readability/identifier-naming.html) in `.clang-tidy`); a member without an underscore breaks the build.
+- Locals: `snake_case`. Constants and enumerators: `kPascalCase` (`kColorScale`).
+- The store suffix is uniformly `…Store` (not `…Storage`) — for types **and** for member and parameter names (`…_store`, not `…_storage`).
+
+### Design principles
+
+Binding design principles. The established terms are set here — as everywhere in this document — deliberately as [semantic anchors](https://github.com/LLM-Coding/Semantic-Anchors): the term activates the knowledge behind it, in humans as in coding agents, more precisely than any paraphrase. As a general C++ guideline the [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#main) hold throughout, and many of the anchors below come from them.
+
+- [Single responsibility principle](https://en.wikipedia.org/wiki/Single-responsibility_principle) and [separation of concerns](https://en.wikipedia.org/wiki/Separation_of_concerns); low [coupling](https://en.wikipedia.org/wiki/Coupling_%28computer_programming%29), high [cohesion](https://en.wikipedia.org/wiki/Cohesion_%28computer_science%29).
+- [Domain-driven design](https://www.domainlanguage.com/ddd/reference/) — see the [domain pattern](#domain-pattern-value-objects-and-stores) — and [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) — see [Layers and layer rules](#layers-and-layer-rules).
+- [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) as DRY of knowledge, with [single source of truth](https://en.wikipedia.org/wiki/Single_source_of_truth) as the measure: every piece of knowledge (a rule, a constant, a domain decision) has exactly one authoritative representation — not every similar-looking line folded together. But: [duplication is cheaper than the wrong abstraction](https://sandimetz.com/blog/2016/1/20/the-wrong-abstraction); two coincidentally identical blocks expressing *different* concepts stay apart — in doubt, do not abstract early ([YAGNI](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it), [KISS](https://en.wikipedia.org/wiki/KISS_principle)).
+  - The mechanics: where the same multi-line shape recurs across several methods (or panels), pull it up into a small helper — a `private` member, a free function or a shared base class — instead of copying it. Established examples: `scene_shapes::FillRectangles` and `AddCenteredText` (scene node creation), `runtime_options_detail::FoundString` (read an option → `std::optional<std::string>`), `MakeOwned<T>` (parent-owned widgets), `TablePanelBase` (the table plus add and delete scaffold), `serialization_detail::ColorToArray` and `ColorFromArray` (glm::vec4 marshalling). Prefer that over macros, because macros worsen readability and debuggability — the explicit, field-by-field `save`/`load` pairs in `infrastructure/persistence/value_serialization.hpp` stay written out on purpose, because they document the on-disk format.
+- [Principle of least astonishment](https://en.wikipedia.org/wiki/Principle_of_least_astonishment): names, signatures and behaviour fit together.
+- Choose the smallest useful abstraction; prefer explicit data flow over hidden coupling ([law of Demeter](https://en.wikipedia.org/wiki/Law_of_Demeter)); encapsulate unwieldy constructs instead of spreading them.
+- [GRASP](https://en.wikipedia.org/wiki/GRASP_%28object-oriented_design%29) heuristics for assigning responsibility when deciding where code belongs: information expert, creator, controller, low coupling and high cohesion, indirection, pure fabrication, polymorphism and protected variations.
+
+## Purpose
+
+A C++26 desktop application for calendars and timelines. Grown out of a prototype; it still carries technical debt (god classes, unclear ownership). The goal is evolutionary refactoring — stepwise, behaviour-preserving, without a rewrite.
+
+Carried by Qt 6 (GUI), OpenGL through libepoxy (rendering), ICU (calendar and locale), Boost.Serialization (XML project files), FreeType, csv2 and Bullet (picking). The full list including submodules stands in `CMakeLists.txt` and `external/` (current state through `git submodule status`). Build, tests, headless runs and the lint gate commands: [operations.md](operations.md).
 
 ## Architecture
 
@@ -80,37 +106,6 @@ The wiring itself is a lifetime, not a pair of calls: `AppWiring` connects on co
 - C++26, no compiler extensions. The move up from C++23 was made for [`#embed`](https://en.cppreference.com/cpp/preprocessor/embed), which carries the shaders and licence texts into the binary and replaced a submodule with a generator binary ([#79](https://github.com/schneeregenflocke/decade/issues/79)). Before C++26 both GCC and Clang grade it as an extension and `-Wpedantic -Werror` rejects it, so the standard level is not cosmetic here.
 - Header guards use the file name style: the upper-cased file name with the dot before the suffix as `_`, for instance `main_window.hpp` → `MAIN_WINDOW_HPP`, `gl_canvas.hpp` → `GL_CANVAS_HPP`. No directory path prefix. Apply that consistently in `#ifndef`, `#define` and the closing `#endif  // <GUARD>` comment. (The clang-tidy check `llvm-header-guard`, which would otherwise force a full-path style, is switched off in `.clang-tidy` — leave it that way.)
 
-### Self-documenting code
-
-The code communicates its intent itself; prose is the exception. The guard rail is P.1 "[Express ideas directly in code](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#Rp-direct)" of the C++ Core Guidelines. What the code or a command already shows does not get documented on top.
-
-- **Names carry the purpose, not the mechanism** — on every level: variables, functions, classes, members. Anchors: intention-revealing selector (Kent Beck, "Smalltalk Best Practice Patterns") for names; intention-revealing interfaces (Eric Evans, [DDD Reference](https://www.domainlanguage.com/ddd/reference/)) for interfaces; [general naming rules](https://google.github.io/styleguide/cppguide.html#General_Naming_Rules): optimise for readability, no cryptic abbreviations.
-- **Structure explains itself:** small units with one responsibility; one level of abstraction per function (SLAP); deep modules — a small interface with much functionality behind it (John Ousterhout, "[A Philosophy of Software Design](https://web.stanford.edu/~ouster/cgi-bin/book.php)").
-- **Comments are sparing** and explain the non-obvious why alone (a decision, a trade-off), never the what ([NL.1](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#S-naming) of the Core Guidelines). A comment describing *what* the code does is a hint to make the code clearer — not to keep the comment.
-
-Concretely, after [Google C++ Style](https://google.github.io/styleguide/cppguide.html#Naming) (in force):
-
-- Types: `PascalCase` (`DateGroup`).
-- Functions and methods: `PascalCase` (`GetDateGroups()`); trivial accessors and mutators may carry `snake_case` like their member (`set_count()`).
-- Class data members: `snake_case` **with a trailing underscore** (`date_format_`). Struct members without one. The clang-tidy gate enforces this member rule ([readability-identifier-naming](https://clang.llvm.org/extra/clang-tidy/checks/readability/identifier-naming.html) in `.clang-tidy`); a member without an underscore breaks the build.
-- Locals: `snake_case`. Constants and enumerators: `kPascalCase` (`kColorScale`).
-- The store suffix is uniformly `…Store` (not `…Storage`) — for types **and** for member and parameter names (`…_store`, not `…_storage`).
-- Renames that unify spelling and identifiers are welcome; how far one reaches stands under [Refactoring](#refactoring).
-
-### Principles
-
-Binding design principles. The established terms are set here — as everywhere in this document — deliberately as [semantic anchors](https://github.com/LLM-Coding/Semantic-Anchors): the term activates the knowledge behind it, in humans as in coding agents, more precisely than any paraphrase. As a general C++ guideline the [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#main) hold throughout, and many of the anchors below come from them.
-
-- Check against the official manual, not from memory: when working with Qt, OpenGL, ICU, Boost, clang-tidy or CMake, read the documentation of the **version used here** — behaviour, flags and defaults change between versions.
-- [Single responsibility principle](https://en.wikipedia.org/wiki/Single-responsibility_principle) and [separation of concerns](https://en.wikipedia.org/wiki/Separation_of_concerns); low [coupling](https://en.wikipedia.org/wiki/Coupling_%28computer_programming%29), high [cohesion](https://en.wikipedia.org/wiki/Cohesion_%28computer_science%29).
-- [Domain-driven design](https://www.domainlanguage.com/ddd/reference/) — see the [domain pattern](#domain-pattern-value-objects-and-stores) — and [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) — see [Layers and layer rules](#layers-and-layer-rules).
-- [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) as DRY of knowledge, with [single source of truth](https://en.wikipedia.org/wiki/Single_source_of_truth) as the measure: every piece of knowledge (a rule, a constant, a domain decision) has exactly one authoritative representation — not every similar-looking line folded together. But: [duplication is cheaper than the wrong abstraction](https://sandimetz.com/blog/2016/1/20/the-wrong-abstraction); two coincidentally identical blocks expressing *different* concepts stay apart — in doubt, do not abstract early ([YAGNI](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it), [KISS](https://en.wikipedia.org/wiki/KISS_principle)).
-  - The mechanics: where the same multi-line shape recurs across several methods (or panels), pull it up into a small helper — a `private` member, a free function or a shared base class — instead of copying it. Established examples: `scene_shapes::FillRectangles` and `AddCenteredText` (scene node creation), `runtime_options_detail::FoundString` (read an option → `std::optional<std::string>`), `MakeOwned<T>` (parent-owned widgets), `TablePanelBase` (the table plus add and delete scaffold), `serialization_detail::ColorToArray` and `ColorFromArray` (glm::vec4 marshalling). Prefer that over macros, because macros worsen readability and debuggability — the explicit, field-by-field `save`/`load` pairs in `infrastructure/persistence/value_serialization.hpp` stay written out on purpose, because they document the on-disk format.
-- [Principle of least astonishment](https://en.wikipedia.org/wiki/Principle_of_least_astonishment): names, signatures and behaviour fit together.
-- Choose the smallest useful abstraction; prefer explicit data flow over hidden coupling ([law of Demeter](https://en.wikipedia.org/wiki/Law_of_Demeter)); encapsulate unwieldy constructs instead of spreading them.
-- [GRASP](https://en.wikipedia.org/wiki/GRASP_%28object-oriented_design%29) heuristics for assigning responsibility when deciding where code belongs: information expert, creator, controller, low coupling and high cohesion, indirection, pure fabrication, polymorphism and protected variations.
-- Keep stable rules apart from unstable work (this file against the issues).
-
 ### Style
 
 Language and documentation rules live in the superproject (`~/code/homelab-superproject/AGENTS.md`).
@@ -140,7 +135,7 @@ Whatever the language holds visible stays in the header and needs no argument: t
 
 One shape resists the rule: the destructor of a **pure interface** stays defaulted in the class body. Defining it out of line would give the vtable a home, but it also makes the class more than an interface — and `misc-multiple-inheritance` then fires at whoever inherits it beside a widget base, which is exactly what `RenderSurface` is for. Where a base gets inherited singly, the out-of-line destructor is welcome (`Drawable`).
 
-`AUTOMOC` is **on**, and whoever declares a signal carries `Q_OBJECT`: the state topics, the panels, the main window. With a translation unit per header the unit [moc](https://doc.qt.io/qt-6/moc.html) emits costs nothing the design forbids. Reach for it to *declare* a signal alone — subscribing to a Qt widget's own signal works through `QObject::connect` with a functor and needs none of ours. [moc's bounds](https://doc.qt.io/qt-6/moc.html) shape the design where they bite: it processes no class template, which is why a topic is a class per value; and it wants signal parameters spelled out fully, so they stand as written types, not as aliases.
+`AUTOMOC` is **on**, and whoever declares a signal carries `Q_OBJECT`: the state topics, the panels, the main window. With a translation unit per header the unit [moc](https://doc.qt.io/qt-6/moc.html) emits costs nothing the design forbids. Reach for it to *declare* a signal alone — subscribing to a Qt widget's own signal works through `QObject::connect` with a functor and needs none of ours. [moc's bounds](https://doc.qt.io/qt-6/moc.html) shape the design where they bite: besides the class template (see [Domain pattern](#domain-pattern-value-objects-and-stores)), it wants signal parameters spelled out fully, so they stand as written types, not as aliases.
 
 `emit` comes from `<QtCore/qtmetamacros.h>`, and the unit that emits includes it — Qt's own class headers do not satisfy `misc-include-cleaner` for a macro.
 
@@ -169,8 +164,8 @@ The obligations follow the linker, not the repository layout — a system librar
   - **Suppression is a last resort alone, and only for constructs a third-party C API forces on us contractually and that the code cannot solve otherwise.** Two stand today: libpng's mandatory `setjmp`/`longjmp` error handling in `src/infrastructure/graphics/png_writer.cpp`, and FreeType's macro include in `src/infrastructure/graphics/freetype.hpp` — `FT_FREETYPE_H` exists only once `<ft2build.h>` has run, and the order `llvm-include-order` demands breaks the build. If you must suppress: scope the `NOLINT` to the **concrete check names** (never a bare `NOLINT`), confine it to the narrowest line and add a comment explaining *why* it is unfixable. Where a whole dependency makes a class of warning unavoidable, replace that dependency rather than spread suppressions.
   - The one `-Wno-…` in the build is **not** an exception to the rule but a statement about a compiler: `-Wno-c23-extensions` says that Clang 22 has not yet implemented `#embed` as the C++26 feature it is. It says nothing about our code — GCC compiles the same line as standard under `-std=c++26 -Wpedantic -Werror`. It stands in the clang branch of both build files and goes the day Clang catches up.
 
-One build directory, one compiler in it: `build/` holds GCC or clang, chosen when you configure, and the choice decides which targets exist — `clang-tidy` and `sanitize-memory` appear under clang alone, because they parse with its frontend. `CMakeLists.txt` gathers each compiler's own flags and targets into one section at its end; whatever holds for both stands before them, unguarded. `CMakeLists.txt` and `tests/CMakeLists.txt` share no target and no variable — each names its own sources and its own dependencies, so either reads on its own and a new dependency has to be entered twice. CI runs one job per compiler, and both build and test, because each sees warnings the other does not. Whoever adds a gate says which compiler it belongs to.
+One build directory, one compiler in it: `build/` holds GCC or clang, chosen when you configure, and the choice decides which targets exist — `clang-tidy` and `sanitize-memory` appear under clang alone, because they parse with its frontend — and a GCC `compile_commands.json` carries `-mno-direct-extern-access` out of `Qt6::Platform`, which clang rejects as an unknown argument before any check runs. `CMakeLists.txt` gathers each compiler's own flags and targets into one section at its end; whatever holds for both stands before them, unguarded. `CMakeLists.txt` and `tests/CMakeLists.txt` share no target and no variable — each names its own sources and its own dependencies, so either reads on its own and a new dependency has to be entered twice. CI runs one job per compiler, and both build and test, because each sees warnings the other does not. Whoever adds a gate says which compiler it belongs to.
 
-Beside clang-tidy stands the sanitizer gate `sanitize-address` (address, leak, undefined): it rebuilds the tree instrumented and runs the test suite underneath. It works under both compilers and gets held at **zero findings**; a sanitizer hit gets fixed, not suppressed.
+Beside clang-tidy stands the sanitizer gate `sanitize-address` (address, leak, undefined): it rebuilds the tree instrumented and runs the test suite underneath. It gets held at **zero findings**; a sanitizer hit gets fixed, not suppressed.
 
 The gate commands (enforcement targets, the full run, auto-fix, clang-format, CI) stand in [operations.md](operations.md), section Build checks.

@@ -10,7 +10,7 @@ Build, tests, headless runs and the lint gates. Principles, architecture and con
 
 The build runs on [CMake](https://cmake.org/cmake/help/latest/) with the [Ninja](https://ninja-build.org/manual.html) generator. One build directory, `build/`, holds one compiler — GCC or clang, chosen when you configure. `compile_commands.json` gets exported for clangd.
 
-The choice decides which targets exist. `clang-tidy` and `sanitize-memory` appear under clang alone: clang-tidy parses with clang's frontend, and a GCC `compile_commands.json` carries `-mno-direct-extern-access` out of `Qt6::Platform`, which clang rejects as an unknown argument before any check runs. Under GCC the target is absent, and `ninja` answers `unknown target`. CI runs one job per compiler, and both build and test — each sees warnings the other does not.
+The choice decides which targets exist (why: [AGENTS.md](AGENTS.md), *Warnings, the clang-tidy and the sanitizer gate*). Under GCC the `clang-tidy` target is absent, and `ninja` answers `unknown target`.
 
 Initialise the submodules once after cloning (their state at any time through `git submodule status`):
 
@@ -81,7 +81,7 @@ A startup file (CSV or XML) gets passed as a positional argument alone; without 
 
 ### Headless runs
 
-The binary honours several command line options in GNU syntax (`--name=value` or `--name value`; `--help` shows them all) for non-interactive use — CI, screenshots, smoke tests. The option vocabulary is defined and parsed in exactly one place (`AddRuntimeOptions` and `RuntimeOptionsFromParser` in `src/application/runtime_options.hpp`); the binary reads no environment variables any more.
+The binary honours several command line options in GNU syntax (`--name=value` or `--name value`; `--help` shows them all) for non-interactive use — CI, screenshots, smoke tests. The option vocabulary stands in `AddRuntimeOptions` (`src/application/runtime_options.cpp`).
 
 **Image capture** — two options capture two different things; they are not redundant:
 
@@ -126,7 +126,7 @@ xvfb-run -a -s "-screen 0 1600x1000x24" \
   --dump-window-png=/tmp/decade_ui.png --exit-after-ms=3000 examples/sample_dates.csv
 ```
 
-**Comparing two renders.** A restructuring that reaches the scene or the renderer proves itself with a `--dump-png` before and after. The two files never match byte for byte: from run to run the multisampling moves a few pixels by one step in one channel — 24 of 3.9 million with `examples/sample_dates.csv` on the laptop's GPU. One step is 0.4 %, so a fuzz of 0.5 % absorbs it:
+**Comparing two renders**, when a change should leave the page untouched: a `--dump-png` before and after. No gate runs it. The two files never match byte for byte: from run to run the multisampling moves a few pixels by one step in one channel — 24 of 3.9 million with `examples/sample_dates.csv` on the laptop's GPU. One step is 0.4 %, so a fuzz of 0.5 % absorbs it:
 
 ```bash
 magick compare -metric AE -fuzz 0.5% before.png after.png diff.png   # 0: the same page
@@ -143,7 +143,7 @@ cmake -S . -B build -G Ninja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang
 cmake --build build --target clang-tidy   # fails on EVERY finding
 ```
 
-The first line is the whole prerequisite: the target exists under clang alone. The tree gets held at **zero findings**; a new finding breaks the target. The gate sits *outside* the standard build, so normal compiles stay fast — run it explicitly or in CI. `run-clang-tidy` spreads the units over the cores, and the path prefix it takes as a regex keeps the `external/` submodules and the generated moc unit out. Every check switched off in `.clang-tidy` carries a comment explaining why (glm unions, GL and Qt C API interop, deliberate style).
+The first line is the whole prerequisite: the target exists under clang alone. The gate sits *outside* the standard build, so normal compiles stay fast — run it explicitly or in CI. `run-clang-tidy` spreads the units over the cores, and the path prefix it takes as a regex keeps the `external/` submodules and the generated moc unit out.
 
 It needs no extra arguments: everything in the database is spelled for the compiler that reads it.
 
@@ -192,7 +192,7 @@ cmake --build build --target sanitize-memory    # diagnosis, needs a clang build
 
 `sanitize-address` exists under both compilers and instruments with whichever one configured `build/`; CI runs GCC's. `sanitize-memory` exists under clang alone — no other compiler knows MemorySanitizer.
 
-- **`sanitize-address`** is the gate. It combines AddressSanitizer (buffer overruns, use-after-free), LeakSanitizer and UndefinedBehaviorSanitizer. The tree gets held at **zero findings**. `-fno-sanitize-recover=undefined` is needed, because UBSan would otherwise merely report and carry on — the gate would stay green. LeakSanitizer already sits inside AddressSanitizer on Linux; it is named anyway, so the intent stands in the target.
+- **`sanitize-address`** is the gate. It combines AddressSanitizer (buffer overruns, use-after-free), LeakSanitizer and UndefinedBehaviorSanitizer. `-fno-sanitize-recover=undefined` is needed, because UBSan would otherwise merely report and carry on — the gate would stay green. LeakSanitizer already sits inside AddressSanitizer on Linux; it is named anyway, so the intent stands in the target.
 - `_GLIBCXX_ASSERTIONS` rides along. It is no sanitizer, but it closes a hole they leave: reading past a container's size while it still has capacity stays inside the allocation, so AddressSanitizer sees nothing — `v.front()` on an empty vector after `reserve()` hands back garbage and runs on.
 - `float-cast-overflow` and `float-divide-by-zero` stand **beside** `undefined`, because GCC folds neither into it (checked against GCC 16 on 2026-08-06 — a cast of 7.87e30 to `size_t` passes unremarked under plain `-fsanitize=undefined`). Whoever extends the flag list checks the same way: write the smallest program that triggers the class, compile it with the gate's flags and see whether it fires. A flag nobody has seen fire buys nothing.
 - **`sanitize-memory`** is a diagnostic tool, not a gate. MemorySanitizer (uninitialised reads) excludes AddressSanitizer — the compiler rejects the combination — and clang alone knows it, hence a second target. It demands that **every** dependency be instrumented; with the system libstdc++ and gtest it reports false alarms out of foreign code and breaks off during test discovery already. Building the whole project under clang changes nothing about that: the blocker is the dependencies, not the compiler of our own units. It would become usable only with a self-built, instrumented libc++ plus a rebuilt gtest, ICU and Boost.
