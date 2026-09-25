@@ -15,6 +15,7 @@
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 #include <cstddef>
+#include <glm/ext/vector_float3.hpp>
 #include <glm/ext/vector_float4.hpp>
 #include <string>
 #include <vector>
@@ -68,11 +69,16 @@ void ShapeSetupPanel::ReceiveDateCategories(
 }
 
 void ShapeSetupPanel::CreateDetailFields(QWidget* detail_widget) {
+  color_ = MakeOwned<ColorButton>(detail_widget);
   outline_visible_ = MakeOwned<QCheckBox>(detail_widget);
+  // Outline and fill share the one colour picked above; their buttons only
+  // show it, so the two can never drift apart.
   outline_color_ = MakeOwned<ColorButton>(detail_widget);
+  outline_color_->setEnabled(false);
   outline_alpha_ = MakeOwned<AlphaSlider>(detail_widget);
   fill_visible_ = MakeOwned<QCheckBox>(detail_widget);
   fill_color_ = MakeOwned<ColorButton>(detail_widget);
+  fill_color_->setEnabled(false);
   fill_alpha_ = MakeOwned<AlphaSlider>(detail_widget);
 
   line_width_ = MakeOwned<QDoubleSpinBox>(detail_widget);
@@ -82,12 +88,13 @@ void ShapeSetupPanel::CreateDetailFields(QWidget* detail_widget) {
 
   auto* form_layout = MakeOwned<QFormLayout>();
   form_layout->setContentsMargins(kBorderPx, kBorderPx, kBorderPx, kBorderPx);
+  form_layout->addRow("Color", color_.data());
   form_layout->addRow("Outline Visible", outline_visible_.data());
   form_layout->addRow("Outline Color", outline_color_.data());
-  form_layout->addRow("Outline Transparency", outline_alpha_.data());
+  form_layout->addRow("Outline Opacity", outline_alpha_.data());
   form_layout->addRow("Fill Visible", fill_visible_.data());
   form_layout->addRow("Fill Color", fill_color_.data());
-  form_layout->addRow("Fill Transparency", fill_alpha_.data());
+  form_layout->addRow("Fill Opacity", fill_alpha_.data());
   form_layout->addRow("Line Width (mm)", line_width_.data());
   detail_widget->setLayout(form_layout);
 
@@ -100,8 +107,11 @@ void ShapeSetupPanel::CreateDetailFields(QWidget* detail_widget) {
           [on_edit](bool) { on_edit(); });
   connect(line_width_.data(), &QDoubleSpinBox::valueChanged, this,
           [on_edit](double) { on_edit(); });
-  outline_color_->SetOnChanged(on_edit);
-  fill_color_->SetOnChanged(on_edit);
+  color_->SetOnChanged([this, on_edit]() {
+    outline_color_->SetColor(color_->Color());
+    fill_color_->SetColor(color_->Color());
+    on_edit();
+  });
   outline_alpha_->SetOnChanged(on_edit);
   fill_alpha_->SetOnChanged(on_edit);
 }
@@ -166,11 +176,10 @@ void ShapeSetupPanel::RefreshDetail() {
       shape_config_set_.GetShapeConfiguration(selected_key_);
   const bool has_selection = config.Key() == selected_key_;
 
+  color_->setEnabled(has_selection);
   outline_visible_->setEnabled(has_selection);
-  outline_color_->setEnabled(has_selection);
   outline_alpha_->setEnabled(has_selection);
   fill_visible_->setEnabled(has_selection);
-  fill_color_->setEnabled(has_selection);
   fill_alpha_->setEnabled(has_selection);
   line_width_->setEnabled(has_selection);
   if (!has_selection) {
@@ -180,6 +189,8 @@ void ShapeSetupPanel::RefreshDetail() {
   // Loading the widgets fires their change signals; the guard keeps that from
   // reading straight back out as a user edit.
   const domain::detail::ScopedReentryFlag guard(loading_);
+  color_->SetColor(
+      ToQColor(glm::vec4(glm::vec3(config.OutlineColorDisabled()), 1.0F)));
   outline_visible_->setChecked(config.OutlineVisible());
   ShowColor(config.OutlineColorDisabled(), outline_color_, outline_alpha_);
   fill_visible_->setChecked(config.FillVisible());

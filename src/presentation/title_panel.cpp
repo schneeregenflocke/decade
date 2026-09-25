@@ -34,7 +34,7 @@ TitleSetupPanel::TitleSetupPanel(QWidget* parent) : QWidget(parent) {
   form_layout->addRow("Area Height", area_height_spin_.data());
   form_layout->addRow("Font Size (pt)", font_size_spin_.data());
   form_layout->addRow("Color", text_color_button_.data());
-  form_layout->addRow("Transparency", alpha_slider_.data());
+  form_layout->addRow("Opacity", alpha_slider_.data());
   setLayout(form_layout);
 
   connect(area_height_spin_.data(), &QDoubleSpinBox::valueChanged, this,

@@ -43,6 +43,11 @@ void ShapeConfiguration::FillColor(const glm::vec4& value) {
   fill_color_ = value;
 }
 
+void ShapeConfiguration::SetColor(const glm::vec3& color) {
+  outline_color_ = glm::vec4(color, outline_color_[3]);
+  fill_color_ = glm::vec4(color, fill_color_[3]);
+}
+
 float ShapeConfiguration::LineWidth() const {
   return outline_visible_ ? line_width_ : 0.0F;
 }
@@ -128,11 +133,7 @@ bool ShapeConfigSet::SetCategoryColor(size_t category_index,
   if (category_index >= category_configurations_.size()) {
     return false;
   }
-  const ShapeConfiguration styled = MakeBarStyledConfiguration(
-      DynamicConfigurationKey(category_index), color);
-  ShapeConfiguration& config = category_configurations_[category_index];
-  config.OutlineColor(styled.OutlineColorDisabled());
-  config.FillColor(styled.FillColorDisabled());
+  category_configurations_[category_index].SetColor(color);
   return true;
 }
 

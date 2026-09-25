@@ -88,6 +88,7 @@ class ShapeSetupPanel : public QWidget {
   std::string selected_key_;
 
   QPointer<QListWidget> key_list_;
+  QPointer<ColorButton> color_;
   QPointer<QCheckBox> outline_visible_;
   QPointer<ColorButton> outline_color_;
   QPointer<AlphaSlider> outline_alpha_;

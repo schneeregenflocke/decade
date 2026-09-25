@@ -194,3 +194,15 @@ TEST(ShapeConfigSetTest, SetCategoryColorRefusesAnUnknownCategory) {
 
   EXPECT_FALSE(set.SetCategoryColor(1, glm::vec3{1.0F, 0.0F, 0.0F}));
 }
+
+TEST(ShapeConfigurationTest, SetColorKeepsEachOpacity) {
+  ShapeConfiguration shape(
+      "k", true, true, 1.0F,
+      ShapeConfiguration::OutlineColorValue{glm::vec4{0.0F, 0.0F, 0.0F, 0.8F}},
+      ShapeConfiguration::FillColorValue{glm::vec4{1.0F, 1.0F, 1.0F, 0.3F}});
+
+  shape.SetColor(glm::vec3{0.2F, 0.4F, 0.6F});
+
+  EXPECT_EQ(shape.OutlineColorDisabled(), (glm::vec4{0.2F, 0.4F, 0.6F, 0.8F}));
+  EXPECT_EQ(shape.FillColorDisabled(), (glm::vec4{0.2F, 0.4F, 0.6F, 0.3F}));
+}

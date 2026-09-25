@@ -46,6 +46,10 @@ class ShapeConfiguration {
 
   void FillColor(const glm::vec4& value);
 
+  // One colour for outline and fill; each keeps its own opacity, so a fill
+  // stays as translucent as it was.
+  void SetColor(const glm::vec3& color);
+
   [[nodiscard]] float LineWidth() const;
 
   [[nodiscard]] glm::vec4 OutlineColor() const;
@@ -132,9 +136,9 @@ class ShapeConfigSet {
   // colour — the user picks a category's colour, the set never changes it.
   void SyncToDateCategories(size_t category_count);
 
-  // Colours the category at the given zero-based index the way every bar is
-  // coloured: MakeBarStyledConfiguration's outline and fill from one colour.
-  // Returns false when no such category exists.
+  // Colours outline and fill of the category at the given zero-based index,
+  // keeping their opacities (ShapeConfiguration::SetColor). Returns false when
+  // no such category exists.
   bool SetCategoryColor(size_t category_index, const glm::vec3& color);
 
   // Raw access for non-intrusive serialization in the infrastructure layer.
