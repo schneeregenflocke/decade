@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <QtCore/QObject>
+#include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <string>
 
@@ -170,4 +171,26 @@ TEST(ShapeConfigSetTest, EveryNewCategoryStartsInTheSamePastelBlue) {
   EXPECT_EQ(set.GetDynamicConfiguration(1).FillColorDisabled(), first);
   EXPECT_EQ(set.GetDynamicConfiguration(2).FillColorDisabled(), first);
   EXPECT_GT(first[2], first[0]);  // blue outweighs red
+}
+
+TEST(ShapeConfigSetTest, SetCategoryColorColoursOutlineAndFillOfThatCategory) {
+  ShapeConfigSet set;
+  set.SyncToDateCategories(2);
+  const glm::vec3 teal{0.0F, 0.5F, 0.5F};
+
+  ASSERT_TRUE(set.SetCategoryColor(1, teal));
+
+  const ShapeConfiguration colored = set.GetDynamicConfiguration(1);
+  EXPECT_EQ(glm::vec3(colored.OutlineColorDisabled()), teal);
+  EXPECT_EQ(glm::vec3(colored.FillColorDisabled()), teal);
+  EXPECT_GT(colored.OutlineColorDisabled()[3], colored.FillColorDisabled()[3]);
+  EXPECT_NE(glm::vec3(set.GetDynamicConfiguration(0).FillColorDisabled()),
+            teal);
+}
+
+TEST(ShapeConfigSetTest, SetCategoryColorRefusesAnUnknownCategory) {
+  ShapeConfigSet set;
+  set.SyncToDateCategories(1);
+
+  EXPECT_FALSE(set.SetCategoryColor(1, glm::vec3{1.0F, 0.0F, 0.0F}));
 }

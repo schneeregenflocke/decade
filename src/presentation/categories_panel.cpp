@@ -2,24 +2,40 @@
 
 #include <QtCore/qtmetamacros.h>
 
+#include <QtCore/QModelIndex>
+#include <QtCore/Qt>
+#include <QtGui/QColor>
 #include <QtWidgets/QAbstractItemView>
+#include <QtWidgets/QColorDialog>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QTableWidget>
 #include <QtWidgets/QTableWidgetItem>
 #include <QtWidgets/QWidget>
 #include <cstddef>
+#include <glm/ext/vector_float3.hpp>
+#include <glm/ext/vector_float4.hpp>
 #include <string>
 #include <vector>
 
 #include "../domain/date_category.hpp"
 #include "../domain/detail/reentry_guard.hpp"
+#include "../domain/shape_configuration.hpp"
+#include "casts.hpp"
+#include "color_button_delegate.hpp"
+#include "make_owned.hpp"
 #include "table_panel_base.hpp"
 
 DateCategoriesTablePanel::DateCategoriesTablePanel(QWidget* parent)
     : TablePanelBase(parent, QAbstractItemView::SingleSelection) {
   InitColumns({{.label = "Number", .editable = false},
+               {.label = "Color", .editable = false},
                {.label = "Name", .editable = true}});
   BuildTableLayout();
+
+  auto* color_delegate = MakeOwned<ColorButtonDelegate>(this);
+  table()->setItemDelegateForColumn(kColorColumn, color_delegate);
+  connect(color_delegate, &ColorButtonDelegate::Clicked, this,
+          [this](const QModelIndex& index) { OpenColorDialog(index.row()); });
 
   connect(table(), &QTableWidget::itemChanged, this,
           [this](QTableWidgetItem* item) { CallbackItemChanged(item); });
@@ -47,6 +63,50 @@ void DateCategoriesTablePanel::ReceiveDateCategories(
     SetCellText(row, kNumberColumn,
                 std::to_string(date_categories_[index].GetNumber()));
     SetCellText(row, kNameColumn, date_categories_[index].GetName());
+  }
+  RefreshColors();
+}
+
+void DateCategoriesTablePanel::ReceiveShapeConfigSet(
+    const ShapeConfigSet& shape_config_set) {
+  shape_config_set_ = shape_config_set;
+  RefreshColors();
+}
+
+void DateCategoriesTablePanel::RefreshColors() {
+  const domain::detail::ScopedReentryFlag guard(filling_);
+  for (int row = 0; row < table()->rowCount(); ++row) {
+    QTableWidgetItem* item = table()->item(row, kColorColumn);
+    if (item == nullptr) {
+      continue;
+    }
+    QColor color = ToQColor(
+        shape_config_set_.GetDynamicConfiguration(static_cast<std::size_t>(row))
+            .FillColorDisabled());
+    // The swatch shows the category's colour itself, not its translucent fill.
+    color.setAlphaF(1.0F);
+    item->setData(Qt::UserRole, color);
+  }
+}
+
+void DateCategoriesTablePanel::OpenColorDialog(int row) {
+  const auto current =
+      table()->item(row, kColorColumn)->data(Qt::UserRole).value<QColor>();
+  auto* dialog = MakeOwned<QColorDialog>(current, this);
+  dialog->setWindowTitle("Choose Category Colour");
+  dialog->setAttribute(Qt::WA_DeleteOnClose);
+  connect(
+      dialog, &QColorDialog::colorSelected, this,
+      [this, row](const QColor& color) { CallbackColorChosen(row, color); });
+  dialog->open();
+}
+
+void DateCategoriesTablePanel::CallbackColorChosen(int row,
+                                                   const QColor& color) {
+  const glm::vec4 chosen = ToGlmVec4(color);
+  if (shape_config_set_.SetCategoryColor(static_cast<std::size_t>(row),
+                                         glm::vec3(chosen))) {
+    emit ShapeConfigSetEdited(shape_config_set_);
   }
 }
 

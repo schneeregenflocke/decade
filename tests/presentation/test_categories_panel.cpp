@@ -1,14 +1,18 @@
 #include <gtest/gtest.h>
 
 #include <QtCore/QObject>
+#include <QtCore/QRect>
 #include <QtCore/QString>
 #include <QtCore/Qt>
+#include <QtGui/QColor>
 #include <QtTest/QTest>
+#include <QtWidgets/QColorDialog>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QTableWidget>
 #include <QtWidgets/QWidget>
 #include <cstddef>
 #include <glm/vec4.hpp>
+#include <optional>
 #include <vector>
 
 #include "domain/date_category.hpp"
@@ -147,4 +151,37 @@ TEST(DateCategoriesPanelTest, AddRowClicksLeaveExistingCategoryColorsAlone) {
   wired.ClickAddRow();
   ExpectSameColor(wired.CategoryFillColor(0), first_category);
   ExpectSameColor(wired.CategoryFillColor(1), second_category);
+}
+
+// The Color column is a delegate-drawn button: a click on it opens the colour
+// dialogue, and the colour chosen there comes out as an edit of the set.
+TEST(DateCategoriesPanelTest, AColorPickedInTheTableEditsThatCategorysColor) {
+  DateCategoriesTablePanel panel(nullptr);
+  ShapeConfigSet set;
+  set.SyncToDateCategories(1);
+  panel.ReceiveDateCategories({DateCategory("PBL")});
+  panel.ReceiveShapeConfigSet(set);
+  std::optional<ShapeConfigSet> edited;
+  QObject::connect(&panel, &DateCategoriesTablePanel::ShapeConfigSetEdited,
+                   [&edited](const ShapeConfigSet& value) { edited = value; });
+  constexpr int kWidth = 400;
+  constexpr int kHeight = 300;
+  panel.resize(kWidth, kHeight);
+  panel.show();
+
+  auto* table = panel.findChild<QTableWidget*>();
+  ASSERT_NE(table, nullptr);
+  const QRect cell = table->visualRect(table->model()->index(0, 1));
+  QTest::mouseClick(table->viewport(), Qt::LeftButton, Qt::KeyboardModifiers(),
+                    cell.center());
+  auto* dialog = panel.findChild<QColorDialog*>();
+  ASSERT_NE(dialog, nullptr);
+  dialog->setCurrentColor(QColor(0, 128, 128));
+  dialog->accept();
+
+  ASSERT_TRUE(edited.has_value());
+  const glm::vec4 fill = edited->GetDynamicConfiguration(0).FillColorDisabled();
+  EXPECT_NEAR(fill[0], 0.0F, 1e-3F);
+  EXPECT_NEAR(fill[1], 128.0F / 255.0F, 1e-3F);
+  EXPECT_NEAR(fill[2], 128.0F / 255.0F, 1e-3F);
 }

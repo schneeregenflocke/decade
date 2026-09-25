@@ -123,6 +123,19 @@ void ShapeConfigSet::SyncToDateCategories(size_t category_count) {
   }
 }
 
+bool ShapeConfigSet::SetCategoryColor(size_t category_index,
+                                      const glm::vec3& color) {
+  if (category_index >= category_configurations_.size()) {
+    return false;
+  }
+  const ShapeConfiguration styled = MakeBarStyledConfiguration(
+      DynamicConfigurationKey(category_index), color);
+  ShapeConfiguration& config = category_configurations_[category_index];
+  config.OutlineColor(styled.OutlineColorDisabled());
+  config.FillColor(styled.FillColorDisabled());
+  return true;
+}
+
 const std::vector<ShapeConfiguration>& ShapeConfigSet::FixedConfigurations()
     const {
   return fixed_configurations_;

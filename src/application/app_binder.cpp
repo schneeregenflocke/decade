@@ -159,10 +159,18 @@ void BindShapeConfiguration(QObject& scope, EventBus& bus,
           &ShapeSetupPanel::ShapeConfigSetEdited,
           components.shape_configuration_store,
           &ShapeConfigurationStore::ReceiveShapeConfigSet);
+  // A category's colour gets picked in the Categories table as well.
+  Connect(scope, components.date_categories_table_panel,
+          &DateCategoriesTablePanel::ShapeConfigSetEdited,
+          components.shape_configuration_store,
+          &ShapeConfigurationStore::ReceiveShapeConfigSet);
 
   Connect(scope, bus.shape_config_set, &domain::ShapeConfigSetTopic::Published,
           components.shape_setup_panel,
           &ShapeSetupPanel::ReceiveShapeConfigSet);
+  Connect(scope, bus.shape_config_set, &domain::ShapeConfigSetTopic::Published,
+          components.date_categories_table_panel,
+          &DateCategoriesTablePanel::ReceiveShapeConfigSet);
   Connect(scope, bus.shape_config_set, &domain::ShapeConfigSetTopic::Published,
           components.calendar_page, &CalendarPage::ReceiveShapeConfigSet);
   Connect(scope, bus.shape_config_set, &domain::ShapeConfigSetTopic::Published,
