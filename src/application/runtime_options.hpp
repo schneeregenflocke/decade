@@ -37,6 +37,8 @@ struct RuntimeOptions {
   // node path at start, so the selection overlay is checkable without a mouse.
   std::optional<std::string> debug_select_node;
   bool debug_log{false};
+  // A GUI script to play once the window stands (GuiScriptRunner).
+  std::optional<std::string> gui_script;
 };
 
 // The mark of a non-interactive run: an image capture or an auto exit is asked

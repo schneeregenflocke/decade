@@ -3,6 +3,7 @@
 #include <QtCore/QCommandLineParser>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QString>
+#include <QtCore/Qt>
 #include <QtCore/QtLogging>
 #include <QtCore/QtMessageHandler>
 #include <QtGui/QSurfaceFormat>
@@ -53,6 +54,11 @@ int RunDecadeApp(int& argument_count, char** arguments) {
 
   const RuntimeOptions runtime_options = RuntimeOptionsFromParser(parser);
   decade_debug::SetLogEnabled(runtime_options.debug_log);
+  // A native dialogue lives outside the application (a portal under Wayland),
+  // where a script cannot reach its fields.
+  if (runtime_options.gui_script) {
+    QCoreApplication::setAttribute(Qt::AA_DontUseNativeDialogs);
+  }
   qInstallMessageHandler(MessageHandler);
 
   std::unique_ptr<LocaleServices> locale_services;

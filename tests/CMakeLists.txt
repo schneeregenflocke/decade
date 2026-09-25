@@ -39,6 +39,7 @@ add_executable(decade_tests
 	presentation/test_categories_panel.cpp
 	presentation/test_shape_panel.cpp
 	presentation/test_csv_import_panel.cpp
+	presentation/test_gui_script.cpp
 )
 
 target_compile_features(decade_tests PRIVATE cxx_std_26)

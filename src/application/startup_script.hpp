@@ -37,6 +37,10 @@ class StartupScript {
 
   void WriteRequestedImages(MainWindow& window) const;
 
+  // Last, so the script meets the window the other options prepared. A script
+  // that does not parse ends the run before its first step.
+  void StartGuiScript(MainWindow& window) const;
+
   const RuntimeOptions& options_;
   ProjectDocument& document_;
 };

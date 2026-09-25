@@ -1,16 +1,23 @@
 #include "startup_script.hpp"
 
+#include <QtCore/QCoreApplication>
 #include <QtCore/QFileInfo>
 #include <QtCore/QObject>
 #include <QtCore/QString>
 #include <QtCore/QTimer>
+#include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
+#include <utility>
 
 #include "../common/debug_log.hpp"
 #include "../infrastructure/graphics/pick_id.hpp"
 #include "../presentation/gl_canvas.hpp"
+#include "../presentation/gui_script.hpp"
+#include "../presentation/gui_script_runner.hpp"
 #include "../presentation/main_window.hpp"
+#include "../presentation/make_owned.hpp"
 #include "../presentation/scene_tree_panel.hpp"
 #include "calendar/calendar_page.hpp"
 #include "calendar/title_text_editor.hpp"
@@ -39,6 +46,7 @@ void StartupScript::RunAfterGraphics(MainWindow& window,
   LoadStartupFile();
   ApplyDebugHighlights(window, calendar_page, title_text_editor);
   WriteRequestedImages(window);
+  StartGuiScript(window);
 }
 
 void StartupScript::SelectStartupTab(MainWindow& window) const {
@@ -123,6 +131,29 @@ void StartupScript::WriteRequestedImages(MainWindow& window) const {
       }
     });
   }
+}
+
+void StartupScript::StartGuiScript(MainWindow& window) const {
+  if (!options_.gui_script) {
+    return;
+  }
+  const std::ifstream file(*options_.gui_script);
+  if (!file) {
+    std::cerr << "--script: cannot read " << *options_.gui_script << '\n';
+    QCoreApplication::exit(1);
+    return;
+  }
+  std::stringstream text;
+  text << file.rdbuf();
+  auto steps = ParseGuiScript(text.str());
+  if (!steps) {
+    std::cerr << "script: line " << steps.error().line << ": "
+              << steps.error().message << '\n';
+    QCoreApplication::exit(1);
+    return;
+  }
+  // The window owns the runner, so it stops with the window.
+  MakeOwned<GuiScriptRunner>(std::move(*steps), window)->Start();
 }
 
 }  // namespace application

@@ -132,6 +132,31 @@ xvfb-run -a -s "-screen 0 1600x1000x24" \
 magick compare -metric AE -fuzz 0.5% before.png after.png diff.png   # 0: the same page
 ```
 
+### GUI scripts
+
+`--script=<path>` plays a list of steps against the running window through `QTest`, so each step takes the route a person's input takes. A step finds a widget by what a person reads: a tab label, a button text, a column header, the label beside a combo box. Every step checks its own effect, so a step that did not land fails instead of passing silently. A failing step prints `script: line N: …` on stderr and ends the run with exit code 1; `--debug-log` echoes every step before it runs.
+
+One step per line, words split at blanks, a double-quoted word may hold blanks, `#` starts a comment. Rows count from 1, top to bottom.
+
+- `tab <label>` — clicks the tab.
+- `click <text>` — clicks the one visible, enabled button reading `<text>`.
+- `edit-cell <row> <column> <text>` — clicks the cell, presses F2, types, presses Return.
+- `select-rows <rows…>` — clicks the first row, Ctrl-clicks the rest; ranges as `11-23`.
+- `choose <label> <entry>` — opens the combo box beside the label and picks the entry by keyboard.
+- `pick-color <row> <#rrggbb>` — clicks the row's Color button, types the value into the dialogue's HTML field, clicks OK.
+- `menu <menu> <entry>` — opens a menu of the menu bar and clicks the entry; an ellipsis and the mnemonic `&` do not count.
+- `file-dialog <path>` — types the path into the open file dialogue and confirms.
+- `wait <ms>` — holds the next step back.
+- `quit` — closes the window.
+
+A step that opens a modal dialogue (File → Save As) returns only once the dialogue closes, which is why the runner arms the next step before it runs the current one; that step fills the dialogue in from inside its event loop — `file-dialog <path>` follows `menu File "Save As"`. A script run switches native dialogues off (`Qt::AA_DontUseNativeDialogs`): a native one lives outside the application, a portal under Wayland, where no step reaches its fields.
+
+The run needs a display, like every run that reaches the canvas. Watch it on the session, and keep stderr in a file so a Qt warning stays readable next to the step that caused it; `QT_FATAL_WARNINGS=1` turns the first warning into an abort:
+
+```bash
+./build/decade --debug-log --script=steps.txt 2> run.log
+```
+
 ### Build checks
 
 The rule behind them — **warnings break the build, never suppress them** — stands in [AGENTS.md](AGENTS.md), section "Warnings, the clang-tidy and the sanitizer gate". Here are the commands.

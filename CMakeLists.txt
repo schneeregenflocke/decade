@@ -19,7 +19,7 @@ find_package(Freetype REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(Microsoft.GSL CONFIG REQUIRED)
 
-find_package(Qt6 CONFIG REQUIRED COMPONENTS Widgets OpenGLWidgets PrintSupport)
+find_package(Qt6 CONFIG REQUIRED COMPONENTS Widgets OpenGLWidgets PrintSupport Test)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(EPOXY REQUIRED epoxy)
@@ -66,6 +66,7 @@ target_link_libraries(decade PRIVATE
 	Qt6::Widgets
 	Qt6::OpenGLWidgets
 	Qt6::PrintSupport
+	Qt6::Test
 	ZLIB::ZLIB
 	PNG::PNG
 	Fontconfig::Fontconfig

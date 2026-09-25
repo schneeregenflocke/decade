@@ -42,6 +42,9 @@ void AddRuntimeOptions(QCommandLineParser& parser) {
                     "force the scene-tree selection on node path root/.../name",
                     "path"});
   parser.addOption({"debug-log", "enable debug logging"});
+  parser.addOption({"script",
+                    "play a GUI script, one step per line (operations.md)",
+                    "path"});
   parser.addPositionalArgument("file", "project or CSV file to load at start",
                                "[file]");
 }
@@ -88,6 +91,7 @@ RuntimeOptions RuntimeOptionsFromParser(const QCommandLineParser& parser) {
   options.debug_hover_title = parser.isSet("debug-hover-title");
   options.debug_edit_title = FoundString(parser, "debug-edit-title");
   options.debug_log = parser.isSet("debug-log");
+  options.gui_script = FoundString(parser, "script");
 
   if (const auto dump_png_dpi = FoundNumber(parser, "dump-png-dpi")) {
     if (*dump_png_dpi > 0) {
