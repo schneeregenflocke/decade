@@ -51,7 +51,6 @@ class DateTablePanel : public TablePanelBase {
     second_date,
     number,
     category,
-    category_number,
     duration,
     duration_to_next
   };

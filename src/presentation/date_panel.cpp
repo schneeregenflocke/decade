@@ -36,7 +36,6 @@ DateTablePanel::DateTablePanel(QWidget* parent,
                {.label = "To Date", .editable = true},
                {.label = "Number", .editable = false},
                {.label = "Category", .editable = false},
-               {.label = "Category Number", .editable = false},
                {.label = "Duration", .editable = false},
                {.label = "Duration to next", .editable = false}});
 
@@ -106,9 +105,6 @@ void DateTablePanel::ReceiveDateEntries(
     }
     SetCellText(row, ColumnIndex(Columns::category),
                 date_categories_.GetName(category));
-
-    SetCellText(row, ColumnIndex(Columns::category_number),
-                std::to_string(entry.GetCategoryNumber() + 1));
 
     SetCellText(row, ColumnIndex(Columns::duration),
                 std::to_string(entry.GetDateInterval().LengthDays()));
@@ -190,7 +186,6 @@ std::vector<int> DateTablePanel::BuildValidRowsList() {
 
     SetCellText(row, ColumnIndex(Columns::number), "");
     SetCellText(row, ColumnIndex(Columns::category), "");
-    SetCellText(row, ColumnIndex(Columns::category_number), "");
     SetCellText(row, ColumnIndex(Columns::duration), "");
     SetCellText(row, ColumnIndex(Columns::duration_to_next), "");
   }
