@@ -30,6 +30,8 @@ TablePanelBase::TablePanelBase(QWidget* parent,
   table_->setEditTriggers(QAbstractItemView::DoubleClicked |
                           QAbstractItemView::EditKeyPressed);
   table_->verticalHeader()->setVisible(false);
+  table_->horizontalHeader()->setSectionResizeMode(
+      QHeaderView::ResizeToContents);
   table_->horizontalHeader()->setStretchLastSection(true);
 
   // More compact than the system font; the row height follows it by itself.
