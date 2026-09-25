@@ -65,6 +65,13 @@ void BindDateEntries(QObject& scope, EventBus& bus,
           components.transform_date_entry,
           &TransformDateEntry::ReceiveDateEntries);
 
+  // The calendar span follows the entries it draws, so the store listens where
+  // the rendering adapter does.
+  Connect(scope, bus.transformed_date_entries,
+          &domain::DateEntriesTopic::Published,
+          components.calendar_configuration_store,
+          &CalendarConfigStore::ReceiveDateEntries);
+
   // The transform adapter publishes on its own topic. No shift: DatePeriod is
   // half-open [begin, end) everywhere, so the end is exclusive already. The
   // earlier {end_days = 1} was a correction out of the old inclusive model and

@@ -42,7 +42,8 @@ CalendarSceneComposer::CalendarSceneComposer(
     GraphicsEngine& graphics_engine_in, Scene& scene_in,
     const std::shared_ptr<Font>& font_in, const FontConfig& font_config_in,
     const RectF& page_size_in, const RectF& page_margin_in,
-    const TitleConfig& title_config_in, CalendarConfig& calendar_config_in,
+    const TitleConfig& title_config_in,
+    const CalendarConfig& calendar_config_in,
     const ShapeConfigSet& shape_config_in, const DateGroups& date_groups_in,
     const DateEntryBars& date_entry_bars_in)
     : scene_(scene_in),
@@ -81,14 +82,6 @@ void CalendarSceneComposer::Build() {
   FillShape& page_shape = nodes_.page.Shape();
   page_shape.SetShape(page_size_);
   page_shape.SetColor(glm::vec4(kOne, kOne, kOne, kOne));
-
-  // The auto span derives the calendar's year range from the data; it must
-  // run before the layout, which sizes the rows from the span length.
-  if (calendar_config_.IsAutoCalendarSpan() && !date_entry_bars_.is_empty()) {
-    calendar_config_.SetSpan(
-        CalendarSpan::YearSpan{.first_year = date_entry_bars_.GetFirstYear(),
-                               .last_year = date_entry_bars_.GetLastYear()});
-  }
 
   layout_ = CalendarLayout(page_size_, page_margin_, title_config_.AreaHeight(),
                            calendar_config_.GetSpanLengthYears(),

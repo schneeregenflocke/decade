@@ -47,7 +47,7 @@ class CalendarSceneComposer {
                         const FontConfig& font_config_in,
                         const RectF& page_size_in, const RectF& page_margin_in,
                         const TitleConfig& title_config_in,
-                        CalendarConfig& calendar_config_in,
+                        const CalendarConfig& calendar_config_in,
                         const ShapeConfigSet& shape_config_in,
                         const DateGroups& date_groups_in,
                         const DateEntryBars& date_entry_bars_in);
@@ -120,7 +120,7 @@ class CalendarSceneComposer {
   const RectF& page_size_;
   const RectF& page_margin_;
   const TitleConfig& title_config_;
-  CalendarConfig& calendar_config_;
+  const CalendarConfig& calendar_config_;
   const ShapeConfigSet& shape_config_;
   const DateGroups& date_groups_;
   const DateEntryBars& date_entry_bars_;

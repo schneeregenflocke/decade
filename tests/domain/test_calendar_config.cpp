@@ -2,9 +2,13 @@
 
 #include <QtCore/QObject>
 #include <stdexcept>
+#include <vector>
 
 #include "domain/calendar_config.hpp"
 #include "domain/calendar_config_store.hpp"
+#include "domain/date.hpp"
+#include "domain/date_entry.hpp"
+#include "domain/date_period.hpp"
 #include "domain/state_topics.hpp"
 
 TEST(CalendarSpanTest, DefaultSpanIsValid) {
@@ -98,4 +102,71 @@ TEST(CalendarConfigStoreTest, ReentryGuardBlocksRecursiveReceive) {
   primary.ReceiveCalendarConfig(secondary);
 
   EXPECT_EQ(emissions, 1);
+}
+
+namespace {
+
+DateEntry EntryBetween(int first_year, int last_year) {
+  DateEntry entry;
+  entry.SetDateInterval(DatePeriod(Date::FromYmd(first_year, 3, 1),
+                                   Date::FromYmd(last_year, 9, 1)));
+  return entry;
+}
+
+}  // namespace
+
+TEST(CalendarConfigStoreTest, AutoSpanFollowsTheEntries) {
+  domain::CalendarConfigTopic topic;
+  CalendarConfigStore store(topic);
+  int emissions = 0;
+  QObject::connect(&topic, &domain::CalendarConfigTopic::Published,
+                   [&](const CalendarConfig&) { ++emissions; });
+
+  store.ReceiveDateEntries(
+      {EntryBetween(2004, 2005), EntryBetween(1998, 2023)});
+
+  EXPECT_EQ(emissions, 1);
+  EXPECT_EQ(store.Get().GetSpanLimitsYears()[0], 1998);
+  EXPECT_EQ(store.Get().GetSpanLimitsYears()[1], 2023);
+}
+
+TEST(CalendarConfigStoreTest, AutoSpanOverridesAnIncomingSpan) {
+  domain::CalendarConfigTopic topic;
+  CalendarConfigStore store(topic);
+  store.ReceiveDateEntries({EntryBetween(1998, 2023)});
+
+  CalendarConfig edited;
+  edited.SetSpan({.first_year = 2040, .last_year = 2041});
+  store.ReceiveCalendarConfig(edited);
+
+  EXPECT_EQ(store.Get().GetSpanLimitsYears()[0], 1998);
+  EXPECT_EQ(store.Get().GetSpanLimitsYears()[1], 2023);
+}
+
+TEST(CalendarConfigStoreTest, ManualSpanIgnoresTheEntries) {
+  domain::CalendarConfigTopic topic;
+  CalendarConfigStore store(topic);
+  CalendarConfig manual;
+  manual.SetAutoCalendarSpan(false);
+  manual.SetSpan({.first_year = 2040, .last_year = 2041});
+  store.ReceiveCalendarConfig(manual);
+
+  store.ReceiveDateEntries({EntryBetween(1998, 2023)});
+
+  EXPECT_EQ(store.Get().GetSpanLimitsYears()[0], 2040);
+  EXPECT_EQ(store.Get().GetSpanLimitsYears()[1], 2041);
+}
+
+TEST(CalendarConfigStoreTest, EntriesWithinTheSameYearsPublishNothing) {
+  domain::CalendarConfigTopic topic;
+  CalendarConfigStore store(topic);
+  store.ReceiveDateEntries({EntryBetween(1998, 2023)});
+  int emissions = 0;
+  QObject::connect(&topic, &domain::CalendarConfigTopic::Published,
+                   [&](const CalendarConfig&) { ++emissions; });
+
+  store.ReceiveDateEntries(
+      {EntryBetween(1998, 2000), EntryBetween(2010, 2023)});
+
+  EXPECT_EQ(emissions, 0);
 }
