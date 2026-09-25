@@ -15,7 +15,6 @@
 #include <boost/serialization/split_free.hpp>
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/vector.hpp>
-#include <cstddef>
 #include <glm/vec4.hpp>
 #include <string>
 #include <vector>
@@ -73,8 +72,7 @@ void load(Archive& ar, DateCategory& category, const unsigned int /*v*/) {
 // Only the primary state is persisted: the half-open interval (interval_end
 // is exclusive) and the category. The derived fields (inter-interval, number)
 // are recomputed by DateEntryStore::ReceiveDateEntries when the loaded entries
-// are pushed back into the store. The key "group" predates
-// the rename to category and stays, so existing project files load.
+// are pushed back into the store.
 template <class Archive>
 void save(Archive& ar, const DateEntry& entry, const unsigned int /*v*/) {
   const std::string interval_begin =
@@ -86,7 +84,7 @@ void save(Archive& ar, const DateEntry& entry, const unsigned int /*v*/) {
   const int category = entry.GetCategory();
   ar& make_nvp("interval_begin", interval_begin);
   ar& make_nvp("interval_end", interval_end);
-  ar& make_nvp("group", category);
+  ar& make_nvp("category", category);
 }
 template <class Archive>
 void load(Archive& ar, DateEntry& entry, const unsigned int /*v*/) {
@@ -95,7 +93,7 @@ void load(Archive& ar, DateEntry& entry, const unsigned int /*v*/) {
   int category = 0;
   ar& make_nvp("interval_begin", interval_begin);
   ar& make_nvp("interval_end", interval_end);
-  ar& make_nvp("group", category);
+  ar& make_nvp("category", category);
   entry.SetDateInterval(DatePeriod(
       persistence::serialization_detail::DateFromIsoString(interval_begin),
       persistence::serialization_detail::DateFromIsoString(interval_end)));
@@ -204,37 +202,25 @@ void load(Archive& ar, ShapeConfiguration& config, const unsigned int /*v*/) {
 }
 
 // --- ShapeConfigSet ---
-// "group_configurations" predates the rename to category and stays. The key
-// each of those entries carries is derived from its index, so loading derives
-// it anew: a file written as "Bar Group N" reads back as "Bar Category N".
 template <class Archive>
 void save(Archive& ar, const ShapeConfigSet& set, const unsigned int /*v*/) {
   const std::vector<ShapeConfiguration>& fixed = set.FixedConfigurations();
   const std::vector<ShapeConfiguration>& categories =
       set.CategoryConfigurations();
   ar& make_nvp("fixed_configurations", fixed);
-  ar& make_nvp("group_configurations", categories);
+  ar& make_nvp("category_configurations", categories);
 }
 template <class Archive>
 void load(Archive& ar, ShapeConfigSet& set, const unsigned int /*v*/) {
   std::vector<ShapeConfiguration> fixed;
   std::vector<ShapeConfiguration> categories;
   ar& make_nvp("fixed_configurations", fixed);
-  ar& make_nvp("group_configurations", categories);
-  for (std::size_t index = 0; index < categories.size(); ++index) {
-    const ShapeConfiguration& loaded = categories[index];
-    categories[index] = ShapeConfiguration(
-        ShapeConfigSet::DynamicConfigurationKey(index), loaded.OutlineVisible(),
-        loaded.FillVisible(), loaded.LineWidthDisabled(),
-        ShapeConfiguration::OutlineColorValue{loaded.OutlineColorDisabled()},
-        ShapeConfiguration::FillColorValue{loaded.FillColorDisabled()});
-  }
+  ar& make_nvp("category_configurations", categories);
   set.MutableFixedConfigurations() = std::move(fixed);
   set.MutableCategoryConfigurations() = std::move(categories);
 }
 
 // --- CalendarConfig (incl. CalendarSpan year range) ---
-// The key keeps its old name: project files written before the rename carry it.
 template <class Archive>
 void save(Archive& ar, const CalendarConfig& config, const unsigned int /*v*/) {
   const int first_year = config.FirstYear();
@@ -244,7 +230,7 @@ void save(Archive& ar, const CalendarConfig& config, const unsigned int /*v*/) {
       config.GetSpacingProportions();
   ar& make_nvp("first_year", first_year);
   ar& make_nvp("last_year", last_year);
-  ar& make_nvp("auto_calendar_span", fit_years_to_entries);
+  ar& make_nvp("fit_years_to_entries", fit_years_to_entries);
   ar& make_nvp("spacing_proportions", spacing_proportions);
 }
 template <class Archive>
@@ -255,7 +241,7 @@ void load(Archive& ar, CalendarConfig& config, const unsigned int /*v*/) {
   std::vector<float> spacing_proportions;
   ar& make_nvp("first_year", first_year);
   ar& make_nvp("last_year", last_year);
-  ar& make_nvp("auto_calendar_span", fit_years_to_entries);
+  ar& make_nvp("fit_years_to_entries", fit_years_to_entries);
   ar& make_nvp("spacing_proportions", spacing_proportions);
   config.SetYears(
       CalendarSpan::YearSpan{.first_year = first_year, .last_year = last_year});

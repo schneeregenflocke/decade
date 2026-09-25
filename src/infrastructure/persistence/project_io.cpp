@@ -49,9 +49,8 @@ std::optional<std::string> LoadProjectXml(
   CalendarConfig calendar_config;
   try {
     boost::archive::xml_iarchive iarchive(filestream);
-    // "date_groups" predates the rename to category and stays, so existing
-    // project files load.
-    iarchive >> boost::serialization::make_nvp("date_groups", date_categories);
+    iarchive >>
+        boost::serialization::make_nvp("date_categories", date_categories);
     iarchive >> boost::serialization::make_nvp("date_entries", date_entries);
     iarchive >> boost::serialization::make_nvp("page_setup", page_setup_config);
     iarchive >> boost::serialization::make_nvp("title_config", title_config);
@@ -95,7 +94,7 @@ std::optional<std::string> SaveProjectXml(
     // themselves; what gets persisted are their domain values.
     boost::archive::xml_oarchive oarchive(filestream);
     oarchive << boost::serialization::make_nvp(
-        "date_groups", date_categories_store.Get().Items());
+        "date_categories", date_categories_store.Get().Items());
     oarchive << boost::serialization::make_nvp("date_entries",
                                                date_entry_store.Get().Items());
     oarchive << boost::serialization::make_nvp("page_setup",

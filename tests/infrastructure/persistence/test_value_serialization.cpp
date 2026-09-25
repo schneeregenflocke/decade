@@ -4,7 +4,6 @@
 #include <boost/archive/xml_oarchive.hpp>
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/vector.hpp>
-#include <glm/vec4.hpp>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -14,7 +13,6 @@
 #include "domain/date_category.hpp"
 #include "domain/date_entry.hpp"
 #include "domain/date_period.hpp"
-#include "domain/shape_configuration.hpp"
 #include "infrastructure/persistence/value_serialization.hpp"
 
 namespace {
@@ -91,22 +89,4 @@ TEST(ValueSerializationTest, CalendarConfigRoundTrip) {
   EXPECT_EQ(loaded.FirstYear(), 1998);
   EXPECT_EQ(loaded.LastYear(), 2003);
   EXPECT_FALSE(loaded.IsFitYearsToEntries());
-}
-
-// A project file written before the rename to category carries "Bar Group N"
-// as the key of every category configuration; loading derives the key anew
-// from the index and keeps the colour.
-TEST(ValueSerializationTest, CategoryConfigurationKeysFollowTheirIndex) {
-  const glm::vec4 teal(0.0F, 0.5F, 0.5F, 1.0F);
-  ShapeConfigSet written;
-  written.MutableCategoryConfigurations().emplace_back(
-      "Bar Group 0", true, true, 0.3F,
-      ShapeConfiguration::OutlineColorValue{teal},
-      ShapeConfiguration::FillColorValue{teal});
-
-  const auto loaded = XmlRoundTrip(written);
-
-  ASSERT_EQ(loaded.CategoryConfigurations().size(), 1U);
-  EXPECT_EQ(loaded.CategoryConfigurations()[0].Key(), "Bar Category 0");
-  EXPECT_EQ(loaded.CategoryConfigurations()[0].FillColorDisabled(), teal);
 }
