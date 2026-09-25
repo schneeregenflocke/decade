@@ -49,6 +49,7 @@ set_target_properties(BulletCollision LinearMath PROPERTIES SYSTEM TRUE)
 # --- Executable -----------------------------------------------------------
 
 target_compile_features(decade PRIVATE cxx_std_26)
+set_target_properties(decade PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(decade PROPERTIES AUTOMOC ON)
 
 target_include_directories(decade PRIVATE src)
@@ -87,9 +88,6 @@ include(CMakePrintHelpers)
 cmake_print_variables(
 	CMAKE_CXX_COMPILER_ID
 	CMAKE_CXX_COMPILER_VERSION
-	CMAKE_CXX_STANDARD
-	CMAKE_CXX_STANDARD_REQUIRED
-	CMAKE_CXX_EXTENSIONS
 )
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")

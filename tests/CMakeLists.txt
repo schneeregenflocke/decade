@@ -43,6 +43,7 @@ add_executable(decade_tests
 )
 
 target_compile_features(decade_tests PRIVATE cxx_std_26)
+set_target_properties(decade_tests PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(decade_tests PROPERTIES AUTOMOC ON)
 
 target_include_directories(decade_tests PRIVATE ${CMAKE_SOURCE_DIR}/src)
