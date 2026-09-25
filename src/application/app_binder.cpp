@@ -11,7 +11,6 @@
 #include "../domain/state_topics.hpp"
 #include "../domain/text_edit_buffer.hpp"
 #include "../domain/title_config_store.hpp"
-#include "../domain/transform_date_entry.hpp"
 #include "../infrastructure/graphics/pick_id.hpp"
 #include "../presentation/calendar_panel.hpp"
 #include "../presentation/csv_import_panel.hpp"
@@ -63,24 +62,12 @@ void BindDateEntries(QObject& scope, EventBus& bus,
   // Topic -> consumers. The store publishes itself.
   Connect(scope, bus.date_entries, &domain::DateEntriesTopic::Published,
           components.data_table_panel, &DateTablePanel::ReceiveDateEntries);
+  // The calendar span has to fit the new entries before the page draws them.
   Connect(scope, bus.date_entries, &domain::DateEntriesTopic::Published,
-          components.transform_date_entry,
-          &TransformDateEntry::ReceiveDateEntries);
-
-  // The calendar span follows the entries it draws, so the store listens where
-  // the rendering adapter does.
-  Connect(scope, bus.transformed_date_entries,
-          &domain::DateEntriesTopic::Published,
           components.calendar_configuration_store,
           &CalendarConfigStore::ReceiveDateEntries);
-
-  // The transform adapter publishes on its own topic. No shift: DatePeriod is
-  // half-open [begin, end) everywhere, so the end is exclusive already. The
-  // earlier {end_days = 1} was a correction out of the old inclusive model and
-  // made every bar one day too long.
-  Connect(scope, bus.transformed_date_entries,
-          &domain::DateEntriesTopic::Published, components.calendar_page,
-          &CalendarPage::ReceiveDateEntries);
+  Connect(scope, bus.date_entries, &domain::DateEntriesTopic::Published,
+          components.calendar_page, &CalendarPage::ReceiveDateEntries);
 }
 
 void BindDateGroups(QObject& scope, EventBus& bus,

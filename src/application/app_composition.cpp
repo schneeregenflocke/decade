@@ -90,7 +90,6 @@ AppComponents AppComposition::Components(CalendarPage& calendar_page) {
   return AppComponents{
       .date_groups_store = document_.DateGroups(),
       .date_entry_store = document_.DateEntries(),
-      .transform_date_entry = document_.Transform(),
       .page_setup_store = document_.PageSetup(),
       .title_config_store = document_.TitleConfiguration(),
       .shape_configuration_store = document_.ShapeConfiguration(),

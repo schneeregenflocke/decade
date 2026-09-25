@@ -13,7 +13,6 @@
 #include "../domain/shape_configuration_store.hpp"
 #include "../domain/state_topics.hpp"
 #include "../domain/title_config_store.hpp"
-#include "../domain/transform_date_entry.hpp"
 #include "../infrastructure/persistence/csv_io.hpp"
 #include "../infrastructure/persistence/project_io.hpp"
 #include "event_bus.hpp"
@@ -54,7 +53,6 @@ class ProjectDocument {
   // Access for the composition root, which builds the wiring out of it.
   [[nodiscard]] DateGroupStore& DateGroups();
   [[nodiscard]] DateEntryStore& DateEntries();
-  [[nodiscard]] TransformDateEntry& Transform();
   [[nodiscard]] PageSetupStore& PageSetup();
   [[nodiscard]] TitleConfigStore& TitleConfiguration();
   [[nodiscard]] ShapeConfigurationStore& ShapeConfiguration();
@@ -73,7 +71,6 @@ class ProjectDocument {
 
   DateGroupStore date_groups_store_;
   DateEntryStore date_entry_store_;
-  TransformDateEntry transform_date_entry_;
   PageSetupStore page_setup_store_;
   TitleConfigStore title_config_store_;
   ShapeConfigurationStore shape_configuration_store_;

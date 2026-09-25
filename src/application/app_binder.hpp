@@ -9,7 +9,6 @@
 #include "../domain/page_setup_store.hpp"
 #include "../domain/shape_configuration_store.hpp"
 #include "../domain/title_config_store.hpp"
-#include "../domain/transform_date_entry.hpp"
 #include "../presentation/calendar_panel.hpp"
 #include "../presentation/csv_import_panel.hpp"
 #include "../presentation/date_panel.hpp"
@@ -35,7 +34,6 @@
 struct AppComponents {
   DateGroupStore& date_groups_store;
   DateEntryStore& date_entry_store;
-  TransformDateEntry& transform_date_entry;
   PageSetupStore& page_setup_store;
   TitleConfigStore& title_config_store;
   ShapeConfigurationStore& shape_configuration_store;

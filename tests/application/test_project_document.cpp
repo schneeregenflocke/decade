@@ -152,9 +152,9 @@ TEST(ProjectDocumentTest, LoadBracketsEveryStorePublishInOneBurst) {
   EXPECT_TRUE(recorder.EveryStoreInsideOneBracket()) << recorder.events.size();
 }
 
-// The same for the CSV import, which publishes the entries and, over the
-// transform, the derived bars. The file gets written here rather than taken
-// from examples/, so the test does not hang on the working directory.
+// The same for the CSV import, which publishes the entries and the title. The
+// file gets written here rather than taken from examples/, so the test does not
+// hang on the working directory.
 TEST(ProjectDocumentTest, CsvImportBracketsItsPublishes) {
   const std::string csv_path = TempXmlPath("decade_document_burst.csv");
   {

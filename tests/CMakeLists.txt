@@ -1,9 +1,9 @@
 find_package(GTest REQUIRED)
-# Qt6::Test carries the GUI event simulation the presentation tests click with.
+#Qt6::Test carries the GUI event simulation the presentation tests click with.
 find_package(Qt6 CONFIG REQUIRED COMPONENTS Test)
 
-# This file globs src/ itself rather than borrowing a variable from the parent.
-# The application's main.cpp stays out: it would collide with the one below.
+#This file globs src / itself rather than borrowing a variable from the parent.
+#The application's main.cpp stays out: it would collide with the one below.
 file(GLOB_RECURSE decade_units CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/src/*.cpp)
 list(FILTER decade_units EXCLUDE REGEX "/main\\.cpp$")
 
@@ -23,7 +23,6 @@ add_executable(decade_tests
 	domain/test_timeline_projection.cpp
 	domain/test_date_entry_store.cpp
 	domain/test_date_entry_list.cpp
-	domain/test_transform_date_entry.cpp
 	domain/test_text_edit_buffer.cpp
 	domain/test_color_palette.cpp
 	infrastructure/persistence/test_csv_io.cpp

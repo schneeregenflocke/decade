@@ -14,7 +14,6 @@
 #include "../domain/shape_configuration_store.hpp"
 #include "../domain/title_config.hpp"
 #include "../domain/title_config_store.hpp"
-#include "../domain/transform_date_entry.hpp"
 #include "../infrastructure/persistence/csv_io.hpp"
 #include "../infrastructure/persistence/project_io.hpp"
 #include "event_bus.hpp"
@@ -29,7 +28,6 @@ ProjectDocument::ProjectDocument(EventBus& bus,
       state_burst_topic_(bus.state_burst),
       date_groups_store_(bus.date_groups),
       date_entry_store_(bus.date_entries),
-      transform_date_entry_(bus.transformed_date_entries),
       page_setup_store_(bus.page_setup),
       title_config_store_(bus.title_config),
       shape_configuration_store_(bus.shape_config_set),
@@ -89,10 +87,6 @@ const std::string& ProjectDocument::FilePath() const { return file_path_; }
 DateGroupStore& ProjectDocument::DateGroups() { return date_groups_store_; }
 
 DateEntryStore& ProjectDocument::DateEntries() { return date_entry_store_; }
-
-TransformDateEntry& ProjectDocument::Transform() {
-  return transform_date_entry_;
-}
 
 PageSetupStore& ProjectDocument::PageSetup() { return page_setup_store_; }
 
