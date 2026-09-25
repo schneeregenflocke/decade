@@ -88,8 +88,8 @@ CalendarConfig CalendarSetupForm::ReadConfig() const {
   config.SetSpacingProportions(proportions);
 
   config.SetFitYearsToEntries(fit_years_to_entries_->isChecked());
-  config.SetSpan(CalendarSpan::YearSpan{.first_year = first_year_->value(),
-                                        .last_year = last_year_->value()});
+  config.SetYears(CalendarSpan::YearSpan{.first_year = first_year_->value(),
+                                         .last_year = last_year_->value()});
 
   return config;
 }

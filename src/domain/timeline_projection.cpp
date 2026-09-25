@@ -28,12 +28,10 @@ std::vector<DatePeriod> SplitAtYearBoundaries(const DatePeriod& period) {
 TimelineProjection::TimelineProjection(const CalendarSpan& span)
     : span_(span) {}
 
-std::size_t TimelineProjection::RowCount() const {
-  return span_.GetSpanLengthYears();
-}
+std::size_t TimelineProjection::RowCount() const { return span_.YearCount(); }
 
 int TimelineProjection::YearForRow(std::size_t row) const {
-  return span_.GetYear(row);
+  return span_.YearAt(row);
 }
 
 std::size_t TimelineProjection::RowForYear(int year) const {

@@ -84,7 +84,7 @@ void CalendarSceneComposer::Build() {
   page_shape.SetColor(glm::vec4(kOne, kOne, kOne, kOne));
 
   layout_ = CalendarLayout(page_size_, page_margin_, title_config_.AreaHeight(),
-                           calendar_config_.GetSpanLengthYears(),
+                           calendar_config_.YearCount(),
                            calendar_config_.GetSpacingProportions());
 
   // The print-area node carries the print area's offset within the page;

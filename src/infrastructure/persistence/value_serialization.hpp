@@ -244,7 +244,7 @@ void load(Archive& ar, CalendarConfig& config, const unsigned int /*v*/) {
   ar& make_nvp("last_year", last_year);
   ar& make_nvp("auto_calendar_span", fit_years_to_entries);
   ar& make_nvp("spacing_proportions", spacing_proportions);
-  config.SetSpan(
+  config.SetYears(
       CalendarSpan::YearSpan{.first_year = first_year, .last_year = last_year});
   config.SetFitYearsToEntries(fit_years_to_entries);
   config.SetSpacingProportions(spacing_proportions);

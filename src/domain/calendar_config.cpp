@@ -14,15 +14,15 @@ CalendarSpan::CalendarSpan()
     : span_(Date::FromYmd(kDefaultStartYear, 1, 1),
             Date::FromYmd(kDefaultEndYear, 1, 1)) {}
 
-void CalendarSpan::SetSpan(YearSpan span_years) {
+void CalendarSpan::SetYears(YearSpan years) {
   // It never produces a null span: the half-open end Jan 1 (last + 1) needs a
   // representable year — the last selectable calendar year is therefore
   // kMaxYear - 1, and a last year before the first year gets raised to the
   // first year (a span of exactly one year).
   const int first_year =
-      std::clamp(span_years.first_year, Date::kMinYear, Date::kMaxYear - 1);
+      std::clamp(years.first_year, Date::kMinYear, Date::kMaxYear - 1);
   const int last_year =
-      std::clamp(span_years.last_year, first_year, Date::kMaxYear - 1);
+      std::clamp(years.last_year, first_year, Date::kMaxYear - 1);
 
   span_ = DatePeriod(Date::FromYmd(first_year, 1, 1),
                      Date::FromYmd(last_year + 1, 1, 1));
@@ -30,7 +30,7 @@ void CalendarSpan::SetSpan(YearSpan span_years) {
 
 bool CalendarSpan::IsValidSpan() const { return !span_.IsNull(); }
 
-std::size_t CalendarSpan::GetSpanLengthYears() const {
+std::size_t CalendarSpan::YearCount() const {
   if (!IsValidSpan()) {
     throw std::runtime_error("Not valid calendar span!");
   }
@@ -45,21 +45,19 @@ std::array<Date, 2> CalendarSpan::GetSpanLimitsDate() const {
   return std::array<Date, 2>{span_.Begin(), span_.Last()};
 }
 
-std::int64_t CalendarSpan::GetSpanLengthDays() const {
-  return span_.LengthDays();
-}
+std::int64_t CalendarSpan::DayCount() const { return span_.LengthDays(); }
 
-int CalendarSpan::GetYear(const std::size_t index) const {
+int CalendarSpan::YearAt(const std::size_t index) const {
   const int year = span_.Begin().Year() + static_cast<int>(index);
 
-  if (!IsInSpan(year)) {
+  if (!ShowsYear(year)) {
     throw std::logic_error("Year not in span!");
   }
 
   return year;
 }
 
-bool CalendarSpan::IsInSpan(const int year) const {
+bool CalendarSpan::ShowsYear(const int year) const {
   return year >= span_.Begin().Year() && year <= span_.Last().Year();
 }
 

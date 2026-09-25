@@ -56,15 +56,15 @@ void BuildCalendarLabels(const SectionContext& ctx) {
       ShapeConfigSet::kCalendarLabelsKey);
   detail::FillRectangles(ctx.nodes.column_labels, x_label_frames, config);
 
-  const std::size_t span_years = ctx.calendar_config.GetSpanLengthYears();
+  const std::size_t year_count = ctx.calendar_config.YearCount();
   auto year_labels = detail::TextPool(ctx, ctx.nodes.year_labels);
-  if (span_years == 0) {
+  if (year_count == 0) {
     return;
   }
 
   const TimelineProjection projection(ctx.calendar_config);
-  std::vector<RectF> y_labels_frames(span_years);
-  for (std::size_t index = 0; index < span_years; ++index) {
+  std::vector<RectF> y_labels_frames(year_count);
+  for (std::size_t index = 0; index < year_count; ++index) {
     const std::string current_year_text =
         std::to_string(projection.YearForRow(index));
 
@@ -85,15 +85,15 @@ void BuildCalendarLabels(const SectionContext& ctx) {
 }
 
 void BuildYears(const SectionContext& ctx) {
-  const std::size_t span_years = ctx.calendar_config.GetSpanLengthYears();
-  if (span_years == 0) {
+  const std::size_t year_count = ctx.calendar_config.YearCount();
+  if (year_count == 0) {
     return;
   }
 
   const TimelineProjection projection(ctx.calendar_config);
-  std::vector<RectF> year_cells(span_years);
+  std::vector<RectF> year_cells(year_count);
 
-  for (std::size_t index = 0; index < span_years; ++index) {
+  for (std::size_t index = 0; index < year_count; ++index) {
     const int current_year = projection.YearForRow(index);
     const auto number_days = DaysInYear(current_year);
     const float year_length =
@@ -110,16 +110,16 @@ void BuildYears(const SectionContext& ctx) {
 
 void BuildMonths(const SectionContext& ctx) {
   constexpr size_t number_months = 12;
-  const std::size_t span_years = ctx.calendar_config.GetSpanLengthYears();
-  if (span_years == 0) {
+  const std::size_t year_count = ctx.calendar_config.YearCount();
+  if (year_count == 0) {
     return;
   }
 
-  const auto store_size = number_months * span_years;
+  const auto store_size = number_months * year_count;
   const TimelineProjection projection(ctx.calendar_config);
   std::vector<RectF> month_cells(store_size);
 
-  for (std::size_t index = 0; index < span_years; ++index) {
+  for (std::size_t index = 0; index < year_count; ++index) {
     const int current_year = projection.YearForRow(index);
     const Date first_day_of_year = Date::FromYmd(current_year, 1, 1);
 
@@ -156,22 +156,22 @@ void BuildDays(const SectionContext& ctx) {
     return;
   }
 
-  const auto span_days = ctx.calendar_config.GetSpanLengthDays();
-  if (span_days <= 0) {
+  const auto day_count = ctx.calendar_config.DayCount();
+  if (day_count <= 0) {
     return;
   }
 
   std::int64_t days_index = 0;
-  const auto number_days_cells = static_cast<size_t>(span_days);
+  const auto number_days_cells = static_cast<size_t>(day_count);
 
   std::vector<RectF> day_cells;
   std::vector<RectF> sunday_cells;
   day_cells.resize(number_days_cells);
   sunday_cells.resize(number_days_cells);
 
-  const std::size_t span_years = ctx.calendar_config.GetSpanLengthYears();
+  const std::size_t year_count = ctx.calendar_config.YearCount();
   const TimelineProjection projection(ctx.calendar_config);
-  for (std::size_t index = 0; index < span_years; ++index) {
+  for (std::size_t index = 0; index < year_count; ++index) {
     const int current_year = projection.YearForRow(index);
     const std::int64_t number_days = DaysInYear(current_year);
 

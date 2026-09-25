@@ -14,61 +14,61 @@
 TEST(CalendarSpanTest, DefaultSpanIsValid) {
   CalendarSpan span;
   EXPECT_TRUE(span.IsValidSpan());
-  EXPECT_GT(span.GetSpanLengthYears(), 0);
+  EXPECT_GT(span.YearCount(), 0);
 }
 
-TEST(CalendarSpanTest, SetSpanClampsAndStores) {
+TEST(CalendarSpanTest, SetYearsClampsAndStores) {
   CalendarSpan span;
-  span.SetSpan({.first_year = 2020, .last_year = 2025});
+  span.SetYears({.first_year = 2020, .last_year = 2025});
   ASSERT_TRUE(span.IsValidSpan());
   const auto limits = span.GetSpanLimitsYears();
   EXPECT_EQ(limits[0], 2020);
   EXPECT_EQ(limits[1], 2025);
 }
 
-// Regression: SetSpan must never produce a null span — GetSpanLengthYears()
+// Regression: SetYears must never produce a null span — YearCount()
 // would otherwise throw and the error escapes the Qt event handler uncaught
 // (First Year > Last Year in the Timeframe tab, or both years = kMaxYear).
-TEST(CalendarSpanTest, SetSpanNormalizesReversedYears) {
+TEST(CalendarSpanTest, SetYearsNormalizesReversedYears) {
   CalendarSpan span;
-  span.SetSpan({.first_year = 2030, .last_year = 2020});
+  span.SetYears({.first_year = 2030, .last_year = 2020});
   ASSERT_TRUE(span.IsValidSpan());
-  EXPECT_EQ(span.GetSpanLengthYears(), 1U);
+  EXPECT_EQ(span.YearCount(), 1U);
   EXPECT_EQ(span.GetSpanLimitsYears()[0], 2030);
 }
 
-TEST(CalendarSpanTest, SetSpanStaysValidAtMaxYear) {
+TEST(CalendarSpanTest, SetYearsStaysValidAtMaxYear) {
   CalendarSpan span;
-  span.SetSpan({.first_year = Date::kMaxYear, .last_year = Date::kMaxYear});
+  span.SetYears({.first_year = Date::kMaxYear, .last_year = Date::kMaxYear});
   ASSERT_TRUE(span.IsValidSpan());
-  EXPECT_GE(span.GetSpanLengthYears(), 1U);
+  EXPECT_GE(span.YearCount(), 1U);
 }
 
-TEST(CalendarSpanTest, IsInSpanRespectsBounds) {
+TEST(CalendarSpanTest, ShowsYearRespectsBounds) {
   CalendarSpan span;
-  span.SetSpan({.first_year = 2020, .last_year = 2025});
-  EXPECT_TRUE(span.IsInSpan(2020));
-  EXPECT_TRUE(span.IsInSpan(2025));
-  EXPECT_FALSE(span.IsInSpan(2019));
-  EXPECT_FALSE(span.IsInSpan(2026));
+  span.SetYears({.first_year = 2020, .last_year = 2025});
+  EXPECT_TRUE(span.ShowsYear(2020));
+  EXPECT_TRUE(span.ShowsYear(2025));
+  EXPECT_FALSE(span.ShowsYear(2019));
+  EXPECT_FALSE(span.ShowsYear(2026));
 }
 
-TEST(CalendarSpanTest, GetYearReturnsRelativeYear) {
+TEST(CalendarSpanTest, YearAtReturnsRelativeYear) {
   CalendarSpan span;
-  span.SetSpan({.first_year = 2030, .last_year = 2032});
-  EXPECT_EQ(span.GetYear(0), 2030);
-  EXPECT_EQ(span.GetYear(2), 2032);
+  span.SetYears({.first_year = 2030, .last_year = 2032});
+  EXPECT_EQ(span.YearAt(0), 2030);
+  EXPECT_EQ(span.YearAt(2), 2032);
 }
 
-TEST(CalendarSpanTest, GetYearThrowsWhenOutOfRange) {
+TEST(CalendarSpanTest, YearAtThrowsWhenOutOfRange) {
   CalendarSpan span;
-  span.SetSpan({.first_year = 2030, .last_year = 2030});
-  EXPECT_THROW((void)span.GetYear(5), std::logic_error);
+  span.SetYears({.first_year = 2030, .last_year = 2030});
+  EXPECT_THROW((void)span.YearAt(5), std::logic_error);
 }
 
 TEST(CalendarConfigStoreTest, ReceiveCopiesAndEmits) {
   CalendarConfig source;
-  source.SetSpan({.first_year = 2040, .last_year = 2042});
+  source.SetYears({.first_year = 2040, .last_year = 2042});
   source.SetFitYearsToEntries(false);
 
   domain::CalendarConfigTopic topic;
@@ -86,7 +86,7 @@ TEST(CalendarConfigStoreTest, ReceiveCopiesAndEmits) {
 
 TEST(CalendarConfigStoreTest, ReentryGuardBlocksRecursiveReceive) {
   CalendarConfig secondary;
-  secondary.SetSpan({.first_year = 2050, .last_year = 2050});
+  secondary.SetYears({.first_year = 2050, .last_year = 2050});
 
   domain::CalendarConfigTopic topic;
   CalendarConfigStore primary(topic);
@@ -136,7 +136,7 @@ TEST(CalendarConfigStoreTest, FittedYearsOverrideAnIncomingSpan) {
   store.ReceiveDateEntries({EntryBetween(1998, 2023)});
 
   CalendarConfig edited;
-  edited.SetSpan({.first_year = 2040, .last_year = 2041});
+  edited.SetYears({.first_year = 2040, .last_year = 2041});
   store.ReceiveCalendarConfig(edited);
 
   EXPECT_EQ(store.Get().GetSpanLimitsYears()[0], 1998);
@@ -148,7 +148,7 @@ TEST(CalendarConfigStoreTest, ManualSpanIgnoresTheEntries) {
   CalendarConfigStore store(topic);
   CalendarConfig manual;
   manual.SetFitYearsToEntries(false);
-  manual.SetSpan({.first_year = 2040, .last_year = 2041});
+  manual.SetYears({.first_year = 2040, .last_year = 2041});
   store.ReceiveCalendarConfig(manual);
 
   store.ReceiveDateEntries({EntryBetween(1998, 2023)});

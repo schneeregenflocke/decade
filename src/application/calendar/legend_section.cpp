@@ -50,7 +50,7 @@ void BuildLegend(const SectionContext& ctx) {
       Font::TextScale{.height_ratio = detail::kFontScaleMin,
                       .width_ratio = detail::kFontScaleMax});
 
-  const std::size_t span_years = ctx.calendar_config.GetSpanLengthYears();
+  const std::size_t year_count = ctx.calendar_config.YearCount();
   for (size_t index = 0; index < ctx.date_groups.Items().size(); ++index) {
     const auto label_index = index * 2;
     detail::SetCenteredText(
@@ -58,7 +58,7 @@ void BuildLegend(const SectionContext& ctx) {
         ctx.date_groups.Items().at(index).GetName(),
         legend_entries_frames.at(label_index).Center(), legend_font_size);
 
-    if (span_years > 0U) {
+    if (year_count > 0U) {
       const auto current_height = ctx.layout.GetSubArea(0, 1).Height();
       auto current_cell = legend_entries_frames.at(label_index + 1);
       const auto current_vertical_center = current_cell.Center()[1];
@@ -87,7 +87,7 @@ void BuildLegend(const SectionContext& ctx) {
         legend_entries_frames.at(legend_entries_frames.size() - 2).Center(),
         legend_font_size);
 
-    if (span_years > 0U) {
+    if (year_count > 0U) {
       const auto current_height = ctx.layout.GetSubArea(0, 0).Height();
       auto current_cell =
           legend_entries_frames.at(legend_entries_frames.size() - 1);

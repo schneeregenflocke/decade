@@ -62,16 +62,16 @@ TEST(SplitAtYearBoundariesTest, SegmentsAreContiguousAndCoverThePeriod) {
 
 TEST(TimelineProjectionTest, RowCountMatchesSpanYears) {
   CalendarSpan span;
-  span.SetSpan({.first_year = 2020, .last_year = 2025});
+  span.SetYears({.first_year = 2020, .last_year = 2025});
   const TimelineProjection projection(span);
 
-  EXPECT_EQ(projection.RowCount(), span.GetSpanLengthYears());
+  EXPECT_EQ(projection.RowCount(), span.YearCount());
   EXPECT_EQ(projection.RowCount(), 6U);
 }
 
 TEST(TimelineProjectionTest, YearForRowIsAscendingFromFirstYear) {
   CalendarSpan span;
-  span.SetSpan({.first_year = 2030, .last_year = 2032});
+  span.SetYears({.first_year = 2030, .last_year = 2032});
   const TimelineProjection projection(span);
 
   EXPECT_EQ(projection.YearForRow(0), 2030);
@@ -81,7 +81,7 @@ TEST(TimelineProjectionTest, YearForRowIsAscendingFromFirstYear) {
 
 TEST(TimelineProjectionTest, RowForYearInvertsYearForRow) {
   CalendarSpan span;
-  span.SetSpan({.first_year = 2030, .last_year = 2034});
+  span.SetYears({.first_year = 2030, .last_year = 2034});
   const TimelineProjection projection(span);
 
   for (std::size_t row = 0; row < projection.RowCount(); ++row) {

@@ -43,7 +43,7 @@ BarSceneResult BuildBars(const SectionContext& ctx) {
   const auto number_bars = ctx.date_entry_bars.GetNumberBars();
   for (size_t index = 0; index < number_bars; ++index) {
     const auto& bar_data = ctx.date_entry_bars.GetBar(index);
-    if (!ctx.calendar_config.IsInSpan(bar_data.GetYear())) {
+    if (!ctx.calendar_config.ShowsYear(bar_data.GetYear())) {
       continue;
     }
     const auto current_group = static_cast<size_t>(bar_data.GetGroup());
@@ -119,7 +119,7 @@ void BuildAnnualCoverage(const SectionContext& ctx) {
   for (std::size_t index = 0; index < span_years; ++index) {
     const int current_year =
         ctx.date_entry_bars.GetFirstYear() + static_cast<int>(index);
-    if (ctx.calendar_config.IsInSpan(current_year)) {
+    if (ctx.calendar_config.ShowsYear(current_year)) {
       const auto row = projection.RowForYear(current_year);
       const auto current_cell = ctx.layout.GetSubArea(row, 0);
 

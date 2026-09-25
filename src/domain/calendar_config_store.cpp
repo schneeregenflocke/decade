@@ -48,7 +48,7 @@ const CalendarConfig& CalendarConfigStore::Get() const {
 
 void CalendarConfigStore::FitYearsToEntries(CalendarConfig& config) const {
   if (config.IsFitYearsToEntries() && entry_years_.has_value()) {
-    config.SetSpan(*entry_years_);
+    config.SetYears(*entry_years_);
   }
 }
 

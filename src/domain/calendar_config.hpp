@@ -22,21 +22,21 @@ class CalendarSpan {
 
   CalendarSpan();
 
-  void SetSpan(YearSpan span_years);
+  void SetYears(YearSpan years);
 
   [[nodiscard]] bool IsValidSpan() const;
 
-  [[nodiscard]] std::size_t GetSpanLengthYears() const;
+  [[nodiscard]] std::size_t YearCount() const;
 
   [[nodiscard]] std::array<int, 2> GetSpanLimitsYears() const;
 
   [[nodiscard]] std::array<Date, 2> GetSpanLimitsDate() const;
 
-  [[nodiscard]] std::int64_t GetSpanLengthDays() const;
+  [[nodiscard]] std::int64_t DayCount() const;
 
-  [[nodiscard]] int GetYear(std::size_t index) const;
+  [[nodiscard]] int YearAt(std::size_t index) const;
 
-  [[nodiscard]] bool IsInSpan(int year) const;
+  [[nodiscard]] bool ShowsYear(int year) const;
 
  private:
   static constexpr int kDefaultStartYear = 2000;

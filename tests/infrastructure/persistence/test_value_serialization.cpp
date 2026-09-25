@@ -81,7 +81,7 @@ TEST(ValueSerializationTest, DateGroupsRoundTrip) {
 
 TEST(ValueSerializationTest, CalendarConfigRoundTrip) {
   CalendarConfig config;
-  config.SetSpan({.first_year = 1998, .last_year = 2003});
+  config.SetYears({.first_year = 1998, .last_year = 2003});
   config.SetFitYearsToEntries(false);
 
   const auto loaded = XmlRoundTrip(config);
