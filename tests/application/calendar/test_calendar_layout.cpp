@@ -16,7 +16,7 @@ CalendarLayout MakeLayout() {
   const RectF margin(10.0F, 20.0F, 30.0F, 40.0F);
   const std::vector<float> proportions(7, 1.0F);
   return CalendarLayout(page, margin, /*title_area_height=*/15.0F,
-                        /*span_length_years=*/3, proportions);
+                        /*year_count=*/3, proportions);
 }
 
 constexpr float kTol = 1.0e-3F;

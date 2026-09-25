@@ -7,11 +7,10 @@
 #include "../../infrastructure/graphics/rect.hpp"
 
 CalendarLayout::CalendarLayout(const RectF& page_size, const RectF& page_margin,
-                               float title_area_height,
-                               std::size_t span_length_years,
+                               float title_area_height, std::size_t year_count,
                                const std::vector<float>& spacing_proportions)
-    : fields_(Compute(page_size, page_margin, title_area_height,
-                      span_length_years, spacing_proportions)) {}
+    : fields_(Compute(page_size, page_margin, title_area_height, year_count,
+                      spacing_proportions)) {}
 
 const glm::vec3& CalendarLayout::PrintAreaOrigin() const {
   return fields_.print_area_origin;
@@ -49,8 +48,7 @@ RectF CalendarLayout::GetSubArea(std::size_t row, std::size_t sub) const {
 
 CalendarLayout::Fields CalendarLayout::Compute(
     const RectF& page_size, const RectF& page_margin, float title_area_height,
-    std::size_t span_length_years,
-    const std::vector<float>& spacing_proportions) {
+    std::size_t year_count, const std::vector<float>& spacing_proportions) {
   Fields fields;
 
   // The print area is the page minus the margins, then shifted so its
@@ -70,7 +68,7 @@ CalendarLayout::Fields CalendarLayout::Compute(
   fields.calendar_area =
       page_margin_area.Reduce(RectF(kZero, kDefaultMargin, kZero, kZero));
 
-  const std::size_t number_rows = kAdditionalRows + span_length_years;
+  const std::size_t number_rows = kAdditionalRows + year_count;
   fields.cell_width = fields.calendar_area.Width() / kCalendarColumns;
   fields.row_height =
       fields.calendar_area.Height() / static_cast<float>(number_rows);
@@ -78,7 +76,7 @@ CalendarLayout::Fields CalendarLayout::Compute(
   fields.cells_area = fields.calendar_area.Reduce(RectF(
       fields.cell_width, kZero, fields.row_height * kRowHeaderScale, kZero));
 
-  fields.proportions.SetupRowAreas(fields.cells_area, span_length_years);
+  fields.proportions.SetupRowAreas(fields.cells_area, year_count);
   fields.proportions.SetupSubAreas(spacing_proportions);
 
   fields.day_width = fields.cells_area.Width() / kDaysPerYear;

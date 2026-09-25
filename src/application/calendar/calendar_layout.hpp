@@ -23,7 +23,7 @@ class CalendarLayout {
   CalendarLayout() = default;
 
   CalendarLayout(const RectF& page_size, const RectF& page_margin,
-                 float title_area_height, std::size_t span_length_years,
+                 float title_area_height, std::size_t year_count,
                  const std::vector<float>& spacing_proportions);
 
   [[nodiscard]] const glm::vec3& PrintAreaOrigin() const;
@@ -67,7 +67,7 @@ class CalendarLayout {
   };
 
   static Fields Compute(const RectF& page_size, const RectF& page_margin,
-                        float title_area_height, std::size_t span_length_years,
+                        float title_area_height, std::size_t year_count,
                         const std::vector<float>& spacing_proportions);
 
   Fields fields_;
