@@ -22,7 +22,7 @@ The target is self-documenting code (see [Self-documenting code](#self-documenti
 - **Too large for one step: the [Mikado Method](https://www.manning.com/books/the-mikado-method)** (Ola Ellnestam, Daniel Brolund). Attempt the goal, note what breaks, revert, and do the prerequisites first; the graph of prerequisites becomes the plan, kept in the issue.
 - **Replacing a component: the [strangler fig](https://martinfowler.com/bliki/StranglerFigApplication.html)** (Fowler). The new one grows beside the old, the callers move over one by one, and the old one goes once nobody calls it.
 - **A rename goes all the way.** Renames that unify spelling are welcome, and one covers every occurrence — declaration, definition, call sites, tests, comments, documentation, open issues — and the names derived from it: a config struct, a member or parameter holding the object, a constant, a command-line option. It ends when a search for the old spelling finds history alone.
-- **Green means every gate.** Compile, `ctest`, the clang-tidy gate and `sanitize-address` (commands in [operations.md](operations.md)).
+- **Green means every gate.** Compile, `ctest`, the clang-tidy gate and `sanitize-address` (commands in [operations.md](operations.md)). Locally a commit needs compile, `ctest` and clang-tidy over the units it touched; the full clang-tidy gate and `sanitize-address` run once per series, before the push, because every push runs both in CI on the same laptop.
 - **Read the whole file, not just the task.** A misleading name, a duplicated block, a violated convention: fix it right away as its **own** commit, or open an issue when the fix outgrows the task or needs a decision. Noticing without acting is no option.
 
 ### Self-documenting code
