@@ -7,6 +7,7 @@
 #include <QtCore/QPointer>
 #include <QtWidgets/QAbstractItemView>
 #include <QtWidgets/QComboBox>
+#include <QtWidgets/QLabel>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QTableWidget>
 #include <QtWidgets/QTableWidgetItem>
@@ -41,8 +42,12 @@ DateTablePanel::DateTablePanel(QWidget* parent,
 
   auto* select_group_control = MakeOwned<QComboBox>(this);
   select_group_control_ = select_group_control;
+  select_group_control->setToolTip(
+      "Moves every selected row into the chosen category.");
+  auto* select_group_label = MakeOwned<QLabel>("Assign category:", this);
+  select_group_label->setBuddy(select_group_control);
 
-  BuildTableLayout({select_group_control});
+  BuildTableLayout({select_group_label, select_group_control});
 
   connect(table(), &QTableWidget::itemChanged, this,
           [this](QTableWidgetItem* item) { OnItemChanged(item); });
