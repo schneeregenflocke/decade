@@ -4,13 +4,10 @@
 #include <QtCore/QString>
 #include <QtGui/QClipboard>
 #include <QtGui/QGuiApplication>
-#include <QtGui/QResizeEvent>
 #include <QtWidgets/QGroupBox>
 #include <QtWidgets/QHBoxLayout>
-#include <QtWidgets/QLabel>
 #include <QtWidgets/QLayout>
 #include <QtWidgets/QPushButton>
-#include <QtWidgets/QSizePolicy>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 #include <string>

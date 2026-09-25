@@ -3,52 +3,17 @@
 
 #include <QtCore/QPointer>
 #include <QtCore/QString>
-#include <QtGui/QClipboard>
-#include <QtGui/QGuiApplication>
-#include <QtGui/QResizeEvent>
 #include <QtWidgets/QGroupBox>
-#include <QtWidgets/QHBoxLayout>
-#include <QtWidgets/QLabel>
 #include <QtWidgets/QLayout>
 #include <QtWidgets/QPushButton>
-#include <QtWidgets/QSizePolicy>
-#include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 #include <string>
 
+#include "elided_path_label.hpp"
 #include "font_panel.hpp"
 #include "make_owned.hpp"
 #include "page_panel.hpp"
 #include "title_panel.hpp"
-
-// A label that shortens a long path at the front, so the file name stays
-// visible. Qt shortens nothing by itself, and without this the path would
-// dictate the column width.
-class ElidedPathLabel : public QLabel {
- public:
-  explicit ElidedPathLabel(QWidget* parent) : QLabel(parent) {
-    setMinimumWidth(1);
-    setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
-  }
-
-  void SetFullText(const QString& text) {
-    full_text_ = text;
-    RefreshElided();
-  }
-
- protected:
-  void resizeEvent(QResizeEvent* event) override {
-    QLabel::resizeEvent(event);
-    RefreshElided();
-  }
-
- private:
-  void RefreshElided() {
-    setText(fontMetrics().elidedText(full_text_, Qt::ElideLeft, width()));
-  }
-
-  QString full_text_;
-};
 
 // Presentation: composite tab that groups the page-format, font and title
 // settings — all of which configure the overall rendered document — into a
