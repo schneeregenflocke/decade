@@ -26,7 +26,7 @@
 // values and stays read-only — this is where they get changed (#65).
 //
 // Master and detail rather than one long form, because the set grows with the
-// date groups: the fixed configurations plus one entry per group.
+// date categories: the fixed configurations plus one entry per category.
 class ShapeSetupPanel : public QWidget {
   Q_OBJECT
 
@@ -34,7 +34,7 @@ class ShapeSetupPanel : public QWidget {
   explicit ShapeSetupPanel(QWidget* parent);
 
   // The set arrives whole and replaces what stands here. The selection follows
-  // the key, not the row: a new date group adds an entry and would otherwise
+  // the key, not the row: a new date category adds an entry and would otherwise
   // shift the selection to a different configuration.
   void ReceiveShapeConfigSet(const ShapeConfigSet& shape_config_set);
 
@@ -52,7 +52,7 @@ class ShapeSetupPanel : public QWidget {
   void CreateDetailFields(QWidget* detail_widget);
 
   // Every configuration of the set in one list: the fixed ones first, the
-  // per-date-group ones after them, in the order the set holds them.
+  // per-date-category ones after them, in the order the set holds them.
   [[nodiscard]] std::vector<std::string> ConfigurationKeys() const;
 
   void RebuildKeyList();

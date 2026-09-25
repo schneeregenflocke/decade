@@ -12,8 +12,8 @@
 
 #include "../../common/debug_log.hpp"
 #include "../../domain/calendar_config.hpp"
+#include "../../domain/date_category.hpp"
 #include "../../domain/date_entry.hpp"
-#include "../../domain/date_group.hpp"
 #include "../../domain/font_config.hpp"
 #include "../../domain/page_setup_config.hpp"
 #include "../../domain/shape_configuration.hpp"
@@ -36,12 +36,12 @@ CalendarPage::CalendarPage(GraphicsEngine& graphics_engine,
       font_(std::make_shared<Font>(font_config.FilePath())),
       scene_composer_(graphics_engine, scene_, font_, font_config_, page_size_,
                       page_margin_, title_config_, calendar_config_,
-                      shape_config_, date_groups_, date_entry_bars_) {}
+                      shape_config_, date_categories_, date_entry_bars_) {}
 
-void CalendarPage::ReceiveDateGroups(
-    const std::vector<DateGroup>& date_groups_in) {
-  date_groups_.Assign(date_groups_in);
-  date_entry_bars_.ReceiveDateGroups(date_groups_in);
+void CalendarPage::ReceiveDateCategories(
+    const std::vector<DateCategory>& date_categories_in) {
+  date_categories_.Assign(date_categories_in);
+  date_entry_bars_.ReceiveDateCategories(date_categories_in);
   Update();
 }
 

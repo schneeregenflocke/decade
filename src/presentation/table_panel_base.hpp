@@ -11,8 +11,8 @@ class QPushButton;
 class QTableWidget;
 
 // Common scaffolding shared by the two data-table panels (date entries and date
-// groups): a QTableWidget sitting below an "Add Row" / "Delete Row" button row.
-// The base owns the three widgets and lays them out; subclasses choose the
+// categories): a QTableWidget sitting below an "Add Row" / "Delete Row" button
+// row. The base owns the three widgets and lays them out; subclasses choose the
 // selection mode and columns, fill the rows and decide what Add/Delete actually
 // do (single vs. multi selection, what a new/removed row means) by connecting
 // their own handlers to the two buttons.

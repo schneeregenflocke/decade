@@ -19,7 +19,8 @@ void BuildLegend(const SectionContext& ctx) {
       ctx.nodes.legend_entries, ctx.rectangles_shader, calendar_layers::kBars);
   auto entry_labels = detail::TextPool(ctx, ctx.nodes.legend_labels);
 
-  const size_t number_entry_frames = (ctx.date_groups.Items().size() + 1) * 2;
+  const size_t number_entry_frames =
+      (ctx.date_categories.Items().size() + 1) * 2;
   std::vector<RectF> legend_entries_frames(number_entry_frames);
   const auto entries_width =
       ctx.layout.LegendArea().Width() / static_cast<float>(number_entry_frames);
@@ -35,7 +36,7 @@ void BuildLegend(const SectionContext& ctx) {
 
   std::vector<RectF> bar_cells;
 
-  auto print_strings = ctx.date_groups.GetDateGroupsNames();
+  auto print_strings = ctx.date_categories.GetDateCategoryNames();
   print_strings.emplace_back(ShapeConfigSet::kAnnualCoverageKey);
 
   std::string string_max_length;
@@ -51,11 +52,11 @@ void BuildLegend(const SectionContext& ctx) {
                       .width_ratio = detail::kFontScaleMax});
 
   const std::size_t year_count = ctx.calendar_config.YearCount();
-  for (size_t index = 0; index < ctx.date_groups.Items().size(); ++index) {
+  for (size_t index = 0; index < ctx.date_categories.Items().size(); ++index) {
     const auto label_index = index * 2;
     detail::SetCenteredText(
         ctx, entry_labels, std::string("legend label ") + std::to_string(index),
-        ctx.date_groups.Items().at(index).GetName(),
+        ctx.date_categories.Items().at(index).GetName(),
         legend_entries_frames.at(label_index).Center(), legend_font_size);
 
     if (year_count > 0U) {

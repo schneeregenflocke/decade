@@ -17,7 +17,7 @@
 // it: QObject members are not copyable, so neither is the bus.
 struct EventBus {
   domain::DateEntriesTopic date_entries;
-  domain::DateGroupsTopic date_groups;
+  domain::DateCategoriesTopic date_categories;
   domain::PageSetupTopic page_setup;
   domain::FilePathTopic project_file_path;
   domain::FontConfigTopic font_config;

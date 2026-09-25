@@ -8,7 +8,7 @@
 
 namespace {
 
-constexpr std::size_t kEnoughGroups = 64;
+constexpr std::size_t kEnoughCategories = 64;
 
 bool InsideDisplayRange(const glm::vec3& color) {
   for (glm::vec3::length_type channel = 0; channel < 3; ++channel) {
@@ -22,12 +22,12 @@ bool InsideDisplayRange(const glm::vec3& color) {
 }  // namespace
 
 TEST(ColorPaletteTest, EveryColorFitsInsideTheDisplayableRange) {
-  for (std::size_t index = 0; index < kEnoughGroups; ++index) {
+  for (std::size_t index = 0; index < kEnoughCategories; ++index) {
     EXPECT_TRUE(InsideDisplayRange(palette::CategoricalColor(index))) << index;
   }
 }
 
-TEST(ColorPaletteTest, AnIndexKeepsItsColorAsGroupsAreAdded) {
+TEST(ColorPaletteTest, AnIndexKeepsItsColorAsCategoriesAreAdded) {
   const glm::vec3 third = palette::CategoricalColor(2);
 
   EXPECT_EQ(palette::CategoricalColor(2), third);
@@ -39,7 +39,7 @@ TEST(ColorPaletteTest, AnIndexKeepsItsColorAsGroupsAreAdded) {
 TEST(ColorPaletteTest, NeighbouringIndicesDifferVisibly) {
   constexpr float kLeastNoticeableDistance = 0.2F;
 
-  for (std::size_t index = 0; index + 1 < kEnoughGroups; ++index) {
+  for (std::size_t index = 0; index + 1 < kEnoughCategories; ++index) {
     const glm::vec3 current = palette::CategoricalColor(index);
     const glm::vec3 next = palette::CategoricalColor(index + 1);
     const float distance = glm::length(next - current);

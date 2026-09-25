@@ -11,10 +11,10 @@
 
 #include "../../domain/calendar_config.hpp"
 #include "../../domain/calendar_config_store.hpp"
+#include "../../domain/date_category.hpp"
+#include "../../domain/date_category_store.hpp"
 #include "../../domain/date_entry.hpp"
 #include "../../domain/date_entry_store.hpp"
-#include "../../domain/date_group.hpp"
-#include "../../domain/date_group_store.hpp"
 #include "../../domain/page_setup_config.hpp"
 #include "../../domain/page_setup_store.hpp"
 #include "../../domain/shape_configuration.hpp"
@@ -28,7 +28,7 @@
 namespace persistence {
 
 std::optional<std::string> LoadProjectXml(
-    const std::string& file_path, DateGroupStore& date_groups_store,
+    const std::string& file_path, DateCategoryStore& date_categories_store,
     DateEntryStore& date_entry_store, PageSetupStore& page_setup_store,
     TitleConfigStore& title_config_store,
     ShapeConfigurationStore& shape_configuration_store,
@@ -41,7 +41,7 @@ std::optional<std::string> LoadProjectXml(
   // Read the whole file into local values first: that way a read error (a
   // broken file, an old format deliberately no longer readable) leaves the
   // project state untouched instead of half-overwriting the stores.
-  std::vector<DateGroup> date_groups;
+  std::vector<DateCategory> date_categories;
   std::vector<DateEntry> date_entries;
   PageSetupConfig page_setup_config{};
   TitleConfig title_config;
@@ -49,7 +49,9 @@ std::optional<std::string> LoadProjectXml(
   CalendarConfig calendar_config;
   try {
     boost::archive::xml_iarchive iarchive(filestream);
-    iarchive >> boost::serialization::make_nvp("date_groups", date_groups);
+    // "date_groups" predates the rename to category and stays, so existing
+    // project files load.
+    iarchive >> boost::serialization::make_nvp("date_groups", date_categories);
     iarchive >> boost::serialization::make_nvp("date_entries", date_entries);
     iarchive >> boost::serialization::make_nvp("page_setup", page_setup_config);
     iarchive >> boost::serialization::make_nvp("title_config", title_config);
@@ -62,9 +64,10 @@ std::optional<std::string> LoadProjectXml(
   }
 
   // Push the values into the stores through the Receive* inputs, so the change
-  // signals fire exactly as on user input. The order counts: groups before
-  // entries, because the entry store derives group-dependent state on receipt.
-  date_groups_store.ReceiveDateGroups(date_groups);
+  // signals fire exactly as on user input. The order counts: categories before
+  // entries, because the entry store derives category-dependent state on
+  // receipt.
+  date_categories_store.ReceiveDateCategories(date_categories);
   date_entry_store.ReceiveDateEntries(date_entries);
   page_setup_store.ReceivePageSetup(page_setup_config);
   title_config_store.ReceiveTitleConfig(title_config);
@@ -74,7 +77,8 @@ std::optional<std::string> LoadProjectXml(
 }
 
 std::optional<std::string> SaveProjectXml(
-    const std::string& file_path, const DateGroupStore& date_groups_store,
+    const std::string& file_path,
+    const DateCategoryStore& date_categories_store,
     const DateEntryStore& date_entry_store,
     const PageSetupStore& page_setup_store,
     const TitleConfigStore& title_config_store,
@@ -90,8 +94,8 @@ std::optional<std::string> SaveProjectXml(
     // own before the stream check. The stores carry no serialisation code
     // themselves; what gets persisted are their domain values.
     boost::archive::xml_oarchive oarchive(filestream);
-    oarchive << boost::serialization::make_nvp("date_groups",
-                                               date_groups_store.Get().Items());
+    oarchive << boost::serialization::make_nvp(
+        "date_groups", date_categories_store.Get().Items());
     oarchive << boost::serialization::make_nvp("date_entries",
                                                date_entry_store.Get().Items());
     oarchive << boost::serialization::make_nvp("page_setup",

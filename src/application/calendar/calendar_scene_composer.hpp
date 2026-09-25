@@ -11,8 +11,8 @@
 #include <vector>
 
 #include "../../domain/calendar_config.hpp"
+#include "../../domain/date_category.hpp"
 #include "../../domain/date_entry_bars.hpp"
-#include "../../domain/date_group.hpp"
 #include "../../domain/font_config.hpp"
 #include "../../domain/scene_snapshot.hpp"
 #include "../../domain/shape_configuration.hpp"
@@ -49,7 +49,7 @@ class CalendarSceneComposer {
                         const TitleConfig& title_config_in,
                         const CalendarConfig& calendar_config_in,
                         const ShapeConfigSet& shape_config_in,
-                        const DateGroups& date_groups_in,
+                        const DateCategories& date_categories_in,
                         const DateEntryBars& date_entry_bars_in);
 
   void Build();
@@ -122,7 +122,7 @@ class CalendarSceneComposer {
   const TitleConfig& title_config_;
   const CalendarConfig& calendar_config_;
   const ShapeConfigSet& shape_config_;
-  const DateGroups& date_groups_;
+  const DateCategories& date_categories_;
   const DateEntryBars& date_entry_bars_;
 
   // Transient render state, recomputed on every Build(). The page geometry now

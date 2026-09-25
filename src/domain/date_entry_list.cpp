@@ -5,8 +5,8 @@
 #include <map>
 #include <vector>
 
+#include "date_category.hpp"
 #include "date_entry.hpp"
-#include "date_group.hpp"
 #include "date_period.hpp"
 
 void DateEntryList::Assign(
@@ -25,16 +25,16 @@ void DateEntryList::Assign(
   date_entries_.shrink_to_fit();
 
   Sort();
-  ClampGroupsToKnownRange();
+  ClampCategoriesToKnownRange();
   AssignNumbers();
   AssignInterIntervals();
-  AssignGroupNumbers();
+  AssignCategoryNumbers();
 }
 
-void DateEntryList::AssignDateGroups(
-    const std::vector<DateGroup>& incoming_date_groups) {
-  date_groups_.Assign(incoming_date_groups);
-  ClampGroupsToKnownRange();
+void DateEntryList::AssignDateCategories(
+    const std::vector<DateCategory>& incoming_date_categories) {
+  date_categories_.Assign(incoming_date_categories);
+  ClampCategoriesToKnownRange();
 }
 
 const std::vector<DateEntry>& DateEntryList::Items() const {
@@ -95,27 +95,28 @@ void DateEntryList::AssignInterIntervals() {
   }
 }
 
-void DateEntryList::AssignGroupNumbers() {
-  std::map<int, int> groups_counter;
+void DateEntryList::AssignCategoryNumbers() {
+  std::map<int, int> categories_counter;
 
   for (auto& date_entry : date_entries_) {
-    const int current_group = date_entry.GetGroup();
+    const int current_category = date_entry.GetCategory();
 
-    if (groups_counter.contains(current_group)) {
-      groups_counter[current_group] += 1;
+    if (categories_counter.contains(current_category)) {
+      categories_counter[current_category] += 1;
     } else {
-      groups_counter[current_group] = 0;
+      categories_counter[current_category] = 0;
     }
 
-    date_entry.SetGroupNumber(groups_counter[current_group]);
+    date_entry.SetCategoryNumber(categories_counter[current_category]);
   }
 }
 
-void DateEntryList::ClampGroupsToKnownRange() {
-  const int group_max = date_groups_.GetGroupMax();
+void DateEntryList::ClampCategoriesToKnownRange() {
+  const int category_max = date_categories_.GetCategoryMax();
   for (auto& date_entry : date_entries_) {
-    if (date_entry.GetGroup() < 0 || date_entry.GetGroup() > group_max) {
-      date_entry.SetGroup(0);
+    if (date_entry.GetCategory() < 0 ||
+        date_entry.GetCategory() > category_max) {
+      date_entry.SetCategory(0);
     }
   }
 }

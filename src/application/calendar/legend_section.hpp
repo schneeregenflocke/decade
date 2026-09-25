@@ -3,8 +3,8 @@
 
 #include "section_context.hpp"
 
-// The legend below the calendar: one label plus one sample bar per date group,
-// and the annual coverage after them.
+// The legend below the calendar: one label plus one sample bar per date
+// category, and the annual coverage after them.
 
 namespace calendar_sections {
 

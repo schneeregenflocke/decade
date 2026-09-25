@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "date_group.hpp"
+#include "date_category.hpp"
 #include "detail/reentry_guard.hpp"
 #include "shape_configuration.hpp"
 #include "state_topics.hpp"
@@ -21,13 +21,13 @@ void ShapeConfigurationStore::ReceiveShapeConfigSet(
   topic_.Publish(shape_config_set_);
 }
 
-void ShapeConfigurationStore::ReceiveDateGroups(
-    const std::vector<DateGroup>& date_groups) {
+void ShapeConfigurationStore::ReceiveDateCategories(
+    const std::vector<DateCategory>& date_categories) {
   if (emitting_) {
     return;
   }
   const domain::detail::ScopedReentryFlag guard(emitting_);
-  shape_config_set_.SyncToDateGroups(date_groups.size());
+  shape_config_set_.SyncToDateCategories(date_categories.size());
   topic_.Publish(shape_config_set_);
 }
 

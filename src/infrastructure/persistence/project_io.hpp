@@ -8,8 +8,8 @@
 #include <string>
 
 #include "../../domain/calendar_config_store.hpp"
+#include "../../domain/date_category_store.hpp"
 #include "../../domain/date_entry_store.hpp"
-#include "../../domain/date_group_store.hpp"
 #include "../../domain/page_setup_store.hpp"
 #include "../../domain/shape_configuration_store.hpp"
 #include "../../domain/title_config_store.hpp"
@@ -20,14 +20,15 @@ namespace persistence {
 // Neither Load nor Save lets an exception escape — the callers sit in Qt event
 // handlers, where a throw would tear the application down.
 [[nodiscard]] std::optional<std::string> LoadProjectXml(
-    const std::string& file_path, DateGroupStore& date_groups_store,
+    const std::string& file_path, DateCategoryStore& date_categories_store,
     DateEntryStore& date_entry_store, PageSetupStore& page_setup_store,
     TitleConfigStore& title_config_store,
     ShapeConfigurationStore& shape_configuration_store,
     CalendarConfigStore& calendar_configuration_store);
 
 [[nodiscard]] std::optional<std::string> SaveProjectXml(
-    const std::string& file_path, const DateGroupStore& date_groups_store,
+    const std::string& file_path,
+    const DateCategoryStore& date_categories_store,
     const DateEntryStore& date_entry_store,
     const PageSetupStore& page_setup_store,
     const TitleConfigStore& title_config_store,

@@ -26,15 +26,15 @@ namespace calendar_sections {
 BarSceneResult BuildBars(const SectionContext& ctx) {
   BarSceneResult result;
 
-  ChildPool group_pool(ctx.nodes.date_bars);
-  const auto number_groups = ctx.date_groups.Items().size();
+  ChildPool category_pool(ctx.nodes.date_bars);
+  const auto number_categories = ctx.date_categories.Items().size();
   // A deque, not a vector: the pool is deliberately neither copyable nor
   // movable, and a deque places its elements without ever moving them.
   std::deque<ShapeChildPool<BoxesShape>> bar_pools;
-  for (size_t index = 0; index < number_groups; ++index) {
-    bar_pools.emplace_back(
-        group_pool.Next(std::string("group node ") + std::to_string(index)),
-        ctx.rectangles_shader, calendar_layers::kBars);
+  for (size_t index = 0; index < number_categories; ++index) {
+    bar_pools.emplace_back(category_pool.Next(std::string("category node ") +
+                                              std::to_string(index)),
+                           ctx.rectangles_shader, calendar_layers::kBars);
   }
 
   auto bar_labels = detail::TextPool(ctx, ctx.nodes.date_bar_labels);
@@ -46,9 +46,9 @@ BarSceneResult BuildBars(const SectionContext& ctx) {
     if (!ctx.calendar_config.ShowsYear(bar_data.GetYear())) {
       continue;
     }
-    const auto current_group = static_cast<size_t>(bar_data.GetGroup());
+    const auto current_category = static_cast<size_t>(bar_data.GetCategory());
     auto current_shape_config =
-        ctx.shape_config.GetDynamicConfiguration(current_group);
+        ctx.shape_config.GetDynamicConfiguration(current_category);
 
     const auto row = projection.RowForYear(bar_data.GetYear());
     const auto current_sub_cell = ctx.layout.GetSubArea(row, 1);
@@ -63,7 +63,7 @@ BarSceneResult BuildBars(const SectionContext& ctx) {
     // for dragging/animating), the size lives in the shape geometry. A pure
     // translation keeps the outline width constant, which a scale matrix would
     // distort. The bar's world rect is therefore unchanged.
-    const auto bar = bar_pools.at(current_group)
+    const auto bar = bar_pools.at(current_category)
                          .Next(std::string("bar ") + std::to_string(index));
     bar.node->SetModelMatrix(glm::translate(
         glm::mat4(1.0F),

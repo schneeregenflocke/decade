@@ -17,9 +17,9 @@
 #include <vector>
 
 #include "../domain/date.hpp"
+#include "../domain/date_category.hpp"
 #include "../domain/date_entry.hpp"
 #include "../domain/date_format.hpp"
-#include "../domain/date_group.hpp"
 #include "../domain/date_period.hpp"
 #include "../domain/detail/reentry_guard.hpp"
 #include "make_owned.hpp"
@@ -40,7 +40,7 @@ class DateTablePanel : public TablePanelBase {
 
   void ReceiveDateEntries(const std::vector<DateEntry>& date_entries);
 
-  void ReceiveDateGroups(const std::vector<DateGroup>& date_groups);
+  void ReceiveDateCategories(const std::vector<DateCategory>& date_categories);
 
  signals:
   void DateEntriesEdited(const std::vector<DateEntry>& date_entries);
@@ -50,8 +50,8 @@ class DateTablePanel : public TablePanelBase {
     first_date,
     second_date,
     number,
-    group,
-    group_number,
+    category,
+    category_number,
     duration,
     duration_to_next
   };
@@ -88,12 +88,12 @@ class DateTablePanel : public TablePanelBase {
 
   void OnDelete();
 
-  void OnGroupChosen(int group_number);
+  void OnCategoryChosen(int category_number);
 
-  QPointer<QComboBox> select_group_control_;
+  QPointer<QComboBox> select_category_control_;
 
   LocaleDateFormatter& date_format_;
-  DateGroups date_groups_;
+  DateCategories date_categories_;
 
   bool filling_{false};
 };

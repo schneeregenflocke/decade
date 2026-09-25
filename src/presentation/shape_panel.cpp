@@ -99,11 +99,11 @@ void ShapeSetupPanel::CreateDetailFields(QWidget* detail_widget) {
 std::vector<std::string> ShapeSetupPanel::ConfigurationKeys() const {
   std::vector<std::string> keys;
   keys.reserve(shape_config_set_.FixedConfigurations().size() +
-               shape_config_set_.GroupConfigurations().size());
+               shape_config_set_.CategoryConfigurations().size());
   for (const auto& config : shape_config_set_.FixedConfigurations()) {
     keys.push_back(config.Key());
   }
-  for (const auto& config : shape_config_set_.GroupConfigurations()) {
+  for (const auto& config : shape_config_set_.CategoryConfigurations()) {
     keys.push_back(config.Key());
   }
   return keys;

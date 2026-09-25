@@ -7,8 +7,8 @@
 #include <vector>
 
 #include "calendar_config.hpp"
+#include "date_category.hpp"
 #include "date_entry.hpp"
-#include "date_group.hpp"
 #include "font_config.hpp"
 #include "page_setup_config.hpp"
 #include "scene_snapshot.hpp"
@@ -42,14 +42,14 @@ class DateEntriesTopic : public QObject {
   void Published(const std::vector<DateEntry>& date_entries);
 };
 
-class DateGroupsTopic : public QObject {
+class DateCategoriesTopic : public QObject {
   Q_OBJECT
 
  public:
-  void Publish(const std::vector<DateGroup>& date_groups);
+  void Publish(const std::vector<DateCategory>& date_categories);
 
  signals:
-  void Published(const std::vector<DateGroup>& date_groups);
+  void Published(const std::vector<DateCategory>& date_categories);
 };
 
 class PageSetupTopic : public QObject {

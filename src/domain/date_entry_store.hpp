@@ -3,9 +3,9 @@
 
 #include <vector>
 
+#include "date_category.hpp"
 #include "date_entry.hpp"
 #include "date_entry_list.hpp"
-#include "date_group.hpp"
 #include "detail/reentry_guard.hpp"
 #include "state_topics.hpp"
 
@@ -22,7 +22,7 @@ class DateEntryStore {
 
   void ReceiveDateEntries(const std::vector<DateEntry>& incoming_date_entries);
 
-  void ReceiveDateGroups(const std::vector<DateGroup>& date_groups);
+  void ReceiveDateCategories(const std::vector<DateCategory>& date_categories);
 
   [[nodiscard]] const DateEntryList& Get() const;
 

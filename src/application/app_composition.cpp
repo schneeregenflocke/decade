@@ -88,7 +88,7 @@ void AppComposition::OnGraphicsFailed(const std::string& message) {
 
 AppComponents AppComposition::Components(CalendarPage& calendar_page) {
   return AppComponents{
-      .date_groups_store = document_.DateGroups(),
+      .date_categories_store = document_.DateCategories(),
       .date_entry_store = document_.DateEntries(),
       .page_setup_store = document_.PageSetup(),
       .title_config_store = document_.TitleConfiguration(),
@@ -96,7 +96,7 @@ AppComponents AppComposition::Components(CalendarPage& calendar_page) {
       .calendar_configuration_store = document_.CalendarConfiguration(),
       .project_document = document_,
       .data_table_panel = window_->DataTable(),
-      .date_groups_table_panel = window_->DateGroupsTable(),
+      .date_categories_table_panel = window_->DateCategoriesTable(),
       .document_setup_panel = window_->DocumentSetup(),
       .page_setup_panel = window_->PageSetup(),
       .title_setup_panel = window_->TitleSetup(),

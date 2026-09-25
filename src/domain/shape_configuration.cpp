@@ -84,25 +84,26 @@ bool ShapeConfigSet::UpdateConfiguration(const ShapeConfiguration& config) {
   return true;
 }
 
-std::string ShapeConfigSet::DynamicConfigurationKey(size_t group_index) {
-  return std::string(kGroupKeyPrefix) + std::to_string(group_index);
+std::string ShapeConfigSet::DynamicConfigurationKey(size_t category_index) {
+  return std::string(kCategoryKeyPrefix) + std::to_string(category_index);
 }
 
 ShapeConfiguration ShapeConfigSet::GetDynamicConfiguration(
-    size_t group_index) const {
-  if (group_index >= group_configurations_.size()) {
+    size_t category_index) const {
+  if (category_index >= category_configurations_.size()) {
     return {};
   }
-  return group_configurations_.at(group_index);
+  return category_configurations_.at(category_index);
 }
 
-void ShapeConfigSet::SyncToDateGroups(size_t group_count) {
-  const size_t previous_group_count = group_configurations_.size();
-  if (group_count < previous_group_count) {
-    group_configurations_.resize(group_count);
+void ShapeConfigSet::SyncToDateCategories(size_t category_count) {
+  const size_t previous_category_count = category_configurations_.size();
+  if (category_count < previous_category_count) {
+    category_configurations_.resize(category_count);
   } else {
-    for (size_t index = previous_group_count; index < group_count; ++index) {
-      group_configurations_.push_back(MakeBarGroupConfiguration(index));
+    for (size_t index = previous_category_count; index < category_count;
+         ++index) {
+      category_configurations_.push_back(MakeBarCategoryConfiguration(index));
     }
   }
 }
@@ -116,13 +117,14 @@ std::vector<ShapeConfiguration>& ShapeConfigSet::MutableFixedConfigurations() {
   return fixed_configurations_;
 }
 
-const std::vector<ShapeConfiguration>& ShapeConfigSet::GroupConfigurations()
+const std::vector<ShapeConfiguration>& ShapeConfigSet::CategoryConfigurations()
     const {
-  return group_configurations_;
+  return category_configurations_;
 }
 
-std::vector<ShapeConfiguration>& ShapeConfigSet::MutableGroupConfigurations() {
-  return group_configurations_;
+std::vector<ShapeConfiguration>&
+ShapeConfigSet::MutableCategoryConfigurations() {
+  return category_configurations_;
 }
 
 ShapeConfiguration ShapeConfigSet::MakeBarStyledConfiguration(
@@ -140,10 +142,10 @@ ShapeConfiguration ShapeConfigSet::MakeBarStyledConfiguration(
       ShapeConfiguration::FillColorValue{glm::vec4(color, kFillAlpha)}};
 }
 
-ShapeConfiguration ShapeConfigSet::MakeBarGroupConfiguration(
-    size_t group_index) {
-  return MakeBarStyledConfiguration(DynamicConfigurationKey(group_index),
-                                    palette::CategoricalColor(group_index));
+ShapeConfiguration ShapeConfigSet::MakeBarCategoryConfiguration(
+    size_t category_index) {
+  return MakeBarStyledConfiguration(DynamicConfigurationKey(category_index),
+                                    palette::CategoricalColor(category_index));
 }
 
 std::vector<ShapeConfiguration> ShapeConfigSet::BuildDefaults() {
@@ -173,7 +175,7 @@ std::vector<ShapeConfiguration> ShapeConfigSet::BuildDefaults() {
   const glm::vec4 dark_quarter_transparent{kQuarter, kQuarter, kQuarter, kZero};
   // The annual coverage is no category, so it takes no colour out of the
   // categorical palette: a neutral grey tells the aggregate apart from the
-  // groups it sums up, and it collides with none of them however many there
+  // categories it sums up, and it collides with none of them however many there
   // are — Viridis is saturated end to end.
   const glm::vec3 annual_coverage_gray{kMid, kMid, kMid};
 

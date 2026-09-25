@@ -20,12 +20,12 @@ int DateEntry::GetNumber() const { return number_; }
 
 void DateEntry::SetNumber(int number) { number_ = number; }
 
-int DateEntry::GetGroup() const { return group_; }
+int DateEntry::GetCategory() const { return category_; }
 
-void DateEntry::SetGroup(int group) { group_ = group; }
+void DateEntry::SetCategory(int category) { category_ = category; }
 
-int DateEntry::GetGroupNumber() const { return group_number_; }
+int DateEntry::GetCategoryNumber() const { return category_number_; }
 
-void DateEntry::SetGroupNumber(int group_number) {
-  group_number_ = group_number;
+void DateEntry::SetCategoryNumber(int category_number) {
+  category_number_ = category_number;
 }

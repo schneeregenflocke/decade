@@ -2,9 +2,9 @@
 
 #include <vector>
 
+#include "date_category.hpp"
 #include "date_entry.hpp"
 #include "date_entry_list.hpp"
-#include "date_group.hpp"
 #include "detail/reentry_guard.hpp"
 #include "state_topics.hpp"
 
@@ -21,9 +21,9 @@ void DateEntryStore::ReceiveDateEntries(
   topic_.Publish(date_entries_.Items());
 }
 
-void DateEntryStore::ReceiveDateGroups(
-    const std::vector<DateGroup>& date_groups) {
-  date_entries_.AssignDateGroups(date_groups);
+void DateEntryStore::ReceiveDateCategories(
+    const std::vector<DateCategory>& date_categories) {
+  date_entries_.AssignDateCategories(date_categories);
 }
 
 const DateEntryList& DateEntryStore::Get() const { return date_entries_; }

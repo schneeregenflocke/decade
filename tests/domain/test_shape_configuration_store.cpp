@@ -11,8 +11,8 @@
 TEST(ShapeConfigSetTest, DefaultsContainExpectedNames) {
   ShapeConfigSet set;
   ASSERT_FALSE(set.FixedConfigurations().empty());
-  // The defaults are all fixed configurations: no group entries yet.
-  EXPECT_TRUE(set.GroupConfigurations().empty());
+  // The defaults are all fixed configurations: no category entries yet.
+  EXPECT_TRUE(set.CategoryConfigurations().empty());
   EXPECT_TRUE(set.GetDynamicConfiguration(0).Key().empty());
 
   // A handful of named entries we expect from the default set.
@@ -35,53 +35,55 @@ TEST(ShapeConfigSetTest, GetShapeConfigurationReturnsBlankForUnknownName) {
 }
 
 TEST(ShapeConfigSetTest, DynamicConfigurationKeyMatchesFormat) {
-  EXPECT_EQ(ShapeConfigSet::DynamicConfigurationKey(0), "Bar Group 0");
-  EXPECT_EQ(ShapeConfigSet::DynamicConfigurationKey(7), "Bar Group 7");
+  EXPECT_EQ(ShapeConfigSet::DynamicConfigurationKey(0), "Bar Category 0");
+  EXPECT_EQ(ShapeConfigSet::DynamicConfigurationKey(7), "Bar Category 7");
 }
 
-TEST(ShapeConfigSetTest, SyncToDateGroupsAddressesByIndex) {
+TEST(ShapeConfigSetTest, SyncToDateCategoriesAddressesByIndex) {
   ShapeConfigSet set;
 
-  // Grow the set to three groups, mirroring how the store reacts to date
-  // groups being added.
-  set.SyncToDateGroups(3);
+  // Grow the set to three categories, mirroring how the store reacts to date
+  // categories being added.
+  set.SyncToDateCategories(3);
 
   const ShapeConfiguration second = set.GetDynamicConfiguration(1);
-  EXPECT_EQ(second.Key(), "Bar Group 1");
+  EXPECT_EQ(second.Key(), "Bar Category 1");
 
   // Out-of-range / absent indices return a blank configuration.
   EXPECT_TRUE(set.GetDynamicConfiguration(3).Key().empty());
 }
 
-TEST(ShapeConfigSetTest, SyncToDateGroupsPreservesCustomisationAndDropsStale) {
+TEST(ShapeConfigSetTest,
+     SyncToDateCategoriesPreservesCustomisationAndDropsStale) {
   ShapeConfigSet set;
-  set.SyncToDateGroups(3);
+  set.SyncToDateCategories(3);
 
-  // Customise the colour of the second group's configuration.
+  // Customise the colour of the second category's configuration.
   ShapeConfiguration customised = set.GetDynamicConfiguration(1);
-  ASSERT_EQ(customised.Key(), "Bar Group 1");
+  ASSERT_EQ(customised.Key(), "Bar Category 1");
   customised.OutlineColor(glm::vec4{0.1F, 0.2F, 0.3F, 1.0F});
   ASSERT_TRUE(set.UpdateConfiguration(customised));
 
-  // Shrinking then re-growing must keep the surviving group's customisation
+  // Shrinking then re-growing must keep the surviving category's customisation
   // and drop the entries past the new count.
-  set.SyncToDateGroups(2);
+  set.SyncToDateCategories(2);
   EXPECT_TRUE(set.GetDynamicConfiguration(2).Key().empty());
   const ShapeConfiguration kept = set.GetDynamicConfiguration(1);
-  EXPECT_EQ(kept.Key(), "Bar Group 1");
+  EXPECT_EQ(kept.Key(), "Bar Category 1");
   EXPECT_FLOAT_EQ(kept.OutlineColorDisabled()[0], 0.1F);
 }
 
-// The annual coverage aggregates the groups instead of being one, so neither
-// adding nor removing a group may recolour it — least of all over a colour the
-// user picked.
-TEST(ShapeConfigSetTest, SyncToDateGroupsKeepsTheAnnualCoverageConfiguration) {
+// The annual coverage aggregates the categories instead of being one, so
+// neither adding nor removing a category may recolour it — least of all over a
+// colour the user picked.
+TEST(ShapeConfigSetTest,
+     SyncToDateCategoriesKeepsTheAnnualCoverageConfiguration) {
   ShapeConfigSet set;
   const ShapeConfiguration initial =
       set.GetShapeConfiguration(ShapeConfigSet::kAnnualCoverageKey);
   ASSERT_EQ(initial.Key(), ShapeConfigSet::kAnnualCoverageKey);
 
-  set.SyncToDateGroups(3);
+  set.SyncToDateCategories(3);
   EXPECT_FLOAT_EQ(set.GetShapeConfiguration(ShapeConfigSet::kAnnualCoverageKey)
                       .FillColorDisabled()[0],
                   initial.FillColorDisabled()[0]);
@@ -91,8 +93,8 @@ TEST(ShapeConfigSetTest, SyncToDateGroupsKeepsTheAnnualCoverageConfiguration) {
   customised.FillColor(glm::vec4{0.9F, 0.1F, 0.2F, 1.0F});
   ASSERT_TRUE(set.UpdateConfiguration(customised));
 
-  set.SyncToDateGroups(5);
-  set.SyncToDateGroups(2);
+  set.SyncToDateCategories(5);
+  set.SyncToDateCategories(2);
 
   const ShapeConfiguration kept =
       set.GetShapeConfiguration(ShapeConfigSet::kAnnualCoverageKey);

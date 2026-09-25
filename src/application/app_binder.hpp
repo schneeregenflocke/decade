@@ -4,18 +4,18 @@
 #include <QtCore/QObject>
 
 #include "../domain/calendar_config_store.hpp"
+#include "../domain/date_category_store.hpp"
 #include "../domain/date_entry_store.hpp"
-#include "../domain/date_group_store.hpp"
 #include "../domain/page_setup_store.hpp"
 #include "../domain/shape_configuration_store.hpp"
 #include "../domain/title_config_store.hpp"
 #include "../presentation/calendar_panel.hpp"
+#include "../presentation/categories_panel.hpp"
 #include "../presentation/csv_import_panel.hpp"
 #include "../presentation/date_panel.hpp"
 #include "../presentation/document_panel.hpp"
 #include "../presentation/font_panel.hpp"
 #include "../presentation/gl_canvas.hpp"
-#include "../presentation/groups_panel.hpp"
 #include "../presentation/page_panel.hpp"
 #include "../presentation/scene_tree_panel.hpp"
 #include "../presentation/shape_panel.hpp"
@@ -32,7 +32,7 @@
 // its store, the new state a fact on the bus — stands in AGENTS.md, "Event
 // flow".
 struct AppComponents {
-  DateGroupStore& date_groups_store;
+  DateCategoryStore& date_categories_store;
   DateEntryStore& date_entry_store;
   PageSetupStore& page_setup_store;
   TitleConfigStore& title_config_store;
@@ -41,7 +41,7 @@ struct AppComponents {
   application::ProjectDocument& project_document;
 
   DateTablePanel& data_table_panel;
-  DateGroupsTablePanel& date_groups_table_panel;
+  DateCategoriesTablePanel& date_categories_table_panel;
   DocumentSetupPanel& document_setup_panel;
   PageSetupPanel& page_setup_panel;
   TitleSetupPanel& title_setup_panel;

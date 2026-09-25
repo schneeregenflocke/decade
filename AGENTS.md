@@ -35,8 +35,8 @@ The code communicates its intent itself; prose is the exception. The guard rail 
 
 Concretely, after [Google C++ Style](https://google.github.io/styleguide/cppguide.html#Naming) (in force):
 
-- Types: `PascalCase` (`DateGroup`).
-- Functions and methods: `PascalCase` (`GetDateGroups()`); trivial accessors and mutators may carry `snake_case` like their member (`set_count()`).
+- Types: `PascalCase` (`DateCategory`).
+- Functions and methods: `PascalCase` (`GetCategoryMax()`); trivial accessors and mutators may carry `snake_case` like their member (`set_count()`).
 - Class data members: `snake_case` **with a trailing underscore** (`date_format_`). Struct members without one. The clang-tidy gate enforces this member rule ([readability-identifier-naming](https://clang.llvm.org/extra/clang-tidy/checks/readability/identifier-naming.html) in `.clang-tidy`); a member without an underscore breaks the build.
 - Locals: `snake_case`. Constants and enumerators: `kPascalCase` (`kColorScale`).
 - The store suffix is uniformly `…Store` (not `…Storage`) — for types **and** for member and parameter names (`…_store`, not `…_storage`).
@@ -85,7 +85,7 @@ What the list does not show:
 
 - **[Value objects](https://martinfowler.com/bliki/ValueObject.html)** hold data plus the queries on it: data members `private`, const accessors, named setters. No signal, no serialisation, no `friend` → [rule of zero](https://en.cppreference.com/w/cpp/language/rule_of_three), freely copyable.
 - **Stores** pair a value object with an injected state topic and a re-entry guard; they have identity and are not copyable. A store offers `Receive`, `Send` and `Get` and publishes with `Publish`. A topic is a small `QObject` carrying one value on one `Published` signal — one class per value, because moc processes no class template. The two topics carrying a `PickId` sit in `application/interaction_topics.hpp`, since that type lives in infrastructure.
-- Value object and store live in **separate files**, named after the class (`date_group.hpp`, `date_group_store.hpp`).
+- Value object and store live in **separate files**, named after the class (`date_category.hpp`, `date_category_store.hpp`).
 
 ### Date and interval semantics
 
@@ -99,7 +99,7 @@ One typed topic per domain event on an in-process bus; the consumers get wired i
 
 - **Two directions.** A panel edit is a command and goes straight to the owning store's `Receive*`; the new state is a fact and goes over the bus. Panel signals carry the edit's name (`…Edited`, `…Chosen`), topics the fact's (`Published`). A producer in presentation without an injected topic (font, tree selection) gets connected to the topic's `Publish` by the binder. The scene tree only displays.
 - **Bursts.** `state_burst` brackets a run of store changes (loading a project fills six) (RAII `StateBurst`), so a consumer may rebuild once; ignoring it stays correct.
-- **Delivery order is connection order** ([QObject::connect](https://doc.qt.io/qt-6/qobject.html#connect)). The shape store has to answer a new date group before the rendering adapter rebuilds, so reordering `app_binder` changes behaviour ([#97](https://github.com/schneeregenflocke/decade/issues/97)).
+- **Delivery order is connection order** ([QObject::connect](https://doc.qt.io/qt-6/qobject.html#connect)). The shape store has to answer a new date category before the rendering adapter rebuilds, so reordering `app_binder` changes behaviour ([#97](https://github.com/schneeregenflocke/decade/issues/97)).
 - **Wiring is a lifetime.** `AppWiring` connects on construction; every connection carries a `QObject` member as its context object, so destruction releases them all. The `std::function` callbacks (a pick answers with a hit, a signal cannot) release in `ReleaseCallbacks`.
 - **Canvas editing.** `TitleTextEditor` holds a buffer and publishes a GL-free `TextEditView` per key; Enter sends one command to the store, Esc discards. The canvas translates key codes into a `TextInputEvent`.
 

@@ -6,10 +6,10 @@
 #include <vector>
 
 #include "domain/date.hpp"
+#include "domain/date_category.hpp"
 #include "domain/date_entry.hpp"
 #include "domain/date_entry_bars.hpp"
 #include "domain/date_entry_store.hpp"
-#include "domain/date_group.hpp"
 #include "domain/date_period.hpp"
 #include "domain/state_topics.hpp"
 
@@ -23,14 +23,15 @@ DateEntry MakeEntry(int year, int month_begin, int day_begin, int month_end,
   return entry;
 }
 
-// In production the wiring guarantees a `Default` group is delivered before any
-// entry; seeding it here mirrors that setup so the holder sees the same initial
-// state it does at runtime. Serves both the store and the bar read model.
+// In production the wiring guarantees a `Default` category is delivered before
+// any entry; seeding it here mirrors that setup so the holder sees the same
+// initial state it does at runtime. Serves both the store and the bar read
+// model.
 template <typename Holder>
-void SeedDefaultGroup(Holder& holder) {
-  std::vector<DateGroup> groups;
-  groups.emplace_back("Default");
-  holder.ReceiveDateGroups(groups);
+void SeedDefaultCategory(Holder& holder) {
+  std::vector<DateCategory> categories;
+  categories.emplace_back("Default");
+  holder.ReceiveDateCategories(categories);
 }
 
 }  // namespace
@@ -38,7 +39,7 @@ void SeedDefaultGroup(Holder& holder) {
 TEST(DateEntryStoreTest, ReceiveSortsByBeginDate) {
   domain::DateEntriesTopic topic;
   DateEntryStore store(topic);
-  SeedDefaultGroup(store);
+  SeedDefaultCategory(store);
   std::vector<DateEntry> input;
   input.push_back(MakeEntry(2030, 6, 1, 6, 10));
   input.push_back(MakeEntry(2030, 1, 1, 1, 10));
@@ -56,7 +57,7 @@ TEST(DateEntryStoreTest, ReceiveSortsByBeginDate) {
 TEST(DateEntryStoreTest, ReceiveAssignsSequentialNumbers) {
   domain::DateEntriesTopic topic;
   DateEntryStore store(topic);
-  SeedDefaultGroup(store);
+  SeedDefaultCategory(store);
   std::vector<DateEntry> input;
   input.push_back(MakeEntry(2030, 1, 1, 1, 10));
   input.push_back(MakeEntry(2030, 2, 1, 2, 10));
@@ -74,7 +75,7 @@ TEST(DateEntryStoreTest, ReceiveAssignsSequentialNumbers) {
 TEST(DateEntryStoreTest, SpanReflectsFirstAndLastYear) {
   domain::DateEntriesTopic topic;
   DateEntryStore store(topic);
-  SeedDefaultGroup(store);
+  SeedDefaultCategory(store);
   std::vector<DateEntry> input;
   input.push_back(MakeEntry(2030, 1, 1, 1, 10));
   input.push_back(MakeEntry(2034, 1, 1, 1, 10));
@@ -88,7 +89,7 @@ TEST(DateEntryStoreTest, SpanReflectsFirstAndLastYear) {
 TEST(DateEntryStoreTest, EmitsSignalOnReceive) {
   domain::DateEntriesTopic topic;
   DateEntryStore store(topic);
-  SeedDefaultGroup(store);
+  SeedDefaultCategory(store);
   int emissions = 0;
   QObject::connect(&topic, &domain::DateEntriesTopic::Published,
                    [&](const std::vector<DateEntry>&) { ++emissions; });
@@ -103,7 +104,7 @@ TEST(DateEntryStoreTest, EmitsSignalOnReceive) {
 TEST(DateEntryStoreTest, ReentryGuardBlocksRecursiveReceive) {
   domain::DateEntriesTopic topic;
   DateEntryStore store(topic);
-  SeedDefaultGroup(store);
+  SeedDefaultCategory(store);
   std::vector<DateEntry> recursive_input;
   recursive_input.push_back(MakeEntry(2099, 1, 1, 1, 10));
 
@@ -127,7 +128,7 @@ TEST(DateEntryStoreTest, ReentryGuardBlocksRecursiveReceive) {
 
 TEST(DateEntryBarsTest, ProducesOneBarPerIntervalWithinYear) {
   DateEntryBars bars;
-  SeedDefaultGroup(bars);
+  SeedDefaultCategory(bars);
   std::vector<DateEntry> input;
   input.push_back(MakeEntry(2030, 1, 1, 1, 10));
   input.push_back(MakeEntry(2030, 2, 1, 2, 10));
@@ -139,7 +140,7 @@ TEST(DateEntryBarsTest, ProducesOneBarPerIntervalWithinYear) {
 
 TEST(DateEntryBarsTest, SplitsYearSpanningIntervalAtYearBoundary) {
   DateEntryBars bars;
-  SeedDefaultGroup(bars);
+  SeedDefaultCategory(bars);
   DateEntry entry;
   entry.SetDateInterval(
       DatePeriod(Date::FromYmd(2030, 12, 20), Date::FromYmd(2031, 1, 10)));
@@ -162,7 +163,7 @@ TEST(DateEntryBarsTest, SplitsYearSpanningIntervalAtYearBoundary) {
 // previous year and broke the split loop.)
 TEST(DateEntryBarsTest, SingleDayOnJanuaryFirstProducesOneBar) {
   DateEntryBars bars;
-  SeedDefaultGroup(bars);
+  SeedDefaultCategory(bars);
   DateEntry entry;
   entry.SetDateInterval(
       DatePeriod(Date::FromYmd(2030, 1, 1), Date::FromYmd(2030, 1, 2)));
@@ -183,7 +184,7 @@ TEST(DateEntryBarsTest, SingleDayOnJanuaryFirstProducesOneBar) {
 // bars of the multi-year entry.
 TEST(DateEntryBarsTest, LastYearComesFromLatestEndNotLatestBegin) {
   DateEntryBars bars;
-  SeedDefaultGroup(bars);
+  SeedDefaultCategory(bars);
   DateEntry long_entry;
   long_entry.SetDateInterval(
       DatePeriod(Date::FromYmd(2000, 1, 1), Date::FromYmd(2010, 1, 1)));
@@ -211,7 +212,7 @@ TEST(DateEntryBarsTest, LastYearComesFromLatestEndNotLatestBegin) {
 TEST(DateEntryStoreTest, DropsNullPeriodEntries) {
   domain::DateEntriesTopic topic;
   DateEntryStore store(topic);
-  SeedDefaultGroup(store);
+  SeedDefaultCategory(store);
   DateEntry null_entry;
   null_entry.SetDateInterval(
       DatePeriod(Date::FromYmd(2030, 1, 1), Date::FromYmd(2030, 1, 1)));

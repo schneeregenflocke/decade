@@ -37,8 +37,9 @@ struct BurstRecorder {
     QObject::connect(
         &bus.state_burst, &domain::StateBurstTopic::Published,
         [this](bool open) { events.emplace_back(open ? "open" : "close"); });
-    QObject::connect(&bus.date_groups, &domain::DateGroupsTopic::Published,
-                     [this](const std::vector<DateGroup>&) {
+    QObject::connect(&bus.date_categories,
+                     &domain::DateCategoriesTopic::Published,
+                     [this](const std::vector<DateCategory>&) {
                        events.emplace_back("store");
                      });
     QObject::connect(&bus.date_entries, &domain::DateEntriesTopic::Published,

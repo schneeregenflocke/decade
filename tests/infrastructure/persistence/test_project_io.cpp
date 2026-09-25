@@ -7,10 +7,10 @@
 
 #include "domain/calendar_config_store.hpp"
 #include "domain/date.hpp"
+#include "domain/date_category.hpp"
+#include "domain/date_category_store.hpp"
 #include "domain/date_entry.hpp"
 #include "domain/date_entry_store.hpp"
-#include "domain/date_group.hpp"
-#include "domain/date_group_store.hpp"
 #include "domain/date_period.hpp"
 #include "domain/page_setup_store.hpp"
 #include "domain/shape_configuration_store.hpp"
@@ -24,14 +24,14 @@ namespace {
 // every store publishes on an injected channel. The topics are declared first,
 // so they outlive the stores.
 struct ProjectStores {
-  domain::DateGroupsTopic date_groups_topic;
+  domain::DateCategoriesTopic date_categories_topic;
   domain::DateEntriesTopic date_entries_topic;
   domain::PageSetupTopic page_setup_topic;
   domain::TitleConfigTopic title_config_topic;
   domain::ShapeConfigSetTopic shape_configuration_topic;
   domain::CalendarConfigTopic calendar_configuration_topic;
 
-  DateGroupStore date_groups{date_groups_topic};
+  DateCategoryStore date_categories{date_categories_topic};
   DateEntryStore date_entries{date_entries_topic};
   PageSetupStore page_setup{page_setup_topic};
   TitleConfigStore title_config{title_config_topic};
@@ -41,22 +41,22 @@ struct ProjectStores {
 
 std::optional<std::string> Load(const std::string& path, ProjectStores& s) {
   return persistence::LoadProjectXml(
-      path, s.date_groups, s.date_entries, s.page_setup, s.title_config,
+      path, s.date_categories, s.date_entries, s.page_setup, s.title_config,
       s.shape_configuration, s.calendar_configuration);
 }
 
 std::optional<std::string> Save(const std::string& path,
                                 const ProjectStores& s) {
   return persistence::SaveProjectXml(
-      path, s.date_groups, s.date_entries, s.page_setup, s.title_config,
+      path, s.date_categories, s.date_entries, s.page_setup, s.title_config,
       s.shape_configuration, s.calendar_configuration);
 }
 
 void SeedProject(ProjectStores& s) {
-  std::vector<DateGroup> groups;
-  groups.emplace_back("Seeded");
-  s.date_groups.ReceiveDateGroups(groups);
-  s.date_entries.ReceiveDateGroups(groups);
+  std::vector<DateCategory> categories;
+  categories.emplace_back("Seeded");
+  s.date_categories.ReceiveDateCategories(categories);
+  s.date_entries.ReceiveDateCategories(categories);
 
   DateEntry entry;
   entry.SetDateInterval(
@@ -90,8 +90,8 @@ TEST(ProjectIoTest, CorruptFileReportsErrorAndLeavesStoresUntouched) {
 
   ASSERT_TRUE(error.has_value());
   ASSERT_EQ(stores.date_entries.Get().Items().size(), 1U);
-  EXPECT_EQ(stores.date_groups.Get().Items().size(), 1U);
-  EXPECT_EQ(stores.date_groups.Get().Items()[0].GetName(), "Seeded");
+  EXPECT_EQ(stores.date_categories.Get().Items().size(), 1U);
+  EXPECT_EQ(stores.date_categories.Get().Items()[0].GetName(), "Seeded");
 }
 
 TEST(ProjectIoTest, MissingFileReportsError) {

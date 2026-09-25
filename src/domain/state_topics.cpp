@@ -7,8 +7,8 @@
 #include <vector>
 
 #include "calendar_config.hpp"
+#include "date_category.hpp"
 #include "date_entry.hpp"
-#include "date_group.hpp"
 #include "font_config.hpp"
 #include "page_setup_config.hpp"
 #include "scene_snapshot.hpp"
@@ -22,8 +22,9 @@ void DateEntriesTopic::Publish(const std::vector<DateEntry>& date_entries) {
   emit Published(date_entries);
 }
 
-void DateGroupsTopic::Publish(const std::vector<DateGroup>& date_groups) {
-  emit Published(date_groups);
+void DateCategoriesTopic::Publish(
+    const std::vector<DateCategory>& date_categories) {
+  emit Published(date_categories);
 }
 
 void PageSetupTopic::Publish(const PageSetupConfig& page_setup) {

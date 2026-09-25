@@ -23,6 +23,6 @@ float Bar::GetLastDay() const {
   return static_cast<float>(date_interval_.Last().DayOfYear());
 }
 
-int Bar::GetGroup() const { return group_; }
+int Bar::GetCategory() const { return category_; }
 
-void Bar::SetGroup(int group) { group_ = group; }
+void Bar::SetCategory(int category) { category_ = category; }

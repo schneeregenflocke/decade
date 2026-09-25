@@ -15,7 +15,7 @@ namespace {
 // which the domain layer must not reach into.
 //
 // Hues alternate between the full and the half-intensity variant so that
-// neighbouring group indices differ in lightness as well as in hue.
+// neighbouring category indices differ in lightness as well as in hue.
 constexpr std::array<std::uint32_t, 12> kCategoricalColors{
     0xFF0000,  // red
     0x008080,  // darkCyan

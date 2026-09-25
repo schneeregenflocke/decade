@@ -13,8 +13,8 @@
 #include <vector>
 
 #include "../../domain/calendar_config.hpp"
+#include "../../domain/date_category.hpp"
 #include "../../domain/date_entry_bars.hpp"
-#include "../../domain/date_group.hpp"
 #include "../../domain/font_config.hpp"
 #include "../../domain/scene_snapshot.hpp"
 #include "../../domain/shape_configuration.hpp"
@@ -44,7 +44,8 @@ CalendarSceneComposer::CalendarSceneComposer(
     const RectF& page_size_in, const RectF& page_margin_in,
     const TitleConfig& title_config_in,
     const CalendarConfig& calendar_config_in,
-    const ShapeConfigSet& shape_config_in, const DateGroups& date_groups_in,
+    const ShapeConfigSet& shape_config_in,
+    const DateCategories& date_categories_in,
     const DateEntryBars& date_entry_bars_in)
     : scene_(scene_in),
       graphics_engine_(graphics_engine_in),
@@ -58,7 +59,7 @@ CalendarSceneComposer::CalendarSceneComposer(
       title_config_(title_config_in),
       calendar_config_(calendar_config_in),
       shape_config_(shape_config_in),
-      date_groups_(date_groups_in),
+      date_categories_(date_categories_in),
       date_entry_bars_(date_entry_bars_in) {
   graphics_engine_.SetScene(scene_);
   Shader& simple_shader = RequireShader(graphics_engine_, "Simple Shader");
@@ -120,7 +121,7 @@ calendar_sections::SectionContext CalendarSceneComposer::MakeContext() const {
       .shape_config = shape_config_,
       .calendar_config = calendar_config_,
       .title_config = title_config_,
-      .date_groups = date_groups_,
+      .date_categories = date_categories_,
       .date_entry_bars = date_entry_bars_,
       .text_edit = text_edit_,
       .font = font_,

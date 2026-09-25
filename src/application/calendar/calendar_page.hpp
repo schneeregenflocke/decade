@@ -11,9 +11,9 @@
 
 #include "../../common/debug_log.hpp"
 #include "../../domain/calendar_config.hpp"
+#include "../../domain/date_category.hpp"
 #include "../../domain/date_entry.hpp"
 #include "../../domain/date_entry_bars.hpp"
-#include "../../domain/date_group.hpp"
 #include "../../domain/font_config.hpp"
 #include "../../domain/page_setup_config.hpp"
 #include "../../domain/scene_snapshot.hpp"
@@ -42,7 +42,8 @@ class CalendarPage {
                const FontConfig& font_config,
                domain::SceneSnapshotTopic& snapshot_topic);
 
-  void ReceiveDateGroups(const std::vector<DateGroup>& date_groups_in);
+  void ReceiveDateCategories(
+      const std::vector<DateCategory>& date_categories_in);
 
   void ReceiveDateEntries(const std::vector<DateEntry>& date_entries);
 
@@ -118,7 +119,7 @@ class CalendarPage {
   RectF page_margin_;
 
   DateEntryBars date_entry_bars_;
-  DateGroups date_groups_;
+  DateCategories date_categories_;
   CalendarConfig calendar_config_;
   ShapeConfigSet shape_config_;
   TitleConfig title_config_;

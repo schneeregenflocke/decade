@@ -6,8 +6,8 @@
 #include <vector>
 
 #include "bar.hpp"
+#include "date_category.hpp"
 #include "date_entry.hpp"
-#include "date_group.hpp"
 #include "timeline_projection.hpp"
 
 void DateEntryBars::ReceiveDateEntries(
@@ -17,9 +17,9 @@ void DateEntryBars::ReceiveDateEntries(
   ProcessCoveredDays();
 }
 
-void DateEntryBars::ReceiveDateGroups(
-    const std::vector<DateGroup>& date_groups) {
-  date_entries_.AssignDateGroups(date_groups);
+void DateEntryBars::ReceiveDateCategories(
+    const std::vector<DateCategory>& date_categories) {
+  date_entries_.AssignDateCategories(date_categories);
 }
 
 bool DateEntryBars::is_empty() const { return date_entries_.IsEmpty(); }
@@ -51,7 +51,7 @@ void DateEntryBars::ProcessBars() {
     for (const auto& split_period : split_date_periods) {
       Bar bar(split_period);
       bar.SetText(std::to_string(entry.GetNumber() + 1));
-      bar.SetGroup(entry.GetGroup());
+      bar.SetCategory(entry.GetCategory());
       bars_.push_back(bar);
     }
   }

@@ -15,12 +15,12 @@
 #include "../application/app_config.hpp"
 #include "../domain/date_format.hpp"
 #include "calendar_panel.hpp"
+#include "categories_panel.hpp"
 #include "csv_import_panel.hpp"
 #include "date_panel.hpp"
 #include "document_panel.hpp"
 #include "font_panel.hpp"
 #include "gl_canvas.hpp"
-#include "groups_panel.hpp"
 #include "license_panel.hpp"
 #include "main_menu.hpp"
 #include "page_panel.hpp"
@@ -58,7 +58,7 @@ class MainWindow : public QMainWindow {
   MainWindow& operator=(MainWindow&&) = delete;
 
   [[nodiscard]] DateTablePanel& DataTable();
-  [[nodiscard]] DateGroupsTablePanel& DateGroupsTable();
+  [[nodiscard]] DateCategoriesTablePanel& DateCategoriesTable();
   [[nodiscard]] DocumentSetupPanel& DocumentSetup();
   [[nodiscard]] PageSetupPanel& PageSetup();
   [[nodiscard]] TitleSetupPanel& TitleSetup();
@@ -107,7 +107,7 @@ class MainWindow : public QMainWindow {
 
   QPointer<QTabWidget> tabs_;
 
-  QPointer<DateGroupsTablePanel> date_groups_table_panel_;
+  QPointer<DateCategoriesTablePanel> date_categories_table_panel_;
   QPointer<DocumentSetupPanel> document_setup_panel_;
   QPointer<PageSetupPanel> page_setup_panel_;
   QPointer<TitleSetupPanel> title_setup_panel_;

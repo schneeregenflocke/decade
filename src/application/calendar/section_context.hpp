@@ -10,8 +10,8 @@
 #include <vector>
 
 #include "../../domain/calendar_config.hpp"
+#include "../../domain/date_category.hpp"
 #include "../../domain/date_entry_bars.hpp"
-#include "../../domain/date_group.hpp"
 #include "../../domain/font_config.hpp"
 #include "../../domain/shape_configuration.hpp"
 #include "../../domain/text_edit_view.hpp"
@@ -38,7 +38,7 @@ struct SectionContext {
   const ShapeConfigSet& shape_config;
   const CalendarConfig& calendar_config;
   const TitleConfig& title_config;
-  const DateGroups& date_groups;
+  const DateCategories& date_categories;
   const DateEntryBars& date_entry_bars;
   // Empty while nobody edits text in the canvas.
   const std::optional<TextEditView>& text_edit;
@@ -78,8 +78,8 @@ inline void FillRectangles(const ShapeNode<BoxesShape>& node,
 }
 
 // A pool of text children under `parent`, on the text draw layer. One per
-// label group and rebuild; it hands the nodes of the previous rebuild back out
-// instead of building new ones (#69).
+// label group and rebuild; it hands the nodes of the previous rebuild back
+// out instead of building new ones (#69).
 [[nodiscard]] scene_shapes::TextChildPool TextPool(
     const SectionContext& ctx, const std::shared_ptr<SceneNode>& parent);
 

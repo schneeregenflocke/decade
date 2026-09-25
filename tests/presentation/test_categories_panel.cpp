@@ -11,37 +11,40 @@
 #include <glm/vec4.hpp>
 #include <vector>
 
-#include "domain/date_group.hpp"
-#include "domain/date_group_store.hpp"
+#include "domain/date_category.hpp"
+#include "domain/date_category_store.hpp"
 #include "domain/shape_configuration.hpp"
 #include "domain/shape_configuration_store.hpp"
 #include "domain/state_topics.hpp"
-#include "presentation/groups_panel.hpp"
+#include "presentation/categories_panel.hpp"
 
 namespace {
 
-// Panel, topics and stores wired the way app_binder does for the date groups.
-// A simulated click therefore travels the path it travels in the running
-// program: button -> panel -> DateGroupsEdited -> store -> topic -> consumers.
-class WiredGroupsPanel {
+// Panel, topics and stores wired the way app_binder does for the date
+// categories. A simulated click therefore travels the path it travels in the
+// running program: button -> panel -> DateCategoriesEdited -> store -> topic ->
+// consumers.
+class WiredCategoriesPanel {
  public:
-  WiredGroupsPanel() {
+  WiredCategoriesPanel() {
     // The stores are no QObjects, so their connections carry `scope_` as the
     // context object and reach the store through a lambda — the same shape
     // app_binder::Connect gives every store connection.
-    QObject::connect(&panel_, &DateGroupsTablePanel::DateGroupsEdited, &scope_,
-                     [this](const std::vector<DateGroup>& date_groups) {
-                       groups_store_.ReceiveDateGroups(date_groups);
-                     });
-    QObject::connect(&groups_topic_, &domain::DateGroupsTopic::Published,
-                     &panel_, &DateGroupsTablePanel::ReceiveDateGroups);
-    QObject::connect(&groups_topic_, &domain::DateGroupsTopic::Published,
+    QObject::connect(&panel_, &DateCategoriesTablePanel::DateCategoriesEdited,
                      &scope_,
-                     [this](const std::vector<DateGroup>& date_groups) {
-                       shape_store_.ReceiveDateGroups(date_groups);
+                     [this](const std::vector<DateCategory>& date_categories) {
+                       categories_store_.ReceiveDateCategories(date_categories);
+                     });
+    QObject::connect(&categories_topic_,
+                     &domain::DateCategoriesTopic::Published, &panel_,
+                     &DateCategoriesTablePanel::ReceiveDateCategories);
+    QObject::connect(&categories_topic_,
+                     &domain::DateCategoriesTopic::Published, &scope_,
+                     [this](const std::vector<DateCategory>& date_categories) {
+                       shape_store_.ReceiveDateCategories(date_categories);
                      });
 
-    groups_store_.SendDefaultValues();
+    categories_store_.SendDefaultValues();
 
     panel_.resize(kPanelWidth, kPanelHeight);
     panel_.show();
@@ -56,8 +59,8 @@ class WiredGroupsPanel {
     QTest::mouseClick(add_row, Qt::LeftButton);
   }
 
-  [[nodiscard]] std::size_t GroupCount() const {
-    return groups_store_.Get().Items().size();
+  [[nodiscard]] std::size_t CategoryCount() const {
+    return categories_store_.Get().Items().size();
   }
 
   [[nodiscard]] int TableRowCount() const {
@@ -71,9 +74,9 @@ class WiredGroupsPanel {
         .FillColorDisabled();
   }
 
-  [[nodiscard]] glm::vec4 GroupFillColor(std::size_t group_index) const {
+  [[nodiscard]] glm::vec4 CategoryFillColor(std::size_t category_index) const {
     return shape_store_.Get()
-        .GetDynamicConfiguration(group_index)
+        .GetDynamicConfiguration(category_index)
         .FillColorDisabled();
   }
 
@@ -90,11 +93,11 @@ class WiredGroupsPanel {
     return nullptr;
   }
 
-  domain::DateGroupsTopic groups_topic_;
+  domain::DateCategoriesTopic categories_topic_;
   domain::ShapeConfigSetTopic shape_topic_;
-  DateGroupStore groups_store_{groups_topic_};
+  DateCategoryStore categories_store_{categories_topic_};
   ShapeConfigurationStore shape_store_{shape_topic_};
-  DateGroupsTablePanel panel_{nullptr};
+  DateCategoriesTablePanel panel_{nullptr};
 
   // Last member, so it dies first and takes every connection with it while the
   // receivers above are still alive.
@@ -110,22 +113,22 @@ void ExpectSameColor(const glm::vec4& actual, const glm::vec4& expected) {
 
 }  // namespace
 
-TEST(DateGroupsPanelTest, AddRowClickAddsOneGroupPerClick) {
-  WiredGroupsPanel wired;
-  ASSERT_EQ(wired.GroupCount(), 1U);
+TEST(DateCategoriesPanelTest, AddRowClickAddsOneCategoryPerClick) {
+  WiredCategoriesPanel wired;
+  ASSERT_EQ(wired.CategoryCount(), 1U);
 
   wired.ClickAddRow();
-  EXPECT_EQ(wired.GroupCount(), 2U);
+  EXPECT_EQ(wired.CategoryCount(), 2U);
   EXPECT_EQ(wired.TableRowCount(), 2);
 
   wired.ClickAddRow();
   wired.ClickAddRow();
-  EXPECT_EQ(wired.GroupCount(), 4U);
+  EXPECT_EQ(wired.CategoryCount(), 4U);
   EXPECT_EQ(wired.TableRowCount(), 4);
 }
 
-TEST(DateGroupsPanelTest, AddRowClicksLeaveTheAnnualCoverageColorAlone) {
-  WiredGroupsPanel wired;
+TEST(DateCategoriesPanelTest, AddRowClicksLeaveTheAnnualCoverageColorAlone) {
+  WiredCategoriesPanel wired;
   const glm::vec4 before = wired.AnnualCoverageFillColor();
 
   for (int click = 0; click < 3; ++click) {
@@ -134,14 +137,14 @@ TEST(DateGroupsPanelTest, AddRowClicksLeaveTheAnnualCoverageColorAlone) {
   }
 }
 
-TEST(DateGroupsPanelTest, AddRowClicksLeaveExistingGroupColorsAlone) {
-  WiredGroupsPanel wired;
-  const glm::vec4 first_group = wired.GroupFillColor(0);
+TEST(DateCategoriesPanelTest, AddRowClicksLeaveExistingCategoryColorsAlone) {
+  WiredCategoriesPanel wired;
+  const glm::vec4 first_category = wired.CategoryFillColor(0);
 
   wired.ClickAddRow();
-  const glm::vec4 second_group = wired.GroupFillColor(1);
+  const glm::vec4 second_category = wired.CategoryFillColor(1);
 
   wired.ClickAddRow();
-  ExpectSameColor(wired.GroupFillColor(0), first_group);
-  ExpectSameColor(wired.GroupFillColor(1), second_group);
+  ExpectSameColor(wired.CategoryFillColor(0), first_category);
+  ExpectSameColor(wired.CategoryFillColor(1), second_category);
 }

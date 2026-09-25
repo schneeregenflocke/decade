@@ -4,15 +4,17 @@
 #include <boost/archive/xml_oarchive.hpp>
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/vector.hpp>
+#include <glm/vec4.hpp>
 #include <sstream>
 #include <string>
 #include <vector>
 
 #include "domain/calendar_config.hpp"
 #include "domain/date.hpp"
+#include "domain/date_category.hpp"
 #include "domain/date_entry.hpp"
-#include "domain/date_group.hpp"
 #include "domain/date_period.hpp"
+#include "domain/shape_configuration.hpp"
 #include "infrastructure/persistence/value_serialization.hpp"
 
 namespace {
@@ -58,21 +60,21 @@ TEST(ValueSerializationTest, DateEntriesRoundTrip) {
   std::vector<DateEntry> entries(1);
   entries[0].SetDateInterval(
       DatePeriod(Date::FromYmd(1998, 9, 23), Date::FromYmd(1998, 11, 25)));
-  entries[0].SetGroup(2);
+  entries[0].SetCategory(2);
 
   const auto loaded = XmlRoundTrip(entries);
 
   ASSERT_EQ(loaded.size(), 1U);
   EXPECT_EQ(loaded[0].GetDateInterval(), entries[0].GetDateInterval());
-  EXPECT_EQ(loaded[0].GetGroup(), 2);
+  EXPECT_EQ(loaded[0].GetCategory(), 2);
 }
 
-TEST(ValueSerializationTest, DateGroupsRoundTrip) {
-  std::vector<DateGroup> groups;
-  groups.emplace_back("Gruppe äöü");
-  groups.back().SetNumber(3);
+TEST(ValueSerializationTest, DateCategoriesRoundTrip) {
+  std::vector<DateCategory> categories;
+  categories.emplace_back("Gruppe äöü");
+  categories.back().SetNumber(3);
 
-  const auto loaded = XmlRoundTrip(groups);
+  const auto loaded = XmlRoundTrip(categories);
 
   ASSERT_EQ(loaded.size(), 1U);
   EXPECT_EQ(loaded[0].GetName(), "Gruppe äöü");
@@ -89,4 +91,22 @@ TEST(ValueSerializationTest, CalendarConfigRoundTrip) {
   EXPECT_EQ(loaded.FirstYear(), 1998);
   EXPECT_EQ(loaded.LastYear(), 2003);
   EXPECT_FALSE(loaded.IsFitYearsToEntries());
+}
+
+// A project file written before the rename to category carries "Bar Group N"
+// as the key of every category configuration; loading derives the key anew
+// from the index and keeps the colour.
+TEST(ValueSerializationTest, CategoryConfigurationKeysFollowTheirIndex) {
+  const glm::vec4 teal(0.0F, 0.5F, 0.5F, 1.0F);
+  ShapeConfigSet written;
+  written.MutableCategoryConfigurations().emplace_back(
+      "Bar Group 0", true, true, 0.3F,
+      ShapeConfiguration::OutlineColorValue{teal},
+      ShapeConfiguration::FillColorValue{teal});
+
+  const auto loaded = XmlRoundTrip(written);
+
+  ASSERT_EQ(loaded.CategoryConfigurations().size(), 1U);
+  EXPECT_EQ(loaded.CategoryConfigurations()[0].Key(), "Bar Category 0");
+  EXPECT_EQ(loaded.CategoryConfigurations()[0].FillColorDisabled(), teal);
 }

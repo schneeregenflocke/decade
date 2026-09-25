@@ -54,9 +54,9 @@ TEST(ChildPoolTest, DropsTheChildrenAShorterSetNoLongerNeeds) {
 // freed memory here.
 //
 // The shape this guards is `BuildBars`, which opens one child pool per date
-// group and keeps them all alive while creating the next: with a single group
-// nothing ever reallocates, so the fault appears the moment a second date group
-// exists (#71).
+// category and keeps them all alive while creating the next: with a single
+// category nothing ever reallocates, so the fault appears the moment a second
+// date category exists (#71).
 TEST(ChildPoolTest, EarlierChildrenSurviveTheParentVectorGrowing) {
   const auto parent = std::make_shared<SceneNode>("parent");
   ChildPool pool(parent);
@@ -79,14 +79,14 @@ TEST(ChildPoolTest, EarlierChildrenSurviveTheParentVectorGrowing) {
 // over a child that a *second* pool then makes the parent's vector grow past.
 TEST(ChildPoolTest, ANestedPoolOutlivesItsParentVectorGrowing) {
   const auto root = std::make_shared<SceneNode>("root");
-  ChildPool group_pool(root);
+  ChildPool category_pool(root);
 
   // A deque, because the pool is neither copyable nor movable.
   std::deque<ChildPool> nested_pools;
   constexpr std::size_t kEnoughToReallocate = 64;
   for (std::size_t index = 0; index < kEnoughToReallocate; ++index) {
     nested_pools.emplace_back(
-        group_pool.Next("group " + std::to_string(index)));
+        category_pool.Next("category " + std::to_string(index)));
   }
 
   // Every nested pool still has a parent to fill, although the root's child

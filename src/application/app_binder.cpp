@@ -4,8 +4,8 @@
 #include <glm/ext/vector_float2.hpp>
 
 #include "../domain/calendar_config_store.hpp"
+#include "../domain/date_category_store.hpp"
 #include "../domain/date_entry_store.hpp"
-#include "../domain/date_group_store.hpp"
 #include "../domain/page_setup_store.hpp"
 #include "../domain/shape_configuration_store.hpp"
 #include "../domain/state_topics.hpp"
@@ -13,12 +13,12 @@
 #include "../domain/title_config_store.hpp"
 #include "../infrastructure/graphics/pick_id.hpp"
 #include "../presentation/calendar_panel.hpp"
+#include "../presentation/categories_panel.hpp"
 #include "../presentation/csv_import_panel.hpp"
 #include "../presentation/date_panel.hpp"
 #include "../presentation/document_panel.hpp"
 #include "../presentation/font_panel.hpp"
 #include "../presentation/gl_canvas.hpp"
-#include "../presentation/groups_panel.hpp"
 #include "../presentation/page_panel.hpp"
 #include "../presentation/scene_tree_panel.hpp"
 #include "../presentation/shape_panel.hpp"
@@ -70,30 +70,31 @@ void BindDateEntries(QObject& scope, EventBus& bus,
           components.calendar_page, &CalendarPage::ReceiveDateEntries);
 }
 
-void BindDateGroups(QObject& scope, EventBus& bus,
-                    const AppComponents& components) {
-  Connect(scope, components.date_groups_table_panel,
-          &DateGroupsTablePanel::DateGroupsEdited, components.date_groups_store,
-          &DateGroupStore::ReceiveDateGroups);
+void BindDateCategories(QObject& scope, EventBus& bus,
+                        const AppComponents& components) {
+  Connect(scope, components.date_categories_table_panel,
+          &DateCategoriesTablePanel::DateCategoriesEdited,
+          components.date_categories_store,
+          &DateCategoryStore::ReceiveDateCategories);
 
-  Connect(scope, bus.date_groups, &domain::DateGroupsTopic::Published,
-          components.date_groups_table_panel,
-          &DateGroupsTablePanel::ReceiveDateGroups);
-  Connect(scope, bus.date_groups, &domain::DateGroupsTopic::Published,
-          components.date_entry_store, &DateEntryStore::ReceiveDateGroups);
-  Connect(scope, bus.date_groups, &domain::DateGroupsTopic::Published,
-          components.data_table_panel, &DateTablePanel::ReceiveDateGroups);
-  // The store synthesises the per-group shape configurations out of the palette
-  // and publishes them anew — that must run before the scene rebuild below,
-  // which reads the updated configurations off the bus. What keeps the order is
-  // the order of these two calls: "if a signal is connected to several slots,
-  // the slots are activated in the same order as the order the connection was
-  // made" (https://doc.qt.io/qt-6/qobject.html#connect).
-  Connect(scope, bus.date_groups, &domain::DateGroupsTopic::Published,
+  Connect(scope, bus.date_categories, &domain::DateCategoriesTopic::Published,
+          components.date_categories_table_panel,
+          &DateCategoriesTablePanel::ReceiveDateCategories);
+  Connect(scope, bus.date_categories, &domain::DateCategoriesTopic::Published,
+          components.date_entry_store, &DateEntryStore::ReceiveDateCategories);
+  Connect(scope, bus.date_categories, &domain::DateCategoriesTopic::Published,
+          components.data_table_panel, &DateTablePanel::ReceiveDateCategories);
+  // The store synthesises the per-category shape configurations out of the
+  // palette and publishes them anew — that must run before the scene rebuild
+  // below, which reads the updated configurations off the bus. What keeps the
+  // order is the order of these two calls: "if a signal is connected to several
+  // slots, the slots are activated in the same order as the order the
+  // connection was made" (https://doc.qt.io/qt-6/qobject.html#connect).
+  Connect(scope, bus.date_categories, &domain::DateCategoriesTopic::Published,
           components.shape_configuration_store,
-          &ShapeConfigurationStore::ReceiveDateGroups);
-  Connect(scope, bus.date_groups, &domain::DateGroupsTopic::Published,
-          components.calendar_page, &CalendarPage::ReceiveDateGroups);
+          &ShapeConfigurationStore::ReceiveDateCategories);
+  Connect(scope, bus.date_categories, &domain::DateCategoriesTopic::Published,
+          components.calendar_page, &CalendarPage::ReceiveDateCategories);
 }
 
 void BindPageSetup(QObject& scope, EventBus& bus,
@@ -266,7 +267,7 @@ void BindInteraction(QObject& scope, EventBus& bus,
 
 void Bind(QObject& scope, EventBus& bus, const AppComponents& components) {
   BindDateEntries(scope, bus, components);
-  BindDateGroups(scope, bus, components);
+  BindDateCategories(scope, bus, components);
   BindPageSetup(scope, bus, components);
   BindProjectFilePath(scope, bus, components);
   BindFont(scope, bus, components);
@@ -296,7 +297,7 @@ void SendInitialValues(EventBus& bus, const AppComponents& components) {
   // Five producers in a row, one rebuild at the end (#36).
   const application::StateBurst burst(bus.state_burst);
   components.shape_configuration_store.SendShapeConfigSet();
-  components.date_groups_store.SendDefaultValues();
+  components.date_categories_store.SendDefaultValues();
   components.page_setup_panel.SendDefaultValues();
   components.title_setup_panel.SendDefaultValues();
   components.calendar_configuration_store.SendCalendarConfig();

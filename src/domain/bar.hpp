@@ -22,12 +22,12 @@ class Bar {
 
   [[nodiscard]] float GetLastDay() const;
 
-  [[nodiscard]] int GetGroup() const;
-  void SetGroup(int group);
+  [[nodiscard]] int GetCategory() const;
+  void SetCategory(int category);
 
  private:
   DatePeriod date_interval_;
   std::string text_;
-  int group_{0};
+  int category_{0};
 };
 #endif  // BAR_HPP

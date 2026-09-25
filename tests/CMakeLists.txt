@@ -15,7 +15,7 @@ add_executable(decade_tests
 	domain/test_date_period.cpp
 	domain/test_date_format.cpp
 	domain/test_reentry_guard.cpp
-	domain/test_date_group_store.cpp
+	domain/test_date_category_store.cpp
 	domain/test_page_setup_store.cpp
 	domain/test_title_config_store.cpp
 	domain/test_shape_configuration_store.cpp
@@ -37,7 +37,7 @@ add_executable(decade_tests
 	application/calendar/test_calendar_layout.cpp
 	application/calendar/test_title_text_editor.cpp
 	application/test_project_document.cpp
-	presentation/test_groups_panel.cpp
+	presentation/test_categories_panel.cpp
 	presentation/test_shape_panel.cpp
 	presentation/test_csv_import_panel.cpp
 )

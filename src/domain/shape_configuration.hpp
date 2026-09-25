@@ -70,10 +70,10 @@ class ShapeConfiguration {
 };
 
 // Pure value object: the shape configurations, split into the fixed ones (page
-// margin, labels, the per-year coverage bar, …) and the per-date-group ones.
-// The two live in separate containers, so a group configuration is identified
-// structurally (its position in the group list), not by parsing its key. No
-// signal -> Rule of Zero, copyable.
+// margin, labels, the per-year coverage bar, …) and the per-date-category ones.
+// The two live in separate containers, so a category configuration is
+// identified structurally (its position in the category list), not by parsing
+// its key. No signal -> Rule of Zero, copyable.
 class ShapeConfigSet {
  public:
   ShapeConfigSet();
@@ -90,18 +90,18 @@ class ShapeConfigSet {
   static constexpr std::string_view kSundayShapesKey = "Sunday Shapes";
   static constexpr std::string_view kMonthsShapesKey = "Months Shapes";
   static constexpr std::string_view kYearsShapesKey = "Years Shapes";
-  // The per-year bar: styled like a bar group so it sits beside them, but
-  // coloured off the palette it is not part of. It aggregates the groups
+  // The per-year bar: styled like a bar category so it sits beside them, but
+  // coloured off the palette it is not part of. It aggregates the categories
   // instead of being one, and a colour derived from their count would move
-  // under the user every time a group is added. Coverage rather than sum,
+  // under the user every time a category is added. Coverage rather than sum,
   // because the bar measures the marked days of a year and the figure beside
   // it their share of that year — a sum leaves open of what.
   static constexpr std::string_view kAnnualCoverageKey = "Annual Coverage";
 
   // The configuration under the given key, searched across the fixed and the
-  // group configurations (a default-constructed value when absent). The key no
-  // longer decides whether a configuration is a group entry — its container
-  // does.
+  // category configurations (a default-constructed value when absent). The key
+  // no longer decides whether a configuration is a category entry — its
+  // container does.
   [[nodiscard]] ShapeConfiguration GetShapeConfiguration(
       std::string_view key) const;
 
@@ -109,38 +109,41 @@ class ShapeConfigSet {
   // holds it. Returns false when no such configuration exists.
   bool UpdateConfiguration(const ShapeConfiguration& config);
 
-  // Key of the per-date-group configuration at the given zero-based index. It
-  // labels the group configurations and matches the node style id; group
-  // membership no longer depends on it.
-  [[nodiscard]] static std::string DynamicConfigurationKey(size_t group_index);
+  // Key of the per-date-category configuration at the given zero-based index.
+  // It labels the category configurations and matches the node style id;
+  // category membership no longer depends on it.
+  [[nodiscard]] static std::string DynamicConfigurationKey(
+      size_t category_index);
 
-  // The configuration for the date group at the given zero-based index (a
+  // The configuration for the date category at the given zero-based index (a
   // default-constructed value when out of range).
   [[nodiscard]] ShapeConfiguration GetDynamicConfiguration(
-      size_t group_index) const;
+      size_t category_index) const;
 
-  // Reconciles the group configurations with the current date groups: keeps the
-  // existing entries (so user customisations survive), drops the entries past
-  // `group_count` and synthesises fresh ones from the palette for newly added
-  // groups. Every configuration that already exists keeps its colour — an entry
-  // is coloured once, when it comes into being, and is the user's from then on.
-  void SyncToDateGroups(size_t group_count);
+  // Reconciles the category configurations with the current date categories:
+  // keeps the existing entries (so user customisations survive), drops the
+  // entries past `category_count` and synthesises fresh ones from the palette
+  // for newly added categories. Every configuration that already exists keeps
+  // its colour — an entry is coloured once, when it comes into being, and is
+  // the user's from then on.
+  void SyncToDateCategories(size_t category_count);
 
   // Raw access for non-intrusive serialization in the infrastructure layer.
   [[nodiscard]] const std::vector<ShapeConfiguration>& FixedConfigurations()
       const;
   [[nodiscard]] std::vector<ShapeConfiguration>& MutableFixedConfigurations();
-  [[nodiscard]] const std::vector<ShapeConfiguration>& GroupConfigurations()
+  [[nodiscard]] const std::vector<ShapeConfiguration>& CategoryConfigurations()
       const;
-  [[nodiscard]] std::vector<ShapeConfiguration>& MutableGroupConfigurations();
+  [[nodiscard]] std::vector<ShapeConfiguration>&
+  MutableCategoryConfigurations();
 
  private:
-  // Key prefix shared by every per-date-group configuration; it labels them
-  // alone and no longer decides group membership.
-  static constexpr std::string_view kGroupKeyPrefix = "Bar Group ";
+  // Key prefix shared by every per-date-category configuration; it labels them
+  // alone and no longer decides category membership.
+  static constexpr std::string_view kCategoryKeyPrefix = "Bar Category ";
 
   // Locates the configuration under the given key across both containers
-  // (fixed first, then group), or nullptr when absent.
+  // (fixed first, then category), or nullptr when absent.
   //
   // One body for both constnesses through [deducing this]
   // (https://en.cppreference.com/w/cpp/language/member_functions): a const set
@@ -159,7 +162,7 @@ class ShapeConfigSet {
     using Config =
         std::remove_reference_t<decltype(*self.fixed_configurations_.begin())>;
     for (auto* container :
-         {&self.fixed_configurations_, &self.group_configurations_}) {
+         {&self.fixed_configurations_, &self.category_configurations_}) {
       const auto found = std::ranges::find_if(
           *container,
           [&](const ShapeConfiguration& config) { return config == key; });
@@ -172,18 +175,18 @@ class ShapeConfigSet {
 
   // Builds a bar-styled shape configuration around the given colour: a stronger
   // outline than fill, so the box has a visible border while the fill stays
-  // pastel. The single source of that alpha recipe, for the bar groups and for
-  // the annual coverage alike.
+  // pastel. The single source of that alpha recipe, for the bar categories and
+  // for the annual coverage alike.
   static ShapeConfiguration MakeBarStyledConfiguration(std::string key,
                                                        const glm::vec3& color);
 
-  // Default configuration for the dynamic bar group at the given zero-based
+  // Default configuration for the dynamic bar category at the given zero-based
   // index, reproducible across sessions because the palette is index-stable.
-  static ShapeConfiguration MakeBarGroupConfiguration(size_t group_index);
+  static ShapeConfiguration MakeBarCategoryConfiguration(size_t category_index);
 
   static std::vector<ShapeConfiguration> BuildDefaults();
 
   std::vector<ShapeConfiguration> fixed_configurations_;
-  std::vector<ShapeConfiguration> group_configurations_;
+  std::vector<ShapeConfiguration> category_configurations_;
 };
 #endif  // SHAPE_CONFIGURATION_HPP

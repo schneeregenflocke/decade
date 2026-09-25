@@ -6,9 +6,9 @@
 
 #include "../domain/calendar_config_store.hpp"
 #include "../domain/csv_import_options.hpp"
+#include "../domain/date_category_store.hpp"
 #include "../domain/date_entry_store.hpp"
 #include "../domain/date_format.hpp"
-#include "../domain/date_group_store.hpp"
 #include "../domain/page_setup_store.hpp"
 #include "../domain/shape_configuration_store.hpp"
 #include "../domain/state_topics.hpp"
@@ -51,7 +51,7 @@ class ProjectDocument {
   [[nodiscard]] const std::string& FilePath() const;
 
   // Access for the composition root, which builds the wiring out of it.
-  [[nodiscard]] DateGroupStore& DateGroups();
+  [[nodiscard]] DateCategoryStore& DateCategories();
   [[nodiscard]] DateEntryStore& DateEntries();
   [[nodiscard]] PageSetupStore& PageSetup();
   [[nodiscard]] TitleConfigStore& TitleConfiguration();
@@ -69,7 +69,7 @@ class ProjectDocument {
   std::string file_path_;
   CsvImportOptions csv_import_options_;
 
-  DateGroupStore date_groups_store_;
+  DateCategoryStore date_categories_store_;
   DateEntryStore date_entry_store_;
   PageSetupStore page_setup_store_;
   TitleConfigStore title_config_store_;

@@ -20,9 +20,9 @@
 #include <vector>
 
 #include "../domain/date.hpp"
+#include "../domain/date_category.hpp"
 #include "../domain/date_entry.hpp"
 #include "../domain/date_format.hpp"
-#include "../domain/date_group.hpp"
 #include "../domain/date_period.hpp"
 #include "../domain/detail/reentry_guard.hpp"
 #include "make_owned.hpp"
@@ -35,19 +35,19 @@ DateTablePanel::DateTablePanel(QWidget* parent,
   InitColumns({{.label = "From Date", .editable = true},
                {.label = "To Date", .editable = true},
                {.label = "Number", .editable = false},
-               {.label = "Group", .editable = false},
-               {.label = "Group Number", .editable = false},
+               {.label = "Category", .editable = false},
+               {.label = "Category Number", .editable = false},
                {.label = "Duration", .editable = false},
                {.label = "Duration to next", .editable = false}});
 
-  auto* select_group_control = MakeOwned<QComboBox>(this);
-  select_group_control_ = select_group_control;
-  select_group_control->setToolTip(
+  auto* select_category_control = MakeOwned<QComboBox>(this);
+  select_category_control_ = select_category_control;
+  select_category_control->setToolTip(
       "Moves every selected row into the chosen category.");
-  auto* select_group_label = MakeOwned<QLabel>("Assign category:", this);
-  select_group_label->setBuddy(select_group_control);
+  auto* select_category_label = MakeOwned<QLabel>("Assign category:", this);
+  select_category_label->setBuddy(select_category_control);
 
-  BuildTableLayout({select_group_label, select_group_control});
+  BuildTableLayout({select_category_label, select_category_control});
 
   connect(table(), &QTableWidget::itemChanged, this,
           [this](QTableWidgetItem* item) { OnItemChanged(item); });
@@ -56,8 +56,8 @@ DateTablePanel::DateTablePanel(QWidget* parent,
   connect(add_button(), &QPushButton::clicked, this, [this]() { OnAdd(); });
   connect(delete_button(), &QPushButton::clicked, this,
           [this]() { OnDelete(); });
-  connect(select_group_control, &QComboBox::activated, this,
-          [this](int index) { OnGroupChosen(index); });
+  connect(select_category_control, &QComboBox::activated, this,
+          [this](int index) { OnCategoryChosen(index); });
 }
 
 void DateTablePanel::ReceiveDateEntries(
@@ -98,16 +98,17 @@ void DateTablePanel::ReceiveDateEntries(
     SetCellText(row, ColumnIndex(Columns::number),
                 std::to_string(entry.GetNumber() + 1));
 
-    // Unknown groups fall back to the default group (0); the store resets
-    // them the same way on its side (CheckAndAdjustGroupIntegrity).
-    int group = entry.GetGroup();
-    if (group > date_groups_.GetGroupMax()) {
-      group = 0;
+    // Unknown categories fall back to the default category (0); the store
+    // resets them the same way on its side (CheckAndAdjustCategoryIntegrity).
+    int category = entry.GetCategory();
+    if (category > date_categories_.GetCategoryMax()) {
+      category = 0;
     }
-    SetCellText(row, ColumnIndex(Columns::group), date_groups_.GetName(group));
+    SetCellText(row, ColumnIndex(Columns::category),
+                date_categories_.GetName(category));
 
-    SetCellText(row, ColumnIndex(Columns::group_number),
-                std::to_string(entry.GetGroupNumber() + 1));
+    SetCellText(row, ColumnIndex(Columns::category_number),
+                std::to_string(entry.GetCategoryNumber() + 1));
 
     SetCellText(row, ColumnIndex(Columns::duration),
                 std::to_string(entry.GetDateInterval().LengthDays()));
@@ -122,18 +123,18 @@ void DateTablePanel::ReceiveDateEntries(
   }
 }
 
-void DateTablePanel::ReceiveDateGroups(
-    const std::vector<DateGroup>& date_groups) {
-  date_groups_.Assign(date_groups);
+void DateTablePanel::ReceiveDateCategories(
+    const std::vector<DateCategory>& date_categories) {
+  date_categories_.Assign(date_categories);
 
   SendDateEntries();
 
-  const QSignalBlocker blocker(select_group_control_);
-  select_group_control_->clear();
-  for (const std::string& name : date_groups_.GetDateGroupsNames()) {
-    select_group_control_->addItem(QString::fromStdString(name));
+  const QSignalBlocker blocker(select_category_control_);
+  select_category_control_->clear();
+  for (const std::string& name : date_categories_.GetDateCategoryNames()) {
+    select_category_control_->addItem(QString::fromStdString(name));
   }
-  select_group_control_->setCurrentIndex(0);
+  select_category_control_->setCurrentIndex(0);
 }
 
 void DateTablePanel::SendDateEntries() {
@@ -154,14 +155,14 @@ void DateTablePanel::SendDateEntries() {
     DateEntry date_entry;
     date_entry.SetDateInterval(date_interval);
 
-    int group_number = 0;
+    int category_number = 0;
     try {
-      group_number =
-          date_groups_.GetNumber(CellText(row, ColumnIndex(Columns::group)));
+      category_number = date_categories_.GetNumber(
+          CellText(row, ColumnIndex(Columns::category)));
     } catch (const std::exception&) {
-      group_number = 0;
+      category_number = 0;
     }
-    date_entry.SetGroup(group_number);
+    date_entry.SetCategory(category_number);
 
     date_entries.push_back(date_entry);
   }
@@ -188,8 +189,8 @@ std::vector<int> DateTablePanel::BuildValidRowsList() {
     }
 
     SetCellText(row, ColumnIndex(Columns::number), "");
-    SetCellText(row, ColumnIndex(Columns::group), "");
-    SetCellText(row, ColumnIndex(Columns::group_number), "");
+    SetCellText(row, ColumnIndex(Columns::category), "");
+    SetCellText(row, ColumnIndex(Columns::category_number), "");
     SetCellText(row, ColumnIndex(Columns::duration), "");
     SetCellText(row, ColumnIndex(Columns::duration_to_next), "");
   }
@@ -209,7 +210,7 @@ std::vector<int> DateTablePanel::SelectedRows() const {
 void DateTablePanel::InsertRow(int row) {
   table()->insertRow(row);
   FillEmptyRow(row);
-  SetCellText(row, ColumnIndex(Columns::group), date_groups_.GetName(0));
+  SetCellText(row, ColumnIndex(Columns::category), date_categories_.GetName(0));
 }
 
 void DateTablePanel::RemoveRow(int row) {
@@ -286,12 +287,12 @@ void DateTablePanel::OnDelete() {
   SendDateEntries();
 }
 
-void DateTablePanel::OnGroupChosen(int group_number) {
-  const std::string group_name = date_groups_.GetName(group_number);
+void DateTablePanel::OnCategoryChosen(int category_number) {
+  const std::string category_name = date_categories_.GetName(category_number);
   {
     const domain::detail::ScopedReentryFlag guard(filling_);
     for (const int row : SelectedRows()) {
-      SetCellText(row, ColumnIndex(Columns::group), group_name);
+      SetCellText(row, ColumnIndex(Columns::category), category_name);
     }
   }
   SendDateEntries();

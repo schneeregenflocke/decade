@@ -16,17 +16,17 @@ class DateEntry {
   [[nodiscard]] int GetNumber() const;
   void SetNumber(int number);
 
-  [[nodiscard]] int GetGroup() const;
-  void SetGroup(int group);
+  [[nodiscard]] int GetCategory() const;
+  void SetCategory(int category);
 
-  [[nodiscard]] int GetGroupNumber() const;
-  void SetGroupNumber(int group_number);
+  [[nodiscard]] int GetCategoryNumber() const;
+  void SetCategoryNumber(int category_number);
 
  private:
   DatePeriod date_interval_;
   DatePeriod date_inter_interval_;
   int number_{0};
-  int group_{0};
-  int group_number_{0};
+  int category_{0};
+  int category_number_{0};
 };
 #endif  // DATE_ENTRY_HPP

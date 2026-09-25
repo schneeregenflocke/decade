@@ -15,14 +15,15 @@
 #include <boost/serialization/split_free.hpp>
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/vector.hpp>
+#include <cstddef>
 #include <glm/vec4.hpp>
 #include <string>
 #include <vector>
 
 #include "../../domain/calendar_config.hpp"
 #include "../../domain/date.hpp"
+#include "../../domain/date_category.hpp"
 #include "../../domain/date_entry.hpp"
-#include "../../domain/date_group.hpp"
 #include "../../domain/date_period.hpp"
 #include "../../domain/page_setup_config.hpp"
 #include "../../domain/shape_configuration.hpp"
@@ -50,29 +51,30 @@ glm::vec4 ColorFromArray(const std::array<float, 4>& array);
 
 namespace boost::serialization {
 
-// --- DateGroup ---
+// --- DateCategory ---
 template <class Archive>
-void save(Archive& ar, const DateGroup& group, const unsigned int /*v*/) {
-  const int number = group.GetNumber();
-  const std::string& name = group.GetName();
+void save(Archive& ar, const DateCategory& category, const unsigned int /*v*/) {
+  const int number = category.GetNumber();
+  const std::string& name = category.GetName();
   ar& make_nvp("number", number);
   ar& make_nvp("name", name);
 }
 template <class Archive>
-void load(Archive& ar, DateGroup& group, const unsigned int /*v*/) {
+void load(Archive& ar, DateCategory& category, const unsigned int /*v*/) {
   int number = 0;
   std::string name;
   ar& make_nvp("number", number);
   ar& make_nvp("name", name);
-  group.SetNumber(number);
-  group.SetName(std::move(name));
+  category.SetNumber(number);
+  category.SetName(std::move(name));
 }
 
 // --- DateEntry ---
 // Only the primary state is persisted: the half-open interval (interval_end
-// is exclusive) and the group. The derived fields (inter-interval, number,
-// group number) are recomputed by DateEntryStore::ReceiveDateEntries when the
-// loaded entries are pushed back into the store.
+// is exclusive) and the category. The derived fields (inter-interval, number,
+// category number) are recomputed by DateEntryStore::ReceiveDateEntries when
+// the loaded entries are pushed back into the store. The key "group" predates
+// the rename to category and stays, so existing project files load.
 template <class Archive>
 void save(Archive& ar, const DateEntry& entry, const unsigned int /*v*/) {
   const std::string interval_begin =
@@ -81,23 +83,23 @@ void save(Archive& ar, const DateEntry& entry, const unsigned int /*v*/) {
   const std::string interval_end =
       persistence::serialization_detail::DateToIsoString(
           entry.GetDateInterval().End());
-  const int group = entry.GetGroup();
+  const int category = entry.GetCategory();
   ar& make_nvp("interval_begin", interval_begin);
   ar& make_nvp("interval_end", interval_end);
-  ar& make_nvp("group", group);
+  ar& make_nvp("group", category);
 }
 template <class Archive>
 void load(Archive& ar, DateEntry& entry, const unsigned int /*v*/) {
   std::string interval_begin;
   std::string interval_end;
-  int group = 0;
+  int category = 0;
   ar& make_nvp("interval_begin", interval_begin);
   ar& make_nvp("interval_end", interval_end);
-  ar& make_nvp("group", group);
+  ar& make_nvp("group", category);
   entry.SetDateInterval(DatePeriod(
       persistence::serialization_detail::DateFromIsoString(interval_begin),
       persistence::serialization_detail::DateFromIsoString(interval_end)));
-  entry.SetGroup(group);
+  entry.SetCategory(category);
 }
 
 // --- PageSetupConfig ---
@@ -202,21 +204,33 @@ void load(Archive& ar, ShapeConfiguration& config, const unsigned int /*v*/) {
 }
 
 // --- ShapeConfigSet ---
+// "group_configurations" predates the rename to category and stays. The key
+// each of those entries carries is derived from its index, so loading derives
+// it anew: a file written as "Bar Group N" reads back as "Bar Category N".
 template <class Archive>
 void save(Archive& ar, const ShapeConfigSet& set, const unsigned int /*v*/) {
   const std::vector<ShapeConfiguration>& fixed = set.FixedConfigurations();
-  const std::vector<ShapeConfiguration>& groups = set.GroupConfigurations();
+  const std::vector<ShapeConfiguration>& categories =
+      set.CategoryConfigurations();
   ar& make_nvp("fixed_configurations", fixed);
-  ar& make_nvp("group_configurations", groups);
+  ar& make_nvp("group_configurations", categories);
 }
 template <class Archive>
 void load(Archive& ar, ShapeConfigSet& set, const unsigned int /*v*/) {
   std::vector<ShapeConfiguration> fixed;
-  std::vector<ShapeConfiguration> groups;
+  std::vector<ShapeConfiguration> categories;
   ar& make_nvp("fixed_configurations", fixed);
-  ar& make_nvp("group_configurations", groups);
+  ar& make_nvp("group_configurations", categories);
+  for (std::size_t index = 0; index < categories.size(); ++index) {
+    const ShapeConfiguration& loaded = categories[index];
+    categories[index] = ShapeConfiguration(
+        ShapeConfigSet::DynamicConfigurationKey(index), loaded.OutlineVisible(),
+        loaded.FillVisible(), loaded.LineWidthDisabled(),
+        ShapeConfiguration::OutlineColorValue{loaded.OutlineColorDisabled()},
+        ShapeConfiguration::FillColorValue{loaded.FillColorDisabled()});
+  }
   set.MutableFixedConfigurations() = std::move(fixed);
-  set.MutableGroupConfigurations() = std::move(groups);
+  set.MutableCategoryConfigurations() = std::move(categories);
 }
 
 // --- CalendarConfig (incl. CalendarSpan year range) ---
@@ -251,7 +265,7 @@ void load(Archive& ar, CalendarConfig& config, const unsigned int /*v*/) {
 
 }  // namespace boost::serialization
 
-BOOST_SERIALIZATION_SPLIT_FREE(DateGroup)
+BOOST_SERIALIZATION_SPLIT_FREE(DateCategory)
 BOOST_SERIALIZATION_SPLIT_FREE(DateEntry)
 BOOST_SERIALIZATION_SPLIT_FREE(PageSetupConfig)
 BOOST_SERIALIZATION_SPLIT_FREE(TitleConfig)

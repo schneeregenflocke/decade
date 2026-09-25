@@ -7,9 +7,9 @@
 
 #include "../domain/calendar_config_store.hpp"
 #include "../domain/csv_import_options.hpp"
+#include "../domain/date_category_store.hpp"
 #include "../domain/date_entry_store.hpp"
 #include "../domain/date_format.hpp"
-#include "../domain/date_group_store.hpp"
 #include "../domain/page_setup_store.hpp"
 #include "../domain/shape_configuration_store.hpp"
 #include "../domain/title_config.hpp"
@@ -26,7 +26,7 @@ ProjectDocument::ProjectDocument(EventBus& bus,
     : locale_date_formatter_(locale_date_formatter),
       file_path_topic_(bus.project_file_path),
       state_burst_topic_(bus.state_burst),
-      date_groups_store_(bus.date_groups),
+      date_categories_store_(bus.date_categories),
       date_entry_store_(bus.date_entries),
       page_setup_store_(bus.page_setup),
       title_config_store_(bus.title_config),
@@ -38,8 +38,8 @@ std::optional<std::string> ProjectDocument::LoadXml(std::string file_path) {
   // The bracket makes that one change for whoever rebuilds on it (#36).
   const StateBurst burst(state_burst_topic_);
   if (auto error = persistence::LoadProjectXml(
-          file_path, date_groups_store_, date_entry_store_, page_setup_store_,
-          title_config_store_, shape_configuration_store_,
+          file_path, date_categories_store_, date_entry_store_,
+          page_setup_store_, title_config_store_, shape_configuration_store_,
           calendar_configuration_store_)) {
     return error;
   }
@@ -49,8 +49,8 @@ std::optional<std::string> ProjectDocument::LoadXml(std::string file_path) {
 
 std::optional<std::string> ProjectDocument::SaveXml(std::string file_path) {
   if (auto error = persistence::SaveProjectXml(
-          file_path, date_groups_store_, date_entry_store_, page_setup_store_,
-          title_config_store_, shape_configuration_store_,
+          file_path, date_categories_store_, date_entry_store_,
+          page_setup_store_, title_config_store_, shape_configuration_store_,
           calendar_configuration_store_)) {
     return error;
   }
@@ -84,7 +84,9 @@ bool ProjectDocument::HasFilePath() const { return !file_path_.empty(); }
 
 const std::string& ProjectDocument::FilePath() const { return file_path_; }
 
-DateGroupStore& ProjectDocument::DateGroups() { return date_groups_store_; }
+DateCategoryStore& ProjectDocument::DateCategories() {
+  return date_categories_store_;
+}
 
 DateEntryStore& ProjectDocument::DateEntries() { return date_entry_store_; }
 

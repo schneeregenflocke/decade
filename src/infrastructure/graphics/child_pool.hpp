@@ -26,10 +26,10 @@
 // a child vector. That vector grows while the scene is being built, and growing
 // reallocates: a pool holding a reference to its parent — or a caller holding
 // one to a child it was handed — would then read freed memory. `BuildBars`
-// does exactly that, one pool per date group, all alive while the next is made,
-// so the fault stayed invisible until a second date group existed (#71). The
-// copy costs one atomic increment per node and buys the whole class of bug
-// away.
+// does exactly that, one pool per date category, all alive while the next is
+// made, so the fault stayed invisible until a second date category existed
+// (#71). The copy costs one atomic increment per node and buys the whole class
+// of bug away.
 
 // Children without a shape — pure grouping nodes.
 class ChildPool {

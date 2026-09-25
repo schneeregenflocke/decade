@@ -1,5 +1,5 @@
-#ifndef GROUPS_PANEL_HPP
-#define GROUPS_PANEL_HPP
+#ifndef CATEGORIES_PANEL_HPP
+#define CATEGORIES_PANEL_HPP
 
 #include <QtWidgets/QAbstractItemView>
 #include <QtWidgets/QPushButton>
@@ -10,23 +10,24 @@
 #include <string>
 #include <vector>
 
-#include "../domain/date_group.hpp"
+#include "../domain/date_category.hpp"
 #include "../domain/detail/reentry_guard.hpp"
 #include "table_panel_base.hpp"
 
-class DateGroupsTablePanel : public TablePanelBase {
+class DateCategoriesTablePanel : public TablePanelBase {
   Q_OBJECT
 
  public:
-  explicit DateGroupsTablePanel(QWidget* parent);
+  explicit DateCategoriesTablePanel(QWidget* parent);
 
-  void ReceiveDateGroups(const std::vector<DateGroup>& argument_date_groups);
+  void ReceiveDateCategories(
+      const std::vector<DateCategory>& argument_date_categories);
 
  signals:
-  void DateGroupsEdited(const std::vector<DateGroup>& date_groups);
+  void DateCategoriesEdited(const std::vector<DateCategory>& date_categories);
 
  private:
-  // The default group sits in row 0 and is neither removable nor insertable
+  // The default category sits in row 0 and is neither removable nor insertable
   // before: everything the user adds lands behind it.
   static constexpr int kFirstEditableRow = 1;
   static constexpr int kNumberColumn = 0;
@@ -45,8 +46,8 @@ class DateGroupsTablePanel : public TablePanelBase {
 
   void CallbackItemChanged(const QTableWidgetItem* item);
 
-  std::vector<DateGroup> date_groups_;
+  std::vector<DateCategory> date_categories_;
 
   bool filling_{false};
 };
-#endif  // GROUPS_PANEL_HPP
+#endif  // CATEGORIES_PANEL_HPP

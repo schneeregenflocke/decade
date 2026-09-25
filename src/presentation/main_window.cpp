@@ -17,12 +17,12 @@
 #include "../application/app_config.hpp"
 #include "../domain/date_format.hpp"
 #include "calendar_panel.hpp"
+#include "categories_panel.hpp"
 #include "csv_import_panel.hpp"
 #include "date_panel.hpp"
 #include "document_panel.hpp"
 #include "font_panel.hpp"
 #include "gl_canvas.hpp"
-#include "groups_panel.hpp"
 #include "license_panel.hpp"
 #include "main_menu.hpp"
 #include "make_owned.hpp"
@@ -49,8 +49,8 @@ MainWindow::MainWindow(QWidget* parent,
 
 DateTablePanel& MainWindow::DataTable() { return *data_table_panel_; }
 
-DateGroupsTablePanel& MainWindow::DateGroupsTable() {
-  return *date_groups_table_panel_;
+DateCategoriesTablePanel& MainWindow::DateCategoriesTable() {
+  return *date_categories_table_panel_;
 }
 
 DocumentSetupPanel& MainWindow::DocumentSetup() {
@@ -134,8 +134,8 @@ void MainWindow::CreatePanels(QTabWidget* tabs) {
   auto* data_table_panel =
       MakeOwned<DateTablePanel>(tabs, locale_date_formatter_);
   data_table_panel_ = data_table_panel;
-  auto* date_groups_table_panel = MakeOwned<DateGroupsTablePanel>(tabs);
-  date_groups_table_panel_ = date_groups_table_panel;
+  auto* date_categories_table_panel = MakeOwned<DateCategoriesTablePanel>(tabs);
+  date_categories_table_panel_ = date_categories_table_panel;
   auto* calendar_setup_panel = MakeOwned<CalendarSetupPanel>(tabs);
   calendar_setup_panel_ = calendar_setup_panel;
   auto* csv_import_panel = MakeOwned<CsvImportPanel>(tabs);
@@ -154,7 +154,7 @@ void MainWindow::CreatePanels(QTabWidget* tabs) {
   font_panel_ = document_setup_panel->GetFontPanel();
   title_setup_panel_ = document_setup_panel->GetTitleSetupPanel();
 
-  tabs->addTab(date_groups_table_panel, "Categories");
+  tabs->addTab(date_categories_table_panel, "Categories");
   tabs->addTab(data_table_panel, "Entries");
   tabs->addTab(csv_import_panel, "CSV Import");
   tabs->addTab(document_setup_panel, "Document");

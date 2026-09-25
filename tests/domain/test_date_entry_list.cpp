@@ -5,17 +5,17 @@
 #include <vector>
 
 #include "domain/date.hpp"
+#include "domain/date_category.hpp"
 #include "domain/date_entry.hpp"
 #include "domain/date_entry_list.hpp"
-#include "domain/date_group.hpp"
 #include "domain/date_period.hpp"
 
 // Characterisation test over DateEntryList::Assign — the funnel every entry
 // passes through, whatever its source: the XML load, the CSV import, a table
-// edit, a group deletion. Assign derives four things at once (it drops null
-// periods, sorts, clamps groups, then numbers entries, gap periods and group
-// numbers), and each derivation is silent: a wrong one shows up as a wrong
-// calendar, never as an error.
+// edit, a category deletion. Assign derives four things at once (it drops null
+// periods, sorts, clamps categories, then numbers entries, gap periods and
+// category numbers), and each derivation is silent: a wrong one shows up as a
+// wrong calendar, never as an error.
 //
 // It freezes the behaviour of 2026-08-06 as the net for the restructuring
 // around it (#26, #46, #55) — including the gaps. Where an expectation states
@@ -26,22 +26,23 @@
 namespace {
 
 DateEntry MakeEntry(int begin_year, int begin_month, int begin_day,
-                    int end_year, int end_month, int end_day, int group = 0) {
+                    int end_year, int end_month, int end_day,
+                    int category = 0) {
   DateEntry entry;
   entry.SetDateInterval(
       DatePeriod(Date::FromYmd(begin_year, begin_month, begin_day),
                  Date::FromYmd(end_year, end_month, end_day)));
-  entry.SetGroup(group);
+  entry.SetCategory(category);
   return entry;
 }
 
-std::vector<DateGroup> MakeGroups(std::size_t count) {
-  std::vector<DateGroup> groups;
-  groups.reserve(count);
+std::vector<DateCategory> MakeCategories(std::size_t count) {
+  std::vector<DateCategory> categories;
+  categories.reserve(count);
   for (std::size_t index = 0; index < count; ++index) {
-    groups.emplace_back("group " + std::to_string(index));
+    categories.emplace_back("category " + std::to_string(index));
   }
-  return groups;
+  return categories;
 }
 
 }  // namespace
@@ -135,85 +136,88 @@ TEST(DateEntryListCharacterisation, LastEntryKeepsItsIncomingGap) {
             Date::FromYmd(1999, 1, 1));
 }
 
-// --- The number within the group ---
+// --- The number within the category ---
 
-// Counted per group and zero-based, in the sorted order.
-TEST(DateEntryListCharacterisation, GroupNumbersCountPerGroupFromZero) {
+// Counted per category and zero-based, in the sorted order.
+TEST(DateEntryListCharacterisation, CategoryNumbersCountPerCategoryFromZero) {
   DateEntryList list;
-  list.AssignDateGroups(MakeGroups(2));
-  list.Assign({MakeEntry(2030, 1, 1, 2030, 1, 5, /*group=*/0),
-               MakeEntry(2030, 2, 1, 2030, 2, 5, /*group=*/1),
-               MakeEntry(2030, 3, 1, 2030, 3, 5, /*group=*/0),
-               MakeEntry(2030, 4, 1, 2030, 4, 5, /*group=*/1)});
+  list.AssignDateCategories(MakeCategories(2));
+  list.Assign({MakeEntry(2030, 1, 1, 2030, 1, 5, /*category=*/0),
+               MakeEntry(2030, 2, 1, 2030, 2, 5, /*category=*/1),
+               MakeEntry(2030, 3, 1, 2030, 3, 5, /*category=*/0),
+               MakeEntry(2030, 4, 1, 2030, 4, 5, /*category=*/1)});
 
   ASSERT_EQ(list.Items().size(), 4U);
-  EXPECT_EQ(list.Items()[0].GetGroupNumber(), 0);
-  EXPECT_EQ(list.Items()[1].GetGroupNumber(), 0);
-  EXPECT_EQ(list.Items()[2].GetGroupNumber(), 1);
-  EXPECT_EQ(list.Items()[3].GetGroupNumber(), 1);
+  EXPECT_EQ(list.Items()[0].GetCategoryNumber(), 0);
+  EXPECT_EQ(list.Items()[1].GetCategoryNumber(), 0);
+  EXPECT_EQ(list.Items()[2].GetCategoryNumber(), 1);
+  EXPECT_EQ(list.Items()[3].GetCategoryNumber(), 1);
 }
 
-// --- Clamping the group ---
+// --- Clamping the category ---
 
-// Without groups GetGroupMax() is -1, so every non-negative group falls to 0.
-TEST(DateEntryListCharacterisation, WithoutGroupsEveryGroupFallsToZero) {
+// Without categories GetCategoryMax() is -1, so every non-negative category
+// falls to 0.
+TEST(DateEntryListCharacterisation, WithoutCategoriesEveryCategoryFallsToZero) {
   DateEntryList list;
-  list.Assign({MakeEntry(2030, 1, 1, 2030, 1, 5, /*group=*/3)});
+  list.Assign({MakeEntry(2030, 1, 1, 2030, 1, 5, /*category=*/3)});
 
   ASSERT_EQ(list.Items().size(), 1U);
-  EXPECT_EQ(list.Items()[0].GetGroup(), 0);
+  EXPECT_EQ(list.Items()[0].GetCategory(), 0);
 }
 
-TEST(DateEntryListCharacterisation, GroupBeyondTheLastOneFallsToZero) {
+TEST(DateEntryListCharacterisation, CategoryBeyondTheLastOneFallsToZero) {
   DateEntryList list;
-  list.AssignDateGroups(MakeGroups(2));  // valid: 0 and 1
-  list.Assign({MakeEntry(2030, 1, 1, 2030, 1, 5, /*group=*/1),
-               MakeEntry(2030, 2, 1, 2030, 2, 5, /*group=*/2)});
+  list.AssignDateCategories(MakeCategories(2));  // valid: 0 and 1
+  list.Assign({MakeEntry(2030, 1, 1, 2030, 1, 5, /*category=*/1),
+               MakeEntry(2030, 2, 1, 2030, 2, 5, /*category=*/2)});
 
   ASSERT_EQ(list.Items().size(), 2U);
-  EXPECT_EQ(list.Items()[0].GetGroup(), 1);
-  EXPECT_EQ(list.Items()[1].GetGroup(), 0);
+  EXPECT_EQ(list.Items()[0].GetCategory(), 1);
+  EXPECT_EQ(list.Items()[1].GetCategory(), 0);
 }
 
-// A project file carries the group number unchecked, so a negative one arrives
-// just as a too-large one does. Both ends fall back to group 0 (#26); before
-// the fix the negative one walked through and reached
-// group_nodes.at(current_group) in calendar_section_builders.hpp as a huge
-// size_t, throwing std::out_of_range that nobody catches.
-TEST(DateEntryListCharacterisation, NegativeGroupFallsToZero) {
+// A project file carries the category number unchecked, so a negative one
+// arrives just as a too-large one does. Both ends fall back to category 0
+// (#26); before the fix the negative one walked through and reached
+// category_nodes.at(current_category) in calendar_section_builders.hpp as a
+// huge size_t, throwing std::out_of_range that nobody catches.
+TEST(DateEntryListCharacterisation, NegativeCategoryFallsToZero) {
   DateEntryList list;
-  list.AssignDateGroups(MakeGroups(2));
-  list.Assign({MakeEntry(2030, 1, 1, 2030, 1, 5, /*group=*/-3)});
+  list.AssignDateCategories(MakeCategories(2));
+  list.Assign({MakeEntry(2030, 1, 1, 2030, 1, 5, /*category=*/-3)});
 
   ASSERT_EQ(list.Items().size(), 1U);
-  EXPECT_EQ(list.Items()[0].GetGroup(), 0);
+  EXPECT_EQ(list.Items()[0].GetCategory(), 0);
 }
 
-// Deleting a group re-clamps what is already stored — the second half of #26
-// and the path a user actually walks: the groups panel deletes a row, the bus
-// carries the shrunk list to DateEntryStore and DateEntryBars, and both
-// hold entries pointing at the group that just went. The scene builder sizes
-// group_nodes by the new group count, so a stale index took the rebuild down.
-TEST(DateEntryListCharacterisation, DeletingAGroupReclampsStoredEntries) {
+// Deleting a category re-clamps what is already stored — the second half of #26
+// and the path a user actually walks: the categories panel deletes a row, the
+// bus carries the shrunk list to DateEntryStore and DateEntryBars, and both
+// hold entries pointing at the category that just went. The scene builder sizes
+// category_nodes by the new category count, so a stale index took the rebuild
+// down.
+TEST(DateEntryListCharacterisation, DeletingACategoryReclampsStoredEntries) {
   DateEntryList list;
-  list.AssignDateGroups(MakeGroups(4));
-  list.Assign({MakeEntry(2030, 1, 1, 2030, 1, 5, /*group=*/3)});
-  ASSERT_EQ(list.Items()[0].GetGroup(), 3);
+  list.AssignDateCategories(MakeCategories(4));
+  list.Assign({MakeEntry(2030, 1, 1, 2030, 1, 5, /*category=*/3)});
+  ASSERT_EQ(list.Items()[0].GetCategory(), 3);
 
-  list.AssignDateGroups(MakeGroups(1));  // group 3 no longer exists
+  list.AssignDateCategories(MakeCategories(1));  // category 3 no longer exists
 
-  EXPECT_EQ(list.Items()[0].GetGroup(), 0);
+  EXPECT_EQ(list.Items()[0].GetCategory(), 0);
 }
 
-// Groups the other way round: growing the list leaves a valid group alone.
-TEST(DateEntryListCharacterisation, AddingAGroupLeavesValidEntriesAlone) {
+// Categories the other way round: growing the list leaves a valid category
+// alone.
+TEST(DateEntryListCharacterisation, AddingACategoryLeavesValidEntriesAlone) {
   DateEntryList list;
-  list.AssignDateGroups(MakeGroups(2));
-  list.Assign({MakeEntry(2030, 1, 1, 2030, 1, 5, /*group=*/1)});
+  list.AssignDateCategories(MakeCategories(2));
+  list.Assign({MakeEntry(2030, 1, 1, 2030, 1, 5, /*category=*/1)});
 
-  list.AssignDateGroups(MakeGroups(5));
+  list.AssignDateCategories(MakeCategories(5));
 
-  EXPECT_EQ(list.Items()[0].GetGroup(), 1);
+  EXPECT_EQ(list.Items()[0].GetCategory(), 1);
 }
 
 // --- The year span ---
