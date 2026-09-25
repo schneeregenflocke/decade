@@ -23,9 +23,3 @@ void DateEntry::SetNumber(int number) { number_ = number; }
 int DateEntry::GetCategory() const { return category_; }
 
 void DateEntry::SetCategory(int category) { category_ = category; }
-
-int DateEntry::GetCategoryNumber() const { return category_number_; }
-
-void DateEntry::SetCategoryNumber(int category_number) {
-  category_number_ = category_number;
-}

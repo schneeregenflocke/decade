@@ -19,14 +19,10 @@ class DateEntry {
   [[nodiscard]] int GetCategory() const;
   void SetCategory(int category);
 
-  [[nodiscard]] int GetCategoryNumber() const;
-  void SetCategoryNumber(int category_number);
-
  private:
   DatePeriod date_interval_;
   DatePeriod date_inter_interval_;
   int number_{0};
   int category_{0};
-  int category_number_{0};
 };
 #endif  // DATE_ENTRY_HPP

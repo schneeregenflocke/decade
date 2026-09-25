@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <map>
 #include <vector>
 
 #include "date_category.hpp"
@@ -28,7 +27,6 @@ void DateEntryList::Assign(
   ClampCategoriesToKnownRange();
   AssignNumbers();
   AssignInterIntervals();
-  AssignCategoryNumbers();
 }
 
 void DateEntryList::AssignDateCategories(
@@ -92,22 +90,6 @@ void DateEntryList::AssignInterIntervals() {
       iterator->SetDateInterInterval(DatePeriod(
           iterator->GetDateInterval().End(), next->GetDateInterval().Begin()));
     }
-  }
-}
-
-void DateEntryList::AssignCategoryNumbers() {
-  std::map<int, int> categories_counter;
-
-  for (auto& date_entry : date_entries_) {
-    const int current_category = date_entry.GetCategory();
-
-    if (categories_counter.contains(current_category)) {
-      categories_counter[current_category] += 1;
-    } else {
-      categories_counter[current_category] = 0;
-    }
-
-    date_entry.SetCategoryNumber(categories_counter[current_category]);
   }
 }
 

@@ -9,8 +9,8 @@
 
 // A value object: the entries of a project in canonical form. `Assign` discards
 // null periods, sorts by begin and derives everything derived anew — the
-// running number, the gap period to the next entry, the number within the
-// category — and cuts categories that no longer exist.
+// running number and the gap period to the next entry — and cuts categories
+// that no longer exist.
 //
 // Separate from the store, because two holders need the same preparation but
 // only one of them publishes: DateEntryStore publishes, DateEntryBars
@@ -43,8 +43,6 @@ class DateEntryList {
   void AssignNumbers();
 
   void AssignInterIntervals();
-
-  void AssignCategoryNumbers();
 
   // The invariant every consumer relies on: an entry's category indexes a
   // category that exists. Both ends are guarded — a project file carries the

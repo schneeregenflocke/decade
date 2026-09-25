@@ -71,9 +71,9 @@ void load(Archive& ar, DateCategory& category, const unsigned int /*v*/) {
 
 // --- DateEntry ---
 // Only the primary state is persisted: the half-open interval (interval_end
-// is exclusive) and the category. The derived fields (inter-interval, number,
-// category number) are recomputed by DateEntryStore::ReceiveDateEntries when
-// the loaded entries are pushed back into the store. The key "group" predates
+// is exclusive) and the category. The derived fields (inter-interval, number)
+// are recomputed by DateEntryStore::ReceiveDateEntries when the loaded entries
+// are pushed back into the store. The key "group" predates
 // the rename to category and stays, so existing project files load.
 template <class Archive>
 void save(Archive& ar, const DateEntry& entry, const unsigned int /*v*/) {

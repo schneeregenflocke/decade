@@ -12,10 +12,10 @@
 
 // Characterisation test over DateEntryList::Assign — the funnel every entry
 // passes through, whatever its source: the XML load, the CSV import, a table
-// edit, a category deletion. Assign derives four things at once (it drops null
-// periods, sorts, clamps categories, then numbers entries, gap periods and
-// category numbers), and each derivation is silent: a wrong one shows up as a
-// wrong calendar, never as an error.
+// edit, a category deletion. Assign derives several things at once (it drops
+// null periods, sorts, clamps categories, then numbers entries and derives the
+// gap periods), and each derivation is silent: a wrong one shows up as a wrong
+// calendar, never as an error.
 //
 // It freezes the behaviour of 2026-08-06 as the net for the restructuring
 // around it (#26, #46, #55) — including the gaps. Where an expectation states
@@ -134,24 +134,6 @@ TEST(DateEntryListCharacterisation, LastEntryKeepsItsIncomingGap) {
   ASSERT_EQ(list.Items().size(), 2U);
   EXPECT_EQ(list.Items()[1].GetDateInterInterval().Begin(),
             Date::FromYmd(1999, 1, 1));
-}
-
-// --- The number within the category ---
-
-// Counted per category and zero-based, in the sorted order.
-TEST(DateEntryListCharacterisation, CategoryNumbersCountPerCategoryFromZero) {
-  DateEntryList list;
-  list.AssignDateCategories(MakeCategories(2));
-  list.Assign({MakeEntry(2030, 1, 1, 2030, 1, 5, /*category=*/0),
-               MakeEntry(2030, 2, 1, 2030, 2, 5, /*category=*/1),
-               MakeEntry(2030, 3, 1, 2030, 3, 5, /*category=*/0),
-               MakeEntry(2030, 4, 1, 2030, 4, 5, /*category=*/1)});
-
-  ASSERT_EQ(list.Items().size(), 4U);
-  EXPECT_EQ(list.Items()[0].GetCategoryNumber(), 0);
-  EXPECT_EQ(list.Items()[1].GetCategoryNumber(), 0);
-  EXPECT_EQ(list.Items()[2].GetCategoryNumber(), 1);
-  EXPECT_EQ(list.Items()[3].GetCategoryNumber(), 1);
 }
 
 // --- Clamping the category ---
