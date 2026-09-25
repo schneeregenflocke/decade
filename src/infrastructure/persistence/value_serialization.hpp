@@ -220,32 +220,33 @@ void load(Archive& ar, ShapeConfigSet& set, const unsigned int /*v*/) {
 }
 
 // --- CalendarConfig (incl. CalendarSpan year range) ---
+// The key keeps its old name: project files written before the rename carry it.
 template <class Archive>
 void save(Archive& ar, const CalendarConfig& config, const unsigned int /*v*/) {
   const std::array<int, 2> limits = config.GetSpanLimitsYears();
   const int first_year = limits[0];
   const int last_year = limits[1];
-  const bool auto_calendar_span = config.IsAutoCalendarSpan();
+  const bool fit_years_to_entries = config.IsFitYearsToEntries();
   const std::vector<float>& spacing_proportions =
       config.GetSpacingProportions();
   ar& make_nvp("first_year", first_year);
   ar& make_nvp("last_year", last_year);
-  ar& make_nvp("auto_calendar_span", auto_calendar_span);
+  ar& make_nvp("auto_calendar_span", fit_years_to_entries);
   ar& make_nvp("spacing_proportions", spacing_proportions);
 }
 template <class Archive>
 void load(Archive& ar, CalendarConfig& config, const unsigned int /*v*/) {
   int first_year = 0;
   int last_year = 0;
-  bool auto_calendar_span = true;
+  bool fit_years_to_entries = true;
   std::vector<float> spacing_proportions;
   ar& make_nvp("first_year", first_year);
   ar& make_nvp("last_year", last_year);
-  ar& make_nvp("auto_calendar_span", auto_calendar_span);
+  ar& make_nvp("auto_calendar_span", fit_years_to_entries);
   ar& make_nvp("spacing_proportions", spacing_proportions);
   config.SetSpan(
       CalendarSpan::YearSpan{.first_year = first_year, .last_year = last_year});
-  config.SetAutoCalendarSpan(auto_calendar_span);
+  config.SetFitYearsToEntries(fit_years_to_entries);
   config.SetSpacingProportions(spacing_proportions);
 }
 

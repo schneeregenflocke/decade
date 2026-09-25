@@ -69,7 +69,7 @@ TEST(CalendarSpanTest, GetYearThrowsWhenOutOfRange) {
 TEST(CalendarConfigStoreTest, ReceiveCopiesAndEmits) {
   CalendarConfig source;
   source.SetSpan({.first_year = 2040, .last_year = 2042});
-  source.SetAutoCalendarSpan(false);
+  source.SetFitYearsToEntries(false);
 
   domain::CalendarConfigTopic topic;
   CalendarConfigStore target(topic);
@@ -80,7 +80,7 @@ TEST(CalendarConfigStoreTest, ReceiveCopiesAndEmits) {
   target.ReceiveCalendarConfig(source);
 
   EXPECT_EQ(emissions, 1);
-  EXPECT_FALSE(target.Get().IsAutoCalendarSpan());
+  EXPECT_FALSE(target.Get().IsFitYearsToEntries());
   EXPECT_EQ(target.Get().GetSpanLimitsYears()[0], 2040);
 }
 
@@ -115,7 +115,7 @@ DateEntry EntryBetween(int first_year, int last_year) {
 
 }  // namespace
 
-TEST(CalendarConfigStoreTest, AutoSpanFollowsTheEntries) {
+TEST(CalendarConfigStoreTest, FittedYearsFollowTheEntries) {
   domain::CalendarConfigTopic topic;
   CalendarConfigStore store(topic);
   int emissions = 0;
@@ -130,7 +130,7 @@ TEST(CalendarConfigStoreTest, AutoSpanFollowsTheEntries) {
   EXPECT_EQ(store.Get().GetSpanLimitsYears()[1], 2023);
 }
 
-TEST(CalendarConfigStoreTest, AutoSpanOverridesAnIncomingSpan) {
+TEST(CalendarConfigStoreTest, FittedYearsOverrideAnIncomingSpan) {
   domain::CalendarConfigTopic topic;
   CalendarConfigStore store(topic);
   store.ReceiveDateEntries({EntryBetween(1998, 2023)});
@@ -147,7 +147,7 @@ TEST(CalendarConfigStoreTest, ManualSpanIgnoresTheEntries) {
   domain::CalendarConfigTopic topic;
   CalendarConfigStore store(topic);
   CalendarConfig manual;
-  manual.SetAutoCalendarSpan(false);
+  manual.SetFitYearsToEntries(false);
   manual.SetSpan({.first_year = 2040, .last_year = 2041});
   store.ReceiveCalendarConfig(manual);
 

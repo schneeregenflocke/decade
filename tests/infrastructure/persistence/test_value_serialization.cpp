@@ -82,10 +82,10 @@ TEST(ValueSerializationTest, DateGroupsRoundTrip) {
 TEST(ValueSerializationTest, CalendarConfigRoundTrip) {
   CalendarConfig config;
   config.SetSpan({.first_year = 1998, .last_year = 2003});
-  config.SetAutoCalendarSpan(false);
+  config.SetFitYearsToEntries(false);
 
   const auto loaded = XmlRoundTrip(config);
 
   EXPECT_EQ(loaded.GetSpanLimitsYears(), (std::array<int, 2>{1998, 2003}));
-  EXPECT_FALSE(loaded.IsAutoCalendarSpan());
+  EXPECT_FALSE(loaded.IsFitYearsToEntries());
 }

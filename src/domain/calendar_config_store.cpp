@@ -15,7 +15,7 @@ CalendarConfigStore::CalendarConfigStore(domain::CalendarConfigTopic& topic)
 void CalendarConfigStore::ReceiveCalendarConfig(
     const CalendarConfig& incoming_calendar_config) {
   CalendarConfig config = incoming_calendar_config;
-  ApplyAutoSpan(config);
+  FitYearsToEntries(config);
   Adopt(config);
 }
 
@@ -30,7 +30,7 @@ void CalendarConfigStore::ReceiveDateEntries(
   }
 
   CalendarConfig config = calendar_config_;
-  ApplyAutoSpan(config);
+  FitYearsToEntries(config);
   // Entries change far more often than their year range; an unchanged span
   // would only cost every consumer a rebuild.
   if (config.GetSpanLimitsYears() != calendar_config_.GetSpanLimitsYears()) {
@@ -46,8 +46,8 @@ const CalendarConfig& CalendarConfigStore::Get() const {
   return calendar_config_;
 }
 
-void CalendarConfigStore::ApplyAutoSpan(CalendarConfig& config) const {
-  if (config.IsAutoCalendarSpan() && entry_years_.has_value()) {
+void CalendarConfigStore::FitYearsToEntries(CalendarConfig& config) const {
+  if (config.IsFitYearsToEntries() && entry_years_.has_value()) {
     config.SetSpan(*entry_years_);
   }
 }

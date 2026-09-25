@@ -24,14 +24,14 @@
 
 CalendarSetupForm::CalendarSetupForm(QWidget* parent)
     : QWidget(parent), spacing_layout_(MakeOwned<QFormLayout>()) {
-  auto_span_ = MakeOwned<QCheckBox>(this);
+  fit_years_to_entries_ = MakeOwned<QCheckBox>(this);
   first_year_ = MakeOwned<QSpinBox>(this);
   first_year_->setRange(Date::kMinYear, Date::kMaxYear);
   last_year_ = MakeOwned<QSpinBox>(this);
   last_year_->setRange(Date::kMinYear, Date::kMaxYear);
 
   auto* span_layout = MakeOwned<QFormLayout>();
-  span_layout->addRow("Auto Span", auto_span_.data());
+  span_layout->addRow("Fit years to entries", fit_years_to_entries_.data());
   span_layout->addRow("First Year", first_year_.data());
   span_layout->addRow("Last Year", last_year_.data());
 
@@ -43,10 +43,11 @@ CalendarSetupForm::CalendarSetupForm(QWidget* parent)
   vertical_layout->addStretch(1);
   setLayout(vertical_layout);
 
-  connect(auto_span_.data(), &QCheckBox::toggled, this, [this](bool) {
-    RefreshSpanLimitsState();
-    ReportChange();
-  });
+  connect(fit_years_to_entries_.data(), &QCheckBox::toggled, this,
+          [this](bool) {
+            RefreshSpanLimitsState();
+            ReportChange();
+          });
   connect(first_year_.data(), &QSpinBox::valueChanged, this,
           [this](int) { ReportChange(); });
   connect(last_year_.data(), &QSpinBox::valueChanged, this,
@@ -68,7 +69,7 @@ void CalendarSetupForm::LoadConfig(const CalendarConfig& config) {
     spacing_fields_[index]->setValue(static_cast<double>(proportions[index]));
   }
 
-  auto_span_->setChecked(config.IsAutoCalendarSpan());
+  fit_years_to_entries_->setChecked(config.IsFitYearsToEntries());
   first_year_->setValue(config.GetSpanLimitsYears()[0]);
   last_year_->setValue(config.GetSpanLimitsYears()[1]);
 
@@ -86,7 +87,7 @@ CalendarConfig CalendarSetupForm::ReadConfig() const {
   }
   config.SetSpacingProportions(proportions);
 
-  config.SetAutoCalendarSpan(auto_span_->isChecked());
+  config.SetFitYearsToEntries(fit_years_to_entries_->isChecked());
   config.SetSpan(CalendarSpan::YearSpan{.first_year = first_year_->value(),
                                         .last_year = last_year_->value()});
 
@@ -108,9 +109,9 @@ QString CalendarSetupForm::SpacingLabel(std::size_t index) {
 }
 
 void CalendarSetupForm::RefreshSpanLimitsState() {
-  const bool auto_span = auto_span_->isChecked();
-  first_year_->setEnabled(!auto_span);
-  last_year_->setEnabled(!auto_span);
+  const bool fit_to_entries = fit_years_to_entries_->isChecked();
+  first_year_->setEnabled(!fit_to_entries);
+  last_year_->setEnabled(!fit_to_entries);
 }
 
 void CalendarSetupForm::SyncSpacingRows(std::size_t count) {

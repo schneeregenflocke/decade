@@ -49,8 +49,8 @@ class CalendarSpan {
 // no hand-written copy/move) -> freely and correctly copyable.
 class CalendarConfig : public CalendarSpan {
  public:
-  [[nodiscard]] bool IsAutoCalendarSpan() const;
-  void SetAutoCalendarSpan(bool auto_span);
+  [[nodiscard]] bool IsFitYearsToEntries() const;
+  void SetFitYearsToEntries(bool fit);
 
   [[nodiscard]] const std::vector<float>& GetSpacingProportions() const;
   void SetSpacingProportions(const std::vector<float>& proportions);
@@ -63,7 +63,7 @@ class CalendarConfig : public CalendarSpan {
       kSpacingSmall,  kSpacingLarge, kSpacingMedium, kSpacingLarge,
       kSpacingMedium, kSpacingLarge, kSpacingSmall};
 
-  bool auto_calendar_span_{true};
+  bool fit_years_to_entries_{true};
   std::vector<float> spacing_proportions_{std::vector<float>(
       kDefaultSpacingProportions.begin(), kDefaultSpacingProportions.end())};
 };

@@ -13,9 +13,9 @@
 // identity -> not copyable. The topic carries the value, so the store needs no
 // query delegation.
 //
-// The auto span lives here, so every consumer sees the span the page shows:
-// while it is on, the store derives the years from the entries it last
-// received and overrides whatever span came in.
+// Fitting the years to the entries happens here, so every consumer sees the
+// span the page shows: while it is on, the store derives the years from the
+// entries it last received and overrides whatever span came in.
 class CalendarConfigStore {
  public:
   explicit CalendarConfigStore(domain::CalendarConfigTopic& topic);
@@ -34,7 +34,7 @@ class CalendarConfigStore {
   [[nodiscard]] const CalendarConfig& Get() const;
 
  private:
-  void ApplyAutoSpan(CalendarConfig& config) const;
+  void FitYearsToEntries(CalendarConfig& config) const;
 
   void Adopt(const CalendarConfig& config);
 

@@ -70,7 +70,7 @@ class CalendarSetupForm : public QWidget {
 
   void ReportChange();
 
-  QPointer<QCheckBox> auto_span_;
+  QPointer<QCheckBox> fit_years_to_entries_;
   QPointer<QSpinBox> first_year_;
   QPointer<QSpinBox> last_year_;
 

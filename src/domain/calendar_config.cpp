@@ -63,10 +63,12 @@ bool CalendarSpan::IsInSpan(const int year) const {
   return year >= span_.Begin().Year() && year <= span_.Last().Year();
 }
 
-bool CalendarConfig::IsAutoCalendarSpan() const { return auto_calendar_span_; }
+bool CalendarConfig::IsFitYearsToEntries() const {
+  return fit_years_to_entries_;
+}
 
-void CalendarConfig::SetAutoCalendarSpan(bool auto_span) {
-  auto_calendar_span_ = auto_span;
+void CalendarConfig::SetFitYearsToEntries(bool fit) {
+  fit_years_to_entries_ = fit;
 }
 
 const std::vector<float>& CalendarConfig::GetSpacingProportions() const {
