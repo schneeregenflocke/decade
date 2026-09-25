@@ -92,9 +92,8 @@ class ShapeConfigSet {
   static constexpr std::string_view kMonthsShapesKey = "months_shapes";
   static constexpr std::string_view kYearsShapesKey = "years_shapes";
   // The per-year bar: styled like a bar category so it sits beside them, but
-  // coloured off the palette it is not part of. It aggregates the categories
-  // instead of being one, and a colour derived from their count would move
-  // under the user every time a category is added. Coverage rather than sum,
+  // grey, because it aggregates the categories instead of being one. Coverage
+  // rather than sum,
   // because the bar measures the marked days of a year and the figure beside
   // it their share of that year — a sum leaves open of what.
   static constexpr std::string_view kAnnualCoverageKey = "annual_coverage";
@@ -128,10 +127,9 @@ class ShapeConfigSet {
 
   // Reconciles the category configurations with the current date categories:
   // keeps the existing entries (so user customisations survive), drops the
-  // entries past `category_count` and synthesises fresh ones from the palette
-  // for newly added categories. Every configuration that already exists keeps
-  // its colour — an entry is coloured once, when it comes into being, and is
-  // the user's from then on.
+  // entries past `category_count` and gives every newly added category the
+  // default category colour. Every configuration that already exists keeps its
+  // colour — the user picks a category's colour, the set never changes it.
   void SyncToDateCategories(size_t category_count);
 
   // Raw access for non-intrusive serialization in the infrastructure layer.
@@ -184,8 +182,9 @@ class ShapeConfigSet {
   static ShapeConfiguration MakeBarStyledConfiguration(std::string key,
                                                        const glm::vec3& color);
 
-  // Default configuration for the dynamic bar category at the given zero-based
-  // index, reproducible across sessions because the palette is index-stable.
+  // Default configuration for the bar category at the given zero-based index:
+  // every new category starts in the same light pastel blue, so a colour on
+  // the page always means someone chose it.
   static ShapeConfiguration MakeBarCategoryConfiguration(size_t category_index);
 
   static std::vector<ShapeConfiguration> BuildDefaults();

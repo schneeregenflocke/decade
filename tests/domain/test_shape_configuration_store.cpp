@@ -158,3 +158,16 @@ TEST(ShapeConfigurationStoreTest, ReentryGuardBlocksRecursiveReceive) {
 
   EXPECT_EQ(emissions, 1);
 }
+
+// No colour comes out of the index any more: every new category starts in the
+// same light pastel blue until the user picks one.
+TEST(ShapeConfigSetTest, EveryNewCategoryStartsInTheSamePastelBlue) {
+  ShapeConfigSet set;
+
+  set.SyncToDateCategories(3);
+
+  const glm::vec4 first = set.GetDynamicConfiguration(0).FillColorDisabled();
+  EXPECT_EQ(set.GetDynamicConfiguration(1).FillColorDisabled(), first);
+  EXPECT_EQ(set.GetDynamicConfiguration(2).FillColorDisabled(), first);
+  EXPECT_GT(first[2], first[0]);  // blue outweighs red
+}

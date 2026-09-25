@@ -84,12 +84,12 @@ void BindDateCategories(QObject& scope, EventBus& bus,
           components.date_entry_store, &DateEntryStore::ReceiveDateCategories);
   Connect(scope, bus.date_categories, &domain::DateCategoriesTopic::Published,
           components.data_table_panel, &DateTablePanel::ReceiveDateCategories);
-  // The store synthesises the per-category shape configurations out of the
-  // palette and publishes them anew — that must run before the scene rebuild
-  // below, which reads the updated configurations off the bus. What keeps the
-  // order is the order of these two calls: "if a signal is connected to several
-  // slots, the slots are activated in the same order as the order the
-  // connection was made" (https://doc.qt.io/qt-6/qobject.html#connect).
+  // The store synthesises the per-category shape configurations and publishes
+  // them anew — that must run before the scene rebuild below, which reads the
+  // updated configurations off the bus. What keeps the order is the order of
+  // these two calls: "if a signal is connected to several slots, the slots are
+  // activated in the same order as the order the connection was made"
+  // (https://doc.qt.io/qt-6/qobject.html#connect).
   Connect(scope, bus.date_categories, &domain::DateCategoriesTopic::Published,
           components.shape_configuration_store,
           &ShapeConfigurationStore::ReceiveDateCategories);

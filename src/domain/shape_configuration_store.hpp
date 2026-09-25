@@ -23,9 +23,9 @@ class ShapeConfigurationStore {
   void ReceiveShapeConfigSet(const ShapeConfigSet& incoming_shape_config_set);
 
   // Aligns the per-category configurations to the current date categories (add
-  // new ones from the palette, discard orphans) and publishes the set anew.
-  // This palette logic is domain knowledge and therefore belongs in the store,
-  // not in a panel.
+  // new ones in the default colour, discard orphans) and publishes the set
+  // anew. That is domain knowledge and therefore belongs in the store, not in
+  // a panel.
   void ReceiveDateCategories(const std::vector<DateCategory>& date_categories);
 
   void SendShapeConfigSet();

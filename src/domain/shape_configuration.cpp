@@ -10,8 +10,6 @@
 #include <utility>
 #include <vector>
 
-#include "color_palette.hpp"
-
 ShapeConfiguration::ShapeConfiguration(std::string key, bool outline_visible,
                                        bool fill_visible, float line_width,
                                        OutlineColorValue outline_color,
@@ -161,8 +159,10 @@ ShapeConfiguration ShapeConfigSet::MakeBarStyledConfiguration(
 
 ShapeConfiguration ShapeConfigSet::MakeBarCategoryConfiguration(
     size_t category_index) {
+  // #A7C7E7, a light pastel blue.
+  const glm::vec3 pastel_blue{0xA7 / 255.0F, 0xC7 / 255.0F, 0xE7 / 255.0F};
   return MakeBarStyledConfiguration(DynamicConfigurationKey(category_index),
-                                    palette::CategoricalColor(category_index));
+                                    pastel_blue);
 }
 
 std::vector<ShapeConfiguration> ShapeConfigSet::BuildDefaults() {
@@ -190,10 +190,8 @@ std::vector<ShapeConfiguration> ShapeConfigSet::BuildDefaults() {
   const glm::vec4 mid_gray_transparent{kHalf, kHalf, kHalf, kZero};
   const glm::vec4 dark_quarter{kQuarter, kQuarter, kQuarter, kOne};
   const glm::vec4 dark_quarter_transparent{kQuarter, kQuarter, kQuarter, kZero};
-  // The annual coverage is no category, so it takes no colour out of the
-  // categorical palette: a neutral grey tells the aggregate apart from the
-  // categories it sums up, and it collides with none of them however many there
-  // are — Viridis is saturated end to end.
+  // The annual coverage is no category: a neutral grey tells the aggregate
+  // apart from the categories it sums up.
   const glm::vec3 annual_coverage_gray{kMid, kMid, kMid};
 
   return {

@@ -24,7 +24,6 @@ add_executable(decade_tests
 	domain/test_date_entry_store.cpp
 	domain/test_date_entry_list.cpp
 	domain/test_text_edit_buffer.cpp
-	domain/test_color_palette.cpp
 	infrastructure/persistence/test_csv_io.cpp
 	infrastructure/persistence/test_project_io.cpp
 	infrastructure/persistence/test_value_serialization.cpp
