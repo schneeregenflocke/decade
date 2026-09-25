@@ -28,9 +28,11 @@ class CalendarSpan {
 
   [[nodiscard]] std::size_t YearCount() const;
 
-  [[nodiscard]] std::array<int, 2> GetSpanLimitsYears() const;
+  [[nodiscard]] int FirstYear() const;
 
-  [[nodiscard]] std::array<Date, 2> GetSpanLimitsDate() const;
+  [[nodiscard]] int LastYear() const;
+
+  [[nodiscard]] Date FirstDay() const;
 
   [[nodiscard]] std::int64_t DayCount() const;
 

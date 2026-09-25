@@ -180,8 +180,7 @@ void BuildDays(const SectionContext& ctx) {
       const auto current_cell = ctx.layout.GetSubArea(index, 1);
 
       const Date current_date =
-          ctx.calendar_config.GetSpanLimitsDate().at(0).AddDays(
-              static_cast<int>(days_index));
+          ctx.calendar_config.FirstDay().AddDays(static_cast<int>(days_index));
 
       if (current_date.DayOfWeek() == Weekday::kSunday) {
         RectF day_cell;

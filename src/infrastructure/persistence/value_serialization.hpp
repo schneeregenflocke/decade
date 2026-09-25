@@ -223,9 +223,8 @@ void load(Archive& ar, ShapeConfigSet& set, const unsigned int /*v*/) {
 // The key keeps its old name: project files written before the rename carry it.
 template <class Archive>
 void save(Archive& ar, const CalendarConfig& config, const unsigned int /*v*/) {
-  const std::array<int, 2> limits = config.GetSpanLimitsYears();
-  const int first_year = limits[0];
-  const int last_year = limits[1];
+  const int first_year = config.FirstYear();
+  const int last_year = config.LastYear();
   const bool fit_years_to_entries = config.IsFitYearsToEntries();
   const std::vector<float>& spacing_proportions =
       config.GetSpacingProportions();

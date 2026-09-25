@@ -1,7 +1,6 @@
 #include "calendar_config.hpp"
 
 #include <algorithm>
-#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
@@ -37,13 +36,11 @@ std::size_t CalendarSpan::YearCount() const {
   return static_cast<std::size_t>(span_.End().Year() - span_.Begin().Year());
 }
 
-std::array<int, 2> CalendarSpan::GetSpanLimitsYears() const {
-  return std::array<int, 2>{span_.Begin().Year(), span_.Last().Year()};
-}
+int CalendarSpan::FirstYear() const { return span_.Begin().Year(); }
 
-std::array<Date, 2> CalendarSpan::GetSpanLimitsDate() const {
-  return std::array<Date, 2>{span_.Begin(), span_.Last()};
-}
+int CalendarSpan::LastYear() const { return span_.Last().Year(); }
+
+Date CalendarSpan::FirstDay() const { return span_.Begin(); }
 
 std::int64_t CalendarSpan::DayCount() const { return span_.LengthDays(); }
 

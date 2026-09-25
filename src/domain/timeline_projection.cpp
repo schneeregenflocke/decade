@@ -35,5 +35,5 @@ int TimelineProjection::YearForRow(std::size_t row) const {
 }
 
 std::size_t TimelineProjection::RowForYear(int year) const {
-  return static_cast<std::size_t>(year - span_.GetSpanLimitsYears().at(0));
+  return static_cast<std::size_t>(year - span_.FirstYear());
 }

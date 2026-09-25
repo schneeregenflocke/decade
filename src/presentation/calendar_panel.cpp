@@ -70,8 +70,8 @@ void CalendarSetupForm::LoadConfig(const CalendarConfig& config) {
   }
 
   fit_years_to_entries_->setChecked(config.IsFitYearsToEntries());
-  first_year_->setValue(config.GetSpanLimitsYears()[0]);
-  last_year_->setValue(config.GetSpanLimitsYears()[1]);
+  first_year_->setValue(config.FirstYear());
+  last_year_->setValue(config.LastYear());
 
   RefreshSpanLimitsState();
   loading_ = false;

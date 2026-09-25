@@ -33,7 +33,8 @@ void CalendarConfigStore::ReceiveDateEntries(
   FitYearsToEntries(config);
   // Entries change far more often than their year range; an unchanged span
   // would only cost every consumer a rebuild.
-  if (config.GetSpanLimitsYears() != calendar_config_.GetSpanLimitsYears()) {
+  if (config.FirstYear() != calendar_config_.FirstYear() ||
+      config.LastYear() != calendar_config_.LastYear()) {
     Adopt(config);
   }
 }

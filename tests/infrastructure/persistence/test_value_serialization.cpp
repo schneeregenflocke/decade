@@ -86,6 +86,7 @@ TEST(ValueSerializationTest, CalendarConfigRoundTrip) {
 
   const auto loaded = XmlRoundTrip(config);
 
-  EXPECT_EQ(loaded.GetSpanLimitsYears(), (std::array<int, 2>{1998, 2003}));
+  EXPECT_EQ(loaded.FirstYear(), 1998);
+  EXPECT_EQ(loaded.LastYear(), 2003);
   EXPECT_FALSE(loaded.IsFitYearsToEntries());
 }

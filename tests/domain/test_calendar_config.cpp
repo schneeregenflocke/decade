@@ -21,9 +21,8 @@ TEST(CalendarSpanTest, SetYearsClampsAndStores) {
   CalendarSpan span;
   span.SetYears({.first_year = 2020, .last_year = 2025});
   ASSERT_TRUE(span.IsValidSpan());
-  const auto limits = span.GetSpanLimitsYears();
-  EXPECT_EQ(limits[0], 2020);
-  EXPECT_EQ(limits[1], 2025);
+  EXPECT_EQ(span.FirstYear(), 2020);
+  EXPECT_EQ(span.LastYear(), 2025);
 }
 
 // Regression: SetYears must never produce a null span — YearCount()
@@ -34,7 +33,7 @@ TEST(CalendarSpanTest, SetYearsNormalizesReversedYears) {
   span.SetYears({.first_year = 2030, .last_year = 2020});
   ASSERT_TRUE(span.IsValidSpan());
   EXPECT_EQ(span.YearCount(), 1U);
-  EXPECT_EQ(span.GetSpanLimitsYears()[0], 2030);
+  EXPECT_EQ(span.FirstYear(), 2030);
 }
 
 TEST(CalendarSpanTest, SetYearsStaysValidAtMaxYear) {
@@ -81,7 +80,7 @@ TEST(CalendarConfigStoreTest, ReceiveCopiesAndEmits) {
 
   EXPECT_EQ(emissions, 1);
   EXPECT_FALSE(target.Get().IsFitYearsToEntries());
-  EXPECT_EQ(target.Get().GetSpanLimitsYears()[0], 2040);
+  EXPECT_EQ(target.Get().FirstYear(), 2040);
 }
 
 TEST(CalendarConfigStoreTest, ReentryGuardBlocksRecursiveReceive) {
@@ -126,8 +125,8 @@ TEST(CalendarConfigStoreTest, FittedYearsFollowTheEntries) {
       {EntryBetween(2004, 2005), EntryBetween(1998, 2023)});
 
   EXPECT_EQ(emissions, 1);
-  EXPECT_EQ(store.Get().GetSpanLimitsYears()[0], 1998);
-  EXPECT_EQ(store.Get().GetSpanLimitsYears()[1], 2023);
+  EXPECT_EQ(store.Get().FirstYear(), 1998);
+  EXPECT_EQ(store.Get().LastYear(), 2023);
 }
 
 TEST(CalendarConfigStoreTest, FittedYearsOverrideAnIncomingSpan) {
@@ -139,8 +138,8 @@ TEST(CalendarConfigStoreTest, FittedYearsOverrideAnIncomingSpan) {
   edited.SetYears({.first_year = 2040, .last_year = 2041});
   store.ReceiveCalendarConfig(edited);
 
-  EXPECT_EQ(store.Get().GetSpanLimitsYears()[0], 1998);
-  EXPECT_EQ(store.Get().GetSpanLimitsYears()[1], 2023);
+  EXPECT_EQ(store.Get().FirstYear(), 1998);
+  EXPECT_EQ(store.Get().LastYear(), 2023);
 }
 
 TEST(CalendarConfigStoreTest, ManualSpanIgnoresTheEntries) {
@@ -153,8 +152,8 @@ TEST(CalendarConfigStoreTest, ManualSpanIgnoresTheEntries) {
 
   store.ReceiveDateEntries({EntryBetween(1998, 2023)});
 
-  EXPECT_EQ(store.Get().GetSpanLimitsYears()[0], 2040);
-  EXPECT_EQ(store.Get().GetSpanLimitsYears()[1], 2041);
+  EXPECT_EQ(store.Get().FirstYear(), 2040);
+  EXPECT_EQ(store.Get().LastYear(), 2041);
 }
 
 TEST(CalendarConfigStoreTest, EntriesWithinTheSameYearsPublishNothing) {
