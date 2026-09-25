@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 
+#include "../domain/date_category.hpp"
 #include "../domain/detail/reentry_guard.hpp"
 #include "../domain/shape_configuration.hpp"
 #include "alpha_slider.hpp"
@@ -55,6 +56,15 @@ void ShapeSetupPanel::ReceiveShapeConfigSet(
   shape_config_set_ = shape_config_set;
   RebuildKeyList();
   RefreshDetail();
+}
+
+void ShapeSetupPanel::ReceiveDateCategories(
+    const std::vector<DateCategory>& date_categories) {
+  category_names_.clear();
+  for (const DateCategory& category : date_categories) {
+    category_names_.push_back(category.GetName());
+  }
+  RebuildKeyList();
 }
 
 void ShapeSetupPanel::CreateDetailFields(QWidget* detail_widget) {
@@ -115,7 +125,8 @@ void ShapeSetupPanel::RebuildKeyList() {
   const QSignalBlocker blocker(key_list_);
   key_list_->clear();
   for (const std::string& key : keys) {
-    key_list_->addItem(QString::fromStdString(key));
+    auto* item = MakeOwned<QListWidgetItem>(LabelFor(key), key_list_);
+    item->setData(Qt::UserRole, QString::fromStdString(key));
   }
 
   if (selected_key_.empty() && !keys.empty()) {
@@ -128,6 +139,16 @@ void ShapeSetupPanel::RebuildKeyList() {
     return;
   }
   key_list_->setCurrentRow(row);
+}
+
+QString ShapeSetupPanel::LabelFor(const std::string& key) const {
+  const auto& categories = shape_config_set_.CategoryConfigurations();
+  for (std::size_t index = 0; index < categories.size(); ++index) {
+    if (categories[index].Key() == key && index < category_names_.size()) {
+      return QString::fromStdString(category_names_[index]);
+    }
+  }
+  return QString::fromUtf8(ShapeConfigSet::FixedConfigurationLabel(key));
 }
 
 int ShapeSetupPanel::RowOf(const std::vector<std::string>& keys,
@@ -185,7 +206,8 @@ void ShapeSetupPanel::CallbackSelection(int row) {
   if (row < 0) {
     return;
   }
-  selected_key_ = key_list_->item(row)->text().toStdString();
+  selected_key_ =
+      key_list_->item(row)->data(Qt::UserRole).toString().toStdString();
   RefreshDetail();
 }
 

@@ -35,8 +35,8 @@ TEST(ShapeConfigSetTest, GetShapeConfigurationReturnsBlankForUnknownName) {
 }
 
 TEST(ShapeConfigSetTest, DynamicConfigurationKeyMatchesFormat) {
-  EXPECT_EQ(ShapeConfigSet::DynamicConfigurationKey(0), "Bar Category 0");
-  EXPECT_EQ(ShapeConfigSet::DynamicConfigurationKey(7), "Bar Category 7");
+  EXPECT_EQ(ShapeConfigSet::DynamicConfigurationKey(0), "category_0");
+  EXPECT_EQ(ShapeConfigSet::DynamicConfigurationKey(7), "category_7");
 }
 
 TEST(ShapeConfigSetTest, SyncToDateCategoriesAddressesByIndex) {
@@ -47,7 +47,7 @@ TEST(ShapeConfigSetTest, SyncToDateCategoriesAddressesByIndex) {
   set.SyncToDateCategories(3);
 
   const ShapeConfiguration second = set.GetDynamicConfiguration(1);
-  EXPECT_EQ(second.Key(), "Bar Category 1");
+  EXPECT_EQ(second.Key(), "category_1");
 
   // Out-of-range / absent indices return a blank configuration.
   EXPECT_TRUE(set.GetDynamicConfiguration(3).Key().empty());
@@ -60,7 +60,7 @@ TEST(ShapeConfigSetTest,
 
   // Customise the colour of the second category's configuration.
   ShapeConfiguration customised = set.GetDynamicConfiguration(1);
-  ASSERT_EQ(customised.Key(), "Bar Category 1");
+  ASSERT_EQ(customised.Key(), "category_1");
   customised.OutlineColor(glm::vec4{0.1F, 0.2F, 0.3F, 1.0F});
   ASSERT_TRUE(set.UpdateConfiguration(customised));
 
@@ -69,7 +69,7 @@ TEST(ShapeConfigSetTest,
   set.SyncToDateCategories(2);
   EXPECT_TRUE(set.GetDynamicConfiguration(2).Key().empty());
   const ShapeConfiguration kept = set.GetDynamicConfiguration(1);
-  EXPECT_EQ(kept.Key(), "Bar Category 1");
+  EXPECT_EQ(kept.Key(), "category_1");
   EXPECT_FLOAT_EQ(kept.OutlineColorDisabled()[0], 0.1F);
 }
 

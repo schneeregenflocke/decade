@@ -37,7 +37,8 @@ void BuildLegend(const SectionContext& ctx) {
   std::vector<RectF> bar_cells;
 
   auto print_strings = ctx.date_categories.GetDateCategoryNames();
-  print_strings.emplace_back(ShapeConfigSet::kAnnualCoverageKey);
+  print_strings.emplace_back(ShapeConfigSet::FixedConfigurationLabel(
+      ShapeConfigSet::kAnnualCoverageKey));
 
   std::string string_max_length;
   for (const auto& current_string : print_strings) {
@@ -84,7 +85,8 @@ void BuildLegend(const SectionContext& ctx) {
   {
     detail::SetCenteredText(
         ctx, entry_labels, std::string("legend label annual coverage"),
-        std::string(ShapeConfigSet::kAnnualCoverageKey),
+        std::string(ShapeConfigSet::FixedConfigurationLabel(
+            ShapeConfigSet::kAnnualCoverageKey)),
         legend_entries_frames.at(legend_entries_frames.size() - 2).Center(),
         legend_font_size);
 

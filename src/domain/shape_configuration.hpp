@@ -79,24 +79,31 @@ class ShapeConfigSet {
   ShapeConfigSet();
 
   // The keys of the fixed configurations: the identity a scene builder looks a
-  // configuration up by, the style id of the node it draws, the row the shapes
-  // list shows — and what a saved project carries on disk. Renaming one breaks
-  // every project written before, because GetShapeConfiguration answers an
-  // unknown key with a default-constructed value, which draws nothing.
-  static constexpr std::string_view kPageMarginKey = "Page Margin";
-  static constexpr std::string_view kTitleFrameKey = "Title Frame";
-  static constexpr std::string_view kCalendarLabelsKey = "Calendar Labels";
-  static constexpr std::string_view kDayShapesKey = "Day Shapes";
-  static constexpr std::string_view kSundayShapesKey = "Sunday Shapes";
-  static constexpr std::string_view kMonthsShapesKey = "Months Shapes";
-  static constexpr std::string_view kYearsShapesKey = "Years Shapes";
+  // configuration up by, the style id of the node it draws and what a saved
+  // project carries on disk. What a person reads is FixedConfigurationLabel().
+  // Renaming a key breaks every project written before, because
+  // GetShapeConfiguration answers an unknown key with a default-constructed
+  // value, which draws nothing.
+  static constexpr std::string_view kPageMarginKey = "page_margin";
+  static constexpr std::string_view kTitleFrameKey = "title_frame";
+  static constexpr std::string_view kCalendarLabelsKey = "calendar_labels";
+  static constexpr std::string_view kDayShapesKey = "day_shapes";
+  static constexpr std::string_view kSundayShapesKey = "sunday_shapes";
+  static constexpr std::string_view kMonthsShapesKey = "months_shapes";
+  static constexpr std::string_view kYearsShapesKey = "years_shapes";
   // The per-year bar: styled like a bar category so it sits beside them, but
   // coloured off the palette it is not part of. It aggregates the categories
   // instead of being one, and a colour derived from their count would move
   // under the user every time a category is added. Coverage rather than sum,
   // because the bar measures the marked days of a year and the figure beside
   // it their share of that year — a sum leaves open of what.
-  static constexpr std::string_view kAnnualCoverageKey = "Annual Coverage";
+  static constexpr std::string_view kAnnualCoverageKey = "annual_coverage";
+
+  // What the shapes list and the legend show for a fixed key; an unknown key
+  // comes back as it is. A category configuration reads as its category's
+  // name, which this set does not know.
+  [[nodiscard]] static std::string_view FixedConfigurationLabel(
+      std::string_view key);
 
   // The configuration under the given key, searched across the fixed and the
   // category configurations (a default-constructed value when absent). The key
@@ -109,9 +116,8 @@ class ShapeConfigSet {
   // holds it. Returns false when no such configuration exists.
   bool UpdateConfiguration(const ShapeConfiguration& config);
 
-  // Key of the per-date-category configuration at the given zero-based index.
-  // It labels the category configurations and matches the node style id;
-  // category membership no longer depends on it.
+  // Key of the per-date-category configuration at the given zero-based index;
+  // it matches the node style id. Category membership does not depend on it.
   [[nodiscard]] static std::string DynamicConfigurationKey(
       size_t category_index);
 
@@ -138,9 +144,7 @@ class ShapeConfigSet {
   MutableCategoryConfigurations();
 
  private:
-  // Key prefix shared by every per-date-category configuration; it labels them
-  // alone and no longer decides category membership.
-  static constexpr std::string_view kCategoryKeyPrefix = "Bar Category ";
+  static constexpr std::string_view kCategoryKeyPrefix = "category_";
 
   // Locates the configuration under the given key across both containers
   // (fixed first, then category), or nullptr when absent.

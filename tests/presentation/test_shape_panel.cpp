@@ -9,8 +9,10 @@
 #include <QtWidgets/QListWidgetItem>
 #include <QtWidgets/QWidget>
 #include <optional>
+#include <string>
 #include <string_view>
 
+#include "domain/date_category.hpp"
 #include "domain/shape_configuration.hpp"
 #include "presentation/shape_panel.hpp"
 
@@ -40,7 +42,7 @@ class WiredShapePanel {
       return -1;
     }
     for (int row = 0; row < list->count(); ++row) {
-      if (list->item(row)->text() == key) {
+      if (list->item(row)->data(Qt::UserRole).toString() == key) {
         return row;
       }
     }
@@ -68,6 +70,22 @@ class WiredShapePanel {
 
   [[nodiscard]] const std::optional<ShapeConfigSet>& Edited() const {
     return edited_;
+  }
+
+  [[nodiscard]] QString LabelOf(int row) const {
+    QListWidget* list = List();
+    return list != nullptr && list->item(row) != nullptr
+               ? list->item(row)->text()
+               : QString{};
+  }
+
+  // One category configuration named `name`, delivered the way the binder
+  // delivers it: the set first, then the categories.
+  void ReceiveOneCategory(const std::string& name) {
+    ShapeConfigSet set;
+    set.SyncToDateCategories(1);
+    panel_.ReceiveShapeConfigSet(set);
+    panel_.ReceiveDateCategories({DateCategory(name)});
   }
 
  private:
@@ -111,4 +129,24 @@ TEST(ShapeSetupPanelTest, ClickingARowEditsTheConfigurationUnderThatKey) {
             ShapeConfigSet{}
                 .GetShapeConfiguration(ShapeConfigSet::kAnnualCoverageKey)
                 .LineWidthDisabled());
+}
+
+TEST(ShapeSetupPanelTest, AFixedRowReadsAsItsLabelNotItsKey) {
+  const WiredShapePanel wired;
+
+  const int row = wired.RowKeyed(ToQString(ShapeConfigSet::kPageMarginKey));
+
+  ASSERT_GE(row, 0);
+  EXPECT_EQ(wired.LabelOf(row), "Page Margin");
+}
+
+TEST(ShapeSetupPanelTest, ACategoryRowReadsAsItsCategoryName) {
+  WiredShapePanel wired;
+
+  wired.ReceiveOneCategory("PBL");
+
+  const int row =
+      wired.RowKeyed(ToQString(ShapeConfigSet::DynamicConfigurationKey(0)));
+  ASSERT_GE(row, 0);
+  EXPECT_EQ(wired.LabelOf(row), "PBL");
 }

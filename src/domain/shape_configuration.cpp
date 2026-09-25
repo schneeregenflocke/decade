@@ -1,5 +1,7 @@
 #include "shape_configuration.hpp"
 
+#include <algorithm>
+#include <array>
 #include <cstddef>
 #include <glm/ext/vector_float3.hpp>
 #include <glm/ext/vector_float4.hpp>
@@ -82,6 +84,21 @@ bool ShapeConfigSet::UpdateConfiguration(const ShapeConfiguration& config) {
   }
   *found = config;
   return true;
+}
+
+std::string_view ShapeConfigSet::FixedConfigurationLabel(std::string_view key) {
+  static constexpr std::array<std::pair<std::string_view, std::string_view>, 8>
+      kLabels{{{kPageMarginKey, "Page Margin"},
+               {kTitleFrameKey, "Title Frame"},
+               {kCalendarLabelsKey, "Calendar Labels"},
+               {kDayShapesKey, "Day Shapes"},
+               {kSundayShapesKey, "Sunday Shapes"},
+               {kMonthsShapesKey, "Months Shapes"},
+               {kYearsShapesKey, "Years Shapes"},
+               {kAnnualCoverageKey, "Annual Coverage"}}};
+  const auto* found = std::ranges::find(
+      kLabels, key, &std::pair<std::string_view, std::string_view>::first);
+  return found != kLabels.end() ? found->second : key;
 }
 
 std::string ShapeConfigSet::DynamicConfigurationKey(size_t category_index) {

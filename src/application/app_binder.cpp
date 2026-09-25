@@ -95,6 +95,9 @@ void BindDateCategories(QObject& scope, EventBus& bus,
           &ShapeConfigurationStore::ReceiveDateCategories);
   Connect(scope, bus.date_categories, &domain::DateCategoriesTopic::Published,
           components.calendar_page, &CalendarPage::ReceiveDateCategories);
+  Connect(scope, bus.date_categories, &domain::DateCategoriesTopic::Published,
+          components.shape_setup_panel,
+          &ShapeSetupPanel::ReceiveDateCategories);
 }
 
 void BindPageSetup(QObject& scope, EventBus& bus,

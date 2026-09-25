@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "../domain/date_category.hpp"
 #include "../domain/detail/reentry_guard.hpp"
 #include "../domain/shape_configuration.hpp"
 #include "alpha_slider.hpp"
@@ -38,6 +39,9 @@ class ShapeSetupPanel : public QWidget {
   // shift the selection to a different configuration.
   void ReceiveShapeConfigSet(const ShapeConfigSet& shape_config_set);
 
+  // A category configuration reads as its category's name in the list.
+  void ReceiveDateCategories(const std::vector<DateCategory>& date_categories);
+
  signals:
   void ShapeConfigSetEdited(const ShapeConfigSet& shape_config_set);
 
@@ -56,6 +60,10 @@ class ShapeSetupPanel : public QWidget {
   [[nodiscard]] std::vector<std::string> ConfigurationKeys() const;
 
   void RebuildKeyList();
+
+  // What the list shows for the configuration under `key`; the key itself
+  // travels in the row's Qt::UserRole.
+  [[nodiscard]] QString LabelFor(const std::string& key) const;
 
   static int RowOf(const std::vector<std::string>& keys,
                    const std::string& key);
@@ -76,6 +84,7 @@ class ShapeSetupPanel : public QWidget {
   void CallbackEdit();
 
   ShapeConfigSet shape_config_set_;
+  std::vector<std::string> category_names_;
   std::string selected_key_;
 
   QPointer<QListWidget> key_list_;
