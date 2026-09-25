@@ -14,6 +14,7 @@
 #include "../domain/transform_date_entry.hpp"
 #include "../infrastructure/graphics/pick_id.hpp"
 #include "../presentation/calendar_panel.hpp"
+#include "../presentation/csv_import_panel.hpp"
 #include "../presentation/date_panel.hpp"
 #include "../presentation/document_panel.hpp"
 #include "../presentation/font_panel.hpp"
@@ -29,6 +30,7 @@
 #include "calendar/title_text_editor.hpp"
 #include "event_bus.hpp"
 #include "interaction_topics.hpp"
+#include "project_document.hpp"
 #include "state_burst.hpp"
 
 namespace app_binder {
@@ -190,6 +192,14 @@ void BindCalendarConfig(QObject& scope, EventBus& bus,
           components.calendar_page, &CalendarPage::ReceiveCalendarConfig);
 }
 
+// The options steer the next import alone, so they go straight to the document
+// and nothing else observes them.
+void BindCsvImport(QObject& scope, const AppComponents& components) {
+  Connect(scope, components.csv_import_panel,
+          &CsvImportPanel::CsvImportOptionsEdited, components.project_document,
+          &application::ProjectDocument::ReceiveCsvImportOptions);
+}
+
 // The rendering adapter publishes the scene snapshots itself; the scene tree
 // panel is the only consumer. Its selection goes back the other way over the
 // bus to the highlight in the renderer.
@@ -277,6 +287,7 @@ void Bind(QObject& scope, EventBus& bus, const AppComponents& components) {
   BindStateBurst(scope, bus, components);
   BindShapeConfiguration(scope, bus, components);
   BindCalendarConfig(scope, bus, components);
+  BindCsvImport(scope, components);
   BindSceneSnapshot(scope, bus, components);
   BindInteraction(scope, bus, components);
 }

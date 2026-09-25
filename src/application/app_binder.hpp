@@ -11,6 +11,7 @@
 #include "../domain/title_config_store.hpp"
 #include "../domain/transform_date_entry.hpp"
 #include "../presentation/calendar_panel.hpp"
+#include "../presentation/csv_import_panel.hpp"
 #include "../presentation/date_panel.hpp"
 #include "../presentation/document_panel.hpp"
 #include "../presentation/font_panel.hpp"
@@ -24,6 +25,7 @@
 #include "calendar/interaction_controller.hpp"
 #include "calendar/title_text_editor.hpp"
 #include "event_bus.hpp"
+#include "project_document.hpp"
 #include "state_burst.hpp"
 
 // Everything the wiring reaches: stores, panels, rendering adapter and GL
@@ -38,6 +40,7 @@ struct AppComponents {
   TitleConfigStore& title_config_store;
   ShapeConfigurationStore& shape_configuration_store;
   CalendarConfigStore& calendar_configuration_store;
+  application::ProjectDocument& project_document;
 
   DateTablePanel& data_table_panel;
   DateGroupsTablePanel& date_groups_table_panel;
@@ -45,6 +48,7 @@ struct AppComponents {
   PageSetupPanel& page_setup_panel;
   TitleSetupPanel& title_setup_panel;
   CalendarSetupPanel& calendar_setup_panel;
+  CsvImportPanel& csv_import_panel;
   FontPanel& font_panel;
   SceneTreePanel& scene_tree_panel;
   ShapeSetupPanel& shape_setup_panel;

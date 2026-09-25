@@ -7,6 +7,7 @@
 
 #include "application/event_bus.hpp"
 #include "application/project_document.hpp"
+#include "domain/csv_import_options.hpp"
 #include "domain/date_format.hpp"
 
 namespace {
@@ -186,4 +187,43 @@ TEST(ProjectDocumentTest, AFailedLoadStillClosesTheBurst) {
       document.LoadXml(TempXmlPath("decade_no_such_file.xml")).has_value());
 
   EXPECT_EQ(brackets, (std::vector<bool>{true, false}));
+}
+
+namespace {
+
+std::string WriteOneEntryCsv(const std::string& name) {
+  const std::string csv_path = TempXmlPath(name);
+  std::ofstream csv(csv_path);
+  csv << "23.09.1998,24.11.1998\n";
+  return csv_path;
+}
+
+}  // namespace
+
+TEST(ProjectDocumentTest, CsvImportTitlesTheCalendarAfterTheFile) {
+  const std::string csv_path = WriteOneEntryCsv("decade_trips_2024.csv");
+  EventBus bus;
+  LocaleDateFormatter formatter;
+  application::ProjectDocument document(bus, formatter);
+
+  document.ImportCsv(csv_path);
+
+  EXPECT_EQ(document.TitleConfiguration().Get().TitleText(),
+            "decade_trips_2024");
+}
+
+TEST(ProjectDocumentTest, CsvImportKeepsTheTitleWhenTheOptionIsOff) {
+  const std::string csv_path = WriteOneEntryCsv("decade_trips_2025.csv");
+  EventBus bus;
+  LocaleDateFormatter formatter;
+  application::ProjectDocument document(bus, formatter);
+  const std::string title_before =
+      document.TitleConfiguration().Get().TitleText();
+  CsvImportOptions options;
+  options.SetTitleFromFileName(false);
+  document.ReceiveCsvImportOptions(options);
+
+  document.ImportCsv(csv_path);
+
+  EXPECT_EQ(document.TitleConfiguration().Get().TitleText(), title_before);
 }

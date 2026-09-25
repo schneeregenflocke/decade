@@ -1,15 +1,18 @@
 #include "project_document.hpp"
 
+#include <filesystem>
 #include <optional>
 #include <string>
 #include <utility>
 
 #include "../domain/calendar_config_store.hpp"
+#include "../domain/csv_import_options.hpp"
 #include "../domain/date_entry_store.hpp"
 #include "../domain/date_format.hpp"
 #include "../domain/date_group_store.hpp"
 #include "../domain/page_setup_store.hpp"
 #include "../domain/shape_configuration_store.hpp"
+#include "../domain/title_config.hpp"
 #include "../domain/title_config_store.hpp"
 #include "../domain/transform_date_entry.hpp"
 #include "../infrastructure/persistence/csv_io.hpp"
@@ -61,6 +64,16 @@ void ProjectDocument::ImportCsv(const std::string& file_path) {
   const StateBurst burst(state_burst_topic_);
   date_entry_store_.ReceiveDateEntries(
       persistence::ReadDateEntriesFromCsv(file_path, locale_date_formatter_));
+
+  if (csv_import_options_.TitleFromFileName()) {
+    TitleConfig title_config = title_config_store_.Get();
+    title_config.SetTitleText(std::filesystem::path(file_path).stem().string());
+    title_config_store_.ReceiveTitleConfig(title_config);
+  }
+}
+
+void ProjectDocument::ReceiveCsvImportOptions(const CsvImportOptions& options) {
+  csv_import_options_ = options;
 }
 
 std::optional<std::string> ProjectDocument::ExportCsv(

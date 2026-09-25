@@ -17,6 +17,7 @@
 #include "../application/app_config.hpp"
 #include "../domain/date_format.hpp"
 #include "calendar_panel.hpp"
+#include "csv_import_panel.hpp"
 #include "date_panel.hpp"
 #include "document_panel.hpp"
 #include "font_panel.hpp"
@@ -63,6 +64,8 @@ TitleSetupPanel& MainWindow::TitleSetup() { return *title_setup_panel_; }
 CalendarSetupPanel& MainWindow::CalendarSetup() {
   return *calendar_setup_panel_;
 }
+
+CsvImportPanel& MainWindow::CsvImport() { return *csv_import_panel_; }
 
 FontPanel& MainWindow::Font() { return *font_panel_; }
 
@@ -135,6 +138,8 @@ void MainWindow::CreatePanels(QTabWidget* tabs) {
   date_groups_table_panel_ = date_groups_table_panel;
   auto* calendar_setup_panel = MakeOwned<CalendarSetupPanel>(tabs);
   calendar_setup_panel_ = calendar_setup_panel;
+  auto* csv_import_panel = MakeOwned<CsvImportPanel>(tabs);
+  csv_import_panel_ = csv_import_panel;
   auto* scene_tree_panel = MakeOwned<SceneTreePanel>(tabs);
   scene_tree_panel_ = scene_tree_panel;
   auto* shape_setup_panel = MakeOwned<ShapeSetupPanel>(tabs);
@@ -151,6 +156,7 @@ void MainWindow::CreatePanels(QTabWidget* tabs) {
 
   tabs->addTab(date_groups_table_panel, "Categories");
   tabs->addTab(data_table_panel, "Entries");
+  tabs->addTab(csv_import_panel, "CSV Import");
   tabs->addTab(document_setup_panel, "Document");
   tabs->addTab(shape_setup_panel, "Shapes");
   tabs->addTab(calendar_setup_panel, "Timeframe");

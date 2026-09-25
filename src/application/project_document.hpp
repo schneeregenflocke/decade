@@ -5,6 +5,7 @@
 #include <string>
 
 #include "../domain/calendar_config_store.hpp"
+#include "../domain/csv_import_options.hpp"
 #include "../domain/date_entry_store.hpp"
 #include "../domain/date_format.hpp"
 #include "../domain/date_group_store.hpp"
@@ -42,6 +43,8 @@ class ProjectDocument {
 
   void ImportCsv(const std::string& file_path);
 
+  void ReceiveCsvImportOptions(const CsvImportOptions& options);
+
   [[nodiscard]] std::optional<std::string> ExportCsv(
       const std::string& file_path) const;
 
@@ -66,6 +69,7 @@ class ProjectDocument {
   domain::FilePathTopic& file_path_topic_;
   domain::StateBurstTopic& state_burst_topic_;
   std::string file_path_;
+  CsvImportOptions csv_import_options_;
 
   DateGroupStore date_groups_store_;
   DateEntryStore date_entry_store_;

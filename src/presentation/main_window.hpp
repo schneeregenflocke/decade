@@ -15,6 +15,7 @@
 #include "../application/app_config.hpp"
 #include "../domain/date_format.hpp"
 #include "calendar_panel.hpp"
+#include "csv_import_panel.hpp"
 #include "date_panel.hpp"
 #include "document_panel.hpp"
 #include "font_panel.hpp"
@@ -62,6 +63,7 @@ class MainWindow : public QMainWindow {
   [[nodiscard]] PageSetupPanel& PageSetup();
   [[nodiscard]] TitleSetupPanel& TitleSetup();
   [[nodiscard]] CalendarSetupPanel& CalendarSetup();
+  [[nodiscard]] CsvImportPanel& CsvImport();
   [[nodiscard]] FontPanel& Font();
   [[nodiscard]] ShapeSetupPanel& ShapeSetup();
   [[nodiscard]] SceneTreePanel& SceneTree();
@@ -110,6 +112,7 @@ class MainWindow : public QMainWindow {
   QPointer<PageSetupPanel> page_setup_panel_;
   QPointer<TitleSetupPanel> title_setup_panel_;
   QPointer<CalendarSetupPanel> calendar_setup_panel_;
+  QPointer<CsvImportPanel> csv_import_panel_;
   QPointer<GLCanvas> gl_canvas_;
   QPointer<FontPanel> font_panel_;
   QPointer<DateTablePanel> data_table_panel_;
