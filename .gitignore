@@ -31,3 +31,4 @@ CMakePresets.json
 .sbom-venv/
 
 examples/sample_dates_2.csv
+examples/sample_dates_2.xml
