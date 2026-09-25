@@ -27,12 +27,7 @@ void CalendarSpan::SetYears(YearSpan years) {
                      Date::FromYmd(last_year + 1, 1, 1));
 }
 
-bool CalendarSpan::IsValidSpan() const { return !span_.IsNull(); }
-
 std::size_t CalendarSpan::YearCount() const {
-  if (!IsValidSpan()) {
-    throw std::runtime_error("Not valid calendar span!");
-  }
   return static_cast<std::size_t>(span_.End().Year() - span_.Begin().Year());
 }
 

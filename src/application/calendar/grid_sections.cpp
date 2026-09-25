@@ -152,10 +152,6 @@ void BuildMonths(const SectionContext& ctx) {
 }
 
 void BuildDays(const SectionContext& ctx) {
-  if (!ctx.calendar_config.IsValidSpan()) {
-    return;
-  }
-
   const auto day_count = ctx.calendar_config.DayCount();
   if (day_count <= 0) {
     return;

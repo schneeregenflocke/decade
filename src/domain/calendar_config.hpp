@@ -24,8 +24,6 @@ class CalendarSpan {
 
   void SetYears(YearSpan years);
 
-  [[nodiscard]] bool IsValidSpan() const;
-
   [[nodiscard]] std::size_t YearCount() const;
 
   [[nodiscard]] int FirstYear() const;

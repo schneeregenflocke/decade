@@ -13,25 +13,22 @@
 
 TEST(CalendarSpanTest, DefaultSpanIsValid) {
   CalendarSpan span;
-  EXPECT_TRUE(span.IsValidSpan());
   EXPECT_GT(span.YearCount(), 0);
 }
 
 TEST(CalendarSpanTest, SetYearsClampsAndStores) {
   CalendarSpan span;
   span.SetYears({.first_year = 2020, .last_year = 2025});
-  ASSERT_TRUE(span.IsValidSpan());
   EXPECT_EQ(span.FirstYear(), 2020);
   EXPECT_EQ(span.LastYear(), 2025);
 }
 
-// Regression: SetYears must never produce a null span — YearCount()
-// would otherwise throw and the error escapes the Qt event handler uncaught
-// (First Year > Last Year in the Timeframe tab, or both years = kMaxYear).
+// Regression: SetYears must never produce a null span — the calendar would lose
+// every year row (First Year > Last Year in the Timeframe tab, or both years =
+// kMaxYear).
 TEST(CalendarSpanTest, SetYearsNormalizesReversedYears) {
   CalendarSpan span;
   span.SetYears({.first_year = 2030, .last_year = 2020});
-  ASSERT_TRUE(span.IsValidSpan());
   EXPECT_EQ(span.YearCount(), 1U);
   EXPECT_EQ(span.FirstYear(), 2030);
 }
@@ -39,7 +36,6 @@ TEST(CalendarSpanTest, SetYearsNormalizesReversedYears) {
 TEST(CalendarSpanTest, SetYearsStaysValidAtMaxYear) {
   CalendarSpan span;
   span.SetYears({.first_year = Date::kMaxYear, .last_year = Date::kMaxYear});
-  ASSERT_TRUE(span.IsValidSpan());
   EXPECT_GE(span.YearCount(), 1U);
 }
 
