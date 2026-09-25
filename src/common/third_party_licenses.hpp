@@ -13,8 +13,7 @@
 // Every library the build links appears here, not just the ones vendored under
 // `external/`: the notice obligations follow the linker, not the repository
 // layout. Whoever adds a dependency to CMakeLists.txt adds its licence text to
-// `licenses/` and one line below — and enters it in the SBOM beside the
-// `find_package` call it came in with.
+// `licenses/` and one line below.
 //
 // The order is the display order: the application first, the notices that no
 // licence text carries by itself second, then Qt with the two GNU texts its

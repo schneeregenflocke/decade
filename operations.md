@@ -47,28 +47,15 @@ ctest --test-dir build
 
 A panel gets tested through simulated input rather than through its handlers: `Qt6::Test` sends a click over `QWindowSystemInterface`, so it walks the route a real one walks — hit test, grab, focus — and the assertion stands at the far end of the wiring instead of beside the widget. Two consequences carry the setup. The binary brings its own `main` (`tests/main.cpp`) instead of linking `gtest_main`, because a widget needs a `QApplication` before it exists. And that `main` defaults to the `offscreen` platform, so CI needs no display; `QT_QPA_PLATFORM` overrides it when you want to watch a run on a real one. The plugin carries no `QOpenGLWidget`, so anything reaching the canvas needs a real display either way.
 
-#### Installing and the SBOM
+#### Installing
 
-`cmake --install` places the binary, the licence texts the dialogue also carries, and an [SPDX](https://spdx.github.io/spdx-spec/v2.3/) 2.3 document describing the build:
+`cmake --install` places the binary and the licence texts the dialogue also carries:
 
 ```bash
 cmake -S . -B build -G Ninja -DCMAKE_INSTALL_PREFIX=/some/where
 cmake --build build
-cmake --install build            # bin/decade, share/decade/licenses/, share/decade/decade.spdx
+cmake --install build            # bin/decade, share/decade/licenses/
 ```
-
-The document names every linked library with the version `find_package` and `pkg_check_modules` just resolved, so it cannot drift from what the linker took; the submodules answer with their pinned commit. GoogleTest stays out — it links into the test binary alone.
-
-Verifying it needs two Python packages no distribution ships, so the install skips the check. Run it by hand after changing a `sbom_add` line — it catches what CMake accepts and SPDX does not, such as a `PackageSupplier` without its `Organization:` or `Person:` prefix:
-
-```bash
-python3 -m venv .sbom-venv
-.sbom-venv/bin/pip install -r external/cmake-sbom/dist/common/requirements.txt
-.sbom-venv/bin/python -m spdx_tools.spdx.clitools.pyspdxtools -i /some/where/share/decade/decade.spdx
-.sbom-venv/bin/python -m ntia_conformance_checker.main --file /some/where/share/decade/decade.spdx
-```
-
-The first command stays silent when the document parses; the second answers `Conformant: True`.
 
 ### Startup file
 

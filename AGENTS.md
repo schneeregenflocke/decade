@@ -159,7 +159,7 @@ Decade is MIT, and every dependency but one is permissive. Qt is the exception: 
 
 What no licence text says by itself stands in `licenses/notices.txt`: the Qt notice with its relinking statement, and FreeType's mandatory disclaimer ("based in part of the work of the FreeType Team").
 
-The obligations follow the linker, not the repository layout — a system library obliges as much as a submodule, and the dialogue once showed the submodules alone. Whoever adds a dependency does four things: drop its licence text into `licenses/`, add a line to `src/common/third_party_licenses.hpp`, add the name to `tests/common/test_third_party_licenses.cpp`, and write a `sbom_add(PACKAGE …)` beside the `find_package` call it arrived with. No gate catches a forgotten one.
+The obligations follow the linker, not the repository layout — a system library obliges as much as a submodule, and the dialogue once showed the submodules alone. Whoever adds a dependency does three things: drop its licence text into `licenses/`, add a line to `src/common/third_party_licenses.hpp`, and add the name to `tests/common/test_third_party_licenses.cpp`. No gate catches a forgotten one.
 
 ### Warnings, the clang-tidy and the sanitizer gate
 
