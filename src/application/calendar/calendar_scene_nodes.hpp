@@ -99,11 +99,12 @@ struct CalendarSceneNodes {
   static constexpr std::string_view kLegendLabelsName = "Legend Labels";
   std::shared_ptr<SceneNode> legend_labels;
 
-  static constexpr std::string_view kMonthLabelsName = "Month Labels";
-  std::shared_ptr<SceneNode> month_labels;
+  static constexpr std::string_view kColumnLabelTextsName =
+      "Column Label Texts";
+  std::shared_ptr<SceneNode> column_label_texts;
 
-  static constexpr std::string_view kYearLabelsName = "Year Labels";
-  std::shared_ptr<SceneNode> year_labels;
+  static constexpr std::string_view kRowLabelTextsName = "Row Label Texts";
+  std::shared_ptr<SceneNode> row_label_texts;
 
   static constexpr std::string_view kDateBarLabelsName = "Date Bar Labels";
   std::shared_ptr<SceneNode> date_bar_labels;

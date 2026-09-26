@@ -92,10 +92,10 @@ CalendarSceneNodes BuildCalendarSceneNodes(Scene& scene, Shader& simple_shader,
   nodes.title_caret =
       fill_under_print_area(CalendarSceneNodes::kTitleCaretName);
 
-  nodes.month_labels =
-      container_under_print_area(CalendarSceneNodes::kMonthLabelsName);
-  nodes.year_labels =
-      container_under_print_area(CalendarSceneNodes::kYearLabelsName);
+  nodes.column_label_texts =
+      container_under_print_area(CalendarSceneNodes::kColumnLabelTextsName);
+  nodes.row_label_texts =
+      container_under_print_area(CalendarSceneNodes::kRowLabelTextsName);
   nodes.date_bar_labels =
       container_under_print_area(CalendarSceneNodes::kDateBarLabelsName);
 

@@ -56,10 +56,10 @@ void BuildCalendarLabels(const SectionContext& ctx) {
 
   const std::vector<RectF> x_label_frames =
       EqualColumns(ctx.layout.XLabelsArea(), number_months);
-  auto month_labels = detail::TextPool(ctx, ctx.nodes.month_labels);
+  auto column_label_texts = detail::TextPool(ctx, ctx.nodes.column_label_texts);
   for (size_t index = 0; index < number_months; ++index) {
     detail::SetCenteredText(
-        ctx, month_labels, months_names.at(index), months_names.at(index),
+        ctx, column_label_texts, months_names.at(index), months_names.at(index),
         x_label_frames.at(index).Center(), labels_font_size);
   }
 
@@ -68,7 +68,7 @@ void BuildCalendarLabels(const SectionContext& ctx) {
   detail::FillRectangles(ctx.nodes.column_labels, x_label_frames, config);
 
   const std::size_t row_count = ctx.projection.RowCount();
-  auto row_labels = detail::TextPool(ctx, ctx.nodes.year_labels);
+  auto row_label_texts = detail::TextPool(ctx, ctx.nodes.row_label_texts);
   std::vector<RectF> y_label_frames(row_count);
   for (std::size_t row = 0; row < row_count; ++row) {
     const std::string text =
@@ -77,7 +77,7 @@ void BuildCalendarLabels(const SectionContext& ctx) {
     frame = ctx.layout.GetRowArea(row);
     frame.SetLeft(ctx.layout.YLabelsArea().Left());
     frame.SetRight(ctx.layout.YLabelsArea().Right());
-    detail::SetCenteredText(ctx, row_labels, text, text, frame.Center(),
+    detail::SetCenteredText(ctx, row_label_texts, text, text, frame.Center(),
                             labels_font_size);
   }
 
