@@ -66,7 +66,7 @@ class CalendarSceneComposer {
   [[nodiscard]] SceneNodeSnapshot SceneSnapshot() const;
 
   // The page-space area the last Build() drew on: the page, grown by whatever
-  // of the calendar runs past it.
+  // of the calendar runs past it and the page margin beyond that.
   [[nodiscard]] RectF DrawingExtent() const;
 
   // The sizes the last Build() laid the calendar out at.

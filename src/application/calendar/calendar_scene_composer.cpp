@@ -119,8 +119,10 @@ void CalendarSceneComposer::Build() {
 
 RectF CalendarSceneComposer::DrawingExtent() const {
   const glm::vec3& origin = layout_.PrintAreaOrigin();
-  return page_size_.Enclosing(layout_.CalendarArea().Shift(origin.x, origin.y))
-      .Enclosing(legend_.area.Shift(origin.x, origin.y));
+  // What runs past the page keeps the page's margin there too.
+  const RectF drawn =
+      layout_.CalendarArea().Enclosing(legend_.area).Expand(page_margin_);
+  return page_size_.Enclosing(drawn.Shift(origin.x, origin.y));
 }
 
 CalendarMetrics CalendarSceneComposer::Metrics() const {
