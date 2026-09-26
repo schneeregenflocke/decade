@@ -2,8 +2,6 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <cstdint>
-#include <stdexcept>
 #include <vector>
 
 #include "date.hpp"
@@ -35,19 +33,7 @@ int CalendarSpan::FirstYear() const { return span_.Begin().Year(); }
 
 int CalendarSpan::LastYear() const { return span_.Last().Year(); }
 
-Date CalendarSpan::FirstDay() const { return span_.Begin(); }
-
-std::int64_t CalendarSpan::DayCount() const { return span_.LengthDays(); }
-
-int CalendarSpan::YearAt(const std::size_t index) const {
-  const int year = span_.Begin().Year() + static_cast<int>(index);
-
-  if (!ShowsYear(year)) {
-    throw std::logic_error("Year not in span!");
-  }
-
-  return year;
-}
+const DatePeriod& CalendarSpan::Period() const { return span_; }
 
 bool CalendarSpan::ShowsYear(const int year) const {
   return year >= span_.Begin().Year() && year <= span_.Last().Year();

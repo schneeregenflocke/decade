@@ -138,7 +138,8 @@ TEST(DateEntryBarsTest, ProducesOneBarPerIntervalWithinYear) {
   EXPECT_EQ(bars.GetNumberBars(), 2U);
 }
 
-TEST(DateEntryBarsTest, SplitsYearSpanningIntervalAtYearBoundary) {
+// A bar keeps its entry whole; each year's coverage counts only its own part.
+TEST(DateEntryBarsTest, CountsEachYearsPartOfAYearSpanningInterval) {
   DateEntryBars bars;
   SeedDefaultCategory(bars);
   DateEntry entry;
@@ -149,12 +150,11 @@ TEST(DateEntryBarsTest, SplitsYearSpanningIntervalAtYearBoundary) {
 
   bars.ReceiveDateEntries(input);
 
-  ASSERT_EQ(bars.GetNumberBars(), 2U);
-  EXPECT_EQ(bars.GetBar(0).GetYear(), 2030);
-  EXPECT_EQ(bars.GetBar(1).GetYear(), 2031);
-  EXPECT_EQ(bars.GetBar(0).GetLength() + bars.GetBar(1).GetLength(),
-            Date::DaysBetween(Date::FromYmd(2030, 12, 20),
-                              Date::FromYmd(2031, 1, 10)));
+  ASSERT_EQ(bars.GetNumberBars(), 1U);
+  EXPECT_EQ(bars.GetBar(0).Period(), entry.GetDateInterval());
+  ASSERT_EQ(bars.GetSpan(), 2U);
+  EXPECT_EQ(bars.GetCoveredDays(0), 12);
+  EXPECT_EQ(bars.GetCoveredDays(1), 9);
 }
 
 // A single day on January 1st is the half-open period [Jan 1, Jan 2): one
@@ -173,8 +173,8 @@ TEST(DateEntryBarsTest, SingleDayOnJanuaryFirstProducesOneBar) {
   bars.ReceiveDateEntries(input);
 
   ASSERT_EQ(bars.GetNumberBars(), 1U);
-  EXPECT_EQ(bars.GetBar(0).GetYear(), 2030);
-  EXPECT_EQ(bars.GetBar(0).GetLength(), 1);
+  EXPECT_EQ(bars.GetBar(0).Period().Begin().Year(), 2030);
+  EXPECT_EQ(bars.GetBar(0).Period().LengthDays(), 1);
   EXPECT_EQ(bars.GetCoveredDays(0), 1);
 }
 

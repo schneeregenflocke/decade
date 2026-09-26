@@ -2,15 +2,16 @@
 
 #include <cstddef>
 #include <glm/ext/vector_float3.hpp>
-#include <vector>
 
+#include "../../domain/calendar_config.hpp"
+#include "../../domain/timeline_projection.hpp"
 #include "../../infrastructure/graphics/rect.hpp"
 
 CalendarLayout::CalendarLayout(const RectF& page_size, const RectF& page_margin,
-                               float title_area_height, std::size_t year_count,
-                               const std::vector<float>& spacing_proportions)
-    : fields_(Compute(page_size, page_margin, title_area_height, year_count,
-                      spacing_proportions)) {}
+                               float title_area_height,
+                               const CalendarConfig& calendar_config)
+    : fields_(Compute(page_size, page_margin, title_area_height,
+                      calendar_config)) {}
 
 const glm::vec3& CalendarLayout::PrintAreaOrigin() const {
   return fields_.print_area_origin;
@@ -36,11 +37,11 @@ const RectF& CalendarLayout::YLabelsArea() const {
 
 const RectF& CalendarLayout::LegendArea() const { return fields_.legend_area; }
 
-float CalendarLayout::CellWidth() const { return fields_.cell_width; }
-
-float CalendarLayout::RowHeight() const { return fields_.row_height; }
-
 float CalendarLayout::DayWidth() const { return fields_.day_width; }
+
+RectF CalendarLayout::GetRowArea(std::size_t row) const {
+  return fields_.proportions.GetRowArea(row);
+}
 
 RectF CalendarLayout::GetSubArea(std::size_t row, std::size_t sub) const {
   return fields_.proportions.GetSubArea(row, sub);
@@ -48,7 +49,7 @@ RectF CalendarLayout::GetSubArea(std::size_t row, std::size_t sub) const {
 
 CalendarLayout::Fields CalendarLayout::Compute(
     const RectF& page_size, const RectF& page_margin, float title_area_height,
-    std::size_t year_count, const std::vector<float>& spacing_proportions) {
+    const CalendarConfig& calendar_config) {
   Fields fields;
 
   // The print area is the page minus the margins, then shifted so its
@@ -68,27 +69,31 @@ CalendarLayout::Fields CalendarLayout::Compute(
   fields.calendar_area =
       page_margin_area.Reduce(RectF(kZero, kDefaultMargin, kZero, kZero));
 
-  const std::size_t number_rows = kAdditionalRows + year_count;
-  fields.cell_width = fields.calendar_area.Width() / kCalendarColumns;
-  fields.row_height =
-      fields.calendar_area.Height() / static_cast<float>(number_rows);
+  const TimelineProjection projection(calendar_config);
+  const std::size_t band_count =
+      kLabelAndLegendBands + calendar_config.YearCount();
+  const float band_height =
+      fields.calendar_area.Height() / static_cast<float>(band_count);
+  const float label_and_legend_height =
+      band_height * static_cast<float>(kLabelAndLegendBands);
+  const float row_labels_width =
+      fields.calendar_area.Width() / kCalendarColumns;
 
-  fields.cells_area = fields.calendar_area.Reduce(RectF(
-      fields.cell_width, kZero, fields.row_height * kRowHeaderScale, kZero));
+  fields.cells_area = fields.calendar_area.Reduce(
+      RectF(row_labels_width, kZero, label_and_legend_height, kZero));
 
-  fields.proportions.SetupRowAreas(fields.cells_area, year_count);
-  fields.proportions.SetupSubAreas(spacing_proportions);
+  fields.proportions.SetupRowAreas(fields.cells_area, projection.RowCount());
+  fields.proportions.SetupSubAreas(calendar_config.LaidOutSpacingProportions());
 
   fields.day_width = fields.cells_area.Width() / kDaysPerYear;
 
-  fields.x_labels_area = fields.calendar_area.Reduce(RectF(
-      fields.cell_width, kZero, fields.row_height, fields.cells_area.Height()));
+  fields.x_labels_area = fields.calendar_area.Reduce(
+      RectF(row_labels_width, kZero, band_height, fields.cells_area.Height()));
   fields.y_labels_area = fields.calendar_area.Reduce(
-      RectF(kZero, fields.cells_area.Width(),
-            fields.row_height * kRowHeaderScale, kZero));
+      RectF(kZero, fields.cells_area.Width(), label_and_legend_height, kZero));
   fields.legend_area = fields.calendar_area.Reduce(
-      RectF(fields.cell_width, kZero, kZero,
-            fields.cells_area.Height() + fields.row_height));
+      RectF(row_labels_width, kZero, kZero,
+            fields.cells_area.Height() + band_height));
 
   return fields;
 }

@@ -1,7 +1,6 @@
 #ifndef BAR_HPP
 #define BAR_HPP
 
-#include <cstdint>
 #include <string>
 
 #include "date_period.hpp"
@@ -14,13 +13,7 @@ class Bar {
 
   [[nodiscard]] const std::string& GetText() const;
 
-  [[nodiscard]] int GetYear() const;
-
-  [[nodiscard]] std::int64_t GetLength() const;
-
-  [[nodiscard]] float GetFirstDay() const;
-
-  [[nodiscard]] float GetLastDay() const;
+  [[nodiscard]] const DatePeriod& Period() const;
 
   [[nodiscard]] int GetCategory() const;
   void SetCategory(int category);

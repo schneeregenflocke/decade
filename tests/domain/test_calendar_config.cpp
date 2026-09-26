@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 
 #include <QtCore/QObject>
-#include <stdexcept>
 #include <vector>
 
 #include "domain/calendar_config.hpp"
@@ -48,17 +47,11 @@ TEST(CalendarSpanTest, ShowsYearRespectsBounds) {
   EXPECT_FALSE(span.ShowsYear(2026));
 }
 
-TEST(CalendarSpanTest, YearAtReturnsRelativeYear) {
+TEST(CalendarSpanTest, PeriodRunsFromFirstJanuaryToTheNextAfterLastYear) {
   CalendarSpan span;
   span.SetYears({.first_year = 2030, .last_year = 2032});
-  EXPECT_EQ(span.YearAt(0), 2030);
-  EXPECT_EQ(span.YearAt(2), 2032);
-}
-
-TEST(CalendarSpanTest, YearAtThrowsWhenOutOfRange) {
-  CalendarSpan span;
-  span.SetYears({.first_year = 2030, .last_year = 2030});
-  EXPECT_THROW((void)span.YearAt(5), std::logic_error);
+  EXPECT_EQ(span.Period().Begin(), Date::FromYmd(2030, 1, 1));
+  EXPECT_EQ(span.Period().End(), Date::FromYmd(2033, 1, 1));
 }
 
 TEST(CalendarConfigTest, HiddenAnnualCoverageLaysOutNoSubrow) {

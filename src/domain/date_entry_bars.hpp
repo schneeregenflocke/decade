@@ -32,7 +32,7 @@ class DateEntryBars {
 
   [[nodiscard]] size_t GetNumberBars() const;
 
-  [[nodiscard]] Bar GetBar(size_t index) const;
+  [[nodiscard]] const Bar& GetBar(size_t index) const;
 
   // Marked days in the year at the given zero-based offset from the first one
   // — what the annual coverage bar draws and its percentage divides.

@@ -15,6 +15,8 @@ class ProportionAreaLayout {
   // set from underflowing the unsigned subtraction.
   void SetupSubAreas(const std::vector<float>& proportions);
 
+  [[nodiscard]] RectF GetRowArea(size_t row) const;
+
   [[nodiscard]] RectF GetSubArea(size_t row, size_t sub) const;
 
  private:

@@ -1,5 +1,6 @@
 #include "timeline_projection.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <vector>
 
@@ -30,10 +31,27 @@ TimelineProjection::TimelineProjection(const CalendarSpan& span)
 
 std::size_t TimelineProjection::RowCount() const { return span_.YearCount(); }
 
-int TimelineProjection::YearForRow(std::size_t row) const {
-  return span_.YearAt(row);
+DatePeriod TimelineProjection::RowPeriod(std::size_t row) const {
+  const int year = span_.FirstYear() + static_cast<int>(row);
+  return {Date::FromYmd(year, 1, 1), Date::FromYmd(year + 1, 1, 1)};
 }
 
-std::size_t TimelineProjection::RowForYear(int year) const {
-  return static_cast<std::size_t>(year - span_.FirstYear());
+std::size_t TimelineProjection::RowOf(const Date& date) const {
+  return static_cast<std::size_t>(date.Year() - span_.FirstYear());
+}
+
+std::vector<DatePeriod> TimelineProjection::SplitAtRowBoundaries(
+    const DatePeriod& period) const {
+  const Date begin = std::max(period.Begin(), span_.Period().Begin());
+  const Date end = std::min(period.End(), span_.Period().End());
+  std::vector<DatePeriod> pieces;
+  if (end <= begin) {
+    return pieces;
+  }
+  for (std::size_t row = RowOf(begin); row <= RowOf(end.AddDays(-1)); ++row) {
+    const DatePeriod row_period = RowPeriod(row);
+    pieces.emplace_back(std::max(begin, row_period.Begin()),
+                        std::min(end, row_period.End()));
+  }
+  return pieces;
 }

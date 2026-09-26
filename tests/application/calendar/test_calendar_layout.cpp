@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "application/calendar/calendar_layout.hpp"
+#include "domain/calendar_config.hpp"
 #include "infrastructure/graphics/rect.hpp"
 
 namespace {
@@ -14,9 +15,10 @@ CalendarLayout MakeLayout() {
   const RectF page =
       RectF::FromDimension(RectF::Dimension{.width = 200.0F, .height = 300.0F});
   const RectF margin(10.0F, 20.0F, 30.0F, 40.0F);
-  const std::vector<float> proportions(7, 1.0F);
-  return CalendarLayout(page, margin, /*title_area_height=*/15.0F,
-                        /*year_count=*/3, proportions);
+  CalendarConfig config;
+  config.SetYears({.first_year = 2001, .last_year = 2003});
+  config.SetSpacingProportions(std::vector<float>(7, 1.0F));
+  return CalendarLayout(page, margin, /*title_area_height=*/15.0F, config);
 }
 
 constexpr float kTol = 1.0e-3F;
@@ -57,10 +59,11 @@ TEST(CalendarLayoutTest, CalendarFrameIsBelowTitleAndRightMargined) {
 TEST(CalendarLayoutTest, CellAndRowAndDayMetrics) {
   const CalendarLayout layout = MakeLayout();
 
-  // 13 columns across the calendar frame.
-  EXPECT_NEAR(layout.CellWidth(), 165.0F / 13.0F, kTol);
-  // (2 header rows + 3 span years) divide the height.
-  EXPECT_NEAR(layout.RowHeight(), 215.0F / 5.0F, kTol);
+  // The row labels take one of 13 columns across the calendar frame.
+  EXPECT_NEAR(layout.YLabelsArea().Width(), 165.0F / 13.0F, kTol);
+  // (2 header bands + 3 span years) divide the height.
+  EXPECT_NEAR(layout.GetRowArea(0).Height(), 215.0F / 5.0F, kTol);
+  EXPECT_NEAR(layout.XLabelsArea().Height(), 215.0F / 5.0F, kTol);
   // Day width is the cells-frame width spread over a 366-day year.
   EXPECT_NEAR(layout.DayWidth(), (165.0F - (165.0F / 13.0F)) / 366.0F, kTol);
 }
@@ -79,7 +82,7 @@ TEST(CalendarLayoutTest, SubFrameAlignsHorizontallyWithCellsFrame) {
 TEST(CalendarLayoutTest, DefaultConstructedIsEmpty) {
   const CalendarLayout layout;
   EXPECT_NEAR(layout.PrintArea().Width(), 0.0F, kTol);
-  EXPECT_NEAR(layout.CellWidth(), 0.0F, kTol);
+  EXPECT_NEAR(layout.DayWidth(), 0.0F, kTol);
 }
 
 }  // namespace

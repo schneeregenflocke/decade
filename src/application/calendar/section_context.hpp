@@ -12,12 +12,15 @@
 #include "../../domain/calendar_config.hpp"
 #include "../../domain/date_category.hpp"
 #include "../../domain/date_entry_bars.hpp"
+#include "../../domain/date_period.hpp"
 #include "../../domain/font_config.hpp"
 #include "../../domain/shape_configuration.hpp"
 #include "../../domain/text_edit_view.hpp"
+#include "../../domain/timeline_projection.hpp"
 #include "../../domain/title_config.hpp"
 #include "../../infrastructure/graphics/font.hpp"
 #include "../../infrastructure/graphics/pick_id.hpp"
+#include "../../infrastructure/graphics/rect.hpp"
 #include "../../infrastructure/graphics/scene_graph.hpp"
 #include "../../infrastructure/graphics/scene_shape_filler.hpp"
 #include "../../infrastructure/graphics/shaders.hpp"
@@ -35,6 +38,7 @@ namespace calendar_sections {
 struct SectionContext {
   const CalendarSceneNodes& nodes;
   const CalendarLayout& layout;
+  const TimelineProjection& projection;
   const ShapeConfigSet& shape_config;
   const CalendarConfig& calendar_config;
   const TitleConfig& title_config;
@@ -87,6 +91,11 @@ void SetCenteredText(const SectionContext& ctx,
                      scene_shapes::TextChildPool& pool, const std::string& name,
                      const std::string& text, const glm::vec3& center,
                      float size);
+
+// Where `period` lies in subrow `sub` of its row. Precondition: the period
+// lies within one row, as SplitAtRowBoundaries cuts it.
+[[nodiscard]] RectF PeriodArea(const SectionContext& ctx,
+                               const DatePeriod& period, std::size_t sub);
 
 }  // namespace detail
 

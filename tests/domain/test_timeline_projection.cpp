@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#include <cstddef>
+
 #include "domain/calendar_config.hpp"
 #include "domain/date.hpp"
 #include "domain/date_period.hpp"
@@ -69,22 +71,57 @@ TEST(TimelineProjectionTest, RowCountMatchesSpanYears) {
   EXPECT_EQ(projection.RowCount(), 6U);
 }
 
-TEST(TimelineProjectionTest, YearForRowIsAscendingFromFirstYear) {
+TEST(TimelineProjectionTest, RowPeriodIsOneYearAscendingFromFirstYear) {
   CalendarSpan span;
   span.SetYears({.first_year = 2030, .last_year = 2032});
   const TimelineProjection projection(span);
 
-  EXPECT_EQ(projection.YearForRow(0), 2030);
-  EXPECT_EQ(projection.YearForRow(1), 2031);
-  EXPECT_EQ(projection.YearForRow(2), 2032);
+  EXPECT_EQ(projection.RowPeriod(0), HalfOpen(2030, 1, 1, 2031, 1, 1));
+  EXPECT_EQ(projection.RowPeriod(2), HalfOpen(2032, 1, 1, 2033, 1, 1));
 }
 
-TEST(TimelineProjectionTest, RowForYearInvertsYearForRow) {
+TEST(TimelineProjectionTest, RowOfInvertsRowPeriod) {
   CalendarSpan span;
   span.SetYears({.first_year = 2030, .last_year = 2034});
   const TimelineProjection projection(span);
 
   for (std::size_t row = 0; row < projection.RowCount(); ++row) {
-    EXPECT_EQ(projection.RowForYear(projection.YearForRow(row)), row);
+    EXPECT_EQ(projection.RowOf(projection.RowPeriod(row).Begin()), row);
+    EXPECT_EQ(projection.RowOf(projection.RowPeriod(row).Last()), row);
   }
+}
+
+TEST(TimelineProjectionTest, SplitAtRowBoundariesCutsAtEachRowEnd) {
+  CalendarSpan span;
+  span.SetYears({.first_year = 2030, .last_year = 2034});
+  const TimelineProjection projection(span);
+
+  const auto pieces =
+      projection.SplitAtRowBoundaries(HalfOpen(2030, 12, 20, 2032, 1, 10));
+
+  ASSERT_EQ(pieces.size(), 3U);
+  EXPECT_EQ(pieces[0], HalfOpen(2030, 12, 20, 2031, 1, 1));
+  EXPECT_EQ(pieces[1], HalfOpen(2031, 1, 1, 2032, 1, 1));
+  EXPECT_EQ(pieces[2], HalfOpen(2032, 1, 1, 2032, 1, 10));
+}
+
+TEST(TimelineProjectionTest, SplitAtRowBoundariesClipsToTheSpan) {
+  CalendarSpan span;
+  span.SetYears({.first_year = 2030, .last_year = 2030});
+  const TimelineProjection projection(span);
+
+  const auto pieces =
+      projection.SplitAtRowBoundaries(HalfOpen(2029, 12, 20, 2031, 1, 10));
+
+  ASSERT_EQ(pieces.size(), 1U);
+  EXPECT_EQ(pieces[0], projection.RowPeriod(0));
+}
+
+TEST(TimelineProjectionTest, SplitAtRowBoundariesDropsAPeriodOutsideTheSpan) {
+  CalendarSpan span;
+  span.SetYears({.first_year = 2030, .last_year = 2030});
+  const TimelineProjection projection(span);
+
+  EXPECT_TRUE(projection.SplitAtRowBoundaries(HalfOpen(2031, 1, 1, 2031, 2, 1))
+                  .empty());
 }

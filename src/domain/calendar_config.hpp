@@ -3,7 +3,6 @@
 
 #include <array>
 #include <cstddef>
-#include <cstdint>
 #include <vector>
 
 #include "date.hpp"
@@ -30,11 +29,7 @@ class CalendarSpan {
 
   [[nodiscard]] int LastYear() const;
 
-  [[nodiscard]] Date FirstDay() const;
-
-  [[nodiscard]] std::int64_t DayCount() const;
-
-  [[nodiscard]] int YearAt(std::size_t index) const;
+  [[nodiscard]] const DatePeriod& Period() const;
 
   [[nodiscard]] bool ShowsYear(int year) const;
 

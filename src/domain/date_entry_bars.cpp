@@ -32,7 +32,7 @@ int DateEntryBars::GetLastYear() const { return date_entries_.LastYear(); }
 
 size_t DateEntryBars::GetNumberBars() const { return bars_.size(); }
 
-Bar DateEntryBars::GetBar(size_t index) const { return bars_[index]; }
+const Bar& DateEntryBars::GetBar(size_t index) const { return bars_[index]; }
 
 std::int64_t DateEntryBars::GetCoveredDays(size_t year_index) const {
   return covered_days_[year_index];
@@ -42,18 +42,10 @@ void DateEntryBars::ProcessBars() {
   bars_.clear();
 
   for (const auto& entry : date_entries_.Items()) {
-    // Stored periods are never null (filtered upstream), so the row-period
-    // split is well-defined. The split rule (one bar per calendar year)
-    // lives in the domain projection, not in this store.
-    const auto split_date_periods =
-        SplitAtYearBoundaries(entry.GetDateInterval());
-
-    for (const auto& split_period : split_date_periods) {
-      Bar bar(split_period);
-      bar.SetText(std::to_string(entry.GetNumber() + 1));
-      bar.SetCategory(entry.GetCategory());
-      bars_.push_back(bar);
-    }
+    Bar bar(entry.GetDateInterval());
+    bar.SetText(std::to_string(entry.GetNumber() + 1));
+    bar.SetCategory(entry.GetCategory());
+    bars_.push_back(bar);
   }
 }
 
@@ -62,9 +54,12 @@ void DateEntryBars::ProcessCoveredDays() {
   covered_days_.resize(GetSpan());
 
   for (const auto& bar : bars_) {
-    const size_t covered_days_index = static_cast<size_t>(bar.GetYear()) -
-                                      static_cast<size_t>(GetFirstYear());
-
-    covered_days_[covered_days_index] += bar.GetLength();
+    // Stored periods are never null (filtered upstream), so the split is
+    // well-defined.
+    for (const auto& year_part : SplitAtYearBoundaries(bar.Period())) {
+      const auto covered_days_index =
+          static_cast<size_t>(year_part.Begin().Year() - GetFirstYear());
+      covered_days_[covered_days_index] += year_part.LengthDays();
+    }
   }
 }

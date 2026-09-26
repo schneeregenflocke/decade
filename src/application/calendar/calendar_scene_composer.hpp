@@ -17,6 +17,7 @@
 #include "../../domain/scene_snapshot.hpp"
 #include "../../domain/shape_configuration.hpp"
 #include "../../domain/text_edit_view.hpp"
+#include "../../domain/timeline_projection.hpp"
 #include "../../domain/title_config.hpp"
 #include "../../infrastructure/graphics/font.hpp"
 #include "../../infrastructure/graphics/graphics_engine.hpp"
@@ -127,6 +128,7 @@ class CalendarSceneComposer {
 
   // Transient render state, recomputed on every Build(). The page geometry now
   // lives in CalendarLayout; the builder only keeps what the sections produce.
+  TimelineProjection projection_{calendar_config_};
   CalendarLayout layout_;
   std::vector<PickBox> pick_boxes_;
   std::optional<TextEditView> text_edit_;

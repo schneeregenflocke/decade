@@ -55,6 +55,10 @@ void ProportionAreaLayout::SetupSubAreas(
   }
 }
 
+RectF ProportionAreaLayout::GetRowArea(const size_t row) const {
+  return row_areas_.at(row);
+}
+
 RectF ProportionAreaLayout::GetSubArea(const size_t row,
                                        const size_t sub) const {
   return sub_areas_.at((number_sub_areas_per_row_ * row) + sub);

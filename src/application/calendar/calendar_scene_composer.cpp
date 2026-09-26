@@ -19,6 +19,7 @@
 #include "../../domain/scene_snapshot.hpp"
 #include "../../domain/shape_configuration.hpp"
 #include "../../domain/text_edit_view.hpp"
+#include "../../domain/timeline_projection.hpp"
 #include "../../domain/title_config.hpp"
 #include "../../infrastructure/graphics/font.hpp"
 #include "../../infrastructure/graphics/graphics_engine.hpp"
@@ -84,9 +85,9 @@ void CalendarSceneComposer::Build() {
   page_shape.SetShape(page_size_);
   page_shape.SetColor(glm::vec4(kOne, kOne, kOne, kOne));
 
+  projection_ = TimelineProjection(calendar_config_);
   layout_ = CalendarLayout(page_size_, page_margin_, title_config_.AreaHeight(),
-                           calendar_config_.YearCount(),
-                           calendar_config_.LaidOutSpacingProportions());
+                           calendar_config_);
 
   // The print-area node carries the print area's offset within the page;
   // every descendant is computed in print-area-local coordinates (origin at
@@ -118,6 +119,7 @@ calendar_sections::SectionContext CalendarSceneComposer::MakeContext() const {
   return calendar_sections::SectionContext{
       .nodes = nodes_,
       .layout = layout_,
+      .projection = projection_,
       .shape_config = shape_config_,
       .calendar_config = calendar_config_,
       .title_config = title_config_,
