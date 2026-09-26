@@ -6,6 +6,7 @@
 #include <glm/vec3.hpp>
 #include <optional>
 
+#include "../../domain/band_part.hpp"
 #include "../../domain/calendar_config.hpp"
 #include "../../infrastructure/graphics/area_layout.hpp"
 #include "../../infrastructure/graphics/rect.hpp"
@@ -54,9 +55,10 @@ class CalendarLayout {
   [[nodiscard]] RectF GetPartArea(std::size_t row, BandPart part) const;
 
   // The height a part takes within one year's band. Texts inside a row and the
-  // legend's samples take it, so they keep their size in every view. Same
-  // precondition as GetPartArea.
+  // legend's samples take it, so they keep their size in every view.
   [[nodiscard]] float BandPartHeight(BandPart part) const;
+
+  [[nodiscard]] const BandHeights& BandPartHeights() const;
 
  private:
   static constexpr float kZero = 0.0F;
@@ -90,7 +92,7 @@ class CalendarLayout {
   // it from a single pure function (rather than assigning members in its body).
   struct Fields {
     ProportionAreaLayout proportions;
-    ProportionAreaLayout band_proportions;
+    BandHeights band_part_heights{};
     glm::vec3 print_area_origin{0.0F};
     RectF print_area;
     RectF title_area;

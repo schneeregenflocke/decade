@@ -16,6 +16,7 @@
 #include <functional>
 #include <utility>
 
+#include "../domain/band_part.hpp"
 #include "../domain/calendar_config.hpp"
 #include "../domain/calendar_sizing.hpp"
 #include "../domain/date.hpp"

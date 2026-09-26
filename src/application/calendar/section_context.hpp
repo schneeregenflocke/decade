@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "../../domain/band_part.hpp"
 #include "../../domain/calendar_config.hpp"
 #include "../../domain/date_category.hpp"
 #include "../../domain/date_entry_bars.hpp"

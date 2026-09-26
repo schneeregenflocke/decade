@@ -3,8 +3,8 @@
 
 #include <array>
 #include <cstddef>
-#include <cstdint>
 
+#include "band_part.hpp"
 #include "calendar_sizing.hpp"
 #include "calendar_view.hpp"
 #include "date.hpp"
@@ -41,23 +41,6 @@ class CalendarSpan {
 
   DatePeriod span_;
 };
-
-// The parts a year's band stacks from the bottom up: three rows of content,
-// each with a gap below, and a gap above the top row.
-enum class BandPart : std::uint8_t {
-  kBelowCoverage,
-  kCoverage,
-  kBelowDays,
-  kDays,
-  kBelowLabels,
-  kEntryLabels,
-  kAboveLabels,
-};
-
-inline constexpr std::size_t kBandPartCount = 7;
-
-// Relative heights, indexed by BandPart.
-using BandProportions = std::array<float, kBandPartCount>;
 
 // Pure domain value: the full calendar configuration. Rule of Zero (no signal,
 // no hand-written copy/move) -> freely and correctly copyable.

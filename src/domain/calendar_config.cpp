@@ -2,9 +2,9 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <numeric>
 #include <utility>
 
+#include "band_part.hpp"
 #include "calendar_sizing.hpp"
 #include "calendar_view.hpp"
 #include "date.hpp"
@@ -80,8 +80,7 @@ BandProportions CalendarConfig::LaidOutBandProportions() const {
 
 float CalendarConfig::LaidOutShare(BandPart part) const {
   const BandProportions proportions = LaidOutBandProportions();
-  const float total =
-      std::accumulate(proportions.begin(), proportions.end(), 0.0F);
+  const float total = SumOfParts(proportions);
   if (total <= 0.0F) {
     return 0.0F;
   }

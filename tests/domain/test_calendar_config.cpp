@@ -3,6 +3,7 @@
 #include <QtCore/QObject>
 #include <utility>
 
+#include "domain/band_part.hpp"
 #include "domain/calendar_config.hpp"
 #include "domain/calendar_config_store.hpp"
 #include "domain/date.hpp"

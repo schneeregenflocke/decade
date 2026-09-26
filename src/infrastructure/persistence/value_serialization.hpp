@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 
+#include "../../domain/band_part.hpp"
 #include "../../domain/calendar_config.hpp"
 #include "../../domain/calendar_sizing.hpp"
 #include "../../domain/calendar_view.hpp"

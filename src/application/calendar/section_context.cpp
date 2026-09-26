@@ -5,7 +5,7 @@
 #include <memory>
 #include <string>
 
-#include "../../domain/calendar_config.hpp"
+#include "../../domain/band_part.hpp"
 #include "../../domain/date.hpp"
 #include "../../domain/date_period.hpp"
 #include "../../infrastructure/graphics/rect.hpp"

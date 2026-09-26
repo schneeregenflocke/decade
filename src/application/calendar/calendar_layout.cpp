@@ -6,6 +6,7 @@
 #include <optional>
 #include <utility>
 
+#include "../../domain/band_part.hpp"
 #include "../../domain/calendar_config.hpp"
 #include "../../domain/calendar_sizing.hpp"
 #include "../../domain/timeline_projection.hpp"
@@ -52,7 +53,11 @@ RectF CalendarLayout::GetPartArea(std::size_t row, BandPart part) const {
 }
 
 float CalendarLayout::BandPartHeight(BandPart part) const {
-  return fields_.band_proportions.GetSubArea(0, ContentIndex(part)).Height();
+  return fields_.band_part_heights.at(std::to_underlying(part));
+}
+
+const BandHeights& CalendarLayout::BandPartHeights() const {
+  return fields_.band_part_heights;
 }
 
 std::size_t CalendarLayout::ContentIndex(BandPart part) {
@@ -131,9 +136,13 @@ CalendarLayout::Fields CalendarLayout::Compute(
       calendar_config.LaidOutBandProportions();
   fields.proportions.SetupSubAreas(band_proportions);
 
-  fields.band_proportions.SetupRowAreas(
-      RectF(kZero, kZero, kZero, heights.band), 1);
-  fields.band_proportions.SetupSubAreas(band_proportions);
+  const float proportions_total = SumOfParts(band_proportions);
+  for (std::size_t index = 0; index < kBandPartCount; ++index) {
+    fields.band_part_heights.at(index) =
+        proportions_total > kZero
+            ? heights.band * band_proportions.at(index) / proportions_total
+            : kZero;
+  }
 
   fields.day_width = widths.cells / static_cast<float>(projection.RowDays());
 

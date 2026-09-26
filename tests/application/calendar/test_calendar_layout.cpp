@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "application/calendar/calendar_layout.hpp"
+#include "domain/band_part.hpp"
 #include "domain/calendar_config.hpp"
 #include "domain/calendar_sizing.hpp"
 #include "domain/calendar_view.hpp"
