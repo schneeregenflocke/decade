@@ -1,5 +1,6 @@
 #include "value_serialization.hpp"
 
+#include <algorithm>
 #include <array>
 #include <charconv>
 #include <cstddef>
@@ -8,6 +9,7 @@
 #include <string>
 #include <system_error>
 
+#include "../../domain/calendar_view.hpp"
 #include "../../domain/date.hpp"
 
 namespace persistence::serialization_detail {
@@ -52,6 +54,13 @@ std::array<float, 4> ColorToArray(const glm::vec4& color) {
 
 glm::vec4 ColorFromArray(const std::array<float, 4>& array) {
   return {array[0], array[1], array[2], array[3]};
+}
+
+CalendarView CalendarViewFromNumber(int number) {
+  const auto* const known = std::ranges::find_if(
+      kCalendarViews,
+      [number](CalendarView view) { return static_cast<int>(view) == number; });
+  return known == kCalendarViews.end() ? CalendarView::kYearPerRow : *known;
 }
 
 }  // namespace persistence::serialization_detail

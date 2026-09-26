@@ -21,6 +21,47 @@ namespace {
 
 constexpr int kDaysPerWeek = 7;
 
+std::vector<std::string> MonthNames() {
+  constexpr std::size_t kMonthCount = 12;
+  std::array<char, detail::kMonthNameBufferSize> buf{};
+  std::vector<std::string> names(kMonthCount);
+  for (std::size_t index = 0; index < kMonthCount; ++index) {
+    std::tm month_tm = {};
+    month_tm.tm_mon = static_cast<int>(index);
+    if (std::strftime(buf.data(), std::size(buf), "%b", &month_tm) != 0) {
+      names[index] = buf.data();
+    }
+  }
+  return names;
+}
+
+// One per column of the first row; every row shares them.
+std::vector<std::string> ColumnLabels(const SectionContext& ctx) {
+  switch (ctx.projection.Columns()) {
+    case ColumnUnit::kMonth:
+      return MonthNames();
+    case ColumnUnit::kYear: {
+      std::vector<std::string> years;
+      for (const DatePeriod& year :
+           SplitAtYearBoundaries(ctx.projection.RowPeriod(0))) {
+        years.push_back(std::to_string(year.Begin().Year()));
+      }
+      return years;
+    }
+  }
+  return {};
+}
+
+// The bounds of a row's period as years: one year alone, or first and last.
+std::string RowLabel(const DatePeriod& period) {
+  const int first_year = period.Begin().Year();
+  const int last_year = period.Last().Year();
+  if (first_year == last_year) {
+    return std::to_string(first_year);
+  }
+  return std::to_string(first_year) + "\u2013" + std::to_string(last_year);
+}
+
 std::vector<RectF> EqualColumns(const RectF& area, std::size_t count) {
   std::vector<RectF> columns(count, area);
   const float width = area.Width() / static_cast<float>(count);
@@ -35,32 +76,19 @@ std::vector<RectF> EqualColumns(const RectF& area, std::size_t count) {
 }  // namespace
 
 void BuildCalendarLabels(const SectionContext& ctx) {
-  constexpr size_t number_months = 12;
-  std::array<char, detail::kMonthNameBufferSize> buf{};
-  constexpr const char* format = "%b";
-  std::array<std::string, number_months> months_names;
-
-  for (size_t index = 0; index < months_names.size(); ++index) {
-    std::tm month_tm = {};
-    month_tm.tm_mon = static_cast<int>(index);
-
-    if (std::strftime(buf.data(), std::size(buf), format, &month_tm) != 0) {
-      months_names.at(index) = buf.data();
-    }
-  }
-
-  // Month names and year numbers carry the application-wide chosen size in
-  // points — they label the page, not the individual bar, and should therefore
-  // not travel with the cell size.
+  // Column and row labels carry the application-wide chosen size in points —
+  // they label the page, not the individual bar, and should therefore not
+  // travel with the cell size.
   const float labels_font_size = ctx.font_config.SizeMillimetres();
 
+  const std::vector<std::string> column_labels = ColumnLabels(ctx);
   const std::vector<RectF> x_label_frames =
-      EqualColumns(ctx.layout.XLabelsArea(), number_months);
+      EqualColumns(ctx.layout.XLabelsArea(), column_labels.size());
   auto column_label_texts = detail::TextPool(ctx, ctx.nodes.column_label_texts);
-  for (size_t index = 0; index < number_months; ++index) {
-    detail::SetCenteredText(
-        ctx, column_label_texts, months_names.at(index), months_names.at(index),
-        x_label_frames.at(index).Center(), labels_font_size);
+  for (std::size_t index = 0; index < column_labels.size(); ++index) {
+    detail::SetCenteredText(ctx, column_label_texts, column_labels[index],
+                            column_labels[index],
+                            x_label_frames[index].Center(), labels_font_size);
   }
 
   const auto config = ctx.shape_config.GetShapeConfiguration(
@@ -71,8 +99,7 @@ void BuildCalendarLabels(const SectionContext& ctx) {
   auto row_label_texts = detail::TextPool(ctx, ctx.nodes.row_label_texts);
   std::vector<RectF> y_label_frames(row_count);
   for (std::size_t row = 0; row < row_count; ++row) {
-    const std::string text =
-        std::to_string(ctx.projection.RowPeriod(row).Begin().Year());
+    const std::string text = RowLabel(ctx.projection.RowPeriod(row));
     RectF& frame = y_label_frames.at(row);
     frame = ctx.layout.GetRowArea(row);
     frame.SetLeft(ctx.layout.YLabelsArea().Left());
@@ -111,12 +138,16 @@ void BuildMonths(const SectionContext& ctx) {
 }
 
 // Row by row rather than through PeriodArea: a weekday that steps on its own
-// spares every day of the span a trip through the calendar backend.
+// spares every day of the span a trip through the calendar backend. Under
+// year columns a day is too narrow to draw, so the months are the finest cell.
 void BuildDays(const SectionContext& ctx) {
   std::vector<RectF> day_cells;
   std::vector<RectF> sunday_cells;
 
-  for (std::size_t row = 0; row < ctx.projection.RowCount(); ++row) {
+  const std::size_t drawn_rows = ctx.projection.Columns() == ColumnUnit::kMonth
+                                     ? ctx.projection.RowCount()
+                                     : 0;
+  for (std::size_t row = 0; row < drawn_rows; ++row) {
     const DatePeriod row_period = ctx.projection.RowPeriod(row);
     const RectF row_area = ctx.layout.GetSubArea(row, 1);
     const auto first_weekday =

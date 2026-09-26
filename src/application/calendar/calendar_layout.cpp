@@ -47,6 +47,10 @@ RectF CalendarLayout::GetSubArea(std::size_t row, std::size_t sub) const {
   return fields_.proportions.GetSubArea(row, sub);
 }
 
+float CalendarLayout::BandSubHeight(std::size_t sub) const {
+  return fields_.band_proportions.GetSubArea(0, sub).Height();
+}
+
 CalendarLayout::Fields CalendarLayout::Compute(
     const RectF& page_size, const RectF& page_margin, float title_area_height,
     const CalendarConfig& calendar_config) {
@@ -85,7 +89,13 @@ CalendarLayout::Fields CalendarLayout::Compute(
   fields.proportions.SetupRowAreas(fields.cells_area, projection.RowCount());
   fields.proportions.SetupSubAreas(calendar_config.LaidOutSpacingProportions());
 
-  fields.day_width = fields.cells_area.Width() / kDaysPerYear;
+  fields.band_proportions.SetupRowAreas(RectF(kZero, kZero, kZero, band_height),
+                                        1);
+  fields.band_proportions.SetupSubAreas(
+      calendar_config.LaidOutSpacingProportions());
+
+  fields.day_width =
+      fields.cells_area.Width() / static_cast<float>(projection.RowDays());
 
   fields.x_labels_area = fields.calendar_area.Reduce(
       RectF(row_labels_width, kZero, band_height, fields.cells_area.Height()));

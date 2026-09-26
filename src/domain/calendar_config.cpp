@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <vector>
 
+#include "calendar_view.hpp"
 #include "date.hpp"
 #include "date_period.hpp"
 
@@ -38,6 +39,10 @@ const DatePeriod& CalendarSpan::Period() const { return span_; }
 bool CalendarSpan::ShowsYear(const int year) const {
   return year >= span_.Begin().Year() && year <= span_.Last().Year();
 }
+
+CalendarView CalendarConfig::View() const { return view_; }
+
+void CalendarConfig::SetView(CalendarView view) { view_ = view; }
 
 bool CalendarConfig::IsFitYearsToEntries() const {
   return fit_years_to_entries_;

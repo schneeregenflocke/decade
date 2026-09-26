@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <vector>
 
+#include "calendar_view.hpp"
 #include "date.hpp"
 #include "date_period.hpp"
 
@@ -44,6 +45,9 @@ class CalendarSpan {
 // no hand-written copy/move) -> freely and correctly copyable.
 class CalendarConfig : public CalendarSpan {
  public:
+  [[nodiscard]] CalendarView View() const;
+  void SetView(CalendarView view);
+
   [[nodiscard]] bool IsFitYearsToEntries() const;
   void SetFitYearsToEntries(bool fit);
 
@@ -67,6 +71,7 @@ class CalendarConfig : public CalendarSpan {
       kSpacingSmall,  kSpacingLarge, kSpacingMedium, kSpacingLarge,
       kSpacingMedium, kSpacingLarge, kSpacingSmall};
 
+  CalendarView view_{CalendarView::kYearPerRow};
   bool fit_years_to_entries_{true};
   bool shows_annual_coverage_{true};
   std::vector<float> spacing_proportions_{std::vector<float>(

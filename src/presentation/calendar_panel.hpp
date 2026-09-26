@@ -19,20 +19,21 @@
 
 #include "../domain/calendar_config.hpp"
 #include "../domain/date.hpp"
+#include "calendar_view_combo_box.hpp"
 #include "make_owned.hpp"
 
-// The form that edits a CalendarConfig: the calendar's year span, whether the
-// annual coverage shows, and the per-row spacing proportions. It is a pure view
-// — LoadConfig() pushes a config into the widgets, ReadConfig() reads the
-// widgets back into a config — so the owning panel never reaches into the
-// individual fields.
+// The form that edits a CalendarConfig: the view, the calendar's year span,
+// whether the annual coverage shows, and the per-row spacing proportions. It is
+// a pure view — LoadConfig() pushes a config into the widgets, ReadConfig()
+// reads the widgets back into a config — so the owning panel never reaches into
+// the individual fields.
 //
 // Row-spacing order: the rendered layout stacks the proportions along the
 // rising y-axis (index 0 is the bottom gap, the last index the top gap). The
 // form therefore lists them top-to-bottom in reverse index order, so the entry
 // at the top of the form is the one drawn at the top of the page.
 //
-// Qt carries no property grid; the two categories are section headings above a
+// Qt carries no property grid; the categories are section headings above a
 // QFormLayout each. The spacing rows live in a layout of their own, because
 // their number follows the config and they alone get rebuilt.
 class CalendarSetupForm : public QWidget {
@@ -74,6 +75,7 @@ class CalendarSetupForm : public QWidget {
 
   void ReportChange();
 
+  QPointer<CalendarViewComboBox> view_;
   QPointer<QCheckBox> fit_years_to_entries_;
   QPointer<QSpinBox> first_year_;
   QPointer<QSpinBox> last_year_;

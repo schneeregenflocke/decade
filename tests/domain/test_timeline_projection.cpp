@@ -3,6 +3,7 @@
 #include <cstddef>
 
 #include "domain/calendar_config.hpp"
+#include "domain/calendar_view.hpp"
 #include "domain/date.hpp"
 #include "domain/date_period.hpp"
 #include "domain/timeline_projection.hpp"
@@ -63,27 +64,27 @@ TEST(SplitAtYearBoundariesTest, SegmentsAreContiguousAndCoverThePeriod) {
 }
 
 TEST(TimelineProjectionTest, RowCountMatchesSpanYears) {
-  CalendarSpan span;
-  span.SetYears({.first_year = 2020, .last_year = 2025});
-  const TimelineProjection projection(span);
+  CalendarConfig config;
+  config.SetYears({.first_year = 2020, .last_year = 2025});
+  const TimelineProjection projection(config);
 
-  EXPECT_EQ(projection.RowCount(), span.YearCount());
+  EXPECT_EQ(projection.RowCount(), config.YearCount());
   EXPECT_EQ(projection.RowCount(), 6U);
 }
 
 TEST(TimelineProjectionTest, RowPeriodIsOneYearAscendingFromFirstYear) {
-  CalendarSpan span;
-  span.SetYears({.first_year = 2030, .last_year = 2032});
-  const TimelineProjection projection(span);
+  CalendarConfig config;
+  config.SetYears({.first_year = 2030, .last_year = 2032});
+  const TimelineProjection projection(config);
 
   EXPECT_EQ(projection.RowPeriod(0), HalfOpen(2030, 1, 1, 2031, 1, 1));
   EXPECT_EQ(projection.RowPeriod(2), HalfOpen(2032, 1, 1, 2033, 1, 1));
 }
 
 TEST(TimelineProjectionTest, RowOfInvertsRowPeriod) {
-  CalendarSpan span;
-  span.SetYears({.first_year = 2030, .last_year = 2034});
-  const TimelineProjection projection(span);
+  CalendarConfig config;
+  config.SetYears({.first_year = 2030, .last_year = 2034});
+  const TimelineProjection projection(config);
 
   for (std::size_t row = 0; row < projection.RowCount(); ++row) {
     EXPECT_EQ(projection.RowOf(projection.RowPeriod(row).Begin()), row);
@@ -92,9 +93,9 @@ TEST(TimelineProjectionTest, RowOfInvertsRowPeriod) {
 }
 
 TEST(TimelineProjectionTest, SplitAtRowBoundariesCutsAtEachRowEnd) {
-  CalendarSpan span;
-  span.SetYears({.first_year = 2030, .last_year = 2034});
-  const TimelineProjection projection(span);
+  CalendarConfig config;
+  config.SetYears({.first_year = 2030, .last_year = 2034});
+  const TimelineProjection projection(config);
 
   const auto pieces =
       projection.SplitAtRowBoundaries(HalfOpen(2030, 12, 20, 2032, 1, 10));
@@ -106,9 +107,9 @@ TEST(TimelineProjectionTest, SplitAtRowBoundariesCutsAtEachRowEnd) {
 }
 
 TEST(TimelineProjectionTest, SplitAtRowBoundariesClipsToTheSpan) {
-  CalendarSpan span;
-  span.SetYears({.first_year = 2030, .last_year = 2030});
-  const TimelineProjection projection(span);
+  CalendarConfig config;
+  config.SetYears({.first_year = 2030, .last_year = 2030});
+  const TimelineProjection projection(config);
 
   const auto pieces =
       projection.SplitAtRowBoundaries(HalfOpen(2029, 12, 20, 2031, 1, 10));
@@ -118,10 +119,45 @@ TEST(TimelineProjectionTest, SplitAtRowBoundariesClipsToTheSpan) {
 }
 
 TEST(TimelineProjectionTest, SplitAtRowBoundariesDropsAPeriodOutsideTheSpan) {
-  CalendarSpan span;
-  span.SetYears({.first_year = 2030, .last_year = 2030});
-  const TimelineProjection projection(span);
+  CalendarConfig config;
+  config.SetYears({.first_year = 2030, .last_year = 2030});
+  const TimelineProjection projection(config);
 
   EXPECT_TRUE(projection.SplitAtRowBoundaries(HalfOpen(2031, 1, 1, 2031, 2, 1))
                   .empty());
+}
+
+TEST(TimelineProjectionTest, OneRowHoldsTheWholeSpan) {
+  CalendarConfig config;
+  config.SetYears({.first_year = 1998, .last_year = 2023});
+  config.SetView(CalendarView::kAllYearsInOneRow);
+  const TimelineProjection projection(config);
+
+  EXPECT_EQ(projection.RowCount(), 1U);
+  EXPECT_EQ(projection.RowPeriod(0), config.Period());
+  EXPECT_EQ(projection.RowOf(Date::FromYmd(2023, 12, 31)), 0U);
+  EXPECT_EQ(projection.RowDays(), config.Period().LengthDays());
+  EXPECT_EQ(projection.Columns(), ColumnUnit::kYear);
+}
+
+TEST(TimelineProjectionTest, OneRowKeepsAYearSpanningPeriodWhole) {
+  CalendarConfig config;
+  config.SetYears({.first_year = 2030, .last_year = 2034});
+  config.SetView(CalendarView::kAllYearsInOneRow);
+  const TimelineProjection projection(config);
+
+  const DatePeriod period = HalfOpen(2030, 12, 20, 2032, 1, 10);
+  const auto pieces = projection.SplitAtRowBoundaries(period);
+
+  ASSERT_EQ(pieces.size(), 1U);
+  EXPECT_EQ(pieces[0], period);
+}
+
+TEST(TimelineProjectionTest, AYearPerRowLabelsMonthsAcrossALeapYearsWidth) {
+  CalendarConfig config;
+  config.SetYears({.first_year = 2001, .last_year = 2003});
+  const TimelineProjection projection(config);
+
+  EXPECT_EQ(projection.RowDays(), 366);
+  EXPECT_EQ(projection.Columns(), ColumnUnit::kMonth);
 }

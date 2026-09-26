@@ -78,10 +78,10 @@ BarSceneResult BuildBars(const SectionContext& ctx) {
                           current_shape_config.FillColor());
       result.bar_nodes.emplace(index, bar.node);
 
-      const RectF text_area = detail::PeriodArea(ctx, piece, 2);
       detail::SetCenteredText(
           ctx, bar_labels, std::string("label node ") + std::to_string(index),
-          bar_data.GetText(), text_area.Center(), text_area.Height());
+          bar_data.GetText(), detail::PeriodArea(ctx, piece, 2).Center(),
+          ctx.layout.BandSubHeight(2));
       ++index;
     }
   }
@@ -123,19 +123,17 @@ void BuildAnnualCoverage(const SectionContext& ctx) {
     coverage_stream << std::fixed << std::setprecision(1)
                     << percent * detail::kPercentScale << " %";
     const auto coverage_text = coverage_stream.str();
-    const auto coverage_text_width =
-        ctx.font->TextWidth(coverage_text, coverage_cell.Height());
+    const float text_size = ctx.layout.BandSubHeight(0);
 
     RectF coverage_text_cell = coverage_cell;
-    coverage_text_cell.SetLeft(coverage_cell.Right() + year_cell.Height());
+    coverage_text_cell.SetLeft(coverage_cell.Right() + text_size);
     coverage_text_cell.SetRight(coverage_text_cell.Left() +
-                                coverage_text_width);
+                                ctx.font->TextWidth(coverage_text, text_size));
 
     detail::SetCenteredText(
         ctx, coverage_labels,
         std::string("annual coverage label ") + std::to_string(index),
-        coverage_text, coverage_text_cell.Center(),
-        coverage_text_cell.Height());
+        coverage_text, coverage_text_cell.Center(), text_size);
   }
 
   detail::FillRectangles(node_cells, coverage_cells,

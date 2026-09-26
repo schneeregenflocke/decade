@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "../../domain/calendar_config.hpp"
+#include "../../domain/calendar_view.hpp"
 #include "../../domain/date.hpp"
 #include "../../domain/date_category.hpp"
 #include "../../domain/date_entry.hpp"
@@ -46,6 +47,10 @@ Date DateFromIsoString(const std::string& text);
 std::array<float, 4> ColorToArray(const glm::vec4& color);
 
 glm::vec4 ColorFromArray(const std::array<float, 4>& array);
+
+// A number no view carries — a file from a later version — falls back to a
+// year per row rather than into an enumerator nobody handles.
+CalendarView CalendarViewFromNumber(int number);
 
 }  // namespace persistence::serialization_detail
 
@@ -230,11 +235,13 @@ void save(Archive& ar, const CalendarConfig& config, const unsigned int /*v*/) {
   const std::vector<float>& spacing_proportions =
       config.GetSpacingProportions();
   const bool shows_annual_coverage = config.ShowsAnnualCoverage();
+  const int view = static_cast<int>(config.View());
   ar& make_nvp("first_year", first_year);
   ar& make_nvp("last_year", last_year);
   ar& make_nvp("fit_years_to_entries", fit_years_to_entries);
   ar& make_nvp("spacing_proportions", spacing_proportions);
   ar& make_nvp("shows_annual_coverage", shows_annual_coverage);
+  ar& make_nvp("view", view);
 }
 template <class Archive>
 void load(Archive& ar, CalendarConfig& config, const unsigned int version) {
@@ -243,6 +250,7 @@ void load(Archive& ar, CalendarConfig& config, const unsigned int version) {
   bool fit_years_to_entries = true;
   std::vector<float> spacing_proportions;
   bool shows_annual_coverage = true;
+  int view = static_cast<int>(CalendarView::kYearPerRow);
   ar& make_nvp("first_year", first_year);
   ar& make_nvp("last_year", last_year);
   ar& make_nvp("fit_years_to_entries", fit_years_to_entries);
@@ -250,11 +258,16 @@ void load(Archive& ar, CalendarConfig& config, const unsigned int version) {
   if (version >= 1) {
     ar& make_nvp("shows_annual_coverage", shows_annual_coverage);
   }
+  if (version >= 2) {
+    ar& make_nvp("view", view);
+  }
   config.SetYears(
       CalendarSpan::YearSpan{.first_year = first_year, .last_year = last_year});
   config.SetFitYearsToEntries(fit_years_to_entries);
   config.SetSpacingProportions(spacing_proportions);
   config.SetShowsAnnualCoverage(shows_annual_coverage);
+  config.SetView(
+      persistence::serialization_detail::CalendarViewFromNumber(view));
 }
 
 }  // namespace boost::serialization
@@ -267,7 +280,8 @@ BOOST_SERIALIZATION_SPLIT_FREE(ShapeConfiguration)
 BOOST_SERIALIZATION_SPLIT_FREE(ShapeConfigSet)
 BOOST_SERIALIZATION_SPLIT_FREE(CalendarConfig)
 
-// Version 1 adds shows_annual_coverage; a version 0 file shows it.
-BOOST_CLASS_VERSION(CalendarConfig, 1)
+// Version 1 adds shows_annual_coverage; a version 0 file shows it. Version 2
+// adds the view; an earlier file lays out a year per row.
+BOOST_CLASS_VERSION(CalendarConfig, 2)
 
 #endif  // VALUE_SERIALIZATION_HPP

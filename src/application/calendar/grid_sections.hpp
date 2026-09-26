@@ -3,7 +3,7 @@
 
 #include "section_context.hpp"
 
-// The calendar grid: the month and year labels around it and the year, month
+// The calendar grid: the column and row labels around it and the year, month
 // and day cells inside it.
 
 namespace calendar_sections {

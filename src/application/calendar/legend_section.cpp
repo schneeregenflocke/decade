@@ -82,7 +82,7 @@ void BuildLegend(const SectionContext& ctx) {
   const auto& categories = ctx.date_categories.Items();
   std::vector<LegendEntry> entries;
   entries.reserve(categories.size() + 1);
-  const float category_bar_height = ctx.layout.GetSubArea(0, 1).Height();
+  const float category_bar_height = ctx.layout.BandSubHeight(1);
   for (std::size_t index = 0; index < categories.size(); ++index) {
     entries.push_back(
         {.id = std::to_string(index),
@@ -95,7 +95,7 @@ void BuildLegend(const SectionContext& ctx) {
         {.id = "annual coverage",
          .label = std::string(ShapeConfigSet::FixedConfigurationLabel(
              ShapeConfigSet::kAnnualCoverageKey)),
-         .bar_height = ctx.layout.GetSubArea(0, 0).Height(),
+         .bar_height = ctx.layout.BandSubHeight(0),
          .style = ctx.shape_config.GetShapeConfiguration(
              ShapeConfigSet::kAnnualCoverageKey)});
   }

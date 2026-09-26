@@ -6,6 +6,7 @@
 #include <QtCore/Qt>
 #include <QtTest/QTest>
 #include <QtWidgets/QCheckBox>
+#include <QtWidgets/QComboBox>
 #include <QtWidgets/QDoubleSpinBox>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QStyle>
@@ -14,6 +15,7 @@
 #include <vector>
 
 #include "domain/calendar_config.hpp"
+#include "domain/calendar_view.hpp"
 #include "presentation/calendar_panel.hpp"
 
 namespace {
@@ -63,4 +65,24 @@ TEST(CalendarSetupPanelTest, ClickingAnnualCoverageHidesItAndItsSubrow) {
 
   EXPECT_EQ(reported, std::vector<bool>{false});
   EXPECT_FALSE(coverage_spacing->isEnabled());
+}
+
+TEST(CalendarSetupPanelTest, ChoosingAViewReportsIt) {
+  CalendarSetupPanel panel(nullptr);
+  std::vector<CalendarView> reported;
+  QObject::connect(&panel, &CalendarSetupPanel::CalendarConfigEdited,
+                   [&reported](const CalendarConfig& config) {
+                     reported.push_back(config.View());
+                   });
+  panel.show();
+  auto* view = FieldLabelled<QComboBox>(panel, "Calendar View");
+  ASSERT_NE(view, nullptr);
+  ASSERT_EQ(view->count(), static_cast<int>(kCalendarViews.size()));
+  ASSERT_EQ(view->currentText(), "One Year per Row");
+  view->setFocus();
+
+  QTest::keyClick(view, Qt::Key_Down);
+
+  EXPECT_EQ(view->currentText(), "All Years in One Row");
+  EXPECT_EQ(reported, std::vector{CalendarView::kAllYearsInOneRow});
 }

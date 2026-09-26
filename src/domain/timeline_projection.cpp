@@ -2,9 +2,11 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 
 #include "calendar_config.hpp"
+#include "calendar_view.hpp"
 #include "date.hpp"
 #include "date_period.hpp"
 
@@ -26,24 +28,66 @@ std::vector<DatePeriod> SplitAtYearBoundaries(const DatePeriod& period) {
   return split_periods;
 }
 
-TimelineProjection::TimelineProjection(const CalendarSpan& span)
-    : span_(span) {}
+TimelineProjection::TimelineProjection(const CalendarConfig& config)
+    : span_(config.Period()), view_(config.View()) {}
 
-std::size_t TimelineProjection::RowCount() const { return span_.YearCount(); }
+std::size_t TimelineProjection::RowCount() const {
+  switch (view_) {
+    case CalendarView::kYearPerRow:
+      return static_cast<std::size_t>(span_.End().Year() -
+                                      span_.Begin().Year());
+    case CalendarView::kAllYearsInOneRow:
+      return 1;
+  }
+  return 0;
+}
 
 DatePeriod TimelineProjection::RowPeriod(std::size_t row) const {
-  const int year = span_.FirstYear() + static_cast<int>(row);
-  return {Date::FromYmd(year, 1, 1), Date::FromYmd(year + 1, 1, 1)};
+  switch (view_) {
+    case CalendarView::kYearPerRow: {
+      const int year = span_.Begin().Year() + static_cast<int>(row);
+      return {Date::FromYmd(year, 1, 1), Date::FromYmd(year + 1, 1, 1)};
+    }
+    case CalendarView::kAllYearsInOneRow:
+      return span_;
+  }
+  return {};
 }
 
 std::size_t TimelineProjection::RowOf(const Date& date) const {
-  return static_cast<std::size_t>(date.Year() - span_.FirstYear());
+  switch (view_) {
+    case CalendarView::kYearPerRow:
+      return static_cast<std::size_t>(date.Year() - span_.Begin().Year());
+    case CalendarView::kAllYearsInOneRow:
+      return 0;
+  }
+  return 0;
+}
+
+std::int64_t TimelineProjection::RowDays() const {
+  switch (view_) {
+    case CalendarView::kYearPerRow:
+      return kDaysInLeapYear;
+    case CalendarView::kAllYearsInOneRow:
+      return span_.LengthDays();
+  }
+  return 0;
+}
+
+ColumnUnit TimelineProjection::Columns() const {
+  switch (view_) {
+    case CalendarView::kYearPerRow:
+      return ColumnUnit::kMonth;
+    case CalendarView::kAllYearsInOneRow:
+      return ColumnUnit::kYear;
+  }
+  return ColumnUnit::kMonth;
 }
 
 std::vector<DatePeriod> TimelineProjection::SplitAtRowBoundaries(
     const DatePeriod& period) const {
-  const Date begin = std::max(period.Begin(), span_.Period().Begin());
-  const Date end = std::min(period.End(), span_.Period().End());
+  const Date begin = std::max(period.Begin(), span_.Begin());
+  const Date end = std::min(period.End(), span_.End());
   std::vector<DatePeriod> pieces;
   if (end <= begin) {
     return pieces;

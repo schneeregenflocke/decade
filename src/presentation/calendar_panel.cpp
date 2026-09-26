@@ -6,6 +6,7 @@
 #include <QtCore/QString>
 #include <QtGui/QFont>
 #include <QtWidgets/QCheckBox>
+#include <QtWidgets/QComboBox>
 #include <QtWidgets/QDoubleSpinBox>
 #include <QtWidgets/QFormLayout>
 #include <QtWidgets/QLabel>
@@ -20,16 +21,21 @@
 
 #include "../domain/calendar_config.hpp"
 #include "../domain/date.hpp"
+#include "calendar_view_combo_box.hpp"
 #include "make_owned.hpp"
 
 CalendarSetupForm::CalendarSetupForm(QWidget* parent)
     : QWidget(parent), spacing_layout_(MakeOwned<QFormLayout>()) {
+  view_ = MakeOwned<CalendarViewComboBox>(this);
   fit_years_to_entries_ = MakeOwned<QCheckBox>(this);
   first_year_ = MakeOwned<QSpinBox>(this);
   first_year_->setRange(Date::kMinYear, Date::kMaxYear);
   last_year_ = MakeOwned<QSpinBox>(this);
   last_year_->setRange(Date::kMinYear, Date::kMaxYear);
   shows_annual_coverage_ = MakeOwned<QCheckBox>(this);
+
+  auto* view_layout = MakeOwned<QFormLayout>();
+  view_layout->addRow("Calendar View", view_.data());
 
   auto* span_layout = MakeOwned<QFormLayout>();
   span_layout->addRow("Fit years to entries", fit_years_to_entries_.data());
@@ -40,6 +46,8 @@ CalendarSetupForm::CalendarSetupForm(QWidget* parent)
   elements_layout->addRow("Annual Coverage", shows_annual_coverage_.data());
 
   auto* vertical_layout = MakeOwned<QVBoxLayout>();
+  vertical_layout->addWidget(SectionLabel("View"));
+  vertical_layout->addLayout(view_layout);
   vertical_layout->addWidget(SectionLabel("Calendar Span (Years)"));
   vertical_layout->addLayout(span_layout);
   vertical_layout->addWidget(SectionLabel("Visible Elements"));
@@ -49,6 +57,8 @@ CalendarSetupForm::CalendarSetupForm(QWidget* parent)
   vertical_layout->addStretch(1);
   setLayout(vertical_layout);
 
+  connect(view_.data(), &QComboBox::currentIndexChanged, this,
+          [this](int) { ReportChange(); });
   connect(fit_years_to_entries_.data(), &QCheckBox::toggled, this,
           [this](bool) {
             RefreshSpanLimitsState();
@@ -80,6 +90,7 @@ void CalendarSetupForm::LoadConfig(const CalendarConfig& config) {
     spacing_fields_[index]->setValue(static_cast<double>(proportions[index]));
   }
 
+  view_->SetView(config.View());
   fit_years_to_entries_->setChecked(config.IsFitYearsToEntries());
   first_year_->setValue(config.FirstYear());
   last_year_->setValue(config.LastYear());
@@ -100,6 +111,7 @@ CalendarConfig CalendarSetupForm::ReadConfig() const {
   }
   config.SetSpacingProportions(proportions);
 
+  config.SetView(view_->View());
   config.SetFitYearsToEntries(fit_years_to_entries_->isChecked());
   config.SetYears(CalendarSpan::YearSpan{.first_year = first_year_->value(),
                                          .last_year = last_year_->value()});

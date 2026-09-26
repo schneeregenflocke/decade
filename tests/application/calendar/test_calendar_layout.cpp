@@ -4,6 +4,7 @@
 
 #include "application/calendar/calendar_layout.hpp"
 #include "domain/calendar_config.hpp"
+#include "domain/calendar_view.hpp"
 #include "infrastructure/graphics/rect.hpp"
 
 namespace {
@@ -77,6 +78,31 @@ TEST(CalendarLayoutTest, SubFrameAlignsHorizontallyWithCellsFrame) {
   // The sub-frame lies within the cells frame vertically.
   EXPECT_GE(sub.Bottom(), layout.CellsArea().Bottom() - kTol);
   EXPECT_LE(sub.Top(), layout.CellsArea().Top() + kTol);
+}
+
+// The single row takes every year's band; the labels and the legend keep
+// theirs, and so does what a band's subrow sizes.
+TEST(CalendarLayoutTest, OneRowForAllYearsKeepsTheBandsOfAYearPerRow) {
+  const CalendarLayout per_year = MakeLayout();
+  const RectF page =
+      RectF::FromDimension(RectF::Dimension{.width = 200.0F, .height = 300.0F});
+  CalendarConfig config;
+  config.SetYears({.first_year = 2001, .last_year = 2003});
+  config.SetSpacingProportions(std::vector<float>(7, 1.0F));
+  config.SetView(CalendarView::kAllYearsInOneRow);
+  const CalendarLayout one_row(page, RectF(10.0F, 20.0F, 30.0F, 40.0F),
+                               /*title_area_height=*/15.0F, config);
+
+  EXPECT_NEAR(one_row.GetRowArea(0).Height(), one_row.CellsArea().Height(),
+              kTol);
+  EXPECT_NEAR(one_row.XLabelsArea().Height(), per_year.XLabelsArea().Height(),
+              kTol);
+  EXPECT_NEAR(one_row.LegendArea().Height(), per_year.LegendArea().Height(),
+              kTol);
+  EXPECT_NEAR(one_row.BandSubHeight(1), per_year.GetSubArea(0, 1).Height(),
+              kTol);
+  // 2001 to 2003 hold 1095 days, and the row's width stands for all of them.
+  EXPECT_NEAR(one_row.DayWidth(), one_row.CellsArea().Width() / 1095.0F, kTol);
 }
 
 TEST(CalendarLayoutTest, DefaultConstructedIsEmpty) {
