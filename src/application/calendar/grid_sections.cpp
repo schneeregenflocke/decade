@@ -1,5 +1,6 @@
 #include "grid_sections.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -10,10 +11,12 @@
 #include "../../domain/band_part.hpp"
 #include "../../domain/calendar_config.hpp"
 #include "../../domain/calendar_metrics.hpp"
+#include "../../domain/calendar_sizing.hpp"
 #include "../../domain/date.hpp"
 #include "../../domain/date_period.hpp"
 #include "../../domain/shape_configuration.hpp"
 #include "../../domain/timeline_projection.hpp"
+#include "../../infrastructure/graphics/font.hpp"
 #include "../../infrastructure/graphics/rect.hpp"
 #include "calendar_scene_nodes.hpp"
 #include "section_context.hpp"
@@ -76,43 +79,67 @@ std::vector<RectF> EqualColumns(const RectF& area, std::size_t count) {
   return columns;
 }
 
+// Labels carry the application-wide size while their frames follow the page:
+// they label the page, not a cell. A fixed axis sizes the frames across it, so
+// there the labels fit their frame instead, all at the size the widest fits.
+float LabelSize(const SectionContext& ctx, bool fitted_to_frame,
+                const RectF& frame, const std::vector<std::string>& labels) {
+  if (!fitted_to_frame || labels.empty()) {
+    return ctx.font_config.SizeMillimetres();
+  }
+  const auto widest =
+      std::ranges::max_element(labels, {}, [&](const std::string& label) {
+        return ctx.font->TextWidth(label, 1.0F);
+      });
+  return ctx.font->AdjustTextSize(
+      frame, *widest,
+      Font::TextScale{.height_ratio = detail::kFontScaleMax,
+                      .width_ratio = detail::kFontScaleMax});
+}
+
 }  // namespace
 
 CalendarMetrics::TextSizes BuildCalendarLabels(const SectionContext& ctx) {
-  // Column and row labels carry the application-wide chosen size in points —
-  // they label the page, not the individual bar, and should therefore not
-  // travel with the cell size.
-  const float labels_font_size = ctx.font_config.SizeMillimetres();
+  const CalendarSizing& sizing = ctx.calendar_config.Sizing();
+  const auto config = ctx.shape_config.GetShapeConfiguration(
+      ShapeConfigSet::kCalendarLabelsKey);
 
   const std::vector<std::string> column_labels = ColumnLabels(ctx);
   const std::vector<RectF> x_label_frames =
       EqualColumns(ctx.layout.XLabelsArea(), column_labels.size());
+  const float column_label_size = LabelSize(
+      ctx, sizing.FixesHeight(),
+      x_label_frames.empty() ? RectF() : x_label_frames.front(), column_labels);
   auto column_label_texts = detail::TextPool(ctx, ctx.nodes.column_label_texts);
   for (std::size_t index = 0; index < column_labels.size(); ++index) {
     detail::SetCenteredText(ctx, column_label_texts, column_labels[index],
                             column_labels[index],
-                            x_label_frames[index].Center(), labels_font_size);
+                            x_label_frames[index].Center(), column_label_size);
   }
-
-  const auto config = ctx.shape_config.GetShapeConfiguration(
-      ShapeConfigSet::kCalendarLabelsKey);
   detail::FillRectangles(ctx.nodes.column_labels, x_label_frames, config);
 
   const std::size_t row_count = ctx.projection.RowCount();
-  auto row_label_texts = detail::TextPool(ctx, ctx.nodes.row_label_texts);
+  std::vector<std::string> row_labels(row_count);
   std::vector<RectF> y_label_frames(row_count);
   for (std::size_t row = 0; row < row_count; ++row) {
-    const std::string text = RowLabel(ctx.projection.RowPeriod(row));
+    row_labels.at(row) = RowLabel(ctx.projection.RowPeriod(row));
     RectF& frame = y_label_frames.at(row);
     frame = ctx.layout.GetRowArea(row);
     frame.SetLeft(ctx.layout.YLabelsArea().Left());
     frame.SetRight(ctx.layout.YLabelsArea().Right());
-    detail::SetCenteredText(ctx, row_label_texts, text, text, frame.Center(),
-                            labels_font_size);
   }
-
+  const float row_label_size = LabelSize(
+      ctx, sizing.FixesWidth(),
+      y_label_frames.empty() ? RectF() : y_label_frames.front(), row_labels);
+  auto row_label_texts = detail::TextPool(ctx, ctx.nodes.row_label_texts);
+  for (std::size_t row = 0; row < row_count; ++row) {
+    detail::SetCenteredText(ctx, row_label_texts, row_labels.at(row),
+                            row_labels.at(row), y_label_frames.at(row).Center(),
+                            row_label_size);
+  }
   detail::FillRectangles(ctx.nodes.row_labels, y_label_frames, config);
-  return {.row_labels = labels_font_size, .column_labels = labels_font_size};
+
+  return {.row_labels = row_label_size, .column_labels = column_label_size};
 }
 
 void BuildYears(const SectionContext& ctx) {
