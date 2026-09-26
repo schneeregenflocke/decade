@@ -169,3 +169,36 @@ TEST(ValueSerializationTest, CalendarConfigVersionZeroShowsAnnualCoverage) {
   EXPECT_EQ(loaded.LastYear(), 2003);
   EXPECT_TRUE(loaded.ShowsAnnualCoverage());
 }
+
+// An earlier layout split a row into one subrow alone; its three proportions
+// would leave the layout without the subrows it draws into.
+TEST(ValueSerializationTest, ProportionsOfAnEarlierLayoutKeepTheDefaults) {
+  std::istringstream in(
+      R"(<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<!DOCTYPE boost_serialization>
+<boost_serialization signature="serialization::archive" version="20">
+<value class_id="0" tracking_level="0" version="2">
+	<first_year>1998</first_year>
+	<last_year>2003</last_year>
+	<fit_years_to_entries>0</fit_years_to_entries>
+	<spacing_proportions>
+		<count>3</count>
+		<item_version>0</item_version>
+		<item>1</item>
+		<item>2</item>
+		<item>1</item>
+	</spacing_proportions>
+	<shows_annual_coverage>1</shows_annual_coverage>
+	<view>0</view>
+</value>
+</boost_serialization>
+)");
+  CalendarConfig loaded;
+  {
+    boost::archive::xml_iarchive iarchive(in);
+    iarchive >> boost::serialization::make_nvp("value", loaded);
+  }
+
+  EXPECT_EQ(loaded.GetSpacingProportions(),
+            CalendarConfig().GetSpacingProportions());
+}

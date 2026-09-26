@@ -264,7 +264,11 @@ void load(Archive& ar, CalendarConfig& config, const unsigned int version) {
   config.SetYears(
       CalendarSpan::YearSpan{.first_year = first_year, .last_year = last_year});
   config.SetFitYearsToEntries(fit_years_to_entries);
-  config.SetSpacingProportions(spacing_proportions);
+  // An earlier layout split a row into fewer subrows than the sections draw
+  // into; its proportions give way to the defaults.
+  if (spacing_proportions.size() == config.GetSpacingProportions().size()) {
+    config.SetSpacingProportions(spacing_proportions);
+  }
   config.SetShowsAnnualCoverage(shows_annual_coverage);
   config.SetView(
       persistence::serialization_detail::CalendarViewFromNumber(view));
