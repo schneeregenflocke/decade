@@ -86,7 +86,7 @@ void CalendarSceneComposer::Build() {
 
   layout_ = CalendarLayout(page_size_, page_margin_, title_config_.AreaHeight(),
                            calendar_config_.YearCount(),
-                           calendar_config_.GetSpacingProportions());
+                           calendar_config_.LaidOutSpacingProportions());
 
   // The print-area node carries the print area's offset within the page;
   // every descendant is computed in print-area-local coordinates (origin at

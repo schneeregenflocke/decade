@@ -61,6 +61,14 @@ void CalendarConfig::SetFitYearsToEntries(bool fit) {
   fit_years_to_entries_ = fit;
 }
 
+bool CalendarConfig::ShowsAnnualCoverage() const {
+  return shows_annual_coverage_;
+}
+
+void CalendarConfig::SetShowsAnnualCoverage(bool shows) {
+  shows_annual_coverage_ = shows;
+}
+
 const std::vector<float>& CalendarConfig::GetSpacingProportions() const {
   return spacing_proportions_;
 }
@@ -68,4 +76,13 @@ const std::vector<float>& CalendarConfig::GetSpacingProportions() const {
 void CalendarConfig::SetSpacingProportions(
     const std::vector<float>& proportions) {
   spacing_proportions_ = proportions;
+}
+
+std::vector<float> CalendarConfig::LaidOutSpacingProportions() const {
+  std::vector<float> proportions = spacing_proportions_;
+  if (!shows_annual_coverage_ &&
+      kAnnualCoverageSpacingIndex < proportions.size()) {
+    proportions[kAnnualCoverageSpacingIndex] = 0.0F;
+  }
+  return proportions;
 }

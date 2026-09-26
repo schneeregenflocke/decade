@@ -15,6 +15,7 @@
 #include <boost/serialization/split_free.hpp>
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/vector.hpp>
+#include <boost/serialization/version.hpp>
 #include <glm/vec4.hpp>
 #include <string>
 #include <vector>
@@ -228,25 +229,32 @@ void save(Archive& ar, const CalendarConfig& config, const unsigned int /*v*/) {
   const bool fit_years_to_entries = config.IsFitYearsToEntries();
   const std::vector<float>& spacing_proportions =
       config.GetSpacingProportions();
+  const bool shows_annual_coverage = config.ShowsAnnualCoverage();
   ar& make_nvp("first_year", first_year);
   ar& make_nvp("last_year", last_year);
   ar& make_nvp("fit_years_to_entries", fit_years_to_entries);
   ar& make_nvp("spacing_proportions", spacing_proportions);
+  ar& make_nvp("shows_annual_coverage", shows_annual_coverage);
 }
 template <class Archive>
-void load(Archive& ar, CalendarConfig& config, const unsigned int /*v*/) {
+void load(Archive& ar, CalendarConfig& config, const unsigned int version) {
   int first_year = 0;
   int last_year = 0;
   bool fit_years_to_entries = true;
   std::vector<float> spacing_proportions;
+  bool shows_annual_coverage = true;
   ar& make_nvp("first_year", first_year);
   ar& make_nvp("last_year", last_year);
   ar& make_nvp("fit_years_to_entries", fit_years_to_entries);
   ar& make_nvp("spacing_proportions", spacing_proportions);
+  if (version >= 1) {
+    ar& make_nvp("shows_annual_coverage", shows_annual_coverage);
+  }
   config.SetYears(
       CalendarSpan::YearSpan{.first_year = first_year, .last_year = last_year});
   config.SetFitYearsToEntries(fit_years_to_entries);
   config.SetSpacingProportions(spacing_proportions);
+  config.SetShowsAnnualCoverage(shows_annual_coverage);
 }
 
 }  // namespace boost::serialization
@@ -258,5 +266,8 @@ BOOST_SERIALIZATION_SPLIT_FREE(TitleConfig)
 BOOST_SERIALIZATION_SPLIT_FREE(ShapeConfiguration)
 BOOST_SERIALIZATION_SPLIT_FREE(ShapeConfigSet)
 BOOST_SERIALIZATION_SPLIT_FREE(CalendarConfig)
+
+// Version 1 adds shows_annual_coverage; a version 0 file shows it.
+BOOST_CLASS_VERSION(CalendarConfig, 1)
 
 #endif  // VALUE_SERIALIZATION_HPP

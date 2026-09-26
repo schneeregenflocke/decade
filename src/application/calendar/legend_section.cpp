@@ -33,10 +33,10 @@ struct LegendSlot {
   RectF bar_frame;
 };
 
-void AddLegendEntry(const SectionContext& ctx,
-                    scene_shapes::TextChildPool& labels,
-                    ShapeChildPool<BoxesShape>& bars, const LegendEntry& entry,
-                    const LegendSlot& slot, float font_size) {
+void AddLegendEntry(const SectionContext &ctx,
+                    scene_shapes::TextChildPool &labels,
+                    ShapeChildPool<BoxesShape> &bars, const LegendEntry &entry,
+                    const LegendSlot &slot, float font_size) {
   detail::SetCenteredText(ctx, labels, "legend label " + entry.id, entry.label,
                           slot.label_frame.Center(), font_size);
 
@@ -52,7 +52,7 @@ void AddLegendEntry(const SectionContext& ctx,
 }
 
 // The legend area split into equal slots, each half label, half bar.
-std::vector<LegendSlot> LegendSlots(const SectionContext& ctx,
+std::vector<LegendSlot> LegendSlots(const SectionContext &ctx,
                                     std::size_t entry_count) {
   const RectF area = ctx.layout.LegendArea();
   const auto frame_width = area.Width() / static_cast<float>(entry_count * 2);
@@ -72,14 +72,14 @@ std::vector<LegendSlot> LegendSlots(const SectionContext& ctx,
   return slots;
 }
 
-}  // namespace
+} // namespace
 
-void BuildLegend(const SectionContext& ctx) {
+void BuildLegend(const SectionContext &ctx) {
   ShapeChildPool<BoxesShape> bars(
       ctx.nodes.legend_entries, ctx.rectangles_shader, calendar_layers::kBars);
   auto labels = detail::TextPool(ctx, ctx.nodes.legend_labels);
 
-  const auto& categories = ctx.date_categories.Items();
+  const auto &categories = ctx.date_categories.Items();
   std::vector<LegendEntry> entries;
   entries.reserve(categories.size() + 1);
   const float category_bar_height = ctx.layout.GetSubArea(0, 1).Height();
@@ -90,20 +90,26 @@ void BuildLegend(const SectionContext& ctx) {
          .bar_height = category_bar_height,
          .style = ctx.shape_config.GetDynamicConfiguration(index)});
   }
-  entries.push_back(
-      {.id = "annual coverage",
-       .label = std::string(ShapeConfigSet::FixedConfigurationLabel(
-           ShapeConfigSet::kAnnualCoverageKey)),
-       .bar_height = ctx.layout.GetSubArea(0, 0).Height(),
-       .style = ctx.shape_config.GetShapeConfiguration(
-           ShapeConfigSet::kAnnualCoverageKey)});
+  if (ctx.calendar_config.ShowsAnnualCoverage()) {
+    entries.push_back(
+        {.id = "annual coverage",
+         .label = std::string(ShapeConfigSet::FixedConfigurationLabel(
+             ShapeConfigSet::kAnnualCoverageKey)),
+         .bar_height = ctx.layout.GetSubArea(0, 0).Height(),
+         .style = ctx.shape_config.GetShapeConfiguration(
+             ShapeConfigSet::kAnnualCoverageKey)});
+  }
+  if (entries.empty()) {
+    return;
+  }
 
   const std::vector<LegendSlot> slots = LegendSlots(ctx, entries.size());
 
   // Every label shares one font size: the one the longest label fits at.
-  const auto longest = std::ranges::max_element(
-      entries, {},
-      [](const LegendEntry& entry) { return entry.label.length(); });
+  const auto longest =
+      std::ranges::max_element(entries, {}, [](const LegendEntry &entry) {
+        return entry.label.length();
+      });
   const auto font_size = ctx.font->AdjustTextSize(
       slots.front().label_frame, longest->label,
       Font::TextScale{.height_ratio = detail::kFontScaleMin,
@@ -113,4 +119,4 @@ void BuildLegend(const SectionContext& ctx) {
     AddLegendEntry(ctx, labels, bars, entries[index], slots[index], font_size);
   }
 }
-}  // namespace calendar_sections
+} // namespace calendar_sections

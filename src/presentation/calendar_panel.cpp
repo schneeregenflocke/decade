@@ -29,15 +29,21 @@ CalendarSetupForm::CalendarSetupForm(QWidget* parent)
   first_year_->setRange(Date::kMinYear, Date::kMaxYear);
   last_year_ = MakeOwned<QSpinBox>(this);
   last_year_->setRange(Date::kMinYear, Date::kMaxYear);
+  shows_annual_coverage_ = MakeOwned<QCheckBox>(this);
 
   auto* span_layout = MakeOwned<QFormLayout>();
   span_layout->addRow("Fit years to entries", fit_years_to_entries_.data());
   span_layout->addRow("First Year", first_year_.data());
   span_layout->addRow("Last Year", last_year_.data());
 
+  auto* elements_layout = MakeOwned<QFormLayout>();
+  elements_layout->addRow("Annual Coverage", shows_annual_coverage_.data());
+
   auto* vertical_layout = MakeOwned<QVBoxLayout>();
   vertical_layout->addWidget(SectionLabel("Calendar Span (Years)"));
   vertical_layout->addLayout(span_layout);
+  vertical_layout->addWidget(SectionLabel("Visible Elements"));
+  vertical_layout->addLayout(elements_layout);
   vertical_layout->addWidget(SectionLabel("Row Spacing Proportions"));
   vertical_layout->addLayout(spacing_layout_);
   vertical_layout->addStretch(1);
@@ -46,6 +52,11 @@ CalendarSetupForm::CalendarSetupForm(QWidget* parent)
   connect(fit_years_to_entries_.data(), &QCheckBox::toggled, this,
           [this](bool) {
             RefreshSpanLimitsState();
+            ReportChange();
+          });
+  connect(shows_annual_coverage_.data(), &QCheckBox::toggled, this,
+          [this](bool) {
+            RefreshCoverageSpacingState();
             ReportChange();
           });
   connect(first_year_.data(), &QSpinBox::valueChanged, this,
@@ -72,8 +83,10 @@ void CalendarSetupForm::LoadConfig(const CalendarConfig& config) {
   fit_years_to_entries_->setChecked(config.IsFitYearsToEntries());
   first_year_->setValue(config.FirstYear());
   last_year_->setValue(config.LastYear());
+  shows_annual_coverage_->setChecked(config.ShowsAnnualCoverage());
 
   RefreshSpanLimitsState();
+  RefreshCoverageSpacingState();
   loading_ = false;
 }
 
@@ -90,6 +103,7 @@ CalendarConfig CalendarSetupForm::ReadConfig() const {
   config.SetFitYearsToEntries(fit_years_to_entries_->isChecked());
   config.SetYears(CalendarSpan::YearSpan{.first_year = first_year_->value(),
                                          .last_year = last_year_->value()});
+  config.SetShowsAnnualCoverage(shows_annual_coverage_->isChecked());
 
   return config;
 }
@@ -112,6 +126,13 @@ void CalendarSetupForm::RefreshSpanLimitsState() {
   const bool fit_to_entries = fit_years_to_entries_->isChecked();
   first_year_->setEnabled(!fit_to_entries);
   last_year_->setEnabled(!fit_to_entries);
+}
+
+void CalendarSetupForm::RefreshCoverageSpacingState() {
+  if (CalendarConfig::kAnnualCoverageSpacingIndex < spacing_fields_.size()) {
+    spacing_fields_[CalendarConfig::kAnnualCoverageSpacingIndex]->setEnabled(
+        shows_annual_coverage_->isChecked());
+  }
 }
 
 void CalendarSetupForm::SyncSpacingRows(std::size_t count) {

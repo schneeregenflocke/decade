@@ -61,6 +61,20 @@ TEST(CalendarSpanTest, YearAtThrowsWhenOutOfRange) {
   EXPECT_THROW((void)span.YearAt(5), std::logic_error);
 }
 
+TEST(CalendarConfigTest, HiddenAnnualCoverageLaysOutNoSubrow) {
+  CalendarConfig config;
+  const std::vector<float> stored = config.GetSpacingProportions();
+  ASSERT_GT(stored[CalendarConfig::kAnnualCoverageSpacingIndex], 0.0F);
+  EXPECT_EQ(config.LaidOutSpacingProportions(), stored);
+
+  config.SetShowsAnnualCoverage(false);
+
+  std::vector<float> expected = stored;
+  expected[CalendarConfig::kAnnualCoverageSpacingIndex] = 0.0F;
+  EXPECT_EQ(config.LaidOutSpacingProportions(), expected);
+  EXPECT_EQ(config.GetSpacingProportions(), stored);
+}
+
 TEST(CalendarConfigStoreTest, ReceiveCopiesAndEmits) {
   CalendarConfig source;
   source.SetYears({.first_year = 2040, .last_year = 2042});

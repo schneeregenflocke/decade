@@ -83,10 +83,44 @@ TEST(ValueSerializationTest, CalendarConfigRoundTrip) {
   CalendarConfig config;
   config.SetYears({.first_year = 1998, .last_year = 2003});
   config.SetFitYearsToEntries(false);
+  config.SetShowsAnnualCoverage(false);
 
   const auto loaded = XmlRoundTrip(config);
 
   EXPECT_EQ(loaded.FirstYear(), 1998);
   EXPECT_EQ(loaded.LastYear(), 2003);
   EXPECT_FALSE(loaded.IsFitYearsToEntries());
+  EXPECT_FALSE(loaded.ShowsAnnualCoverage());
+}
+
+// A project saved before the switch existed carries class version 0 and no
+// shows_annual_coverage element; it has to load with the coverage shown.
+TEST(ValueSerializationTest, CalendarConfigVersionZeroShowsAnnualCoverage) {
+  std::istringstream in(
+      R"(<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<!DOCTYPE boost_serialization>
+<boost_serialization signature="serialization::archive" version="20">
+<value class_id="0" tracking_level="0" version="0">
+	<first_year>1998</first_year>
+	<last_year>2003</last_year>
+	<fit_years_to_entries>0</fit_years_to_entries>
+	<spacing_proportions>
+		<count>3</count>
+		<item_version>0</item_version>
+		<item>1</item>
+		<item>2</item>
+		<item>1</item>
+	</spacing_proportions>
+</value>
+</boost_serialization>
+)");
+  CalendarConfig loaded;
+  loaded.SetShowsAnnualCoverage(false);
+  {
+    boost::archive::xml_iarchive iarchive(in);
+    iarchive >> boost::serialization::make_nvp("value", loaded);
+  }
+
+  EXPECT_EQ(loaded.LastYear(), 2003);
+  EXPECT_TRUE(loaded.ShowsAnnualCoverage());
 }

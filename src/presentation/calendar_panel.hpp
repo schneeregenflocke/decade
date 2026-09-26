@@ -21,10 +21,11 @@
 #include "../domain/date.hpp"
 #include "make_owned.hpp"
 
-// The form that edits a CalendarConfig: the calendar's year span and the
-// per-row spacing proportions. It is a pure view — LoadConfig() pushes a config
-// into the widgets, ReadConfig() reads the widgets back into a config — so the
-// owning panel never reaches into the individual fields.
+// The form that edits a CalendarConfig: the calendar's year span, whether the
+// annual coverage shows, and the per-row spacing proportions. It is a pure view
+// — LoadConfig() pushes a config into the widgets, ReadConfig() reads the
+// widgets back into a config — so the owning panel never reaches into the
+// individual fields.
 //
 // Row-spacing order: the rendered layout stacks the proportions along the
 // rising y-axis (index 0 is the bottom gap, the last index the top gap). The
@@ -63,6 +64,9 @@ class CalendarSetupForm : public QWidget {
   // Enables the explicit year limits only while the span is not automatic.
   void RefreshSpanLimitsState();
 
+  // A hidden annual coverage lays out no subrow, so its spacing has no effect.
+  void RefreshCoverageSpacingState();
+
   // Rebuilds the spacing rows when their count changes (only on LoadConfig).
   // Adding from the highest index down lays them out so the form's top matches
   // the page's top.
@@ -73,6 +77,7 @@ class CalendarSetupForm : public QWidget {
   QPointer<QCheckBox> fit_years_to_entries_;
   QPointer<QSpinBox> first_year_;
   QPointer<QSpinBox> last_year_;
+  QPointer<QCheckBox> shows_annual_coverage_;
 
   QPointer<QFormLayout> spacing_layout_;
   // Indexed by proportion index (rising y-axis), independent of form order.

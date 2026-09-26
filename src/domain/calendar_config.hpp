@@ -52,8 +52,17 @@ class CalendarConfig : public CalendarSpan {
   [[nodiscard]] bool IsFitYearsToEntries() const;
   void SetFitYearsToEntries(bool fit);
 
+  [[nodiscard]] bool ShowsAnnualCoverage() const;
+  void SetShowsAnnualCoverage(bool shows);
+
   [[nodiscard]] const std::vector<float>& GetSpacingProportions() const;
   void SetSpacingProportions(const std::vector<float>& proportions);
+
+  // What the layout divides a row by: a hidden annual coverage gives its
+  // subrow back, while the stored proportions keep the value for later.
+  [[nodiscard]] std::vector<float> LaidOutSpacingProportions() const;
+
+  static constexpr std::size_t kAnnualCoverageSpacingIndex = 1;
 
  private:
   static constexpr float kSpacingSmall = 25.0F;
@@ -64,6 +73,7 @@ class CalendarConfig : public CalendarSpan {
       kSpacingMedium, kSpacingLarge, kSpacingSmall};
 
   bool fit_years_to_entries_{true};
+  bool shows_annual_coverage_{true};
   std::vector<float> spacing_proportions_{std::vector<float>(
       kDefaultSpacingProportions.begin(), kDefaultSpacingProportions.end())};
 };
