@@ -2,8 +2,10 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <numeric>
 #include <utility>
 
+#include "calendar_sizing.hpp"
 #include "calendar_view.hpp"
 #include "date.hpp"
 #include "date_period.hpp"
@@ -74,4 +76,20 @@ BandProportions CalendarConfig::LaidOutBandProportions() const {
     proportions.at(std::to_underlying(BandPart::kCoverage)) = 0.0F;
   }
   return proportions;
+}
+
+float CalendarConfig::LaidOutShare(BandPart part) const {
+  const BandProportions proportions = LaidOutBandProportions();
+  const float total =
+      std::accumulate(proportions.begin(), proportions.end(), 0.0F);
+  if (total <= 0.0F) {
+    return 0.0F;
+  }
+  return proportions.at(std::to_underlying(part)) / total;
+}
+
+const CalendarSizing& CalendarConfig::Sizing() const { return sizing_; }
+
+void CalendarConfig::SetSizing(const CalendarSizing& sizing) {
+  sizing_ = sizing;
 }

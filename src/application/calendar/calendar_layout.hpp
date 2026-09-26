@@ -2,7 +2,9 @@
 #define CALENDAR_LAYOUT_HPP
 
 #include <cstddef>
+#include <cstdint>
 #include <glm/vec3.hpp>
+#include <optional>
 
 #include "../../domain/calendar_config.hpp"
 #include "../../infrastructure/graphics/area_layout.hpp"
@@ -19,6 +21,10 @@
 //
 // The calendar's height falls into bands: one per year, one for the column
 // labels, one for the legend. The rows share the years' bands.
+//
+// Each axis either fits the page or takes the millimetres of the config's
+// sizing. A fixed axis anchors the calendar at the top left below the title and
+// lets it run past the page's right or bottom edge.
 class CalendarLayout {
  public:
   CalendarLayout() = default;
@@ -37,6 +43,10 @@ class CalendarLayout {
   [[nodiscard]] const RectF& LegendArea() const;
   [[nodiscard]] float DayWidth() const;
 
+  // The width of one legend entry, its label and its sample together: the
+  // legend area shared out while the width fits, the fixed width otherwise.
+  [[nodiscard]] float LegendEntryWidth(std::size_t entry_count) const;
+
   [[nodiscard]] RectF GetRowArea(std::size_t row) const;
 
   // Where a row draws the given part. Precondition: `part` is one of the three
@@ -53,6 +63,24 @@ class CalendarLayout {
   static constexpr float kDefaultMargin = 5.0F;
   static constexpr float kCalendarColumns = 13.0F;
   static constexpr std::size_t kLabelAndLegendBands = 2;
+
+  struct Heights {
+    float band;
+    float column_labels;
+    float legend;
+  };
+
+  struct Widths {
+    float row_labels;
+    float cells;
+  };
+
+  [[nodiscard]] static Heights ComputeHeights(const RectF& available,
+                                              const CalendarConfig& config);
+
+  [[nodiscard]] static Widths ComputeWidths(const RectF& available,
+                                            const CalendarConfig& config,
+                                            std::int64_t row_days);
 
   // The index of a content part among the areas the proportions yield, which
   // skip the gaps.
@@ -72,6 +100,7 @@ class CalendarLayout {
     RectF y_labels_area;
     RectF legend_area;
     float day_width{0.0F};
+    std::optional<float> fixed_legend_entry_width;
   };
 
   static Fields Compute(const RectF& page_size, const RectF& page_margin,

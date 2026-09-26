@@ -135,6 +135,7 @@ class CalendarSceneComposer {
   TimelineProjection projection_{calendar_config_};
   CalendarLayout layout_;
   std::vector<PickBox> pick_boxes_;
+  RectF legend_area_;
   std::optional<TextEditView> text_edit_;
 
   // Interactive hover/selection highlighting. Declared last so its borrowed

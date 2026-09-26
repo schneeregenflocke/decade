@@ -1,10 +1,13 @@
 #include "calendar_layout.hpp"
 
 #include <cstddef>
+#include <cstdint>
 #include <glm/ext/vector_float3.hpp>
+#include <optional>
 #include <utility>
 
 #include "../../domain/calendar_config.hpp"
+#include "../../domain/calendar_sizing.hpp"
 #include "../../domain/timeline_projection.hpp"
 #include "../../infrastructure/graphics/rect.hpp"
 
@@ -56,6 +59,39 @@ std::size_t CalendarLayout::ContentIndex(BandPart part) {
   return std::to_underlying(part) / 2;
 }
 
+CalendarLayout::Heights CalendarLayout::ComputeHeights(
+    const RectF& available, const CalendarConfig& config) {
+  const CalendarSizing& sizing = config.Sizing();
+  if (sizing.FixesHeight()) {
+    const CalendarSizing::Heights& fixed = sizing.FixedHeights();
+    return {.band = fixed.band,
+            .column_labels = fixed.column_labels,
+            .legend = fixed.legend};
+  }
+  const std::size_t band_count = kLabelAndLegendBands + config.YearCount();
+  const float band = available.Height() / static_cast<float>(band_count);
+  return {.band = band, .column_labels = band, .legend = band};
+}
+
+CalendarLayout::Widths CalendarLayout::ComputeWidths(
+    const RectF& available, const CalendarConfig& config,
+    std::int64_t row_days) {
+  const CalendarSizing& sizing = config.Sizing();
+  if (sizing.FixesWidth()) {
+    const CalendarSizing::Widths& fixed = sizing.FixedWidths();
+    return {.row_labels = fixed.row_labels,
+            .cells = fixed.day * static_cast<float>(row_days)};
+  }
+  const float calendar_width = available.Width() - kDefaultMargin;
+  const float row_labels = calendar_width / kCalendarColumns;
+  return {.row_labels = row_labels, .cells = calendar_width - row_labels};
+}
+
+float CalendarLayout::LegendEntryWidth(std::size_t entry_count) const {
+  return fields_.fixed_legend_entry_width.value_or(
+      fields_.legend_area.Width() / static_cast<float>(entry_count));
+}
+
 CalendarLayout::Fields CalendarLayout::Compute(
     const RectF& page_size, const RectF& page_margin, float title_area_height,
     const CalendarConfig& calendar_config) {
@@ -72,44 +108,46 @@ CalendarLayout::Fields CalendarLayout::Compute(
   fields.title_area = fields.print_area;
   fields.title_area.SetBottom(fields.title_area.Top() - title_area_height);
 
-  RectF page_margin_area = fields.print_area;
-  page_margin_area.SetTop(fields.title_area.Bottom());
-
-  fields.calendar_area =
-      page_margin_area.Reduce(RectF(kZero, kDefaultMargin, kZero, kZero));
+  RectF below_title = fields.print_area;
+  below_title.SetTop(fields.title_area.Bottom());
 
   const TimelineProjection projection(calendar_config);
-  const std::size_t band_count =
-      kLabelAndLegendBands + calendar_config.YearCount();
-  const float band_height =
-      fields.calendar_area.Height() / static_cast<float>(band_count);
-  const float label_and_legend_height =
-      band_height * static_cast<float>(kLabelAndLegendBands);
-  const float row_labels_width =
-      fields.calendar_area.Width() / kCalendarColumns;
+  const Heights heights = ComputeHeights(below_title, calendar_config);
+  const Widths widths =
+      ComputeWidths(below_title, calendar_config, projection.RowDays());
+  const float cells_height =
+      heights.band * static_cast<float>(calendar_config.YearCount());
 
-  fields.cells_area = fields.calendar_area.Reduce(
-      RectF(row_labels_width, kZero, label_and_legend_height, kZero));
+  fields.calendar_area = RectF(
+      below_title.Left(), below_title.Left() + widths.row_labels + widths.cells,
+      below_title.Top() - cells_height - heights.column_labels - heights.legend,
+      below_title.Top());
+
+  fields.cells_area = fields.calendar_area.Reduce(RectF(
+      widths.row_labels, kZero, heights.column_labels + heights.legend, kZero));
 
   fields.proportions.SetupRowAreas(fields.cells_area, projection.RowCount());
   const BandProportions band_proportions =
       calendar_config.LaidOutBandProportions();
   fields.proportions.SetupSubAreas(band_proportions);
 
-  fields.band_proportions.SetupRowAreas(RectF(kZero, kZero, kZero, band_height),
-                                        1);
+  fields.band_proportions.SetupRowAreas(
+      RectF(kZero, kZero, kZero, heights.band), 1);
   fields.band_proportions.SetupSubAreas(band_proportions);
 
-  fields.day_width =
-      fields.cells_area.Width() / static_cast<float>(projection.RowDays());
+  fields.day_width = widths.cells / static_cast<float>(projection.RowDays());
 
   fields.x_labels_area = fields.calendar_area.Reduce(
-      RectF(row_labels_width, kZero, band_height, fields.cells_area.Height()));
-  fields.y_labels_area = fields.calendar_area.Reduce(
-      RectF(kZero, fields.cells_area.Width(), label_and_legend_height, kZero));
-  fields.legend_area = fields.calendar_area.Reduce(
-      RectF(row_labels_width, kZero, kZero,
-            fields.cells_area.Height() + band_height));
+      RectF(widths.row_labels, kZero, heights.legend, cells_height));
+  fields.y_labels_area = fields.calendar_area.Reduce(RectF(
+      kZero, widths.cells, heights.column_labels + heights.legend, kZero));
+  fields.legend_area = fields.calendar_area.Reduce(RectF(
+      widths.row_labels, kZero, kZero, cells_height + heights.column_labels));
+
+  if (calendar_config.Sizing().FixesWidth()) {
+    fields.fixed_legend_entry_width =
+        calendar_config.Sizing().FixedWidths().legend_entry;
+  }
 
   return fields;
 }

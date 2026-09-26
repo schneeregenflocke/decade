@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "calendar_sizing.hpp"
 #include "calendar_view.hpp"
 #include "date.hpp"
 #include "date_period.hpp"
@@ -78,6 +79,12 @@ class CalendarConfig : public CalendarSpan {
   // back, while the stored proportions keep the value for later.
   [[nodiscard]] BandProportions LaidOutBandProportions() const;
 
+  // The share of a band's height the part takes as laid out.
+  [[nodiscard]] float LaidOutShare(BandPart part) const;
+
+  [[nodiscard]] const CalendarSizing& Sizing() const;
+  void SetSizing(const CalendarSizing& sizing);
+
  private:
   static constexpr float kProportionSmall = 25.0F;
   static constexpr float kProportionMedium = 50.0F;
@@ -89,5 +96,6 @@ class CalendarConfig : public CalendarSpan {
   BandProportions band_proportions_{
       kProportionSmall,  kProportionLarge, kProportionMedium, kProportionLarge,
       kProportionMedium, kProportionLarge, kProportionSmall};
+  CalendarSizing sizing_;
 };
 #endif  // CALENDAR_CONFIG_HPP

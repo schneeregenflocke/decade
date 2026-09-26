@@ -109,7 +109,7 @@ void CalendarSceneComposer::Build() {
   pick_boxes_.insert(pick_boxes_.end(), bars.pick_boxes.begin(),
                      bars.pick_boxes.end());
   calendar_sections::BuildAnnualCoverage(ctx);
-  calendar_sections::BuildLegend(ctx);
+  legend_area_ = calendar_sections::BuildLegend(ctx);
 
   // Hand the fresh bar nodes to the highlighter, which re-applies the
   // persisted hover and selection highlights to the new geometry.
@@ -118,7 +118,8 @@ void CalendarSceneComposer::Build() {
 
 RectF CalendarSceneComposer::DrawingExtent() const {
   const glm::vec3& origin = layout_.PrintAreaOrigin();
-  return page_size_.Enclosing(layout_.CalendarArea().Shift(origin.x, origin.y));
+  return page_size_.Enclosing(layout_.CalendarArea().Shift(origin.x, origin.y))
+      .Enclosing(legend_area_.Shift(origin.x, origin.y));
 }
 
 calendar_sections::SectionContext CalendarSceneComposer::MakeContext() const {

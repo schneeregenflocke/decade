@@ -129,6 +129,9 @@ void BindFont(QObject& scope, EventBus& bus, const AppComponents& components) {
 
   Connect(scope, bus.font_config, &domain::FontConfigTopic::Published,
           components.calendar_page, &CalendarPage::ReceiveFont);
+  Connect(scope, bus.font_config, &domain::FontConfigTopic::Published,
+          components.calendar_setup_panel,
+          &CalendarSetupPanel::ReceiveFontConfig);
 }
 
 void BindTitleConfig(QObject& scope, EventBus& bus,
@@ -303,13 +306,14 @@ void ReleaseCallbacks(const CallbackTargets& targets) {
 }
 
 void SendInitialValues(EventBus& bus, const AppComponents& components) {
-  // Five producers in a row, one rebuild at the end (#36).
+  // Six producers in a row, one rebuild at the end (#36).
   const application::StateBurst burst(bus.state_burst);
   components.shape_configuration_store.SendShapeConfigSet();
   components.date_categories_store.SendDefaultValues();
   components.page_setup_panel.SendDefaultValues();
   components.title_setup_panel.SendDefaultValues();
   components.calendar_configuration_store.SendCalendarConfig();
+  bus.font_config.Publish(components.font_panel.GetFontConfig());
 }
 
 }  // namespace app_binder

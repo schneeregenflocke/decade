@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "../../domain/calendar_config.hpp"
+#include "../../domain/calendar_sizing.hpp"
 #include "../../domain/calendar_view.hpp"
 #include "../../domain/date.hpp"
 #include "../../domain/date_category.hpp"
@@ -238,6 +239,11 @@ void save(Archive& ar, const CalendarConfig& config, const unsigned int /*v*/) {
                                               band_proportions.end());
   const bool shows_annual_coverage = config.ShowsAnnualCoverage();
   const int view = static_cast<int>(config.View());
+  const CalendarSizing& sizing = config.Sizing();
+  const bool fixes_width = sizing.FixesWidth();
+  const CalendarSizing::Widths& widths = sizing.FixedWidths();
+  const bool fixes_height = sizing.FixesHeight();
+  const CalendarSizing::Heights& heights = sizing.FixedHeights();
   ar& make_nvp("first_year", first_year);
   ar& make_nvp("last_year", last_year);
   ar& make_nvp("fit_years_to_entries", fit_years_to_entries);
@@ -246,6 +252,14 @@ void save(Archive& ar, const CalendarConfig& config, const unsigned int /*v*/) {
   ar& make_nvp("spacing_proportions", stored_proportions);
   ar& make_nvp("shows_annual_coverage", shows_annual_coverage);
   ar& make_nvp("view", view);
+  ar& make_nvp("fixes_width", fixes_width);
+  ar& make_nvp("day_width", widths.day);
+  ar& make_nvp("row_labels_width", widths.row_labels);
+  ar& make_nvp("legend_entry_width", widths.legend_entry);
+  ar& make_nvp("fixes_height", fixes_height);
+  ar& make_nvp("band_height", heights.band);
+  ar& make_nvp("column_labels_height", heights.column_labels);
+  ar& make_nvp("legend_height", heights.legend);
 }
 template <class Archive>
 void load(Archive& ar, CalendarConfig& config, const unsigned int version) {
@@ -255,6 +269,11 @@ void load(Archive& ar, CalendarConfig& config, const unsigned int version) {
   std::vector<float> stored_proportions;
   bool shows_annual_coverage = true;
   int view = static_cast<int>(CalendarView::kYearPerRow);
+  CalendarSizing sizing;
+  bool fixes_width = sizing.FixesWidth();
+  CalendarSizing::Widths widths = sizing.FixedWidths();
+  bool fixes_height = sizing.FixesHeight();
+  CalendarSizing::Heights heights = sizing.FixedHeights();
   ar& make_nvp("first_year", first_year);
   ar& make_nvp("last_year", last_year);
   ar& make_nvp("fit_years_to_entries", fit_years_to_entries);
@@ -265,6 +284,20 @@ void load(Archive& ar, CalendarConfig& config, const unsigned int version) {
   if (version >= 2) {
     ar& make_nvp("view", view);
   }
+  if (version >= 3) {
+    ar& make_nvp("fixes_width", fixes_width);
+    ar& make_nvp("day_width", widths.day);
+    ar& make_nvp("row_labels_width", widths.row_labels);
+    ar& make_nvp("legend_entry_width", widths.legend_entry);
+    ar& make_nvp("fixes_height", fixes_height);
+    ar& make_nvp("band_height", heights.band);
+    ar& make_nvp("column_labels_height", heights.column_labels);
+    ar& make_nvp("legend_height", heights.legend);
+  }
+  sizing.SetFixesWidth(fixes_width);
+  sizing.SetFixedWidths(widths);
+  sizing.SetFixesHeight(fixes_height);
+  sizing.SetFixedHeights(heights);
   config.SetYears(
       CalendarSpan::YearSpan{.first_year = first_year, .last_year = last_year});
   config.SetFitYearsToEntries(fit_years_to_entries);
@@ -278,6 +311,7 @@ void load(Archive& ar, CalendarConfig& config, const unsigned int version) {
   config.SetShowsAnnualCoverage(shows_annual_coverage);
   config.SetView(
       persistence::serialization_detail::CalendarViewFromNumber(view));
+  config.SetSizing(sizing);
 }
 
 }  // namespace boost::serialization
@@ -291,7 +325,8 @@ BOOST_SERIALIZATION_SPLIT_FREE(ShapeConfigSet)
 BOOST_SERIALIZATION_SPLIT_FREE(CalendarConfig)
 
 // Version 1 adds shows_annual_coverage; a version 0 file shows it. Version 2
-// adds the view; an earlier file lays out a year per row.
-BOOST_CLASS_VERSION(CalendarConfig, 2)
+// adds the view; an earlier file lays out a year per row. Version 3 adds the
+// sizing; an earlier file fits both axes to the page.
+BOOST_CLASS_VERSION(CalendarConfig, 3)
 
 #endif  // VALUE_SERIALIZATION_HPP

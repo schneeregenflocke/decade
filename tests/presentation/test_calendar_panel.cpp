@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "domain/calendar_config.hpp"
+#include "domain/calendar_sizing.hpp"
 #include "domain/calendar_view.hpp"
 #include "presentation/calendar_panel.hpp"
 
@@ -85,4 +86,48 @@ TEST(CalendarSetupPanelTest, ChoosingAViewReportsIt) {
 
   EXPECT_EQ(view->currentText(), "All Years in One Row");
   EXPECT_EQ(reported, std::vector{CalendarView::kAllYearsInOneRow});
+}
+
+TEST(CalendarSetupPanelTest, FixingTheWidthReportsItAndOpensItsMillimetres) {
+  constexpr int kWidth = 400;
+  constexpr int kHeight = 1200;
+  CalendarSetupPanel panel(nullptr);
+  std::vector<bool> reported;
+  QObject::connect(&panel, &CalendarSetupPanel::CalendarConfigEdited,
+                   [&reported](const CalendarConfig& config) {
+                     reported.push_back(config.Sizing().FixesWidth());
+                   });
+  panel.resize(kWidth, kHeight);
+  panel.show();
+  auto* fixes_width = FieldLabelled<QCheckBox>(panel, "Fixed Width");
+  auto* day_width = FieldLabelled<QDoubleSpinBox>(panel, "Day Width (mm)");
+  ASSERT_NE(fixes_width, nullptr);
+  ASSERT_NE(day_width, nullptr);
+  ASSERT_FALSE(day_width->isEnabled());
+
+  ClickIndicator(*fixes_width);
+
+  EXPECT_EQ(reported, std::vector<bool>{true});
+  EXPECT_TRUE(day_width->isEnabled());
+}
+
+// The default parts give the days 100 of 450, so a band of 9 mm leaves them
+// 2 mm, and the entry labels 2 mm, which is 5.7 pt.
+TEST(CalendarSetupPanelTest, AFixedBandHeightShowsWhatItComesTo) {
+  CalendarSetupPanel panel(nullptr);
+  CalendarConfig config;
+  CalendarSizing sizing;
+  sizing.SetFixesHeight(true);
+  sizing.SetFixedHeights({.band = 9.0F, .column_labels = 5.0F, .legend = 5.0F});
+  config.SetSizing(sizing);
+
+  panel.ReceiveCalendarConfig(config);
+
+  auto* day_height = FieldLabelled<QLabel>(panel, "Day Height (mm)");
+  auto* entry_label_size =
+      FieldLabelled<QLabel>(panel, "Entry Label Size (pt)");
+  ASSERT_NE(day_height, nullptr);
+  ASSERT_NE(entry_label_size, nullptr);
+  EXPECT_EQ(day_height->text(), "2.00");
+  EXPECT_EQ(entry_label_size->text(), "5.7");
 }

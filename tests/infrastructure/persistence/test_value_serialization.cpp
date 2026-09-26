@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "domain/calendar_config.hpp"
+#include "domain/calendar_sizing.hpp"
 #include "domain/calendar_view.hpp"
 #include "domain/date.hpp"
 #include "domain/date_category.hpp"
@@ -86,6 +87,13 @@ TEST(ValueSerializationTest, CalendarConfigRoundTrip) {
   config.SetFitYearsToEntries(false);
   config.SetShowsAnnualCoverage(false);
   config.SetView(CalendarView::kAllYearsInOneRow);
+  CalendarSizing sizing;
+  sizing.SetFixesWidth(true);
+  sizing.SetFixedWidths(
+      {.day = 0.5F, .row_labels = 12.0F, .legend_entry = 40.0F});
+  sizing.SetFixesHeight(true);
+  sizing.SetFixedHeights({.band = 4.0F, .column_labels = 5.0F, .legend = 7.0F});
+  config.SetSizing(sizing);
 
   const auto loaded = XmlRoundTrip(config);
 
@@ -94,6 +102,14 @@ TEST(ValueSerializationTest, CalendarConfigRoundTrip) {
   EXPECT_FALSE(loaded.IsFitYearsToEntries());
   EXPECT_FALSE(loaded.ShowsAnnualCoverage());
   EXPECT_EQ(loaded.View(), CalendarView::kAllYearsInOneRow);
+  EXPECT_TRUE(loaded.Sizing().FixesWidth());
+  EXPECT_FLOAT_EQ(loaded.Sizing().FixedWidths().day, 0.5F);
+  EXPECT_FLOAT_EQ(loaded.Sizing().FixedWidths().row_labels, 12.0F);
+  EXPECT_FLOAT_EQ(loaded.Sizing().FixedWidths().legend_entry, 40.0F);
+  EXPECT_TRUE(loaded.Sizing().FixesHeight());
+  EXPECT_FLOAT_EQ(loaded.Sizing().FixedHeights().band, 4.0F);
+  EXPECT_FLOAT_EQ(loaded.Sizing().FixedHeights().column_labels, 5.0F);
+  EXPECT_FLOAT_EQ(loaded.Sizing().FixedHeights().legend, 7.0F);
 }
 
 // A project saved before the views existed carries class version 1 and no
@@ -200,4 +216,45 @@ TEST(ValueSerializationTest, ProportionsOfAnEarlierLayoutKeepTheDefaults) {
   }
 
   EXPECT_EQ(loaded.GetBandProportions(), CalendarConfig().GetBandProportions());
+}
+
+// A project saved before the sizing existed carries class version 2; both axes
+// fit the page.
+TEST(ValueSerializationTest, CalendarConfigVersionTwoFitsThePage) {
+  std::istringstream in(
+      R"(<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<!DOCTYPE boost_serialization>
+<boost_serialization signature="serialization::archive" version="20">
+<value class_id="0" tracking_level="0" version="2">
+	<first_year>1998</first_year>
+	<last_year>2003</last_year>
+	<fit_years_to_entries>0</fit_years_to_entries>
+	<spacing_proportions>
+		<count>7</count>
+		<item_version>0</item_version>
+		<item>1</item>
+		<item>2</item>
+		<item>1</item>
+		<item>2</item>
+		<item>1</item>
+		<item>2</item>
+		<item>1</item>
+	</spacing_proportions>
+	<shows_annual_coverage>1</shows_annual_coverage>
+	<view>0</view>
+</value>
+</boost_serialization>
+)");
+  CalendarConfig loaded;
+  CalendarSizing fixed;
+  fixed.SetFixesWidth(true);
+  fixed.SetFixesHeight(true);
+  loaded.SetSizing(fixed);
+  {
+    boost::archive::xml_iarchive iarchive(in);
+    iarchive >> boost::serialization::make_nvp("value", loaded);
+  }
+
+  EXPECT_FALSE(loaded.Sizing().FixesWidth());
+  EXPECT_FALSE(loaded.Sizing().FixesHeight());
 }

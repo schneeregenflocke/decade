@@ -17,12 +17,15 @@
 #include <utility>
 
 #include "../domain/calendar_config.hpp"
+#include "../domain/calendar_sizing.hpp"
 #include "../domain/date.hpp"
+#include "../domain/font_config.hpp"
 #include "calendar_view_combo_box.hpp"
 #include "make_owned.hpp"
 
 // The form that edits a CalendarConfig: the view, the calendar's year span,
-// whether the annual coverage shows, and the band proportions. It is a pure
+// whether the annual coverage shows, the calendar's size and the band
+// proportions. It is a pure
 // view — LoadConfig() pushes a config into the widgets, ReadConfig() reads the
 // widgets back into a config — so the owning panel never reaches into the
 // individual fields.
@@ -32,7 +35,8 @@
 // band.
 //
 // Qt carries no property grid; the categories are section headings above a
-// QFormLayout each.
+// QFormLayout each. Beside the fields the size section shows, read-only, what
+// the millimetres come to: the day height and the text sizes.
 class CalendarSetupForm : public QWidget {
  public:
   explicit CalendarSetupForm(QWidget* parent);
@@ -45,12 +49,25 @@ class CalendarSetupForm : public QWidget {
   // Reads the form's widgets back into a fresh config.
   [[nodiscard]] CalendarConfig ReadConfig() const;
 
+  // The row labels take the application-wide font size, not one of the band.
+  void ShowRowLabelSize(float points);
+
  private:
   // Proportions are relative to each other, so the ceiling only has to stay out
   // of the way; two decimals match what the defaults are written in.
   static constexpr double kProportionMax = 10000.0;
+  static constexpr double kMillimetreMin = 0.01;
+  static constexpr double kMillimetreMax = 10000.0;
 
   QLabel* SectionLabel(const QString& text);
+
+  [[nodiscard]] QFormLayout* BuildSizeLayout();
+
+  [[nodiscard]] QFormLayout* BuildBandLayout();
+
+  QDoubleSpinBox* MillimetreField();
+
+  [[nodiscard]] CalendarSizing ReadSizing() const;
 
   [[nodiscard]] static QString BandPartLabel(BandPart part);
 
@@ -60,6 +77,13 @@ class CalendarSetupForm : public QWidget {
   // A hidden annual coverage lays out no part, so its proportion has no effect.
   void RefreshCoverageProportionState();
 
+  // Enables the millimetres of an axis only while the axis is fixed.
+  void RefreshSizingState();
+
+  // What a fixed band height comes to; a fitted one depends on the page, which
+  // the form does not know.
+  void RefreshDerivedSizes();
+
   void ReportChange();
 
   QPointer<CalendarViewComboBox> view_;
@@ -67,6 +91,19 @@ class CalendarSetupForm : public QWidget {
   QPointer<QSpinBox> first_year_;
   QPointer<QSpinBox> last_year_;
   QPointer<QCheckBox> shows_annual_coverage_;
+
+  QPointer<QCheckBox> fixes_width_;
+  QPointer<QDoubleSpinBox> day_width_;
+  QPointer<QDoubleSpinBox> row_labels_width_;
+  QPointer<QLabel> row_label_size_;
+  QPointer<QDoubleSpinBox> legend_entry_width_;
+  QPointer<QCheckBox> fixes_height_;
+  QPointer<QDoubleSpinBox> band_height_;
+  QPointer<QLabel> day_height_;
+  QPointer<QLabel> entry_label_size_;
+  QPointer<QLabel> coverage_label_size_;
+  QPointer<QDoubleSpinBox> column_labels_height_;
+  QPointer<QDoubleSpinBox> legend_height_;
 
   // Indexed by BandPart, independent of form order.
   std::array<QPointer<QDoubleSpinBox>, kBandPartCount> band_proportion_fields_;
@@ -82,6 +119,8 @@ class CalendarSetupPanel : public QWidget {
   explicit CalendarSetupPanel(QWidget* parent);
 
   void ReceiveCalendarConfig(const CalendarConfig& incoming_calendar_config);
+
+  void ReceiveFontConfig(const FontConfig& font_config);
 
  signals:
   void CalendarConfigEdited(const CalendarConfig& calendar_config);

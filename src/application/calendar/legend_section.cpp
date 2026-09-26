@@ -52,11 +52,13 @@ void AddLegendEntry(const SectionContext& ctx,
   bar.shape.SetColors(entry.style.OutlineColor(), entry.style.FillColor());
 }
 
-// The legend area split into equal slots, each half label, half bar.
+// One slot per entry from the legend area's left edge, each half label, half
+// bar.
 std::vector<LegendSlot> LegendSlots(const SectionContext& ctx,
                                     std::size_t entry_count) {
   const RectF area = ctx.layout.LegendArea();
-  const auto frame_width = area.Width() / static_cast<float>(entry_count * 2);
+  const auto frame_width =
+      ctx.layout.LegendEntryWidth(entry_count) * detail::kHalf;
   const auto frame_at = [&](std::size_t frame_index) {
     RectF frame = area;
     frame.SetLeft(area.Left() +
@@ -75,7 +77,7 @@ std::vector<LegendSlot> LegendSlots(const SectionContext& ctx,
 
 }  // namespace
 
-void BuildLegend(const SectionContext& ctx) {
+RectF BuildLegend(const SectionContext& ctx) {
   ShapeChildPool<BoxesShape> bars(
       ctx.nodes.legend_entries, ctx.rectangles_shader, calendar_layers::kBars);
   auto labels = detail::TextPool(ctx, ctx.nodes.legend_labels);
@@ -100,8 +102,10 @@ void BuildLegend(const SectionContext& ctx) {
          .style = ctx.shape_config.GetShapeConfiguration(
              ShapeConfigSet::kAnnualCoverageKey)});
   }
+  RectF drawn = ctx.layout.LegendArea();
   if (entries.empty()) {
-    return;
+    drawn.SetRight(drawn.Left());
+    return drawn;
   }
 
   const std::vector<LegendSlot> slots = LegendSlots(ctx, entries.size());
@@ -118,5 +122,7 @@ void BuildLegend(const SectionContext& ctx) {
   for (std::size_t index = 0; index < entries.size(); ++index) {
     AddLegendEntry(ctx, labels, bars, entries[index], slots[index], font_size);
   }
+  drawn.SetRight(slots.back().bar_frame.Right());
+  return drawn;
 }
 }  // namespace calendar_sections
