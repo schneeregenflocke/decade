@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "calendar_config.hpp"
+#include "calendar_metrics.hpp"
 #include "date_category.hpp"
 #include "date_entry.hpp"
 #include "font_config.hpp"
@@ -45,6 +46,10 @@ void ShapeConfigSetTopic::Publish(const ShapeConfigSet& shape_config_set) {
 
 void CalendarConfigTopic::Publish(const CalendarConfig& calendar_config) {
   emit Published(calendar_config);
+}
+
+void CalendarMetricsTopic::Publish(const CalendarMetrics& calendar_metrics) {
+  emit Published(calendar_metrics);
 }
 
 void SceneSnapshotTopic::Publish(const SceneNodeSnapshot& scene_snapshot) {

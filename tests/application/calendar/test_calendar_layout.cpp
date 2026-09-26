@@ -144,21 +144,65 @@ TEST(CalendarLayoutTest, FixedWidthTakesTheMillimetres) {
   EXPECT_NEAR(layout.GetRowArea(0).Height(), 215.0F / 5.0F, kTol);
 }
 
-TEST(CalendarLayoutTest, FixedHeightTakesTheMillimetresBelowTheTitle) {
+constexpr BandHeights kFixedParts = {0.5F, 1.0F, 0.5F, 1.0F, 0.5F, 1.0F, 0.5F};
+
+TEST(CalendarLayoutTest, FixedHeightStacksTheMillimetresBelowTheTitle) {
   CalendarSizing sizing;
   sizing.SetFixesHeight(true);
-  sizing.SetFixedHeights({.band = 4.0F, .column_labels = 5.0F, .legend = 7.0F});
+  sizing.SetFixedHeights(
+      {.parts = kFixedParts, .column_labels = 5.0F, .legend = 7.0F});
   const CalendarLayout layout = MakeFixedLayout(sizing);
 
-  EXPECT_NEAR(layout.GetRowArea(0).Height(), 4.0F, kTol);
+  EXPECT_NEAR(layout.GetRowArea(0).Height(), 5.0F, kTol);
+  EXPECT_NEAR(layout.BandPartHeight(BandPart::kDays), 1.0F, kTol);
+  EXPECT_NEAR(layout.BandPartHeight(BandPart::kAboveLabels), 0.5F, kTol);
   EXPECT_NEAR(layout.XLabelsArea().Height(), 5.0F, kTol);
   EXPECT_NEAR(layout.LegendArea().Height(), 7.0F, kTol);
   EXPECT_NEAR(layout.CalendarArea().Top(), layout.TitleArea().Bottom(), kTol);
-  EXPECT_NEAR(layout.CalendarArea().Height(), (3.0F * 4.0F) + 5.0F + 7.0F,
+  EXPECT_NEAR(layout.CalendarArea().Height(), (3.0F * 5.0F) + 5.0F + 7.0F,
               kTol);
-  EXPECT_NEAR(layout.BandPartHeight(BandPart::kDays), 4.0F / 7.0F, kTol);
   // The width still fits the page.
   EXPECT_NEAR(layout.CalendarArea().Width(), 165.0F, kTol);
+}
+
+// A fixed height is meant as the height of what a row shows, so the one row of
+// all years takes one band, not three.
+TEST(CalendarLayoutTest, FixedHeightGivesTheOneRowOneBand) {
+  const RectF page =
+      RectF::FromDimension(RectF::Dimension{.width = 200.0F, .height = 300.0F});
+  CalendarConfig config;
+  config.SetYears({.first_year = 2001, .last_year = 2003});
+  config.SetView(CalendarView::kAllYearsInOneRow);
+  CalendarSizing sizing;
+  sizing.SetFixesHeight(true);
+  sizing.SetFixedHeights(
+      {.parts = kFixedParts, .column_labels = 5.0F, .legend = 7.0F});
+  config.SetSizing(sizing);
+  const CalendarLayout layout(page, RectF(10.0F, 20.0F, 30.0F, 40.0F),
+                              /*title_area_height=*/15.0F, config);
+
+  EXPECT_NEAR(layout.GetRowArea(0).Height(), 5.0F, kTol);
+  EXPECT_NEAR(layout.CellsArea().Height(), 5.0F, kTol);
+}
+
+// A hidden annual coverage takes its millimetres out of a fixed band; the
+// other parts keep theirs.
+TEST(CalendarLayoutTest, HiddenCoverageShrinksAFixedBand) {
+  CalendarSizing sizing;
+  sizing.SetFixesHeight(true);
+  sizing.SetFixedHeights(
+      {.parts = kFixedParts, .column_labels = 5.0F, .legend = 7.0F});
+  const RectF page =
+      RectF::FromDimension(RectF::Dimension{.width = 200.0F, .height = 300.0F});
+  CalendarConfig config;
+  config.SetYears({.first_year = 2001, .last_year = 2003});
+  config.SetSizing(sizing);
+  config.SetShowsAnnualCoverage(false);
+  const CalendarLayout layout(page, RectF(10.0F, 20.0F, 30.0F, 40.0F),
+                              /*title_area_height=*/15.0F, config);
+
+  EXPECT_NEAR(layout.GetRowArea(0).Height(), 4.0F, kTol);
+  EXPECT_NEAR(layout.BandPartHeight(BandPart::kDays), 1.0F, kTol);
 }
 
 TEST(CalendarLayoutTest, DefaultConstructedIsEmpty) {

@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "../../domain/calendar_config.hpp"
+#include "../../domain/calendar_metrics.hpp"
 #include "../../domain/date_category.hpp"
 #include "../../domain/date_entry_bars.hpp"
 #include "../../domain/font_config.hpp"
@@ -67,6 +68,9 @@ class CalendarSceneComposer {
   // The page-space area the last Build() drew on: the page, grown by whatever
   // of the calendar runs past it.
   [[nodiscard]] RectF DrawingExtent() const;
+
+  // The sizes the last Build() laid the calendar out at.
+  [[nodiscard]] CalendarMetrics Metrics() const;
 
   // Page-space rectangles of the pickable elements (title, bars), produced by
   // the last Build(). Handed to the picking layer; Bullet-free.
@@ -135,7 +139,8 @@ class CalendarSceneComposer {
   TimelineProjection projection_{calendar_config_};
   CalendarLayout layout_;
   std::vector<PickBox> pick_boxes_;
-  RectF legend_area_;
+  calendar_sections::LegendResult legend_;
+  CalendarMetrics::TextSizes label_text_sizes_{};
   std::optional<TextEditView> text_edit_;
 
   // Interactive hover/selection highlighting. Declared last so its borrowed

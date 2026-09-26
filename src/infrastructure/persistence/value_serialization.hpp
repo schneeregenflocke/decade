@@ -245,6 +245,8 @@ void save(Archive& ar, const CalendarConfig& config, const unsigned int /*v*/) {
   const CalendarSizing::Widths& widths = sizing.FixedWidths();
   const bool fixes_height = sizing.FixesHeight();
   const CalendarSizing::Heights& heights = sizing.FixedHeights();
+  const std::vector<float> band_part_heights(heights.parts.begin(),
+                                             heights.parts.end());
   ar& make_nvp("first_year", first_year);
   ar& make_nvp("last_year", last_year);
   ar& make_nvp("fit_years_to_entries", fit_years_to_entries);
@@ -258,7 +260,7 @@ void save(Archive& ar, const CalendarConfig& config, const unsigned int /*v*/) {
   ar& make_nvp("row_labels_width", widths.row_labels);
   ar& make_nvp("legend_entry_width", widths.legend_entry);
   ar& make_nvp("fixes_height", fixes_height);
-  ar& make_nvp("band_height", heights.band);
+  ar& make_nvp("band_part_heights", band_part_heights);
   ar& make_nvp("column_labels_height", heights.column_labels);
   ar& make_nvp("legend_height", heights.legend);
 }
@@ -275,6 +277,7 @@ void load(Archive& ar, CalendarConfig& config, const unsigned int version) {
   CalendarSizing::Widths widths = sizing.FixedWidths();
   bool fixes_height = sizing.FixesHeight();
   CalendarSizing::Heights heights = sizing.FixedHeights();
+  std::vector<float> band_part_heights;
   ar& make_nvp("first_year", first_year);
   ar& make_nvp("last_year", last_year);
   ar& make_nvp("fit_years_to_entries", fit_years_to_entries);
@@ -291,9 +294,12 @@ void load(Archive& ar, CalendarConfig& config, const unsigned int version) {
     ar& make_nvp("row_labels_width", widths.row_labels);
     ar& make_nvp("legend_entry_width", widths.legend_entry);
     ar& make_nvp("fixes_height", fixes_height);
-    ar& make_nvp("band_height", heights.band);
+    ar& make_nvp("band_part_heights", band_part_heights);
     ar& make_nvp("column_labels_height", heights.column_labels);
     ar& make_nvp("legend_height", heights.legend);
+  }
+  if (band_part_heights.size() == kBandPartCount) {
+    std::ranges::copy(band_part_heights, heights.parts.begin());
   }
   sizing.SetFixesWidth(fixes_width);
   sizing.SetFixedWidths(widths);

@@ -78,7 +78,7 @@ std::vector<LegendSlot> LegendSlots(const SectionContext& ctx,
 
 }  // namespace
 
-RectF BuildLegend(const SectionContext& ctx) {
+LegendResult BuildLegend(const SectionContext& ctx) {
   ShapeChildPool<BoxesShape> bars(
       ctx.nodes.legend_entries, ctx.rectangles_shader, calendar_layers::kBars);
   auto labels = detail::TextPool(ctx, ctx.nodes.legend_labels);
@@ -106,7 +106,7 @@ RectF BuildLegend(const SectionContext& ctx) {
   RectF drawn = ctx.layout.LegendArea();
   if (entries.empty()) {
     drawn.SetRight(drawn.Left());
-    return drawn;
+    return {.area = drawn, .entry_width = ctx.layout.LegendEntryWidth(1)};
   }
 
   const std::vector<LegendSlot> slots = LegendSlots(ctx, entries.size());
@@ -124,6 +124,7 @@ RectF BuildLegend(const SectionContext& ctx) {
     AddLegendEntry(ctx, labels, bars, entries[index], slots[index], font_size);
   }
   drawn.SetRight(slots.back().bar_frame.Right());
-  return drawn;
+  return {.area = drawn,
+          .entry_width = ctx.layout.LegendEntryWidth(entries.size())};
 }
 }  // namespace calendar_sections

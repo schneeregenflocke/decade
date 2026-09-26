@@ -6,6 +6,7 @@
 #include "domain/band_part.hpp"
 #include "domain/calendar_config.hpp"
 #include "domain/calendar_config_store.hpp"
+#include "domain/calendar_sizing.hpp"
 #include "domain/date.hpp"
 #include "domain/date_entry.hpp"
 #include "domain/date_period.hpp"
@@ -24,7 +25,7 @@ TEST(CalendarSpanTest, SetYearsClampsAndStores) {
 }
 
 // Regression: SetYears must never produce a null span — the calendar would lose
-// every year row (First Year > Last Year in the Timeframe tab, or both years =
+// every year row (First year > Last year in the Timeframe tab, or both years =
 // kMaxYear).
 TEST(CalendarSpanTest, SetYearsNormalizesReversedYears) {
   CalendarSpan span;
@@ -60,14 +61,23 @@ TEST(CalendarConfigTest, HiddenAnnualCoverageLaysOutNoCoveragePart) {
   CalendarConfig config;
   const BandProportions stored = config.GetBandProportions();
   ASSERT_GT(stored.at(kCoverage), 0.0F);
-  EXPECT_EQ(config.LaidOutBandProportions(), stored);
+  EXPECT_EQ(config.LaidOutBandParts(), stored);
 
   config.SetShowsAnnualCoverage(false);
 
   BandProportions expected = stored;
   expected.at(kCoverage) = 0.0F;
-  EXPECT_EQ(config.LaidOutBandProportions(), expected);
+  EXPECT_EQ(config.LaidOutBandParts(), expected);
   EXPECT_EQ(config.GetBandProportions(), stored);
+}
+
+TEST(CalendarConfigTest, AFixedHeightLaysOutItsMillimetres) {
+  CalendarConfig config;
+  CalendarSizing sizing;
+  sizing.SetFixesHeight(true);
+  config.SetSizing(sizing);
+
+  EXPECT_EQ(config.LaidOutBandParts(), sizing.FixedHeights().parts);
 }
 
 TEST(CalendarConfigStoreTest, ReceiveCopiesAndEmits) {

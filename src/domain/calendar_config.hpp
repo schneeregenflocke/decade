@@ -58,12 +58,10 @@ class CalendarConfig : public CalendarSpan {
   [[nodiscard]] const BandProportions& GetBandProportions() const;
   void SetBandProportions(const BandProportions& proportions);
 
-  // What the layout divides a band by: a hidden annual coverage gives its part
-  // back, while the stored proportions keep the value for later.
-  [[nodiscard]] BandProportions LaidOutBandProportions() const;
-
-  // The share of a band's height the part takes as laid out.
-  [[nodiscard]] float LaidOutShare(BandPart part) const;
+  // What the layout divides a band by: the fixed millimetres while the height
+  // is fixed, the proportions otherwise. A hidden annual coverage gives its
+  // part back, while the stored values keep it for later.
+  [[nodiscard]] std::array<float, kBandPartCount> LaidOutBandParts() const;
 
   [[nodiscard]] const CalendarSizing& Sizing() const;
   void SetSizing(const CalendarSizing& sizing);

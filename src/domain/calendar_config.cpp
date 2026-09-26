@@ -1,6 +1,7 @@
 #include "calendar_config.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <utility>
 
@@ -70,21 +71,13 @@ void CalendarConfig::SetBandProportions(const BandProportions& proportions) {
   band_proportions_ = proportions;
 }
 
-BandProportions CalendarConfig::LaidOutBandProportions() const {
-  BandProportions proportions = band_proportions_;
+std::array<float, kBandPartCount> CalendarConfig::LaidOutBandParts() const {
+  std::array<float, kBandPartCount> parts =
+      sizing_.FixesHeight() ? sizing_.FixedHeights().parts : band_proportions_;
   if (!shows_annual_coverage_) {
-    proportions.at(std::to_underlying(BandPart::kCoverage)) = 0.0F;
+    parts.at(std::to_underlying(BandPart::kCoverage)) = 0.0F;
   }
-  return proportions;
-}
-
-float CalendarConfig::LaidOutShare(BandPart part) const {
-  const BandProportions proportions = LaidOutBandProportions();
-  const float total = SumOfParts(proportions);
-  if (total <= 0.0F) {
-    return 0.0F;
-  }
-  return proportions.at(std::to_underlying(part)) / total;
+  return parts;
 }
 
 const CalendarSizing& CalendarConfig::Sizing() const { return sizing_; }

@@ -9,6 +9,7 @@
 
 #include "../../domain/band_part.hpp"
 #include "../../domain/calendar_config.hpp"
+#include "../../domain/calendar_metrics.hpp"
 #include "../../domain/date.hpp"
 #include "../../domain/date_period.hpp"
 #include "../../domain/shape_configuration.hpp"
@@ -77,7 +78,7 @@ std::vector<RectF> EqualColumns(const RectF& area, std::size_t count) {
 
 }  // namespace
 
-void BuildCalendarLabels(const SectionContext& ctx) {
+CalendarMetrics::TextSizes BuildCalendarLabels(const SectionContext& ctx) {
   // Column and row labels carry the application-wide chosen size in points —
   // they label the page, not the individual bar, and should therefore not
   // travel with the cell size.
@@ -111,6 +112,7 @@ void BuildCalendarLabels(const SectionContext& ctx) {
   }
 
   detail::FillRectangles(ctx.nodes.row_labels, y_label_frames, config);
+  return {.row_labels = labels_font_size, .column_labels = labels_font_size};
 }
 
 void BuildYears(const SectionContext& ctx) {

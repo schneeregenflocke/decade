@@ -3,41 +3,36 @@
 
 #include <QtCore/QPointer>
 #include <QtCore/QString>
-#include <QtGui/QFont>
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QDoubleSpinBox>
-#include <QtWidgets/QFormLayout>
+#include <QtWidgets/QGroupBox>
 #include <QtWidgets/QLabel>
-#include <QtWidgets/QScrollArea>
 #include <QtWidgets/QSpinBox>
-#include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 #include <array>
 #include <functional>
-#include <utility>
+#include <optional>
 
 #include "../domain/band_part.hpp"
 #include "../domain/calendar_config.hpp"
+#include "../domain/calendar_metrics.hpp"
 #include "../domain/calendar_sizing.hpp"
-#include "../domain/date.hpp"
-#include "../domain/font_config.hpp"
 #include "calendar_view_combo_box.hpp"
-#include "make_owned.hpp"
+#include "sizing_mode_switch.hpp"
 
 // The form that edits a CalendarConfig: the view, the calendar's year span,
-// whether the annual coverage shows, the calendar's size and the band
-// proportions. It is a pure
-// view — LoadConfig() pushes a config into the widgets, ReadConfig() reads the
-// widgets back into a config — so the owning panel never reaches into the
-// individual fields.
+// whether the annual coverage shows, and the calendar's size, one group per
+// axis. It is a pure view — LoadConfig() pushes a config into the widgets,
+// ReadConfig() reads the widgets back into a config — so the owning panel never
+// reaches into the individual fields.
 //
-// The band stacks its parts along the rising y-axis, so the form lists them in
-// reverse: the part at the top of the form is the one drawn at the top of the
-// band.
+// Every size has a field, editable or not: a white field is set by the user, a
+// grey one shows what the layout made of the rest — the fitted millimetres, the
+// shares a fixed height comes to, the text sizes. Switching an axis either way
+// makes the grey values the editable ones, so the drawing does not jump.
 //
-// Qt carries no property grid; the categories are section headings above a
-// QFormLayout each. Beside the fields the size section shows, read-only, what
-// the millimetres come to: the day height and the text sizes.
+// The band table lists the parts top to bottom, as the page shows them; the
+// layout stacks them along the rising y-axis.
 class CalendarSetupForm : public QWidget {
  public:
   explicit CalendarSetupForm(QWidget* parent);
@@ -50,40 +45,63 @@ class CalendarSetupForm : public QWidget {
   // Reads the form's widgets back into a fresh config.
   [[nodiscard]] CalendarConfig ReadConfig() const;
 
-  // The row labels take the application-wide font size, not one of the band.
-  void ShowRowLabelSize(float points);
+  void ShowMetrics(const CalendarMetrics& metrics);
 
  private:
-  // Proportions are relative to each other, so the ceiling only has to stay out
-  // of the way; two decimals match what the defaults are written in.
-  static constexpr double kProportionMax = 10000.0;
-  static constexpr double kMillimetreMin = 0.01;
-  static constexpr double kMillimetreMax = 10000.0;
+  // One row of the band table. A part that holds text has a text size.
+  struct BandPartRow {
+    QPointer<QDoubleSpinBox> share;
+    QPointer<QDoubleSpinBox> height;
+    QPointer<QDoubleSpinBox> text_size;
+  };
+
+  struct NumberFormat {
+    QString suffix;
+    int decimals;
+    double step;
+    double minimum;
+    double maximum;
+  };
+
+  static constexpr int kPercentDecimals = 1;
 
   QLabel* SectionLabel(const QString& text);
 
-  [[nodiscard]] QFormLayout* BuildSizeLayout();
+  [[nodiscard]] QGroupBox* BuildWidthGroup();
 
-  [[nodiscard]] QFormLayout* BuildBandLayout();
+  [[nodiscard]] QGroupBox* BuildHeightGroup();
 
-  QDoubleSpinBox* MillimetreField();
+  // An editable number that reports each committed change.
+  QDoubleSpinBox* NumberField(const QString& name, const NumberFormat& format);
+
+  // A number the form derives and the user never edits.
+  QDoubleSpinBox* ReadoutField(const QString& name, const NumberFormat& format);
+
+  [[nodiscard]] static QString BandPartLabel(BandPart part);
+
+  [[nodiscard]] static bool HoldsText(BandPart part);
+
+  [[nodiscard]] BandPartRow& Row(BandPart part);
 
   [[nodiscard]] CalendarSizing ReadSizing() const;
 
-  [[nodiscard]] static QString BandPartLabel(BandPart part);
+  // The part heights the layout stacks: a hidden coverage takes none.
+  [[nodiscard]] BandHeights LaidOutHeights() const;
+
+  void OnWidthSwitched(bool fixed);
+
+  void OnHeightSwitched(bool fixed);
+
+  void TakeOverMetricWidths();
+
+  void TakeOverMetricHeights();
 
   // Enables the explicit year limits only while the span is not automatic.
   void RefreshSpanLimitsState();
 
-  // A hidden annual coverage lays out no part, so its proportion has no effect.
-  void RefreshCoverageProportionState();
+  void RefreshEditability();
 
-  // Enables the millimetres of an axis only while the axis is fixed.
-  void RefreshSizingState();
-
-  // What a fixed band height comes to; a fitted one depends on the page, which
-  // the form does not know.
-  void RefreshDerivedSizes();
+  void RefreshReadouts();
 
   void ReportChange();
 
@@ -93,22 +111,21 @@ class CalendarSetupForm : public QWidget {
   QPointer<QSpinBox> last_year_;
   QPointer<QCheckBox> shows_annual_coverage_;
 
-  QPointer<QCheckBox> fixes_width_;
+  QPointer<SizingModeSwitch> width_mode_;
   QPointer<QDoubleSpinBox> day_width_;
   QPointer<QDoubleSpinBox> row_labels_width_;
-  QPointer<QLabel> row_label_size_;
+  QPointer<QDoubleSpinBox> row_label_text_size_;
   QPointer<QDoubleSpinBox> legend_entry_width_;
-  QPointer<QCheckBox> fixes_height_;
+
+  QPointer<SizingModeSwitch> height_mode_;
+  // Indexed by BandPart, independent of the table's order.
+  std::array<BandPartRow, kBandPartCount> band_rows_;
   QPointer<QDoubleSpinBox> band_height_;
-  QPointer<QLabel> day_height_;
-  QPointer<QLabel> entry_label_size_;
-  QPointer<QLabel> coverage_label_size_;
   QPointer<QDoubleSpinBox> column_labels_height_;
+  QPointer<QDoubleSpinBox> column_label_text_size_;
   QPointer<QDoubleSpinBox> legend_height_;
 
-  // Indexed by BandPart, independent of form order.
-  std::array<QPointer<QDoubleSpinBox>, kBandPartCount> band_proportion_fields_;
-
+  std::optional<CalendarMetrics> metrics_;
   std::function<void()> on_changed_;
   bool loading_{false};
 };
@@ -121,7 +138,7 @@ class CalendarSetupPanel : public QWidget {
 
   void ReceiveCalendarConfig(const CalendarConfig& incoming_calendar_config);
 
-  void ReceiveFontConfig(const FontConfig& font_config);
+  void ReceiveCalendarMetrics(const CalendarMetrics& calendar_metrics);
 
  signals:
   void CalendarConfigEdited(const CalendarConfig& calendar_config);

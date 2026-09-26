@@ -40,7 +40,8 @@ class CalendarPage {
   CalendarPage(GraphicsEngine& graphics_engine,
                application::RenderSurface& render_surface,
                const FontConfig& font_config,
-               domain::SceneSnapshotTopic& snapshot_topic);
+               domain::SceneSnapshotTopic& snapshot_topic,
+               domain::CalendarMetricsTopic& metrics_topic);
 
   void ReceiveDateCategories(
       const std::vector<DateCategory>& date_categories_in);
@@ -110,6 +111,7 @@ class CalendarPage {
   bool pending_update_{false};
   std::size_t build_count_{0};
   domain::SceneSnapshotTopic& snapshot_topic_;
+  domain::CalendarMetricsTopic& metrics_topic_;
 
   PhysicsWorld physics_world_;
 

@@ -61,9 +61,10 @@ AppComposition::~AppComposition() { ReleaseGraphics(); }
 
 void AppComposition::OnGraphicsReady() {
   try {
-    CalendarPage& calendar_page = calendar_page_.emplace(
-        window_->Canvas().Engine(), window_->Canvas(),
-        window_->Font().GetFontConfig(), bus_.scene_snapshot);
+    CalendarPage& calendar_page =
+        calendar_page_.emplace(window_->Canvas().Engine(), window_->Canvas(),
+                               window_->Font().GetFontConfig(),
+                               bus_.scene_snapshot, bus_.calendar_metrics);
     wiring_.emplace(bus_, Components(calendar_page));
     startup_script_.RunAfterGraphics(*window_, calendar_page,
                                      title_text_editor_);

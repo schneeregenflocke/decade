@@ -29,9 +29,11 @@
 CalendarPage::CalendarPage(GraphicsEngine& graphics_engine,
                            application::RenderSurface& render_surface,
                            const FontConfig& font_config,
-                           domain::SceneSnapshotTopic& snapshot_topic)
+                           domain::SceneSnapshotTopic& snapshot_topic,
+                           domain::CalendarMetricsTopic& metrics_topic)
     : render_surface_(render_surface),
       snapshot_topic_(snapshot_topic),
+      metrics_topic_(metrics_topic),
       font_config_(font_config),
       font_(std::make_shared<Font>(font_config.FilePath())),
       scene_composer_(graphics_engine, scene_, font_, font_config_, page_size_,
@@ -142,6 +144,7 @@ void CalendarPage::Rebuild() {
   physics_world_.Rebuild(scene_composer_.PickBoxes());
   render_surface_.ShowDrawing(scene_composer_.DrawingExtent());
   snapshot_topic_.Publish(scene_composer_.SceneSnapshot());
+  metrics_topic_.Publish(scene_composer_.Metrics());
 }
 
 void CalendarPage::BuildScene(const char* reason) {

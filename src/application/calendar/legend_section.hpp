@@ -9,9 +9,14 @@
 
 namespace calendar_sections {
 
-// Answers the area the entries take, which runs past the calendar once a fixed
-// entry width asks for more than it has.
-RectF BuildLegend(const SectionContext& ctx);
+struct LegendResult {
+  // What the entries take, which runs past the calendar once a fixed entry
+  // width asks for more than it has.
+  RectF area;
+  float entry_width{0.0F};
+};
+
+LegendResult BuildLegend(const SectionContext& ctx);
 
 }  // namespace calendar_sections
 

@@ -24,6 +24,8 @@ struct EventBus {
   domain::TitleConfigTopic title_config;
   domain::ShapeConfigSetTopic shape_config_set;
   domain::CalendarConfigTopic calendar_config;
+  // The sizes the last layout came out at, for the form to show.
+  domain::CalendarMetricsTopic calendar_metrics;
   domain::SceneSnapshotTopic scene_snapshot;
   application::HoveredTopic hovered;
   domain::NodePathTopic selected_node;

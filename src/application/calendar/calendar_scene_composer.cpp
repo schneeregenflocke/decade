@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "../../domain/calendar_config.hpp"
+#include "../../domain/calendar_metrics.hpp"
 #include "../../domain/date_category.hpp"
 #include "../../domain/date_entry_bars.hpp"
 #include "../../domain/font_config.hpp"
@@ -101,7 +102,7 @@ void CalendarSceneComposer::Build() {
   calendar_sections::BuildPrintArea(ctx);
   pick_boxes_.clear();
   pick_boxes_.push_back(calendar_sections::BuildTitle(ctx));
-  calendar_sections::BuildCalendarLabels(ctx);
+  label_text_sizes_ = calendar_sections::BuildCalendarLabels(ctx);
   calendar_sections::BuildDays(ctx);
   calendar_sections::BuildMonths(ctx);
   calendar_sections::BuildYears(ctx);
@@ -109,7 +110,7 @@ void CalendarSceneComposer::Build() {
   pick_boxes_.insert(pick_boxes_.end(), bars.pick_boxes.begin(),
                      bars.pick_boxes.end());
   calendar_sections::BuildAnnualCoverage(ctx);
-  legend_area_ = calendar_sections::BuildLegend(ctx);
+  legend_ = calendar_sections::BuildLegend(ctx);
 
   // Hand the fresh bar nodes to the highlighter, which re-applies the
   // persisted hover and selection highlights to the new geometry.
@@ -119,7 +120,17 @@ void CalendarSceneComposer::Build() {
 RectF CalendarSceneComposer::DrawingExtent() const {
   const glm::vec3& origin = layout_.PrintAreaOrigin();
   return page_size_.Enclosing(layout_.CalendarArea().Shift(origin.x, origin.y))
-      .Enclosing(legend_area_.Shift(origin.x, origin.y));
+      .Enclosing(legend_.area.Shift(origin.x, origin.y));
+}
+
+CalendarMetrics CalendarSceneComposer::Metrics() const {
+  return {{.day = layout_.DayWidth(),
+           .row_labels = layout_.YLabelsArea().Width(),
+           .legend_entry = legend_.entry_width},
+          {.parts = layout_.BandPartHeights(),
+           .column_labels = layout_.XLabelsArea().Height(),
+           .legend = layout_.LegendArea().Height()},
+          label_text_sizes_};
 }
 
 calendar_sections::SectionContext CalendarSceneComposer::MakeContext() const {

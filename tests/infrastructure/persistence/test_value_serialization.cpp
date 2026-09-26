@@ -93,7 +93,9 @@ TEST(ValueSerializationTest, CalendarConfigRoundTrip) {
   sizing.SetFixedWidths(
       {.day = 0.5F, .row_labels = 12.0F, .legend_entry = 40.0F});
   sizing.SetFixesHeight(true);
-  sizing.SetFixedHeights({.band = 4.0F, .column_labels = 5.0F, .legend = 7.0F});
+  sizing.SetFixedHeights({.parts = {0.5F, 1.0F, 0.5F, 2.0F, 0.5F, 1.5F, 0.25F},
+                          .column_labels = 5.0F,
+                          .legend = 7.0F});
   config.SetSizing(sizing);
 
   const auto loaded = XmlRoundTrip(config);
@@ -108,7 +110,8 @@ TEST(ValueSerializationTest, CalendarConfigRoundTrip) {
   EXPECT_FLOAT_EQ(loaded.Sizing().FixedWidths().row_labels, 12.0F);
   EXPECT_FLOAT_EQ(loaded.Sizing().FixedWidths().legend_entry, 40.0F);
   EXPECT_TRUE(loaded.Sizing().FixesHeight());
-  EXPECT_FLOAT_EQ(loaded.Sizing().FixedHeights().band, 4.0F);
+  EXPECT_EQ(loaded.Sizing().FixedHeights().parts,
+            (BandHeights{0.5F, 1.0F, 0.5F, 2.0F, 0.5F, 1.5F, 0.25F}));
   EXPECT_FLOAT_EQ(loaded.Sizing().FixedHeights().column_labels, 5.0F);
   EXPECT_FLOAT_EQ(loaded.Sizing().FixedHeights().legend, 7.0F);
 }

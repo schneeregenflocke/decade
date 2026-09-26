@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "calendar_config.hpp"
+#include "calendar_metrics.hpp"
 #include "date_category.hpp"
 #include "date_entry.hpp"
 #include "font_config.hpp"
@@ -100,6 +101,16 @@ class CalendarConfigTopic : public QObject {
 
  signals:
   void Published(const CalendarConfig& calendar_config);
+};
+
+class CalendarMetricsTopic : public QObject {
+  Q_OBJECT
+
+ public:
+  void Publish(const CalendarMetrics& calendar_metrics);
+
+ signals:
+  void Published(const CalendarMetrics& calendar_metrics);
 };
 
 class SceneSnapshotTopic : public QObject {

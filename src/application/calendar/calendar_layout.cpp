@@ -1,5 +1,6 @@
 #include "calendar_layout.hpp"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <glm/ext/vector_float3.hpp>
@@ -69,7 +70,7 @@ CalendarLayout::Heights CalendarLayout::ComputeHeights(
   const CalendarSizing& sizing = config.Sizing();
   if (sizing.FixesHeight()) {
     const CalendarSizing::Heights& fixed = sizing.FixedHeights();
-    return {.band = fixed.band,
+    return {.band = SumOfParts(config.LaidOutBandParts()),
             .column_labels = fixed.column_labels,
             .legend = fixed.legend};
   }
@@ -120,8 +121,12 @@ CalendarLayout::Fields CalendarLayout::Compute(
   const Heights heights = ComputeHeights(below_title, calendar_config);
   const Widths widths =
       ComputeWidths(below_title, calendar_config, projection.RowDays());
-  const float cells_height =
-      heights.band * static_cast<float>(calendar_config.YearCount());
+  // A fitted height gives every year its band, even where one row shows them
+  // all; a fixed one makes each row a band high.
+  const std::size_t bands = calendar_config.Sizing().FixesHeight()
+                                ? projection.RowCount()
+                                : calendar_config.YearCount();
+  const float cells_height = heights.band * static_cast<float>(bands);
 
   fields.calendar_area = RectF(
       below_title.Left(), below_title.Left() + widths.row_labels + widths.cells,
@@ -132,16 +137,15 @@ CalendarLayout::Fields CalendarLayout::Compute(
       widths.row_labels, kZero, heights.column_labels + heights.legend, kZero));
 
   fields.proportions.SetupRowAreas(fields.cells_area, projection.RowCount());
-  const BandProportions band_proportions =
-      calendar_config.LaidOutBandProportions();
-  fields.proportions.SetupSubAreas(band_proportions);
+  const std::array<float, kBandPartCount> band_parts =
+      calendar_config.LaidOutBandParts();
+  fields.proportions.SetupSubAreas(band_parts);
 
-  const float proportions_total = SumOfParts(band_proportions);
+  const float parts_total = SumOfParts(band_parts);
   for (std::size_t index = 0; index < kBandPartCount; ++index) {
     fields.band_part_heights.at(index) =
-        proportions_total > kZero
-            ? heights.band * band_proportions.at(index) / proportions_total
-            : kZero;
+        parts_total > kZero ? heights.band * band_parts.at(index) / parts_total
+                            : kZero;
   }
 
   fields.day_width = widths.cells / static_cast<float>(projection.RowDays());

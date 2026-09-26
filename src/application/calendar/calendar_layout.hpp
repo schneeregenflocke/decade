@@ -21,7 +21,8 @@
 // through the accessors; nobody recomputes geometry.
 //
 // The calendar's height falls into bands: one per year, one for the column
-// labels, one for the legend. The rows share the years' bands.
+// labels, one for the legend. While the height fits, the rows share the years'
+// bands; a fixed height makes each row one band.
 //
 // Each axis either fits the page or takes the millimetres of the config's
 // sizing. A fixed axis anchors the calendar at the top left below the title and
