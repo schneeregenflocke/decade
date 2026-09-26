@@ -109,10 +109,6 @@ void BuildAnnualCoverage(const SectionContext& ctx) {
       detail::TextPool(ctx, ctx.nodes.annual_coverage_labels);
 
   const std::size_t span_years = ctx.date_entry_bars.GetSpan();
-  if (span_years == 0) {
-    return;
-  }
-
   const TimelineProjection projection(ctx.calendar_config);
   std::vector<RectF> coverage_cells(span_years);
 
