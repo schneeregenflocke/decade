@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#include <glm/ext/vector_float4.hpp>
+
 #include "infrastructure/graphics/projection.hpp"
 
 // Regression: a degenerate viewport must carry no inf or NaN into the matrices.
@@ -39,4 +41,15 @@ TEST(ProjectionTest, ATallViewportFitsThePageByWidth) {
 
   EXPECT_FLOAT_EQ(1.0F / ortho[0][0], 100.0F);
   EXPECT_FLOAT_EQ(1.0F / ortho[1][1], 100.0F);
+}
+
+TEST(ProjectionTest, AnOffCentreDrawingLandsInTheMiddle) {
+  const RectF drawing(-100.0F, 300.0F, -150.0F, 50.0F);  // centre (100, -50)
+  const glm::mat4 ortho = Projection::OrthoMatrix(drawing, 2.0F);
+
+  const glm::vec4 centre = ortho * glm::vec4(100.0F, -50.0F, 0.0F, 1.0F);
+  EXPECT_NEAR(centre.x, 0.0F, 1.0e-6F);
+  EXPECT_NEAR(centre.y, 0.0F, 1.0e-6F);
+  const glm::vec4 left_edge = ortho * glm::vec4(-100.0F, -50.0F, 0.0F, 1.0F);
+  EXPECT_NEAR(left_edge.x, -1.0F, 1.0e-6F);
 }

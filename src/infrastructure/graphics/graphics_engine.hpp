@@ -1,6 +1,7 @@
 #ifndef GRAPHICS_ENGINE_HPP
 #define GRAPHICS_ENGINE_HPP
 
+#include <cstdint>
 #include <functional>
 #include <optional>
 #include <string>
@@ -11,9 +12,12 @@
 
 class GraphicsEngine {
  public:
-  static constexpr float kBackgroundGray = 0.2F;
+  // What shows where the scene draws nothing: grey around the page on the
+  // canvas, paper in an export, where a calendar laid out in millimetres runs
+  // past the page.
+  enum class Backdrop : std::uint8_t { kCanvas, kPaper };
 
-  void Render();
+  void Render(Backdrop backdrop);
 
   void SetMVP(const MVP& new_mvp);
 
@@ -28,6 +32,8 @@ class GraphicsEngine {
       const std::string& search_name);
 
  private:
+  static constexpr float kCanvasGray = 0.2F;
+
   MVP mvp_;
   Shaders shaders_;
   std::optional<std::reference_wrapper<Scene>> scene_;

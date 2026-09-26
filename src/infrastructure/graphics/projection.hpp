@@ -5,7 +5,8 @@
 
 #include "rect.hpp"
 
-// The orthographic projection that fits the page into the window.
+// The orthographic projection that fits the drawing into the window, centred
+// on it: a calendar that runs past the page lies off the origin.
 //
 // The aspect ratio travels in as a parameter. It used to be read back with
 // glGetIntegerv(GL_VIEWPORT), which tied the whole class to a current GL
@@ -29,9 +30,5 @@ class Projection {
   }
 
   static glm::mat4 OrthoMatrix(const RectF& view_size, float aspect_ratio);
-
-  static glm::mat4 OrthoMatrixWidth(float width, float aspect_ratio);
-
-  static glm::mat4 OrthoMatrixHeight(float height, float aspect_ratio);
 };
 #endif  // PROJECTION_HPP

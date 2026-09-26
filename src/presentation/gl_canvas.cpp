@@ -182,7 +182,7 @@ void GLCanvas::paintGL() {
   const FramebufferSize framebuffer = CurrentFramebufferSize();
   glViewport(0, 0, framebuffer.width, framebuffer.height);
   graphics_engine_->SetMVP(mvp_);
-  graphics_engine_->Render();
+  graphics_engine_->Render(GraphicsEngine::Backdrop::kCanvas);
   const auto render_end = FrameStats::Clock::now();
   frame_stats_.AddFrame(render_end, render_end - render_start);
   LogFrameStats(render_end);

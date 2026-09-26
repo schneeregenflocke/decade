@@ -10,8 +10,9 @@
 #include "scene.hpp"
 #include "shaders.hpp"
 
-void GraphicsEngine::Render() {
-  glClearColor(kBackgroundGray, kBackgroundGray, kBackgroundGray, 1.0F);
+void GraphicsEngine::Render(Backdrop backdrop) {
+  const float shade = backdrop == Backdrop::kPaper ? 1.0F : kCanvasGray;
+  glClearColor(shade, shade, shade, 1.0F);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   // The per-node model matrix is applied by each Shape during the scene-graph

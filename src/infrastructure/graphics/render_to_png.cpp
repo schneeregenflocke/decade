@@ -174,7 +174,7 @@ void ImageComposer::RenderTiles() {
                      tile.ortho_region.Bottom(), tile.ortho_region.Top()));
 
       graphics_engine_.SetMVP(mvp);
-      graphics_engine_.Render();
+      graphics_engine_.Render(GraphicsEngine::Backdrop::kPaper);
 
       render_texture.EndRender();
 
