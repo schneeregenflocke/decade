@@ -140,7 +140,7 @@ std::size_t CalendarPage::TitleCaretIndexAt(glm::vec2 page_point) const {
 void CalendarPage::Rebuild() {
   BuildScene("state change");
   physics_world_.Rebuild(scene_composer_.PickBoxes());
-  render_surface_.RefreshView();
+  render_surface_.ShowDrawing(scene_composer_.DrawingExtent());
   snapshot_topic_.Publish(scene_composer_.SceneSnapshot());
 }
 

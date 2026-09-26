@@ -32,12 +32,10 @@
 #include "../application/calendar/text_input_event.hpp"
 #include "../application/render_surface.hpp"
 #include "../common/debug_log.hpp"
-#include "../domain/page_setup_config.hpp"
 #include "../domain/text_edit_buffer.hpp"
 #include "../infrastructure/graphics/frame_stats.hpp"
 #include "../infrastructure/graphics/graphics_engine.hpp"
 #include "../infrastructure/graphics/mvp_matrices.hpp"
-#include "../infrastructure/graphics/page_geometry.hpp"
 #include "../infrastructure/graphics/pan_zoom_camera.hpp"
 #include "../infrastructure/graphics/projection.hpp"
 #include "../infrastructure/graphics/rect.hpp"
@@ -124,16 +122,10 @@ class GLCanvas : public QOpenGLWidget, public application::RenderSurface {
 
   void SetSelectedTextSource(std::function<std::string()> source);
 
-  void ReceivePageSetup(const PageSetupConfig& page_setup_config);
-
-  // Refits projection and zoom bounds to the current window and page size and
-  // asks for a repaint. Needed when the page or the canvas size changes. It
-  // touches no GL — the viewport is set where the context is current, in
-  // paintGL — so it may be called from anywhere.
-  void RefreshView() override;
+  void ShowDrawing(const RectF& drawing_extent) override;
 
   // Triggers a repaint alone — for changes touching neither projection nor zoom
-  // bounds (hover and selection colours). Markedly cheaper than RefreshView.
+  // bounds (hover and selection colours). Markedly cheaper than ShowDrawing.
   void Repaint() override;
 
   // The frame rate in the one-second window of the newest frame; since drawing
@@ -212,6 +204,11 @@ class GLCanvas : public QOpenGLWidget, public application::RenderSurface {
 
   [[nodiscard]] glm::ivec2 ViewportSize() const;
 
+  // Refits projection and zoom bounds to the window and the drawing extent and
+  // asks for a repaint. It touches no GL — the viewport is set where the
+  // context is current, in paintGL — so it may be called from anywhere.
+  void RefitView();
+
   void UpdateProjection();
 
   // Logs FPS and render duration at most once a second (debug mode).
@@ -254,7 +251,7 @@ class GLCanvas : public QOpenGLWidget, public application::RenderSurface {
 
   MouseInteraction mouse_interaction_;
   PanZoomCamera camera_;
-  RectF page_size_;
+  RectF drawing_extent_;
   MVP mvp_;
 
   FrameStats frame_stats_;

@@ -1,6 +1,8 @@
 #ifndef RENDER_SURFACE_HPP
 #define RENDER_SURFACE_HPP
 
+#include "../infrastructure/graphics/rect.hpp"
+
 namespace application {
 
 // The port through which the rendering adapter asks for a repaint, without
@@ -23,9 +25,10 @@ class RenderSurface {
   // widget base.
   virtual ~RenderSurface() = default;
 
-  // The page geometry or the window size changed: viewport, projection and zoom
-  // bounds have to be refitted before the repaint.
-  virtual void RefreshView() = 0;
+  // The scene got rebuilt, and with it maybe the area it covers: the page, and
+  // a calendar laid out in millimetres beyond it. The surface fits its view and
+  // its export to `drawing_extent`, in page space, and repaints.
+  virtual void ShowDrawing(const RectF& drawing_extent) = 0;
 
   // Nothing but colours changed (hover, selection): repaint on the geometry
   // that already stands.

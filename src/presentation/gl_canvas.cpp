@@ -28,12 +28,10 @@
 
 #include "../application/calendar/text_input_event.hpp"
 #include "../common/debug_log.hpp"
-#include "../domain/page_setup_config.hpp"
 #include "../domain/text_edit_buffer.hpp"
 #include "../infrastructure/graphics/frame_stats.hpp"
 #include "../infrastructure/graphics/graphics_engine.hpp"
 #include "../infrastructure/graphics/mvp_matrices.hpp"
-#include "../infrastructure/graphics/page_geometry.hpp"
 #include "../infrastructure/graphics/pan_zoom_camera.hpp"
 #include "../infrastructure/graphics/projection.hpp"
 #include "../infrastructure/graphics/rect.hpp"
@@ -112,23 +110,22 @@ void GLCanvas::SetSelectedTextSource(std::function<std::string()> source) {
   selected_text_ = std::move(source);
 }
 
-void GLCanvas::ReceivePageSetup(const PageSetupConfig& page_setup_config) {
-  page_size_ = PageRect(page_setup_config);
+void GLCanvas::ShowDrawing(const RectF& drawing_extent) {
+  drawing_extent_ = drawing_extent;
   if (decade_debug::LogEnabled()) {
-    std::cout << "ReceivePageSetup: page=" << page_size_.Width() << "x"
-              << page_size_.Height() << " rect=(" << page_size_.Left() << ","
-              << page_size_.Right() << "," << page_size_.Bottom() << ","
-              << page_size_.Top() << ")\n";
+    std::cout << "ShowDrawing: extent=" << drawing_extent_.Width() << "x"
+              << drawing_extent_.Height() << " rect=(" << drawing_extent_.Left()
+              << "," << drawing_extent_.Right() << ","
+              << drawing_extent_.Bottom() << "," << drawing_extent_.Top()
+              << ")\n";
   }
-  if (graphics_engine_) {
-    RefreshView();
-  }
+  RefitView();
 }
 
-void GLCanvas::RefreshView() {
-  if (page_size_.Width() <= 0.0F || page_size_.Height() <= 0.0F) {
+void GLCanvas::RefitView() {
+  if (drawing_extent_.Width() <= 0.0F || drawing_extent_.Height() <= 0.0F) {
     if (decade_debug::LogEnabled()) {
-      std::cout << "RefreshView: skipped, page_size not yet initialised\n";
+      std::cout << "RefitView: skipped, nothing drawn yet\n";
     }
     return;
   }
@@ -142,7 +139,7 @@ double GLCanvas::CurrentFps() const { return frame_stats_.Fps(); }
 
 void GLCanvas::SavePNG(const std::string& file_path, int dpi) {
   makeCurrent();
-  WritePageToPng(file_path, page_size_, static_cast<float>(dpi),
+  WritePageToPng(file_path, drawing_extent_, static_cast<float>(dpi),
                  *graphics_engine_, kExportMsaaSamples);
 }
 
@@ -175,7 +172,7 @@ void GLCanvas::initializeGL() {
   ReportReady();
 }
 
-void GLCanvas::resizeGL(int /*width*/, int /*height*/) { RefreshView(); }
+void GLCanvas::resizeGL(int /*width*/, int /*height*/) { RefitView(); }
 
 void GLCanvas::paintGL() {
   if (!graphics_engine_) {
@@ -375,19 +372,19 @@ glm::ivec2 GLCanvas::ViewportSize() const {
 
 void GLCanvas::UpdateProjection() {
   constexpr float kViewSizeScale = 1.1F;
-  const RectF view_size = page_size_.Scale(kViewSizeScale);
+  const RectF view_size = drawing_extent_.Scale(kViewSizeScale);
   const glm::ivec2 viewport = ViewportSize();
 
   mvp_.SetProjection(Projection::OrthoMatrix(
       view_size, Projection::AspectRatioOf(viewport.x, viewport.y)));
   camera_.SetScaleLimits(ComputeZoomLimits(
-      mvp_.GetProjection(), {page_size_.Width(), page_size_.Height()},
+      mvp_.GetProjection(), {drawing_extent_.Width(), drawing_extent_.Height()},
       static_cast<float>(kExportPngDpi)));
 
   if (decade_debug::LogEnabled()) {
-    std::cout << "UpdateProjection: page=" << page_size_.Width() << "x"
-              << page_size_.Height() << " view=" << view_size.Width() << "x"
-              << view_size.Height() << '\n';
+    std::cout << "UpdateProjection: extent=" << drawing_extent_.Width() << "x"
+              << drawing_extent_.Height() << " view=" << view_size.Width()
+              << "x" << view_size.Height() << '\n';
     decade_debug::LogMat4("UpdateProjection proj", mvp_.GetProjection());
     decade_debug::LogMat4("UpdateProjection view", mvp_.GetView());
   }
@@ -425,7 +422,7 @@ void GLCanvas::HandlePointer(glm::ivec2 position_physical, bool dragging,
   // Dragging and the mouse wheel alone change the view; a bare pointer
   // movement triggers no repaint — a hover change triggers its own through
   // CalendarPage::ReceiveHovered. Projection and zoom bounds stay untouched,
-  // so RefreshView is not needed here.
+  // so RefitView is not needed here.
   if (dragging || wheel_rotation != 0) {
     Repaint();
   }

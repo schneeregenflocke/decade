@@ -1,6 +1,7 @@
 #ifndef RECT_HPP
 #define RECT_HPP
 
+#include <algorithm>
 #include <array>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
@@ -51,6 +52,13 @@ class Rect {
   [[nodiscard]] Rect Reduce(const Rect& value) const {
     return Rect(Left() + value.Left(), Right() - value.Right(),
                 Bottom() + value.Bottom(), Top() - value.Top());
+  }
+
+  // The smallest rectangle holding this one and `other`.
+  [[nodiscard]] Rect Enclosing(const Rect& other) const {
+    return Rect(
+        std::min(Left(), other.Left()), std::max(Right(), other.Right()),
+        std::min(Bottom(), other.Bottom()), std::max(Top(), other.Top()));
   }
 
   [[nodiscard]] Rect Scale(Ty factor) const {

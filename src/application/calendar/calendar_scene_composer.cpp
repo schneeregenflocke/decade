@@ -4,6 +4,7 @@
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/vector_float2.hpp>
+#include <glm/ext/vector_float3.hpp>
 #include <glm/ext/vector_float4.hpp>
 #include <memory>
 #include <optional>
@@ -113,6 +114,11 @@ void CalendarSceneComposer::Build() {
   // Hand the fresh bar nodes to the highlighter, which re-applies the
   // persisted hover and selection highlights to the new geometry.
   highlighter_.Refresh(std::move(bars.bar_nodes));
+}
+
+RectF CalendarSceneComposer::DrawingExtent() const {
+  const glm::vec3& origin = layout_.PrintAreaOrigin();
+  return page_size_.Enclosing(layout_.CalendarArea().Shift(origin.x, origin.y));
 }
 
 calendar_sections::SectionContext CalendarSceneComposer::MakeContext() const {

@@ -64,6 +64,10 @@ class CalendarSceneComposer {
   // live graph after Build().
   [[nodiscard]] SceneNodeSnapshot SceneSnapshot() const;
 
+  // The page-space area the last Build() drew on: the page, grown by whatever
+  // of the calendar runs past it.
+  [[nodiscard]] RectF DrawingExtent() const;
+
   // Page-space rectangles of the pickable elements (title, bars), produced by
   // the last Build(). Handed to the picking layer; Bullet-free.
   [[nodiscard]] const std::vector<PickBox>& PickBoxes() const;

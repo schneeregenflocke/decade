@@ -109,8 +109,6 @@ void BindPageSetup(QObject& scope, EventBus& bus,
           components.page_setup_panel, &PageSetupPanel::ReceivePageSetup);
   Connect(scope, bus.page_setup, &domain::PageSetupTopic::Published,
           components.calendar_page, &CalendarPage::ReceivePageSetup);
-  Connect(scope, bus.page_setup, &domain::PageSetupTopic::Published,
-          components.gl_canvas, &GLCanvas::ReceivePageSetup);
 }
 
 // The file path comes from the document, not from a store: loading and saving
