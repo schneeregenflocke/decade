@@ -3,7 +3,7 @@
 
 #include <array>
 #include <cstddef>
-#include <vector>
+#include <cstdint>
 
 #include "calendar_view.hpp"
 #include "date.hpp"
@@ -41,6 +41,23 @@ class CalendarSpan {
   DatePeriod span_;
 };
 
+// The parts a year's band stacks from the bottom up: three rows of content,
+// each with a gap below, and a gap above the top row.
+enum class BandPart : std::uint8_t {
+  kBelowCoverage,
+  kCoverage,
+  kBelowDays,
+  kDays,
+  kBelowLabels,
+  kEntryLabels,
+  kAboveLabels,
+};
+
+inline constexpr std::size_t kBandPartCount = 7;
+
+// Relative heights, indexed by BandPart.
+using BandProportions = std::array<float, kBandPartCount>;
+
 // Pure domain value: the full calendar configuration. Rule of Zero (no signal,
 // no hand-written copy/move) -> freely and correctly copyable.
 class CalendarConfig : public CalendarSpan {
@@ -54,27 +71,23 @@ class CalendarConfig : public CalendarSpan {
   [[nodiscard]] bool ShowsAnnualCoverage() const;
   void SetShowsAnnualCoverage(bool shows);
 
-  [[nodiscard]] const std::vector<float>& GetSpacingProportions() const;
-  void SetSpacingProportions(const std::vector<float>& proportions);
+  [[nodiscard]] const BandProportions& GetBandProportions() const;
+  void SetBandProportions(const BandProportions& proportions);
 
-  // What the layout divides a row by: a hidden annual coverage gives its
-  // subrow back, while the stored proportions keep the value for later.
-  [[nodiscard]] std::vector<float> LaidOutSpacingProportions() const;
-
-  static constexpr std::size_t kAnnualCoverageSpacingIndex = 1;
+  // What the layout divides a band by: a hidden annual coverage gives its part
+  // back, while the stored proportions keep the value for later.
+  [[nodiscard]] BandProportions LaidOutBandProportions() const;
 
  private:
-  static constexpr float kSpacingSmall = 25.0F;
-  static constexpr float kSpacingMedium = 50.0F;
-  static constexpr float kSpacingLarge = 100.0F;
-  static constexpr std::array<float, 7> kDefaultSpacingProportions = {
-      kSpacingSmall,  kSpacingLarge, kSpacingMedium, kSpacingLarge,
-      kSpacingMedium, kSpacingLarge, kSpacingSmall};
+  static constexpr float kProportionSmall = 25.0F;
+  static constexpr float kProportionMedium = 50.0F;
+  static constexpr float kProportionLarge = 100.0F;
 
   CalendarView view_{CalendarView::kYearPerRow};
   bool fit_years_to_entries_{true};
   bool shows_annual_coverage_{true};
-  std::vector<float> spacing_proportions_{std::vector<float>(
-      kDefaultSpacingProportions.begin(), kDefaultSpacingProportions.end())};
+  BandProportions band_proportions_{
+      kProportionSmall,  kProportionLarge, kProportionMedium, kProportionLarge,
+      kProportionMedium, kProportionLarge, kProportionSmall};
 };
 #endif  // CALENDAR_CONFIG_HPP

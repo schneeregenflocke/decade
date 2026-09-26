@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <QtCore/QObject>
-#include <vector>
+#include <utility>
 
 #include "domain/calendar_config.hpp"
 #include "domain/calendar_config_store.hpp"
@@ -54,18 +54,19 @@ TEST(CalendarSpanTest, PeriodRunsFromFirstJanuaryToTheNextAfterLastYear) {
   EXPECT_EQ(span.Period().End(), Date::FromYmd(2033, 1, 1));
 }
 
-TEST(CalendarConfigTest, HiddenAnnualCoverageLaysOutNoSubrow) {
+TEST(CalendarConfigTest, HiddenAnnualCoverageLaysOutNoCoveragePart) {
+  constexpr auto kCoverage = std::to_underlying(BandPart::kCoverage);
   CalendarConfig config;
-  const std::vector<float> stored = config.GetSpacingProportions();
-  ASSERT_GT(stored[CalendarConfig::kAnnualCoverageSpacingIndex], 0.0F);
-  EXPECT_EQ(config.LaidOutSpacingProportions(), stored);
+  const BandProportions stored = config.GetBandProportions();
+  ASSERT_GT(stored.at(kCoverage), 0.0F);
+  EXPECT_EQ(config.LaidOutBandProportions(), stored);
 
   config.SetShowsAnnualCoverage(false);
 
-  std::vector<float> expected = stored;
-  expected[CalendarConfig::kAnnualCoverageSpacingIndex] = 0.0F;
-  EXPECT_EQ(config.LaidOutSpacingProportions(), expected);
-  EXPECT_EQ(config.GetSpacingProportions(), stored);
+  BandProportions expected = stored;
+  expected.at(kCoverage) = 0.0F;
+  EXPECT_EQ(config.LaidOutBandProportions(), expected);
+  EXPECT_EQ(config.GetBandProportions(), stored);
 }
 
 TEST(CalendarConfigStoreTest, ReceiveCopiesAndEmits) {

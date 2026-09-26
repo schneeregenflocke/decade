@@ -2,7 +2,7 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <vector>
+#include <utility>
 
 #include "calendar_view.hpp"
 #include "date.hpp"
@@ -60,20 +60,18 @@ void CalendarConfig::SetShowsAnnualCoverage(bool shows) {
   shows_annual_coverage_ = shows;
 }
 
-const std::vector<float>& CalendarConfig::GetSpacingProportions() const {
-  return spacing_proportions_;
+const BandProportions& CalendarConfig::GetBandProportions() const {
+  return band_proportions_;
 }
 
-void CalendarConfig::SetSpacingProportions(
-    const std::vector<float>& proportions) {
-  spacing_proportions_ = proportions;
+void CalendarConfig::SetBandProportions(const BandProportions& proportions) {
+  band_proportions_ = proportions;
 }
 
-std::vector<float> CalendarConfig::LaidOutSpacingProportions() const {
-  std::vector<float> proportions = spacing_proportions_;
-  if (!shows_annual_coverage_ &&
-      kAnnualCoverageSpacingIndex < proportions.size()) {
-    proportions[kAnnualCoverageSpacingIndex] = 0.0F;
+BandProportions CalendarConfig::LaidOutBandProportions() const {
+  BandProportions proportions = band_proportions_;
+  if (!shows_annual_coverage_) {
+    proportions.at(std::to_underlying(BandPart::kCoverage)) = 0.0F;
   }
   return proportions;
 }

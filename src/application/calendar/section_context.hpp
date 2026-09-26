@@ -92,10 +92,10 @@ void SetCenteredText(const SectionContext& ctx,
                      const std::string& text, const glm::vec3& center,
                      float size);
 
-// Where `period` lies in subrow `sub` of its row. Precondition: the period
+// Where `period` lies in the given part of its row. Precondition: the period
 // lies within one row, as SplitAtRowBoundaries cuts it.
 [[nodiscard]] RectF PeriodArea(const SectionContext& ctx,
-                               const DatePeriod& period, std::size_t sub);
+                               const DatePeriod& period, BandPart part);
 
 }  // namespace detail
 

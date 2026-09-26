@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <iterator>
 #include <numeric>
+#include <span>
 #include <vector>
 
 #include "rect.hpp"
@@ -21,8 +22,7 @@ void ProportionAreaLayout::SetupRowAreas(const RectF& area,
   }
 }
 
-void ProportionAreaLayout::SetupSubAreas(
-    const std::vector<float>& proportions) {
+void ProportionAreaLayout::SetupSubAreas(std::span<const float> proportions) {
   number_sub_areas_per_row_ =
       proportions.empty() ? 0 : (proportions.size() - 1) / 2;
 
@@ -65,7 +65,7 @@ RectF ProportionAreaLayout::GetSubArea(const size_t row,
 }
 
 std::vector<float> ProportionAreaLayout::Section(
-    const std::vector<float>& proportions, float value) {
+    std::span<const float> proportions, float value) {
   const auto sum =
       std::accumulate(proportions.cbegin(), proportions.cend(), 0.0F);
 

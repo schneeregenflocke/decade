@@ -14,18 +14,17 @@
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
+#include <array>
 #include <cstddef>
 #include <functional>
 #include <utility>
-#include <vector>
 
 #include "../domain/calendar_config.hpp"
 #include "../domain/date.hpp"
 #include "calendar_view_combo_box.hpp"
 #include "make_owned.hpp"
 
-CalendarSetupForm::CalendarSetupForm(QWidget* parent)
-    : QWidget(parent), spacing_layout_(MakeOwned<QFormLayout>()) {
+CalendarSetupForm::CalendarSetupForm(QWidget* parent) : QWidget(parent) {
   view_ = MakeOwned<CalendarViewComboBox>(this);
   fit_years_to_entries_ = MakeOwned<QCheckBox>(this);
   first_year_ = MakeOwned<QSpinBox>(this);
@@ -45,6 +44,17 @@ CalendarSetupForm::CalendarSetupForm(QWidget* parent)
   auto* elements_layout = MakeOwned<QFormLayout>();
   elements_layout->addRow("Annual Coverage", shows_annual_coverage_.data());
 
+  auto* band_layout = MakeOwned<QFormLayout>();
+  for (std::size_t index = kBandPartCount; index-- > 0;) {
+    auto* field = MakeOwned<QDoubleSpinBox>(this);
+    field->setDecimals(2);
+    field->setRange(0.0, kProportionMax);
+    connect(field, &QDoubleSpinBox::valueChanged, this,
+            [this](double) { ReportChange(); });
+    band_layout->addRow(BandPartLabel(static_cast<BandPart>(index)), field);
+    band_proportion_fields_.at(index) = field;
+  }
+
   auto* vertical_layout = MakeOwned<QVBoxLayout>();
   vertical_layout->addWidget(SectionLabel("View"));
   vertical_layout->addLayout(view_layout);
@@ -52,8 +62,8 @@ CalendarSetupForm::CalendarSetupForm(QWidget* parent)
   vertical_layout->addLayout(span_layout);
   vertical_layout->addWidget(SectionLabel("Visible Elements"));
   vertical_layout->addLayout(elements_layout);
-  vertical_layout->addWidget(SectionLabel("Row Spacing Proportions"));
-  vertical_layout->addLayout(spacing_layout_);
+  vertical_layout->addWidget(SectionLabel("Band Proportions"));
+  vertical_layout->addLayout(band_layout);
   vertical_layout->addStretch(1);
   setLayout(vertical_layout);
 
@@ -66,7 +76,7 @@ CalendarSetupForm::CalendarSetupForm(QWidget* parent)
           });
   connect(shows_annual_coverage_.data(), &QCheckBox::toggled, this,
           [this](bool) {
-            RefreshCoverageSpacingState();
+            RefreshCoverageProportionState();
             ReportChange();
           });
   connect(first_year_.data(), &QSpinBox::valueChanged, this,
@@ -84,10 +94,10 @@ void CalendarSetupForm::SetOnChanged(std::function<void()> on_changed) {
 void CalendarSetupForm::LoadConfig(const CalendarConfig& config) {
   loading_ = true;
 
-  const auto& proportions = config.GetSpacingProportions();
-  SyncSpacingRows(proportions.size());
-  for (std::size_t index = 0; index < proportions.size(); ++index) {
-    spacing_fields_[index]->setValue(static_cast<double>(proportions[index]));
+  const BandProportions& proportions = config.GetBandProportions();
+  for (std::size_t index = 0; index < kBandPartCount; ++index) {
+    band_proportion_fields_.at(index)->setValue(
+        static_cast<double>(proportions.at(index)));
   }
 
   view_->SetView(config.View());
@@ -97,19 +107,19 @@ void CalendarSetupForm::LoadConfig(const CalendarConfig& config) {
   shows_annual_coverage_->setChecked(config.ShowsAnnualCoverage());
 
   RefreshSpanLimitsState();
-  RefreshCoverageSpacingState();
+  RefreshCoverageProportionState();
   loading_ = false;
 }
 
 CalendarConfig CalendarSetupForm::ReadConfig() const {
   CalendarConfig config;
 
-  std::vector<float> proportions;
-  proportions.reserve(spacing_fields_.size());
-  for (const auto& field : spacing_fields_) {
-    proportions.push_back(static_cast<float>(field->value()));
+  BandProportions proportions{};
+  for (std::size_t index = 0; index < kBandPartCount; ++index) {
+    proportions.at(index) =
+        static_cast<float>(band_proportion_fields_.at(index)->value());
   }
-  config.SetSpacingProportions(proportions);
+  config.SetBandProportions(proportions);
 
   config.SetView(view_->View());
   config.SetFitYearsToEntries(fit_years_to_entries_->isChecked());
@@ -128,10 +138,24 @@ QLabel* CalendarSetupForm::SectionLabel(const QString& text) {
   return label;
 }
 
-QString CalendarSetupForm::SpacingLabel(std::size_t index) {
-  const std::size_t ordinal = (index / 2) + 1;
-  const bool is_subrow = (index % 2) == 1;
-  return QString(is_subrow ? "Subrow %1" : "Gap %1").arg(ordinal);
+QString CalendarSetupForm::BandPartLabel(BandPart part) {
+  switch (part) {
+    case BandPart::kBelowCoverage:
+      return "Gap Below Coverage";
+    case BandPart::kCoverage:
+      return "Coverage";
+    case BandPart::kBelowDays:
+      return "Gap Below Days";
+    case BandPart::kDays:
+      return "Days";
+    case BandPart::kBelowLabels:
+      return "Gap Below Labels";
+    case BandPart::kEntryLabels:
+      return "Entry Labels";
+    case BandPart::kAboveLabels:
+      return "Gap Above Labels";
+  }
+  return {};
 }
 
 void CalendarSetupForm::RefreshSpanLimitsState() {
@@ -140,35 +164,9 @@ void CalendarSetupForm::RefreshSpanLimitsState() {
   last_year_->setEnabled(!fit_to_entries);
 }
 
-void CalendarSetupForm::RefreshCoverageSpacingState() {
-  if (CalendarConfig::kAnnualCoverageSpacingIndex < spacing_fields_.size()) {
-    spacing_fields_[CalendarConfig::kAnnualCoverageSpacingIndex]->setEnabled(
-        shows_annual_coverage_->isChecked());
-  }
-}
-
-void CalendarSetupForm::SyncSpacingRows(std::size_t count) {
-  if (count == spacing_fields_.size()) {
-    return;
-  }
-
-  // The layout owns the widgets it holds; clearing it deletes them, which is
-  // why the index vector gets rebuilt rather than patched.
-  while (spacing_layout_->rowCount() > 0) {
-    spacing_layout_->removeRow(0);
-  }
-  spacing_fields_.assign(count, nullptr);
-
-  for (std::size_t index = count; index-- > 0;) {
-    auto* field = MakeOwned<QDoubleSpinBox>(this);
-    field->setDecimals(2);
-    field->setRange(0.0, kSpacingMax);
-    field->setValue(kDefaultSpacing);
-    connect(field, &QDoubleSpinBox::valueChanged, this,
-            [this](double) { ReportChange(); });
-    spacing_layout_->addRow(SpacingLabel(index), field);
-    spacing_fields_[index] = field;
-  }
+void CalendarSetupForm::RefreshCoverageProportionState() {
+  band_proportion_fields_.at(std::to_underlying(BandPart::kCoverage))
+      ->setEnabled(shows_annual_coverage_->isChecked());
 }
 
 void CalendarSetupForm::ReportChange() {

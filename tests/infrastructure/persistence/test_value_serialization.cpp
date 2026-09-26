@@ -170,8 +170,8 @@ TEST(ValueSerializationTest, CalendarConfigVersionZeroShowsAnnualCoverage) {
   EXPECT_TRUE(loaded.ShowsAnnualCoverage());
 }
 
-// An earlier layout split a row into one subrow alone; its three proportions
-// would leave the layout without the subrows it draws into.
+// An earlier layout split a band into one part of content alone; its three
+// proportions would leave the layout without the parts it draws into.
 TEST(ValueSerializationTest, ProportionsOfAnEarlierLayoutKeepTheDefaults) {
   std::istringstream in(
       R"(<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
@@ -199,6 +199,5 @@ TEST(ValueSerializationTest, ProportionsOfAnEarlierLayoutKeepTheDefaults) {
     iarchive >> boost::serialization::make_nvp("value", loaded);
   }
 
-  EXPECT_EQ(loaded.GetSpacingProportions(),
-            CalendarConfig().GetSpacingProportions());
+  EXPECT_EQ(loaded.GetBandProportions(), CalendarConfig().GetBandProportions());
 }

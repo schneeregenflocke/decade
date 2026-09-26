@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "../../domain/calendar_config.hpp"
 #include "../../domain/date.hpp"
 #include "../../domain/date_period.hpp"
 #include "../../domain/shape_configuration.hpp"
@@ -115,7 +116,7 @@ void BuildYears(const SectionContext& ctx) {
   std::vector<RectF> year_cells;
   for (const DatePeriod& year :
        SplitAtYearBoundaries(ctx.calendar_config.Period())) {
-    year_cells.push_back(detail::PeriodArea(ctx, year, 1));
+    year_cells.push_back(detail::PeriodArea(ctx, year, BandPart::kDays));
   }
 
   detail::FillRectangles(
@@ -128,8 +129,8 @@ void BuildMonths(const SectionContext& ctx) {
   std::vector<RectF> month_cells;
   for (Date month = span.Begin(); month < span.End();
        month = month.AddMonths(1)) {
-    month_cells.push_back(
-        detail::PeriodArea(ctx, DatePeriod(month, month.AddMonths(1)), 1));
+    month_cells.push_back(detail::PeriodArea(
+        ctx, DatePeriod(month, month.AddMonths(1)), BandPart::kDays));
   }
 
   detail::FillRectangles(
@@ -149,7 +150,7 @@ void BuildDays(const SectionContext& ctx) {
                                      : 0;
   for (std::size_t row = 0; row < drawn_rows; ++row) {
     const DatePeriod row_period = ctx.projection.RowPeriod(row);
-    const RectF row_area = ctx.layout.GetSubArea(row, 1);
+    const RectF row_area = ctx.layout.GetPartArea(row, BandPart::kDays);
     const auto first_weekday =
         static_cast<std::int64_t>(row_period.Begin().DayOfWeek());
 

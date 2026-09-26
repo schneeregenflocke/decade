@@ -43,7 +43,7 @@ void ClickIndicator(QCheckBox& check_box) {
 
 }  // namespace
 
-TEST(CalendarSetupPanelTest, ClickingAnnualCoverageHidesItAndItsSubrow) {
+TEST(CalendarSetupPanelTest, ClickingAnnualCoverageHidesItAndItsBandPart) {
   constexpr int kWidth = 400;
   constexpr int kHeight = 800;
   CalendarSetupPanel panel(nullptr);
@@ -55,16 +55,16 @@ TEST(CalendarSetupPanelTest, ClickingAnnualCoverageHidesItAndItsSubrow) {
   panel.resize(kWidth, kHeight);
   panel.show();
   auto* coverage = FieldLabelled<QCheckBox>(panel, "Annual Coverage");
-  auto* coverage_spacing = FieldLabelled<QDoubleSpinBox>(panel, "Subrow 1");
+  auto* coverage_proportion = FieldLabelled<QDoubleSpinBox>(panel, "Coverage");
   ASSERT_NE(coverage, nullptr);
-  ASSERT_NE(coverage_spacing, nullptr);
+  ASSERT_NE(coverage_proportion, nullptr);
   ASSERT_TRUE(coverage->isChecked());
-  ASSERT_TRUE(coverage_spacing->isEnabled());
+  ASSERT_TRUE(coverage_proportion->isEnabled());
 
   ClickIndicator(*coverage);
 
   EXPECT_EQ(reported, std::vector<bool>{false});
-  EXPECT_FALSE(coverage_spacing->isEnabled());
+  EXPECT_FALSE(coverage_proportion->isEnabled());
 }
 
 TEST(CalendarSetupPanelTest, ChoosingAViewReportsIt) {

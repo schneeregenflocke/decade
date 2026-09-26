@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "../../domain/calendar_config.hpp"
 #include "../../domain/shape_configuration.hpp"
 #include "../../infrastructure/graphics/child_pool.hpp"
 #include "../../infrastructure/graphics/font.hpp"
@@ -82,7 +83,7 @@ void BuildLegend(const SectionContext& ctx) {
   const auto& categories = ctx.date_categories.Items();
   std::vector<LegendEntry> entries;
   entries.reserve(categories.size() + 1);
-  const float category_bar_height = ctx.layout.BandSubHeight(1);
+  const float category_bar_height = ctx.layout.BandPartHeight(BandPart::kDays);
   for (std::size_t index = 0; index < categories.size(); ++index) {
     entries.push_back(
         {.id = std::to_string(index),
@@ -95,7 +96,7 @@ void BuildLegend(const SectionContext& ctx) {
         {.id = "annual coverage",
          .label = std::string(ShapeConfigSet::FixedConfigurationLabel(
              ShapeConfigSet::kAnnualCoverageKey)),
-         .bar_height = ctx.layout.BandSubHeight(0),
+         .bar_height = ctx.layout.BandPartHeight(BandPart::kCoverage),
          .style = ctx.shape_config.GetShapeConfiguration(
              ShapeConfigSet::kAnnualCoverageKey)});
   }

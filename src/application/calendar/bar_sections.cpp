@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "../../domain/calendar_config.hpp"
 #include "../../domain/date.hpp"
 #include "../../domain/date_period.hpp"
 #include "../../domain/shape_configuration.hpp"
@@ -50,7 +51,7 @@ BarSceneResult BuildBars(const SectionContext& ctx) {
 
     for (const DatePeriod& piece :
          ctx.projection.SplitAtRowBoundaries(bar_data.Period())) {
-      const RectF bar_area = detail::PeriodArea(ctx, piece, 1);
+      const RectF bar_area = detail::PeriodArea(ctx, piece, BandPart::kDays);
 
       // Each bar is its own node: the position lives in the node transform
       // (ready for dragging/animating), the size lives in the shape geometry.
@@ -80,8 +81,9 @@ BarSceneResult BuildBars(const SectionContext& ctx) {
 
       detail::SetCenteredText(
           ctx, bar_labels, std::string("label node ") + std::to_string(index),
-          bar_data.GetText(), detail::PeriodArea(ctx, piece, 2).Center(),
-          ctx.layout.BandSubHeight(2));
+          bar_data.GetText(),
+          detail::PeriodArea(ctx, piece, BandPart::kEntryLabels).Center(),
+          ctx.layout.BandPartHeight(BandPart::kEntryLabels));
       ++index;
     }
   }
@@ -107,7 +109,7 @@ void BuildAnnualCoverage(const SectionContext& ctx) {
     }
     const DatePeriod year(Date::FromYmd(current_year, 1, 1),
                           Date::FromYmd(current_year + 1, 1, 1));
-    const RectF year_cell = detail::PeriodArea(ctx, year, 0);
+    const RectF year_cell = detail::PeriodArea(ctx, year, BandPart::kCoverage);
     const auto covered_days = ctx.date_entry_bars.GetCoveredDays(index);
 
     RectF coverage_cell = year_cell;
@@ -123,7 +125,7 @@ void BuildAnnualCoverage(const SectionContext& ctx) {
     coverage_stream << std::fixed << std::setprecision(1)
                     << percent * detail::kPercentScale << " %";
     const auto coverage_text = coverage_stream.str();
-    const float text_size = ctx.layout.BandSubHeight(0);
+    const float text_size = ctx.layout.BandPartHeight(BandPart::kCoverage);
 
     RectF coverage_text_cell = coverage_cell;
     coverage_text_cell.SetLeft(coverage_cell.Right() + text_size);

@@ -2,6 +2,7 @@
 #define AREA_LAYOUT_HPP
 
 #include <cstddef>
+#include <span>
 #include <vector>
 
 #include "rect.hpp"
@@ -13,7 +14,7 @@ class ProportionAreaLayout {
   // The proportions alternate gap / subrow / … / gap, so a valid set has an
   // odd length 2k+1 yielding k subrows. The guard keeps a degenerate (empty)
   // set from underflowing the unsigned subtraction.
-  void SetupSubAreas(const std::vector<float>& proportions);
+  void SetupSubAreas(std::span<const float> proportions);
 
   [[nodiscard]] RectF GetRowArea(size_t row) const;
 
@@ -21,7 +22,7 @@ class ProportionAreaLayout {
 
  private:
   [[nodiscard]] static std::vector<float> Section(
-      const std::vector<float>& proportions, float value);
+      std::span<const float> proportions, float value);
 
   std::vector<RectF> row_areas_;
   std::vector<RectF> sub_areas_;

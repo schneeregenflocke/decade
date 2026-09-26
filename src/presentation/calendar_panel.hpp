@@ -12,10 +12,9 @@
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
-#include <cstddef>
+#include <array>
 #include <functional>
 #include <utility>
-#include <vector>
 
 #include "../domain/calendar_config.hpp"
 #include "../domain/date.hpp"
@@ -23,19 +22,17 @@
 #include "make_owned.hpp"
 
 // The form that edits a CalendarConfig: the view, the calendar's year span,
-// whether the annual coverage shows, and the per-row spacing proportions. It is
-// a pure view — LoadConfig() pushes a config into the widgets, ReadConfig()
-// reads the widgets back into a config — so the owning panel never reaches into
-// the individual fields.
+// whether the annual coverage shows, and the band proportions. It is a pure
+// view — LoadConfig() pushes a config into the widgets, ReadConfig() reads the
+// widgets back into a config — so the owning panel never reaches into the
+// individual fields.
 //
-// Row-spacing order: the rendered layout stacks the proportions along the
-// rising y-axis (index 0 is the bottom gap, the last index the top gap). The
-// form therefore lists them top-to-bottom in reverse index order, so the entry
-// at the top of the form is the one drawn at the top of the page.
+// The band stacks its parts along the rising y-axis, so the form lists them in
+// reverse: the part at the top of the form is the one drawn at the top of the
+// band.
 //
 // Qt carries no property grid; the categories are section headings above a
-// QFormLayout each. The spacing rows live in a layout of their own, because
-// their number follows the config and they alone get rebuilt.
+// QFormLayout each.
 class CalendarSetupForm : public QWidget {
  public:
   explicit CalendarSetupForm(QWidget* parent);
@@ -45,33 +42,23 @@ class CalendarSetupForm : public QWidget {
   // Mirrors a config into the form's widgets.
   void LoadConfig(const CalendarConfig& config);
 
-  // Reads the form's widgets back into a fresh config. The number of spacing
-  // rows is fixed by the last LoadConfig() — the user only edits values — so
-  // this just reads the current widgets back.
+  // Reads the form's widgets back into a fresh config.
   [[nodiscard]] CalendarConfig ReadConfig() const;
 
  private:
   // Proportions are relative to each other, so the ceiling only has to stay out
   // of the way; two decimals match what the defaults are written in.
-  static constexpr double kSpacingMax = 10000.0;
-  static constexpr double kDefaultSpacing = 10.0;
+  static constexpr double kProportionMax = 10000.0;
 
   QLabel* SectionLabel(const QString& text);
 
-  // Spacings alternate gap / subrow / gap …, so even indices are gaps and odd
-  // indices subrows; the ordinal counts each kind from the bottom up.
-  [[nodiscard]] static QString SpacingLabel(std::size_t index);
+  [[nodiscard]] static QString BandPartLabel(BandPart part);
 
   // Enables the explicit year limits only while the span is not automatic.
   void RefreshSpanLimitsState();
 
-  // A hidden annual coverage lays out no subrow, so its spacing has no effect.
-  void RefreshCoverageSpacingState();
-
-  // Rebuilds the spacing rows when their count changes (only on LoadConfig).
-  // Adding from the highest index down lays them out so the form's top matches
-  // the page's top.
-  void SyncSpacingRows(std::size_t count);
+  // A hidden annual coverage lays out no part, so its proportion has no effect.
+  void RefreshCoverageProportionState();
 
   void ReportChange();
 
@@ -81,9 +68,8 @@ class CalendarSetupForm : public QWidget {
   QPointer<QSpinBox> last_year_;
   QPointer<QCheckBox> shows_annual_coverage_;
 
-  QPointer<QFormLayout> spacing_layout_;
-  // Indexed by proportion index (rising y-axis), independent of form order.
-  std::vector<QPointer<QDoubleSpinBox>> spacing_fields_;
+  // Indexed by BandPart, independent of form order.
+  std::array<QPointer<QDoubleSpinBox>, kBandPartCount> band_proportion_fields_;
 
   std::function<void()> on_changed_;
   bool loading_{false};

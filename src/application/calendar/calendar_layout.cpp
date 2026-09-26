@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <glm/ext/vector_float3.hpp>
+#include <utility>
 
 #include "../../domain/calendar_config.hpp"
 #include "../../domain/timeline_projection.hpp"
@@ -43,12 +44,16 @@ RectF CalendarLayout::GetRowArea(std::size_t row) const {
   return fields_.proportions.GetRowArea(row);
 }
 
-RectF CalendarLayout::GetSubArea(std::size_t row, std::size_t sub) const {
-  return fields_.proportions.GetSubArea(row, sub);
+RectF CalendarLayout::GetPartArea(std::size_t row, BandPart part) const {
+  return fields_.proportions.GetSubArea(row, ContentIndex(part));
 }
 
-float CalendarLayout::BandSubHeight(std::size_t sub) const {
-  return fields_.band_proportions.GetSubArea(0, sub).Height();
+float CalendarLayout::BandPartHeight(BandPart part) const {
+  return fields_.band_proportions.GetSubArea(0, ContentIndex(part)).Height();
+}
+
+std::size_t CalendarLayout::ContentIndex(BandPart part) {
+  return std::to_underlying(part) / 2;
 }
 
 CalendarLayout::Fields CalendarLayout::Compute(
@@ -87,12 +92,13 @@ CalendarLayout::Fields CalendarLayout::Compute(
       RectF(row_labels_width, kZero, label_and_legend_height, kZero));
 
   fields.proportions.SetupRowAreas(fields.cells_area, projection.RowCount());
-  fields.proportions.SetupSubAreas(calendar_config.LaidOutSpacingProportions());
+  const BandProportions band_proportions =
+      calendar_config.LaidOutBandProportions();
+  fields.proportions.SetupSubAreas(band_proportions);
 
   fields.band_proportions.SetupRowAreas(RectF(kZero, kZero, kZero, band_height),
                                         1);
-  fields.band_proportions.SetupSubAreas(
-      calendar_config.LaidOutSpacingProportions());
+  fields.band_proportions.SetupSubAreas(band_proportions);
 
   fields.day_width =
       fields.cells_area.Width() / static_cast<float>(projection.RowDays());

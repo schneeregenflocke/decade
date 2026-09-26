@@ -1,7 +1,5 @@
 #include <gtest/gtest.h>
 
-#include <vector>
-
 #include "application/calendar/calendar_layout.hpp"
 #include "domain/calendar_config.hpp"
 #include "domain/calendar_view.hpp"
@@ -9,16 +7,18 @@
 
 namespace {
 
+constexpr BandProportions kEqualParts = {1.0F, 1.0F, 1.0F, 1.0F,
+                                         1.0F, 1.0F, 1.0F};
+
 // A4-ish page with deliberately asymmetric margins (l/r/b/t all different) so a
-// swapped axis would be caught, plus a 3-year span and a 7-entry proportion set
-// (gap/sub/gap/sub/gap/sub/gap -> 3 sub-frames per row).
+// swapped axis would be caught, plus a 3-year span and equal band parts.
 CalendarLayout MakeLayout() {
   const RectF page =
       RectF::FromDimension(RectF::Dimension{.width = 200.0F, .height = 300.0F});
   const RectF margin(10.0F, 20.0F, 30.0F, 40.0F);
   CalendarConfig config;
   config.SetYears({.first_year = 2001, .last_year = 2003});
-  config.SetSpacingProportions(std::vector<float>(7, 1.0F));
+  config.SetBandProportions(kEqualParts);
   return CalendarLayout(page, margin, /*title_area_height=*/15.0F, config);
 }
 
@@ -69,26 +69,26 @@ TEST(CalendarLayoutTest, CellAndRowAndDayMetrics) {
   EXPECT_NEAR(layout.DayWidth(), (165.0F - (165.0F / 13.0F)) / 366.0F, kTol);
 }
 
-TEST(CalendarLayoutTest, SubFrameAlignsHorizontallyWithCellsFrame) {
+TEST(CalendarLayoutTest, PartAreaAlignsHorizontallyWithCellsFrame) {
   const CalendarLayout layout = MakeLayout();
 
-  const RectF sub = layout.GetSubArea(0, 1);
-  EXPECT_NEAR(sub.Left(), layout.CellsArea().Left(), kTol);
-  EXPECT_NEAR(sub.Right(), layout.CellsArea().Right(), kTol);
-  // The sub-frame lies within the cells frame vertically.
-  EXPECT_GE(sub.Bottom(), layout.CellsArea().Bottom() - kTol);
-  EXPECT_LE(sub.Top(), layout.CellsArea().Top() + kTol);
+  const RectF days = layout.GetPartArea(0, BandPart::kDays);
+  EXPECT_NEAR(days.Left(), layout.CellsArea().Left(), kTol);
+  EXPECT_NEAR(days.Right(), layout.CellsArea().Right(), kTol);
+  // The part lies within the cells frame vertically.
+  EXPECT_GE(days.Bottom(), layout.CellsArea().Bottom() - kTol);
+  EXPECT_LE(days.Top(), layout.CellsArea().Top() + kTol);
 }
 
 // The single row takes every year's band; the labels and the legend keep
-// theirs, and so does what a band's subrow sizes.
+// theirs, and so does what a band's part sizes.
 TEST(CalendarLayoutTest, OneRowForAllYearsKeepsTheBandsOfAYearPerRow) {
   const CalendarLayout per_year = MakeLayout();
   const RectF page =
       RectF::FromDimension(RectF::Dimension{.width = 200.0F, .height = 300.0F});
   CalendarConfig config;
   config.SetYears({.first_year = 2001, .last_year = 2003});
-  config.SetSpacingProportions(std::vector<float>(7, 1.0F));
+  config.SetBandProportions(kEqualParts);
   config.SetView(CalendarView::kAllYearsInOneRow);
   const CalendarLayout one_row(page, RectF(10.0F, 20.0F, 30.0F, 40.0F),
                                /*title_area_height=*/15.0F, config);
@@ -99,8 +99,8 @@ TEST(CalendarLayoutTest, OneRowForAllYearsKeepsTheBandsOfAYearPerRow) {
               kTol);
   EXPECT_NEAR(one_row.LegendArea().Height(), per_year.LegendArea().Height(),
               kTol);
-  EXPECT_NEAR(one_row.BandSubHeight(1), per_year.GetSubArea(0, 1).Height(),
-              kTol);
+  EXPECT_NEAR(one_row.BandPartHeight(BandPart::kDays),
+              per_year.GetPartArea(0, BandPart::kDays).Height(), kTol);
   // 2001 to 2003 hold 1095 days, and the row's width stands for all of them.
   EXPECT_NEAR(one_row.DayWidth(), one_row.CellsArea().Width() / 1095.0F, kTol);
 }

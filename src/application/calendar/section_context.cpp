@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 
+#include "../../domain/calendar_config.hpp"
 #include "../../domain/date.hpp"
 #include "../../domain/date_period.hpp"
 #include "../../infrastructure/graphics/rect.hpp"
@@ -27,14 +28,14 @@ void SetCenteredText(const SectionContext& ctx,
 }
 
 RectF PeriodArea(const SectionContext& ctx, const DatePeriod& period,
-                 std::size_t sub) {
+                 BandPart part) {
   const std::size_t row = ctx.projection.RowOf(period.Begin());
   const Date row_begin = ctx.projection.RowPeriod(row).Begin();
   const auto offset = [&](const Date& date) {
     return static_cast<float>(Date::DaysBetween(row_begin, date)) *
            ctx.layout.DayWidth();
   };
-  RectF area = ctx.layout.GetSubArea(row, sub);
+  RectF area = ctx.layout.GetPartArea(row, part);
   const float row_left = area.Left();
   area.SetLeft(row_left + offset(period.Begin()));
   area.SetRight(row_left + offset(period.End()));

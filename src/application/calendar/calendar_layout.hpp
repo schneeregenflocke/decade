@@ -39,18 +39,24 @@ class CalendarLayout {
 
   [[nodiscard]] RectF GetRowArea(std::size_t row) const;
 
-  // Sub-area of the given row/sub band from the proportional row layout.
-  [[nodiscard]] RectF GetSubArea(std::size_t row, std::size_t sub) const;
+  // Where a row draws the given part. Precondition: `part` is one of the three
+  // rows of content, not a gap.
+  [[nodiscard]] RectF GetPartArea(std::size_t row, BandPart part) const;
 
-  // The height a subrow takes within one year's band. Texts inside a row and
-  // the legend's samples take it, so they keep their size in every view.
-  [[nodiscard]] float BandSubHeight(std::size_t sub) const;
+  // The height a part takes within one year's band. Texts inside a row and the
+  // legend's samples take it, so they keep their size in every view. Same
+  // precondition as GetPartArea.
+  [[nodiscard]] float BandPartHeight(BandPart part) const;
 
  private:
   static constexpr float kZero = 0.0F;
   static constexpr float kDefaultMargin = 5.0F;
   static constexpr float kCalendarColumns = 13.0F;
   static constexpr std::size_t kLabelAndLegendBands = 2;
+
+  // The index of a content part among the areas the proportions yield, which
+  // skip the gaps.
+  [[nodiscard]] static std::size_t ContentIndex(BandPart part);
 
   // All computed geometry in one aggregate, so the constructor can initialise
   // it from a single pure function (rather than assigning members in its body).

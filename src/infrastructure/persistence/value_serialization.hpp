@@ -9,6 +9,7 @@
 // only — no `friend`, no member `serialize`. The on-disk format is owned by
 // this header alone.
 
+#include <algorithm>
 #include <array>
 #include <boost/serialization/array.hpp>
 #include <boost/serialization/nvp.hpp>
@@ -232,14 +233,17 @@ void save(Archive& ar, const CalendarConfig& config, const unsigned int /*v*/) {
   const int first_year = config.FirstYear();
   const int last_year = config.LastYear();
   const bool fit_years_to_entries = config.IsFitYearsToEntries();
-  const std::vector<float>& spacing_proportions =
-      config.GetSpacingProportions();
+  const BandProportions& band_proportions = config.GetBandProportions();
+  const std::vector<float> stored_proportions(band_proportions.begin(),
+                                              band_proportions.end());
   const bool shows_annual_coverage = config.ShowsAnnualCoverage();
   const int view = static_cast<int>(config.View());
   ar& make_nvp("first_year", first_year);
   ar& make_nvp("last_year", last_year);
   ar& make_nvp("fit_years_to_entries", fit_years_to_entries);
-  ar& make_nvp("spacing_proportions", spacing_proportions);
+  // The element keeps its earlier name, so the files written before the
+  // proportions got named after the band stay readable.
+  ar& make_nvp("spacing_proportions", stored_proportions);
   ar& make_nvp("shows_annual_coverage", shows_annual_coverage);
   ar& make_nvp("view", view);
 }
@@ -248,13 +252,13 @@ void load(Archive& ar, CalendarConfig& config, const unsigned int version) {
   int first_year = 0;
   int last_year = 0;
   bool fit_years_to_entries = true;
-  std::vector<float> spacing_proportions;
+  std::vector<float> stored_proportions;
   bool shows_annual_coverage = true;
   int view = static_cast<int>(CalendarView::kYearPerRow);
   ar& make_nvp("first_year", first_year);
   ar& make_nvp("last_year", last_year);
   ar& make_nvp("fit_years_to_entries", fit_years_to_entries);
-  ar& make_nvp("spacing_proportions", spacing_proportions);
+  ar& make_nvp("spacing_proportions", stored_proportions);
   if (version >= 1) {
     ar& make_nvp("shows_annual_coverage", shows_annual_coverage);
   }
@@ -264,10 +268,12 @@ void load(Archive& ar, CalendarConfig& config, const unsigned int version) {
   config.SetYears(
       CalendarSpan::YearSpan{.first_year = first_year, .last_year = last_year});
   config.SetFitYearsToEntries(fit_years_to_entries);
-  // An earlier layout split a row into fewer subrows than the sections draw
+  // An earlier layout split a band into fewer parts than the sections draw
   // into; its proportions give way to the defaults.
-  if (spacing_proportions.size() == config.GetSpacingProportions().size()) {
-    config.SetSpacingProportions(spacing_proportions);
+  if (stored_proportions.size() == kBandPartCount) {
+    BandProportions band_proportions{};
+    std::ranges::copy(stored_proportions, band_proportions.begin());
+    config.SetBandProportions(band_proportions);
   }
   config.SetShowsAnnualCoverage(shows_annual_coverage);
   config.SetView(
