@@ -76,11 +76,11 @@ class CalendarSceneComposer {
   // the last Build(). Handed to the picking layer; Bullet-free.
   [[nodiscard]] const std::vector<PickBox>& PickBoxes() const;
 
-  // Hover and scene-tree selection highlighting are delegated to the
+  // Hover and selection highlighting are delegated to the
   // SceneHighlighter; the builder just forwards.
   void SetHovered(const std::optional<PickId>& hovered);
 
-  void SetSelectedNode(const std::optional<std::string>& path);
+  void SetSelectedNodes(const std::vector<std::string>& paths);
 
   // The state of the running text edit; the next Build() draws text, cursor and
   // selection out of it.

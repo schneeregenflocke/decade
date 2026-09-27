@@ -61,15 +61,16 @@ std::shared_ptr<SceneNode> SceneHighlighter::NodeFor(
   return nullptr;
 }
 
-void SceneHighlighter::SetSelectedNode(const std::optional<std::string>& path) {
-  selected_path_ = path;
+void SceneHighlighter::SetSelectedNodes(
+    const std::vector<std::string>& paths) {
+  selected_paths_ = paths;
   ApplySelectionOverlay();
 }
 
 void SceneHighlighter::ApplySelectionOverlay() {
   std::vector<RectF> boxes;
-  if (selected_path_.has_value()) {
-    if (const auto placed = Resolve(*selected_path_); placed.has_value()) {
+  for (const std::string& path : selected_paths_) {
+    if (const auto placed = Resolve(path); placed.has_value()) {
       AppendCoverage(*placed, boxes);
     }
   }

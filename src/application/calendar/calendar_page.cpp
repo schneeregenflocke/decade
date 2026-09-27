@@ -118,8 +118,8 @@ void CalendarPage::ReceiveHovered(const std::optional<PickId>& hovered) {
   render_surface_.Repaint();
 }
 
-void CalendarPage::ReceiveSelectedNode(const std::optional<std::string>& path) {
-  scene_composer_.SetSelectedNode(path);
+void CalendarPage::ReceiveSelectedNodes(const std::vector<std::string>& paths) {
+  scene_composer_.SetSelectedNodes(paths);
   render_surface_.Repaint();
 }
 

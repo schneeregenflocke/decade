@@ -10,7 +10,6 @@
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 #include <cstddef>
-#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -47,21 +46,21 @@ class SceneTreePanel : public QWidget {
   // configuration changes elsewhere.
   void ReceiveShapeConfigSet(const ShapeConfigSet& shape_config_set);
 
-  // Selects the tree item at `path`, driving the normal selection path (detail
-  // plus highlight emit). A debug/screenshot aid for exercising the panel
-  // without a pointer device; a no-op when the path is unknown.
+  // Selects the tree item at `path` alone, driving the normal selection path
+  // (detail plus highlight emit). A debug/screenshot aid for exercising the
+  // panel without a pointer device; a no-op when the path is unknown.
   void SelectNodeByPath(const std::string& path);
 
-  // The selection came from outside — from a click in the canvas today. The
-  // tree follows without reporting it back: otherwise the value would run in a
-  // circle.
-  void ReceiveSelectedNode(const std::optional<std::string>& path);
+  // The selection came from outside — from the canvas or the entries table.
+  // The tree follows without reporting it back: otherwise the value would run
+  // in a circle.
+  void ReceiveSelectedNodes(const std::vector<std::string>& paths);
 
  signals:
-  // The path of the currently selected node (nullopt when none), so the
-  // renderer can highlight that node and its subtree on the calendar. The
-  // selection has no store, so the binder puts it onto the topic itself.
-  void SelectedNodeChanged(const std::optional<std::string>& path);
+  // The paths of the selected nodes, so the renderer can highlight them on the
+  // calendar. The selection has no store, so the binder puts it onto the topic
+  // itself.
+  void SelectedNodesChanged(const std::vector<std::string>& paths);
 
  private:
   // Per-node payload: the snapshot node's scalar fields plus its child count. A
@@ -97,20 +96,22 @@ class SceneTreePanel : public QWidget {
   // entries the tree deletes underneath it on every rebuild.
   [[nodiscard]] QTreeWidgetItem* FindItemAt(const std::string& path) const;
 
-  void SelectItemAt(const std::string& path);
+  // Selects exactly the items at `paths`; the last one found becomes the
+  // current item, whose detail the list shows.
+  void SelectItemsAt(const std::vector<std::string>& paths);
 
   void CallbackTreeSelectionChanged();
 
-  // The stable path of the currently selected node, or empty when nothing
-  // (valid) is selected. The single place that reads the selection's payload.
-  [[nodiscard]] std::string SelectedPath() const;
+  [[nodiscard]] static std::string PathOf(const QTreeWidgetItem& item);
 
-  // Publishes the selected node's stable path (or nullopt when the selection is
-  // empty/invalid) on the selection signal.
-  void EmitSelection();
+  [[nodiscard]] std::vector<std::string> SelectedPaths() const;
 
-  // Rebuilds the detail from the current tree selection. Rebuilding wholesale
-  // keeps the code simple and robust to the optional categories.
+  // The path of the node the detail describes: the current item while it is
+  // selected, else empty.
+  [[nodiscard]] std::string DetailedPath() const;
+
+  // Rebuilds the detail of the current item. Rebuilding wholesale keeps the
+  // code simple and robust to the optional categories.
   void RefreshDetail();
 
   // The node's own geometry: its box in node space and the same box on the

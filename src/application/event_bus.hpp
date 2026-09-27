@@ -28,7 +28,7 @@ struct EventBus {
   domain::CalendarMetricsTopic calendar_metrics;
   domain::SceneSnapshotTopic scene_snapshot;
   application::HoveredTopic hovered;
-  domain::NodePathTopic selected_node;
+  domain::NodePathsTopic selected_nodes;
   // A double click on an element: please edit this one.
   application::EditRequestTopic edit_requested;
   // What is to be seen of a running edit; empty means none.

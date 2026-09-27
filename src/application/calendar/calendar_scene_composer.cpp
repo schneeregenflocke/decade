@@ -164,9 +164,9 @@ void CalendarSceneComposer::SetHovered(const std::optional<PickId>& hovered) {
   highlighter_.SetHovered(hovered);
 }
 
-void CalendarSceneComposer::SetSelectedNode(
-    const std::optional<std::string>& path) {
-  highlighter_.SetSelectedNode(path);
+void CalendarSceneComposer::SetSelectedNodes(
+    const std::vector<std::string>& paths) {
+  highlighter_.SetSelectedNodes(paths);
 }
 
 void CalendarSceneComposer::SetTextEdit(

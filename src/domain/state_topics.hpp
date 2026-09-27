@@ -133,15 +133,16 @@ class FilePathTopic : public QObject {
   void Published(const std::string& file_path);
 };
 
-// The stable path of a scene node; empty means nothing is selected.
-class NodePathTopic : public QObject {
+// The stable paths of the selected scene nodes; empty means nothing is
+// selected.
+class NodePathsTopic : public QObject {
   Q_OBJECT
 
  public:
-  void Publish(const std::optional<std::string>& node_path);
+  void Publish(const std::vector<std::string>& node_paths);
 
  signals:
-  void Published(const std::optional<std::string>& node_path);
+  void Published(const std::vector<std::string>& node_paths);
 };
 
 // What is to be seen of a running edit; empty means none.

@@ -23,7 +23,7 @@
 //
 //   * the hovered element (a date entry or the title frame), recoloured in
 //     place via its shapes; and
-//   * the selected node, covered by translucent overlay boxes.
+//   * the selected nodes, covered by translucent overlay boxes.
 //
 // Both are applied without a scene rebuild. The coordinator calls Refresh()
 // once per rebuild to hand over the freshly built entry nodes and re-apply the
@@ -47,9 +47,9 @@ class SceneHighlighter {
   // to hold them a second time.
   [[nodiscard]] std::shared_ptr<SceneNode> NodeFor(const PickId& picked) const;
 
-  // Covers the node identified by `path` with the overlay — no rebuild. A
-  // null/unknown path clears the overlay.
-  void SetSelectedNode(const std::optional<std::string>& path);
+  // Covers the nodes the paths identify with the overlay — no rebuild. A path
+  // that resolves to nothing covers nothing.
+  void SetSelectedNodes(const std::vector<std::string>& paths);
 
  private:
   // A node the scene holds, with the world transform of its parent.
@@ -94,9 +94,9 @@ class SceneHighlighter {
 
   std::vector<std::shared_ptr<SceneNode>> entry_nodes_;
   std::optional<PickId> hovered_;
-  // Path of the selected node ("root/.../name"); persists across rebuilds so
-  // the overlay is re-applied to the fresh geometry.
-  std::optional<std::string> selected_path_;
+  // Paths of the selected nodes ("root/.../name"); they persist across
+  // rebuilds so the overlay is re-applied to the fresh geometry.
+  std::vector<std::string> selected_paths_;
 };
 
 #endif  // SCENE_HIGHLIGHTER_HPP

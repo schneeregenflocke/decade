@@ -201,20 +201,28 @@ void BindCsvImport(QObject& scope, const AppComponents& components) {
 }
 
 // The rendering adapter publishes the scene snapshots itself; the scene tree
-// panel is the only consumer. Its selection goes back the other way over the
-// bus to the highlight in the renderer.
+// panel is the only consumer.
 void BindSceneSnapshot(QObject& scope, EventBus& bus,
                        const AppComponents& components) {
   Connect(scope, bus.scene_snapshot, &domain::SceneSnapshotTopic::Published,
           components.scene_tree_panel, &SceneTreePanel::ReceiveSceneSnapshot);
+}
 
+// One selection of scene nodes: the tree and a click in the canvas set it, and
+// the highlight, the tree and the controller follow it.
+void BindSelection(QObject& scope, EventBus& bus,
+                   const AppComponents& components) {
   Connect(scope, components.scene_tree_panel,
-          &SceneTreePanel::SelectedNodeChanged, bus.selected_node,
-          &domain::NodePathTopic::Publish);
-  Connect(scope, bus.selected_node, &domain::NodePathTopic::Published,
-          components.calendar_page, &CalendarPage::ReceiveSelectedNode);
-  Connect(scope, bus.selected_node, &domain::NodePathTopic::Published,
-          components.scene_tree_panel, &SceneTreePanel::ReceiveSelectedNode);
+          &SceneTreePanel::SelectedNodesChanged, bus.selected_nodes,
+          &domain::NodePathsTopic::Publish);
+
+  Connect(scope, bus.selected_nodes, &domain::NodePathsTopic::Published,
+          components.calendar_page, &CalendarPage::ReceiveSelectedNodes);
+  Connect(scope, bus.selected_nodes, &domain::NodePathsTopic::Published,
+          components.scene_tree_panel, &SceneTreePanel::ReceiveSelectedNodes);
+  Connect(scope, bus.selected_nodes, &domain::NodePathsTopic::Published,
+          components.interaction_controller,
+          &InteractionController::ReceiveSelectedNodes);
 }
 
 // Picking: the canvas reports pointer movements in page space, the controller
@@ -249,7 +257,9 @@ void BindInteraction(QObject& scope, EventBus& bus,
         if (editor->OnPrimaryDown(point, selection)) {
           return;
         }
-        controller->OnPrimaryDown(point);
+        controller->OnPrimaryDown(
+            point, extend ? InteractionController::Gesture::kToggle
+                          : InteractionController::Gesture::kReplace);
       });
 
   components.gl_canvas.SetDoubleClickCallback(
@@ -289,6 +299,7 @@ void Bind(QObject& scope, EventBus& bus, const AppComponents& components) {
   BindCalendarConfig(scope, bus, components);
   BindCsvImport(scope, components);
   BindSceneSnapshot(scope, bus, components);
+  BindSelection(scope, bus, components);
   BindInteraction(scope, bus, components);
 }
 

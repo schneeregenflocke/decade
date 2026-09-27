@@ -60,8 +60,8 @@ void FilePathTopic::Publish(const std::string& file_path) {
   emit Published(file_path);
 }
 
-void NodePathTopic::Publish(const std::optional<std::string>& node_path) {
-  emit Published(node_path);
+void NodePathsTopic::Publish(const std::vector<std::string>& node_paths) {
+  emit Published(node_paths);
 }
 
 void TextEditTopic::Publish(const std::optional<TextEditView>& text_edit) {

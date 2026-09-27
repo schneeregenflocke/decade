@@ -28,7 +28,7 @@ AppComposition::AppComposition(LocaleDateFormatter& locale_date_formatter,
                                RuntimeOptions options)
     : runtime_options_(std::move(options)),
       document_(bus_, locale_date_formatter),
-      interaction_controller_(bus_.hovered, bus_.selected_node,
+      interaction_controller_(bus_.hovered, bus_.selected_nodes,
                               bus_.edit_requested),
       title_text_editor_(document_.TitleConfiguration(), bus_.text_edit),
       startup_script_(runtime_options_, document_),

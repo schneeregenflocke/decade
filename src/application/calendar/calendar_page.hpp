@@ -74,9 +74,9 @@ class CalendarPage {
   // colours change, so the cheap Repaint suffices — no projection refresh.
   void ReceiveHovered(const std::optional<PickId>& hovered);
 
-  // Highlights the scene-tree-selected node (and its subtree) in place and
-  // repaints. The path identifies the node within the scene graph.
-  void ReceiveSelectedNode(const std::optional<std::string>& path);
+  // Highlights the selected nodes in place and repaints. A path identifies a
+  // node within the scene graph.
+  void ReceiveSelectedNodes(const std::vector<std::string>& paths);
 
   // Draws the running text edit. The text changes the geometry, so a rebuild is
   // needed — but no new scene snapshot: the user's tree does not change while

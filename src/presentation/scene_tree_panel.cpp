@@ -2,11 +2,13 @@
 
 #include <QtCore/qtmetamacros.h>
 
+#include <QtCore/QItemSelectionModel>
 #include <QtCore/QPointer>
 #include <QtCore/QString>
 #include <QtCore/Qt>
 #include <QtGui/QColor>
 #include <QtGui/QFont>
+#include <QtWidgets/QAbstractItemView>
 #include <QtWidgets/QSplitter>
 #include <QtWidgets/QTreeWidget>
 #include <QtWidgets/QTreeWidgetItem>
@@ -34,6 +36,7 @@ SceneTreePanel::SceneTreePanel(QWidget* parent) : QWidget(parent) {
   tree_ = MakeOwned<QTreeWidget>(splitter);
   tree_->setHeaderHidden(true);
   tree_->setColumnCount(1);
+  tree_->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
   detail_ = MakeOwned<QTreeWidget>(splitter);
   detail_->setColumnCount(2);
@@ -50,9 +53,13 @@ SceneTreePanel::SceneTreePanel(QWidget* parent) : QWidget(parent) {
   vertical_layout->addWidget(splitter);
   setLayout(vertical_layout);
 
+  connect(tree_.data(), &QTreeWidget::itemSelectionChanged, this,
+          [this]() { CallbackTreeSelectionChanged(); });
   connect(tree_.data(), &QTreeWidget::currentItemChanged, this,
           [this](QTreeWidgetItem*, QTreeWidgetItem*) {
-            CallbackTreeSelectionChanged();
+            if (!rebuilding_) {
+              RefreshDetail();
+            }
           });
 }
 
@@ -64,11 +71,10 @@ void SceneTreePanel::ReceiveSceneSnapshot(const SceneNodeSnapshot& snapshot) {
   // highlighting the last selected path across rebuilds, so a spurious
   // "nothing selected" event here would wrongly clear it.
   rebuilding_ = true;
-  // Remember the selected node's stable path so the rebuild can restore it.
-  // Without this the selection collapses to the root on every rebuild, which
-  // happens after each state change, and would force the user to re-select
-  // the node afterwards.
-  const std::string previously_selected = SelectedPath();
+  // Remember the selected nodes' stable paths so the rebuild can restore them.
+  // Without this the selection collapses on every rebuild, which happens after
+  // each state change, and would force the user to re-select afterwards.
+  const std::vector<std::string> previously_selected = SelectedPaths();
   tree_->setUpdatesEnabled(false);
   tree_->clear();
   node_details_.clear();
@@ -104,9 +110,7 @@ void SceneTreePanel::ReceiveSceneSnapshot(const SceneNodeSnapshot& snapshot) {
   // Restore the previous selection by path. Still under the rebuilding_ guard
   // so setting it does not re-emit the selection (which the renderer already
   // tracks); the detail is refreshed explicitly below.
-  if (!previously_selected.empty()) {
-    SelectItemAt(previously_selected);
-  }
+  SelectItemsAt(previously_selected);
 
   tree_->setUpdatesEnabled(true);
   rebuilding_ = false;
@@ -123,16 +127,20 @@ void SceneTreePanel::SelectNodeByPath(const std::string& path) {
   if (tree_ == nullptr) {
     return;
   }
-  SelectItemAt(path);
+  if (QTreeWidgetItem* item = FindItemAt(path); item != nullptr) {
+    tree_->setCurrentItem(item);
+  }
 }
 
-void SceneTreePanel::ReceiveSelectedNode(
-    const std::optional<std::string>& path) {
-  if (!path.has_value() || *path == SelectedPath()) {
+void SceneTreePanel::ReceiveSelectedNodes(
+    const std::vector<std::string>& paths) {
+  if (tree_ == nullptr || paths == SelectedPaths()) {
     return;
   }
-  const domain::detail::ScopedReentryFlag guard(rebuilding_);
-  SelectNodeByPath(*path);
+  {
+    const domain::detail::ScopedReentryFlag guard(rebuilding_);
+    SelectItemsAt(paths);
+  }
   RefreshDetail();
 }
 
@@ -205,9 +213,19 @@ QTreeWidgetItem* SceneTreePanel::FindItemAt(const std::string& path) const {
   return nullptr;
 }
 
-void SceneTreePanel::SelectItemAt(const std::string& path) {
-  if (QTreeWidgetItem* item = FindItemAt(path); item != nullptr) {
-    tree_->setCurrentItem(item);
+void SceneTreePanel::SelectItemsAt(const std::vector<std::string>& paths) {
+  tree_->clearSelection();
+  QTreeWidgetItem* last_found = nullptr;
+  for (const std::string& path : paths) {
+    if (QTreeWidgetItem* item = FindItemAt(path); item != nullptr) {
+      item->setSelected(true);
+      last_found = item;
+    }
+  }
+  if (last_found != nullptr) {
+    tree_->setCurrentItem(last_found, kLabelColumn,
+                          QItemSelectionModel::NoUpdate);
+    tree_->scrollToItem(last_found);
   }
 }
 
@@ -216,27 +234,33 @@ void SceneTreePanel::CallbackTreeSelectionChanged() {
     return;
   }
   RefreshDetail();
-  EmitSelection();
+  emit SelectedNodesChanged(SelectedPaths());
 }
 
-std::string SceneTreePanel::SelectedPath() const {
+std::string SceneTreePanel::PathOf(const QTreeWidgetItem& item) {
+  return item.data(kLabelColumn, kPathRole).toString().toStdString();
+}
+
+std::vector<std::string> SceneTreePanel::SelectedPaths() const {
+  std::vector<std::string> paths;
+  if (tree_ == nullptr) {
+    return paths;
+  }
+  for (const QTreeWidgetItem* item : tree_->selectedItems()) {
+    paths.push_back(PathOf(*item));
+  }
+  return paths;
+}
+
+std::string SceneTreePanel::DetailedPath() const {
   if (tree_ == nullptr) {
     return {};
   }
-  const QTreeWidgetItem* selected = tree_->currentItem();
-  if (selected == nullptr) {
+  const QTreeWidgetItem* current = tree_->currentItem();
+  if (current == nullptr || !current->isSelected()) {
     return {};
   }
-  return selected->data(kLabelColumn, kPathRole).toString().toStdString();
-}
-
-void SceneTreePanel::EmitSelection() {
-  const std::string path = SelectedPath();
-  if (path.empty()) {
-    emit SelectedNodeChanged(std::nullopt);
-  } else {
-    emit SelectedNodeChanged(std::optional<std::string>(path));
-  }
+  return PathOf(*current);
 }
 
 void SceneTreePanel::RefreshDetail() {
@@ -245,7 +269,7 @@ void SceneTreePanel::RefreshDetail() {
   }
   detail_->clear();
 
-  const auto iterator = node_details_.find(SelectedPath());
+  const auto iterator = node_details_.find(DetailedPath());
   if (iterator == node_details_.end()) {
     return;
   }
