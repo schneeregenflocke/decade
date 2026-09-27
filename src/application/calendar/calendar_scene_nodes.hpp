@@ -53,8 +53,6 @@ struct CalendarSceneNodes {
   static constexpr std::string_view kTitleTextName = "Title Text";
   ShapeNode<FontShape> title_text;
 
-  // The cursor and selection area of the running title edit. Pure operating
-  // aids, and therefore hidden from the user's scene tree.
   static constexpr std::string_view kTitleSelectionName = "Title Selection";
   ShapeNode<FillShape> title_selection;
 
