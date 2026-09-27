@@ -55,7 +55,8 @@ TEST(SceneSnapshotBuilder, APieceShowsTheStyleItsEntryHandsDown) {
 }
 
 TEST(SceneSnapshotBuilder, TheEntryShowsItsStyleAsItsOwn) {
-  const SceneNodeValues& entry = SnapshotOfAnEntry().children[0].values;
+  const SceneNodeSnapshot snapshot = SnapshotOfAnEntry();
+  const SceneNodeValues& entry = snapshot.children[0].values;
 
   EXPECT_EQ(entry.style_id, "category 1");
   EXPECT_TRUE(entry.style_inherited_from.empty());
