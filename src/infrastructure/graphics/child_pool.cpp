@@ -12,6 +12,12 @@ ChildPool::ChildPool(std::shared_ptr<SceneNode> parent)
 ChildPool::~ChildPool() { parent_->TruncateChildren(used_); }
 
 std::shared_ptr<SceneNode> ChildPool::Next(const std::string& name) {
+  std::shared_ptr<SceneNode> child = NextNode(name);
+  child->SetShape(nullptr);
+  return child;
+}
+
+std::shared_ptr<SceneNode> ChildPool::NextNode(const std::string& name) {
   if (used_ == parent_->GetChildren().size()) {
     parent_->AddChild(std::make_shared<SceneNode>(name));
   }

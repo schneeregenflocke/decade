@@ -6,6 +6,7 @@
 #include <string>
 #include <utility>
 
+#include "drawable.hpp"
 #include "scene_graph.hpp"
 #include "shaders.hpp"
 
@@ -31,7 +32,18 @@
 // (#71). The copy costs one atomic increment per node and buys the whole class
 // of bug away.
 
-// Children without a shape — pure grouping nodes.
+// What a pool hands back for a child that draws: the node, and its shape as
+// the type it was asked for.
+template <typename ShapeT>
+struct ShapeChild {
+  std::shared_ptr<SceneNode> node;
+  ShapeT& shape;
+};
+
+// A parent's children in the order one rebuild asks for them. A group child
+// carries no shape; a drawing child keeps its shape from the last rebuild as
+// long as it asks for the same kind at the same position, and gets a new one
+// otherwise — so a parent may hold children of several kinds.
 class ChildPool {
  public:
   explicit ChildPool(std::shared_ptr<SceneNode> parent);
@@ -45,51 +57,44 @@ class ChildPool {
 
   [[nodiscard]] std::shared_ptr<SceneNode> Next(const std::string& name);
 
+  // `shape_arguments` build the shape when the child needs a new one.
+  template <typename ShapeT, typename... ShapeArguments>
+  [[nodiscard]] ShapeChild<ShapeT> NextShape(
+      const std::string& name, int draw_layer,
+      ShapeArguments&... shape_arguments) {
+    const std::shared_ptr<SceneNode> child = NextNode(name);
+    const Drawable* shape = child->GetShape();
+    if (shape == nullptr || shape->Kind() != ShapeT::kKind) {
+      child->SetShape(std::make_unique<ShapeT>(shape_arguments...));
+    }
+    child->SetDrawLayer(draw_layer);
+    auto& typed_shape = static_cast<ShapeT&>(*child->GetShape());
+    return {.node = child, .shape = typed_shape};
+  }
+
  private:
+  [[nodiscard]] std::shared_ptr<SceneNode> NextNode(const std::string& name);
+
   std::shared_ptr<SceneNode> parent_;
   std::size_t used_{0};
 };
 
-// Children carrying a shape of one kind. The pool fills the parent alone, so
-// every child it hands back is a ShapeT — which is what lets the cast stand
-// without a check, as with ShapeNode.
+// Children of one kind, all built with the same shader on the same layer.
 template <typename ShapeT>
 class ShapeChildPool {
  public:
-  struct Child {
-    std::shared_ptr<SceneNode> node;
-    ShapeT& shape;
-  };
-
   ShapeChildPool(std::shared_ptr<SceneNode> parent, Shader& shader,
                  int draw_layer)
-      : parent_(std::move(parent)), shader_(shader), draw_layer_(draw_layer) {}
+      : pool_(std::move(parent)), shader_(shader), draw_layer_(draw_layer) {}
 
-  ~ShapeChildPool() { parent_->TruncateChildren(used_); }
-
-  ShapeChildPool(const ShapeChildPool&) = delete;
-  ShapeChildPool& operator=(const ShapeChildPool&) = delete;
-  ShapeChildPool(ShapeChildPool&&) = delete;
-  ShapeChildPool& operator=(ShapeChildPool&&) = delete;
-
-  [[nodiscard]] Child Next(const std::string& name) {
-    if (used_ == parent_->GetChildren().size()) {
-      parent_->AddChild(
-          std::make_shared<SceneNode>(name, std::make_unique<ShapeT>(shader_)));
-    }
-    std::shared_ptr<SceneNode> child = parent_->GetChildren()[used_];
-    ++used_;
-    child->SetNodeName(name);
-    child->SetDrawLayer(draw_layer_);
-    auto& shape = static_cast<ShapeT&>(*child->GetShape());
-    return Child{.node = std::move(child), .shape = shape};
+  [[nodiscard]] ShapeChild<ShapeT> Next(const std::string& name) {
+    return pool_.NextShape<ShapeT>(name, draw_layer_, shader_);
   }
 
  private:
-  std::shared_ptr<SceneNode> parent_;
+  ChildPool pool_;
   Shader& shader_;
   int draw_layer_;
-  std::size_t used_{0};
 };
 
 #endif  // CHILD_POOL_HPP

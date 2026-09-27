@@ -207,7 +207,7 @@ Letter Font::RenderGlyph(char32_t code_point) const {
 
 FontShape::FontShape(Shader& shader_in) : Shape(shader_in) {}
 
-DrawableKind FontShape::Kind() const { return DrawableKind::kText; }
+DrawableKind FontShape::Kind() const { return kKind; }
 
 void FontShape::SetFont(std::shared_ptr<Font> font_ptr) {
   font_ = std::move(font_ptr);

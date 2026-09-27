@@ -109,6 +109,8 @@ class Font {
 
 class FontShape : public Shape {
  public:
+  static constexpr DrawableKind kKind = DrawableKind::kText;
+
   explicit FontShape(Shader& shader_in);
 
   [[nodiscard]] DrawableKind Kind() const override;

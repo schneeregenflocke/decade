@@ -1,18 +1,41 @@
 #include <gtest/gtest.h>
 
 #include <deque>
+#include <glm/mat4x4.hpp>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "infrastructure/graphics/child_pool.hpp"
+#include "infrastructure/graphics/drawable.hpp"
+#include "infrastructure/graphics/rect.hpp"
 #include "infrastructure/graphics/scene_graph.hpp"
 
-// ShapeChildPool needs a Shader and therefore a GL context; ChildPool does not,
-// and the two share the way they hold their parent. These tests exercise the
-// GL-free half, so they say the same thing without a window.
+// ShapeChildPool builds its shapes with a Shader and therefore needs a GL
+// context; the ChildPool underneath it takes whatever builds a shape, so these
+// tests run over drawables that touch no GL.
 
 namespace {
+
+template <DrawableKind kind>
+class FakeShape : public Drawable {
+ public:
+  static constexpr DrawableKind kKind = kind;
+
+  void Draw(const glm::mat4& /*model*/) const override {}
+
+  [[nodiscard]] const RectF& LocalBounds() const override { return bounds_; }
+
+  [[nodiscard]] DrawableKind Kind() const override { return kKind; }
+
+ private:
+  RectF bounds_;
+};
+
+using FakeBoxes = FakeShape<DrawableKind::kBoxes>;
+using FakeText = FakeShape<DrawableKind::kText>;
+
+constexpr int kLayer = 7;
 
 TEST(ChildPoolTest, HandsBackTheSameNodeOnTheNextRebuild) {
   const auto parent = std::make_shared<SceneNode>("parent");
@@ -100,6 +123,49 @@ TEST(ChildPoolTest, ANestedPoolOutlivesItsParentVectorGrowing) {
     EXPECT_EQ(root->GetChildren()[index]->GetChildren()[0]->GetNodeName(),
               "leaf");
   }
+}
+
+// A date entry holds its bar pieces and their labels side by side, so one
+// parent carries two kinds and a rebuild may ask for another kind at a
+// position than the last one did.
+TEST(ChildPoolTest, AChildKeepsItsShapeWhileItsKindStaysTheSame) {
+  const auto parent = std::make_shared<SceneNode>("parent");
+
+  const Drawable* first_pass = nullptr;
+  {
+    ChildPool pool(parent);
+    first_pass = &pool.NextShape<FakeBoxes>("piece", kLayer).shape;
+  }
+
+  ChildPool pool(parent);
+  EXPECT_EQ(&pool.NextShape<FakeBoxes>("piece", kLayer).shape, first_pass);
+}
+
+TEST(ChildPoolTest, AChildAskedForAnotherKindGetsANewShapeOnTheSameNode) {
+  const auto parent = std::make_shared<SceneNode>("parent");
+
+  SceneNode* first_node = nullptr;
+  {
+    ChildPool pool(parent);
+    first_node = pool.NextShape<FakeBoxes>("piece", kLayer).node.get();
+  }
+
+  ChildPool pool(parent);
+  const ShapeChild<FakeText> child = pool.NextShape<FakeText>("label", kLayer);
+  EXPECT_EQ(child.node.get(), first_node);
+  EXPECT_EQ(child.node->GetShape()->Kind(), DrawableKind::kText);
+  EXPECT_EQ(child.node->GetDrawLayer(), kLayer);
+}
+
+TEST(ChildPoolTest, AGroupChildDropsTheShapeItDrewBefore) {
+  const auto parent = std::make_shared<SceneNode>("parent");
+  {
+    ChildPool pool(parent);
+    (void)pool.NextShape<FakeBoxes>("piece", kLayer);
+  }
+
+  ChildPool pool(parent);
+  EXPECT_EQ(pool.Next("group")->GetShape(), nullptr);
 }
 
 }  // namespace

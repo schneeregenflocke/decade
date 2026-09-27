@@ -18,7 +18,7 @@
 
 FillShape::FillShape(Shader& shader_in) : Shape(shader_in) {}
 
-DrawableKind FillShape::Kind() const { return DrawableKind::kFill; }
+DrawableKind FillShape::Kind() const { return kKind; }
 
 void FillShape::SetShape(const RectF& rectangle) {
   std::vector<glm::vec3> vertices(kVerticesPerQuad);
@@ -50,7 +50,7 @@ void FillShape::Draw(const glm::mat4& model) const {
 
 BoxesShape::BoxesShape(Shader& shader_in) : Shape(shader_in) {}
 
-DrawableKind BoxesShape::Kind() const { return DrawableKind::kBoxes; }
+DrawableKind BoxesShape::Kind() const { return kKind; }
 
 void BoxesShape::SetShape(const std::vector<RectF>& rectangles,
                           float line_width) {

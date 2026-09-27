@@ -19,6 +19,8 @@ inline constexpr size_t kVerticesPerQuad = 6;
 // One axis-aligned rectangle as a plain coloured area: no outline, one colour.
 class FillShape : public Shape {
  public:
+  static constexpr DrawableKind kKind = DrawableKind::kFill;
+
   explicit FillShape(Shader& shader_in);
 
   [[nodiscard]] DrawableKind Kind() const override;
@@ -38,6 +40,8 @@ class FillShape : public Shape {
 // of them, which is why the whole set travels together.
 class BoxesShape : public Shape {
  public:
+  static constexpr DrawableKind kKind = DrawableKind::kBoxes;
+
   explicit BoxesShape(Shader& shader_in);
 
   [[nodiscard]] DrawableKind Kind() const override;
