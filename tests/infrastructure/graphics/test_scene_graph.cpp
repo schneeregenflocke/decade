@@ -53,6 +53,21 @@ std::shared_ptr<SceneNode> MakeNode(const std::string& name,
       name, std::make_unique<RecordingDrawable>(name, bounds, log));
 }
 
+// Claims to be text and nothing more; the style rule asks no more of it.
+class TextKind : public Drawable {
+ public:
+  void Draw(const glm::mat4& /*model*/) const override {}
+
+  [[nodiscard]] const RectF& LocalBounds() const override { return bounds_; }
+
+  [[nodiscard]] DrawableKind Kind() const override {
+    return DrawableKind::kText;
+  }
+
+ private:
+  RectF bounds_;
+};
+
 glm::mat4 ShiftedBy(float x_offset) {
   return glm::translate(glm::mat4(1.0F), glm::vec3(x_offset, 0.0F, 0.0F));
 }
@@ -205,4 +220,55 @@ TEST(SceneNodeCharacterisation, NodePathIsEmptyForAStranger) {
   const SceneNode stranger("stranger");
 
   EXPECT_FALSE(FindNodePath(root, stranger).has_value());
+}
+
+// --- The style a group hands down ---
+
+TEST(SceneNodeStyle, AGroupHandsItsStyleToAMemberWithoutOne) {
+  std::vector<std::string> log;
+  SceneNode entry("entry");
+  entry.SetStyleId("category 1");
+  const auto piece = MakeNode("piece", log);
+
+  const SceneNode* handed_down = HandedDownStyleSource(entry, nullptr);
+
+  EXPECT_EQ(StyleSource(*piece, handed_down), &entry);
+}
+
+TEST(SceneNodeStyle, AMemberNamingItsOwnStyleKeepsIt) {
+  std::vector<std::string> log;
+  SceneNode entry("entry");
+  entry.SetStyleId("category 1");
+  const auto piece = MakeNode("piece", log);
+  piece->SetStyleId("category 2");
+
+  EXPECT_EQ(StyleSource(*piece, HandedDownStyleSource(entry, nullptr)),
+            piece.get());
+}
+
+// The print area draws a frame in its own style; everything inside it would
+// otherwise claim that style too.
+TEST(SceneNodeStyle, ADrawingNodeKeepsItsStyleToItself) {
+  std::vector<std::string> log;
+  const auto print_area = MakeNode("print area", log);
+  print_area->SetStyleId("print area");
+
+  EXPECT_EQ(HandedDownStyleSource(*print_area, nullptr), nullptr);
+}
+
+TEST(SceneNodeStyle, TextTakesNoStyleFromItsGroup) {
+  SceneNode entry("entry");
+  entry.SetStyleId("category 1");
+  const SceneNode label("label", std::make_unique<TextKind>());
+
+  EXPECT_EQ(StyleSource(label, HandedDownStyleSource(entry, nullptr)),
+            nullptr);
+}
+
+TEST(SceneNodeStyle, AGroupWithoutAStylePassesOnWhatItReceived) {
+  SceneNode entry("entry");
+  entry.SetStyleId("category 1");
+  const SceneNode group("group");
+
+  EXPECT_EQ(HandedDownStyleSource(group, &entry), &entry);
 }

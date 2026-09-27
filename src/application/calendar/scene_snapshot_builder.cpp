@@ -68,9 +68,15 @@ std::optional<SnapshotTextDetail> TextDetailOf(const Drawable* shape) {
 }
 
 void FillSnapshotValues(SceneNodeValues& destination, const SceneNode& source,
-                        const glm::mat4& world) {
+                        const glm::mat4& world, const SceneNode* handed_down) {
   destination.name = source.GetNodeName();
-  destination.style_id = source.GetStyleId();
+  if (const SceneNode* style_source = StyleSource(source, handed_down);
+      style_source != nullptr) {
+    destination.style_id = style_source->GetStyleId();
+    if (style_source != &source) {
+      destination.style_inherited_from = style_source->GetNodeName();
+    }
+  }
   const Drawable* shape = source.GetShape();
   destination.has_shape = shape != nullptr;
   destination.shape_kind = ClassifyShape(shape);
@@ -86,16 +92,19 @@ void FillSnapshotValues(SceneNodeValues& destination, const SceneNode& source,
 SceneNodeSnapshot BuildSceneSnapshot(const SceneNode& root) {
   SceneNodeSnapshot result;
   const glm::mat4 root_world = root.GetModelMatrix();
-  FillSnapshotValues(result.values, root, root_world);
+  FillSnapshotValues(result.values, root, root_world, nullptr);
 
   struct Frame {
     const SceneNode* source;
     SceneNodeSnapshot* destination;
     glm::mat4 world;
+    const SceneNode* handed_down;
   };
   std::vector<Frame> stack;
-  stack.push_back(
-      {.source = &root, .destination = &result, .world = root_world});
+  stack.push_back({.source = &root,
+                   .destination = &result,
+                   .world = root_world,
+                   .handed_down = HandedDownStyleSource(root, nullptr)});
 
   while (!stack.empty()) {
     const Frame frame = stack.back();
@@ -107,10 +116,14 @@ SceneNodeSnapshot BuildSceneSnapshot(const SceneNode& root) {
       SceneNodeSnapshot& child = frame.destination->children[index];
       const glm::mat4 child_world =
           frame.world * children[index]->GetModelMatrix();
-      FillSnapshotValues(child.values, *children[index], child_world);
-      stack.push_back({.source = children[index].get(),
-                       .destination = &child,
-                       .world = child_world});
+      FillSnapshotValues(child.values, *children[index], child_world,
+                         frame.handed_down);
+      stack.push_back(
+          {.source = children[index].get(),
+           .destination = &child,
+           .world = child_world,
+           .handed_down =
+               HandedDownStyleSource(*children[index], frame.handed_down)});
     }
   }
 

@@ -30,9 +30,10 @@
 
 // Fills a node's own values (everything but the children) from a scene node.
 // `world` is the accumulated transformation down to and including this node —
-// the same one Draw() draws with.
+// the same one Draw() draws with; `handed_down` is the style source its
+// ancestors pass on.
 void FillSnapshotValues(SceneNodeValues& destination, const SceneNode& source,
-                        const glm::mat4& world);
+                        const glm::mat4& world, const SceneNode* handed_down);
 
 // Application/Infrastructure bridge: turns the live OpenGL `SceneNode` graph
 // into the GL-free `SceneNodeSnapshot` read model consumed by the presentation

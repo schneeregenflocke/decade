@@ -37,6 +37,7 @@ add_executable(decade_tests
 	infrastructure/graphics/test_page_geometry.cpp
 	application/calendar/test_calendar_layout.cpp
 	application/calendar/test_title_text_editor.cpp
+	application/calendar/test_scene_snapshot_builder.cpp
 	application/test_project_document.cpp
 	presentation/test_categories_panel.cpp
 	presentation/test_shape_panel.cpp

@@ -50,7 +50,8 @@ class SceneNode {
   // (empty on nodes without such a binding, text and container nodes for
   // instance). The stable back reference to the configuration the rebuild
   // reproduces — the scene tree shows the node's values by it. Set by the scene
-  // builder wherever it applies a configuration.
+  // builder wherever it applies a configuration; a group node carrying one
+  // hands it down (StyleSource below).
   void SetStyleId(const std::string& style_id);
 
   [[nodiscard]] const std::string& GetStyleId() const;
@@ -131,4 +132,19 @@ class SceneNode {
 // panel and the selection highlight use.
 [[nodiscard]] std::optional<std::string> FindNodePath(const SceneNode& root,
                                                       const SceneNode& target);
+
+// Whose style a node shows, given the source its ancestors hand down: its own
+// style when it names one, else the handed-down one — except for text, which
+// draws in a colour of its own. Empty when neither applies.
+//
+// A style gets handed down by a group alone, a node without a shape: the
+// properties its members share move up to it. A drawing node's style belongs
+// to its own shape, so the print area does not colour everything inside it.
+[[nodiscard]] const SceneNode* StyleSource(const SceneNode& node,
+                                           const SceneNode* handed_down);
+
+// What a node hands down to its children: itself when it is a group naming a
+// style, else what it received.
+[[nodiscard]] const SceneNode* HandedDownStyleSource(
+    const SceneNode& node, const SceneNode* received);
 #endif  // SCENE_GRAPH_HPP

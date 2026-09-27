@@ -51,7 +51,10 @@ struct SnapshotTextDetail {
 // a whole subtree along by accident.
 struct SceneNodeValues {
   std::string name;
+  // The style the node shows — its own, or one a group above hands down, which
+  // `style_inherited_from` then names.
   std::string style_id;
+  std::string style_inherited_from;
   bool has_shape{false};
   SnapshotShapeKind shape_kind{SnapshotShapeKind::kNone};
   int draw_layer{0};

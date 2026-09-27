@@ -160,3 +160,23 @@ std::optional<std::string> FindNodePath(const SceneNode& root,
 
   return std::nullopt;
 }
+
+const SceneNode* StyleSource(const SceneNode& node,
+                             const SceneNode* handed_down) {
+  if (!node.GetStyleId().empty()) {
+    return &node;
+  }
+  const Drawable* shape = node.GetShape();
+  if (shape != nullptr && shape->Kind() == DrawableKind::kText) {
+    return nullptr;
+  }
+  return handed_down;
+}
+
+const SceneNode* HandedDownStyleSource(const SceneNode& node,
+                                       const SceneNode* received) {
+  if (node.GetShape() == nullptr && !node.GetStyleId().empty()) {
+    return &node;
+  }
+  return received;
+}

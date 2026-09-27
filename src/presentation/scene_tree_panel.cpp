@@ -258,6 +258,10 @@ void SceneTreePanel::RefreshDetail() {
   AppendText(node_category, "Draw Layer", QString::number(node.draw_layer));
   AppendText(node_category, "Children", QString::number(detail.child_count));
   AppendText(node_category, "Style ID", QString::fromStdString(node.style_id));
+  if (!node.style_inherited_from.empty()) {
+    AppendText(node_category, "Style Inherited From",
+               QString::fromStdString(node.style_inherited_from));
+  }
 
   AppendGeometryCategory(node);
   AppendTextCategory(node);
