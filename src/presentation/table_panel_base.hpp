@@ -45,6 +45,10 @@ class TablePanelBase : public QWidget {
 
   void InitColumns(const std::vector<Column>& columns);
 
+  // The columns fit the first rows a table gets; from then on their widths are
+  // the user's, and a fill does not undo them.
+  void FitColumnsOnFirstFill(bool was_empty);
+
   // Creates the cells of a row; without them there is nothing to read or write.
   void FillEmptyRow(int row);
 

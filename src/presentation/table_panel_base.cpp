@@ -30,8 +30,8 @@ TablePanelBase::TablePanelBase(QWidget* parent,
   table_->setEditTriggers(QAbstractItemView::DoubleClicked |
                           QAbstractItemView::EditKeyPressed);
   table_->verticalHeader()->setVisible(false);
-  table_->horizontalHeader()->setSectionResizeMode(
-      QHeaderView::ResizeToContents);
+  // The header's default mode lets the user drag a column edge, and QTableView
+  // itself fits a column to its content on a double click on that edge.
   table_->horizontalHeader()->setStretchLastSection(true);
 
   // More compact than the system font; the row height follows it by itself.
@@ -79,6 +79,13 @@ void TablePanelBase::InitColumns(const std::vector<Column>& columns) {
     labels.append(QString::fromUtf8(column.label));
   }
   table_->setHorizontalHeaderLabels(labels);
+  table_->resizeColumnsToContents();
+}
+
+void TablePanelBase::FitColumnsOnFirstFill(bool was_empty) {
+  if (was_empty && table_->rowCount() > 0) {
+    table_->resizeColumnsToContents();
+  }
 }
 
 void TablePanelBase::FillEmptyRow(int row) {

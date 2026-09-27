@@ -62,6 +62,7 @@ DateTablePanel::DateTablePanel(QWidget* parent,
 void DateTablePanel::ReceiveDateEntries(
     const std::vector<DateEntry>& date_entries) {
   const domain::detail::ScopedReentryFlag guard(filling_);
+  const bool was_empty = table()->rowCount() == 0;
 
   auto valid_rows_list = BuildValidRowsList();
 
@@ -117,6 +118,7 @@ void DateTablePanel::ReceiveDateEntries(
                     ? std::to_string(entry.GetDateInterInterval().LengthDays())
                     : std::string{});
   }
+  FitColumnsOnFirstFill(was_empty);
 }
 
 void DateTablePanel::ReceiveDateCategories(

@@ -54,6 +54,7 @@ void DateCategoriesTablePanel::ReceiveDateCategories(
   // Filling the cells fires itemChanged as an edit would; the guard tells the
   // two apart, so a rebuild does not read itself back in as user input.
   const domain::detail::ScopedReentryFlag guard(filling_);
+  const bool was_empty = table()->rowCount() == 0;
 
   const auto row_count = static_cast<int>(date_categories_.size());
   ResizeRows(row_count);
@@ -65,6 +66,7 @@ void DateCategoriesTablePanel::ReceiveDateCategories(
     SetCellText(row, kNameColumn, date_categories_[index].GetName());
   }
   RefreshColors();
+  FitColumnsOnFirstFill(was_empty);
 }
 
 void DateCategoriesTablePanel::ReceiveShapeConfigSet(

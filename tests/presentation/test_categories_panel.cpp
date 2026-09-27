@@ -1,12 +1,14 @@
 #include <gtest/gtest.h>
 
 #include <QtCore/QObject>
+#include <QtCore/QPoint>
 #include <QtCore/QRect>
 #include <QtCore/QString>
 #include <QtCore/Qt>
 #include <QtGui/QColor>
 #include <QtTest/QTest>
 #include <QtWidgets/QColorDialog>
+#include <QtWidgets/QHeaderView>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QTableWidget>
 #include <QtWidgets/QWidget>
@@ -184,4 +186,65 @@ TEST(DateCategoriesPanelTest, AColorPickedInTheTableEditsThatCategorysColor) {
   EXPECT_NEAR(fill[0], 0.0F, 1e-3F);
   EXPECT_NEAR(fill[1], 128.0F / 255.0F, 1e-3F);
   EXPECT_NEAR(fill[2], 128.0F / 255.0F, 1e-3F);
+}
+
+namespace {
+
+class ShownPanel {
+ public:
+  ShownPanel() {
+    panel_.ReceiveDateCategories({DateCategory("PBL")});
+    panel_.resize(kWidth, kHeight);
+    panel_.show();
+  }
+
+  [[nodiscard]] QHeaderView& Header() const {
+    return *panel_.findChild<QTableWidget*>()->horizontalHeader();
+  }
+
+  // The right edge of a column, where the header offers its resize handle.
+  [[nodiscard]] QPoint EdgeOf(int column) const {
+    const QHeaderView& header = Header();
+    return {header.sectionViewportPosition(column) +
+                header.sectionSize(column) - 1,
+            header.height() / 2};
+  }
+
+ private:
+  static constexpr int kWidth = 600;
+  static constexpr int kHeight = 300;
+
+  DateCategoriesTablePanel panel_{nullptr};
+};
+
+constexpr int kNumberColumn = 0;
+
+}  // namespace
+
+TEST(TablePanelBaseTest, DraggingAColumnEdgeResizesTheColumn) {
+  const ShownPanel shown;
+  QHeaderView& header = shown.Header();
+  const int before = header.sectionSize(kNumberColumn);
+  const QPoint edge = shown.EdgeOf(kNumberColumn);
+  constexpr int kDragPx = 40;
+
+  QTest::mousePress(header.viewport(), Qt::LeftButton, Qt::KeyboardModifiers(),
+                    edge);
+  QTest::mouseMove(header.viewport(), edge + QPoint(kDragPx, 0));
+  QTest::mouseRelease(header.viewport(), Qt::LeftButton,
+                      Qt::KeyboardModifiers(), edge + QPoint(kDragPx, 0));
+
+  EXPECT_EQ(header.sectionSize(kNumberColumn), before + kDragPx);
+}
+
+TEST(TablePanelBaseTest, ADoubleClickOnAColumnEdgeFitsTheColumnToItsContent) {
+  const ShownPanel shown;
+  QHeaderView& header = shown.Header();
+  const int fitted = header.sectionSize(kNumberColumn);
+  header.resizeSection(kNumberColumn, fitted * 3);
+
+  QTest::mouseDClick(header.viewport(), Qt::LeftButton,
+                     Qt::KeyboardModifiers(), shown.EdgeOf(kNumberColumn));
+
+  EXPECT_EQ(header.sectionSize(kNumberColumn), fitted);
 }
