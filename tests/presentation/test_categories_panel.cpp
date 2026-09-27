@@ -205,9 +205,9 @@ class ShownPanel {
   // The right edge of a column, where the header offers its resize handle.
   [[nodiscard]] QPoint EdgeOf(int column) const {
     const QHeaderView& header = Header();
-    return {header.sectionViewportPosition(column) +
-                header.sectionSize(column) - 1,
-            header.height() / 2};
+    return {
+        header.sectionViewportPosition(column) + header.sectionSize(column) - 1,
+        header.height() / 2};
   }
 
  private:
@@ -243,8 +243,8 @@ TEST(TablePanelBaseTest, ADoubleClickOnAColumnEdgeFitsTheColumnToItsContent) {
   const int fitted = header.sectionSize(kNumberColumn);
   header.resizeSection(kNumberColumn, fitted * 3);
 
-  QTest::mouseDClick(header.viewport(), Qt::LeftButton,
-                     Qt::KeyboardModifiers(), shown.EdgeOf(kNumberColumn));
+  QTest::mouseDClick(header.viewport(), Qt::LeftButton, Qt::KeyboardModifiers(),
+                     shown.EdgeOf(kNumberColumn));
 
   EXPECT_EQ(header.sectionSize(kNumberColumn), fitted);
 }

@@ -32,9 +32,9 @@ void AddRuntimeOptions(QCommandLineParser& parser) {
                     "label"});
   parser.addOption(
       {"exit-after-ms", "auto-close the main window after N ms", "ms"});
-  parser.addOption(
-      {"debug-hover-bar",
-       "force the hover highlight on the bar of entry N (from 0)", "index"});
+  parser.addOption({"debug-hover-bar",
+                    "force the hover highlight on the bar of entry N (from 0)",
+                    "index"});
   parser.addOption(
       {"debug-hover-title", "force the hover highlight on the title"});
   parser.addOption({"debug-edit-title",

@@ -118,12 +118,11 @@ SceneNodeSnapshot BuildSceneSnapshot(const SceneNode& root) {
           frame.world * children[index]->GetModelMatrix();
       FillSnapshotValues(child.values, *children[index], child_world,
                          frame.handed_down);
-      stack.push_back(
-          {.source = children[index].get(),
-           .destination = &child,
-           .world = child_world,
-           .handed_down =
-               HandedDownStyleSource(*children[index], frame.handed_down)});
+      stack.push_back({.source = children[index].get(),
+                       .destination = &child,
+                       .world = child_world,
+                       .handed_down = HandedDownStyleSource(
+                           *children[index], frame.handed_down)});
     }
   }
 

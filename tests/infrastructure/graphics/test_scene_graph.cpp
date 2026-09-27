@@ -261,8 +261,7 @@ TEST(SceneNodeStyle, TextTakesNoStyleFromItsGroup) {
   entry.SetStyleId("category 1");
   const SceneNode label("label", std::make_unique<TextKind>());
 
-  EXPECT_EQ(StyleSource(label, HandedDownStyleSource(entry, nullptr)),
-            nullptr);
+  EXPECT_EQ(StyleSource(label, HandedDownStyleSource(entry, nullptr)), nullptr);
 }
 
 TEST(SceneNodeStyle, AGroupWithoutAStylePassesOnWhatItReceived) {

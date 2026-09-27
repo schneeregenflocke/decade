@@ -145,6 +145,6 @@ class SceneNode {
 
 // What a node hands down to its children: itself when it is a group naming a
 // style, else what it received.
-[[nodiscard]] const SceneNode* HandedDownStyleSource(
-    const SceneNode& node, const SceneNode* received);
+[[nodiscard]] const SceneNode* HandedDownStyleSource(const SceneNode& node,
+                                                     const SceneNode* received);
 #endif  // SCENE_GRAPH_HPP

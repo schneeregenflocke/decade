@@ -58,8 +58,8 @@ BarSceneResult BuildBars(const SectionContext& ctx) {
       piece.node->SetModelMatrix(glm::translate(
           glm::mat4(1.0F),
           glm::vec3(bar_area.Left(), bar_area.Bottom(), detail::kZero)));
-      piece.shape.SetShape(RectF(detail::kZero, bar_area.Width(),
-                                 detail::kZero, bar_area.Height()),
+      piece.shape.SetShape(RectF(detail::kZero, bar_area.Width(), detail::kZero,
+                                 bar_area.Height()),
                            shape_config.LineWidth());
       piece.shape.SetColors(shape_config.OutlineColor(),
                             shape_config.FillColor());
@@ -72,9 +72,9 @@ BarSceneResult BuildBars(const SectionContext& ctx) {
                                          ctx.layout.PrintAreaOrigin().y)});
     }
     for (size_t index = 0; index < pieces.size(); ++index) {
-      const auto label = members.NextShape<FontShape>(
-          "label " + std::to_string(index), calendar_layers::kText,
-          ctx.font_shader);
+      const auto label =
+          members.NextShape<FontShape>("label " + std::to_string(index),
+                                       calendar_layers::kText, ctx.font_shader);
       scene_shapes::SetCenteredText(
           label.shape, bar_data.GetText(),
           detail::PeriodArea(ctx, pieces[index], BandPart::kEntryLabels)

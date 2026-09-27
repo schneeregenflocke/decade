@@ -30,7 +30,8 @@
 // persisted highlights to the new geometry.
 class SceneHighlighter {
  public:
-  SceneHighlighter(const Scene& scene, const ShapeNode<BoxesShape>& overlay_node,
+  SceneHighlighter(const Scene& scene,
+                   const ShapeNode<BoxesShape>& overlay_node,
                    const ShapeNode<BoxesShape>& title_area_node,
                    const ShapeConfigSet& shape_config);
 

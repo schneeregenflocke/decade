@@ -18,10 +18,10 @@
 #include "../../infrastructure/graphics/shape_node.hpp"
 #include "../../infrastructure/graphics/shapes.hpp"
 
-SceneHighlighter::SceneHighlighter(
-    const Scene& scene, const ShapeNode<BoxesShape>& overlay_node,
-    const ShapeNode<BoxesShape>& title_area_node,
-    const ShapeConfigSet& shape_config)
+SceneHighlighter::SceneHighlighter(const Scene& scene,
+                                   const ShapeNode<BoxesShape>& overlay_node,
+                                   const ShapeNode<BoxesShape>& title_area_node,
+                                   const ShapeConfigSet& shape_config)
     : scene_(scene),
       overlay_node_(overlay_node),
       title_area_node_(title_area_node),
@@ -61,8 +61,7 @@ std::shared_ptr<SceneNode> SceneHighlighter::NodeFor(
   return nullptr;
 }
 
-void SceneHighlighter::SetSelectedNodes(
-    const std::vector<std::string>& paths) {
+void SceneHighlighter::SetSelectedNodes(const std::vector<std::string>& paths) {
   selected_paths_ = paths;
   ApplySelectionOverlay();
 }
@@ -168,7 +167,8 @@ void SceneHighlighter::ApplyHover(const PickId& picked, bool highlighted) {
       continue;
     }
     auto& shape = static_cast<BoxesShape&>(*drawable);
-    const auto config = shape_config_.GetShapeConfiguration(style->GetStyleId());
+    const auto config =
+        shape_config_.GetShapeConfiguration(style->GetStyleId());
     const glm::vec4 hover_outline(kOne, kHoverOutlineGreen, kZero, kOne);
     shape.SetColors(highlighted ? hover_outline : config.OutlineColor(),
                     config.FillColor());
