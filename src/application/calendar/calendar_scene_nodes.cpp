@@ -21,11 +21,12 @@ CalendarSceneNodes BuildCalendarSceneNodes(Scene& scene, Shader& simple_shader,
       std::string(CalendarSceneNodes::kPageName), simple_shader);
   scene.Root().AddChild(nodes.page.Node());
 
-  // Selection-highlight overlay: a single translucent quad drawn on top of
-  // everything, covering the scene-tree-selected node and its subtree. Updated
-  // in place (no rebuild) when the selection changes.
-  nodes.selection_overlay = ShapeNode<FillShape>::Make(
-      std::string(CalendarSceneNodes::kSelectionOverlayName), simple_shader);
+  // Selection-highlight overlay: translucent boxes drawn on top of everything,
+  // over whatever the selection covers. Updated in place (no rebuild) when the
+  // selection changes.
+  nodes.selection_overlay = ShapeNode<BoxesShape>::Make(
+      std::string(CalendarSceneNodes::kSelectionOverlayName),
+      rectangles_shader);
   scene.Root().AddChild(nodes.selection_overlay.Node());
 
   nodes.print_area = ShapeNode<BoxesShape>::Make(
@@ -96,8 +97,6 @@ CalendarSceneNodes BuildCalendarSceneNodes(Scene& scene, Shader& simple_shader,
       container_under_print_area(CalendarSceneNodes::kColumnLabelTextsName);
   nodes.row_label_texts =
       container_under_print_area(CalendarSceneNodes::kRowLabelTextsName);
-  nodes.date_bar_labels =
-      container_under_print_area(CalendarSceneNodes::kDateBarLabelsName);
 
   nodes.page.Node()->SetDrawLayer(calendar_layers::kPage);
   nodes.print_area.Node()->SetDrawLayer(calendar_layers::kArea);

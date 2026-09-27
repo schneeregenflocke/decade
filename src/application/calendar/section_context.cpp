@@ -24,7 +24,8 @@ void SetCenteredText(const SectionContext& ctx,
                      scene_shapes::TextChildPool& pool, const std::string& name,
                      const std::string& text, const glm::vec3& center,
                      float size) {
-  scene_shapes::SetCenteredText(pool, name, text, center, size, ctx.font);
+  scene_shapes::SetCenteredText(pool.Next(name).shape, text, center, size,
+                                ctx.font);
 }
 
 RectF PeriodArea(const SectionContext& ctx, const DatePeriod& period,

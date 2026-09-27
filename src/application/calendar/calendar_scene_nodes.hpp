@@ -42,7 +42,7 @@ struct CalendarSceneNodes {
   ShapeNode<FillShape> page;
 
   static constexpr std::string_view kSelectionOverlayName = "Selection Overlay";
-  ShapeNode<FillShape> selection_overlay;
+  ShapeNode<BoxesShape> selection_overlay;
 
   static constexpr std::string_view kPrintAreaName = "Print Area";
   ShapeNode<BoxesShape> print_area;
@@ -103,9 +103,6 @@ struct CalendarSceneNodes {
 
   static constexpr std::string_view kRowLabelTextsName = "Row Label Texts";
   std::shared_ptr<SceneNode> row_label_texts;
-
-  static constexpr std::string_view kDateBarLabelsName = "Date Bar Labels";
-  std::shared_ptr<SceneNode> date_bar_labels;
 };
 
 // Builds the fixed scene skeleton under the scene's root once: every named node

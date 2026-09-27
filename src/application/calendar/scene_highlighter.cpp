@@ -6,7 +6,6 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -19,18 +18,18 @@
 #include "../../infrastructure/graphics/shape_node.hpp"
 #include "../../infrastructure/graphics/shapes.hpp"
 
-SceneHighlighter::SceneHighlighter(const Scene& scene,
-                                   const ShapeNode<FillShape>& overlay_node,
-                                   const ShapeNode<BoxesShape>& title_area_node,
-                                   const ShapeConfigSet& shape_config)
+SceneHighlighter::SceneHighlighter(
+    const Scene& scene, const ShapeNode<BoxesShape>& overlay_node,
+    const ShapeNode<BoxesShape>& title_area_node,
+    const ShapeConfigSet& shape_config)
     : scene_(scene),
       overlay_node_(overlay_node),
       title_area_node_(title_area_node),
       shape_config_(shape_config) {}
 
 void SceneHighlighter::Refresh(
-    std::unordered_map<std::size_t, std::shared_ptr<SceneNode>> bar_nodes) {
-  bar_nodes_ = std::move(bar_nodes);
+    std::vector<std::shared_ptr<SceneNode>> entry_nodes) {
+  entry_nodes_ = std::move(entry_nodes);
   if (hovered_.has_value()) {
     ApplyHover(*hovered_, /*highlighted=*/true);
   }
@@ -53,10 +52,9 @@ void SceneHighlighter::SetHovered(const std::optional<PickId>& hovered) {
 std::shared_ptr<SceneNode> SceneHighlighter::NodeFor(
     const PickId& picked) const {
   switch (picked.kind) {
-    case PickId::Kind::kBar: {
-      const auto iterator = bar_nodes_.find(picked.index);
-      return iterator == bar_nodes_.end() ? nullptr : iterator->second;
-    }
+    case PickId::Kind::kBar:
+      return picked.index < entry_nodes_.size() ? entry_nodes_[picked.index]
+                                                : nullptr;
     case PickId::Kind::kTitle:
       return title_area_node_.Node();
   }
@@ -69,21 +67,24 @@ void SceneHighlighter::SetSelectedNode(const std::optional<std::string>& path) {
 }
 
 void SceneHighlighter::ApplySelectionOverlay() {
-  FillShape& shape = overlay_node_.Shape();
-  std::optional<RectF> bounds;
+  std::vector<RectF> boxes;
   if (selected_path_.has_value()) {
-    bounds = NodeWorldBounds(*selected_path_);
+    if (const auto placed = Resolve(*selected_path_); placed.has_value()) {
+      AppendCoverage(*placed, boxes);
+    }
   }
-  if (bounds.has_value()) {
-    shape.SetShape(*bounds);
-    shape.SetColor(glm::vec4(kSelectionRed, kSelectionGreen, kSelectionBlue,
-                             kSelectionAlpha));
-  } else {
+  BoxesShape& shape = overlay_node_.Shape();
+  if (boxes.empty()) {
     shape.Hide();
+    return;
   }
+  const glm::vec4 accent(kSelectionRed, kSelectionGreen, kSelectionBlue,
+                         kSelectionAlpha);
+  shape.SetShape(boxes, kZero);
+  shape.SetColors(accent, accent);
 }
 
-std::optional<RectF> SceneHighlighter::NodeWorldBounds(
+std::optional<SceneHighlighter::PlacedNode> SceneHighlighter::Resolve(
     const std::string& path) const {
   std::vector<std::string> segments;
   std::size_t start = 0;
@@ -116,23 +117,59 @@ std::optional<RectF> SceneHighlighter::NodeWorldBounds(
     }
     node = next;
   }
-  return node->WorldBounds(parent_world);
+  return PlacedNode{.node = node, .parent_world = parent_world};
+}
+
+void SceneHighlighter::AppendCoverage(const PlacedNode& placed,
+                                      std::vector<RectF>& boxes) {
+  std::vector<PlacedNode> stack{placed};
+  while (!stack.empty()) {
+    const PlacedNode current = stack.back();
+    stack.pop_back();
+    if (current.node->GetShape() != nullptr) {
+      if (const auto bounds = current.node->WorldBounds(current.parent_world);
+          bounds.has_value()) {
+        boxes.push_back(*bounds);
+      }
+      continue;
+    }
+    const glm::mat4 world =
+        current.parent_world * current.node->GetModelMatrix();
+    for (const auto& child : current.node->GetChildren()) {
+      stack.push_back({.node = child.get(), .parent_world = world});
+    }
+  }
 }
 
 void SceneHighlighter::ApplyHover(const PickId& picked, bool highlighted) {
-  const auto node = NodeFor(picked);
-  if (!node) {
+  const auto root = NodeFor(picked);
+  if (!root) {
     return;
   }
-  // A bar node comes out of the map by index, so its type is not settled by a
-  // handle here — but the drawable says what it is, which needs no RTTI.
-  Drawable* drawable = node->GetShape();
-  if (drawable == nullptr || drawable->Kind() != DrawableKind::kBoxes) {
-    return;
+  struct Visit {
+    SceneNode* node;
+    const SceneNode* handed_down;
+  };
+  std::vector<Visit> stack{{.node = root.get(), .handed_down = nullptr}};
+  while (!stack.empty()) {
+    const Visit current = stack.back();
+    stack.pop_back();
+    const SceneNode* for_members =
+        HandedDownStyleSource(*current.node, current.handed_down);
+    for (const auto& child : current.node->GetChildren()) {
+      stack.push_back({.node = child.get(), .handed_down = for_members});
+    }
+    // The drawable says what it is, which needs no RTTI.
+    Drawable* drawable = current.node->GetShape();
+    const SceneNode* style = StyleSource(*current.node, current.handed_down);
+    if (drawable == nullptr || drawable->Kind() != DrawableKind::kBoxes ||
+        style == nullptr) {
+      continue;
+    }
+    auto& shape = static_cast<BoxesShape&>(*drawable);
+    const auto config = shape_config_.GetShapeConfiguration(style->GetStyleId());
+    const glm::vec4 hover_outline(kOne, kHoverOutlineGreen, kZero, kOne);
+    shape.SetColors(highlighted ? hover_outline : config.OutlineColor(),
+                    config.FillColor());
   }
-  auto& shape = static_cast<BoxesShape&>(*drawable);
-  const auto config = shape_config_.GetShapeConfiguration(node->GetStyleId());
-  const glm::vec4 hover_outline(kOne, kHoverOutlineGreen, kZero, kOne);
-  shape.SetColors(highlighted ? hover_outline : config.OutlineColor(),
-                  config.FillColor());
 }

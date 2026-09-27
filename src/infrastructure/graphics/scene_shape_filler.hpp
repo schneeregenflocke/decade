@@ -35,14 +35,14 @@ inline void FillRectangles(const ShapeNode<BoxesShape>& node,
   shape.SetColors(outline_color, fill_color);
 }
 
-// A pool of centred text children. Sets the next child to `text`, centred at
-// `center` with font height `size`, and keeps the node it already had —
-// including its GL buffers. The label groups all share this shape.
+// A pool of text children; it keeps the nodes it already had — including their
+// GL buffers. The label groups all share this shape.
 using TextChildPool = ShapeChildPool<FontShape>;
 
-void SetCenteredText(TextChildPool& pool, const std::string& name,
-                     const std::string& text, const glm::vec3& center,
-                     float size, const std::shared_ptr<Font>& font);
+// Sets `shape` to `text`, centred at `center` with font height `size`.
+void SetCenteredText(FontShape& shape, const std::string& text,
+                     const glm::vec3& center, float size,
+                     const std::shared_ptr<Font>& font);
 
 }  // namespace scene_shapes
 

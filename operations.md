@@ -85,7 +85,7 @@ Take `--dump-png` for a clean high-DPI export of the drawing itself, `--dump-win
 - `--exit-after-ms=<ms>` — closes the main window after N ms by itself.
 - `--select-tab=<label>` — preselects a notebook tab by label at start (case-insensitive), for screenshotting a particular tab.
 - `--debug-log` — switches on OpenGL and runtime debug logging. It also lets Qt's own `qDebug`/`qInfo` messages through; without it they stay silent, while a `qWarning` and anything above always reaches stderr. The message handler sits in `decade_app_detail::MessageHandler`.
-- `--debug-hover-bar=<index>` — highlights the bar with the given index at start as though it were hovered, to screenshot or debug the hover path without a live cursor.
+- `--debug-hover-bar=<index>` — highlights the bar of the date entry with the given index (from 0, one below the table's Number) at start as though it were hovered, every piece of it, to screenshot or debug the hover path without a live cursor.
 - `--debug-hover-title` — the same for the title frame; it beats `--debug-hover-bar`, because at most one element is ever hovered.
 - `--debug-edit-title=<text>` — opens the title edit after loading, like a double click, and types `<text>` into it; empty means open alone, with everything selected. The edit stays open, so cursor and selection stand in the image.
 - `--debug-select-node=<path>` — selects the scene tree node at `path` (`root/.../name`) at start and thereby walks the real selection path (the scene tab detail grid plus the calendar selection highlight of the node and its subtree) without a pointing device.

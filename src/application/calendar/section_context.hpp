@@ -6,7 +6,6 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "../../domain/band_part.hpp"
@@ -55,10 +54,11 @@ struct SectionContext {
 };
 
 // Output of BuildBars consumed by the coordinator: the page-space pick boxes
-// for the picking layer and the per-index bar nodes for the hover highlight.
+// for the picking layer and the entry nodes, indexed like the entries, for the
+// highlights.
 struct BarSceneResult {
   std::vector<PickBox> pick_boxes;
-  std::unordered_map<std::size_t, std::shared_ptr<SceneNode>> bar_nodes;
+  std::vector<std::shared_ptr<SceneNode>> entry_nodes;
 };
 
 namespace detail {

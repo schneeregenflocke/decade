@@ -10,8 +10,8 @@
 // Identity of a pickable scene element. Kept as a small, dependency-free value
 // so both the scene graph (SceneNode carries one) and the physics/picking layer
 // (the collision world maps a hit back to one) can use it without coupling.
-// `index` is the element's index within its kind (e.g. the bar index); kinds
-// that exist only once (the title) leave it at 0.
+// `index` is the element's index within its kind (a bar's is its date entry's);
+// kinds that exist only once (the title) leave it at 0.
 struct PickId {
   enum class Kind : std::uint8_t { kBar, kTitle };
 

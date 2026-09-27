@@ -1,7 +1,6 @@
 #include "bar_sections.hpp"
 
 #include <cstddef>
-#include <deque>
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/vector_float3.hpp>
@@ -18,8 +17,10 @@
 #include "../../domain/shape_configuration.hpp"
 #include "../../domain/timeline_projection.hpp"
 #include "../../infrastructure/graphics/child_pool.hpp"
+#include "../../infrastructure/graphics/font.hpp"
 #include "../../infrastructure/graphics/pick_id.hpp"
 #include "../../infrastructure/graphics/rect.hpp"
+#include "../../infrastructure/graphics/scene_shape_filler.hpp"
 #include "../../infrastructure/graphics/shapes.hpp"
 #include "calendar_scene_nodes.hpp"
 #include "section_context.hpp"
@@ -29,63 +30,56 @@ namespace calendar_sections {
 BarSceneResult BuildBars(const SectionContext& ctx) {
   BarSceneResult result;
 
-  ChildPool category_pool(ctx.nodes.date_bars);
-  const auto number_categories = ctx.date_categories.Items().size();
-  // A deque, not a vector: the pool is deliberately neither copyable nor
-  // movable, and a deque places its elements without ever moving them.
-  std::deque<ShapeChildPool<BoxesShape>> bar_pools;
-  for (size_t index = 0; index < number_categories; ++index) {
-    bar_pools.emplace_back(category_pool.Next(std::string("category node ") +
-                                              std::to_string(index)),
-                           ctx.rectangles_shader, calendar_layers::kBars);
-  }
-
-  auto bar_labels = detail::TextPool(ctx, ctx.nodes.date_bar_labels);
-
-  // One bar per row an entry reaches; the index counts the bars drawn.
-  std::size_t index = 0;
+  // One group per entry: it carries the category style and holds the bar
+  // pieces — one per row the entry reaches — beside their labels.
+  ChildPool entry_pool(ctx.nodes.date_bars);
   for (size_t entry = 0; entry < ctx.date_entry_bars.GetNumberBars(); ++entry) {
     const auto& bar_data = ctx.date_entry_bars.GetBar(entry);
-    const auto current_category = static_cast<size_t>(bar_data.GetCategory());
-    auto current_shape_config =
-        ctx.shape_config.GetDynamicConfiguration(current_category);
+    const auto shape_config = ctx.shape_config.GetDynamicConfiguration(
+        static_cast<size_t>(bar_data.GetCategory()));
 
-    for (const DatePeriod& piece :
-         ctx.projection.SplitAtRowBoundaries(bar_data.Period())) {
-      const RectF bar_area = detail::PeriodArea(ctx, piece, BandPart::kDays);
+    const auto entry_node = entry_pool.Next("entry " + bar_data.GetText());
+    entry_node->SetStyleId(shape_config.Key());
+    result.entry_nodes.push_back(entry_node);
 
-      // Each bar is its own node: the position lives in the node transform
-      // (ready for dragging/animating), the size lives in the shape geometry.
-      // A pure translation keeps the outline width constant, which a scale
-      // matrix would distort. The bar's world rect is therefore unchanged.
-      const auto bar = bar_pools.at(current_category)
-                           .Next(std::string("bar ") + std::to_string(index));
-      bar.node->SetModelMatrix(glm::translate(
+    const std::vector<DatePeriod> pieces =
+        ctx.projection.SplitAtRowBoundaries(bar_data.Period());
+    ChildPool members(entry_node);
+    for (size_t index = 0; index < pieces.size(); ++index) {
+      const RectF bar_area =
+          detail::PeriodArea(ctx, pieces[index], BandPart::kDays);
+
+      // The position lives in the node transform (ready for dragging), the
+      // size in the shape geometry. A pure translation keeps the outline width
+      // constant, which a scale matrix would distort.
+      const auto piece = members.NextShape<BoxesShape>(
+          "piece " + std::to_string(index), calendar_layers::kBars,
+          ctx.rectangles_shader);
+      piece.node->SetModelMatrix(glm::translate(
           glm::mat4(1.0F),
           glm::vec3(bar_area.Left(), bar_area.Bottom(), detail::kZero)));
-      bar.node->SetStyleId(current_shape_config.Key());
+      piece.shape.SetShape(RectF(detail::kZero, bar_area.Width(),
+                                 detail::kZero, bar_area.Height()),
+                           shape_config.LineWidth());
+      piece.shape.SetColors(shape_config.OutlineColor(),
+                            shape_config.FillColor());
 
-      // Page-space box for hit-testing: the node's world position is
+      // Page-space box for hit-testing: the piece's world position is
       // layout.PrintAreaOrigin() + the bar's corner.
-      const PickId pick_id{.kind = PickId::Kind::kBar, .index = index};
       result.pick_boxes.push_back(
-          PickBox{.id = pick_id,
+          PickBox{.id = {.kind = PickId::Kind::kBar, .index = entry},
                   .rect = bar_area.Shift(ctx.layout.PrintAreaOrigin().x,
                                          ctx.layout.PrintAreaOrigin().y)});
-
-      bar.shape.SetShape(RectF(detail::kZero, bar_area.Width(), detail::kZero,
-                               bar_area.Height()),
-                         current_shape_config.LineWidth());
-      bar.shape.SetColors(current_shape_config.OutlineColor(),
-                          current_shape_config.FillColor());
-      result.bar_nodes.emplace(index, bar.node);
-
-      detail::SetCenteredText(
-          ctx, bar_labels, std::string("label node ") + std::to_string(index),
-          bar_data.GetText(),
-          detail::PeriodArea(ctx, piece, BandPart::kEntryLabels).Center(),
-          ctx.layout.BandPartHeight(BandPart::kEntryLabels));
-      ++index;
+    }
+    for (size_t index = 0; index < pieces.size(); ++index) {
+      const auto label = members.NextShape<FontShape>(
+          "label " + std::to_string(index), calendar_layers::kText,
+          ctx.font_shader);
+      scene_shapes::SetCenteredText(
+          label.shape, bar_data.GetText(),
+          detail::PeriodArea(ctx, pieces[index], BandPart::kEntryLabels)
+              .Center(),
+          ctx.layout.BandPartHeight(BandPart::kEntryLabels), ctx.font);
     }
   }
 

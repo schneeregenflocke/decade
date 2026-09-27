@@ -112,9 +112,9 @@ void CalendarSceneComposer::Build() {
   calendar_sections::BuildAnnualCoverage(ctx);
   legend_ = calendar_sections::BuildLegend(ctx);
 
-  // Hand the fresh bar nodes to the highlighter, which re-applies the
+  // Hand the fresh entry nodes to the highlighter, which re-applies the
   // persisted hover and selection highlights to the new geometry.
-  highlighter_.Refresh(std::move(bars.bar_nodes));
+  highlighter_.Refresh(std::move(bars.entry_nodes));
 }
 
 RectF CalendarSceneComposer::DrawingExtent() const {
