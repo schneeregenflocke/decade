@@ -91,6 +91,17 @@ class CalendarPage {
   // The cursor index a click in page space means within the title line.
   [[nodiscard]] std::size_t TitleCaretIndexAt(glm::vec2 page_point) const;
 
+  // The entries table speaks of date entries, the selection of node paths.
+  // The paths of entries do not wait for the rebuild that makes their nodes:
+  // the table sends its selection while the new entries are still on the way
+  // to this page.
+  [[nodiscard]] std::vector<std::string> EntryNodePaths(
+      const std::vector<std::size_t>& entries) const;
+
+  // The date entries among the selected nodes; every other node drops out.
+  [[nodiscard]] std::vector<std::size_t> EntriesAt(
+      const std::vector<std::string>& paths) const;
+
  private:
   void Rebuild();
 

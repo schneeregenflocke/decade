@@ -1,7 +1,10 @@
 #include "app_binder.hpp"
 
 #include <QtCore/QObject>
+#include <cstddef>
 #include <glm/ext/vector_float2.hpp>
+#include <string>
+#include <vector>
 
 #include "../domain/calendar_config_store.hpp"
 #include "../domain/date_category_store.hpp"
@@ -225,6 +228,26 @@ void BindSelection(QObject& scope, EventBus& bus,
           &InteractionController::ReceiveSelectedNodes);
 }
 
+// The entries table joins the selection in its own terms: its rows travel as
+// date entries, and the rendering adapter translates them to the paths of
+// their nodes and back.
+void BindEntrySelection(QObject& scope, EventBus& bus,
+                        const AppComponents& components) {
+  auto* page = &components.calendar_page;
+  auto* table = &components.data_table_panel;
+  auto* selected_nodes = &bus.selected_nodes;
+
+  QObject::connect(
+      table, &DateTablePanel::SelectedEntriesChanged, &scope,
+      [page, selected_nodes](const std::vector<std::size_t>& entries) {
+        selected_nodes->Publish(page->EntryNodePaths(entries));
+      });
+  QObject::connect(selected_nodes, &domain::NodePathsTopic::Published, &scope,
+                   [page, table](const std::vector<std::string>& paths) {
+                     table->ReceiveSelectedEntries(page->EntriesAt(paths));
+                   });
+}
+
 // Picking: the canvas reports pointer movements in page space, the controller
 // tests them through the rendering adapter and publishes hover and selection
 // itself. Click and double click go to the text editor first: while an edit is
@@ -300,6 +323,7 @@ void Bind(QObject& scope, EventBus& bus, const AppComponents& components) {
   BindCsvImport(scope, components);
   BindSceneSnapshot(scope, bus, components);
   BindSelection(scope, bus, components);
+  BindEntrySelection(scope, bus, components);
   BindInteraction(scope, bus, components);
 }
 

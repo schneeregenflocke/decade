@@ -1,5 +1,6 @@
 #include "calendar_scene_nodes.hpp"
 
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -10,6 +11,10 @@
 #include "../../infrastructure/graphics/shaders.hpp"
 #include "../../infrastructure/graphics/shape_node.hpp"
 #include "../../infrastructure/graphics/shapes.hpp"
+
+std::string EntryNodeName(std::size_t entry) {
+  return "entry " + std::to_string(entry + 1);
+}
 
 CalendarSceneNodes BuildCalendarSceneNodes(Scene& scene, Shader& simple_shader,
                                            Shader& rectangles_shader,

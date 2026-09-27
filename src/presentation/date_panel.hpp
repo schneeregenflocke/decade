@@ -3,6 +3,7 @@
 
 #include <QtCore/QPointer>
 #include <QtWidgets/QAbstractItemView>
+#include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QTableWidget>
@@ -42,8 +43,16 @@ class DateTablePanel : public TablePanelBase {
 
   void ReceiveDateCategories(const std::vector<DateCategory>& date_categories);
 
+  // The calendar's selection, as the date entries in it. The rows follow while
+  // the sync box is ticked, without reporting back.
+  void ReceiveSelectedEntries(const std::vector<std::size_t>& entries);
+
  signals:
   void DateEntriesEdited(const std::vector<DateEntry>& date_entries);
+
+  // The date entries of the selected rows, while the sync box is ticked; a
+  // half-typed row is no entry and drops out.
+  void SelectedEntriesChanged(const std::vector<std::size_t>& entries);
 
  private:
   enum class Columns : std::uint8_t {
@@ -68,12 +77,23 @@ class DateTablePanel : public TablePanelBase {
 
   void UpdateDeleteButton();
 
-  // The rows holding a usable period, in ascending order. A row that does not
-  // parse keeps its two date cells and loses its derived columns — it is a
-  // half-typed entry, not an error.
+  [[nodiscard]] bool RowHoldsPeriod(int row);
+
+  // The rows holding a usable period, in ascending order: the row of entry i
+  // is the i-th of them.
+  [[nodiscard]] std::vector<int> ValidRows();
+
+  // ValidRows, and a row that does not parse keeps its two date cells and
+  // loses its derived columns — it is a half-typed entry, not an error.
   std::vector<int> BuildValidRowsList();
 
   [[nodiscard]] std::vector<int> SelectedRows() const;
+
+  [[nodiscard]] bool SyncsSelection() const;
+
+  void SendSelectedEntries();
+
+  void SelectRows(const std::vector<int>& rows);
 
   void InsertRow(int row);
 
@@ -90,10 +110,14 @@ class DateTablePanel : public TablePanelBase {
   void OnCategoryChosen(int category_number);
 
   QPointer<QComboBox> select_category_control_;
+  QPointer<QCheckBox> sync_selection_control_;
 
   LocaleDateFormatter& date_format_;
   DateCategories date_categories_;
 
   bool filling_{false};
+  // The selection this panel sends comes straight back over the bus; it is
+  // its own, and by then the scene may not yet know the entries it names.
+  bool sending_selection_{false};
 };
 #endif  // DATE_PANEL_HPP

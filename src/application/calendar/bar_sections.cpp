@@ -38,7 +38,7 @@ BarSceneResult BuildBars(const SectionContext& ctx) {
     const auto shape_config = ctx.shape_config.GetDynamicConfiguration(
         static_cast<size_t>(bar_data.GetCategory()));
 
-    const auto entry_node = entry_pool.Next("entry " + bar_data.GetText());
+    const auto entry_node = entry_pool.Next(EntryNodeName(entry));
     entry_node->SetStyleId(shape_config.Key());
     result.entry_nodes.push_back(entry_node);
 

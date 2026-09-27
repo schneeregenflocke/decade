@@ -2,10 +2,14 @@
 
 #include <QtCore/qtmetamacros.h>
 
+#include <QtCore/QAbstractItemModel>
 #include <QtCore/QHashFunctions>
+#include <QtCore/QItemSelection>
+#include <QtCore/QItemSelectionModel>
 #include <QtCore/QObject>
 #include <QtCore/QPointer>
 #include <QtWidgets/QAbstractItemView>
+#include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QPushButton>
@@ -46,12 +50,27 @@ DateTablePanel::DateTablePanel(QWidget* parent,
   auto* select_category_label = MakeOwned<QLabel>("Assign category:", this);
   select_category_label->setBuddy(select_category_control);
 
-  BuildTableLayout({select_category_label, select_category_control});
+  auto* sync_selection_control =
+      MakeOwned<QCheckBox>("Sync with calendar", this);
+  sync_selection_control_ = sync_selection_control;
+  sync_selection_control->setChecked(true);
+  sync_selection_control->setToolTip(
+      "Selects the bars of the selected rows in the calendar, and the rows of "
+      "the bars selected there.");
+
+  BuildTableLayout(
+      {select_category_label, select_category_control, sync_selection_control});
 
   connect(table(), &QTableWidget::itemChanged, this,
           [this](QTableWidgetItem* item) { OnItemChanged(item); });
-  connect(table(), &QTableWidget::itemSelectionChanged, this,
-          [this]() { UpdateDeleteButton(); });
+  connect(table(), &QTableWidget::itemSelectionChanged, this, [this]() {
+    UpdateDeleteButton();
+    if (!filling_) {
+      SendSelectedEntries();
+    }
+  });
+  connect(sync_selection_control, &QCheckBox::toggled, this,
+          [this]() { SendSelectedEntries(); });
   connect(add_button(), &QPushButton::clicked, this, [this]() { OnAdd(); });
   connect(delete_button(), &QPushButton::clicked, this,
           [this]() { OnDelete(); });
@@ -119,6 +138,8 @@ void DateTablePanel::ReceiveDateEntries(
                     : std::string{});
   }
   FitColumnsOnFirstFill(was_empty);
+  // The entries moved under the rows, so the calendar learns the new ones.
+  SendSelectedEntries();
 }
 
 void DateTablePanel::ReceiveDateCategories(
@@ -133,6 +154,25 @@ void DateTablePanel::ReceiveDateCategories(
     select_category_control_->addItem(QString::fromStdString(name));
   }
   select_category_control_->setCurrentIndex(0);
+}
+
+void DateTablePanel::ReceiveSelectedEntries(
+    const std::vector<std::size_t>& entries) {
+  if (!SyncsSelection() || sending_selection_) {
+    return;
+  }
+  const std::vector<int> valid_rows = ValidRows();
+  std::vector<int> rows;
+  for (const std::size_t entry : entries) {
+    if (entry < valid_rows.size()) {
+      rows.push_back(valid_rows[entry]);
+    }
+  }
+  {
+    const domain::detail::ScopedReentryFlag guard(filling_);
+    SelectRows(rows);
+  }
+  UpdateDeleteButton();
 }
 
 void DateTablePanel::SendDateEntries() {
@@ -172,16 +212,29 @@ void DateTablePanel::UpdateDeleteButton() {
   delete_button()->setEnabled(!SelectedRows().empty());
 }
 
+bool DateTablePanel::RowHoldsPeriod(int row) {
+  const auto begin_date =
+      GetDateByCell({.row = row, .column = Columns::first_date});
+  const auto last_date =
+      GetDateByCell({.row = row, .column = Columns::second_date});
+  return !PeriodFromInclusiveDates(begin_date, last_date).IsNull();
+}
+
+std::vector<int> DateTablePanel::ValidRows() {
+  std::vector<int> valid_rows;
+  for (int row = 0; row < table()->rowCount(); ++row) {
+    if (RowHoldsPeriod(row)) {
+      valid_rows.push_back(row);
+    }
+  }
+  return valid_rows;
+}
+
 std::vector<int> DateTablePanel::BuildValidRowsList() {
   std::vector<int> valid_rows_list;
 
   for (int row = 0; row < table()->rowCount(); ++row) {
-    const auto begin_date =
-        GetDateByCell({.row = row, .column = Columns::first_date});
-    const auto last_date =
-        GetDateByCell({.row = row, .column = Columns::second_date});
-
-    if (!PeriodFromInclusiveDates(begin_date, last_date).IsNull()) {
+    if (RowHoldsPeriod(row)) {
       valid_rows_list.push_back(row);
       continue;
     }
@@ -202,6 +255,41 @@ std::vector<int> DateTablePanel::SelectedRows() const {
   }
   std::ranges::sort(rows);
   return rows;
+}
+
+bool DateTablePanel::SyncsSelection() const {
+  return sync_selection_control_ != nullptr &&
+         sync_selection_control_->isChecked();
+}
+
+void DateTablePanel::SendSelectedEntries() {
+  if (!SyncsSelection()) {
+    return;
+  }
+  const std::vector<int> valid_rows = ValidRows();
+  std::vector<std::size_t> entries;
+  for (const int row : SelectedRows()) {
+    if (const auto found = std::ranges::lower_bound(valid_rows, row);
+        found != valid_rows.end() && *found == row) {
+      entries.push_back(static_cast<std::size_t>(found - valid_rows.begin()));
+    }
+  }
+  const domain::detail::ScopedReentryFlag guard(sending_selection_);
+  emit SelectedEntriesChanged(entries);
+}
+
+void DateTablePanel::SelectRows(const std::vector<int>& rows) {
+  QItemSelection selection;
+  const int last_column = table()->columnCount() - 1;
+  for (const int row : rows) {
+    selection.select(table()->model()->index(row, 0),
+                     table()->model()->index(row, last_column));
+  }
+  table()->selectionModel()->select(selection,
+                                    QItemSelectionModel::ClearAndSelect);
+  if (!rows.empty()) {
+    table()->scrollTo(table()->model()->index(rows.front(), 0));
+  }
 }
 
 void DateTablePanel::InsertRow(int row) {

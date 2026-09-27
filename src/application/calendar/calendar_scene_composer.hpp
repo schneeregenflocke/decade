@@ -94,6 +94,13 @@ class CalendarSceneComposer {
   // The cursor index a click in page space means within the title line.
   [[nodiscard]] std::size_t TitleCaretIndexAt(glm::vec2 page_point) const;
 
+  // The path of the date entry's node — also before a rebuild has made it.
+  [[nodiscard]] std::string EntryNodePath(std::size_t entry) const;
+
+  // The date entry whose node `path` names in the scene as built.
+  [[nodiscard]] std::optional<std::size_t> EntryAt(
+      const std::string& path) const;
+
  private:
   static constexpr float kOne = 1.0F;
 

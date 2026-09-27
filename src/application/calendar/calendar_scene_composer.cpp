@@ -183,6 +183,16 @@ std::optional<std::string> CalendarSceneComposer::NodePathFor(
   return FindNodePath(scene_.Root(), *node);
 }
 
+std::string CalendarSceneComposer::EntryNodePath(std::size_t entry) const {
+  return FindNodePath(scene_.Root(), *nodes_.date_bars).value_or("") + '/' +
+         EntryNodeName(entry);
+}
+
+std::optional<std::size_t> CalendarSceneComposer::EntryAt(
+    const std::string& path) const {
+  return highlighter_.EntryAt(path);
+}
+
 std::size_t CalendarSceneComposer::TitleCaretIndexAt(
     glm::vec2 page_point) const {
   const calendar_sections::SectionContext ctx = MakeContext();

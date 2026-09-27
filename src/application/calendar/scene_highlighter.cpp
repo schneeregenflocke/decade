@@ -1,5 +1,6 @@
 #include "scene_highlighter.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/vector_float4.hpp>
@@ -59,6 +60,21 @@ std::shared_ptr<SceneNode> SceneHighlighter::NodeFor(
       return title_area_node_.Node();
   }
   return nullptr;
+}
+
+std::optional<std::size_t> SceneHighlighter::EntryAt(
+    const std::string& path) const {
+  const auto placed = Resolve(path);
+  if (!placed.has_value()) {
+    return std::nullopt;
+  }
+  const auto found = std::ranges::find(
+      entry_nodes_, placed->node,
+      [](const std::shared_ptr<SceneNode>& node) { return node.get(); });
+  if (found == entry_nodes_.end()) {
+    return std::nullopt;
+  }
+  return static_cast<std::size_t>(found - entry_nodes_.begin());
 }
 
 void SceneHighlighter::SetSelectedNodes(const std::vector<std::string>& paths) {

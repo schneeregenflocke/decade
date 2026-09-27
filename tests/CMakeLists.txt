@@ -41,6 +41,7 @@ add_executable(decade_tests
 	application/calendar/test_interaction_controller.cpp
 	application/test_project_document.cpp
 	presentation/test_categories_panel.cpp
+	presentation/test_date_panel.cpp
 	presentation/test_scene_tree_panel.cpp
 	presentation/test_shape_panel.cpp
 	presentation/test_calendar_panel.cpp

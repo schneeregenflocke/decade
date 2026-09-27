@@ -135,6 +135,27 @@ std::optional<std::string> CalendarPage::NodePathFor(
   return scene_composer_.NodePathFor(picked);
 }
 
+std::vector<std::string> CalendarPage::EntryNodePaths(
+    const std::vector<std::size_t>& entries) const {
+  std::vector<std::string> paths;
+  paths.reserve(entries.size());
+  for (const std::size_t entry : entries) {
+    paths.push_back(scene_composer_.EntryNodePath(entry));
+  }
+  return paths;
+}
+
+std::vector<std::size_t> CalendarPage::EntriesAt(
+    const std::vector<std::string>& paths) const {
+  std::vector<std::size_t> entries;
+  for (const std::string& path : paths) {
+    if (const auto entry = scene_composer_.EntryAt(path); entry.has_value()) {
+      entries.push_back(*entry);
+    }
+  }
+  return entries;
+}
+
 std::size_t CalendarPage::TitleCaretIndexAt(glm::vec2 page_point) const {
   return scene_composer_.TitleCaretIndexAt(page_point);
 }

@@ -48,6 +48,10 @@ class SceneHighlighter {
   // to hold them a second time.
   [[nodiscard]] std::shared_ptr<SceneNode> NodeFor(const PickId& picked) const;
 
+  // The date entry whose node `path` names; empty for any other node.
+  [[nodiscard]] std::optional<std::size_t> EntryAt(
+      const std::string& path) const;
+
   // Covers the nodes the paths identify with the overlay — no rebuild. A path
   // that resolves to nothing covers nothing.
   void SetSelectedNodes(const std::vector<std::string>& paths);

@@ -101,6 +101,7 @@ One typed topic per domain event on an in-process bus; the consumers get wired i
 - **Bursts.** `state_burst` brackets a run of store changes (loading a project fills six) (RAII `StateBurst`), so a consumer may rebuild once; ignoring it stays correct.
 - **Delivery order is connection order** ([QObject::connect](https://doc.qt.io/qt-6/qobject.html#connect)). The shape store has to answer a new date category before the rendering adapter rebuilds, so reordering `app_binder` changes behaviour ([#97](https://github.com/schneeregenflocke/decade/issues/97)).
 - **Wiring is a lifetime.** `AppWiring` connects on construction; every connection carries a `QObject` member as its context object, so destruction releases them all. The `std::function` callbacks (a pick answers with a hit, a signal cannot) release in `ReleaseCallbacks`.
+- **Selection.** One set of node paths on `selected_nodes`: the scene tree and a canvas click set it, Shift toggles a bar in it. The entries table joins while its sync box is ticked; it speaks of date entries, and `CalendarPage` translates them to entry node paths and back. An entry's path follows from its index (`EntryNodeName`), because the table names its entries before the rebuild that draws them.
 - **Canvas editing.** `TitleTextEditor` holds a buffer and publishes a GL-free `TextEditView` per key; Enter sends one command to the store, Esc discards. The canvas translates key codes into a `TextInputEvent`.
 
 ## Decisions

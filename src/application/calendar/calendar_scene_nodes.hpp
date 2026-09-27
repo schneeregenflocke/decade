@@ -1,6 +1,7 @@
 #ifndef CALENDAR_SCENE_NODES_HPP
 #define CALENDAR_SCENE_NODES_HPP
 
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -104,6 +105,11 @@ struct CalendarSceneNodes {
   static constexpr std::string_view kRowLabelTextsName = "Row Label Texts";
   std::shared_ptr<SceneNode> row_label_texts;
 };
+
+// The node of the date entry at `entry` (from 0), named by the number the
+// entries table and the bar label show. A pure function of the index, so the
+// path of an entry is known before the scene holding it is built.
+[[nodiscard]] std::string EntryNodeName(std::size_t entry);
 
 // Builds the fixed scene skeleton under the scene's root once: every named node
 // plus its painter layer and parent attachment. Returns the handles for the
