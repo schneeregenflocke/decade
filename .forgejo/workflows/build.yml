@@ -13,6 +13,8 @@ on:
 # The dependency list stands in both jobs because it gets installed BEFORE the
 # checkout: actions/checkout is a JS action and needs node and git in the bare
 # container, so no file from the repository can carry the list yet.
+# ubuntu:26.04 ends at LLVM 22 and a GCC 16 snapshot; LLVM 23, the version the
+# developer machines run, comes from apt.llvm.org, its key bound to that source.
 jobs:
   gcc:
     runs-on: runner-laptop-omen
@@ -22,12 +24,17 @@ jobs:
       - name: Toolchain and dependencies
         run: |
           apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ca-certificates curl
+          curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key -o /etc/apt/keyrings/apt.llvm.org.asc
+          echo 'deb [signed-by=/etc/apt/keyrings/apt.llvm.org.asc] https://apt.llvm.org/resolute/ llvm-toolchain-resolute-23 main' \
+            > /etc/apt/sources.list.d/apt.llvm.org.list
+          apt-get update -qq
           DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
-            nodejs git cmake ninja-build pkg-config g++ clang-format \
+            nodejs git cmake ninja-build pkg-config g++-16 clang-format-23 \
             libboost-serialization-dev libepoxy-dev qt6-base-dev \
             zlib1g-dev libpng-dev libfontconfig-dev libfreetype-dev \
             libicu-dev libglm-dev libmsgsl-dev libgtest-dev libgl1-mesa-dev
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
       # First, because it needs no build and the drift of #63 arose precisely
@@ -35,9 +42,9 @@ jobs:
       - name: clang-format gate
         run: |
           git ls-files '*.hpp' '*.cpp' | grep -v '^external/' \
-            | xargs clang-format --dry-run -Werror
+            | xargs clang-format-23 --dry-run -Werror
       - name: Configure
-        run: cmake -S . -B build -G Ninja
+        run: cmake -S . -B build -G Ninja -DCMAKE_C_COMPILER=gcc-16 -DCMAKE_CXX_COMPILER=g++-16
       - name: Build
         run: ninja -C build
       - name: Tests
@@ -56,23 +63,28 @@ jobs:
       - name: Toolchain and dependencies
         run: |
           apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ca-certificates curl
+          curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key -o /etc/apt/keyrings/apt.llvm.org.asc
+          echo 'deb [signed-by=/etc/apt/keyrings/apt.llvm.org.asc] https://apt.llvm.org/resolute/ llvm-toolchain-resolute-23 main' \
+            > /etc/apt/sources.list.d/apt.llvm.org.list
+          apt-get update -qq
           DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
-            nodejs git cmake ninja-build pkg-config clang-22 clang-tidy-22 \
+            nodejs git cmake ninja-build pkg-config clang-23 clang-tidy-23 \
             libboost-serialization-dev libepoxy-dev qt6-base-dev \
             zlib1g-dev libpng-dev libfontconfig-dev libfreetype-dev \
             libicu-dev libglm-dev libmsgsl-dev libgtest-dev libgl1-mesa-dev
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
       # The build and the tests run here too: clang sees warnings GCC does not
       # (-Wunreachable-code, -Wextra-semi), and a gate over code that never ran
       # under this compiler would grade an artefact nobody executes.
       # Versioned, not the `clang` metapackage: that one points at 21 on
-      # ubuntu:26.04 while the developer machines run 22, and clang-tidy 21
-      # carries a false positive 22 has fixed. CMakeLists picks the matching
-      # run-clang-tidy off the compiler version, so this one line steers both.
+      # ubuntu:26.04, whose clang-tidy carries a false positive 22 has fixed.
+      # CMakeLists picks the matching run-clang-tidy off the compiler version,
+      # so this one line steers both.
       - name: Configure
-        run: cmake -S . -B build -G Ninja -DCMAKE_C_COMPILER=clang-22 -DCMAKE_CXX_COMPILER=clang++-22
+        run: cmake -S . -B build -G Ninja -DCMAKE_C_COMPILER=clang-23 -DCMAKE_CXX_COMPILER=clang++-23
       - name: Build
         run: ninja -C build
       - name: Tests

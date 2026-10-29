@@ -155,10 +155,10 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 	# The driver has to match the compiler that configured this directory.
 	# A distribution carries several LLVM majors side by side, and the
 	# unversioned name points at whichever one it calls default — on Ubuntu
-	# 26.04 that is 21 while the developer machines run 22. The gate then
-	# reports findings nobody can reproduce: clang-tidy 21 asks for a `const`
-	# pointee on a pointer the function returns non-const, which does not
-	# compile (measured 2026-08-10 on `SceneTreePanel::FindItemAt`).
+	# 26.04 that is 21. The gate then reports findings nobody can reproduce:
+	# clang-tidy 21 asks for a `const` pointee on a pointer the function
+	# returns non-const, which does not compile (measured 2026-08-10 on
+	# `SceneTreePanel::FindItemAt`).
 	string(REGEX MATCH "^[0-9]+" DECADE_CLANG_MAJOR ${CMAKE_CXX_COMPILER_VERSION})
 	find_program(DECADE_RUN_CLANG_TIDY
 		NAMES run-clang-tidy-${DECADE_CLANG_MAJOR} run-clang-tidy
