@@ -143,6 +143,10 @@ void GLCanvas::Repaint() { update(); }
 void GLCanvas::ReceivePngExportConfig(const PngExportConfig& config) {
   export_dpi_ = config.Dpi();
   RefitView();
+  // The camera applies narrowed limits at the next zoom step alone; a zoom by
+  // one around the centre of the view snaps the current scale in before the
+  // repaint RefitView asked for.
+  camera_.ZoomAround(drawing_extent_.Center(), 1.0F);
 }
 
 double GLCanvas::CurrentFps() const { return frame_stats_.Fps(); }
