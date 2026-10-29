@@ -5,10 +5,13 @@
 #include <QtCore/QString>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMessageBox>
+#include <memory>
 #include <optional>
 #include <string>
 
+#include "../application/png_write_job.hpp"
 #include "../application/project_document.hpp"
+#include "graphics/render_to_png.hpp"
 #include "main_window.hpp"
 
 // Carries out the menu commands around files: show the dialogue, fetch the
@@ -59,7 +62,12 @@ class FileCommands {
 
   // Exports to the configured place: the dialogue opens only when neither the
   // tab nor the project file names one, and the chosen place stays configured.
+  // The page renders here, where the GL context lives; the compression goes on
+  // in a PngWriteJob, which reports to the tab.
   void ExportPng();
+
+  void WritePngInBackground(const QString& title, const std::string& file_path,
+                            RgbaImage image);
 
   // Skips the overwrite question: choosing writes nothing, and the export asks
   // before it replaces a file.
@@ -85,6 +93,7 @@ class FileCommands {
 
   MainWindow& window_;
   application::ProjectDocument& document_;
+  std::unique_ptr<PngWriteJob> png_write_job_;
 };
 
 #endif  // FILE_COMMANDS_HPP

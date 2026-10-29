@@ -6,6 +6,7 @@
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
+#include <QtWidgets/QProgressBar>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QWidget>
 #include <array>
@@ -29,7 +30,15 @@ class PngExportPanel : public QWidget {
 
   void ReceiveProjectFilePath(const std::string& file_path);
 
+  // The button stays locked until the export ends, so a second one cannot
+  // start beside it.
+  void ShowExportStarted();
+
+  void ShowProgress(int percent);
+
   void ShowSaved(const std::string& file_path, const QTime& time);
+
+  void ShowExportFailed();
 
   void ClearSaved();
 
@@ -59,6 +68,8 @@ class PngExportPanel : public QWidget {
   QPointer<QLabel> pixel_size_;
   QPointer<QLabel> millimetre_size_;
   QPointer<QLabel> effective_dpi_;
+  QPointer<QPushButton> export_button_;
+  QPointer<QProgressBar> progress_;
   QPointer<QLabel> saved_;
 };
 #endif  // PNG_EXPORT_PANEL_HPP

@@ -1,18 +1,22 @@
 #include "file_commands.hpp"
 
 #include <QtCore/QFileInfo>
+#include <QtCore/QObject>
 #include <QtCore/QString>
 #include <QtCore/QTime>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMessageBox>
+#include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 
+#include "../application/png_write_job.hpp"
 #include "../application/project_document.hpp"
 #include "../domain/png_export_config.hpp"
 #include "../domain/png_export_config_store.hpp"
-#include "graphics/render_to_png.hpp"
 #include "main_window.hpp"
+#include "png_export_panel.hpp"
 
 FileCommands::FileCommands(MainWindow& window,
                            application::ProjectDocument& document)
@@ -86,6 +90,10 @@ void FileCommands::ExportCsv() {
 
 void FileCommands::ExportPng() {
   const QString title = "Export PNG file";
+  if (png_write_job_ && png_write_job_->Running()) {
+    Report(title, "An export is still running.");
+    return;
+  }
   PngExportConfigStore& store = document_.PngExportConfiguration();
   PngExportConfig config = store.Get();
   std::string file_path = config.ResolvedFilePath(document_.FilePath());
@@ -101,19 +109,37 @@ void FileCommands::ExportPng() {
              !ConfirmOverwrite(title, QString::fromStdString(file_path))) {
     return;
   }
-  const auto image =
-      window_.Canvas().RenderPng(config.Dpi(), config.MsaaSamples());
-  const std::optional<std::string> error =
-      image ? WritePng(file_path, *image) : image.error();
-  Report(title, error);
-  if (error) {
-    window_.PngExport().ClearSaved();
-  } else {
-    window_.PngExport().ShowSaved(QFileInfo(QString::fromStdString(file_path))
-                                      .absoluteFilePath()
-                                      .toStdString(),
-                                  QTime::currentTime());
+  auto image = window_.Canvas().RenderPng(config.Dpi(), config.MsaaSamples());
+  PngExportPanel& panel = window_.PngExport();
+  if (!image) {
+    Report(title, image.error());
+    panel.ShowExportFailed();
+    return;
   }
+  WritePngInBackground(title, file_path, *std::move(image));
+}
+
+void FileCommands::WritePngInBackground(const QString& title,
+                                        const std::string& file_path,
+                                        RgbaImage image) {
+  PngExportPanel& panel = window_.PngExport();
+  const std::string saved_path = QFileInfo(QString::fromStdString(file_path))
+                                     .absoluteFilePath()
+                                     .toStdString();
+  panel.ShowExportStarted();
+  png_write_job_ = std::make_unique<PngWriteJob>(file_path, std::move(image));
+  QObject::connect(png_write_job_.get(), &PngWriteJob::Progressed, &panel,
+                   &PngExportPanel::ShowProgress);
+  QObject::connect(png_write_job_.get(), &PngWriteJob::Finished, &panel,
+                   [this, &panel, title,
+                    saved_path](const std::optional<std::string>& error) {
+                     Report(title, error);
+                     if (error) {
+                       panel.ShowExportFailed();
+                     } else {
+                       panel.ShowSaved(saved_path, QTime::currentTime());
+                     }
+                   });
 }
 
 void FileCommands::ChoosePngFile() {

@@ -8,6 +8,7 @@
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
+#include <QtWidgets/QProgressBar>
 #include <QtWidgets/QPushButton>
 #include <vector>
 
@@ -241,11 +242,44 @@ TEST(PngExportPanelTest, TheSameProjectKeepsTheSavedLine) {
   EXPECT_EQ(LabelText(panel, "saved"), "Saved: /home/x/plan.png, 14:32:05");
 }
 
-TEST(PngExportPanelTest, AFailedExportClearsTheSavedLine) {
+TEST(PngExportPanelTest, AStartedExportLocksTheButtonAndEmptiesTheBar) {
   PngExportPanel panel(nullptr);
   panel.ShowSaved("/home/x/plan.png", QTime(14, 32, 5));
 
-  panel.ClearSaved();
+  panel.ShowExportStarted();
 
+  EXPECT_FALSE(panel.findChild<QPushButton*>("export")->isEnabled());
+  EXPECT_EQ(panel.findChild<QProgressBar*>("progress")->value(), 0);
+  EXPECT_EQ(LabelText(panel, "saved"), "");
+}
+
+TEST(PngExportPanelTest, ProgressMovesTheBar) {
+  PngExportPanel panel(nullptr);
+  panel.ShowExportStarted();
+
+  panel.ShowProgress(42);
+
+  EXPECT_EQ(panel.findChild<QProgressBar*>("progress")->value(), 42);
+}
+
+TEST(PngExportPanelTest, ASavedExportFreesTheButton) {
+  PngExportPanel panel(nullptr);
+  panel.ShowExportStarted();
+
+  panel.ShowSaved("/home/x/plan.png", QTime(14, 32, 5));
+
+  EXPECT_TRUE(panel.findChild<QPushButton*>("export")->isEnabled());
+}
+
+TEST(PngExportPanelTest, AFailedExportFreesTheButtonAndEmptiesBarAndLine) {
+  PngExportPanel panel(nullptr);
+  panel.ShowSaved("/home/x/plan.png", QTime(14, 32, 5));
+  panel.ShowExportStarted();
+  panel.ShowProgress(50);
+
+  panel.ShowExportFailed();
+
+  EXPECT_TRUE(panel.findChild<QPushButton*>("export")->isEnabled());
+  EXPECT_EQ(panel.findChild<QProgressBar*>("progress")->value(), 0);
   EXPECT_EQ(LabelText(panel, "saved"), "");
 }

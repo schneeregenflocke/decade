@@ -12,6 +12,7 @@
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
+#include <QtWidgets/QProgressBar>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
@@ -26,6 +27,7 @@
 namespace {
 
 constexpr int kEffectiveDpiDecimals = 3;
+constexpr int kHundredPercent = 100;
 
 QLabel* MakeValueLabel(const char* name, QWidget* parent) {
   auto* label = MakeOwned<QLabel>(parent);
@@ -66,8 +68,13 @@ PngExportPanel::PngExportPanel(QWidget* parent)
   msaa_samples_->setObjectName("msaa_samples");
   msaa_samples_->addItems({"1", "2", "4", "8", "16"});
 
-  auto* export_button = MakeOwned<QPushButton>("Export", this);
-  export_button->setObjectName("export");
+  export_button_ = MakeOwned<QPushButton>("Export", this);
+  export_button_->setObjectName("export");
+
+  progress_ = MakeOwned<QProgressBar>(this);
+  progress_->setObjectName("progress");
+  progress_->setRange(0, kHundredPercent);
+  progress_->setValue(0);
 
   auto* form = MakeOwned<QFormLayout>();
   form->addRow("File", file_row);
@@ -79,7 +86,8 @@ PngExportPanel::PngExportPanel(QWidget* parent)
 
   auto* vertical_layout = MakeOwned<QVBoxLayout>();
   vertical_layout->addLayout(form);
-  vertical_layout->addWidget(export_button);
+  vertical_layout->addWidget(export_button_.data());
+  vertical_layout->addWidget(progress_.data());
   vertical_layout->addWidget(saved_.data());
   vertical_layout->addStretch(1);
   setLayout(vertical_layout);
@@ -96,7 +104,7 @@ PngExportPanel::PngExportPanel(QWidget* parent)
           [this] { CommitFilePath(); });
   connect(browse, &QPushButton::clicked, this,
           [this] { emit BrowseRequested(); });
-  connect(export_button, &QPushButton::clicked, this,
+  connect(export_button_.data(), &QPushButton::clicked, this,
           [this] { emit ExportRequested(); });
 }
 
@@ -132,11 +140,26 @@ void PngExportPanel::ReceiveProjectFilePath(const std::string& file_path) {
       QString::fromStdString(DefaultPngFilePath(file_path)));
 }
 
+void PngExportPanel::ShowExportStarted() {
+  export_button_->setEnabled(false);
+  progress_->setValue(0);
+  ClearSaved();
+}
+
+void PngExportPanel::ShowProgress(int percent) { progress_->setValue(percent); }
+
 void PngExportPanel::ShowSaved(const std::string& file_path,
                                const QTime& time) {
+  export_button_->setEnabled(true);
   saved_->setText(
       QString("Saved: %1, %2")
           .arg(QString::fromStdString(file_path), time.toString("HH:mm:ss")));
+}
+
+void PngExportPanel::ShowExportFailed() {
+  export_button_->setEnabled(true);
+  progress_->setValue(0);
+  ClearSaved();
 }
 
 void PngExportPanel::ClearSaved() { saved_->clear(); }
