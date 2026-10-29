@@ -80,7 +80,7 @@ glm::vec3 MouseInteraction::MouseClipSpace(const glm::ivec2& mouse_pos_px,
   const auto viewport_ortho =
       glm::ortho(0.0F, static_cast<float>(viewport_size.x),
                  static_cast<float>(viewport_size.y), 0.0F);
-  auto mouse_pos_clip_space =
+  const auto mouse_pos_clip_space =
       viewport_ortho * glm::vec4(window_mouse_pos, 0.F, 1.F);
   return mouse_pos_clip_space;
 }

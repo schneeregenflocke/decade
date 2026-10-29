@@ -231,9 +231,9 @@ void BindSelection(QObject& scope, EventBus& bus,
 // The entries table joins the selection in its own terms: its rows travel as
 // date entries, and the rendering adapter translates them to the paths of
 // their nodes and back.
-void BindEntrySelection(QObject& scope, EventBus& bus,
+void BindEntrySelection(const QObject& scope, EventBus& bus,
                         const AppComponents& components) {
-  auto* page = &components.calendar_page;
+  const auto* page = &components.calendar_page;
   auto* table = &components.data_table_panel;
   auto* selected_nodes = &bus.selected_nodes;
 
@@ -258,7 +258,7 @@ void BindEntrySelection(QObject& scope, EventBus& bus,
 // hit, and a Qt signal carries no return value.
 void BindInteraction(QObject& scope, EventBus& bus,
                      const AppComponents& components) {
-  auto* page = &components.calendar_page;
+  const auto* page = &components.calendar_page;
   auto* controller = &components.interaction_controller;
   auto* editor = &components.title_text_editor;
 

@@ -28,10 +28,10 @@ const std::vector<DateCategory>& DateCategories::Items() const {
 }
 
 int DateCategories::GetNumber(const std::string& name) const {
-  auto find_lambda = [&](const DateCategory& compare) {
+  const auto find_lambda = [&](const DateCategory& compare) {
     return compare.GetName() == name;
   };
-  auto found = std::ranges::find_if(date_categories_, find_lambda);
+  const auto found = std::ranges::find_if(date_categories_, find_lambda);
   if (found != date_categories_.end()) {
     return found->GetNumber();
   }
@@ -39,10 +39,10 @@ int DateCategories::GetNumber(const std::string& name) const {
 }
 
 std::string DateCategories::GetName(int number) const {
-  auto find_lambda = [&](const DateCategory& compare) {
+  const auto find_lambda = [&](const DateCategory& compare) {
     return compare.GetNumber() == number;
   };
-  auto found = std::ranges::find_if(date_categories_, find_lambda);
+  const auto found = std::ranges::find_if(date_categories_, find_lambda);
   if (found != date_categories_.end()) {
     return found->GetName();
   }

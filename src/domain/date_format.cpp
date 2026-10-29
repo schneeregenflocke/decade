@@ -35,7 +35,7 @@ LocaleDateFormatter::LocaleDateFormatter(const std::string& locale_name) {
   icu::UnicodeString pattern("yyyy-MM-dd");  // fallback
   const std::unique_ptr<icu::DateFormat> locale_format(
       icu::DateFormat::createDateInstance(icu::DateFormat::kShort, locale));
-  if (auto* simple =
+  if (const auto* simple =
           dynamic_cast<icu::SimpleDateFormat*>(locale_format.get())) {
     simple->toPattern(pattern);
   }

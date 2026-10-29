@@ -295,7 +295,8 @@ StepResult PickColor(const std::string& row_word, const std::string& hex) {
 
 // Opens a menu of the menu bar and clicks one of its entries. The entry may
 // open a modal dialogue, in which case this returns once it closed again.
-StepResult ChooseMenuEntry(QMainWindow& window, const std::string& menu_text,
+StepResult ChooseMenuEntry(const QMainWindow& window,
+                           const std::string& menu_text,
                            const std::string& entry_text) {
   QMenuBar* bar = window.menuBar();
   for (QAction* menu_action : bar->actions()) {
