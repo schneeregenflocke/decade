@@ -31,8 +31,11 @@ std::string PngExportConfig::ResolvedFilePath(
     return DefaultPngFilePath(project_file_path);
   }
   const std::filesystem::path written(file_path_);
-  if (written.is_absolute() || project_file_path.empty()) {
+  if (written.is_absolute()) {
     return file_path_;
+  }
+  if (project_file_path.empty()) {
+    return {};
   }
   return (std::filesystem::path(project_file_path).parent_path() / written)
       .string();

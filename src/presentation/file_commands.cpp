@@ -100,7 +100,10 @@ void FileCommands::ExportPng() {
       window_.Canvas().SavePNG(file_path, config.Dpi(), config.MsaaSamples());
   Report(title, error);
   if (!error) {
-    window_.PngExport().ShowSaved(file_path, QTime::currentTime());
+    window_.PngExport().ShowSaved(QFileInfo(QString::fromStdString(file_path))
+                                      .absoluteFilePath()
+                                      .toStdString(),
+                                  QTime::currentTime());
   }
 }
 

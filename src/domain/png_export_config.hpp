@@ -22,8 +22,8 @@ class PngExportConfig {
   void SetMsaaSamples(int msaa_samples);
   void SetFilePath(std::string file_path);
 
-  // A relative path counts from the project file's directory. Empty when
-  // neither the path nor the project file names a place: then ask.
+  // A relative path counts from the project file's directory. Empty when no
+  // project file anchors an empty or relative path: then ask.
   [[nodiscard]] std::string ResolvedFilePath(
       const std::string& project_file_path) const;
 

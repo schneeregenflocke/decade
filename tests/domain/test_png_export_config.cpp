@@ -54,11 +54,13 @@ TEST(PngExportConfigTest, AnAbsolutePathStaysAsWritten) {
   EXPECT_EQ(config.ResolvedFilePath("/p/plan.xml"), "/abs/a.png");
 }
 
-TEST(PngExportConfigTest, ARelativePathWithoutProjectStaysAsWritten) {
+// Without a project file a relative path has no anchor but the process's
+// working directory, which the user never sees: ask instead.
+TEST(PngExportConfigTest, ARelativePathWithoutProjectAsks) {
   PngExportConfig config;
   config.SetFilePath("a.png");
 
-  EXPECT_EQ(config.ResolvedFilePath(""), "a.png");
+  EXPECT_EQ(config.ResolvedFilePath(""), "");
 }
 
 // The tab offers powers of two alone; a hand-edited file must land on one.
