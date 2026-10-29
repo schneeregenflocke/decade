@@ -57,6 +57,8 @@ class FileCommands {
 
   void ExportCsv();
 
+  // Exports to the configured place: the dialogue opens only when neither the
+  // tab nor the project file names one, and the chosen place stays configured.
   void ExportPng();
 
   // An empty return value means: cancelled.

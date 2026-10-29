@@ -24,6 +24,7 @@
 #include "license_panel.hpp"
 #include "main_menu.hpp"
 #include "page_panel.hpp"
+#include "png_export_panel.hpp"
 #include "scene_tree_panel.hpp"
 #include "shape_panel.hpp"
 #include "title_panel.hpp"
@@ -64,6 +65,7 @@ class MainWindow : public QMainWindow {
   [[nodiscard]] TitleSetupPanel& TitleSetup();
   [[nodiscard]] CalendarSetupPanel& CalendarSetup();
   [[nodiscard]] CsvImportPanel& CsvImport();
+  [[nodiscard]] PngExportPanel& PngExport();
   [[nodiscard]] FontPanel& Font();
   [[nodiscard]] ShapeSetupPanel& ShapeSetup();
   [[nodiscard]] SceneTreePanel& SceneTree();
@@ -113,6 +115,7 @@ class MainWindow : public QMainWindow {
   QPointer<TitleSetupPanel> title_setup_panel_;
   QPointer<CalendarSetupPanel> calendar_setup_panel_;
   QPointer<CsvImportPanel> csv_import_panel_;
+  QPointer<PngExportPanel> png_export_panel_;
   QPointer<GLCanvas> gl_canvas_;
   QPointer<FontPanel> font_panel_;
   QPointer<DateTablePanel> data_table_panel_;

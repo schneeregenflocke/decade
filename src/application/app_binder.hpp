@@ -7,6 +7,7 @@
 #include "../domain/date_category_store.hpp"
 #include "../domain/date_entry_store.hpp"
 #include "../domain/page_setup_store.hpp"
+#include "../domain/png_export_config_store.hpp"
 #include "../domain/shape_configuration_store.hpp"
 #include "../domain/title_config_store.hpp"
 #include "../presentation/calendar_panel.hpp"
@@ -17,6 +18,7 @@
 #include "../presentation/font_panel.hpp"
 #include "../presentation/gl_canvas.hpp"
 #include "../presentation/page_panel.hpp"
+#include "../presentation/png_export_panel.hpp"
 #include "../presentation/scene_tree_panel.hpp"
 #include "../presentation/shape_panel.hpp"
 #include "../presentation/title_panel.hpp"
@@ -38,6 +40,7 @@ struct AppComponents {
   TitleConfigStore& title_config_store;
   ShapeConfigurationStore& shape_configuration_store;
   CalendarConfigStore& calendar_configuration_store;
+  PngExportConfigStore& png_export_config_store;
   application::ProjectDocument& project_document;
 
   DateTablePanel& data_table_panel;
@@ -47,6 +50,7 @@ struct AppComponents {
   TitleSetupPanel& title_setup_panel;
   CalendarSetupPanel& calendar_setup_panel;
   CsvImportPanel& csv_import_panel;
+  PngExportPanel& png_export_panel;
   FontPanel& font_panel;
   SceneTreePanel& scene_tree_panel;
   ShapeSetupPanel& shape_setup_panel;
@@ -96,7 +100,7 @@ class AppWiring {
   AppWiring& operator=(AppWiring&&) = delete;
 
  private:
-  // Of the twenty components the binder reaches, these three outlive the call:
+  // Of the components the binder reaches, these three outlive the call:
   // their callbacks want dropping again.
   CallbackTargets callback_targets_;
   // The context object of every connection Bind makes. Qt releases them all

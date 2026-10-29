@@ -10,6 +10,7 @@
 #include "../domain/date_category_store.hpp"
 #include "../domain/date_entry_store.hpp"
 #include "../domain/page_setup_store.hpp"
+#include "../domain/png_export_config_store.hpp"
 #include "../domain/shape_configuration_store.hpp"
 #include "../domain/state_topics.hpp"
 #include "../domain/text_edit_buffer.hpp"
@@ -22,6 +23,7 @@
 #include "../presentation/font_panel.hpp"
 #include "../presentation/gl_canvas.hpp"
 #include "../presentation/page_panel.hpp"
+#include "../presentation/png_export_panel.hpp"
 #include "../presentation/scene_tree_panel.hpp"
 #include "../presentation/shape_panel.hpp"
 #include "../presentation/title_panel.hpp"
@@ -203,6 +205,23 @@ void BindCsvImport(QObject& scope, const AppComponents& components) {
           &application::ProjectDocument::ReceiveCsvImportOptions);
 }
 
+// The tab shows what the page comes out at, so it follows the page format and
+// the project file beside its own settings.
+void BindPngExport(QObject& scope, EventBus& bus,
+                   const AppComponents& components) {
+  Connect(scope, components.png_export_panel,
+          &PngExportPanel::PngExportConfigEdited,
+          components.png_export_config_store,
+          &PngExportConfigStore::ReceivePngExportConfig);
+  Connect(scope, bus.png_export_config,
+          &domain::PngExportConfigTopic::Published, components.png_export_panel,
+          &PngExportPanel::ReceivePngExportConfig);
+  Connect(scope, bus.page_setup, &domain::PageSetupTopic::Published,
+          components.png_export_panel, &PngExportPanel::ReceivePageSetup);
+  Connect(scope, bus.project_file_path, &domain::FilePathTopic::Published,
+          components.png_export_panel, &PngExportPanel::ReceiveProjectFilePath);
+}
+
 // The rendering adapter publishes the scene snapshots itself; the scene tree
 // panel is the only consumer.
 void BindSceneSnapshot(QObject& scope, EventBus& bus,
@@ -321,6 +340,7 @@ void Bind(QObject& scope, EventBus& bus, const AppComponents& components) {
   BindShapeConfiguration(scope, bus, components);
   BindCalendarConfig(scope, bus, components);
   BindCsvImport(scope, components);
+  BindPngExport(scope, bus, components);
   BindSceneSnapshot(scope, bus, components);
   BindSelection(scope, bus, components);
   BindEntrySelection(scope, bus, components);
@@ -341,13 +361,14 @@ void ReleaseCallbacks(const CallbackTargets& targets) {
 }
 
 void SendInitialValues(EventBus& bus, const AppComponents& components) {
-  // Five producers in a row, one rebuild at the end (#36).
+  // Six producers in a row, one rebuild at the end (#36).
   const application::StateBurst burst(bus.state_burst);
   components.shape_configuration_store.SendShapeConfigSet();
   components.date_categories_store.SendDefaultValues();
   components.page_setup_panel.SendDefaultValues();
   components.title_setup_panel.SendDefaultValues();
   components.calendar_configuration_store.SendCalendarConfig();
+  components.png_export_config_store.SendPngExportConfig();
 }
 
 }  // namespace app_binder

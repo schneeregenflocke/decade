@@ -27,6 +27,7 @@
 #include "main_menu.hpp"
 #include "make_owned.hpp"
 #include "page_panel.hpp"
+#include "png_export_panel.hpp"
 #include "scene_tree_panel.hpp"
 #include "shape_panel.hpp"
 #include "title_panel.hpp"
@@ -66,6 +67,8 @@ CalendarSetupPanel& MainWindow::CalendarSetup() {
 }
 
 CsvImportPanel& MainWindow::CsvImport() { return *csv_import_panel_; }
+
+PngExportPanel& MainWindow::PngExport() { return *png_export_panel_; }
 
 FontPanel& MainWindow::Font() { return *font_panel_; }
 
@@ -140,6 +143,8 @@ void MainWindow::CreatePanels(QTabWidget* tabs) {
   calendar_setup_panel_ = calendar_setup_panel;
   auto* csv_import_panel = MakeOwned<CsvImportPanel>(tabs);
   csv_import_panel_ = csv_import_panel;
+  auto* png_export_panel = MakeOwned<PngExportPanel>(tabs);
+  png_export_panel_ = png_export_panel;
   auto* scene_tree_panel = MakeOwned<SceneTreePanel>(tabs);
   scene_tree_panel_ = scene_tree_panel;
   auto* shape_setup_panel = MakeOwned<ShapeSetupPanel>(tabs);
@@ -160,6 +165,7 @@ void MainWindow::CreatePanels(QTabWidget* tabs) {
   tabs->addTab(document_setup_panel, "Document");
   tabs->addTab(shape_setup_panel, "Shapes");
   tabs->addTab(calendar_setup_panel, "Timeframe");
+  tabs->addTab(png_export_panel, "PNG Export");
   tabs->addTab(scene_tree_panel, "Scene");
 }
 
@@ -173,6 +179,8 @@ void MainWindow::InitMenu() {
   ConnectFileCommand(actions.import_csv, FileCommand::kImportCsv);
   ConnectFileCommand(actions.export_csv, FileCommand::kExportCsv);
   ConnectFileCommand(actions.export_png, FileCommand::kExportPng);
+  connect(png_export_panel_.data(), &PngExportPanel::ExportRequested, this,
+          [this] { emit FileCommandRequested(FileCommand::kExportPng); });
 
   connect(actions.quit, &QAction::triggered, this, [this] { close(); });
   connect(actions.license_info, &QAction::triggered, this, [this] {

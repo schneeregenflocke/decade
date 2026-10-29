@@ -41,6 +41,7 @@ add_executable(decade_tests
 	presentation/test_shape_panel.cpp
 	presentation/test_calendar_panel.cpp
 	presentation/test_csv_import_panel.cpp
+	presentation/test_png_export_panel.cpp
 	presentation/test_gui_script.cpp
 )
 

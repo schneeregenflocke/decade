@@ -2,12 +2,15 @@
 
 #include <QtCore/QFileInfo>
 #include <QtCore/QString>
+#include <QtCore/QTime>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMessageBox>
 #include <optional>
 #include <string>
 
 #include "../application/project_document.hpp"
+#include "../domain/png_export_config.hpp"
+#include "../domain/png_export_config_store.hpp"
 #include "main_window.hpp"
 
 FileCommands::FileCommands(MainWindow& window,
@@ -78,13 +81,27 @@ void FileCommands::ExportCsv() {
 }
 
 void FileCommands::ExportPng() {
-  const std::string file_path = AskSavePath("Export PNG file", kPngFile);
+  const QString title = "Export PNG file";
+  PngExportConfigStore& store = document_.PngExportConfiguration();
+  PngExportConfig config = store.Get();
+  std::string file_path = config.ResolvedFilePath(document_.FilePath());
   if (file_path.empty()) {
+    file_path = AskSavePath(title, kPngFile);
+    if (file_path.empty()) {
+      return;
+    }
+    config.SetFilePath(file_path);
+    store.ReceivePngExportConfig(config);
+  } else if (QFileInfo::exists(QString::fromStdString(file_path)) &&
+             !ConfirmOverwrite(title, QString::fromStdString(file_path))) {
     return;
   }
-  Report("Export PNG file",
-         window_.Canvas().SavePNG(file_path, GLCanvas::kExportPngDpi,
-                                  GLCanvas::kExportMsaaSamples));
+  const std::optional<std::string> error =
+      window_.Canvas().SavePNG(file_path, config.Dpi(), config.MsaaSamples());
+  Report(title, error);
+  if (!error) {
+    window_.PngExport().ShowSaved(file_path, QTime::currentTime());
+  }
 }
 
 std::string FileCommands::AskOpenPath(const QString& title,
