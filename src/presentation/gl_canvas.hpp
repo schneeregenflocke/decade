@@ -132,12 +132,12 @@ class GLCanvas : public QOpenGLWidget, public application::RenderSurface {
   // interaction.
   [[nodiscard]] double CurrentFps() const;
 
-  // The off-screen framebuffers of the export come into being in this context,
-  // so it has to be current — this runs outside the rendering callbacks. The
-  // return: empty on success, otherwise why nothing got written.
   // The zoom reaches as far as the export resolution shows detail.
   void ReceivePngExportConfig(const PngExportConfig& config);
 
+  // The off-screen framebuffers of the export come into being in this context,
+  // so it has to be current — this runs outside the rendering callbacks. The
+  // return: empty on success, otherwise why nothing got written.
   [[nodiscard]] std::optional<std::string> SavePNG(const std::string& file_path,
                                                    int dpi, int msaa_samples);
 
