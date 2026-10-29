@@ -17,6 +17,8 @@
 #include "../../domain/date_entry_store.hpp"
 #include "../../domain/page_setup_config.hpp"
 #include "../../domain/page_setup_store.hpp"
+#include "../../domain/png_export_config.hpp"
+#include "../../domain/png_export_config_store.hpp"
 #include "../../domain/shape_configuration.hpp"
 #include "../../domain/shape_configuration_store.hpp"
 #include "../../domain/title_config.hpp"
@@ -32,7 +34,8 @@ std::optional<std::string> LoadProjectXml(
     DateEntryStore& date_entry_store, PageSetupStore& page_setup_store,
     TitleConfigStore& title_config_store,
     ShapeConfigurationStore& shape_configuration_store,
-    CalendarConfigStore& calendar_configuration_store) {
+    CalendarConfigStore& calendar_configuration_store,
+    PngExportConfigStore& png_export_config_store) {
   std::ifstream filestream(file_path);
   if (!filestream.is_open()) {
     return "Cannot open project file: " + file_path;
@@ -47,6 +50,7 @@ std::optional<std::string> LoadProjectXml(
   TitleConfig title_config;
   ShapeConfigSet shape_config_set;
   CalendarConfig calendar_config;
+  PngExportConfig png_export_config;
   try {
     boost::archive::xml_iarchive iarchive(filestream);
     iarchive >>
@@ -58,6 +62,7 @@ std::optional<std::string> LoadProjectXml(
         boost::serialization::make_nvp("shape_config", shape_config_set);
     iarchive >>
         boost::serialization::make_nvp("calendar_config", calendar_config);
+    iarchive >> boost::serialization::make_nvp("png_export", png_export_config);
   } catch (const std::exception& read_error) {
     return "Loading the project file failed: " + std::string(read_error.what());
   }
@@ -72,6 +77,7 @@ std::optional<std::string> LoadProjectXml(
   title_config_store.ReceiveTitleConfig(title_config);
   shape_configuration_store.ReceiveShapeConfigSet(shape_config_set);
   calendar_configuration_store.ReceiveCalendarConfig(calendar_config);
+  png_export_config_store.ReceivePngExportConfig(png_export_config);
   return std::nullopt;
 }
 
@@ -82,7 +88,8 @@ std::optional<std::string> SaveProjectXml(
     const PageSetupStore& page_setup_store,
     const TitleConfigStore& title_config_store,
     const ShapeConfigurationStore& shape_configuration_store,
-    const CalendarConfigStore& calendar_configuration_store) {
+    const CalendarConfigStore& calendar_configuration_store,
+    const PngExportConfigStore& png_export_config_store) {
   std::ofstream filestream(file_path);
   if (!filestream.is_open()) {
     return "Cannot open file for writing: " + file_path;
@@ -105,6 +112,8 @@ std::optional<std::string> SaveProjectXml(
                                                shape_configuration_store.Get());
     oarchive << boost::serialization::make_nvp(
         "calendar_config", calendar_configuration_store.Get());
+    oarchive << boost::serialization::make_nvp("png_export",
+                                               png_export_config_store.Get());
   } catch (const std::exception& write_error) {
     return "Saving the project file failed: " + std::string(write_error.what());
   }

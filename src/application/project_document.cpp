@@ -11,6 +11,7 @@
 #include "../domain/date_entry_store.hpp"
 #include "../domain/date_format.hpp"
 #include "../domain/page_setup_store.hpp"
+#include "../domain/png_export_config_store.hpp"
 #include "../domain/shape_configuration_store.hpp"
 #include "../domain/title_config.hpp"
 #include "../domain/title_config_store.hpp"
@@ -31,16 +32,17 @@ ProjectDocument::ProjectDocument(EventBus& bus,
       page_setup_store_(bus.page_setup),
       title_config_store_(bus.title_config),
       shape_configuration_store_(bus.shape_config_set),
-      calendar_configuration_store_(bus.calendar_config) {}
+      calendar_configuration_store_(bus.calendar_config),
+      png_export_config_store_(bus.png_export_config) {}
 
 std::optional<std::string> ProjectDocument::LoadXml(std::string file_path) {
-  // Six stores get filled one after another and every one of them publishes.
+  // Seven stores get filled one after another and every one of them publishes.
   // The bracket makes that one change for whoever rebuilds on it (#36).
   const StateBurst burst(state_burst_topic_);
   if (auto error = persistence::LoadProjectXml(
           file_path, date_categories_store_, date_entry_store_,
           page_setup_store_, title_config_store_, shape_configuration_store_,
-          calendar_configuration_store_)) {
+          calendar_configuration_store_, png_export_config_store_)) {
     return error;
   }
   SetFilePath(std::move(file_path));
@@ -51,7 +53,7 @@ std::optional<std::string> ProjectDocument::SaveXml(std::string file_path) {
   if (auto error = persistence::SaveProjectXml(
           file_path, date_categories_store_, date_entry_store_,
           page_setup_store_, title_config_store_, shape_configuration_store_,
-          calendar_configuration_store_)) {
+          calendar_configuration_store_, png_export_config_store_)) {
     return error;
   }
   SetFilePath(std::move(file_path));
@@ -102,6 +104,10 @@ ShapeConfigurationStore& ProjectDocument::ShapeConfiguration() {
 
 CalendarConfigStore& ProjectDocument::CalendarConfiguration() {
   return calendar_configuration_store_;
+}
+
+PngExportConfigStore& ProjectDocument::PngExportConfiguration() {
+  return png_export_config_store_;
 }
 
 void ProjectDocument::SetFilePath(std::string file_path) {

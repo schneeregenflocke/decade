@@ -10,6 +10,7 @@
 #include "../domain/date_entry_store.hpp"
 #include "../domain/date_format.hpp"
 #include "../domain/page_setup_store.hpp"
+#include "../domain/png_export_config_store.hpp"
 #include "../domain/shape_configuration_store.hpp"
 #include "../domain/state_topics.hpp"
 #include "../domain/title_config_store.hpp"
@@ -57,6 +58,7 @@ class ProjectDocument {
   [[nodiscard]] TitleConfigStore& TitleConfiguration();
   [[nodiscard]] ShapeConfigurationStore& ShapeConfiguration();
   [[nodiscard]] CalendarConfigStore& CalendarConfiguration();
+  [[nodiscard]] PngExportConfigStore& PngExportConfiguration();
 
  private:
   // The path changes with loading and saving alone; the display learns it over
@@ -75,6 +77,7 @@ class ProjectDocument {
   TitleConfigStore title_config_store_;
   ShapeConfigurationStore shape_configuration_store_;
   CalendarConfigStore calendar_configuration_store_;
+  PngExportConfigStore png_export_config_store_;
 };
 
 }  // namespace application

@@ -11,6 +11,7 @@
 #include "../../domain/date_category_store.hpp"
 #include "../../domain/date_entry_store.hpp"
 #include "../../domain/page_setup_store.hpp"
+#include "../../domain/png_export_config_store.hpp"
 #include "../../domain/shape_configuration_store.hpp"
 #include "../../domain/title_config_store.hpp"
 
@@ -24,7 +25,8 @@ namespace persistence {
     DateEntryStore& date_entry_store, PageSetupStore& page_setup_store,
     TitleConfigStore& title_config_store,
     ShapeConfigurationStore& shape_configuration_store,
-    CalendarConfigStore& calendar_configuration_store);
+    CalendarConfigStore& calendar_configuration_store,
+    PngExportConfigStore& png_export_config_store);
 
 [[nodiscard]] std::optional<std::string> SaveProjectXml(
     const std::string& file_path,
@@ -33,7 +35,8 @@ namespace persistence {
     const PageSetupStore& page_setup_store,
     const TitleConfigStore& title_config_store,
     const ShapeConfigurationStore& shape_configuration_store,
-    const CalendarConfigStore& calendar_configuration_store);
+    const CalendarConfigStore& calendar_configuration_store,
+    const PngExportConfigStore& png_export_config_store);
 
 }  // namespace persistence
 

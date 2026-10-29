@@ -16,6 +16,7 @@
 #include "domain/date_category.hpp"
 #include "domain/date_entry.hpp"
 #include "domain/date_period.hpp"
+#include "domain/png_export_config.hpp"
 #include "infrastructure/persistence/value_serialization.hpp"
 
 namespace {
@@ -261,4 +262,17 @@ TEST(ValueSerializationTest, CalendarConfigVersionTwoFitsThePage) {
 
   EXPECT_FALSE(loaded.Sizing().FixesWidth());
   EXPECT_FALSE(loaded.Sizing().FixesHeight());
+}
+
+TEST(ValueSerializationTest, PngExportConfigRoundTrip) {
+  PngExportConfig config;
+  config.SetDpi(300);
+  config.SetMsaaSamples(4);
+  config.SetFilePath("out/a.png");
+
+  const auto loaded = XmlRoundTrip(config);
+
+  EXPECT_EQ(loaded.Dpi(), 300);
+  EXPECT_EQ(loaded.MsaaSamples(), 4);
+  EXPECT_EQ(loaded.FilePath(), "out/a.png");
 }

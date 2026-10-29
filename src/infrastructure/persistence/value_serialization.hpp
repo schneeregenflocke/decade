@@ -30,6 +30,7 @@
 #include "../../domain/date_entry.hpp"
 #include "../../domain/date_period.hpp"
 #include "../../domain/page_setup_config.hpp"
+#include "../../domain/png_export_config.hpp"
 #include "../../domain/shape_configuration.hpp"
 #include "../../domain/title_config.hpp"
 
@@ -132,6 +133,31 @@ void load(Archive& ar, PageSetupConfig& config, const unsigned int /*v*/) {
   config.SetSize(size);
   config.SetMargins(margins);
   config.SetOrientation(orientation);
+}
+
+// --- PngExportConfig ---
+template <class Archive>
+void save(Archive& ar, const PngExportConfig& config,
+          const unsigned int /*v*/) {
+  const int dpi = config.Dpi();
+  const int msaa_samples = config.MsaaSamples();
+  const std::string& file_path = config.FilePath();
+  ar& make_nvp("dpi", dpi);
+  ar& make_nvp("msaa_samples", msaa_samples);
+  ar& make_nvp("file_path", file_path);
+}
+
+template <class Archive>
+void load(Archive& ar, PngExportConfig& config, const unsigned int /*v*/) {
+  int dpi = PngExportConfig::kDefaultDpi;
+  int msaa_samples = PngExportConfig::kDefaultMsaaSamples;
+  std::string file_path;
+  ar& make_nvp("dpi", dpi);
+  ar& make_nvp("msaa_samples", msaa_samples);
+  ar& make_nvp("file_path", file_path);
+  config.SetDpi(dpi);
+  config.SetMsaaSamples(msaa_samples);
+  config.SetFilePath(file_path);
 }
 
 // --- TitleConfig ---
@@ -328,6 +354,7 @@ void load(Archive& ar, CalendarConfig& config, const unsigned int version) {
 BOOST_SERIALIZATION_SPLIT_FREE(DateCategory)
 BOOST_SERIALIZATION_SPLIT_FREE(DateEntry)
 BOOST_SERIALIZATION_SPLIT_FREE(PageSetupConfig)
+BOOST_SERIALIZATION_SPLIT_FREE(PngExportConfig)
 BOOST_SERIALIZATION_SPLIT_FREE(TitleConfig)
 BOOST_SERIALIZATION_SPLIT_FREE(ShapeConfiguration)
 BOOST_SERIALIZATION_SPLIT_FREE(ShapeConfigSet)
