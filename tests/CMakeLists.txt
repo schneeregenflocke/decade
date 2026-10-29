@@ -17,6 +17,8 @@ add_executable(decade_tests
 	domain/test_reentry_guard.cpp
 	domain/test_date_category_store.cpp
 	domain/test_page_setup_store.cpp
+	domain/test_png_export_config.cpp
+	domain/test_png_export_config_store.cpp
 	domain/test_title_config_store.cpp
 	domain/test_shape_configuration_store.cpp
 	domain/test_calendar_config.cpp

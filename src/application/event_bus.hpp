@@ -19,6 +19,7 @@ struct EventBus {
   domain::DateEntriesTopic date_entries;
   domain::DateCategoriesTopic date_categories;
   domain::PageSetupTopic page_setup;
+  domain::PngExportConfigTopic png_export_config;
   domain::FilePathTopic project_file_path;
   domain::FontConfigTopic font_config;
   domain::TitleConfigTopic title_config;

@@ -12,6 +12,7 @@
 #include "date_entry.hpp"
 #include "font_config.hpp"
 #include "page_setup_config.hpp"
+#include "png_export_config.hpp"
 #include "scene_snapshot.hpp"
 #include "shape_configuration.hpp"
 #include "text_edit_view.hpp"
@@ -61,6 +62,16 @@ class PageSetupTopic : public QObject {
 
  signals:
   void Published(const PageSetupConfig& page_setup);
+};
+
+class PngExportConfigTopic : public QObject {
+  Q_OBJECT
+
+ public:
+  void Publish(const PngExportConfig& png_export_config);
+
+ signals:
+  void Published(const PngExportConfig& png_export_config);
 };
 
 class FontConfigTopic : public QObject {

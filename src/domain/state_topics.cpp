@@ -12,6 +12,7 @@
 #include "date_entry.hpp"
 #include "font_config.hpp"
 #include "page_setup_config.hpp"
+#include "png_export_config.hpp"
 #include "scene_snapshot.hpp"
 #include "shape_configuration.hpp"
 #include "text_edit_view.hpp"
@@ -30,6 +31,10 @@ void DateCategoriesTopic::Publish(
 
 void PageSetupTopic::Publish(const PageSetupConfig& page_setup) {
   emit Published(page_setup);
+}
+
+void PngExportConfigTopic::Publish(const PngExportConfig& png_export_config) {
+  emit Published(png_export_config);
 }
 
 void FontConfigTopic::Publish(const FontConfig& font_config) {
