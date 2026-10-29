@@ -159,10 +159,12 @@ void TitleTextEditor::End() {
 }
 
 void TitleTextEditor::Publish(const TextEditBuffer& buffer) {
-  edit_topic_.Publish(TextEditView{.text = EncodeUtf8(buffer.Text()),
-                                   .caret = buffer.Caret(),
-                                   .selection_begin = buffer.SelectionBegin(),
-                                   .selection_end = buffer.SelectionEnd()});
+  edit_topic_.Publish(TextEditView{
+      .text = EncodeUtf8(buffer.Text()),
+      .caret = buffer.Caret(),
+      .selection_begin = buffer.SelectionBegin(),
+      .selection_end = buffer.SelectionEnd(),
+  });
 }
 
 bool TitleTextEditor::HitsTitle(glm::vec2 page_point) const {

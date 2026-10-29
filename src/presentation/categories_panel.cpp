@@ -27,9 +27,11 @@
 
 DateCategoriesTablePanel::DateCategoriesTablePanel(QWidget* parent)
     : TablePanelBase(parent, QAbstractItemView::SingleSelection) {
-  InitColumns({{.label = "Number", .editable = false},
-               {.label = "Color", .editable = false},
-               {.label = "Name", .editable = true}});
+  InitColumns({
+      {.label = "Number", .editable = false},
+      {.label = "Color", .editable = false},
+      {.label = "Name", .editable = true},
+  });
   BuildTableLayout();
 
   auto* color_delegate = MakeOwned<ColorButtonDelegate>(this);

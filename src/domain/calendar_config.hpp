@@ -76,7 +76,8 @@ class CalendarConfig : public CalendarSpan {
   bool shows_annual_coverage_{true};
   BandProportions band_proportions_{
       kProportionSmall,  kProportionLarge, kProportionMedium, kProportionLarge,
-      kProportionMedium, kProportionLarge, kProportionSmall};
+      kProportionMedium, kProportionLarge, kProportionSmall,
+  };
   CalendarSizing sizing_;
 };
 #endif  // CALENDAR_CONFIG_HPP

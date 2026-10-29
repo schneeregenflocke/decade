@@ -95,7 +95,8 @@ bool MainWindow::SaveScreenshot(const std::string& file_path) {
   const window_screenshot::Overlay overlay{
       .image = gl_canvas_->CaptureImage(),
       .origin = gl_canvas_->mapTo(this, QPoint(0, 0)),
-      .size = gl_canvas_->size()};
+      .size = gl_canvas_->size(),
+  };
   return window_screenshot::SaveWindowPng(*this, overlay, file_path);
 }
 

@@ -70,9 +70,11 @@ CalendarLayout::Heights CalendarLayout::ComputeHeights(
   const CalendarSizing& sizing = config.Sizing();
   if (sizing.FixesHeight()) {
     const CalendarSizing::Heights& fixed = sizing.FixedHeights();
-    return {.band = SumOfParts(config.LaidOutBandParts()),
-            .column_labels = fixed.column_labels,
-            .legend = fixed.legend};
+    return {
+        .band = SumOfParts(config.LaidOutBandParts()),
+        .column_labels = fixed.column_labels,
+        .legend = fixed.legend,
+    };
   }
   const std::size_t band_count = kLabelAndLegendBands + config.YearCount();
   const float band = available.Height() / static_cast<float>(band_count);
@@ -85,8 +87,10 @@ CalendarLayout::Widths CalendarLayout::ComputeWidths(
   const CalendarSizing& sizing = config.Sizing();
   if (sizing.FixesWidth()) {
     const CalendarSizing::Widths& fixed = sizing.FixedWidths();
-    return {.row_labels = fixed.row_labels,
-            .cells = fixed.day * static_cast<float>(row_days)};
+    return {
+        .row_labels = fixed.row_labels,
+        .cells = fixed.day * static_cast<float>(row_days),
+    };
   }
   const float calendar_width = available.Width() - kDefaultMargin;
   const float row_labels = calendar_width / kCalendarColumns;

@@ -91,14 +91,18 @@ bool ShapeConfigSet::UpdateConfiguration(const ShapeConfiguration& config) {
 
 std::string_view ShapeConfigSet::FixedConfigurationLabel(std::string_view key) {
   static constexpr std::array<std::pair<std::string_view, std::string_view>, 8>
-      kLabels{{{kPageMarginKey, "Page Margin"},
-               {kTitleFrameKey, "Title Frame"},
-               {kCalendarLabelsKey, "Calendar Labels"},
-               {kDayShapesKey, "Day Shapes"},
-               {kSundayShapesKey, "Sunday Shapes"},
-               {kMonthsShapesKey, "Months Shapes"},
-               {kYearsShapesKey, "Years Shapes"},
-               {kAnnualCoverageKey, "Annual Coverage"}}};
+      kLabels{
+          {
+              {kPageMarginKey, "Page Margin"},
+              {kTitleFrameKey, "Title Frame"},
+              {kCalendarLabelsKey, "Calendar Labels"},
+              {kDayShapesKey, "Day Shapes"},
+              {kSundayShapesKey, "Sunday Shapes"},
+              {kMonthsShapesKey, "Months Shapes"},
+              {kYearsShapesKey, "Years Shapes"},
+              {kAnnualCoverageKey, "Annual Coverage"},
+          },
+  };
   const auto* found = std::ranges::find(
       kLabels, key, &std::pair<std::string_view, std::string_view>::first);
   return found != kLabels.end() ? found->second : key;

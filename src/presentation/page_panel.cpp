@@ -61,14 +61,17 @@ void PageSetupPanel::SendPageSetup() {
   page_setup_config.SetOrientation(landscape ? kLandscape : kPortrait);
   page_setup_config.SetSize(
       landscape ? std::array<float, 2>{static_cast<float>(paper.height()),
-                                       static_cast<float>(paper.width())}
+                                       static_cast<float>(paper.width()),}
                 : std::array<float, 2>{static_cast<float>(paper.width()),
-                                       static_cast<float>(paper.height())});
+                                       static_cast<float>(paper.height()),});
 
   const QMarginsF margins = page_layout_.margins(QPageLayout::Millimeter);
-  page_setup_config.SetMargins(
-      {static_cast<float>(margins.left()), static_cast<float>(margins.bottom()),
-       static_cast<float>(margins.right()), static_cast<float>(margins.top())});
+  page_setup_config.SetMargins({
+      static_cast<float>(margins.left()),
+      static_cast<float>(margins.bottom()),
+      static_cast<float>(margins.right()),
+      static_cast<float>(margins.top()),
+  });
 
   emit PageSetupEdited(page_setup_config);
 }

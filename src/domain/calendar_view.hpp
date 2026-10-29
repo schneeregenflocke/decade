@@ -10,8 +10,10 @@
 enum class CalendarView : std::uint8_t { kYearPerRow, kAllYearsInOneRow };
 
 // Every view, in the order a chooser offers them.
-inline constexpr std::array kCalendarViews{CalendarView::kYearPerRow,
-                                           CalendarView::kAllYearsInOneRow};
+inline constexpr std::array kCalendarViews{
+    CalendarView::kYearPerRow,
+    CalendarView::kAllYearsInOneRow,
+};
 
 [[nodiscard]] std::string_view CalendarViewName(CalendarView view);
 

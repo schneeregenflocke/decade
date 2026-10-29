@@ -20,18 +20,24 @@ struct CommandShape {
 
 constexpr std::size_t kUnbounded = 1000;
 
-constexpr std::array<CommandShape, 10> kCommands{{
-    {.name = "tab", .min_arguments = 1, .max_arguments = 1},
-    {.name = "click", .min_arguments = 1, .max_arguments = 1},
-    {.name = "edit-cell", .min_arguments = 3, .max_arguments = 3},
-    {.name = "select-rows", .min_arguments = 1, .max_arguments = kUnbounded},
-    {.name = "choose", .min_arguments = 2, .max_arguments = 2},
-    {.name = "pick-color", .min_arguments = 2, .max_arguments = 2},
-    {.name = "menu", .min_arguments = 2, .max_arguments = 2},
-    {.name = "file-dialog", .min_arguments = 1, .max_arguments = 1},
-    {.name = "wait", .min_arguments = 1, .max_arguments = 1},
-    {.name = "quit", .min_arguments = 0, .max_arguments = 0},
-}};
+constexpr std::array<CommandShape, 10> kCommands{
+    {
+        {.name = "tab", .min_arguments = 1, .max_arguments = 1},
+        {.name = "click", .min_arguments = 1, .max_arguments = 1},
+        {.name = "edit-cell", .min_arguments = 3, .max_arguments = 3},
+        {
+            .name = "select-rows",
+            .min_arguments = 1,
+            .max_arguments = kUnbounded,
+        },
+        {.name = "choose", .min_arguments = 2, .max_arguments = 2},
+        {.name = "pick-color", .min_arguments = 2, .max_arguments = 2},
+        {.name = "menu", .min_arguments = 2, .max_arguments = 2},
+        {.name = "file-dialog", .min_arguments = 1, .max_arguments = 1},
+        {.name = "wait", .min_arguments = 1, .max_arguments = 1},
+        {.name = "quit", .min_arguments = 0, .max_arguments = 0},
+    },
+};
 
 std::expected<std::vector<std::string>, std::string> SplitWords(
     std::string_view line) {
@@ -101,19 +107,23 @@ std::expected<std::vector<GuiStep>, GuiScriptError> ParseGuiScript(
         std::ranges::find(kCommands, command, &CommandShape::name);
     if (shape == kCommands.end()) {
       return std::unexpected(GuiScriptError{
-          .line = line_number, .message = "unknown command: " + command});
+          .line = line_number,
+          .message = "unknown command: " + command,
+      });
     }
     const std::size_t argument_count = words->size() - 1;
     if (argument_count < shape->min_arguments ||
         argument_count > shape->max_arguments) {
       return std::unexpected(GuiScriptError{
           .line = line_number,
-          .message = "wrong number of arguments for " + command});
+          .message = "wrong number of arguments for " + command,
+      });
     }
-    steps.push_back(GuiStep{.line = line_number,
-                            .command = command,
-                            .arguments = std::vector<std::string>(
-                                words->begin() + 1, words->end())});
+    steps.push_back(GuiStep{
+        .line = line_number,
+        .command = command,
+        .arguments = std::vector<std::string>(words->begin() + 1, words->end()),
+    });
   }
   return steps;
 }

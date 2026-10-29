@@ -88,25 +88,35 @@ constexpr std::span<const unsigned char> AsText(
 
 inline constexpr std::array kNotices{
     Notice{.name = "Decade", .text = detail::AsText(detail::kDecadeData)},
-    Notice{.name = "Third-party notices",
-           .text = detail::AsText(detail::kNoticesData)},
-    Notice{.name = "Qt 6 (LGPL v3)",
-           .text = detail::AsText(detail::kQtLgplData)},
+    Notice{
+        .name = "Third-party notices",
+        .text = detail::AsText(detail::kNoticesData),
+    },
+    Notice{
+        .name = "Qt 6 (LGPL v3)",
+        .text = detail::AsText(detail::kQtLgplData),
+    },
     Notice{.name = "GNU GPL v3", .text = detail::AsText(detail::kGplData)},
     Notice{.name = "Boost", .text = detail::AsText(detail::kBoostData)},
-    Notice{.name = "Bullet Physics",
-           .text = detail::AsText(detail::kBulletData)},
+    Notice{
+        .name = "Bullet Physics",
+        .text = detail::AsText(detail::kBulletData),
+    },
     Notice{.name = "csv2", .text = detail::AsText(detail::kCsv2Data)},
     Notice{.name = "csv2mio", .text = detail::AsText(detail::kCsv2MioData)},
-    Notice{.name = "fontconfig",
-           .text = detail::AsText(detail::kFontconfigData)},
+    Notice{
+        .name = "fontconfig",
+        .text = detail::AsText(detail::kFontconfigData),
+    },
     Notice{.name = "FreeType", .text = detail::AsText(detail::kFreetypeData)},
     Notice{.name = "glm", .text = detail::AsText(detail::kGlmData)},
     Notice{.name = "ICU", .text = detail::AsText(detail::kIcuData)},
     Notice{.name = "libepoxy", .text = detail::AsText(detail::kLibepoxyData)},
     Notice{.name = "libpng", .text = detail::AsText(detail::kLibpngData)},
-    Notice{.name = "Microsoft GSL",
-           .text = detail::AsText(detail::kMicrosoftGslData)},
+    Notice{
+        .name = "Microsoft GSL",
+        .text = detail::AsText(detail::kMicrosoftGslData),
+    },
     Notice{.name = "zlib", .text = detail::AsText(detail::kZlibData)},
 };
 

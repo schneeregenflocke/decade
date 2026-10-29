@@ -205,9 +205,11 @@ void load(Archive& ar, ShapeConfiguration& config, const unsigned int /*v*/) {
   config = ShapeConfiguration(
       std::move(key), outline_visible, fill_visible, line_width,
       ShapeConfiguration::OutlineColorValue{
-          persistence::serialization_detail::ColorFromArray(outline_color)},
+          persistence::serialization_detail::ColorFromArray(outline_color),
+      },
       ShapeConfiguration::FillColorValue{
-          persistence::serialization_detail::ColorFromArray(fill_color)});
+          persistence::serialization_detail::ColorFromArray(fill_color),
+      });
 }
 
 // --- ShapeConfigSet ---

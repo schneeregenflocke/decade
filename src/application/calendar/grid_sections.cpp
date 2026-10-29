@@ -91,10 +91,11 @@ float LabelSize(const SectionContext& ctx, bool fitted_to_frame,
       std::ranges::max_element(labels, {}, [&](const std::string& label) {
         return ctx.font->TextWidth(label, 1.0F);
       });
-  return ctx.font->AdjustTextSize(
-      frame, *widest,
-      Font::TextScale{.height_ratio = detail::kFontScaleMax,
-                      .width_ratio = detail::kFontScaleMax});
+  return ctx.font->AdjustTextSize(frame, *widest,
+                                  Font::TextScale{
+                                      .height_ratio = detail::kFontScaleMax,
+                                      .width_ratio = detail::kFontScaleMax,
+                                  });
 }
 
 }  // namespace

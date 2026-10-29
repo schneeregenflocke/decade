@@ -70,8 +70,10 @@ std::vector<LegendSlot> LegendSlots(const SectionContext& ctx,
   std::vector<LegendSlot> slots;
   slots.reserve(entry_count);
   for (std::size_t index = 0; index < entry_count; ++index) {
-    slots.push_back({.label_frame = frame_at(index * 2),
-                     .bar_frame = frame_at((index * 2) + 1)});
+    slots.push_back({
+        .label_frame = frame_at(index * 2),
+        .bar_frame = frame_at((index * 2) + 1),
+    });
   }
   return slots;
 }
@@ -88,20 +90,22 @@ LegendResult BuildLegend(const SectionContext& ctx) {
   entries.reserve(categories.size() + 1);
   const float category_bar_height = ctx.layout.BandPartHeight(BandPart::kDays);
   for (std::size_t index = 0; index < categories.size(); ++index) {
-    entries.push_back(
-        {.id = std::to_string(index),
-         .label = categories[index].GetName(),
-         .bar_height = category_bar_height,
-         .style = ctx.shape_config.GetDynamicConfiguration(index)});
+    entries.push_back({
+        .id = std::to_string(index),
+        .label = categories[index].GetName(),
+        .bar_height = category_bar_height,
+        .style = ctx.shape_config.GetDynamicConfiguration(index),
+    });
   }
   if (ctx.calendar_config.ShowsAnnualCoverage()) {
-    entries.push_back(
-        {.id = "annual coverage",
-         .label = std::string(ShapeConfigSet::FixedConfigurationLabel(
-             ShapeConfigSet::kAnnualCoverageKey)),
-         .bar_height = ctx.layout.BandPartHeight(BandPart::kCoverage),
-         .style = ctx.shape_config.GetShapeConfiguration(
-             ShapeConfigSet::kAnnualCoverageKey)});
+    entries.push_back({
+        .id = "annual coverage",
+        .label = std::string(ShapeConfigSet::FixedConfigurationLabel(
+            ShapeConfigSet::kAnnualCoverageKey)),
+        .bar_height = ctx.layout.BandPartHeight(BandPart::kCoverage),
+        .style = ctx.shape_config.GetShapeConfiguration(
+            ShapeConfigSet::kAnnualCoverageKey),
+    });
   }
   RectF drawn = ctx.layout.LegendArea();
   if (entries.empty()) {
@@ -115,16 +119,20 @@ LegendResult BuildLegend(const SectionContext& ctx) {
   const auto longest = std::ranges::max_element(
       entries, {},
       [](const LegendEntry& entry) { return entry.label.length(); });
-  const auto font_size = ctx.font->AdjustTextSize(
-      slots.front().label_frame, longest->label,
-      Font::TextScale{.height_ratio = detail::kFontScaleMin,
-                      .width_ratio = detail::kFontScaleMax});
+  const auto font_size =
+      ctx.font->AdjustTextSize(slots.front().label_frame, longest->label,
+                               Font::TextScale{
+                                   .height_ratio = detail::kFontScaleMin,
+                                   .width_ratio = detail::kFontScaleMax,
+                               });
 
   for (std::size_t index = 0; index < entries.size(); ++index) {
     AddLegendEntry(ctx, labels, bars, entries[index], slots[index], font_size);
   }
   drawn.SetRight(slots.back().bar_frame.Right());
-  return {.area = drawn,
-          .entry_width = ctx.layout.LegendEntryWidth(entries.size())};
+  return {
+      .area = drawn,
+      .entry_width = ctx.layout.LegendEntryWidth(entries.size()),
+  };
 }
 }  // namespace calendar_sections

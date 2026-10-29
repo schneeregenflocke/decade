@@ -33,12 +33,18 @@ class FileCommands {
     const char* filter;
     const char* extension;
   };
-  static constexpr FileType kXmlFile{.filter = "XML Files (*.xml)",
-                                     .extension = "xml"};
+  static constexpr FileType kXmlFile{
+      .filter = "XML Files (*.xml)",
+      .extension = "xml",
+  };
   static constexpr FileType kCsvFile{
-      .filter = "CSV and TXT files (*.csv *.txt)", .extension = "csv"};
-  static constexpr FileType kPngFile{.filter = "PNG files (*.png)",
-                                     .extension = "png"};
+      .filter = "CSV and TXT files (*.csv *.txt)",
+      .extension = "csv",
+  };
+  static constexpr FileType kPngFile{
+      .filter = "PNG files (*.png)",
+      .extension = "png",
+  };
 
   void OpenXml();
 

@@ -23,7 +23,7 @@ struct TextInputEvent {
     kMove,
     kSelectAll,
     kCommit,
-    kCancel
+    kCancel,
   };
 
   Kind kind{Kind::kInsert};

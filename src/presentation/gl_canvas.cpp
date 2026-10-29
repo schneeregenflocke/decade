@@ -361,8 +361,10 @@ void GLCanvas::ApplyInitialGlState() {
 
 GLCanvas::FramebufferSize GLCanvas::CurrentFramebufferSize() const {
   const double scale = devicePixelRatioF();
-  return {.width = static_cast<GLsizei>(std::lround(width() * scale)),
-          .height = static_cast<GLsizei>(std::lround(height() * scale))};
+  return {
+      .width = static_cast<GLsizei>(std::lround(width() * scale)),
+      .height = static_cast<GLsizei>(std::lround(height() * scale)),
+  };
 }
 
 glm::ivec2 GLCanvas::ViewportSize() const {

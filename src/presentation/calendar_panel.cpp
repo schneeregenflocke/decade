@@ -114,21 +114,27 @@ CalendarSetupForm::CalendarSetupForm(QWidget* parent) : QWidget(parent) {
 }
 
 QGroupBox* CalendarSetupForm::BuildWidthGroup() {
-  const NumberFormat day{.suffix = " mm",
-                         .decimals = 2,
-                         .step = 0.05,
-                         .minimum = 0.01,
-                         .maximum = kLengthMax};
-  const NumberFormat length{.suffix = " mm",
-                            .decimals = 1,
-                            .step = 1.0,
-                            .minimum = 0.0,
-                            .maximum = kLengthMax};
-  const NumberFormat points{.suffix = " pt",
-                            .decimals = 1,
-                            .step = 1.0,
-                            .minimum = 0.0,
-                            .maximum = kLengthMax};
+  const NumberFormat day{
+      .suffix = " mm",
+      .decimals = 2,
+      .step = 0.05,
+      .minimum = 0.01,
+      .maximum = kLengthMax,
+  };
+  const NumberFormat length{
+      .suffix = " mm",
+      .decimals = 1,
+      .step = 1.0,
+      .minimum = 0.0,
+      .maximum = kLengthMax,
+  };
+  const NumberFormat points{
+      .suffix = " pt",
+      .decimals = 1,
+      .step = 1.0,
+      .minimum = 0.0,
+      .maximum = kLengthMax,
+  };
 
   width_mode_ = MakeOwned<SizingModeSwitch>(this);
   width_mode_->setAccessibleName("Width size");
@@ -151,26 +157,34 @@ QGroupBox* CalendarSetupForm::BuildWidthGroup() {
 }
 
 QGroupBox* CalendarSetupForm::BuildHeightGroup() {
-  const NumberFormat share{.suffix = "",
-                           .decimals = kPercentDecimals,
-                           .step = 5.0,
-                           .minimum = 0.0,
-                           .maximum = kLengthMax};
-  const NumberFormat part{.suffix = " mm",
-                          .decimals = 2,
-                          .step = 0.1,
-                          .minimum = 0.0,
-                          .maximum = kLengthMax};
-  const NumberFormat labels{.suffix = " mm",
-                            .decimals = 1,
-                            .step = 0.5,
-                            .minimum = 0.1,
-                            .maximum = kLengthMax};
-  const NumberFormat points{.suffix = " pt",
-                            .decimals = 1,
-                            .step = 1.0,
-                            .minimum = 0.0,
-                            .maximum = kLengthMax};
+  const NumberFormat share{
+      .suffix = "",
+      .decimals = kPercentDecimals,
+      .step = 5.0,
+      .minimum = 0.0,
+      .maximum = kLengthMax,
+  };
+  const NumberFormat part{
+      .suffix = " mm",
+      .decimals = 2,
+      .step = 0.1,
+      .minimum = 0.0,
+      .maximum = kLengthMax,
+  };
+  const NumberFormat labels{
+      .suffix = " mm",
+      .decimals = 1,
+      .step = 0.5,
+      .minimum = 0.1,
+      .maximum = kLengthMax,
+  };
+  const NumberFormat points{
+      .suffix = " pt",
+      .decimals = 1,
+      .step = 1.0,
+      .minimum = 0.0,
+      .maximum = kLengthMax,
+  };
 
   height_mode_ = MakeOwned<SizingModeSwitch>(this);
   height_mode_->setAccessibleName("Height size");
@@ -184,9 +198,11 @@ QGroupBox* CalendarSetupForm::BuildHeightGroup() {
   mode_label->setBuddy(height_mode_);
   table->addWidget(mode_label, 0, kName);
   table->addWidget(height_mode_, 0, kShare, 1, kText);
-  for (const auto& [column, heading] :
-       {std::pair{kShare, "Share"}, std::pair{kHeight, "Height"},
-        std::pair{kText, "Text"}}) {
+  for (const auto& [column, heading] : {
+           std::pair{kShare, "Share"},
+           std::pair{kHeight, "Height"},
+           std::pair{kText, "Text"},
+       }) {
     auto* label = MakeOwned<QLabel>(heading, this);
     label->setAlignment(Qt::AlignHCenter);
     table->addWidget(label, 1, column);
@@ -199,9 +215,11 @@ QGroupBox* CalendarSetupForm::BuildHeightGroup() {
     auto* label = MakeOwned<QLabel>(name, this);
     label->setBuddy(share_field != nullptr ? share_field : height_field);
     table->addWidget(label, grid_row, kName);
-    for (const auto& [column, field] :
-         {std::pair{kShare, share_field}, std::pair{kHeight, height_field},
-          std::pair{kText, text_field}}) {
+    for (const auto& [column, field] : {
+             std::pair{kShare, share_field},
+             std::pair{kHeight, height_field},
+             std::pair{kText, text_field},
+         }) {
       if (field != nullptr) {
         table->addWidget(field, grid_row, column);
       }
@@ -311,8 +329,10 @@ CalendarConfig CalendarSetupForm::ReadConfig() const {
 
   config.SetView(view_->View());
   config.SetFitYearsToEntries(fit_years_to_entries_->isChecked());
-  config.SetYears(CalendarSpan::YearSpan{.first_year = first_year_->value(),
-                                         .last_year = last_year_->value()});
+  config.SetYears(CalendarSpan::YearSpan{
+      .first_year = first_year_->value(),
+      .last_year = last_year_->value(),
+  });
   config.SetShowsAnnualCoverage(shows_annual_coverage_->isChecked());
   config.SetSizing(ReadSizing());
 
@@ -327,15 +347,17 @@ void CalendarSetupForm::ShowMetrics(const CalendarMetrics& metrics) {
 CalendarSizing CalendarSetupForm::ReadSizing() const {
   CalendarSizing sizing;
   sizing.SetFixesWidth(width_mode_->IsFixed());
-  sizing.SetFixedWidths(
-      {.day = static_cast<float>(day_width_->value()),
-       .row_labels = static_cast<float>(row_labels_width_->value()),
-       .legend_entry = static_cast<float>(legend_entry_width_->value())});
+  sizing.SetFixedWidths({
+      .day = static_cast<float>(day_width_->value()),
+      .row_labels = static_cast<float>(row_labels_width_->value()),
+      .legend_entry = static_cast<float>(legend_entry_width_->value()),
+  });
   sizing.SetFixesHeight(height_mode_->IsFixed());
   CalendarSizing::Heights heights{
       .parts = {},
       .column_labels = static_cast<float>(column_labels_height_->value()),
-      .legend = static_cast<float>(legend_height_->value())};
+      .legend = static_cast<float>(legend_height_->value()),
+  };
   for (std::size_t index = 0; index < kBandPartCount; ++index) {
     heights.parts.at(index) =
         static_cast<float>(band_rows_.at(index).height->value());
@@ -445,8 +467,11 @@ void CalendarSetupForm::RefreshSpanLimitsState() {
 
 void CalendarSetupForm::RefreshEditability() {
   const bool fixes_width = width_mode_->IsFixed();
-  for (QDoubleSpinBox* field : {day_width_.data(), row_labels_width_.data(),
-                                legend_entry_width_.data()}) {
+  for (QDoubleSpinBox* field : {
+           day_width_.data(),
+           row_labels_width_.data(),
+           legend_entry_width_.data(),
+       }) {
     SetEditable(*field, fixes_width);
   }
 

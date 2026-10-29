@@ -96,7 +96,8 @@ PickBox BuildTitle(const SectionContext& ctx) {
   return PickBox{
       .id = PickId{.kind = PickId::Kind::kTitle, .index = 0},
       .rect = ctx.layout.TitleArea().Shift(ctx.layout.PrintAreaOrigin().x,
-                                           ctx.layout.PrintAreaOrigin().y)};
+                                           ctx.layout.PrintAreaOrigin().y),
+  };
 }
 
 }  // namespace calendar_sections

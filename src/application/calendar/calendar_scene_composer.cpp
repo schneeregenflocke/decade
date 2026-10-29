@@ -126,12 +126,16 @@ RectF CalendarSceneComposer::DrawingExtent() const {
 }
 
 CalendarMetrics CalendarSceneComposer::Metrics() const {
-  return {{.day = layout_.DayWidth(),
-           .row_labels = layout_.YLabelsArea().Width(),
-           .legend_entry = legend_.entry_width},
-          {.parts = layout_.BandPartHeights(),
-           .column_labels = layout_.XLabelsArea().Height(),
-           .legend = layout_.LegendArea().Height()},
+  return {{
+              .day = layout_.DayWidth(),
+              .row_labels = layout_.YLabelsArea().Width(),
+              .legend_entry = legend_.entry_width,
+          },
+          {
+              .parts = layout_.BandPartHeights(),
+              .column_labels = layout_.XLabelsArea().Height(),
+              .legend = layout_.LegendArea().Height(),
+          },
           label_text_sizes_};
 }
 
@@ -149,7 +153,8 @@ calendar_sections::SectionContext CalendarSceneComposer::MakeContext() const {
       .font = font_,
       .font_config = font_config_,
       .rectangles_shader = rectangles_shader_,
-      .font_shader = font_shader_};
+      .font_shader = font_shader_,
+  };
 }
 
 SceneNodeSnapshot CalendarSceneComposer::SceneSnapshot() const {

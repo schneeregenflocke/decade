@@ -6,9 +6,10 @@
 #include "graphics/rect.hpp"
 
 RectF PageRect(const PageSetupConfig& page_setup_config) {
-  return RectF::FromDimension(
-      RectF::Dimension{.width = page_setup_config.Size()[0],
-                       .height = page_setup_config.Size()[1]});
+  return RectF::FromDimension(RectF::Dimension{
+      .width = page_setup_config.Size()[0],
+      .height = page_setup_config.Size()[1],
+  });
 }
 
 RectF PageMarginRect(const PageSetupConfig& page_setup_config) {

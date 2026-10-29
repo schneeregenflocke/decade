@@ -232,7 +232,8 @@ void ShapeSetupPanel::CallbackEdit() {
       fill_visible_->isChecked(),
       static_cast<float>(line_width_->value()),
       ShapeConfiguration::OutlineColorValue{
-          ReadColor(outline_color_, outline_alpha_)},
+          ReadColor(outline_color_, outline_alpha_),
+      },
       ShapeConfiguration::FillColorValue{ReadColor(fill_color_, fill_alpha_)}};
   if (!shape_config_set_.UpdateConfiguration(edited)) {
     return;

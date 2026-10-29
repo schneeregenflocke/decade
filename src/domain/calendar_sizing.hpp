@@ -42,16 +42,26 @@ class CalendarSizing {
   static constexpr float kDefaultLabelsHeight = 6.0F;
 
   bool fixes_width_{false};
-  Widths widths_{.day = kDefaultDayWidth,
-                 .row_labels = kDefaultRowLabelsWidth,
-                 .legend_entry = kDefaultLegendEntryWidth};
+  Widths widths_{
+      .day = kDefaultDayWidth,
+      .row_labels = kDefaultRowLabelsWidth,
+      .legend_entry = kDefaultLegendEntryWidth,
+  };
   bool fixes_height_{false};
   Heights heights_{
-      .parts = {kDefaultGapHeight, kDefaultRowHeight, kDefaultSpacingHeight,
-                kDefaultRowHeight, kDefaultSpacingHeight, kDefaultRowHeight,
-                kDefaultGapHeight},
+      .parts =
+          {
+              kDefaultGapHeight,
+              kDefaultRowHeight,
+              kDefaultSpacingHeight,
+              kDefaultRowHeight,
+              kDefaultSpacingHeight,
+              kDefaultRowHeight,
+              kDefaultGapHeight,
+          },
       .column_labels = kDefaultLabelsHeight,
-      .legend = kDefaultLabelsHeight};
+      .legend = kDefaultLabelsHeight,
+  };
 };
 
 #endif  // CALENDAR_SIZING_HPP

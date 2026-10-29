@@ -93,7 +93,8 @@ std::optional<std::string> WriteDateEntriesToCsv(
     for (const auto& date_entry : date_entries) {
       const std::array<std::string, 2> date_interval_strings{
           date_format.Format(date_entry.GetDateInterval().Begin()),
-          date_format.Format(date_entry.GetDateInterval().Last())};
+          date_format.Format(date_entry.GetDateInterval().Last()),
+      };
       csv_writer.write_row(date_interval_strings);
     }
   }

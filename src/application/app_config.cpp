@@ -12,11 +12,13 @@ MainWindowConfig DefaultMainWindowConfig() {
   constexpr int kMainWindowWidth = 1280;
   constexpr int kMainWindowHeight = 800;
 
-  return {.title = "Decade",
-          .position = QPoint(kMainWindowPosX, kMainWindowPosY),
-          .size = QSize(kMainWindowWidth, kMainWindowHeight),
-          .flags = Qt::Window,
-          .object_name = "main_window",
-          .maximize_on_start = false};
+  return {
+      .title = "Decade",
+      .position = QPoint(kMainWindowPosX, kMainWindowPosY),
+      .size = QSize(kMainWindowWidth, kMainWindowHeight),
+      .flags = Qt::Window,
+      .object_name = "main_window",
+      .maximize_on_start = false,
+  };
 }
 }  // namespace application

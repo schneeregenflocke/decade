@@ -25,8 +25,10 @@ void CalendarConfigStore::ReceiveDateEntries(
   entries.Assign(date_entries);
   entry_years_ = std::nullopt;
   if (!entries.IsEmpty()) {
-    entry_years_ = CalendarSpan::YearSpan{.first_year = entries.FirstYear(),
-                                          .last_year = entries.LastYear()};
+    entry_years_ = CalendarSpan::YearSpan{
+        .first_year = entries.FirstYear(),
+        .last_year = entries.LastYear(),
+    };
   }
 
   CalendarConfig config = calendar_config_;

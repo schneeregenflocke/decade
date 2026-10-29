@@ -61,7 +61,7 @@ class DateTablePanel : public TablePanelBase {
     number,
     category,
     duration,
-    duration_to_next
+    duration_to_next,
   };
 
   struct CellIndex {

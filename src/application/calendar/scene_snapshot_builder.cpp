@@ -32,10 +32,12 @@ SnapshotShapeKind ClassifyShape(const Drawable* shape) {
 }
 
 SnapshotBounds ToSnapshotBounds(const RectF& bounds) {
-  return SnapshotBounds{.left = bounds.Left(),
-                        .right = bounds.Right(),
-                        .bottom = bounds.Bottom(),
-                        .top = bounds.Top()};
+  return SnapshotBounds{
+      .left = bounds.Left(),
+      .right = bounds.Right(),
+      .bottom = bounds.Bottom(),
+      .top = bounds.Top(),
+  };
 }
 
 SnapshotBounds ToWorldBounds(const RectF& local, const glm::mat4& world) {
@@ -43,11 +45,16 @@ SnapshotBounds ToWorldBounds(const RectF& local, const glm::mat4& world) {
       glm::vec4(local.Left(), local.Bottom(), 0.0F, 1.0F),
       glm::vec4(local.Right(), local.Bottom(), 0.0F, 1.0F),
       glm::vec4(local.Left(), local.Top(), 0.0F, 1.0F),
-      glm::vec4(local.Right(), local.Top(), 0.0F, 1.0F)};
+      glm::vec4(local.Right(), local.Top(), 0.0F, 1.0F),
+  };
 
   const glm::vec4 first = world * corners[0];
   SnapshotBounds bounds{
-      .left = first.x, .right = first.x, .bottom = first.y, .top = first.y};
+      .left = first.x,
+      .right = first.x,
+      .bottom = first.y,
+      .top = first.y,
+  };
   for (const auto& corner : corners) {
     const glm::vec4 transformed = world * corner;
     bounds.left = std::min(bounds.left, transformed.x);
@@ -63,8 +70,10 @@ std::optional<SnapshotTextDetail> TextDetailOf(const Drawable* shape) {
     return std::nullopt;
   }
   const auto& font_shape = static_cast<const FontShape&>(*shape);
-  return SnapshotTextDetail{.text = font_shape.Text(),
-                            .size_millimetres = font_shape.FontSize()};
+  return SnapshotTextDetail{
+      .text = font_shape.Text(),
+      .size_millimetres = font_shape.FontSize(),
+  };
 }
 
 void FillSnapshotValues(SceneNodeValues& destination, const SceneNode& source,
@@ -101,10 +110,12 @@ SceneNodeSnapshot BuildSceneSnapshot(const SceneNode& root) {
     const SceneNode* handed_down;
   };
   std::vector<Frame> stack;
-  stack.push_back({.source = &root,
-                   .destination = &result,
-                   .world = root_world,
-                   .handed_down = HandedDownStyleSource(root, nullptr)});
+  stack.push_back({
+      .source = &root,
+      .destination = &result,
+      .world = root_world,
+      .handed_down = HandedDownStyleSource(root, nullptr),
+  });
 
   while (!stack.empty()) {
     const Frame frame = stack.back();
@@ -118,11 +129,13 @@ SceneNodeSnapshot BuildSceneSnapshot(const SceneNode& root) {
           frame.world * children[index]->GetModelMatrix();
       FillSnapshotValues(child.values, *children[index], child_world,
                          frame.handed_down);
-      stack.push_back({.source = children[index].get(),
-                       .destination = &child,
-                       .world = child_world,
-                       .handed_down = HandedDownStyleSource(
-                           *children[index], frame.handed_down)});
+      stack.push_back({
+          .source = children[index].get(),
+          .destination = &child,
+          .world = child_world,
+          .handed_down =
+              HandedDownStyleSource(*children[index], frame.handed_down),
+      });
     }
   }
 

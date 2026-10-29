@@ -66,10 +66,11 @@ BarSceneResult BuildBars(const SectionContext& ctx) {
 
       // Page-space box for hit-testing: the piece's world position is
       // layout.PrintAreaOrigin() + the bar's corner.
-      result.pick_boxes.push_back(
-          PickBox{.id = {.kind = PickId::Kind::kBar, .index = entry},
-                  .rect = bar_area.Shift(ctx.layout.PrintAreaOrigin().x,
-                                         ctx.layout.PrintAreaOrigin().y)});
+      result.pick_boxes.push_back(PickBox{
+          .id = {.kind = PickId::Kind::kBar, .index = entry},
+          .rect = bar_area.Shift(ctx.layout.PrintAreaOrigin().x,
+                                 ctx.layout.PrintAreaOrigin().y),
+      });
     }
     for (size_t index = 0; index < pieces.size(); ++index) {
       const auto label =

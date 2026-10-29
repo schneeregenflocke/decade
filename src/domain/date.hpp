@@ -23,7 +23,7 @@ enum class Weekday : std::uint8_t {
   kWednesday,
   kThursday,
   kFriday,
-  kSaturday
+  kSaturday,
 };
 
 class Date {

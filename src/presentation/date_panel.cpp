@@ -36,12 +36,14 @@ DateTablePanel::DateTablePanel(QWidget* parent,
                                LocaleDateFormatter& date_format)
     : TablePanelBase(parent, QAbstractItemView::ExtendedSelection),
       date_format_(date_format) {
-  InitColumns({{.label = "From Date", .editable = true},
-               {.label = "To Date", .editable = true},
-               {.label = "Number", .editable = false},
-               {.label = "Category", .editable = false},
-               {.label = "Duration", .editable = false},
-               {.label = "Duration to next", .editable = false}});
+  InitColumns({
+      {.label = "From Date", .editable = true},
+      {.label = "To Date", .editable = true},
+      {.label = "Number", .editable = false},
+      {.label = "Category", .editable = false},
+      {.label = "Duration", .editable = false},
+      {.label = "Duration to next", .editable = false},
+  });
 
   auto* select_category_control = MakeOwned<QComboBox>(this);
   select_category_control_ = select_category_control;
