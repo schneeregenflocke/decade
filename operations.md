@@ -138,6 +138,8 @@ One step per line, words split at blanks, a double-quoted word may hold blanks, 
 
 A step that opens a modal dialogue (File → Save As) returns only once the dialogue closes, which is why the runner arms the next step before it runs the current one; that step fills the dialogue in from inside its event loop — `file-dialog <path>` follows `menu File "Save As"`. A script run switches native dialogues off (`Qt::AA_DontUseNativeDialogs`): a native one lives outside the application, a portal under Wayland, where no step reaches its fields.
 
+`click Export` in the PNG Export tab returns once the page is rendered, while the compression runs on in the background. Hold `quit` back with a `wait` until the file is there: closing stops the writer and removes the unfinished file.
+
 The run needs a display, like every run that reaches the canvas. Watch it on the session, and keep stderr in a file so a Qt warning stays readable next to the step that caused it; `QT_FATAL_WARNINGS=1` turns the first warning into an abort:
 
 ```bash
