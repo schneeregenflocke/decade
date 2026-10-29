@@ -26,9 +26,11 @@ class RenderSurface {
   virtual ~RenderSurface() = default;
 
   // The scene got rebuilt, and with it maybe the area it covers: the page, and
-  // a calendar laid out in millimetres beyond it. The surface fits its view and
-  // its export to `drawing_extent`, in page space, and repaints.
-  virtual void ShowDrawing(const RectF& drawing_extent) = 0;
+  // a calendar laid out in millimetres beyond it. The surface fits its view to
+  // `drawing_extent` and exports `export_region` alone, both in page space, and
+  // repaints.
+  virtual void ShowDrawing(const RectF& drawing_extent,
+                           const RectF& export_region) = 0;
 
   // Nothing but colours changed (hover, selection): repaint on the geometry
   // that already stands.

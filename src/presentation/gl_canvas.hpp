@@ -124,7 +124,8 @@ class GLCanvas : public QOpenGLWidget, public application::RenderSurface {
 
   void SetSelectedTextSource(std::function<std::string()> source);
 
-  void ShowDrawing(const RectF& drawing_extent) override;
+  void ShowDrawing(const RectF& drawing_extent,
+                   const RectF& export_region) override;
 
   // Triggers a repaint alone — for changes touching neither projection nor zoom
   // bounds (hover and selection colours). Markedly cheaper than ShowDrawing.
@@ -256,6 +257,7 @@ class GLCanvas : public QOpenGLWidget, public application::RenderSurface {
   MouseInteraction mouse_interaction_;
   PanZoomCamera camera_;
   RectF drawing_extent_;
+  RectF export_region_;
   MVP mvp_;
 
   FrameStats frame_stats_;

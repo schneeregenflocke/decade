@@ -112,8 +112,10 @@ void GLCanvas::SetSelectedTextSource(std::function<std::string()> source) {
   selected_text_ = std::move(source);
 }
 
-void GLCanvas::ShowDrawing(const RectF& drawing_extent) {
+void GLCanvas::ShowDrawing(const RectF& drawing_extent,
+                           const RectF& export_region) {
   drawing_extent_ = drawing_extent;
+  export_region_ = export_region;
   if (decade_debug::LogEnabled()) {
     std::cout << "ShowDrawing: extent=" << drawing_extent_.Width() << "x"
               << drawing_extent_.Height() << " rect=(" << drawing_extent_.Left()
@@ -142,7 +144,7 @@ double GLCanvas::CurrentFps() const { return frame_stats_.Fps(); }
 std::optional<std::string> GLCanvas::SavePNG(const std::string& file_path,
                                              int dpi, int msaa_samples) {
   makeCurrent();
-  return WritePageToPng(file_path, drawing_extent_, static_cast<float>(dpi),
+  return WritePageToPng(file_path, export_region_, static_cast<float>(dpi),
                         *graphics_engine_, msaa_samples);
 }
 
