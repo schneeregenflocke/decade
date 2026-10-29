@@ -11,6 +11,7 @@
 #include "../application/project_document.hpp"
 #include "../domain/png_export_config.hpp"
 #include "../domain/png_export_config_store.hpp"
+#include "graphics/render_to_png.hpp"
 #include "main_window.hpp"
 
 FileCommands::FileCommands(MainWindow& window,
@@ -100,8 +101,10 @@ void FileCommands::ExportPng() {
              !ConfirmOverwrite(title, QString::fromStdString(file_path))) {
     return;
   }
+  const auto image =
+      window_.Canvas().RenderPng(config.Dpi(), config.MsaaSamples());
   const std::optional<std::string> error =
-      window_.Canvas().SavePNG(file_path, config.Dpi(), config.MsaaSamples());
+      image ? WritePng(file_path, *image) : image.error();
   Report(title, error);
   if (error) {
     window_.PngExport().ClearSaved();

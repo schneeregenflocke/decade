@@ -18,12 +18,12 @@
 #include <chrono>
 #include <cmath>
 #include <exception>
+#include <expected>
 #include <functional>
 #include <glm/ext/vector_float2.hpp>
 #include <glm/ext/vector_int2.hpp>
 #include <iostream>
 #include <memory>
-#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -151,11 +151,11 @@ void GLCanvas::ReceivePngExportConfig(const PngExportConfig& config) {
 
 double GLCanvas::CurrentFps() const { return frame_stats_.Fps(); }
 
-std::optional<std::string> GLCanvas::SavePNG(const std::string& file_path,
-                                             int dpi, int msaa_samples) {
+std::expected<RgbaImage, std::string> GLCanvas::RenderPng(int dpi,
+                                                          int msaa_samples) {
   makeCurrent();
-  return WritePageToPng(file_path, export_region_, static_cast<float>(dpi),
-                        *graphics_engine_, msaa_samples);
+  return RenderPage(export_region_, static_cast<float>(dpi), *graphics_engine_,
+                    msaa_samples);
 }
 
 QImage GLCanvas::CaptureImage() { return grabFramebuffer(); }

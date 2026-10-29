@@ -22,6 +22,7 @@
 #include "calendar/calendar_page.hpp"
 #include "calendar/title_text_editor.hpp"
 #include "graphics/pick_id.hpp"
+#include "graphics/render_to_png.hpp"
 #include "project_document.hpp"
 #include "runtime_options.hpp"
 
@@ -118,8 +119,10 @@ void StartupScript::WriteRequestedImages(MainWindow& window) const {
       std::cout << "--dump-png: writing " << *options_.dump_png_path << " at "
                 << dpi << " dpi\n";
     }
-    if (const auto error = window.Canvas().SavePNG(*options_.dump_png_path, dpi,
-                                                   config.MsaaSamples())) {
+    const auto image = window.Canvas().RenderPng(dpi, config.MsaaSamples());
+    if (!image) {
+      std::cerr << "--dump-png: " << image.error() << '\n';
+    } else if (const auto error = WritePng(*options_.dump_png_path, *image)) {
       std::cerr << "--dump-png: " << *error << '\n';
     }
   }
