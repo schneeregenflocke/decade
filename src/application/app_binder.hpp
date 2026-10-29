@@ -17,6 +17,7 @@
 #include "../presentation/document_panel.hpp"
 #include "../presentation/font_panel.hpp"
 #include "../presentation/gl_canvas.hpp"
+#include "../presentation/main_window.hpp"
 #include "../presentation/page_panel.hpp"
 #include "../presentation/png_export_panel.hpp"
 #include "../presentation/scene_tree_panel.hpp"
@@ -55,6 +56,7 @@ struct AppComponents {
   SceneTreePanel& scene_tree_panel;
   ShapeSetupPanel& shape_setup_panel;
 
+  MainWindow& main_window;
   CalendarPage& calendar_page;
   GLCanvas& gl_canvas;
   InteractionController& interaction_controller;

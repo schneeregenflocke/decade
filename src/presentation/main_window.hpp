@@ -14,6 +14,7 @@
 
 #include "../application/app_config.hpp"
 #include "../domain/date_format.hpp"
+#include "../domain/png_export_config.hpp"
 #include "calendar_panel.hpp"
 #include "categories_panel.hpp"
 #include "csv_import_panel.hpp"
@@ -66,6 +67,9 @@ class MainWindow : public QMainWindow {
   [[nodiscard]] CalendarSetupPanel& CalendarSetup();
   [[nodiscard]] CsvImportPanel& CsvImport();
   [[nodiscard]] PngExportPanel& PngExport();
+
+  // The menu entry names the resolution it exports at.
+  void ReceivePngExportConfig(const PngExportConfig& config);
   [[nodiscard]] FontPanel& Font();
   [[nodiscard]] ShapeSetupPanel& ShapeSetup();
   [[nodiscard]] SceneTreePanel& SceneTree();

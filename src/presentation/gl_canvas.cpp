@@ -30,6 +30,7 @@
 
 #include "../application/calendar/text_input_event.hpp"
 #include "../common/debug_log.hpp"
+#include "../domain/png_export_config.hpp"
 #include "../domain/text_edit_buffer.hpp"
 #include "graphics/frame_stats.hpp"
 #include "graphics/graphics_engine.hpp"
@@ -138,6 +139,11 @@ void GLCanvas::RefitView() {
 }
 
 void GLCanvas::Repaint() { update(); }
+
+void GLCanvas::ReceivePngExportConfig(const PngExportConfig& config) {
+  export_dpi_ = config.Dpi();
+  RefitView();
+}
 
 double GLCanvas::CurrentFps() const { return frame_stats_.Fps(); }
 
@@ -386,7 +392,7 @@ void GLCanvas::UpdateProjection() {
       view_size, Projection::AspectRatioOf(viewport.x, viewport.y)));
   camera_.SetScaleLimits(ComputeZoomLimits(
       mvp_.GetProjection(), {drawing_extent_.Width(), drawing_extent_.Height()},
-      static_cast<float>(kExportPngDpi)));
+      static_cast<float>(export_dpi_)));
 
   if (decade_debug::LogEnabled()) {
     std::cout << "UpdateProjection: extent=" << drawing_extent_.Width() << "x"

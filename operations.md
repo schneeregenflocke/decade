@@ -81,7 +81,7 @@ Take `--dump-png` for a clean high-DPI export of the drawing itself, `--dump-win
 
 **Steering:**
 
-- `--dump-png-dpi=<dpi>` — the export DPI for `--dump-png`; `GLCanvas::kExportPngDpi` (200) when unset. Used for high-resolution README renderings, for instance.
+- `--dump-png-dpi=<dpi>` — the export DPI for `--dump-png`; the project's PNG export resolution when unset. Used for high-resolution README renderings, for instance.
 - `--exit-after-ms=<ms>` — closes the main window after N ms by itself.
 - `--select-tab=<label>` — preselects a notebook tab by label at start (case-insensitive), for screenshotting a particular tab.
 - `--debug-log` — switches on OpenGL and runtime debug logging. It also lets Qt's own `qDebug`/`qInfo` messages through; without it they stay silent, while a `qWarning` and anything above always reaches stderr. The message handler sits in `decade_app_detail::MessageHandler`.

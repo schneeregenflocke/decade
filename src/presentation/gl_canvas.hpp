@@ -34,6 +34,7 @@
 #include "../application/calendar/text_input_event.hpp"
 #include "../application/render_surface.hpp"
 #include "../common/debug_log.hpp"
+#include "../domain/png_export_config.hpp"
 #include "../domain/text_edit_buffer.hpp"
 #include "graphics/frame_stats.hpp"
 #include "graphics/graphics_engine.hpp"
@@ -49,11 +50,6 @@
 // page size and reports pointer positions in page space onwards.
 class GLCanvas : public QOpenGLWidget, public application::RenderSurface {
  public:
-  // Resolution and multisampling of the PNG export (SavePNG). Public, so the
-  // menu caption uses the same value instead of a second number in its text.
-  static constexpr int kExportPngDpi = 200;
-  static constexpr int kExportMsaaSamples = 16;
-
   // The context version the renderer needs. The format itself gets set once,
   // application-wide, before the QApplication exists (SurfaceFormat below);
   // here it serves as the check that the driver really delivered it.
@@ -139,6 +135,9 @@ class GLCanvas : public QOpenGLWidget, public application::RenderSurface {
   // The off-screen framebuffers of the export come into being in this context,
   // so it has to be current — this runs outside the rendering callbacks. The
   // return: empty on success, otherwise why nothing got written.
+  // The zoom reaches as far as the export resolution shows detail.
+  void ReceivePngExportConfig(const PngExportConfig& config);
+
   [[nodiscard]] std::optional<std::string> SavePNG(const std::string& file_path,
                                                    int dpi, int msaa_samples);
 
@@ -258,6 +257,7 @@ class GLCanvas : public QOpenGLWidget, public application::RenderSurface {
   PanZoomCamera camera_;
   RectF drawing_extent_;
   RectF export_region_;
+  int export_dpi_{PngExportConfig::kDefaultDpi};
   MVP mvp_;
 
   FrameStats frame_stats_;

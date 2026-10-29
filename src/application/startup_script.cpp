@@ -12,6 +12,7 @@
 #include <utility>
 
 #include "../common/debug_log.hpp"
+#include "../domain/png_export_config.hpp"
 #include "../presentation/gl_canvas.hpp"
 #include "../presentation/gui_script.hpp"
 #include "../presentation/gui_script_runner.hpp"
@@ -111,13 +112,14 @@ void StartupScript::ApplyDebugHighlights(
 
 void StartupScript::WriteRequestedImages(MainWindow& window) const {
   if (options_.dump_png_path) {
-    const int dpi = options_.dump_png_dpi.value_or(GLCanvas::kExportPngDpi);
+    const PngExportConfig& config = document_.PngExportConfiguration().Get();
+    const int dpi = options_.dump_png_dpi.value_or(config.Dpi());
     if (decade_debug::LogEnabled()) {
       std::cout << "--dump-png: writing " << *options_.dump_png_path << " at "
                 << dpi << " dpi\n";
     }
-    if (const auto error = window.Canvas().SavePNG(
-            *options_.dump_png_path, dpi, GLCanvas::kExportMsaaSamples)) {
+    if (const auto error = window.Canvas().SavePNG(*options_.dump_png_path, dpi,
+                                                   config.MsaaSamples())) {
       std::cerr << "--dump-png: " << *error << '\n';
     }
   }

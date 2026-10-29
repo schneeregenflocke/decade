@@ -22,6 +22,7 @@
 #include "../presentation/document_panel.hpp"
 #include "../presentation/font_panel.hpp"
 #include "../presentation/gl_canvas.hpp"
+#include "../presentation/main_window.hpp"
 #include "../presentation/page_panel.hpp"
 #include "../presentation/png_export_panel.hpp"
 #include "../presentation/scene_tree_panel.hpp"
@@ -206,7 +207,8 @@ void BindCsvImport(QObject& scope, const AppComponents& components) {
 }
 
 // The tab shows what the page comes out at, so it follows the page format and
-// the project file beside its own settings.
+// the project file beside its own settings. The menu names the resolution, and
+// the canvas zooms as far as it shows detail.
 void BindPngExport(QObject& scope, EventBus& bus,
                    const AppComponents& components) {
   Connect(scope, components.png_export_panel,
@@ -220,6 +222,12 @@ void BindPngExport(QObject& scope, EventBus& bus,
           components.png_export_panel, &PngExportPanel::ReceivePageSetup);
   Connect(scope, bus.project_file_path, &domain::FilePathTopic::Published,
           components.png_export_panel, &PngExportPanel::ReceiveProjectFilePath);
+  Connect(scope, bus.png_export_config,
+          &domain::PngExportConfigTopic::Published, components.main_window,
+          &MainWindow::ReceivePngExportConfig);
+  Connect(scope, bus.png_export_config,
+          &domain::PngExportConfigTopic::Published, components.gl_canvas,
+          &GLCanvas::ReceivePngExportConfig);
 }
 
 // The rendering adapter publishes the scene snapshots itself; the scene tree

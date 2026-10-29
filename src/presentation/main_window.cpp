@@ -16,6 +16,7 @@
 
 #include "../application/app_config.hpp"
 #include "../domain/date_format.hpp"
+#include "../domain/png_export_config.hpp"
 #include "calendar_panel.hpp"
 #include "categories_panel.hpp"
 #include "csv_import_panel.hpp"
@@ -37,8 +38,7 @@ MainWindow::MainWindow(QWidget* parent,
                        const application::MainWindowConfig& config,
                        LocaleDateFormatter& locale_date_formatter)
     : QMainWindow(parent, config.flags),
-      locale_date_formatter_(locale_date_formatter),
-      menu_(GLCanvas::kExportPngDpi) {
+      locale_date_formatter_(locale_date_formatter) {
   setWindowTitle(QString::fromStdString(config.title));
   setObjectName(QString::fromStdString(config.object_name));
   move(config.position);
@@ -69,6 +69,10 @@ CalendarSetupPanel& MainWindow::CalendarSetup() {
 CsvImportPanel& MainWindow::CsvImport() { return *csv_import_panel_; }
 
 PngExportPanel& MainWindow::PngExport() { return *png_export_panel_; }
+
+void MainWindow::ReceivePngExportConfig(const PngExportConfig& config) {
+  menu_.ShowExportPngDpi(config.Dpi());
+}
 
 FontPanel& MainWindow::Font() { return *font_panel_; }
 

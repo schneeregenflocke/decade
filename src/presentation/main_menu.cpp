@@ -7,8 +7,6 @@
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QMenuBar>
 
-MainMenu::MainMenu(int export_png_dpi) : export_png_dpi_(export_png_dpi) {}
-
 const MainMenuActions& MainMenu::Actions() const { return actions_; }
 
 void MainMenu::AttachTo(QMainWindow& window) {
@@ -31,6 +29,13 @@ void MainMenu::AttachTo(QMainWindow& window) {
 
   QMenu* help_menu = menu_bar->addMenu("&Help");
   actions_.license_info = help_menu->addAction("&Open Source Licenses");
+}
+
+void MainMenu::ShowExportPngDpi(int dpi) {
+  export_png_dpi_ = dpi;
+  if (!actions_.export_png.isNull()) {
+    actions_.export_png->setText(ExportPngLabel());
+  }
 }
 
 QString MainMenu::ExportPngLabel() const {

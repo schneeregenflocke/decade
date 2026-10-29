@@ -3,6 +3,8 @@
 
 #include <QtCore/QPointer>
 
+#include "../domain/png_export_config.hpp"
+
 class QAction;
 class QMainWindow;
 class QString;
@@ -26,19 +28,19 @@ struct MainMenuActions {
 // changes when the menu changes — independently of wiring and commands.
 class MainMenu {
  public:
-  explicit MainMenu(int export_png_dpi);
-
   [[nodiscard]] const MainMenuActions& Actions() const;
 
   // Builds the menu into the window's menu bar. It has to run before the window
   // connects — the actions come into being here.
   void AttachTo(QMainWindow& window);
 
+  void ShowExportPngDpi(int dpi);
+
  private:
   [[nodiscard]] QString ExportPngLabel() const;
 
   MainMenuActions actions_;
-  int export_png_dpi_;
+  int export_png_dpi_{PngExportConfig::kDefaultDpi};
 };
 
 #endif  // MAIN_MENU_HPP

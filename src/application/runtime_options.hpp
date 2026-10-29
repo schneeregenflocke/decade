@@ -19,7 +19,7 @@ struct RuntimeOptions {
   // The file to load at start. Opt-in: empty means "an empty project".
   std::optional<std::string> startup_file;
   std::optional<std::string> dump_png_path;
-  // The export DPI for dump_png_path; the fallback is GLCanvas::kExportPngDpi.
+  // The export DPI for dump_png_path; the fallback is the project's.
   std::optional<int> dump_png_dpi;
   std::optional<std::string> dump_window_png_path;
   std::optional<std::string> select_tab;

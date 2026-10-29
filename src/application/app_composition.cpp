@@ -108,6 +108,7 @@ AppComponents AppComposition::Components(CalendarPage& calendar_page) {
       .font_panel = window_->Font(),
       .scene_tree_panel = window_->SceneTree(),
       .shape_setup_panel = window_->ShapeSetup(),
+      .main_window = *window_,
       .calendar_page = calendar_page,
       .gl_canvas = window_->Canvas(),
       .interaction_controller = interaction_controller_,
