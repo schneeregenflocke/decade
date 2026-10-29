@@ -100,14 +100,14 @@ void ShapeSetupPanel::CreateDetailFields(QWidget* detail_widget) {
 
   // One handler for every field: the configuration gets rebuilt from the
   // widgets as a whole, so no field needs a branch of its own.
-  const auto on_edit = [this]() { CallbackEdit(); };
+  const auto on_edit = [this] { CallbackEdit(); };
   connect(outline_visible_.data(), &QCheckBox::toggled, this,
           [on_edit](bool) { on_edit(); });
   connect(fill_visible_.data(), &QCheckBox::toggled, this,
           [on_edit](bool) { on_edit(); });
   connect(line_width_.data(), &QDoubleSpinBox::valueChanged, this,
           [on_edit](double) { on_edit(); });
-  color_->SetOnChanged([this, on_edit]() {
+  color_->SetOnChanged([this, on_edit] {
     outline_color_->SetColor(color_->Color());
     fill_color_->SetColor(color_->Color());
     on_edit();

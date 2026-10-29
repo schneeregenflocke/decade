@@ -541,7 +541,7 @@ CalendarSetupPanel::CalendarSetupPanel(QWidget* parent) : QWidget(parent) {
   vertical_layout->addWidget(scroll_area);
   setLayout(vertical_layout);
 
-  form_->SetOnChanged([this]() { CallbackFormChanged(); });
+  form_->SetOnChanged([this] { CallbackFormChanged(); });
   form_->LoadConfig(calendar_config_);
 }
 

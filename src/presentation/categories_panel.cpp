@@ -42,11 +42,10 @@ DateCategoriesTablePanel::DateCategoriesTablePanel(QWidget* parent)
   connect(table(), &QTableWidget::itemChanged, this,
           [this](QTableWidgetItem* item) { CallbackItemChanged(item); });
   connect(table(), &QTableWidget::itemSelectionChanged, this,
-          [this]() { UpdateButtons(); });
-  connect(add_button(), &QPushButton::clicked, this,
-          [this]() { CallbackAdd(); });
+          [this] { UpdateButtons(); });
+  connect(add_button(), &QPushButton::clicked, this, [this] { CallbackAdd(); });
   connect(delete_button(), &QPushButton::clicked, this,
-          [this]() { CallbackDelete(); });
+          [this] { CallbackDelete(); });
 }
 
 void DateCategoriesTablePanel::ReceiveDateCategories(

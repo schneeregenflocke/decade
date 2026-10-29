@@ -122,7 +122,7 @@ void StartupScript::WriteRequestedImages(MainWindow& window) const {
     const std::string path = *options_.dump_window_png_path;
     // After the first real paint alone, so every panel is drawn: queued on
     // the event loop, which runs it once the pending paints are through.
-    QTimer::singleShot(0, &window, [&window, path]() {
+    QTimer::singleShot(0, &window, [&window, path] {
       if (decade_debug::LogEnabled()) {
         std::cout << "--dump-window-png: writing " << path << '\n';
       }

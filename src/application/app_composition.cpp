@@ -46,14 +46,14 @@ AppComposition::AppComposition(LocaleDateFormatter& locale_date_formatter,
                      }
                    });
   QObject::connect(window_.get(), &MainWindow::Closing, &connection_scope_,
-                   [this]() { ReleaseGraphics(); });
+                   [this] { ReleaseGraphics(); });
 
   startup_script_.RunBeforeGraphics(*window_);
 
   window_->show();
   window_->raise();
   window_->Canvas().InitOpenGL(
-      [this]() { OnGraphicsReady(); },
+      [this] { OnGraphicsReady(); },
       [this](const std::string& message) { OnGraphicsFailed(message); });
 }
 
@@ -78,7 +78,7 @@ void AppComposition::OnGraphicsReady() {
 void AppComposition::OnGraphicsFailed(const std::string& message) {
   std::cerr << message << '\n';
   const bool interactive = !IsNonInteractiveRun(runtime_options_);
-  QTimer::singleShot(0, window_.get(), [this, message, interactive]() {
+  QTimer::singleShot(0, window_.get(), [this, message, interactive] {
     if (interactive) {
       QMessageBox::critical(window_.get(), "OpenGL",
                             QString::fromStdString(message));

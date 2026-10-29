@@ -54,7 +54,7 @@ SceneTreePanel::SceneTreePanel(QWidget* parent) : QWidget(parent) {
   setLayout(vertical_layout);
 
   connect(tree_.data(), &QTreeWidget::itemSelectionChanged, this,
-          [this]() { CallbackTreeSelectionChanged(); });
+          [this] { CallbackTreeSelectionChanged(); });
   connect(tree_.data(), &QTreeWidget::currentItemChanged, this,
           [this](QTreeWidgetItem*, QTreeWidgetItem*) {
             if (!rebuilding_) {

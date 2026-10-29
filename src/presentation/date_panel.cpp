@@ -65,17 +65,16 @@ DateTablePanel::DateTablePanel(QWidget* parent,
 
   connect(table(), &QTableWidget::itemChanged, this,
           [this](QTableWidgetItem* item) { OnItemChanged(item); });
-  connect(table(), &QTableWidget::itemSelectionChanged, this, [this]() {
+  connect(table(), &QTableWidget::itemSelectionChanged, this, [this] {
     UpdateDeleteButton();
     if (!filling_) {
       SendSelectedEntries();
     }
   });
   connect(sync_selection_control, &QCheckBox::toggled, this,
-          [this]() { SendSelectedEntries(); });
-  connect(add_button(), &QPushButton::clicked, this, [this]() { OnAdd(); });
-  connect(delete_button(), &QPushButton::clicked, this,
-          [this]() { OnDelete(); });
+          [this] { SendSelectedEntries(); });
+  connect(add_button(), &QPushButton::clicked, this, [this] { OnAdd(); });
+  connect(delete_button(), &QPushButton::clicked, this, [this] { OnDelete(); });
   connect(select_category_control, &QComboBox::activated, this,
           [this](int index) { OnCategoryChosen(index); });
 }

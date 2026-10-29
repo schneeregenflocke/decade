@@ -296,9 +296,9 @@ void BindInteraction(QObject& scope, EventBus& bus,
   components.gl_canvas.SetTextInputCallback(
       [editor](const TextInputEvent& event) { editor->Handle(event); });
   components.gl_canvas.SetEditingQuery(
-      [editor]() { return editor->IsEditing(); });
+      [editor] { return editor->IsEditing(); });
   components.gl_canvas.SetSelectedTextSource(
-      [editor]() { return editor->SelectedText(); });
+      [editor] { return editor->SelectedText(); });
 
   Connect(scope, bus.hovered, &application::HoveredTopic::Published,
           components.calendar_page, &CalendarPage::ReceiveHovered);

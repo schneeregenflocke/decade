@@ -56,8 +56,7 @@ LicenseInformationDialog::LicenseInformationDialog(QWidget* parent)
   vertical_layout->addWidget(button_box);
   setLayout(vertical_layout);
 
-  connect(button_box, &QDialogButtonBox::rejected, this,
-          [this]() { reject(); });
+  connect(button_box, &QDialogButtonBox::rejected, this, [this] { reject(); });
   connect(license_select_list_.data(), &QListWidget::currentRowChanged, this,
           [this](int row) { SelectLicenseRow(row); });
 

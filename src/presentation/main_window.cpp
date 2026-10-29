@@ -87,8 +87,7 @@ bool MainWindow::SelectTab(const std::string& label) {
 }
 
 void MainWindow::CloseAfter(std::int64_t milliseconds) {
-  QTimer::singleShot(static_cast<int>(milliseconds), this,
-                     [this]() { close(); });
+  QTimer::singleShot(static_cast<int>(milliseconds), this, [this] { close(); });
 }
 
 bool MainWindow::SaveScreenshot(const std::string& file_path) {
@@ -175,8 +174,8 @@ void MainWindow::InitMenu() {
   ConnectFileCommand(actions.export_csv, FileCommand::kExportCsv);
   ConnectFileCommand(actions.export_png, FileCommand::kExportPng);
 
-  connect(actions.quit, &QAction::triggered, this, [this]() { close(); });
-  connect(actions.license_info, &QAction::triggered, this, [this]() {
+  connect(actions.quit, &QAction::triggered, this, [this] { close(); });
+  connect(actions.license_info, &QAction::triggered, this, [this] {
     LicenseInformationDialog dialog(this);
     dialog.exec();
   });
@@ -184,5 +183,5 @@ void MainWindow::InitMenu() {
 
 void MainWindow::ConnectFileCommand(QAction* action, FileCommand command) {
   connect(action, &QAction::triggered, this,
-          [this, command]() { emit FileCommandRequested(command); });
+          [this, command] { emit FileCommandRequested(command); });
 }

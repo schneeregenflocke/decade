@@ -349,7 +349,7 @@ GuiScriptRunner::GuiScriptRunner(std::vector<GuiStep> steps,
     : QObject(&window), steps_(std::move(steps)), window_(&window) {}
 
 void GuiScriptRunner::Start() {
-  QTimer::singleShot(kStepDelayMs, this, [this]() { RunNext(); });
+  QTimer::singleShot(kStepDelayMs, this, [this] { RunNext(); });
 }
 
 void GuiScriptRunner::RunNext() {
@@ -368,7 +368,7 @@ void GuiScriptRunner::RunNext() {
     }
     delay_ms = *wait_ms;
   }
-  QTimer::singleShot(delay_ms, this, [this]() { RunNext(); });
+  QTimer::singleShot(delay_ms, this, [this] { RunNext(); });
 
   if (decade_debug::LogEnabled()) {
     std::cerr << "script: line " << step.line << ": " << step.command;

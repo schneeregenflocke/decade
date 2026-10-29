@@ -66,7 +66,7 @@ QLayout* DocumentSetupPanel::CreateFilePathRow() {
   auto* copy_button = MakeOwned<QPushButton>("Copy", this);
   copy_button->setEnabled(false);
   connect(copy_button, &QPushButton::clicked, this,
-          [this]() { CopyFilePathToClipboard(); });
+          [this] { CopyFilePathToClipboard(); });
   copy_button_ = copy_button;
 
   auto* row_layout = MakeOwned<QHBoxLayout>();

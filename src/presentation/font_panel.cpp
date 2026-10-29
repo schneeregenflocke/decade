@@ -32,7 +32,7 @@ FontPanel::FontPanel(QWidget* parent)
 
   RefreshButtonLabel();
   connect(font_button_.data(), &QPushButton::clicked, this,
-          [this]() { ChooseFont(); });
+          [this] { ChooseFont(); });
 
   ProcessFontData();
 }

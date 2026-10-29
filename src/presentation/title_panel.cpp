@@ -47,8 +47,8 @@ TitleSetupPanel::TitleSetupPanel(QWidget* parent) : QWidget(parent) {
             title_config_.SetFontSizePoints(static_cast<float>(value));
             SendUnlessLoading();
           });
-  text_color_button_->SetOnChanged([this]() { ApplyColorFromWidgets(); });
-  alpha_slider_->SetOnChanged([this]() { ApplyColorFromWidgets(); });
+  text_color_button_->SetOnChanged([this] { ApplyColorFromWidgets(); });
+  alpha_slider_->SetOnChanged([this] { ApplyColorFromWidgets(); });
 }
 
 void TitleSetupPanel::SendDefaultValues() { SendTitleConfig(); }

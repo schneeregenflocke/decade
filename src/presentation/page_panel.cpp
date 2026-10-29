@@ -45,7 +45,7 @@ PageSetupPanel::PageSetupPanel(QWidget* parent) : QWidget(parent) {
   UpdateSpinControls();
 
   connect(page_setup_button, &QPushButton::clicked, this,
-          [this]() { OpenPageSetupDialog(); });
+          [this] { OpenPageSetupDialog(); });
   connect(page_width_spin_.data(), &QDoubleSpinBox::valueChanged, this,
           [this](double) { OnSpinChanged(); });
   connect(page_height_spin_.data(), &QDoubleSpinBox::valueChanged, this,

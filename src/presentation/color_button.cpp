@@ -13,7 +13,7 @@
 
 ColorButton::ColorButton(QWidget* parent) : QPushButton(parent) {
   RefreshSwatch();
-  connect(this, &QPushButton::clicked, this, [this]() { PickColor(); });
+  connect(this, &QPushButton::clicked, this, [this] { PickColor(); });
 }
 
 void ColorButton::SetColor(const QColor& color) {
