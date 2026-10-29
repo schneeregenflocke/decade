@@ -138,6 +138,7 @@ install(DIRECTORY licenses DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/decade)
 
 add_custom_target(sanitize-address
 	COMMAND ${CMAKE_COMMAND} -S ${CMAKE_SOURCE_DIR} -B ${CMAKE_BINARY_DIR}/san-address -G ${CMAKE_GENERATOR}
+		-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
 		-DCMAKE_BUILD_TYPE=RelWithDebInfo
 		"-DCMAKE_CXX_FLAGS=-D_GLIBCXX_ASSERTIONS -fsanitize=address,leak,undefined,float-cast-overflow,float-divide-by-zero -fno-sanitize-recover=undefined -fno-omit-frame-pointer"
 	COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}/san-address
@@ -173,6 +174,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 
 	add_custom_target(sanitize-memory
 		COMMAND ${CMAKE_COMMAND} -S ${CMAKE_SOURCE_DIR} -B ${CMAKE_BINARY_DIR}/san-memory -G ${CMAKE_GENERATOR}
+			-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
 			-DCMAKE_BUILD_TYPE=RelWithDebInfo
 			"-DCMAKE_CXX_FLAGS=-fsanitize=memory -fno-omit-frame-pointer"
 		COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}/san-memory
