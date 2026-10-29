@@ -67,13 +67,13 @@ class MainWindow : public QMainWindow {
   [[nodiscard]] CalendarSetupPanel& CalendarSetup();
   [[nodiscard]] CsvImportPanel& CsvImport();
   [[nodiscard]] PngExportPanel& PngExport();
-
-  // The menu entry names the resolution it exports at.
-  void ReceivePngExportConfig(const PngExportConfig& config);
   [[nodiscard]] FontPanel& Font();
   [[nodiscard]] ShapeSetupPanel& ShapeSetup();
   [[nodiscard]] SceneTreePanel& SceneTree();
   [[nodiscard]] GLCanvas& Canvas();
+
+  // The menu entry names the resolution it exports at.
+  void ReceivePngExportConfig(const PngExportConfig& config);
 
   // Preselects the tab with this caption (case-insensitively). It reports
   // whether the tab exists.
