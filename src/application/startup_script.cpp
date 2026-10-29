@@ -116,7 +116,10 @@ void StartupScript::WriteRequestedImages(MainWindow& window) const {
       std::cout << "--dump-png: writing " << *options_.dump_png_path << " at "
                 << dpi << " dpi\n";
     }
-    window.Canvas().SavePNG(*options_.dump_png_path, dpi);
+    if (const auto error = window.Canvas().SavePNG(
+            *options_.dump_png_path, dpi, GLCanvas::kExportMsaaSamples)) {
+      std::cerr << "--dump-png: " << *error << '\n';
+    }
   }
   if (options_.dump_window_png_path) {
     const std::string path = *options_.dump_window_png_path;

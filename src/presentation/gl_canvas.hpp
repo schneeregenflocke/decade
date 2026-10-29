@@ -26,6 +26,7 @@
 #include <glm/vec2.hpp>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -135,8 +136,10 @@ class GLCanvas : public QOpenGLWidget, public application::RenderSurface {
   [[nodiscard]] double CurrentFps() const;
 
   // The off-screen framebuffers of the export come into being in this context,
-  // so it has to be current — this runs outside the rendering callbacks.
-  void SavePNG(const std::string& file_path, int dpi = kExportPngDpi);
+  // so it has to be current — this runs outside the rendering callbacks. The
+  // return: empty on success, otherwise why nothing got written.
+  [[nodiscard]] std::optional<std::string> SavePNG(const std::string& file_path,
+                                                   int dpi, int msaa_samples);
 
   // The rendered canvas content as an image with its origin top left, so it can
   // be mounted into a whole-window screenshot: the widget capture does not see

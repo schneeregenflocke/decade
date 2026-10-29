@@ -82,7 +82,9 @@ void FileCommands::ExportPng() {
   if (file_path.empty()) {
     return;
   }
-  window_.Canvas().SavePNG(file_path);
+  Report("Export PNG file",
+         window_.Canvas().SavePNG(file_path, GLCanvas::kExportPngDpi,
+                                  GLCanvas::kExportMsaaSamples));
 }
 
 std::string FileCommands::AskOpenPath(const QString& title,

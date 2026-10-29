@@ -23,6 +23,7 @@
 #include <glm/ext/vector_int2.hpp>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -138,10 +139,11 @@ void GLCanvas::Repaint() { update(); }
 
 double GLCanvas::CurrentFps() const { return frame_stats_.Fps(); }
 
-void GLCanvas::SavePNG(const std::string& file_path, int dpi) {
+std::optional<std::string> GLCanvas::SavePNG(const std::string& file_path,
+                                             int dpi, int msaa_samples) {
   makeCurrent();
-  WritePageToPng(file_path, drawing_extent_, static_cast<float>(dpi),
-                 *graphics_engine_, kExportMsaaSamples);
+  return WritePageToPng(file_path, drawing_extent_, static_cast<float>(dpi),
+                        *graphics_engine_, msaa_samples);
 }
 
 QImage GLCanvas::CaptureImage() { return grabFramebuffer(); }
