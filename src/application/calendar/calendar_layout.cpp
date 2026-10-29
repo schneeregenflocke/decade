@@ -11,7 +11,7 @@
 #include "../../domain/calendar_config.hpp"
 #include "../../domain/calendar_sizing.hpp"
 #include "../../domain/timeline_projection.hpp"
-#include "../../infrastructure/graphics/rect.hpp"
+#include "graphics/rect.hpp"
 
 CalendarLayout::CalendarLayout(const RectF& page_size, const RectF& page_margin,
                                float title_area_height,

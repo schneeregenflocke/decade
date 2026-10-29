@@ -8,10 +8,10 @@
 #include "../../domain/band_part.hpp"
 #include "../../domain/date.hpp"
 #include "../../domain/date_period.hpp"
-#include "../../infrastructure/graphics/rect.hpp"
-#include "../../infrastructure/graphics/scene_graph.hpp"
-#include "../../infrastructure/graphics/scene_shape_filler.hpp"
 #include "calendar_scene_nodes.hpp"
+#include "graphics/rect.hpp"
+#include "graphics/scene_graph.hpp"
+#include "graphics/scene_shape_filler.hpp"
 
 namespace calendar_sections::detail {
 

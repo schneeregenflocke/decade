@@ -27,15 +27,8 @@ add_executable(decade_tests
 	infrastructure/persistence/test_csv_io.cpp
 	infrastructure/persistence/test_project_io.cpp
 	infrastructure/persistence/test_value_serialization.cpp
-	infrastructure/physics/test_physics_world.cpp
-	infrastructure/graphics/test_pan_zoom_camera.cpp
-	infrastructure/graphics/test_frame_stats.cpp
-	infrastructure/graphics/test_projection.cpp
-	infrastructure/graphics/test_child_pool.cpp
-	infrastructure/graphics/test_scene_graph.cpp
-	infrastructure/graphics/test_rect.cpp
-	infrastructure/graphics/test_page_geometry.cpp
 	application/calendar/test_calendar_layout.cpp
+	application/calendar/test_page_geometry.cpp
 	application/calendar/test_title_text_editor.cpp
 	application/calendar/test_scene_snapshot_builder.cpp
 	application/calendar/test_interaction_controller.cpp
@@ -59,7 +52,6 @@ target_include_directories(decade_tests SYSTEM PRIVATE
 	${EPOXY_INCLUDE_DIRS}
 	${ICU_INCLUDE_DIRS}
 	${CMAKE_SOURCE_DIR}/external/csv2/include
-	${CMAKE_SOURCE_DIR}/external/bullet3/src
 )
 
 target_link_libraries(decade_tests PRIVATE
@@ -76,8 +68,7 @@ target_link_libraries(decade_tests PRIVATE
 	Freetype::Freetype
 	glm::glm
 	Microsoft.GSL::GSL
-	BulletCollision
-	LinearMath
+	graphics_engine
 	${EPOXY_LIBRARIES}
 	${ICU_LIBRARIES}
 )

@@ -2,7 +2,7 @@
 #define PAGE_GEOMETRY_HPP
 
 #include "../../domain/page_setup_config.hpp"
-#include "rect.hpp"
+#include "graphics/rect.hpp"
 
 // The one place that turns the page configuration into geometry. The same
 // conversion used to stand in the GL canvas and in CalendarPage; the same

@@ -1,7 +1,7 @@
 #ifndef RENDER_SURFACE_HPP
 #define RENDER_SURFACE_HPP
 
-#include "../infrastructure/graphics/rect.hpp"
+#include "graphics/rect.hpp"
 
 namespace application {
 

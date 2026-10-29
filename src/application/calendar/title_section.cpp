@@ -8,11 +8,11 @@
 
 #include "../../domain/shape_configuration.hpp"
 #include "../../domain/text_edit_view.hpp"
-#include "../../infrastructure/graphics/font.hpp"
-#include "../../infrastructure/graphics/pick_id.hpp"
-#include "../../infrastructure/graphics/rect.hpp"
-#include "../../infrastructure/graphics/shapes.hpp"
-#include "../../infrastructure/graphics/utf8_codec.hpp"
+#include "graphics/font.hpp"
+#include "graphics/pick_id.hpp"
+#include "graphics/rect.hpp"
+#include "graphics/shapes.hpp"
+#include "graphics/utf8_codec.hpp"
 #include "section_context.hpp"
 
 namespace calendar_sections {

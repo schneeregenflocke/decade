@@ -11,13 +11,13 @@
 #include <vector>
 
 #include "../../domain/shape_configuration.hpp"
-#include "../../infrastructure/graphics/drawable.hpp"
-#include "../../infrastructure/graphics/pick_id.hpp"
-#include "../../infrastructure/graphics/rect.hpp"
-#include "../../infrastructure/graphics/scene.hpp"
-#include "../../infrastructure/graphics/scene_graph.hpp"
-#include "../../infrastructure/graphics/shape_node.hpp"
-#include "../../infrastructure/graphics/shapes.hpp"
+#include "graphics/drawable.hpp"
+#include "graphics/pick_id.hpp"
+#include "graphics/rect.hpp"
+#include "graphics/scene.hpp"
+#include "graphics/scene_graph.hpp"
+#include "graphics/shape_node.hpp"
+#include "graphics/shapes.hpp"
 
 SceneHighlighter::SceneHighlighter(const Scene& scene,
                                    const ShapeNode<BoxesShape>& overlay_node,

@@ -21,15 +21,15 @@
 #include "../../domain/state_topics.hpp"
 #include "../../domain/text_edit_view.hpp"
 #include "../../domain/title_config.hpp"
-#include "../../infrastructure/graphics/font.hpp"
-#include "../../infrastructure/graphics/graphics_engine.hpp"
-#include "../../infrastructure/graphics/page_geometry.hpp"
-#include "../../infrastructure/graphics/pick_id.hpp"
-#include "../../infrastructure/graphics/rect.hpp"
-#include "../../infrastructure/graphics/scene.hpp"
-#include "../../infrastructure/physics/physics_world.hpp"
 #include "../render_surface.hpp"
 #include "calendar_scene_composer.hpp"
+#include "graphics/font.hpp"
+#include "graphics/graphics_engine.hpp"
+#include "graphics/pick_id.hpp"
+#include "graphics/rect.hpp"
+#include "graphics/scene.hpp"
+#include "page_geometry.hpp"
+#include "physics/physics_world.hpp"
 
 // Rendering adapter: owns the domain state relevant to the calendar drawing,
 // receives updates via the Receive* slots, and drives the CalendarSceneComposer

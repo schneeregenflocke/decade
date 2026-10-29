@@ -5,7 +5,7 @@
 #include "domain/calendar_config.hpp"
 #include "domain/calendar_sizing.hpp"
 #include "domain/calendar_view.hpp"
-#include "infrastructure/graphics/rect.hpp"
+#include "graphics/rect.hpp"
 
 namespace {
 

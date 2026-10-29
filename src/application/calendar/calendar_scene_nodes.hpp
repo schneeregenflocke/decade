@@ -6,12 +6,12 @@
 #include <string>
 #include <string_view>
 
-#include "../../infrastructure/graphics/font.hpp"
-#include "../../infrastructure/graphics/scene.hpp"
-#include "../../infrastructure/graphics/scene_graph.hpp"
-#include "../../infrastructure/graphics/shaders.hpp"
-#include "../../infrastructure/graphics/shape_node.hpp"
-#include "../../infrastructure/graphics/shapes.hpp"
+#include "graphics/font.hpp"
+#include "graphics/scene.hpp"
+#include "graphics/scene_graph.hpp"
+#include "graphics/shaders.hpp"
+#include "graphics/shape_node.hpp"
+#include "graphics/shapes.hpp"
 
 // Painter draw layers for the calendar (lower = further back). The bars sit
 // above the grid background so the day/sunday/month cells do not cover them;

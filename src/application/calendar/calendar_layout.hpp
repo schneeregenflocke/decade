@@ -8,8 +8,8 @@
 
 #include "../../domain/band_part.hpp"
 #include "../../domain/calendar_config.hpp"
-#include "../../infrastructure/graphics/area_layout.hpp"
-#include "../../infrastructure/graphics/rect.hpp"
+#include "graphics/area_layout.hpp"
+#include "graphics/rect.hpp"
 
 // The calendar's page geometry, computed once per rebuild from the page size,
 // margins, title height and calendar config. It is GL-free and toolkit-free,

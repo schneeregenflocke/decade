@@ -1,6 +1,6 @@
 [submodule "external/csv2"]
 	path = external/csv2
 	url = https://github.com/p-ranav/csv2.git
-[submodule "external/bullet3"]
-	path = external/bullet3
-	url = https://github.com/bulletphysics/bullet3.git
+[submodule "external/graphics-engine"]
+	path = external/graphics-engine
+	url = https://github.com/schneeregenflocke/graphics-engine.git

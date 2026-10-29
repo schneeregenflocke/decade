@@ -16,9 +16,9 @@
 #include "../../domain/date_period.hpp"
 #include "../../domain/shape_configuration.hpp"
 #include "../../domain/timeline_projection.hpp"
-#include "../../infrastructure/graphics/font.hpp"
-#include "../../infrastructure/graphics/rect.hpp"
 #include "calendar_scene_nodes.hpp"
+#include "graphics/font.hpp"
+#include "graphics/rect.hpp"
 #include "section_context.hpp"
 
 namespace calendar_sections {

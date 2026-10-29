@@ -6,9 +6,9 @@
 
 #include "application/calendar/scene_snapshot_builder.hpp"
 #include "domain/scene_snapshot.hpp"
-#include "infrastructure/graphics/drawable.hpp"
-#include "infrastructure/graphics/rect.hpp"
-#include "infrastructure/graphics/scene_graph.hpp"
+#include "graphics/drawable.hpp"
+#include "graphics/rect.hpp"
+#include "graphics/scene_graph.hpp"
 
 namespace {
 

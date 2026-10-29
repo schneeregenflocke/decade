@@ -9,8 +9,8 @@
 
 #include "../../common/debug_log.hpp"
 #include "../../domain/state_topics.hpp"
-#include "../../infrastructure/graphics/pick_id.hpp"
 #include "../interaction_topics.hpp"
+#include "graphics/pick_id.hpp"
 
 InteractionController::InteractionController(
     application::HoveredTopic& hovered_topic,

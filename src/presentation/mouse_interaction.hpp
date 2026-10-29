@@ -8,8 +8,8 @@
 #include <iostream>
 
 #include "../common/debug_log.hpp"
-#include "../infrastructure/graphics/mvp_matrices.hpp"
-#include "../infrastructure/graphics/pan_zoom_camera.hpp"
+#include "graphics/mvp_matrices.hpp"
+#include "graphics/pan_zoom_camera.hpp"
 
 // Translates mouse events into camera commands: dragging becomes a pan delta in
 // world space, the mouse wheel a zoom factor around the pointer. The pan and

@@ -10,8 +10,8 @@
 #include <iostream>
 
 #include "../common/debug_log.hpp"
-#include "../infrastructure/graphics/mvp_matrices.hpp"
-#include "../infrastructure/graphics/pan_zoom_camera.hpp"
+#include "graphics/mvp_matrices.hpp"
+#include "graphics/pan_zoom_camera.hpp"
 
 void MouseInteraction::Apply(MVP& mvp, PanZoomCamera& camera,
                              glm::ivec2 mouse_position,

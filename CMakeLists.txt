@@ -27,24 +27,7 @@ pkg_check_modules(ICU REQUIRED icu-uc icu-i18n)
 
 # --- Submodules ----------------------------------------------
 
-set(BUILD_BULLET2_DEMOS OFF CACHE BOOL "" FORCE)
-set(BUILD_CPU_DEMOS OFF CACHE BOOL "" FORCE)
-set(BUILD_BULLET3 OFF CACHE BOOL "" FORCE)
-set(BUILD_EXTRAS OFF CACHE BOOL "" FORCE)
-set(BUILD_UNIT_TESTS OFF CACHE BOOL "" FORCE)
-set(BUILD_ENET OFF CACHE BOOL "" FORCE)
-set(BUILD_CLSOCKET OFF CACHE BOOL "" FORCE)
-set(BUILD_PYBULLET OFF CACHE BOOL "" FORCE)
-set(USE_GRAPHICAL_BENCHMARK OFF CACHE BOOL "" FORCE)
-set(ENABLE_VHACD OFF CACHE BOOL "" FORCE)
-set(INSTALL_CMAKE_FILES OFF CACHE BOOL "" FORCE)
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-
-set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
-
-add_subdirectory(external/bullet3 EXCLUDE_FROM_ALL)
-
-set_target_properties(BulletCollision LinearMath PROPERTIES SYSTEM TRUE)
+add_subdirectory(external/graphics-engine)
 
 # --- Executable -----------------------------------------------------------
 
@@ -58,7 +41,6 @@ target_include_directories(decade SYSTEM PRIVATE
 	${EPOXY_INCLUDE_DIRS}
 	${ICU_INCLUDE_DIRS}
 	external/csv2/include
-	external/bullet3/src
 )
 
 target_link_libraries(decade PRIVATE
@@ -74,8 +56,7 @@ target_link_libraries(decade PRIVATE
 	Freetype::Freetype
 	glm::glm
 	Microsoft.GSL::GSL
-	BulletCollision
-	LinearMath
+	graphics_engine
 	${EPOXY_LIBRARIES}
 	${ICU_LIBRARIES}
 )

@@ -8,12 +8,12 @@
 #include "../../domain/band_part.hpp"
 #include "../../domain/calendar_config.hpp"
 #include "../../domain/shape_configuration.hpp"
-#include "../../infrastructure/graphics/child_pool.hpp"
-#include "../../infrastructure/graphics/font.hpp"
-#include "../../infrastructure/graphics/rect.hpp"
-#include "../../infrastructure/graphics/scene_shape_filler.hpp"
-#include "../../infrastructure/graphics/shapes.hpp"
 #include "calendar_scene_nodes.hpp"
+#include "graphics/child_pool.hpp"
+#include "graphics/font.hpp"
+#include "graphics/rect.hpp"
+#include "graphics/scene_shape_filler.hpp"
+#include "graphics/shapes.hpp"
 #include "section_context.hpp"
 
 namespace calendar_sections {

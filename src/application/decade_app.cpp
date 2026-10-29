@@ -15,6 +15,7 @@
 #include "../common/debug_log.hpp"
 #include "../presentation/gl_canvas.hpp"
 #include "app_composition.hpp"
+#include "graphics/graphics_log.hpp"
 #include "locale_services.hpp"
 #include "runtime_info.hpp"
 #include "runtime_options.hpp"
@@ -54,6 +55,7 @@ int RunDecadeApp(int& argument_count, char** arguments) {
 
   const RuntimeOptions runtime_options = RuntimeOptionsFromParser(parser);
   decade_debug::SetLogEnabled(runtime_options.debug_log);
+  graphics_log::SetLogEnabled(runtime_options.debug_log);
   // A native dialogue lives outside the application (a portal under Wayland),
   // where a script cannot reach its fields.
   if (runtime_options.gui_script) {

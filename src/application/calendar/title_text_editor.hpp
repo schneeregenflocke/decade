@@ -11,7 +11,7 @@
 #include "../../domain/text_edit_buffer.hpp"
 #include "../../domain/text_edit_view.hpp"
 #include "../../domain/title_config_store.hpp"
-#include "../../infrastructure/graphics/pick_id.hpp"
+#include "graphics/pick_id.hpp"
 #include "text_input_event.hpp"
 
 // Application: editing the title straight in the canvas. The editor holds the

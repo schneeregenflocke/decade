@@ -12,7 +12,6 @@
 #include <utility>
 
 #include "../common/debug_log.hpp"
-#include "../infrastructure/graphics/pick_id.hpp"
 #include "../presentation/gl_canvas.hpp"
 #include "../presentation/gui_script.hpp"
 #include "../presentation/gui_script_runner.hpp"
@@ -21,6 +20,7 @@
 #include "../presentation/scene_tree_panel.hpp"
 #include "calendar/calendar_page.hpp"
 #include "calendar/title_text_editor.hpp"
+#include "graphics/pick_id.hpp"
 #include "project_document.hpp"
 #include "runtime_options.hpp"
 

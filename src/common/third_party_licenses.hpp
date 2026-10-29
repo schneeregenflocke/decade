@@ -7,8 +7,8 @@
 #include <string_view>
 
 // The licence texts the about dialogue shows, embedded in the binary the same
-// way the shaders are (see embedded_resources.hpp for how `#embed` carries a
-// file into a constant).
+// way the shaders are (see embedded_shaders.hpp in graphics-engine for how
+// `#embed` carries a file into a constant).
 //
 // Every library the build links appears here, not just the ones vendored under
 // `external/`: the notice obligations follow the linker, not the repository
@@ -45,7 +45,7 @@ inline constexpr auto kBoostData = std::to_array<unsigned char>({
 #embed "../../licenses/boost.txt"
 });
 inline constexpr auto kBulletData = std::to_array<unsigned char>({
-#embed "../../external/bullet3/LICENSE.txt"
+#embed "../../external/graphics-engine/external/bullet3/LICENSE.txt"
 });
 inline constexpr auto kCsv2Data = std::to_array<unsigned char>({
 #embed "../../external/csv2/LICENSE"

@@ -5,7 +5,7 @@
 #include <glm/vec2.hpp>
 #include <string>
 
-#include "../../infrastructure/graphics/pick_id.hpp"
+#include "graphics/pick_id.hpp"
 #include "section_context.hpp"
 
 // The print area frame and the title: its frame, its text and — while somebody

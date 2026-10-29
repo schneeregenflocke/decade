@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
+#include "application/calendar/page_geometry.hpp"
 #include "domain/page_setup_config.hpp"
-#include "infrastructure/graphics/page_geometry.hpp"
-#include "infrastructure/graphics/rect.hpp"
+#include "graphics/rect.hpp"
 
 // The page panel stores the margins as {left, bottom, right, top}; four
 // different values catch any two that trade places.

@@ -9,12 +9,12 @@
 #include <vector>
 
 #include "../../domain/shape_configuration.hpp"
-#include "../../infrastructure/graphics/pick_id.hpp"
-#include "../../infrastructure/graphics/rect.hpp"
-#include "../../infrastructure/graphics/scene.hpp"
-#include "../../infrastructure/graphics/scene_graph.hpp"
-#include "../../infrastructure/graphics/shape_node.hpp"
-#include "../../infrastructure/graphics/shapes.hpp"
+#include "graphics/pick_id.hpp"
+#include "graphics/rect.hpp"
+#include "graphics/scene.hpp"
+#include "graphics/scene_graph.hpp"
+#include "graphics/shape_node.hpp"
+#include "graphics/shapes.hpp"
 
 // Application/Infrastructure bridge: the interactive highlighting of the
 // calendar scene, kept apart from the construction concern

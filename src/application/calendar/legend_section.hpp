@@ -1,7 +1,7 @@
 #ifndef LEGEND_SECTION_HPP
 #define LEGEND_SECTION_HPP
 
-#include "../../infrastructure/graphics/rect.hpp"
+#include "graphics/rect.hpp"
 #include "section_context.hpp"
 
 // The legend below the calendar: one label plus one sample bar per date

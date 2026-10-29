@@ -12,8 +12,8 @@
 #include "../../domain/text_edit_view.hpp"
 #include "../../domain/title_config.hpp"
 #include "../../domain/title_config_store.hpp"
-#include "../../infrastructure/graphics/pick_id.hpp"
-#include "../../infrastructure/graphics/utf8_codec.hpp"
+#include "graphics/pick_id.hpp"
+#include "graphics/utf8_codec.hpp"
 #include "text_input_event.hpp"
 
 TitleTextEditor::TitleTextEditor(TitleConfigStore& title_store,

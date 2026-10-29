@@ -20,11 +20,11 @@
 #include "../../domain/state_topics.hpp"
 #include "../../domain/text_edit_view.hpp"
 #include "../../domain/title_config.hpp"
-#include "../../infrastructure/graphics/font.hpp"
-#include "../../infrastructure/graphics/graphics_engine.hpp"
-#include "../../infrastructure/graphics/page_geometry.hpp"
-#include "../../infrastructure/graphics/pick_id.hpp"
 #include "../render_surface.hpp"
+#include "graphics/font.hpp"
+#include "graphics/graphics_engine.hpp"
+#include "graphics/pick_id.hpp"
+#include "page_geometry.hpp"
 
 CalendarPage::CalendarPage(GraphicsEngine& graphics_engine,
                            application::RenderSurface& render_surface,

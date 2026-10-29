@@ -9,8 +9,8 @@
 #include <vector>
 
 #include "../../domain/state_topics.hpp"
-#include "../../infrastructure/graphics/pick_id.hpp"
 #include "../interaction_topics.hpp"
+#include "graphics/pick_id.hpp"
 
 // Application: it turns pointer input into events on the scene. The canvas
 // delivers points in page space, the controller tests them through an

@@ -8,7 +8,7 @@
 
 // Kind of shape a scene node carries, as a GL-free enum so the presentation
 // layer can describe a node without depending on the OpenGL shape types in
-// `src/infrastructure/graphics/`.
+// graphics-engine.
 enum class SnapshotShapeKind : std::uint8_t {
   kNone,
   kFill,
@@ -17,7 +17,7 @@ enum class SnapshotShapeKind : std::uint8_t {
 };
 
 // An axis-aligned box in page millimetres. A type of its own instead of the
-// RectF from `infrastructure/graphics/`, so the read model leaves no dependency
+// RectF from graphics-engine, so the read model leaves no dependency
 // there.
 struct SnapshotBounds {
   float left{0.0F};
@@ -38,7 +38,7 @@ struct SnapshotTextDetail {
 // mirror of the SceneNode hierarchy. It exists so the presentation layer (the
 // scene-tree widget) can display the graph structure and per-node detail
 // without depending on the OpenGL `SceneNode` type in
-// `src/infrastructure/graphics/`. The rendering side builds it; the bus carries
+// graphics-engine. The rendering side builds it; the bus carries
 // it; the panel renders it.
 //
 // `style_id` is the name of the domain ShapeConfiguration the node's appearance

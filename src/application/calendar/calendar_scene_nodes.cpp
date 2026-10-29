@@ -5,12 +5,12 @@
 #include <string>
 #include <string_view>
 
-#include "../../infrastructure/graphics/font.hpp"
-#include "../../infrastructure/graphics/scene.hpp"
-#include "../../infrastructure/graphics/scene_graph.hpp"
-#include "../../infrastructure/graphics/shaders.hpp"
-#include "../../infrastructure/graphics/shape_node.hpp"
-#include "../../infrastructure/graphics/shapes.hpp"
+#include "graphics/font.hpp"
+#include "graphics/scene.hpp"
+#include "graphics/scene_graph.hpp"
+#include "graphics/shaders.hpp"
+#include "graphics/shape_node.hpp"
+#include "graphics/shapes.hpp"
 
 std::string EntryNodeName(std::size_t entry) {
   return "entry " + std::to_string(entry + 1);

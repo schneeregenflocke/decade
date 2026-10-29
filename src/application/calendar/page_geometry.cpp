@@ -3,7 +3,7 @@
 #include <array>
 
 #include "../../domain/page_setup_config.hpp"
-#include "rect.hpp"
+#include "graphics/rect.hpp"
 
 RectF PageRect(const PageSetupConfig& page_setup_config) {
   return RectF::FromDimension(

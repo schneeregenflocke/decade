@@ -9,7 +9,7 @@
 #include "application/calendar/interaction_controller.hpp"
 #include "application/interaction_topics.hpp"
 #include "domain/state_topics.hpp"
-#include "infrastructure/graphics/pick_id.hpp"
+#include "graphics/pick_id.hpp"
 
 namespace {
 

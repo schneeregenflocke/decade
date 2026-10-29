@@ -4,7 +4,7 @@
 #include <QtCore/QObject>
 #include <optional>
 
-#include "../infrastructure/graphics/pick_id.hpp"
+#include "graphics/pick_id.hpp"
 
 namespace application {
 
