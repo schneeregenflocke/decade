@@ -154,6 +154,10 @@ Three traps, all silent, each settled in one place.
 
 **Alpha has to leave the framebuffer at 1.** The canvas draws an opaque page, but `GL_SRC_ALPHA` blends the alpha channel with itself, so a translucent fill leaves a value below 1 behind — colour that is already final beside an alpha that means nothing. The buffer does not stay inside: `QOpenGLWidget` hands it to the compositor, and the export writes it into the PNG. Whoever reads it as premultiplied divides the colour by that alpha and wraps at 8 bit, which is how teal came out red ([#93](https://github.com/schneeregenflocke/decade/issues/93)). Hence `glBlendFuncSeparate` with `GL_ONE` on the alpha channel in `GLCanvas::ApplyInitialGlState`: colour blends as before, alpha saturates. Retagging a read-back afterwards would patch one consumer and miss the rest.
 
+### Project files break between versions
+
+The project file carries no format version, and a new release may refuse an older file. While the application still grows, a new field enters `project_io` without a migration path: `LoadProjectXml` reads the elements in a fixed order, rejects an older file with the read error and leaves the stores untouched. A version number and a migration become worth their cost once the format settles.
+
 ### Licences and the notices they oblige
 
 Decade is MIT, and every dependency but one is permissive. Qt is the exception: Decade uses it under **LGPL-3.0-only**, linked dynamically and unmodified. That choice carries weight. Qt also offers GPL-2.0, and taking it would pull FreeType onto its GPLv2 branch — the FTL carries a credit clause GPLv2 does not admit, which is why FreeType comes dual-licensed at all — and the binary would end up GPLv2, with source obligations for everything in it. LGPLv3 asks for less: [§4](https://www.gnu.org/licenses/lgpl-3.0.html) wants the library named, its copyright shown among the ones the running program displays, and both the LGPL and the GPL text shipped along. The licence dialogue is where those three happen, which is why the texts travel inside the binary rather than beside it.
