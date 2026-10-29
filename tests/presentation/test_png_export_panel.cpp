@@ -219,3 +219,33 @@ TEST(PngExportPanelTest, TheBrowseButtonRequestsAFileChoice) {
 
   EXPECT_EQ(requests, 1);
 }
+
+TEST(PngExportPanelTest, AnotherProjectClearsTheSavedLine) {
+  PngExportPanel panel(nullptr);
+  panel.ReceiveProjectFilePath("/home/x/plan.xml");
+  panel.ShowSaved("/home/x/plan.png", QTime(14, 32, 5));
+
+  panel.ReceiveProjectFilePath("/home/x/other.xml");
+
+  EXPECT_EQ(LabelText(panel, "saved"), "");
+}
+
+// Saving the project publishes its path again; the export still stands.
+TEST(PngExportPanelTest, TheSameProjectKeepsTheSavedLine) {
+  PngExportPanel panel(nullptr);
+  panel.ReceiveProjectFilePath("/home/x/plan.xml");
+  panel.ShowSaved("/home/x/plan.png", QTime(14, 32, 5));
+
+  panel.ReceiveProjectFilePath("/home/x/plan.xml");
+
+  EXPECT_EQ(LabelText(panel, "saved"), "Saved: /home/x/plan.png, 14:32:05");
+}
+
+TEST(PngExportPanelTest, AFailedExportClearsTheSavedLine) {
+  PngExportPanel panel(nullptr);
+  panel.ShowSaved("/home/x/plan.png", QTime(14, 32, 5));
+
+  panel.ClearSaved();
+
+  EXPECT_EQ(LabelText(panel, "saved"), "");
+}

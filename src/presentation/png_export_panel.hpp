@@ -31,6 +31,8 @@ class PngExportPanel : public QWidget {
 
   void ShowSaved(const std::string& file_path, const QTime& time);
 
+  void ClearSaved();
+
  signals:
   void PngExportConfigEdited(const PngExportConfig& config);
 

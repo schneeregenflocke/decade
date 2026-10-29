@@ -122,6 +122,11 @@ void PngExportPanel::ReceivePageSetup(
 }
 
 void PngExportPanel::ReceiveProjectFilePath(const std::string& file_path) {
+  // Saving the project publishes the same path again; only another project
+  // makes the last export stale.
+  if (file_path != project_file_path_) {
+    ClearSaved();
+  }
   project_file_path_ = file_path;
   file_path_->setPlaceholderText(
       QString::fromStdString(DefaultPngFilePath(file_path)));
@@ -133,6 +138,8 @@ void PngExportPanel::ShowSaved(const std::string& file_path,
       QString("Saved: %1, %2")
           .arg(QString::fromStdString(file_path), time.toString("HH:mm:ss")));
 }
+
+void PngExportPanel::ClearSaved() { saved_->clear(); }
 
 void PngExportPanel::CommitDpi() {
   bool parsed = false;

@@ -103,7 +103,9 @@ void FileCommands::ExportPng() {
   const std::optional<std::string> error =
       window_.Canvas().SavePNG(file_path, config.Dpi(), config.MsaaSamples());
   Report(title, error);
-  if (!error) {
+  if (error) {
+    window_.PngExport().ClearSaved();
+  } else {
     window_.PngExport().ShowSaved(QFileInfo(QString::fromStdString(file_path))
                                       .absoluteFilePath()
                                       .toStdString(),
