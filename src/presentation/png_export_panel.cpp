@@ -57,6 +57,9 @@ PngExportPanel::PngExportPanel(QWidget* parent)
   dpi_->setEditable(true);
   dpi_->setInsertPolicy(QComboBox::NoInsert);
   dpi_->addItems({"72", "150", "300", "600"});
+  // An editable combo box completes inline from its items, which would turn a
+  // typed 30 into 300.
+  dpi_->setCompleter(nullptr);
   dpi_->setValidator(MakeOwned<QIntValidator>(
       PngExportConfig::kMinDpi, PngExportConfig::kMaxDpi, dpi_.data()));
 

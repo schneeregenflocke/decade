@@ -80,6 +80,24 @@ TEST(PngExportPanelTest, TypingADpiAndEnterReportsIt) {
   EXPECT_EQ(log.edits[0].Dpi(), 150);
 }
 
+// A preset must not complete a typed prefix: "30" stays 30, not 300.
+TEST(PngExportPanelTest, TypingAPrefixOfAPresetKeepsTheTypedDpi) {
+  PngExportPanel panel(nullptr);
+  EditLog log(panel);
+  panel.show();
+  auto* dpi = panel.findChild<QComboBox*>("dpi");
+  ASSERT_NE(dpi, nullptr);
+  ASSERT_TRUE(QTest::qWaitForWindowExposed(&panel));
+  dpi->setFocus();
+
+  dpi->lineEdit()->selectAll();
+  QTest::keyClicks(dpi->lineEdit(), "30");
+  QTest::keyClick(dpi->lineEdit(), Qt::Key_Return);
+
+  ASSERT_EQ(log.edits.size(), 1U);
+  EXPECT_EQ(log.edits[0].Dpi(), 30);
+}
+
 TEST(PngExportPanelTest, AnIncompleteDpiReportsNothingAndStays) {
   PngExportPanel panel(nullptr);
   EditLog log(panel);
