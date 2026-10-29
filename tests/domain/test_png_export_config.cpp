@@ -5,7 +5,7 @@
 TEST(PngExportConfigTest, StartsAtTheDefaults) {
   const PngExportConfig config;
 
-  EXPECT_EQ(config.Dpi(), 200);
+  EXPECT_EQ(config.Dpi(), 300);
   EXPECT_EQ(config.MsaaSamples(), 16);
   EXPECT_TRUE(config.FilePath().empty());
 }

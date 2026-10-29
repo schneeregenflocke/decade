@@ -10,7 +10,7 @@ class PngExportConfig {
  public:
   static constexpr int kMinDpi = 1;
   static constexpr int kMaxDpi = 2400;
-  static constexpr int kDefaultDpi = 200;
+  static constexpr int kDefaultDpi = 300;
   static constexpr int kMaxMsaaSamples = 16;
   static constexpr int kDefaultMsaaSamples = 16;
 

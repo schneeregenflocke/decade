@@ -10,7 +10,7 @@ TEST(MainMenuTest, TheExportLabelStartsAtTheDefaultDpi) {
   MainMenu menu;
   menu.AttachTo(window);
 
-  EXPECT_EQ(menu.Actions().export_png->text(), "&Export png (200 dpi)...");
+  EXPECT_EQ(menu.Actions().export_png->text(), "&Export png (300 dpi)...");
 }
 
 TEST(MainMenuTest, TheExportLabelFollowsTheDpi) {

@@ -111,7 +111,7 @@ TEST(PngExportPanelTest, AnIncompleteDpiReportsNothingAndStays) {
   QTest::keyClick(dpi->lineEdit(), Qt::Key_Return);
 
   EXPECT_TRUE(log.edits.empty());
-  EXPECT_NE(dpi->lineEdit()->text(), "200");
+  EXPECT_NE(dpi->lineEdit()->text(), "300");
 }
 
 TEST(PngExportPanelTest, ChoosingMsaaSamplesReportsThem) {
