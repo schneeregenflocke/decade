@@ -1,6 +1,7 @@
 #include "png_export_config.hpp"
 
 #include <algorithm>
+#include <bit>
 #include <filesystem>
 #include <string>
 #include <utility>
@@ -16,7 +17,8 @@ void PngExportConfig::SetDpi(int dpi) {
 }
 
 void PngExportConfig::SetMsaaSamples(int msaa_samples) {
-  msaa_samples_ = std::clamp(msaa_samples, 1, kMaxMsaaSamples);
+  msaa_samples_ = static_cast<int>(std::bit_floor(
+      static_cast<unsigned>(std::clamp(msaa_samples, 1, kMaxMsaaSamples))));
 }
 
 void PngExportConfig::SetFilePath(std::string file_path) {

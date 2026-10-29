@@ -60,3 +60,13 @@ TEST(PngExportConfigTest, ARelativePathWithoutProjectStaysAsWritten) {
 
   EXPECT_EQ(config.ResolvedFilePath(""), "a.png");
 }
+
+// The tab offers powers of two alone; a hand-edited file must land on one.
+TEST(PngExportConfigTest, MsaaSamplesRoundDownToAPowerOfTwo) {
+  PngExportConfig config;
+
+  config.SetMsaaSamples(6);
+  EXPECT_EQ(config.MsaaSamples(), 4);
+  config.SetMsaaSamples(3);
+  EXPECT_EQ(config.MsaaSamples(), 2);
+}
