@@ -17,7 +17,6 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
-#include <optional>
 #include <string>
 
 #include "../domain/page_setup_config.hpp"
@@ -180,7 +179,7 @@ void PngExportPanel::UpdateDimensions() {
   const auto [width_mm, height_mm] = page_size_mm_;
   millimetre_size_->setText(
       QString("%1 × %2 mm").arg(width_mm, 0, 'f', 1).arg(height_mm, 0, 'f', 1));
-  const std::optional<ImageSize> size =
+  const auto size =
       ExportPixelSize(width_mm, height_mm, static_cast<float>(config_.Dpi()));
   if (!size) {
     pixel_size_->setText("–");
