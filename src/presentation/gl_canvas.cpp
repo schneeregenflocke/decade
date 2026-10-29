@@ -24,6 +24,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <utility>
 
 #include "../application/calendar/text_input_event.hpp"
@@ -293,11 +294,11 @@ void GLCanvas::ReportReady() {
   }
 }
 
-void GLCanvas::ReportFailure(const std::string& message) {
+void GLCanvas::ReportFailure(std::string_view message) {
   if (on_failed_) {
     const auto failed = std::exchange(on_failed_, nullptr);
     on_ready_ = nullptr;
-    failed(message);
+    failed(std::string(message));
     return;
   }
   std::cerr << message << '\n';
@@ -317,7 +318,7 @@ std::string GLCanvas::VersionFailureMessage() {
          "cannot continue.";
 }
 
-std::string GLCanvas::NoContextMessage() {
+std::string_view GLCanvas::NoContextMessage() {
   return "This platform carries no OpenGL widget. decade needs OpenGL to "
          "draw the calendar and cannot continue.";
 }

@@ -27,6 +27,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <utility>
 
 #include "../application/calendar/text_input_event.hpp"
@@ -179,7 +180,7 @@ class GLCanvas : public QOpenGLWidget, public application::RenderSurface {
 
   void ReportReady();
 
-  void ReportFailure(const std::string& message);
+  void ReportFailure(std::string_view message);
 
   // The format the context really came up with, not the one that was asked
   // for: a driver may hand back less, and the renderer needs to hear about it
@@ -188,7 +189,7 @@ class GLCanvas : public QOpenGLWidget, public application::RenderSurface {
 
   [[nodiscard]] static std::string VersionFailureMessage();
 
-  [[nodiscard]] static std::string NoContextMessage();
+  [[nodiscard]] static std::string_view NoContextMessage();
 
   // Valid with a current context alone; without one glGetString returns
   // nullptr, hence the fallback instead of a cast into the void.
