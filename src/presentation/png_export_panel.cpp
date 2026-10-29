@@ -44,7 +44,7 @@ PngExportPanel::PngExportPanel(QWidget* parent)
       saved_(MakeValueLabel("saved", this)) {
   file_path_ = MakeOwned<QLineEdit>(this);
   file_path_->setObjectName("file_path");
-  auto* browse = MakeOwned<QPushButton>("...", this);
+  auto* browse = MakeOwned<QPushButton>("Browse...", this);
   browse->setObjectName("browse");
   auto* file_row = MakeOwned<QHBoxLayout>();
   file_row->addWidget(file_path_.data(), 1);
