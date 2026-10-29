@@ -98,7 +98,7 @@ TEST(PngExportPanelTest, TypingAPrefixOfAPresetKeepsTheTypedDpi) {
   EXPECT_EQ(log.edits[0].Dpi(), 30);
 }
 
-TEST(PngExportPanelTest, AnIncompleteDpiReportsNothingAndStays) {
+TEST(PngExportPanelTest, AnIncompleteDpiReportsNothingAndStaysWhileTyping) {
   PngExportPanel panel(nullptr);
   EditLog log(panel);
   panel.show();
@@ -108,10 +108,30 @@ TEST(PngExportPanelTest, AnIncompleteDpiReportsNothingAndStays) {
   dpi->lineEdit()->selectAll();
   QTest::keyClick(dpi->lineEdit(), Qt::Key_Backspace);
   QTest::keyClicks(dpi->lineEdit(), "0");
-  QTest::keyClick(dpi->lineEdit(), Qt::Key_Return);
 
   EXPECT_TRUE(log.edits.empty());
-  EXPECT_NE(dpi->lineEdit()->text(), "300");
+  EXPECT_EQ(dpi->lineEdit()->text(), "0");
+}
+
+// Leaving the box with an invalid value would show one dpi and export another.
+TEST(PngExportPanelTest, LeavingAnInvalidDpiRestoresTheConfiguredOne) {
+  PngExportPanel panel(nullptr);
+  EditLog log(panel);
+  panel.show();
+  ASSERT_TRUE(QTest::qWaitForWindowExposed(&panel));
+  auto* dpi = panel.findChild<QComboBox*>("dpi");
+  auto* path = panel.findChild<QLineEdit*>("file_path");
+  ASSERT_NE(dpi, nullptr);
+  ASSERT_NE(path, nullptr);
+  dpi->setFocus();
+
+  dpi->lineEdit()->selectAll();
+  QTest::keyClick(dpi->lineEdit(), Qt::Key_Backspace);
+  QTest::keyClicks(dpi->lineEdit(), "0");
+  path->setFocus();
+
+  EXPECT_TRUE(log.edits.empty());
+  EXPECT_EQ(dpi->lineEdit()->text(), "300");
 }
 
 TEST(PngExportPanelTest, ChoosingMsaaSamplesReportsThem) {

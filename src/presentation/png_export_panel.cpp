@@ -7,7 +7,6 @@
 #include <QtCore/QSignalBlocker>
 #include <QtCore/QString>
 #include <QtCore/QTime>
-#include <QtGui/QIntValidator>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QFormLayout>
@@ -23,6 +22,7 @@
 #include "../domain/png_export_config.hpp"
 #include "graphics/export_size.hpp"
 #include "make_owned.hpp"
+#include "restoring_int_validator.hpp"
 
 namespace {
 
@@ -59,8 +59,9 @@ PngExportPanel::PngExportPanel(QWidget* parent)
   // An editable combo box completes inline from its items, which would turn a
   // typed 30 into 300.
   dpi_->setCompleter(nullptr);
-  dpi_->setValidator(MakeOwned<QIntValidator>(
-      PngExportConfig::kMinDpi, PngExportConfig::kMaxDpi, dpi_.data()));
+  dpi_->setValidator(MakeOwned<RestoringIntValidator>(
+      PngExportConfig::kMinDpi, PngExportConfig::kMaxDpi,
+      [this] { return config_.Dpi(); }, dpi_.data()));
 
   msaa_samples_ = MakeOwned<QComboBox>(this);
   msaa_samples_->setObjectName("msaa_samples");
