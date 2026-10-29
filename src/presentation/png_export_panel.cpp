@@ -8,7 +8,6 @@
 #include <QtCore/QString>
 #include <QtCore/QTime>
 #include <QtWidgets/QComboBox>
-#include <QtWidgets/QFileDialog>
 #include <QtWidgets/QFormLayout>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QLabel>
@@ -95,7 +94,8 @@ PngExportPanel::PngExportPanel(QWidget* parent)
           [this](int) { CommitMsaaSamples(); });
   connect(file_path_.data(), &QLineEdit::editingFinished, this,
           [this] { CommitFilePath(); });
-  connect(browse, &QPushButton::clicked, this, [this] { BrowseFilePath(); });
+  connect(browse, &QPushButton::clicked, this,
+          [this] { emit BrowseRequested(); });
   connect(export_button, &QPushButton::clicked, this,
           [this] { emit ExportRequested(); });
 }
@@ -162,18 +162,6 @@ void PngExportPanel::CommitFilePath() {
   }
   config_.SetFilePath(file_path);
   emit PngExportConfigEdited(config_);
-}
-
-void PngExportPanel::BrowseFilePath() {
-  const QString chosen = QFileDialog::getSaveFileName(
-      this, "PNG export file",
-      QString::fromStdString(config_.ResolvedFilePath(project_file_path_)),
-      "PNG files (*.png)");
-  if (chosen.isEmpty()) {
-    return;
-  }
-  file_path_->setText(chosen);
-  CommitFilePath();
 }
 
 void PngExportPanel::UpdateDimensions() {

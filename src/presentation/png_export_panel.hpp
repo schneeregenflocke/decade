@@ -36,14 +36,14 @@ class PngExportPanel : public QWidget {
 
   void ExportRequested();
 
+  void BrowseRequested();
+
  private:
   void CommitDpi();
 
   void CommitMsaaSamples();
 
   void CommitFilePath();
-
-  void BrowseFilePath();
 
   void UpdateDimensions();
 

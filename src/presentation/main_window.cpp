@@ -185,6 +185,8 @@ void MainWindow::InitMenu() {
   ConnectFileCommand(actions.export_png, FileCommand::kExportPng);
   connect(png_export_panel_.data(), &PngExportPanel::ExportRequested, this,
           [this] { emit FileCommandRequested(FileCommand::kExportPng); });
+  connect(png_export_panel_.data(), &PngExportPanel::BrowseRequested, this,
+          [this] { emit FileCommandRequested(FileCommand::kChoosePngFile); });
 
   connect(actions.quit, &QAction::triggered, this, [this] { close(); });
   connect(actions.license_info, &QAction::triggered, this, [this] {

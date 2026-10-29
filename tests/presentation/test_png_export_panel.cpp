@@ -205,3 +205,17 @@ TEST(PngExportPanelTest, ASavedExportShowsPathAndTime) {
 
   EXPECT_EQ(LabelText(panel, "saved"), "Saved: /tmp/a.png, 14:32:05");
 }
+
+TEST(PngExportPanelTest, TheBrowseButtonRequestsAFileChoice) {
+  PngExportPanel panel(nullptr);
+  int requests = 0;
+  QObject::connect(&panel, &PngExportPanel::BrowseRequested,
+                   [&requests] { ++requests; });
+  panel.show();
+  auto* button = panel.findChild<QPushButton*>("browse");
+  ASSERT_NE(button, nullptr);
+
+  QTest::mouseClick(button, Qt::LeftButton);
+
+  EXPECT_EQ(requests, 1);
+}

@@ -41,6 +41,7 @@ enum class FileCommand : std::uint8_t {
   kImportCsv,
   kExportCsv,
   kExportPng,
+  kChoosePngFile,
 };
 
 // The main window: it builds the layout, owns panels, canvas and menu and

@@ -61,15 +61,21 @@ class FileCommands {
   // tab nor the project file names one, and the chosen place stays configured.
   void ExportPng();
 
+  // Skips the overwrite question: choosing writes nothing, and the export asks
+  // before it replaces a file.
+  void ChoosePngFile();
+
   // An empty return value means: cancelled.
   [[nodiscard]] std::string AskOpenPath(const QString& title,
                                         const QString& filter);
 
   // The overwrite question of the save dialogue asks about the typed name
   // alone, so the suffix gets appended afterwards and the question repeated for
-  // the completed name.
+  // the completed name — unless `options` turns the question off.
   [[nodiscard]] std::string AskSavePath(const QString& title,
-                                        const FileType& type);
+                                        const FileType& type,
+                                        const QString& start = QString(),
+                                        QFileDialog::Options options = {});
 
   [[nodiscard]] bool ConfirmOverwrite(const QString& title,
                                       const QString& file_path) const;

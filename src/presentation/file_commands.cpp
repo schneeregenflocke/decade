@@ -37,6 +37,9 @@ void FileCommands::Execute(FileCommand command) {
     case FileCommand::kExportPng:
       ExportPng();
       break;
+    case FileCommand::kChoosePngFile:
+      ChoosePngFile();
+      break;
   }
 }
 
@@ -86,7 +89,8 @@ void FileCommands::ExportPng() {
   PngExportConfig config = store.Get();
   std::string file_path = config.ResolvedFilePath(document_.FilePath());
   if (file_path.empty()) {
-    file_path = AskSavePath(title, kPngFile);
+    file_path =
+        AskSavePath(title, kPngFile, QString::fromStdString(config.FilePath()));
     if (file_path.empty()) {
       return;
     }
@@ -107,6 +111,20 @@ void FileCommands::ExportPng() {
   }
 }
 
+void FileCommands::ChoosePngFile() {
+  PngExportConfigStore& store = document_.PngExportConfiguration();
+  PngExportConfig config = store.Get();
+  const std::string file_path = AskSavePath(
+      "PNG export file", kPngFile,
+      QString::fromStdString(config.ResolvedFilePath(document_.FilePath())),
+      QFileDialog::DontConfirmOverwrite);
+  if (file_path.empty()) {
+    return;
+  }
+  config.SetFilePath(file_path);
+  store.ReceivePngExportConfig(config);
+}
+
 std::string FileCommands::AskOpenPath(const QString& title,
                                       const QString& filter) {
   return QFileDialog::getOpenFileName(&window_, title, QString(), filter)
@@ -114,9 +132,11 @@ std::string FileCommands::AskOpenPath(const QString& title,
 }
 
 std::string FileCommands::AskSavePath(const QString& title,
-                                      const FileType& type) {
-  const QString chosen =
-      QFileDialog::getSaveFileName(&window_, title, QString(), type.filter);
+                                      const FileType& type,
+                                      const QString& start,
+                                      QFileDialog::Options options) {
+  const QString chosen = QFileDialog::getSaveFileName(
+      &window_, title, start, type.filter, nullptr, options);
   if (chosen.isEmpty()) {
     return {};
   }
@@ -125,7 +145,8 @@ std::string FileCommands::AskSavePath(const QString& title,
     return chosen.toStdString();
   }
   const QString with_extension = chosen + "." + type.extension;
-  if (QFileInfo::exists(with_extension) &&
+  if (!options.testFlag(QFileDialog::DontConfirmOverwrite) &&
+      QFileInfo::exists(with_extension) &&
       !ConfirmOverwrite(title, with_extension)) {
     return {};
   }
