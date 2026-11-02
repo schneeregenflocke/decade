@@ -113,7 +113,7 @@ One typed topic per domain event on an in-process bus; the consumers get wired i
 
 ### Style
 
-Language and documentation rules live in the superproject (`~/code/homelab-superproject/AGENTS.md`).
+Language and documentation rules live in [infra's AGENTS.md](https://github.com/schneeregenflocke/infra/blob/main/AGENTS.md).
 
 ### Ownership and lifetimes
 
